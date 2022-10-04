@@ -15,11 +15,11 @@ const SvgComponent = () => {
   );
 };
 
-interface MyLocationProps {
-  onPress(): void;
+interface Props {
+  onPress: () => void;
 }
 
-const MyLocation = ({ onPress }: MyLocationProps) => {
+const MyLocation = ({ onPress }: Props) => {
   return (
     <TouchableOpacity
       className="absolute bottom-40 right-2 h-10 w-10 rounded-full bg-gray-100 justify-center items-center"
