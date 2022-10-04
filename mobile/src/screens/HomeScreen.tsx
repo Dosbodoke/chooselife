@@ -1,9 +1,12 @@
+import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { useState } from 'react';
-import { View, Text, Dimensions, StyleSheet, Button } from 'react-native';
+import { View, Text, StatusBar, TouchableOpacity } from 'react-native';
 import MapView, { Region } from 'react-native-maps';
 
 const HomeScreen = () => {
+  const navigation = useNavigation();
+
   const [region, setRegion] = useState<Region>({
     latitude: -15.7782081,
     longitude: -47.93371,
@@ -30,22 +33,22 @@ const HomeScreen = () => {
   };
 
   return (
-    <View style={{ position: 'relative' }}>
-      {errorMsg && <Text>{errorMsg}</Text>}
-      <View style={{ position: 'absolute' }}>
-        <Button onPress={handleMyLocation} title="My location" color="#606060"/>
+    <View className="relative h-full">
+      <StatusBar barStyle="dark-content" />
+
+      <MapView className="flex-1" region={region} showsUserLocation provider="google" />
+
+      <View className="absolute h-32 w-full bottom-0 bg-white rounded-t-3xl">
+        <View className=" h-full bg-white my-4 mx-2">
+          <TouchableOpacity
+            className="bg-gray-100 rounded-xl py-3 px-2"
+            onPress={() => navigation.navigate('Search')}>
+            <Text className="text-xl font-bold">Procurar por um highline</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <MapView style={styles.map} region={region} showsUserLocation provider="google" />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  map: {
-    position: 'absolute',
-    width: Dimensions.get('screen').width,
-    height: Dimensions.get('screen').height,
-  },
-});
 
 export default HomeScreen;
