@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { View, Text, StatusBar, TouchableOpacity } from 'react-native';
 import MapView, { Region } from 'react-native-maps';
 
+import MyLocation from '../components/MyLocation';
+
 const HomeScreen = () => {
   const navigation = useNavigation();
 
@@ -38,7 +40,9 @@ const HomeScreen = () => {
 
       <MapView className="flex-1" region={region} showsUserLocation provider="google" />
 
-      <View className="absolute h-32 w-full bottom-0 bg-white rounded-t-3xl">
+      <MyLocation onPress={handleMyLocation} />
+
+      <View className="absolute w-full bottom-0 pb-2 bg-white rounded-t-3xl">
         <View className=" h-full bg-white my-4 mx-2">
           <TouchableOpacity
             className="bg-gray-100 rounded-xl py-3 px-2"
