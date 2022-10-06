@@ -43,7 +43,7 @@ const HomeScreen = ({ navigation }: Props) => {
           <TouchableOpacity
             className="bg-gray-100 rounded-xl py-3 px-2"
             onPress={() => navigation.navigate('Search')}>
-            <Text className="text-xl font-bold">Procurar por um highline</Text>
+            <Text className="text-xl font-bold">Procurar por um Highline</Text>
           </TouchableOpacity>
         </View>
       </View>
