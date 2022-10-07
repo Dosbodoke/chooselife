@@ -1,4 +1,4 @@
-import { TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 const SvgComponent = () => {
@@ -16,16 +16,19 @@ const SvgComponent = () => {
 };
 
 interface Props {
+  mBottom: number;
   onPress: () => void;
 }
 
-const MyLocation = ({ onPress }: Props) => {
+const MyLocation = ({ onPress, mBottom }: Props) => {
   return (
-    <TouchableOpacity
-      className="absolute bottom-40 right-2 h-10 w-10 rounded-full bg-gray-100 justify-center items-center"
-      onPress={onPress}>
-      <SvgComponent />
-    </TouchableOpacity>
+    <View className="absolute right-2" style={{ bottom: mBottom }}>
+      <TouchableOpacity
+        className="h-10 w-10 rounded-full bg-gray-100 justify-center items-center"
+        onPress={onPress}>
+        <SvgComponent />
+      </TouchableOpacity>
+    </View>
   );
 };
 
