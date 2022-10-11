@@ -1,8 +1,10 @@
 /* eslint-disable */
 
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 
 import HomeScreen from '../HomeScreen';
+
+jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
 
 jest.mock('react-native-maps', () => {
   const { View } = require('react-native');
@@ -89,7 +91,7 @@ describe('HomeScreen', () => {
     // given
     const props: any = createTestProps({});
     render(<HomeScreen {...props} />);
-    const jsonScreen: any = screen.toJSON()
+    const jsonScreen: any = screen.toJSON();
     const map = jsonScreen['children'].find((c: any) => 'region' in c.props)
 
     it('Render the map', () => {
@@ -103,18 +105,5 @@ describe('HomeScreen', () => {
     it('Uses google provider', () => {
       expect(map.props.provider).toEqual('google');
     });
-  })
-
-  it('Go to SearchScreen on click search component', () => {
-    // given
-    const props: any = createTestProps({});
-    render(<HomeScreen {...props} />);
-    const myLocation: any = screen.getByText('Procurar por um Highline').parent;
-
-    // when
-    fireEvent.press(myLocation);
-
-    // then
-    expect(props.navigation.navigate).toBeCalledWith('Search');
   });
 });
