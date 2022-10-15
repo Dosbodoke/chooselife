@@ -1,12 +1,12 @@
 import * as Location from 'expo-location';
 import { useState } from 'react';
 import { View, StatusBar, LayoutChangeEvent, PixelRatio } from 'react-native';
-import MapView, { Marker, Region } from 'react-native-maps';
+import { Region } from 'react-native-maps';
 
 import MyLocation from '../../components/MyLocation';
 import SearchCard from '../../components/SearchCard/SearchCard';
-import database from '../../database';
 import type { HomeScreenProps } from '../../navigation/types';
+import ClusteredMapView from './ClusteredMapView';
 
 const HomeScreen = ({ navigation }: HomeScreenProps) => {
   const [marginBottom, setMarginBottom] = useState(0);
@@ -40,10 +40,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
     <View className="relative h-full">
       <StatusBar barStyle="dark-content" />
 
-      <MapView className="flex-1" initialRegion={region} showsUserLocation provider="google">
-        {database?.highline &&
-          database.highline.map((h) => <Marker key={h.id} coordinate={h.anchorA} />)}
-      </MapView>
+      <ClusteredMapView initialRegion={region} />
 
       <MyLocation mBottom={marginBottom} onPress={handleMyLocation} />
 

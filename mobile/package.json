@@ -25,7 +25,9 @@
     "react-native-safe-area-context": "4.3.1",
     "react-native-screens": "~3.15.0",
     "react-native-svg": "12.3.0",
-    "react-native-web": "~0.18.7"
+    "react-native-web": "~0.18.7",
+    "supercluster": "^7.1.5",
+    "use-supercluster": "^0.4.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",
@@ -35,6 +37,7 @@
     "@types/react": "~18.0.14",
     "@types/react-native": "~0.69.1",
     "@types/react-test-renderer": "^18.0.0",
+    "@types/supercluster": "^7.1.0",
     "@typescript-eslint/eslint-plugin": "^5.38.1",
     "@typescript-eslint/parser": "^5.38.1",
     "eslint": "^8.24.0",
