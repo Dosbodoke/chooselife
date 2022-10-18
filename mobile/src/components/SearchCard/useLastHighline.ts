@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+import database, { Highline } from '../../database';
+
 export interface ILastHighline {
   id: string;
   name: string;
@@ -8,13 +10,10 @@ export interface ILastHighline {
 }
 
 const useLastHighline = () => {
-  const [lastHighline, setLastHighline] = useState<[ILastHighline, ILastHighline]>();
+  const [lastHighline, setLastHighline] = useState<Highline[]>();
 
   const getLastTwoVisitedHighlines = async () => {
-    const lastHighlines: [ILastHighline, ILastHighline] = [
-      { id: '1', name: 'Pangaré Figueiredo', height: 15, length: 42 },
-      { id: '2', name: 'Varal de Cabaré', height: 24, length: 84 },
-    ];
+    const lastHighlines: Highline[] = database.highline.slice(0, 2);
     setLastHighline(lastHighlines);
   };
 

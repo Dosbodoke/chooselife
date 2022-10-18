@@ -22,7 +22,7 @@ describe('SearchCard', () => {
 
     // when
     render(<SearchCard {...props} />);
-    const myLocation: any = screen.getByText('Procurar por um Highline').parent;
+    const myLocation: any = screen.getByText('Encontre um Highline').parent;
     fireEvent.press(myLocation);
 
     // then
