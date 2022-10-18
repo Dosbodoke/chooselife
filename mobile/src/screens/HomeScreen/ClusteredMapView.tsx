@@ -54,7 +54,8 @@ const ClusteredMapView = ({ initialRegion }: Props) => {
       provider="google"
       ref={mapRef}
       showsUserLocation
-      onRegionChangeComplete={onRegionChangeComplete}>
+      onRegionChangeComplete={onRegionChangeComplete}
+      testID="MapView">
       {clusters?.map((point) => {
         const [longitude, latitude] = point.geometry.coordinates;
         const coordinate = { latitude, longitude };
@@ -64,14 +65,14 @@ const ClusteredMapView = ({ initialRegion }: Props) => {
           const size = Math.max((properties.point_count * 40) / points.length, minMarkerSize);
           return (
             <ClusteredMarker
-              key={`cluster-${properties.highId}`}
+              key={`cluster-${properties.cluster_id}`}
               size={size}
               coordinate={coordinate}
               pointCount={properties.point_count}
             />
           );
         }
-        return <Marker key={`cluster-${properties.highId}`} coordinate={coordinate} />;
+        return <Marker key={`marker-${properties.highId}`} coordinate={coordinate} />;
       })}
     </MapView>
   );

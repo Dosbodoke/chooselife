@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`HomeScreen Map Renders correctly 1`] = `
+<View
+  initialRegion={
+    Object {
+      "latitude": -15.7782081,
+      "latitudeDelta": 5,
+      "longitude": -47.93371,
+      "longitudeDelta": 5,
+    }
+  }
+  onRegionChangeComplete={[Function]}
+  provider="google"
+  showsUserLocation={true}
+  style={
+    Array [
+      Object {
+        "flexBasis": "0%",
+        "flexGrow": 1,
+        "flexShrink": 1,
+      },
+    ]
+  }
+  testID="MapView"
+/>
+`;
