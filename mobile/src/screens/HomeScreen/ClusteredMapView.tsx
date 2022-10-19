@@ -1,14 +1,23 @@
 import * as Location from 'expo-location';
 import { BBox, GeoJsonProperties } from 'geojson';
-import { useState, useRef } from 'react';
-import MapView, { Marker, Region } from 'react-native-maps';
+import { useState, useRef, useMemo } from 'react';
+import MapView, { Region } from 'react-native-maps';
 import { PointFeature } from 'supercluster';
 import useSuperCluster from 'use-supercluster';
 
+import type { Coordinates } from '../../database';
 import database from '../../database';
 import ClusteredMarker from './ClusteredMarker';
+import HighlineMarker from './HighlineMarker';
 import MyLocation from './MyLocation';
 import { regionToBoundingBox } from './utils';
+
+interface PointProperties {
+  cluster: boolean;
+  category: string;
+  highId: string;
+  anchorB: Coordinates;
+}
 
 interface Props {
   buttonMarginBottom: number;
@@ -38,6 +47,7 @@ const ClusteredMapView = ({ buttonMarginBottom }: Props) => {
     longitudeDelta: 5,
   };
   const initialBound = regionToBoundingBox(initialRegion);
+
   const [bounds, setBounds] = useState<BBox>(initialBound);
   const [zoom, setZoom] = useState(10);
 
@@ -55,18 +65,32 @@ const ClusteredMapView = ({ buttonMarginBottom }: Props) => {
     setBounds(mapBound);
   };
 
-  const points: PointFeature<GeoJsonProperties>[] = database?.highline.map((h) => ({
-    type: 'Feature',
-    properties: {
-      cluster: false,
-      category: 'highline',
-      highId: h.id,
-    },
-    geometry: {
-      type: 'Point',
-      coordinates: [h.anchorA.longitude, h.anchorA.latitude],
-    },
-  }));
+  const fitMapToPolyline = (coords: Coordinates[]): void => {
+    mapRef.current?.fitToCoordinates(coords, {
+      edgePadding: {
+        top: 0,
+        right: 50,
+        bottom: 100,
+        left: 50,
+      },
+    });
+  };
+
+  const points = useMemo<PointFeature<GeoJsonProperties & PointProperties>[]>(() => {
+    return database?.highline.map((h) => ({
+      type: 'Feature',
+      properties: {
+        cluster: false,
+        category: 'highline',
+        highId: h.id,
+        anchorB: h.anchorB,
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: [h.anchorA.longitude, h.anchorA.latitude],
+      },
+    }));
+  }, [database?.highline]);
 
   const { clusters } = useSuperCluster({
     points,
@@ -87,8 +111,8 @@ const ClusteredMapView = ({ buttonMarginBottom }: Props) => {
         showsUserLocation>
         {clusters?.map((point) => {
           const [longitude, latitude] = point.geometry.coordinates;
-          const coordinate = { latitude, longitude };
-          const properties = point.properties ?? {};
+          const coordinateA = { latitude, longitude };
+          const properties = point.properties;
 
           if (properties?.cluster) {
             const size = Math.max((properties.point_count * 40) / points.length, minMarkerSize);
@@ -96,12 +120,24 @@ const ClusteredMapView = ({ buttonMarginBottom }: Props) => {
               <ClusteredMarker
                 key={`cluster-${properties.cluster_id}`}
                 size={size}
-                coordinate={coordinate}
+                coordinate={coordinateA}
                 pointCount={properties.point_count}
               />
             );
           }
-          return <Marker key={`marker-${properties.highId}`} coordinate={coordinate} />;
+
+          const coordinateB = {
+            latitude: properties.anchorB.latitude,
+            longitude: properties.anchorB.longitude,
+          };
+          return (
+            <HighlineMarker
+              key={`marker-${properties.highId}`}
+              coordinateA={coordinateA}
+              coordinateB={coordinateB}
+              fitMapToPolyline={fitMapToPolyline}
+            />
+          );
         })}
       </MapView>
       <MyLocation mBottom={buttonMarginBottom} onPress={setMyLocation} />

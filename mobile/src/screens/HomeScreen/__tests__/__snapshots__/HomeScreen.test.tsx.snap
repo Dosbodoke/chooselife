@@ -1,27 +1,116 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`HomeScreen Map Renders correctly 1`] = `
-<View
-  initialRegion={
-    Object {
-      "latitude": -15.7782081,
-      "latitudeDelta": 5,
-      "longitude": -47.93371,
-      "longitudeDelta": 5,
-    }
-  }
-  onRegionChangeComplete={[Function]}
-  provider="google"
-  showsUserLocation={true}
-  style={
-    Array [
+Array [
+  <View
+    initialRegion={
       Object {
-        "flexBasis": "0%",
-        "flexGrow": 1,
-        "flexShrink": 1,
-      },
-    ]
-  }
-  testID="MapView"
-/>
+        "latitude": -15.7782081,
+        "latitudeDelta": 5,
+        "longitude": -47.93371,
+        "longitudeDelta": 5,
+      }
+    }
+    onRegionChangeComplete={[Function]}
+    provider="google"
+    showsUserLocation={true}
+    style={
+      Array [
+        Object {
+          "flexBasis": "0%",
+          "flexGrow": 1,
+          "flexShrink": 1,
+        },
+      ]
+    }
+    testID="MapView"
+  />,
+  <View
+    style={
+      Array [
+        Object {
+          "position": "absolute",
+        },
+        Object {
+          "right": 8,
+        },
+        Object {
+          "bottom": undefined,
+        },
+      ]
+    }
+  >
+    <View
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onClick={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        Object {
+          "alignItems": "center",
+          "backgroundColor": "#f3f4f6",
+          "borderBottomLeftRadius": 9999,
+          "borderBottomRightRadius": 9999,
+          "borderTopLeftRadius": 9999,
+          "borderTopRightRadius": 9999,
+          "height": 40,
+          "justifyContent": "center",
+          "opacity": 1,
+          "width": 40,
+        }
+      }
+    >
+      <RNSVGSvgView
+        align="xMidYMid"
+        bbHeight="24px"
+        bbWidth="24px"
+        focusable={false}
+        height="24px"
+        meetOrSlice={0}
+        minX={0}
+        minY={0}
+        style={
+          Array [
+            Object {
+              "backgroundColor": "transparent",
+              "borderWidth": 0,
+            },
+            Object {
+              "flex": 0,
+              "height": 24,
+              "width": 24,
+            },
+          ]
+        }
+        vbHeight={24}
+        vbWidth={24}
+        width="24px"
+      >
+        <RNSVGGroup>
+          <RNSVGPath
+            d="M12 2a.75.75 0 01.743.648l.007.102v1.788a7.5 7.5 0 016.713 6.715l.037-.003h1.75a.75.75 0 01.102 1.493l-.102.007-1.788-.001a7.5 7.5 0 01-6.715 6.714l.003.037v1.75a.75.75 0 01-1.493.102l-.007-.102.001-1.788a7.5 7.5 0 01-6.714-6.715l-.037.003H2.75a.75.75 0 01-.102-1.493l.102-.007h1.788a7.5 7.5 0 016.715-6.713L11.25 4.5V2.75A.75.75 0 0112 2zm0 4a6 6 0 100 12 6 6 0 000-12zm0 2a4 4 0 110 8 4 4 0 010-8z"
+            fill={4280361249}
+            fillRule={1}
+            propList={
+              Array [
+                "fill",
+                "fillRule",
+                "stroke",
+                "strokeWidth",
+              ]
+            }
+            stroke={null}
+            strokeWidth={1}
+          />
+        </RNSVGGroup>
+      </RNSVGSvgView>
+    </View>
+  </View>,
+]
 `;

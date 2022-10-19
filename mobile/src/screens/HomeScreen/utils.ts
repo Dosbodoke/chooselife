@@ -13,3 +13,7 @@ export const regionToBoundingBox = (region: Region): BBox => {
     region.latitude + region.latitudeDelta, // northLat - max lat
   ];
 };
+
+export const toRad = (number: number) => (number * Math.PI) / 180;
+
+export const toDeg = (rad: number) => rad * (180 / Math.PI);
