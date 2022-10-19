@@ -1,6 +1,6 @@
 import { View, TouchableOpacity } from 'react-native';
 
-import { MyLocationSvg } from '../assets';
+import { MyLocationSvg } from '../../assets';
 
 interface Props {
   mBottom: number;
