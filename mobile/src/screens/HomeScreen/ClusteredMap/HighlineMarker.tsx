@@ -1,7 +1,7 @@
+import type { Coordinates } from '@src/database';
 import { useState } from 'react';
 import { Marker, Polyline } from 'react-native-maps';
 
-import type { Coordinates } from '../../database';
 
 interface Props {
   coordinateA: Coordinates;

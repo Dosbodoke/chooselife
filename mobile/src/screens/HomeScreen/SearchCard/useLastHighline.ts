@@ -1,6 +1,5 @@
+import database, { Highline } from '@src/database';
 import { useState, useEffect } from 'react';
-
-import database, { Highline } from '../../database';
 
 export interface ILastHighline {
   id: string;

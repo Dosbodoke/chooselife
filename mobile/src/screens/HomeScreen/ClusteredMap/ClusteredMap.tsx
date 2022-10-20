@@ -1,16 +1,16 @@
-import * as Location from 'expo-location';
+import type { Coordinates } from '@src/database';
+import database from '@src/database';
 import { BBox, GeoJsonProperties } from 'geojson';
 import { useState, useRef, useMemo } from 'react';
 import MapView, { Region } from 'react-native-maps';
 import { PointFeature } from 'supercluster';
 import useSuperCluster from 'use-supercluster';
 
-import type { Coordinates } from '../../database';
-import database from '../../database';
+
+import { regionToBoundingBox, getMyLocation } from '../utils';
 import ClusteredMarker from './ClusteredMarker';
 import HighlineMarker from './HighlineMarker';
 import MyLocation from './MyLocation';
-import { regionToBoundingBox } from './utils';
 
 interface PointProperties {
   cluster: boolean;
@@ -23,23 +23,9 @@ interface Props {
   buttonMarginBottom: number;
 }
 
-const getMyLocation = async (): Promise<Region | undefined> => {
-  const { status } = await Location.requestForegroundPermissionsAsync();
-  if (status !== 'granted') return;
-
-  const { latitude, longitude } = (await Location.getCurrentPositionAsync({})).coords;
-  const region = {
-    latitude,
-    longitude,
-    latitudeDelta: 0.035,
-    longitudeDelta: 0.035,
-  };
-  return region;
-};
-
 const minMarkerSize = 30;
 
-const ClusteredMapView = ({ buttonMarginBottom }: Props) => {
+const ClusteredMap = ({ buttonMarginBottom }: Props) => {
   const initialRegion = {
     latitude: -15.7782081,
     longitude: -47.93371,
@@ -145,4 +131,4 @@ const ClusteredMapView = ({ buttonMarginBottom }: Props) => {
   );
 };
 
-export default ClusteredMapView;
+export default ClusteredMap;

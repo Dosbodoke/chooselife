@@ -1,6 +1,7 @@
+import { HistorySvg, HeightSvg, LengthSvg } from '@src/assets';
 import { TouchableOpacity, Text, View } from 'react-native';
 
-import { HistorySvg, HeightSvg, LengthSvg } from '../assets';
+// import { HistorySvg, HeightSvg, LengthSvg } from '../../../assets';
 
 interface Props {
   name: string;

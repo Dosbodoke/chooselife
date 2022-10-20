@@ -1,8 +1,8 @@
+import { SearchSvg } from '@src/assets';
+import type { HomeScreenProps } from '@src/navigation/types';
 import { View, Text, TouchableOpacity, LayoutChangeEvent } from 'react-native';
 
-import { SearchSvg } from '../../assets';
-import type { HomeScreenProps } from '../../navigation/types';
-import LastHighline from '../LastHighline';
+import LastHighline from './LastHighline';
 import useLastHighline from './useLastHighline';
 
 type NavigationProp = HomeScreenProps['navigation'];

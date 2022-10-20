@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
-import SearchCard from './SearchCard';
-import useLastHighline, { ILastHighline } from './useLastHighline';
+import SearchCard from '../SearchCard/SearchCard';
+import useLastHighline, { ILastHighline } from '../SearchCard/useLastHighline';
 
-jest.mock('./useLastHighline', () => ({
+jest.mock('../SearchCard/useLastHighline', () => ({
   __esModule: true,
   default: jest.fn(),
 }));
