@@ -1,13 +1,6 @@
 import database, { Highline } from '@src/database';
 import { useState, useEffect } from 'react';
 
-export interface ILastHighline {
-  id: string;
-  name: string;
-  length: number;
-  height: number;
-}
-
 const useLastHighline = () => {
   const [lastHighline, setLastHighline] = useState<Highline[]>();
 

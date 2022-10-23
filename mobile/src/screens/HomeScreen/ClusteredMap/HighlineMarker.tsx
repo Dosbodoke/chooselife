@@ -1,28 +1,38 @@
 import type { Coordinates } from '@src/database';
-import { useState } from 'react';
+import { useAppDispatch } from '@src/redux/hooks';
+import { highliteMarker, minimizeMarker } from '@src/redux/slices/markerSlice';
 import { Marker, Polyline } from 'react-native-maps';
 
-
 interface Props {
+  id: string;
+  isHighlited?: boolean;
   coordinateA: Coordinates;
   coordinateB: Coordinates;
-  fitMapToPolyline: (coords: Coordinates[]) => void;
 }
 
 const HighlineMarker = (props: Props) => {
-  const [showAnchorB, setShowAnchorB] = useState(false);
+  const dispatch = useAppDispatch();
 
   const handleOnPress = () => {
-    setShowAnchorB((prev) => !prev);
-    props.fitMapToPolyline([props.coordinateA, props.coordinateB]);
+    if (props.isHighlited) {
+      dispatch(minimizeMarker());
+      return;
+    }
+    dispatch(
+      highliteMarker({
+        type: 'Highline',
+        id: props.id,
+        coords: [props.coordinateA, props.coordinateB],
+      })
+    );
   };
 
   return (
     <>
       <Marker coordinate={props.coordinateA} onPress={handleOnPress} />
-      {showAnchorB && (
+      {props.isHighlited && (
         <>
-          <Marker coordinate={props.coordinateB} />
+          <Marker coordinate={props.coordinateB} onPress={handleOnPress} />
           <Polyline coordinates={[props.coordinateA, props.coordinateB]} strokeWidth={3} />
         </>
       )}

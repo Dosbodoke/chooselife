@@ -28,7 +28,7 @@ const SearchCard = ({ handleLayoutChange, navigation }: Props) => {
 
       <View>
         {lastHighline?.map((high) => (
-          <LastHighline key={high.id} name={high.name} length={high.length} height={high.height} />
+          <LastHighline key={high.id} highline={high} />
         ))}
       </View>
     </View>

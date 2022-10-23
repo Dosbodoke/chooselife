@@ -1,11 +1,12 @@
 import type { Coordinates } from '@src/database';
 import database from '@src/database';
+import { useAppSelector } from '@src/redux/hooks';
+import { selectHighlitedMarker } from '@src/redux/slices/markerSlice';
 import { BBox, GeoJsonProperties } from 'geojson';
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import MapView, { Region } from 'react-native-maps';
 import { PointFeature } from 'supercluster';
 import useSuperCluster from 'use-supercluster';
-
 
 import { regionToBoundingBox, getMyLocation } from '../utils';
 import ClusteredMarker from './ClusteredMarker';
@@ -23,7 +24,7 @@ interface Props {
   buttonMarginBottom: number;
 }
 
-const minMarkerSize = 30;
+const MIN_MARKER_SIZE = 30;
 
 const ClusteredMap = ({ buttonMarginBottom }: Props) => {
   const initialRegion = {
@@ -32,12 +33,11 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
     latitudeDelta: 5,
     longitudeDelta: 5,
   };
-  const initialBound = regionToBoundingBox(initialRegion);
-
-  const [bounds, setBounds] = useState<BBox>(initialBound);
-  const [zoom, setZoom] = useState(10);
 
   const mapRef = useRef<MapView>(null);
+  const highlitedMarker = useAppSelector(selectHighlitedMarker);
+  const [bounds, setBounds] = useState<BBox>(regionToBoundingBox(initialRegion));
+  const [zoom, setZoom] = useState(10);
 
   const setMyLocation = async () => {
     const region = await getMyLocation();
@@ -51,7 +51,7 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
     setBounds(mapBound);
   };
 
-  const fitMapToPolyline = (coords: Coordinates[]): void => {
+  const fitMapToCoords = (coords: Coordinates[]): void => {
     mapRef.current?.fitToCoordinates(coords, {
       edgePadding: {
         top: 0,
@@ -59,6 +59,7 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
         bottom: 100,
         left: 50,
       },
+      animated: true,
     });
   };
 
@@ -85,6 +86,10 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
     options: { radius: 75, maxZoom: 25 },
   });
 
+  useEffect(() => {
+    highlitedMarker && fitMapToCoords(highlitedMarker.coords);
+  }, [highlitedMarker]);
+
   return (
     <>
       <MapView
@@ -95,13 +100,21 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
         ref={mapRef}
         onRegionChangeComplete={onRegionChangeComplete}
         showsUserLocation>
+        {highlitedMarker && (
+          <HighlineMarker
+            id={highlitedMarker.id}
+            coordinateA={highlitedMarker.coords[0]}
+            coordinateB={highlitedMarker.coords[1]}
+            isHighlited
+          />
+        )}
         {clusters?.map((point) => {
           const [longitude, latitude] = point.geometry.coordinates;
           const coordinateA = { latitude, longitude };
           const properties = point.properties;
 
           if (properties?.cluster) {
-            const size = Math.max((properties.point_count * 40) / points.length, minMarkerSize);
+            const size = Math.max((properties.point_count * 40) / points.length, MIN_MARKER_SIZE);
             return (
               <ClusteredMarker
                 key={`cluster-${properties.cluster_id}`}
@@ -118,10 +131,10 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
           };
           return (
             <HighlineMarker
-              key={`marker-${properties.highId}`}
+              key={`marker-high-${properties.highId}`}
+              id={properties.highId}
               coordinateA={coordinateA}
               coordinateB={coordinateB}
-              fitMapToPolyline={fitMapToPolyline}
             />
           );
         })}

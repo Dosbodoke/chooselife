@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import type { Highline } from '@src/database';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import SearchCard from '../SearchCard/SearchCard';
-import useLastHighline, { ILastHighline } from '../SearchCard/useLastHighline';
+import useLastHighline from '../SearchCard/useLastHighline';
 
 jest.mock('../SearchCard/useLastHighline', () => ({
   __esModule: true,
@@ -34,9 +35,23 @@ describe('SearchCard', () => {
   it('Show last 2 visited highlines', () => {
     // given
     const props: any = createTestProps({});
-    const lastHighline: ILastHighline[] = [
-      { id: '1', name: 'High 1', height: 42, length: 15 },
-      { id: '2', name: 'High 2', height: 22, length: 10 },
+    const lastHighline: Highline[] = [
+      {
+        id: '1',
+        name: 'Pangaré Figueiredo',
+        height: 15,
+        length: 42,
+        anchorA: { latitude: -15.782699598577715, longitude: -47.93240706636002 },
+        anchorB: { latitude: -15.782857045014248, longitude: -47.932031557107194 },
+      },
+      {
+        id: '2',
+        name: 'Varal de Cabaré',
+        height: 24,
+        length: 84,
+        anchorA: { latitude: -16.40110401623181, longitude: -48.98699219976841 },
+        anchorB: { latitude: -16.39990690739436, longitude: -48.98303872861332 },
+      },
     ];
     (useLastHighline as jest.Mock).mockReturnValue(lastHighline);
 
@@ -44,7 +59,7 @@ describe('SearchCard', () => {
     render(<SearchCard {...props} />);
 
     // then
-    expect(screen.getByText('High 1')).toBeTruthy();
-    expect(screen.getByText('High 2')).toBeTruthy();
+    expect(screen.getByText('Pangaré Figueiredo')).toBeTruthy();
+    expect(screen.getByText('Varal de Cabaré')).toBeTruthy();
   });
 });
