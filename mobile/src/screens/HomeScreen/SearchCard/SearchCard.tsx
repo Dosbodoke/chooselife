@@ -1,8 +1,8 @@
+import { SearchSvg } from '@src/assets';
+import type { HomeScreenProps } from '@src/navigation/types';
 import { View, Text, TouchableOpacity, LayoutChangeEvent } from 'react-native';
 
-import { SearchSvg } from '../../assets';
-import type { HomeScreenProps } from '../../navigation/types';
-import LastHighline from '../LastHighline';
+import LastHighline from './LastHighline';
 import useLastHighline from './useLastHighline';
 
 type NavigationProp = HomeScreenProps['navigation'];
@@ -28,7 +28,7 @@ const SearchCard = ({ handleLayoutChange, navigation }: Props) => {
 
       <View>
         {lastHighline?.map((high) => (
-          <LastHighline key={high.id} name={high.name} length={high.length} height={high.height} />
+          <LastHighline key={high.id} highline={high} />
         ))}
       </View>
     </View>

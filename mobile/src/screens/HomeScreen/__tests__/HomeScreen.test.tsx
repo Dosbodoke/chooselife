@@ -2,11 +2,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/display-name */
 
-import { render } from '@testing-library/react-native';
-import { Region } from 'react-native-maps';
-import renderer from 'react-test-renderer';
+import { renderWithProviders } from '@src/utils/test-utils';
 
-import ClusteredMapView from '../ClusteredMapView';
+import ClusteredMap from '../ClusteredMap/ClusteredMap';
 import HomeScreen from '../HomeScreen';
 
 jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
@@ -91,32 +89,24 @@ const createTestProps = (props: object) => ({
 
 describe('HomeScreen', () => {
   describe('Map', () => {
+    it('Match snapshot', () => {
+      // when
+      const tree = renderWithProviders(<ClusteredMap buttonMarginBottom={240} />).toJSON();
+
+      // then
+      expect(tree).toMatchSnapshot();
+    });
+
     it('Render the map', () => {
       // given
       const props: any = createTestProps({});
 
       // when
-      const { getByTestId } = render(<HomeScreen {...props} />);
+      const { getByTestId } = renderWithProviders(<HomeScreen {...props} />);
       const map = getByTestId('MapView');
 
       // then
       expect(map).toBeDefined();
-    });
-
-    it('Renders correctly', () => {
-      // given
-      const initialRegion: Region = {
-        latitude: -15.7782081,
-        longitude: -47.93371,
-        latitudeDelta: 5,
-        longitudeDelta: 5,
-      };
-
-      // when
-      const tree = renderer.create(<ClusteredMapView initialRegion={initialRegion} />).toJSON();
-
-      // then
-      expect(tree).toMatchSnapshot();
     });
   });
 });
