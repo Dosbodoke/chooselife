@@ -1,14 +1,18 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { combineReducers, configureStore, PreloadedState } from '@reduxjs/toolkit';
 
-import markerSlice from './slices/markerSlice';
-
-const store = configureStore({
-  reducer: {
-    markerSlice,
-  },
+import markerReducer from './slices/markerSlice';
+// Create the root reducer independently to obtain the RootState type
+const rootReducer = combineReducers({
+  marker: markerReducer,
 });
 
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
+export function setupStore(preloadedState?: PreloadedState<RootState>) {
+  return configureStore({
+    reducer: rootReducer,
+    preloadedState,
+  });
+}
 
-export default store;
+export type RootState = ReturnType<typeof rootReducer>;
+export type AppStore = ReturnType<typeof setupStore>;
+export type AppDispatch = AppStore['dispatch'];

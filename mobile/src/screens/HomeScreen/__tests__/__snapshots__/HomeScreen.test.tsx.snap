@@ -24,7 +24,76 @@ Array [
       ]
     }
     testID="MapView"
-  />,
+  >
+    <View
+      coordinate={
+        Object {
+          "latitude": -15.788495645386874,
+          "longitude": -47.930248975753784,
+        }
+      }
+    >
+      <View
+        style={
+          Array [
+            Object {
+              "borderBottomLeftRadius": 9999,
+              "borderBottomRightRadius": 9999,
+              "borderTopLeftRadius": 9999,
+              "borderTopRightRadius": 9999,
+            },
+            Object {
+              "backgroundColor": "#334155",
+            },
+            Object {
+              "display": "flex",
+            },
+            Object {
+              "alignItems": "center",
+            },
+            Object {
+              "justifyContent": "center",
+            },
+            Object {
+              "height": 30,
+              "width": 30,
+            },
+          ]
+        }
+      >
+        <Text
+          style={
+            Array [
+              Object {
+                "color": "#fff",
+              },
+              Object {
+                "textAlign": "center",
+              },
+              Object {
+                "fontWeight": "700",
+              },
+              Object {
+                "fontSize": 20,
+                "lineHeight": 28,
+              },
+            ]
+          }
+        >
+          3
+        </Text>
+      </View>
+    </View>
+    <View
+      coordinate={
+        Object {
+          "latitude": -16.40110401623181,
+          "longitude": -48.98699219976841,
+        }
+      }
+      onPress={[Function]}
+    />
+  </View>,
   <View
     style={
       Array [

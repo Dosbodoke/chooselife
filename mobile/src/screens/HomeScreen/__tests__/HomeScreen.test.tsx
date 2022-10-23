@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/display-name */
 
+import { renderWithProviders } from '@src/utils/test-utils';
 import { render } from '@testing-library/react-native';
 import renderer from 'react-test-renderer';
 
@@ -92,7 +93,7 @@ describe('HomeScreen', () => {
   describe('Map', () => {
     it('Match snapshot', () => {
       // when
-      const tree = renderer.create(<ClusteredMap buttonMarginBottom={240} />).toJSON();
+      const tree = renderWithProviders(<ClusteredMap buttonMarginBottom={240} />).toJSON();
 
       // then
       expect(tree).toMatchSnapshot();
@@ -103,7 +104,7 @@ describe('HomeScreen', () => {
       const props: any = createTestProps({});
 
       // when
-      const { getByTestId } = render(<HomeScreen {...props} />);
+      const { getByTestId } = renderWithProviders(<HomeScreen {...props} />);
       const map = getByTestId('MapView');
 
       // then

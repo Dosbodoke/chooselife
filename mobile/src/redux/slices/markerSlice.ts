@@ -35,6 +35,6 @@ export const markerSlice = createSlice({
 });
 
 export const { highliteMarker, minimizeMarker } = markerSlice.actions;
-export const selectHighlitedMarker = (state: RootState) => state.markerSlice.highlitedMarker;
+export const selectHighlitedMarker = (state: RootState) => state.marker.highlitedMarker;
 
 export default markerSlice.reducer;

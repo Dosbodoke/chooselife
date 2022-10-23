@@ -3,10 +3,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Provider } from 'react-redux';
 
 import { RootStackParamList } from './src/navigation/types';
-import store from './src/redux/store';
+import { setupStore } from './src/redux/store';
 import { HomeScreen, SearchScreen } from './src/screens';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const store = setupStore();
 
 export default function App() {
   return (
