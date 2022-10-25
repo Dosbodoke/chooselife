@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/display-name */
 
-import { renderWithProviders } from '@src/utils/test-utils';
+import { renderWithProviders, createTestProps } from '@src/utils/test-utils';
 
 import ClusteredMap from '../ClusteredMap/ClusteredMap';
 import HomeScreen from '../HomeScreen';
@@ -78,13 +78,6 @@ jest.mock('react-native-maps', () => {
     PROVIDER_DEFAULT: 'default',
     PROVIDER_GOOGLE: 'google',
   };
-});
-
-const createTestProps = (props: object) => ({
-  navigation: {
-    navigate: jest.fn(),
-  },
-  ...props,
 });
 
 describe('HomeScreen', () => {

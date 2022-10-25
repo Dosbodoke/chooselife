@@ -1,9 +1,9 @@
 import { combineReducers, configureStore, PreloadedState } from '@reduxjs/toolkit';
 
-import markerReducer from './slices/markerSlice';
+import mapReducer from './slices/mapSlice';
 // Create the root reducer independently to obtain the RootState type
 const rootReducer = combineReducers({
-  marker: markerReducer,
+  map: mapReducer,
 });
 
 export function setupStore(preloadedState?: PreloadedState<RootState>) {
