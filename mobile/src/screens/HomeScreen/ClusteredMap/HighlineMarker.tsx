@@ -1,6 +1,6 @@
 import type { Coordinates } from '@src/database';
 import { useAppDispatch } from '@src/redux/hooks';
-import { highliteMarker, minimizeMarker } from '@src/redux/slices/markerSlice';
+import { highliteMarker, minimizeMarker } from '@src/redux/slices/mapSlice';
 import { Marker, Polyline } from 'react-native-maps';
 
 interface Props {

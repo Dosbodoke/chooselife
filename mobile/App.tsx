@@ -1,12 +1,13 @@
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator } from '@react-navigation/stack';
 import { Provider } from 'react-redux';
 
 import { RootStackParamList } from './src/navigation/types';
 import { setupStore } from './src/redux/store';
-import { HomeScreen, SearchScreen } from './src/screens';
+import { HomeScreen, SearchScreen, MapTypeScreen } from './src/screens';
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Stack = createStackNavigator<RootStackParamList>();
+
 const store = setupStore();
 
 export default function App() {
@@ -19,6 +20,11 @@ export default function App() {
             name="Search"
             component={SearchScreen}
             options={{ presentation: 'modal' }}
+          />
+          <Stack.Screen
+            name="MapType"
+            component={MapTypeScreen}
+            options={{ presentation: 'transparentModal' }}
           />
         </Stack.Navigator>
       </NavigationContainer>

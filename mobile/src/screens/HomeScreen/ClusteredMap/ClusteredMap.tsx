@@ -1,7 +1,7 @@
 import type { Coordinates } from '@src/database';
 import database from '@src/database';
 import { useAppSelector } from '@src/redux/hooks';
-import { selectHighlitedMarker } from '@src/redux/slices/markerSlice';
+import { selectHighlitedMarker, selectMapType } from '@src/redux/slices/mapSlice';
 import { BBox, GeoJsonProperties } from 'geojson';
 import { useState, useRef, useMemo, useEffect } from 'react';
 import MapView, { Region } from 'react-native-maps';
@@ -11,6 +11,7 @@ import useSuperCluster from 'use-supercluster';
 import { regionToBoundingBox, getMyLocation } from '../utils';
 import ClusteredMarker from './ClusteredMarker';
 import HighlineMarker from './HighlineMarker';
+import MapType from './MapType';
 import MyLocation from './MyLocation';
 
 interface PointProperties {
@@ -36,6 +37,7 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
 
   const mapRef = useRef<MapView>(null);
   const highlitedMarker = useAppSelector(selectHighlitedMarker);
+  const mapType = useAppSelector(selectMapType);
   const [bounds, setBounds] = useState<BBox>(regionToBoundingBox(initialRegion));
   const [zoom, setZoom] = useState(10);
 
@@ -96,6 +98,7 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
         className="flex-1"
         testID="MapView"
         provider="google"
+        mapType={mapType}
         initialRegion={initialRegion}
         ref={mapRef}
         onRegionChangeComplete={onRegionChangeComplete}
@@ -140,6 +143,7 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
         })}
       </MapView>
       <MyLocation mBottom={buttonMarginBottom} onPress={setMyLocation} />
+      <MapType mBottom={buttonMarginBottom + 50} />
     </>
   );
 };

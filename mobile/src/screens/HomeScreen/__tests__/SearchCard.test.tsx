@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { Highline } from '@src/database';
-import { renderWithProviders } from '@src/utils/test-utils';
+import { renderWithProviders, createTestProps } from '@src/utils/test-utils';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import SearchCard from '../SearchCard/SearchCard';
@@ -11,13 +11,6 @@ jest.mock('../SearchCard/useLastHighline', () => ({
   __esModule: true,
   default: jest.fn(),
 }));
-
-const createTestProps = (props: object) => ({
-  navigation: {
-    navigate: jest.fn(),
-  },
-  ...props,
-});
 
 describe('SearchCard', () => {
   it('Go to SearchScreen on click search bar', () => {

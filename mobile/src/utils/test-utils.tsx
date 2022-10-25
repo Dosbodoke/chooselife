@@ -1,3 +1,4 @@
+import { NavigationContainer } from '@react-navigation/native';
 import { PreloadedState } from '@reduxjs/toolkit';
 import type { AppStore, RootState } from '@src/redux/store';
 import { setupStore } from '@src/redux/store';
@@ -21,7 +22,19 @@ export function renderWithProviders(
   }: ExtendedRenderOptions = {}
 ) {
   function Wrapper({ children }: PropsWithChildren<object>): JSX.Element {
-    return <Provider store={store}>{children}</Provider>;
+    return (
+      <Provider store={store}>
+        <NavigationContainer>{children}</NavigationContainer>
+      </Provider>
+    );
   }
   return { store, ...render(ui, { wrapper: Wrapper, ...renderOptions }) };
 }
+
+export const createTestProps = (props: object) => ({
+  navigation: {
+    navigate: jest.fn(),
+    goBack: jest.fn(),
+  },
+  ...props,
+});

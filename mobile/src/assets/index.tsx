@@ -1,5 +1,11 @@
 import Svg, { Path } from 'react-native-svg';
 
+import MapSatellitePng from './map_satellite.png';
+import MapStandardPng from './map_standard.png';
+import MapTerrainPng from './map_terrain.png';
+
+export { MapSatellitePng, MapStandardPng, MapTerrainPng };
+
 export const SearchSvg = () => {
   return (
     <Svg
@@ -73,6 +79,18 @@ export const MyLocationSvg = () => {
         fillRule="nonzero"
         stroke="none"
         strokeWidth={1}
+      />
+    </Svg>
+  );
+};
+
+export const MapTypeSvg = () => {
+  return (
+    <Svg width="20px" height="20px" viewBox="0 0 16 16">
+      <Path fill="none" d="M0 0H16V16H0z" />
+      <Path
+        fill="#212121"
+        d="M8 9L0 5l8-4 8 4-8 4zm6.397-1.8L16 8l-8 4-8-4 1.603-.8L8 10.397 14.397 7.2zm0 3L16 11l-8 4-8-4 1.603-.8L8 13.397l6.397-3.197z"
       />
     </Svg>
   );
