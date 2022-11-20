@@ -100,7 +100,9 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
         mapType={mapType}
         initialRegion={initialRegion}
         ref={mapRef}
-        onRegionChangeComplete={onRegionChangeComplete}>
+        onRegionChangeComplete={onRegionChangeComplete}
+        showsMyLocationButton={false}
+        showsUserLocation>
         {highlitedMarker && (
           <HighlineMarker
             id={highlitedMarker.id}
