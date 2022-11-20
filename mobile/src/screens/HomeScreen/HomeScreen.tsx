@@ -24,7 +24,11 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
       <ClusteredMap buttonMarginBottom={marginBottom} />
 
       {highlitedMarker ? (
-        <DetailCard handleLayoutChange={handleLayoutChange} highlitedMarker={highlitedMarker} />
+        <DetailCard
+          highlitedMarker={highlitedMarker}
+          handleLayoutChange={handleLayoutChange}
+          navigation={navigation}
+        />
       ) : (
         <SearchCard handleLayoutChange={handleLayoutChange} navigation={navigation} />
       )}
