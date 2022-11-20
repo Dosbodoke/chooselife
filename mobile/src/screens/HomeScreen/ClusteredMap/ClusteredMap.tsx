@@ -5,7 +5,7 @@ import { useAppSelector } from '@src/redux/hooks';
 import { selectHighlitedMarker, selectMapType } from '@src/redux/slices/mapSlice';
 import { BBox, GeoJsonProperties } from 'geojson';
 import { useState, useRef, useMemo, useEffect } from 'react';
-import MapView, { Region } from 'react-native-maps';
+import MapView, { Details, Region } from 'react-native-maps';
 import { PointFeature } from 'supercluster';
 import useSuperCluster from 'use-supercluster';
 
@@ -39,20 +39,37 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
   const mapType = useAppSelector(selectMapType);
   const [bounds, setBounds] = useState<BBox>(regionToBoundingBox(initialRegion));
   const [zoom, setZoom] = useState(10);
-  const [isOnMyLocation, setIsOnMyLocation] = useState(false);
+  const [myLocation, setIsOnMyLocation] = useState({
+    isOnMyLocation: false,
+    goToMyLocationWasCalled: false,
+  });
 
   const goToMyLocation = async () => {
     const region = await getMyLocation();
     if (!region) return;
+    setIsOnMyLocation({ isOnMyLocation: false, goToMyLocationWasCalled: true });
     mapRef.current?.animateToRegion(region, 1000);
-    setIsOnMyLocation(true);
   };
 
-  const onRegionChangeComplete = async (region: Region) => {
+  const onRegionChange = async (region: Region, details: Details) => {
+    // When onRegionChangeCompelete set myLocationState as true, the next region
+    // change are detected and the state are setted as false
+    myLocation.isOnMyLocation &&
+      myLocation.goToMyLocationWasCalled &&
+      details.isGesture &&
+      setIsOnMyLocation({ isOnMyLocation: false, goToMyLocationWasCalled: false });
+  };
+
+  const onRegionChangeComplete = async (region: Region, details: Details) => {
     const mapBound = regionToBoundingBox(region);
     const coords = await mapRef.current?.getCamera();
     setZoom(coords?.zoom ?? 10);
     setBounds(mapBound);
+    // Set myLocation state as true when goToMyLocation animation ends
+    !myLocation.isOnMyLocation &&
+      myLocation.goToMyLocationWasCalled &&
+      !details.isGesture &&
+      setIsOnMyLocation({ isOnMyLocation: true, goToMyLocationWasCalled: true });
   };
 
   const fitMapToCoords = (coords: Coordinates[]): void => {
@@ -104,6 +121,7 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
         initialRegion={initialRegion}
         ref={mapRef}
         onMapReady={() => goToMyLocation()}
+        onRegionChange={onRegionChange}
         onRegionChangeComplete={onRegionChangeComplete}
         showsMyLocationButton={false}
         showsUserLocation>
@@ -150,7 +168,7 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
       <MyLocation
         mBottom={buttonMarginBottom}
         onPress={goToMyLocation}
-        isOnMyLocation={isOnMyLocation}
+        isOnMyLocation={myLocation.isOnMyLocation}
       />
       <MapType mBottom={buttonMarginBottom} />
     </>
