@@ -3,7 +3,7 @@ import { Coordinates } from '@src/database';
 
 import { RootState } from '../store';
 
-interface HighlitedMarker {
+export interface HighlitedMarker {
   type: 'Highline';
   id: string;
   coords: Coordinates[];

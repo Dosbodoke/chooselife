@@ -1,3 +1,4 @@
+import { MIN_MARKER_SIZE } from '@src/constants';
 import type { Coordinates } from '@src/database';
 import database from '@src/database';
 import { useAppSelector } from '@src/redux/hooks';
@@ -24,8 +25,6 @@ interface PointProperties {
 interface Props {
   buttonMarginBottom: number;
 }
-
-const MIN_MARKER_SIZE = 30;
 
 const ClusteredMap = ({ buttonMarginBottom }: Props) => {
   const initialRegion = {
@@ -112,6 +111,7 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
         )}
         {clusters?.map((point) => {
           const [longitude, latitude] = point.geometry.coordinates;
+          if (typeof longitude !== 'number' || typeof latitude !== 'number') return;
           const coordinateA = { latitude, longitude };
           const properties = point.properties;
 
@@ -142,7 +142,7 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
         })}
       </MapView>
       <MyLocation mBottom={buttonMarginBottom} onPress={setMyLocation} />
-      <MapType mBottom={buttonMarginBottom + 50} />
+      <MapType mBottom={buttonMarginBottom} />
     </>
   );
 };

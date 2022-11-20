@@ -13,7 +13,7 @@ const MapType = ({ mBottom }: Props) => {
   const navigation = useNavigation<NavigationProp>();
 
   return (
-    <View className="absolute right-2" style={{ bottom: mBottom }}>
+    <View className="absolute right-2 mb-16" style={{ bottom: mBottom }}>
       <TouchableOpacity
         className="h-10 w-10 rounded-full bg-gray-100 justify-center items-center"
         onPress={() => {

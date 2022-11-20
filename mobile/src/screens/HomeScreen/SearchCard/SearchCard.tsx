@@ -17,10 +17,10 @@ const SearchCard = ({ handleLayoutChange, navigation }: Props) => {
 
   return (
     <View
-      className="absolute w-full bottom-0 pb-8 px-2 bg-white rounded-t-3xl"
+      className="absolute w-full bottom-0 pb-8 pt-4 px-2 bg-white rounded-t-3xl"
       onLayout={handleLayoutChange}>
       <TouchableOpacity
-        className="bg-gray-100 rounded-xl my-4 py-3 px-2 flex-row items-center"
+        className="bg-gray-100 rounded-xl mb-4 py-3 px-2 flex-row items-center"
         onPress={() => navigation.navigate('Search')}>
         <SearchSvg />
         <Text className="ml-2 text-xl font-bold">Encontre um Highline</Text>
