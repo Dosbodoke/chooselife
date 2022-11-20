@@ -30,8 +30,8 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
   const initialRegion = {
     latitude: -15.7782081,
     longitude: -47.93371,
-    latitudeDelta: 5,
-    longitudeDelta: 5,
+    latitudeDelta: 80,
+    longitudeDelta: 80,
   };
 
   const mapRef = useRef<MapView>(null);
@@ -39,10 +39,13 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
   const mapType = useAppSelector(selectMapType);
   const [bounds, setBounds] = useState<BBox>(regionToBoundingBox(initialRegion));
   const [zoom, setZoom] = useState(10);
+  const [isOnMyLocation, setIsOnMyLocation] = useState(false);
 
-  const setMyLocation = async () => {
+  const goToMyLocation = async () => {
     const region = await getMyLocation();
-    region && mapRef.current?.animateToRegion(region, 1000);
+    if (!region) return;
+    mapRef.current?.animateToRegion(region, 1000);
+    setIsOnMyLocation(true);
   };
 
   const onRegionChangeComplete = async (region: Region) => {
@@ -100,6 +103,7 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
         mapType={mapType}
         initialRegion={initialRegion}
         ref={mapRef}
+        onMapReady={() => goToMyLocation()}
         onRegionChangeComplete={onRegionChangeComplete}
         showsMyLocationButton={false}
         showsUserLocation>
@@ -143,7 +147,11 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
           );
         })}
       </MapView>
-      <MyLocation mBottom={buttonMarginBottom} onPress={setMyLocation} />
+      <MyLocation
+        mBottom={buttonMarginBottom}
+        onPress={goToMyLocation}
+        isOnMyLocation={isOnMyLocation}
+      />
       <MapType mBottom={buttonMarginBottom} />
     </>
   );

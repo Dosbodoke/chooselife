@@ -23,8 +23,8 @@ export const getMyLocation = async (): Promise<Region | undefined> => {
   const region = {
     latitude,
     longitude,
-    latitudeDelta: 0.035,
-    longitudeDelta: 0.035,
+    latitudeDelta: 0.1,
+    longitudeDelta: 0.1,
   };
   return region;
 };
