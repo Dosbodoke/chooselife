@@ -54,10 +54,12 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
   const onRegionChange = async (region: Region, details: Details) => {
     // When onRegionChangeCompelete set myLocationState as true, the next region
     // change are detected and the state are setted as false
-    myLocation.isOnMyLocation &&
-      myLocation.goToMyLocationWasCalled &&
-      details.isGesture &&
-      setIsOnMyLocation({ isOnMyLocation: false, goToMyLocationWasCalled: false });
+    setTimeout(() => {
+      myLocation.isOnMyLocation &&
+        myLocation.goToMyLocationWasCalled &&
+        details.isGesture &&
+        setIsOnMyLocation({ isOnMyLocation: false, goToMyLocationWasCalled: false });
+    }, 200);
   };
 
   const onRegionChangeComplete = async (region: Region, details: Details) => {
