@@ -51,14 +51,13 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
     mapRef.current?.animateToRegion(region, 1000);
   };
 
-  const onRegionChange = async (region: Region, details: Details) => {
+  const onRegionChange = async (_: Region, details: Details) => {
     // When onRegionChangeCompelete set myLocationState as true, the next region
     // change are detected and the state are setted as false
     setTimeout(() => {
-      myLocation.isOnMyLocation &&
-        myLocation.goToMyLocationWasCalled &&
-        details.isGesture &&
+      if (myLocation.isOnMyLocation && myLocation.goToMyLocationWasCalled && details.isGesture) {
         setIsOnMyLocation({ isOnMyLocation: false, goToMyLocationWasCalled: false });
+      }
     }, 200);
   };
 
@@ -68,22 +67,27 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
     setZoom(coords?.zoom ?? 10);
     setBounds(mapBound);
     // Set myLocation state as true when goToMyLocation animation ends
-    !myLocation.isOnMyLocation &&
-      myLocation.goToMyLocationWasCalled &&
-      !details.isGesture &&
+    if (!myLocation.isOnMyLocation && myLocation.goToMyLocationWasCalled && !details.isGesture) {
       setIsOnMyLocation({ isOnMyLocation: true, goToMyLocationWasCalled: true });
+    }
   };
 
   const fitMapToCoords = (coords: Coordinates[]): void => {
     mapRef.current?.fitToCoordinates(coords, {
       edgePadding: {
-        top: 0,
+        top: 200,
         right: 50,
-        bottom: 100,
+        bottom: 250,
         left: 50,
       },
       animated: true,
     });
+  };
+
+  const handleClusterPress = (cluster_id: number): void => {
+    // Zoom to cluster
+    const leaves = supercluster?.getLeaves(cluster_id);
+    leaves && fitMapToCoords(leaves?.map((l): Coordinates => l.properties.anchorB));
   };
 
   const points = useMemo<PointFeature<GeoJsonProperties & PointProperties>[]>(() => {
@@ -102,7 +106,7 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
     }));
   }, [database?.highline]);
 
-  const { clusters } = useSuperCluster({
+  const { clusters, supercluster } = useSuperCluster({
     points,
     bounds,
     zoom,
@@ -110,7 +114,9 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
   });
 
   useEffect(() => {
-    highlitedMarker && fitMapToCoords(highlitedMarker.coords);
+    if (highlitedMarker === null) return;
+    fitMapToCoords(highlitedMarker.coords);
+    setIsOnMyLocation({ isOnMyLocation: false, goToMyLocationWasCalled: false });
   }, [highlitedMarker]);
 
   return (
@@ -127,14 +133,6 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
         onRegionChangeComplete={onRegionChangeComplete}
         showsMyLocationButton={false}
         showsUserLocation>
-        {highlitedMarker && (
-          <HighlineMarker
-            id={highlitedMarker.id}
-            coordinateA={highlitedMarker.coords[0]}
-            coordinateB={highlitedMarker.coords[1]}
-            isHighlited
-          />
-        )}
         {clusters?.map((point) => {
           const [longitude, latitude] = point.geometry.coordinates;
           if (typeof longitude !== 'number' || typeof latitude !== 'number') return;
@@ -149,20 +147,18 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
                 size={size}
                 coordinate={coordinateA}
                 pointCount={properties.point_count}
+                onPress={() => handleClusterPress(properties.cluster_id)}
               />
             );
           }
 
-          const coordinateB = {
-            latitude: properties.anchorB.latitude,
-            longitude: properties.anchorB.longitude,
-          };
           return (
             <HighlineMarker
               key={`marker-high-${properties.highId}`}
               id={properties.highId}
               coordinateA={coordinateA}
-              coordinateB={coordinateB}
+              coordinateB={properties.anchorB}
+              isHighlited={!!highlitedMarker}
             />
           );
         })}

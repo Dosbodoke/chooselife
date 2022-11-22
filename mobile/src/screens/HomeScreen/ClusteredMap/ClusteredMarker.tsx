@@ -5,11 +5,12 @@ interface Props {
   coordinate: { latitude: number; longitude: number };
   pointCount: number;
   size: number;
+  onPress: () => void;
 }
 
 const ClusteredMarker = (props: Props) => {
   return (
-    <Marker coordinate={props.coordinate}>
+    <Marker coordinate={props.coordinate} onPress={props.onPress}>
       <View
         className="rounded-full bg-slate-700 flex items-center justify-center"
         style={{ width: props.size, height: props.size }}>
