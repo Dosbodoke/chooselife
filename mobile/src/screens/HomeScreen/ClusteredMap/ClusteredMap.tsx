@@ -158,7 +158,7 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
               id={properties.highId}
               coordinateA={coordinateA}
               coordinateB={properties.anchorB}
-              isHighlited={!!highlitedMarker}
+              isHighlited={highlitedMarker?.id === properties.highId}
             />
           );
         })}
