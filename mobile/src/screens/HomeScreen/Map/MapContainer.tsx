@@ -10,10 +10,10 @@ import { PointFeature } from 'supercluster';
 import useSuperCluster from 'use-supercluster';
 
 import { regionToBoundingBox, getMyLocation } from '../utils';
-import ClusteredMarker from './ClusteredMarker';
-import HighlineMarker from './HighlineMarker';
-import MapType from './MapType';
-import MyLocation from './MyLocation';
+import MapType from './Buttons/MapType';
+import MyLocation from './Buttons/MyLocation';
+import ClusteredMarker from './Marker/ClusteredMarker';
+import HighlineMarker from './Marker/HighlineMarker';
 
 interface PointProperties {
   cluster: boolean;

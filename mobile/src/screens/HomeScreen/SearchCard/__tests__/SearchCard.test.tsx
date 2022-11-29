@@ -4,8 +4,8 @@ import type { Highline } from '@src/database';
 import { renderWithProviders, createTestProps } from '@src/utils/test-utils';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
-import SearchCard from '../SearchCard/SearchCard';
-import useLastHighline from '../SearchCard/useLastHighline';
+import SearchCard from '../SearchCard';
+import useLastHighline from '../useLastHighline';
 
 jest.mock('../SearchCard/useLastHighline', () => ({
   __esModule: true,
@@ -37,6 +37,7 @@ describe('SearchCard', () => {
         length: 42,
         anchorA: { latitude: -15.782699598577715, longitude: -47.93240706636002 },
         anchorB: { latitude: -15.782857045014248, longitude: -47.932031557107194 },
+        isRigged: false,
       },
       {
         id: '2',
@@ -45,6 +46,7 @@ describe('SearchCard', () => {
         length: 84,
         anchorA: { latitude: -16.40110401623181, longitude: -48.98699219976841 },
         anchorB: { latitude: -16.39990690739436, longitude: -48.98303872861332 },
+        isRigged: true,
       },
     ];
     (useLastHighline as jest.Mock).mockReturnValue(lastHighline);
