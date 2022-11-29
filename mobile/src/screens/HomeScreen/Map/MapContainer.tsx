@@ -26,7 +26,7 @@ interface Props {
   buttonMarginBottom: number;
 }
 
-const ClusteredMap = ({ buttonMarginBottom }: Props) => {
+const MapContainer = ({ buttonMarginBottom }: Props) => {
   const initialRegion = {
     latitude: -15.7782081,
     longitude: -47.93371,
@@ -173,4 +173,4 @@ const ClusteredMap = ({ buttonMarginBottom }: Props) => {
   );
 };
 
-export default ClusteredMap;
+export default MapContainer;

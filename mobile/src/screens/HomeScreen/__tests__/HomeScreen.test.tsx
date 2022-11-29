@@ -4,7 +4,7 @@
 
 import { renderWithProviders, createTestProps } from '@src/utils/test-utils';
 
-import ClusteredMap from '../ClusteredMap/ClusteredMap';
+import MapContainer from '../Map/MapContainer';
 import HomeScreen from '../HomeScreen';
 
 jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
@@ -84,7 +84,7 @@ describe('HomeScreen', () => {
   describe('Map', () => {
     it('Match snapshot', () => {
       // when
-      const tree = renderWithProviders(<ClusteredMap buttonMarginBottom={240} />).toJSON();
+      const tree = renderWithProviders(<MapContainer buttonMarginBottom={240} />).toJSON();
 
       // then
       expect(tree).toMatchSnapshot();

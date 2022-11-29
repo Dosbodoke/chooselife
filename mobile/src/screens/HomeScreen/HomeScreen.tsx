@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { View, StatusBar, LayoutChangeEvent } from 'react-native';
 
 import type { HomeScreenProps } from '../../navigation/types';
-import ClusteredMap from './ClusteredMap/ClusteredMap';
 import DetailCard from './DetailCard/DetailCard';
+import MapContainer from './Map/MapContainer';
 import SearchCard from './SearchCard/SearchCard';
 
 const HomeScreen = ({ navigation }: HomeScreenProps) => {
@@ -21,7 +21,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
     <View className="relative h-full">
       <StatusBar barStyle="dark-content" />
 
-      <ClusteredMap buttonMarginBottom={marginBottom} />
+      <MapContainer buttonMarginBottom={marginBottom} />
 
       {highlitedMarker ? (
         <DetailCard
