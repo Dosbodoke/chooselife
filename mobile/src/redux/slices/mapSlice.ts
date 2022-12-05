@@ -9,7 +9,7 @@ export interface HighlitedMarker {
   coords: Coordinates[];
 }
 
-type MapType = 'standard' | 'satellite' | 'terrain';
+export type MapType = 'standard' | 'satellite' | 'terrain';
 
 interface MapState {
   highlitedMarker: HighlitedMarker | null;
