@@ -1,4 +1,4 @@
-import Svg, { Path, SvgProps } from 'react-native-svg';
+import Svg, { Path, Circle, SvgProps } from 'react-native-svg';
 
 import MapSatellitePng from './map_satellite.png';
 import MapStandardPng from './map_standard.png';
@@ -8,12 +8,7 @@ export { MapSatellitePng, MapStandardPng, MapTerrainPng };
 
 export const SearchSvg = () => {
   return (
-    <Svg
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth={2.5}
-      stroke="currentColor"
-      className="w-6 h-6">
+    <Svg viewBox="0 0 24 24" strokeWidth={2.5} className="w-6 h-6 stroke-sky-600">
       <Path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -118,5 +113,20 @@ export const HeartOutlinedSvg = () => (
       fill="#000"
       d="M15.999 7.904c-5.514 0-10 4.486-10 10a1 1 0 1 0 2 0c0-4.411 3.589-8 8-8a1 1 0 1 0 0-2z"
     />
+  </Svg>
+);
+
+export const PlusSvg = (props: SvgProps) => (
+  // https://www.svgrepo.com/svg/2087/plus
+  <Svg width="100%" height="100%" viewBox="0 0 45.402 45.402" {...props}>
+    <Path d="M41.267 18.557H26.832V4.134A4.127 4.127 0 0 0 22.707 0a4.126 4.126 0 0 0-4.124 4.135v14.432H4.141a4.137 4.137 0 0 0-4.138 4.135 4.143 4.143 0 0 0 1.207 2.934 4.122 4.122 0 0 0 2.92 1.222h14.453V41.27c0 1.142.453 2.176 1.201 2.922a4.11 4.11 0 0 0 2.919 1.211 4.13 4.13 0 0 0 4.129-4.133V26.857h14.435c2.283 0 4.134-1.867 4.133-4.15-.001-2.282-1.852-4.15-4.133-4.15z" />
+  </Svg>
+);
+
+export const FakeMarkerSvg = (props: SvgProps) => (
+  <Svg width={36} height={68} fill="none" {...props}>
+    <Path fill="#0284C7" d="M16 35h4v33h-4z" />
+    <Circle cx={18} cy={18} r={18} fill="#0284C7" />
+    <Circle cx={18} cy={18} r={3} fill="#fff" />
   </Svg>
 );

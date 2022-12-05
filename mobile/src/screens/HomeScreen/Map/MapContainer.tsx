@@ -1,11 +1,13 @@
-import { MIN_MARKER_SIZE } from '@src/constants';
+import { FakeMarker, LocationPickerTracer, selectLocationPicker } from '@features/locationPicker';
+import { MIN_MARKER_SIZE, INITIAL_REGION } from '@src/constants';
 import type { Coordinates } from '@src/database';
 import database from '@src/database';
-import { useAppSelector } from '@src/redux/hooks';
+import { setPoint } from '@src/features/locationPicker/locationPickerSlice';
+import { useAppDispatch, useAppSelector } from '@src/redux/hooks';
 import { selectHighlitedMarker, selectMapType } from '@src/redux/slices/mapSlice';
 import { BBox, GeoJsonProperties } from 'geojson';
 import { useState, useRef, useMemo, useEffect } from 'react';
-import MapView, { Details, Region } from 'react-native-maps';
+import MapView, { Details, LatLng, Region } from 'react-native-maps';
 import { PointFeature } from 'supercluster';
 import useSuperCluster from 'use-supercluster';
 
@@ -27,18 +29,14 @@ interface Props {
 }
 
 const MapContainer = ({ buttonMarginBottom }: Props) => {
-  const initialRegion = {
-    latitude: -15.7782081,
-    longitude: -47.93371,
-    latitudeDelta: 80,
-    longitudeDelta: 80,
-  };
-
+  const dispatch = useAppDispatch();
   const mapRef = useRef<MapView>(null);
   const highlitedMarker = useAppSelector(selectHighlitedMarker);
+  const locationPicker = useAppSelector(selectLocationPicker);
   const mapType = useAppSelector(selectMapType);
-  const [bounds, setBounds] = useState<BBox>(regionToBoundingBox(initialRegion));
+  const [bounds, setBounds] = useState<BBox>(regionToBoundingBox(INITIAL_REGION));
   const [zoom, setZoom] = useState(10);
+  const [centerCoordinates, setCenterCoordinates] = useState<LatLng>(INITIAL_REGION);
   const [myLocation, setIsOnMyLocation] = useState({
     isOnMyLocation: false,
     goToMyLocationWasCalled: false,
@@ -51,20 +49,26 @@ const MapContainer = ({ buttonMarginBottom }: Props) => {
     mapRef.current?.animateToRegion(region, 1000);
   };
 
-  const onRegionChange = async (_: Region, details: Details) => {
+  const updateCenterCoordinates = async () => {
+    const camera = await mapRef.current?.getCamera();
+    camera && setCenterCoordinates(camera.center);
+  };
+
+  const onRegionChange = (_: Region, details: Details) => {
+    // Update center coordinates if markerSetter is being displayed
+    if (locationPicker.stage === 'picking') updateCenterCoordinates();
+
     // When onRegionChangeCompelete set myLocationState as true, the next region
     // change are detected and the state are setted as false
-    setTimeout(() => {
-      if (myLocation.isOnMyLocation && myLocation.goToMyLocationWasCalled && details.isGesture) {
-        setIsOnMyLocation({ isOnMyLocation: false, goToMyLocationWasCalled: false });
-      }
-    }, 200);
+    if (myLocation.isOnMyLocation && myLocation.goToMyLocationWasCalled && details.isGesture) {
+      setIsOnMyLocation({ isOnMyLocation: false, goToMyLocationWasCalled: false });
+    }
   };
 
   const onRegionChangeComplete = async (region: Region, details: Details) => {
     const mapBound = regionToBoundingBox(region);
-    const coords = await mapRef.current?.getCamera();
-    setZoom(coords?.zoom ?? 10);
+    const camera = await mapRef.current?.getCamera();
+    setZoom(camera?.zoom ?? 10);
     setBounds(mapBound);
     // Set myLocation state as true when goToMyLocation animation ends
     if (!myLocation.isOnMyLocation && myLocation.goToMyLocationWasCalled && !details.isGesture) {
@@ -87,7 +91,20 @@ const MapContainer = ({ buttonMarginBottom }: Props) => {
   const handleClusterPress = (cluster_id: number): void => {
     // Zoom to cluster
     const leaves = supercluster?.getLeaves(cluster_id);
-    leaves && fitMapToCoords(leaves?.map((l): Coordinates => l.properties.anchorB));
+    // leaves && fitMapToCoords(leaves?.map((l): Coordinates => l.properties.anchorB));
+    leaves &&
+      mapRef.current?.fitToCoordinates(
+        leaves?.map((l): Coordinates => l.properties.anchorB),
+        {
+          edgePadding: {
+            top: 200,
+            right: 50,
+            bottom: 250,
+            left: 50,
+          },
+          animated: true,
+        }
+      );
   };
 
   const points = useMemo<PointFeature<GeoJsonProperties & PointProperties>[]>(() => {
@@ -113,11 +130,18 @@ const MapContainer = ({ buttonMarginBottom }: Props) => {
     options: { radius: 75, maxZoom: 25 },
   });
 
+  // Handle marker highlightning
   useEffect(() => {
     if (highlitedMarker === null) return;
     fitMapToCoords(highlitedMarker.coords);
     setIsOnMyLocation({ isOnMyLocation: false, goToMyLocationWasCalled: false });
   }, [highlitedMarker]);
+
+  // Set center coordinates when Add Marker button is clicked
+  useEffect(() => {
+    if (locationPicker.stage === 'picking') updateCenterCoordinates();
+    if (locationPicker.shouldCallSetPoint) dispatch(setPoint(centerCoordinates));
+  }, [locationPicker]);
 
   return (
     <>
@@ -126,7 +150,7 @@ const MapContainer = ({ buttonMarginBottom }: Props) => {
         testID="MapView"
         provider="google"
         mapType={mapType}
-        initialRegion={initialRegion}
+        initialRegion={INITIAL_REGION}
         ref={mapRef}
         onMapReady={() => goToMyLocation()}
         onRegionChange={onRegionChange}
@@ -162,7 +186,16 @@ const MapContainer = ({ buttonMarginBottom }: Props) => {
             />
           );
         })}
+
+        {locationPicker.stage === 'picking' && locationPicker.anchorA && (
+          <LocationPickerTracer
+            key="location-picker"
+            anchorA={locationPicker.anchorA}
+            coordinate={centerCoordinates}
+          />
+        )}
       </MapView>
+      {locationPicker.stage === 'picking' && <FakeMarker />}
       <MyLocation
         mBottom={buttonMarginBottom}
         onPress={goToMyLocation}
