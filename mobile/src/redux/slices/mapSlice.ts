@@ -25,7 +25,7 @@ export const mapSlice = createSlice({
   name: 'map',
   initialState,
   reducers: {
-    highliteMarker: (state, action: PayloadAction<HighlitedMarker>) => {
+    highlightMarker: (state, action: PayloadAction<HighlitedMarker>) => {
       state.highlitedMarker = {
         type: 'Highline',
         id: action.payload.id,
@@ -41,7 +41,7 @@ export const mapSlice = createSlice({
   },
 });
 
-export const { highliteMarker, minimizeMarker, setMapType } = mapSlice.actions;
+export const { highlightMarker, minimizeMarker, setMapType } = mapSlice.actions;
 
 // Selectors
 export const selectHighlitedMarker = (state: RootState) => state.map.highlitedMarker;

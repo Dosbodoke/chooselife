@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { highlightMarker } from '@src/redux/slices/mapSlice';
 import { RootState } from '@src/redux/store';
 import { LatLng } from 'react-native-maps';
 
@@ -36,6 +37,11 @@ export const locationPickerSlice = createSlice({
     callSetPoint: (state) => {
       state.shouldCallSetPoint = true;
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(highlightMarker, (state) => {
+      state.stage = 'hidden';
+    });
   },
 });
 
