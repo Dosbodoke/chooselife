@@ -9,7 +9,7 @@ interface Props {
   title: string;
 }
 
-const TypeButton = ({ onPress, type, selectedType, image, title }: Props) => {
+const MapTypeButton = ({ onPress, type, selectedType, image, title }: Props) => {
   const highlitedImageStyle = 'border-blue-500 border-2';
   const highlitedTextStyle = 'text-blue-500';
   const isSelected = selectedType === type;
@@ -25,4 +25,4 @@ const TypeButton = ({ onPress, type, selectedType, image, title }: Props) => {
   );
 };
 
-export default TypeButton;
+export default MapTypeButton;

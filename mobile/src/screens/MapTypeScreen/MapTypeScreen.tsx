@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from '@src/redux/hooks';
 import { setMapType, selectMapType, MapType } from '@src/redux/slices/mapSlice';
 import { View, Text } from 'react-native';
 
-import TypeButton from './components/TypeButton';
+import MapTypeButton from './components/MapTypeButton';
 
 const MapTypeScreen = ({ navigation }: MapTypeScreenProps) => {
   const mapType = useAppSelector(selectMapType);
@@ -25,7 +25,7 @@ const MapTypeScreen = ({ navigation }: MapTypeScreenProps) => {
       <View className="bg-white rounded-t-2xl pb-5">
         <Text className="text-center text-xl font-bold my-3">Tipo de mapa</Text>
         <View className="flex-row justify-around">
-          <TypeButton
+          <MapTypeButton
             selectedType={mapType}
             type="standard"
             image={MapStandardPng}
@@ -33,7 +33,7 @@ const MapTypeScreen = ({ navigation }: MapTypeScreenProps) => {
             onPress={() => changeMapType('standard')}
           />
 
-          <TypeButton
+          <MapTypeButton
             selectedType={mapType}
             type="satellite"
             image={MapSatellitePng}
@@ -41,7 +41,7 @@ const MapTypeScreen = ({ navigation }: MapTypeScreenProps) => {
             onPress={() => changeMapType('satellite')}
           />
 
-          <TypeButton
+          <MapTypeButton
             selectedType={mapType}
             type="terrain"
             image={MapTerrainPng}
