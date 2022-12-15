@@ -5,7 +5,13 @@ import 'react-native-gesture-handler';
 
 import { RootStackParamList } from './src/navigation/types';
 import { setupStore } from './src/redux/store';
-import { HomeScreen, SearchScreen, MapTypeScreen, DetailScreen } from './src/screens';
+import {
+  HomeScreen,
+  SearchScreen,
+  MapTypeScreen,
+  DetailScreen,
+  LocationPickerScreen,
+} from './src/screens';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -32,6 +38,7 @@ export default function App() {
             component={DetailScreen}
             options={{ presentation: 'card' }}
           />
+          <Stack.Screen name="LocationPicker" component={LocationPickerScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>

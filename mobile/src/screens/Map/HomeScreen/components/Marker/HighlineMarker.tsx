@@ -1,7 +1,8 @@
 import type { Coordinates } from '@src/database';
 import { useAppDispatch } from '@src/redux/hooks';
-import { highlightMarker, minimizeMarker } from '@src/redux/slices/mapSlice';
 import { Marker, Polyline } from 'react-native-maps';
+
+import { highlightMarker, minimizeMarker } from '../../../mapSlice';
 
 interface Props {
   id: string;

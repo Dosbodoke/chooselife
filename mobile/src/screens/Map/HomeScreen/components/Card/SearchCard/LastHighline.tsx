@@ -1,8 +1,9 @@
 import { HistorySvg, HeightSvg, LengthSvg } from '@src/assets';
 import type { Highline } from '@src/database';
 import { useAppDispatch } from '@src/redux/hooks';
-import { highlightMarker } from '@src/redux/slices/mapSlice';
 import { TouchableOpacity, Text, View } from 'react-native';
+
+import { highlightMarker } from '../../../../mapSlice';
 
 interface Props {
   highline: Highline;

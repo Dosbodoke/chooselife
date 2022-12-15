@@ -4,8 +4,8 @@
 
 import { renderWithProviders, createTestProps } from '@src/utils/test-utils';
 
-import MapContainer from '../Map/MapContainer';
 import HomeScreen from '../HomeScreen';
+import MapContainer from '../components/ClusteredMap';
 
 jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
 

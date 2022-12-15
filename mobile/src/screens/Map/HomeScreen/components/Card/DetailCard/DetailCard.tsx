@@ -3,9 +3,8 @@ import { WINDOW_HEIGHT } from '@src/constants';
 import database from '@src/database';
 import type { HomeScreenProps } from '@src/navigation/types';
 import { useAppDispatch } from '@src/redux/hooks';
-import { HighlitedMarker, minimizeMarker } from '@src/redux/slices/mapSlice';
 import { useState } from 'react';
-import { View, Text, LayoutChangeEvent, Image, ScrollView } from 'react-native';
+import { View, Text, Image, ScrollView } from 'react-native';
 import {
   Directions,
   Gesture,
@@ -19,15 +18,16 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 
+import { HighlitedMarker, minimizeMarker } from '../../../../mapSlice';
+
 type NavigationProp = HomeScreenProps['navigation'];
 
 interface Props {
   highlitedMarker: HighlitedMarker;
-  handleLayoutChange: (event: LayoutChangeEvent) => void;
   navigation: NavigationProp;
 }
 
-const DetailCard = ({ highlitedMarker, handleLayoutChange, navigation }: Props) => {
+const DetailCard = ({ highlitedMarker, navigation }: Props) => {
   const dispatch = useAppDispatch();
 
   const data = database.highline.find((high) => high.id === highlitedMarker.id);
@@ -58,11 +58,8 @@ const DetailCard = ({ highlitedMarker, handleLayoutChange, navigation }: Props) 
 
   return (
     <GestureDetector gesture={Gesture.Race(FlingUp, FlingDown)}>
-      <Animated.View
-        className="absolute w-full bottom-0 pb-8 px-4 bg-white rounded-t-3xl"
-        style={animatedStyle}
-        onLayout={handleLayoutChange}>
-        <View className="w-2/5 h-2 bg-slate-300 rounded-md mx-auto my-3" />
+      <Animated.View style={animatedStyle}>
+        <View className="w-2/12 h-2 bg-slate-300 rounded-md mx-auto mb-3" />
         <View className="flex flex-row ">
           <Image
             className="w-2/6 h-40 rounded-lg object-contain"
