@@ -45,8 +45,7 @@ export const mapSlice = createSlice({
   },
 });
 
-export const { highlightMarker, minimizeMarker, setMapType, requestUpdateCamera } =
-  mapSlice.actions;
+export const { highlightMarker, minimizeMarker, setMapType } = mapSlice.actions;
 
 // Selectors
 export const selectHighlitedMarker = (state: RootState) => state.map.highlitedMarker;
