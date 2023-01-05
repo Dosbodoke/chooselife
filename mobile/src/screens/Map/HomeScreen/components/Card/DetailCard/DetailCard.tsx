@@ -34,7 +34,7 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const conquerors = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // TO-DO: get array of coquerors, those should be User: {id: string; profilePic: ?}
 
-  const paddingBottom = useSharedValue<null | number>(null);
+  const paddingBottom = useSharedValue<number>(0);
 
   const FlingUp = Gesture.Fling()
     .direction(Directions.UP)
@@ -53,7 +53,7 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
     .onEnd(() => dispatch(minimizeMarker()));
 
   const animatedStyle = useAnimatedStyle(() => ({
-    ...(paddingBottom.value !== null && { paddingBottom: paddingBottom.value }),
+    paddingBottom: paddingBottom.value,
   }));
 
   return (

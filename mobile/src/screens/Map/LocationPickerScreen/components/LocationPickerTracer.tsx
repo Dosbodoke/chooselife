@@ -1,21 +1,18 @@
 import { FakeMarkerSvg } from '@src/assets';
-import { View } from 'react-native';
 import { LatLng, Marker, Polyline } from 'react-native-maps';
 
 interface Props {
-  coordinate: LatLng;
+  center: LatLng;
   anchorA: LatLng;
 }
 
-const LocationPickerTracer = ({ coordinate, anchorA }: Props) => {
+const LocationPickerTracer = ({ center, anchorA }: Props) => {
   return (
     <>
       <Marker coordinate={anchorA}>
-        <View>
-          <FakeMarkerSvg />
-        </View>
+        <FakeMarkerSvg />
       </Marker>
-      <Polyline coordinates={[anchorA, coordinate]} strokeWidth={4} />
+      <Polyline coordinates={[anchorA, center]} strokeWidth={4} />
     </>
   );
 };

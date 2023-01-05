@@ -1,9 +1,20 @@
 import { FakeMarkerSvg } from '@src/assets';
-import { View } from 'react-native';
+import { View, Text } from 'react-native';
 
-const FakeMarker = () => {
+interface Props {
+  distance: number | undefined;
+}
+
+const FakeMarker = ({ distance }: Props) => {
   return (
-    <View className="absolute right-1/2 bottom-1/2 translate-x-4 translate-y-2">
+    <View
+      pointerEvents="none"
+      className="absolute bottom-1/2 w-full flex items-center justify-center">
+      {distance !== undefined && (
+        <View className="bg-slate-600 rounded-md mb-1 py-1 px-2">
+          <Text className="text-white">{distance}m</Text>
+        </View>
+      )}
       <FakeMarkerSvg />
     </View>
   );

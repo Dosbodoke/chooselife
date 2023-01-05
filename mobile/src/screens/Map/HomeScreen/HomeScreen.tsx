@@ -32,11 +32,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
       <StatusBar barStyle="dark-content" />
 
       <ClusteredMap ref={mapRef} />
-      <MyLocation
-        mBottom={marginBottom}
-        onPress={() => mapRef.current?.goToMyLocation()}
-        isOnMyLocation
-      />
+      <MyLocation mBottom={marginBottom} onPress={() => mapRef.current?.goToMyLocation()} />
       <MapType mBottom={marginBottom} onPress={() => navigation.navigate('MapType')} />
       <CardContainer
         onLayout={handleLayoutChange}

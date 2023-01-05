@@ -124,9 +124,20 @@ export const PlusSvg = (props: SvgProps) => (
 );
 
 export const FakeMarkerSvg = (props: SvgProps) => (
+  // Created by me on a figma file
+  // https://www.figma.com/file/AYTmykfNlzXFHBabLgUq2d/Highline-APP?node-id=312%3A2&t=9Q2PKYNM8aNncYOC-4
   <Svg width={36} height={68} fill="none" {...props}>
     <Path fill="#0284C7" d="M16 35h4v33h-4z" />
     <Circle cx={18} cy={18} r={18} fill="#0284C7" />
     <Circle cx={18} cy={18} r={3} fill="#fff" />
   </Svg>
 );
+
+export const ArrowBackCircleSvg = (props: SvgProps) => {
+  // icon:arrow-left-circle-fill | Bootstrap https://icons.getbootstrap.com/ | Bootstrap
+  return (
+    <Svg fill="currentColor" viewBox="0 0 16 16" height="100%" width="100%" {...props}>
+      <Path d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.5 7.5a.5.5 0 010 1H5.707l2.147 2.146a.5.5 0 01-.708.708l-3-3a.5.5 0 010-.708l3-3a.5.5 0 11.708.708L5.707 7.5H11.5z" />
+    </Svg>
+  );
+};
