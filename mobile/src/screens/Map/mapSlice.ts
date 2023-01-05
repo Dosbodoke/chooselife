@@ -42,9 +42,6 @@ export const mapSlice = createSlice({
     setMapType: (state, action: PayloadAction<MapType>) => {
       state.mapType = action.payload;
     },
-    requestUpdateCamera: (state) => {
-      state.updateCenterCoordinates = true;
-    },
   },
 });
 

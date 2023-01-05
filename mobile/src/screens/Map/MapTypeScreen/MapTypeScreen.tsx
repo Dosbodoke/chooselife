@@ -1,9 +1,9 @@
 import { MapStandardPng, MapSatellitePng, MapTerrainPng } from '@src/assets';
 import type { MapTypeScreenProps } from '@src/navigation/types';
 import { useAppDispatch, useAppSelector } from '@src/redux/hooks';
-import { setMapType, selectMapType, MapType } from '@src/redux/slices/mapSlice';
 import { View, Text } from 'react-native';
 
+import { setMapType, selectMapType, MapType } from '../mapSlice';
 import MapTypeButton from './components/MapTypeButton';
 
 const MapTypeScreen = ({ navigation }: MapTypeScreenProps) => {
