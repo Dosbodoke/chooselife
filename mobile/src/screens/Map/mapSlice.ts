@@ -1,5 +1,4 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { INITIAL_REGION } from '@src/constants';
 import { Coordinates } from '@src/database';
 import { RootState } from '@src/redux/store';
 import { Camera } from 'react-native-maps';
@@ -55,6 +54,5 @@ export const { highlightMarker, minimizeMarker, setMapType, requestUpdateCamera 
 // Selectors
 export const selectHighlitedMarker = (state: RootState) => state.map.highlitedMarker;
 export const selectMapType = (state: RootState) => state.map.mapType;
-export const selectCamera = (state: RootState) => state.map.camera;
 
 export default mapSlice.reducer;

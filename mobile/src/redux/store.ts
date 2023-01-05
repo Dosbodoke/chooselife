@@ -1,7 +1,7 @@
-import locationPickerReducer from '@features/locationPicker/locationPickerSlice';
 import { combineReducers, configureStore, PreloadedState } from '@reduxjs/toolkit';
+import locationPickerReducer from '@src/screens/Map/LocationPickerScreen/locationPickerSlice';
+import mapReducer from '@src/screens/Map/mapSlice';
 
-import mapReducer from './slices/mapSlice';
 // Create the root reducer independently to obtain the RootState type
 const rootReducer = combineReducers({
   map: mapReducer,
