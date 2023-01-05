@@ -2,33 +2,33 @@ import { ArrowBackCircleSvg } from '@src/assets';
 import { INITIAL_REGION } from '@src/constants';
 import { LocationPickerScreenProps } from '@src/navigation/types';
 import { useAppSelector } from '@src/redux/hooks';
-import { LinearGradient } from 'expo-linear-gradient';
 import { getDistance } from 'geolib';
 import { useRef, useState } from 'react';
-import { View, StatusBar, TouchableOpacity, Text } from 'react-native';
+import { View, StatusBar, TouchableOpacity } from 'react-native';
 import MapView, { Region, Details, LatLng } from 'react-native-maps';
 
 import { selectMapType } from '../mapSlice';
 import { FakeMarker, LocationPickerTracer } from './components';
+import PickerButton from './components/PickerButton';
 
 const LocationPickerScreen = ({ navigation, route }: LocationPickerScreenProps) => {
   const mapRef = useRef<MapView>(null);
   const mapType = useAppSelector(selectMapType);
-  const [centerCoordinates, setCenterCoordinates] = useState<Region>();
-  const [firstMarker, setFirstMarker] = useState<LatLng>();
-
-  const isLastMarker = firstMarker && centerCoordinates;
+  const [centerCoordinates, setCenterCoordinates] = useState<LatLng>();
+  const [markers, setMarkers] = useState<LatLng[]>([]);
 
   const onRegionChange = (region: Region, _: Details) => {
     setCenterCoordinates(region);
   };
 
   async function handlePickLocation() {
-    if (isLastMarker) {
+    if (markers.length === 2) {
       console.log('SET MARKER'); // TO-DO: Next step, get form info
     } else {
       const camera = await mapRef.current?.getCamera();
-      setFirstMarker(camera?.center);
+      if (camera?.center) {
+        setMarkers([...markers, camera.center]);
+      }
     }
   }
 
@@ -49,12 +49,18 @@ const LocationPickerScreen = ({ navigation, route }: LocationPickerScreenProps) 
         ref={mapRef}
         showsMyLocationButton={false}
         showsUserLocation>
-        {isLastMarker && <LocationPickerTracer center={centerCoordinates} anchorA={firstMarker} />}
+        {markers.length > 0 && centerCoordinates !== undefined && (
+          <LocationPickerTracer center={centerCoordinates} markers={markers} />
+        )}
       </MapView>
 
-      <FakeMarker
-        distance={isLastMarker ? getDistance(firstMarker, centerCoordinates) : undefined}
-      />
+      {markers.length <= 1 && (
+        <FakeMarker
+          distance={
+            markers[0] && centerCoordinates ? getDistance(markers[0], centerCoordinates) : undefined
+          }
+        />
+      )}
 
       <TouchableOpacity
         className="absolute left-3 top-12 w-12 h-12 bg-gray-600 rounded-full"
@@ -62,27 +68,7 @@ const LocationPickerScreen = ({ navigation, route }: LocationPickerScreenProps) 
         <ArrowBackCircleSvg color="#e7e5e4" className="fill-neutral-200" />
       </TouchableOpacity>
 
-      <TouchableOpacity
-        className="absolute bottom-8 left-1/2  trasnform -translate-x-28"
-        onPress={handlePickLocation}>
-        {isLastMarker ? (
-          <LinearGradient
-            className="w-56 h-10 rounded-lg px-5 py-2.5 mr-2 mb-2"
-            colors={['#4caf50', '#2196f3']}
-            start={{ x: -1, y: 1 }}
-            end={{ x: 3, y: 4 }}>
-            <Text className="text-white font-bold text-center">DEFINIR ANCORAGEM B</Text>
-          </LinearGradient>
-        ) : (
-          <LinearGradient
-            className="w-56 h-10 rounded-lg px-5 py-2.5 mr-2 mb-2"
-            colors={['#4caf50', '#2196f3']}
-            start={{ x: -1, y: 1 }}
-            end={{ x: 3, y: 4 }}>
-            <Text className="text-white font-bold text-center">DEFINIR ANCORAGEM A</Text>
-          </LinearGradient>
-        )}
-      </TouchableOpacity>
+      <PickerButton markersLength={markers.length} onPress={handlePickLocation} />
     </View>
   );
 };
