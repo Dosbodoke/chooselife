@@ -7,7 +7,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import SearchCard from '../SearchCard';
 import useLastHighline from '../useLastHighline';
 
-jest.mock('../SearchCard/useLastHighline', () => ({
+jest.mock('../useLastHighline', () => ({
   __esModule: true,
   default: jest.fn(),
 }));
