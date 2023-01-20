@@ -23,7 +23,7 @@ const LocationPickerScreen = ({ navigation, route }: LocationPickerScreenProps) 
 
   async function handlePickLocation() {
     if (markers.length === 2) {
-      console.log('SET MARKER'); // TO-DO: Next step, get form info
+      navigation.navigate('HighlineFormScreen');
     } else {
       const camera = await mapRef.current?.getCamera();
       if (camera?.center) {
@@ -63,7 +63,7 @@ const LocationPickerScreen = ({ navigation, route }: LocationPickerScreenProps) 
       )}
 
       <TouchableOpacity
-        className="absolute left-3 top-12 w-12 h-12 bg-gray-600 rounded-full"
+        className="absolute left-3 top-10 w-12 h-12 bg-gray-600 rounded-full"
         onPress={() => navigation.goBack()}>
         <ArrowBackCircleSvg color="#e7e5e4" className="fill-neutral-200" />
       </TouchableOpacity>

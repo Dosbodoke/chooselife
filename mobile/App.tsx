@@ -11,6 +11,7 @@ import {
   MapTypeScreen,
   DetailScreen,
   LocationPickerScreen,
+  HighlineFormScreen,
 } from './src/screens';
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -39,6 +40,7 @@ export default function App() {
             options={{ presentation: 'card' }}
           />
           <Stack.Screen name="LocationPicker" component={LocationPickerScreen} />
+          <Stack.Screen name="HighlineFormScreen" component={HighlineFormScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>

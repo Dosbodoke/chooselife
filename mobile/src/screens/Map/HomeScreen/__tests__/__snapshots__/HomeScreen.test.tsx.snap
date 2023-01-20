@@ -1,276 +1,101 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`HomeScreen Map Match snapshot 1`] = `
-Array [
-  <View
-    initialRegion={
+<View
+  initialRegion={
+    Object {
+      "latitude": -15.7782081,
+      "latitudeDelta": 80,
+      "longitude": -47.93371,
+      "longitudeDelta": 80,
+    }
+  }
+  mapType="standard"
+  onMapReady={[Function]}
+  onRegionChange={[Function]}
+  onRegionChangeComplete={[Function]}
+  provider="google"
+  showsMyLocationButton={false}
+  showsUserLocation={true}
+  style={
+    Array [
       Object {
-        "latitude": -15.7782081,
-        "latitudeDelta": 5,
-        "longitude": -47.93371,
-        "longitudeDelta": 5,
-      }
-    }
-    mapType="standard"
-    onRegionChangeComplete={[Function]}
-    provider="google"
-    showsUserLocation={true}
-    style={
-      Array [
-        Object {
-          "flexBasis": "0%",
-          "flexGrow": 1,
-          "flexShrink": 1,
-        },
-      ]
-    }
-    testID="MapView"
-  >
-    <View
-      coordinate={
-        Object {
-          "latitude": -15.788495645386874,
-          "longitude": -47.930248975753784,
-        }
-      }
-    >
-      <View
-        style={
-          Array [
-            Object {
-              "borderBottomLeftRadius": 9999,
-              "borderBottomRightRadius": 9999,
-              "borderTopLeftRadius": 9999,
-              "borderTopRightRadius": 9999,
-            },
-            Object {
-              "backgroundColor": "#334155",
-            },
-            Object {
-              "display": "flex",
-            },
-            Object {
-              "alignItems": "center",
-            },
-            Object {
-              "justifyContent": "center",
-            },
-            Object {
-              "height": 30,
-              "width": 30,
-            },
-          ]
-        }
-      >
-        <Text
-          style={
-            Array [
-              Object {
-                "color": "#fff",
-              },
-              Object {
-                "textAlign": "center",
-              },
-              Object {
-                "fontWeight": "700",
-              },
-              Object {
-                "fontSize": 20,
-                "lineHeight": 28,
-              },
-            ]
-          }
-        >
-          3
-        </Text>
-      </View>
-    </View>
-    <View
-      coordinate={
-        Object {
-          "latitude": -16.40110401623181,
-          "longitude": -48.98699219976841,
-        }
-      }
-      onPress={[Function]}
-    />
-  </View>,
+        "flexBasis": "0%",
+        "flexGrow": 1,
+        "flexShrink": 1,
+      },
+    ]
+  }
+  testID="MapView"
+>
   <View
-    style={
-      Array [
-        Object {
-          "position": "absolute",
-        },
-        Object {
-          "right": 8,
-        },
-        Object {
-          "bottom": 240,
-        },
-      ]
+    coordinate={
+      Object {
+        "latitude": -15.788495645386874,
+        "longitude": -47.930248975753784,
+      }
     }
+    onPress={[Function]}
   >
     <View
-      accessible={true}
-      collapsable={false}
-      focusable={true}
-      onClick={[Function]}
-      onResponderGrant={[Function]}
-      onResponderMove={[Function]}
-      onResponderRelease={[Function]}
-      onResponderTerminate={[Function]}
-      onResponderTerminationRequest={[Function]}
-      onStartShouldSetResponder={[Function]}
       style={
-        Object {
-          "alignItems": "center",
-          "backgroundColor": "#f3f4f6",
-          "borderBottomLeftRadius": 9999,
-          "borderBottomRightRadius": 9999,
-          "borderTopLeftRadius": 9999,
-          "borderTopRightRadius": 9999,
-          "height": 40,
-          "justifyContent": "center",
-          "opacity": 1,
-          "width": 40,
-        }
+        Array [
+          Object {
+            "borderBottomLeftRadius": 9999,
+            "borderBottomRightRadius": 9999,
+            "borderTopLeftRadius": 9999,
+            "borderTopRightRadius": 9999,
+          },
+          Object {
+            "backgroundColor": "#334155",
+          },
+          Object {
+            "display": "flex",
+          },
+          Object {
+            "alignItems": "center",
+          },
+          Object {
+            "justifyContent": "center",
+          },
+          Object {
+            "height": 30,
+            "width": 30,
+          },
+        ]
       }
     >
-      <RNSVGSvgView
-        align="xMidYMid"
-        bbHeight="24px"
-        bbWidth="24px"
-        focusable={false}
-        height="24px"
-        meetOrSlice={0}
-        minX={0}
-        minY={0}
+      <Text
         style={
           Array [
             Object {
-              "backgroundColor": "transparent",
-              "borderWidth": 0,
+              "color": "#fff",
             },
             Object {
-              "flex": 0,
-              "height": 24,
-              "width": 24,
+              "textAlign": "center",
+            },
+            Object {
+              "fontWeight": "700",
+            },
+            Object {
+              "fontSize": 20,
+              "lineHeight": 28,
             },
           ]
         }
-        vbHeight={24}
-        vbWidth={24}
-        width="24px"
       >
-        <RNSVGGroup>
-          <RNSVGPath
-            d="M12 2a.75.75 0 01.743.648l.007.102v1.788a7.5 7.5 0 016.713 6.715l.037-.003h1.75a.75.75 0 01.102 1.493l-.102.007-1.788-.001a7.5 7.5 0 01-6.715 6.714l.003.037v1.75a.75.75 0 01-1.493.102l-.007-.102.001-1.788a7.5 7.5 0 01-6.714-6.715l-.037.003H2.75a.75.75 0 01-.102-1.493l.102-.007h1.788a7.5 7.5 0 016.715-6.713L11.25 4.5V2.75A.75.75 0 0112 2zm0 4a6 6 0 100 12 6 6 0 000-12zm0 2a4 4 0 110 8 4 4 0 010-8z"
-            fill={4280361249}
-            fillRule={1}
-            propList={
-              Array [
-                "fill",
-                "fillRule",
-                "stroke",
-                "strokeWidth",
-              ]
-            }
-            stroke={null}
-            strokeWidth={1}
-          />
-        </RNSVGGroup>
-      </RNSVGSvgView>
+        3
+      </Text>
     </View>
-  </View>,
+  </View>
   <View
-    style={
-      Array [
-        Object {
-          "position": "absolute",
-        },
-        Object {
-          "right": 8,
-        },
-        Object {
-          "bottom": 290,
-        },
-      ]
-    }
-  >
-    <View
-      accessible={true}
-      collapsable={false}
-      focusable={true}
-      onClick={[Function]}
-      onResponderGrant={[Function]}
-      onResponderMove={[Function]}
-      onResponderRelease={[Function]}
-      onResponderTerminate={[Function]}
-      onResponderTerminationRequest={[Function]}
-      onStartShouldSetResponder={[Function]}
-      style={
-        Object {
-          "alignItems": "center",
-          "backgroundColor": "#f3f4f6",
-          "borderBottomLeftRadius": 9999,
-          "borderBottomRightRadius": 9999,
-          "borderTopLeftRadius": 9999,
-          "borderTopRightRadius": 9999,
-          "height": 40,
-          "justifyContent": "center",
-          "opacity": 1,
-          "width": 40,
-        }
+    coordinate={
+      Object {
+        "latitude": -16.40110401623181,
+        "longitude": -48.98699219976841,
       }
-    >
-      <RNSVGSvgView
-        align="xMidYMid"
-        bbHeight="20px"
-        bbWidth="20px"
-        focusable={false}
-        height="20px"
-        meetOrSlice={0}
-        minX={0}
-        minY={0}
-        style={
-          Array [
-            Object {
-              "backgroundColor": "transparent",
-              "borderWidth": 0,
-            },
-            Object {
-              "flex": 0,
-              "height": 20,
-              "width": 20,
-            },
-          ]
-        }
-        vbHeight={16}
-        vbWidth={16}
-        width="20px"
-      >
-        <RNSVGGroup>
-          <RNSVGPath
-            d="M0 0H16V16H0z"
-            fill={null}
-            propList={
-              Array [
-                "fill",
-              ]
-            }
-          />
-          <RNSVGPath
-            d="M8 9L0 5l8-4 8 4-8 4zm6.397-1.8L16 8l-8 4-8-4 1.603-.8L8 10.397 14.397 7.2zm0 3L16 11l-8 4-8-4 1.603-.8L8 13.397l6.397-3.197z"
-            fill={4280361249}
-            propList={
-              Array [
-                "fill",
-              ]
-            }
-          />
-        </RNSVGGroup>
-      </RNSVGSvgView>
-    </View>
-  </View>,
-]
+    }
+    onPress={[Function]}
+  />
+</View>
 `;
