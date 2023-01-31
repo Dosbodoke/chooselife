@@ -9,9 +9,9 @@ const FakeMarker = ({ distance }: Props) => {
   return (
     <View
       pointerEvents="none"
-      className="absolute bottom-1/2 w-full flex items-center justify-center">
+      className="absolute bottom-1/2 flex w-full items-center justify-center">
       {distance !== undefined && (
-        <View className="bg-slate-600 rounded-md mb-1 py-1 px-2">
+        <View className="mb-1 rounded-md bg-slate-600 py-1 px-2">
           <Text className="text-white">{distance}m</Text>
         </View>
       )}

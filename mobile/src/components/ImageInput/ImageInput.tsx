@@ -23,12 +23,12 @@ const ImageInput = () => {
         <Image
           key={uri}
           source={{ uri }}
-          className="mr-2 border-gray-200 border-2 rounded-xl w-64 h-64"
+          className="mr-2 h-64 w-64 rounded-xl border-2 border-gray-200"
         />
       ))}
       <TouchableOpacity
         onPress={pickImage}
-        className="mr-2 flex justify-center border-gray-300 border-2 rounded-xl w-64 h-64">
+        className="mr-2 flex h-64 w-64 justify-center rounded-xl border-2 border-gray-300">
         <View className="h-20">
           <ImageUploadSvg color="#2196f3" className="fill-sky-500" />
         </View>

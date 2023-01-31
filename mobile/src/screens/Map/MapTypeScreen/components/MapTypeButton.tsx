@@ -1,4 +1,4 @@
-import { MapType } from '@src/redux/slices/mapSlice';
+import { MapType } from '../../mapSlice';
 import { TouchableOpacity, Text, Image, ImageSourcePropType } from 'react-native';
 
 interface Props {
@@ -20,7 +20,7 @@ const MapTypeButton = ({ onPress, type, selectedType, image, title }: Props) => 
         className={`h-20 w-20 rounded-lg ${isSelected && highlitedImageStyle}`}
         source={image}
       />
-      <Text className={`text-center my-2 ${isSelected && highlitedTextStyle}`}>{title}</Text>
+      <Text className={`my-2 text-center ${isSelected && highlitedTextStyle}`}>{title}</Text>
     </TouchableOpacity>
   );
 };

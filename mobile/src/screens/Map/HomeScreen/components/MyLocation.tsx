@@ -10,7 +10,7 @@ const MyLocation = ({ onPress, mBottom }: Props) => {
   return (
     <View className="absolute right-2 mb-3" style={{ bottom: mBottom }}>
       <TouchableOpacity
-        className="h-12 w-12 rounded-full bg-gray-100 justify-center items-center"
+        className="h-12 w-12 items-center justify-center rounded-full bg-gray-100"
         onPress={onPress}>
         <MyLocationSvg width="80%" height="80%" fill="#212121" />
       </TouchableOpacity>

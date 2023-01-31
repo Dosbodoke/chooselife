@@ -9,7 +9,7 @@ interface Props {
 const PageHeader = ({ goBack, text }: Props) => {
   return (
     <SafeAreaView className="bg-white">
-      <TouchableOpacity className="w-10 h-10 rounded-full" onPress={goBack}>
+      <TouchableOpacity className="h-10 w-10 rounded-full" onPress={goBack}>
         <ArrowBackSvg color="#1f2937" />
       </TouchableOpacity>
 

@@ -22,7 +22,7 @@ const LastHighline = ({ highline }: Props) => {
     );
   };
   return (
-    <TouchableOpacity onPress={handleOnPress} className="my-3 flex-row items-center gap-x-3 w-full">
+    <TouchableOpacity onPress={handleOnPress} className="my-3 w-full flex-row items-center gap-x-3">
       <View className="flex-shrink-0">
         <HistorySvg />
       </View>

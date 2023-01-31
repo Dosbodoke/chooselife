@@ -19,7 +19,7 @@ const CardContainer = ({ onLayout, onNewLocation, navigation }: Props) => {
 
   return (
     <View
-      className="absolute w-full bottom-0 pb-8 pt-4 px-4 bg-white rounded-t-3xl"
+      className="absolute bottom-0 w-full rounded-t-3xl bg-white px-4 pb-8 pt-4"
       onLayout={onLayout}>
       {highlitedMarker ? (
         <DetailCard highlitedMarker={highlitedMarker} navigation={navigation} />

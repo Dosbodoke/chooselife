@@ -10,7 +10,7 @@ const MapType = ({ mBottom, onPress }: Props) => {
   return (
     <View className="absolute right-2 mb-16" style={{ bottom: mBottom }}>
       <TouchableOpacity
-        className="h-12 w-12 rounded-full bg-gray-100 justify-center items-center"
+        className="h-12 w-12 items-center justify-center rounded-full bg-gray-100"
         onPress={onPress}>
         <MapTypeSvg width="60%" height="60%" />
       </TouchableOpacity>

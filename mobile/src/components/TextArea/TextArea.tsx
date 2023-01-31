@@ -38,10 +38,10 @@ const TextArea = ({
   }
 
   return (
-    <View className="flex-1 mt-3" pointerEvents={disabled ? 'none' : 'auto'}>
+    <View className="mt-3 flex-1" pointerEvents={disabled ? 'none' : 'auto'}>
       <Pressable
         accessibilityRole="text"
-        className={`relative border-[1px] rounded-md p-2 h-40 focus:border-black ${getStatusClass({
+        className={`relative h-40 rounded-md border-[1px] p-2 focus:border-black ${getStatusClass({
           neutral: 'border-gray-400',
           error: 'border-red-500',
           success: 'border-green-500',
@@ -56,13 +56,13 @@ const TextArea = ({
           onEndEditing={(e) => onChangeText(e.nativeEvent.text.trim())}
           onBlur={onBlur}
           accessibilityHint={accessibilityHint}
-          className="text-xl flex-1"
+          className="flex-1 text-xl"
           selectionColor="#23a2a2"
           placeholder={placeholder}>
           {value}
         </RNTextInput>
       </Pressable>
-      <Text className="text-red-500 text-sm h-5 ml-2">{touched && error}</Text>
+      <Text className="ml-2 h-5 text-sm text-red-500">{touched && error}</Text>
     </View>
   );
 };

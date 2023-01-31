@@ -12,9 +12,9 @@ const ClusteredMarker = (props: Props) => {
   return (
     <Marker coordinate={props.coordinate} onPress={props.onPress}>
       <View
-        className="rounded-full bg-slate-700 flex items-center justify-center"
+        className="flex items-center justify-center rounded-full bg-slate-700"
         style={{ width: props.size, height: props.size }}>
-        <Text className="text-white text-center font-bold text-xl">{props.pointCount}</Text>
+        <Text className="text-center text-xl font-bold text-white">{props.pointCount}</Text>
       </View>
     </Marker>
   );

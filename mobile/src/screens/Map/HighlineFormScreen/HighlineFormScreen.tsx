@@ -17,7 +17,7 @@ const HighlineFormScreen = ({ navigation, route }: HighlineFormScreenProps) => {
   });
 
   return (
-    <View className="px-4 bg-white flex-1">
+    <View className="flex-1 bg-white px-4">
       <PageHeader text="Informações da via" goBack={() => navigation.goBack()} />
       <KeyboardAwareScrollView showsVerticalScrollIndicator={false} extraHeight={140}>
         <Formik
@@ -62,7 +62,7 @@ const HighlineFormScreen = ({ navigation, route }: HighlineFormScreenProps) => {
                     label="Comprimento"
                     accessibilityHint="Comprimento da via"
                   />
-                  <View className="flex-0 mx-2 w-6 h-[1] bg-gray-600" />
+                  <View className="flex-0 mx-2 h-[1] w-6 bg-gray-600" />
                   <TextInput
                     isNumeric
                     suffix="m"
@@ -77,7 +77,7 @@ const HighlineFormScreen = ({ navigation, route }: HighlineFormScreenProps) => {
                 </View>
                 <Divider />
                 <View>
-                  <Text className="text-xl font-bold flex-1">Ancoragem 🅰️</Text>
+                  <Text className="flex-1 text-xl font-bold">Ancoragem 🅰️</Text>
                   <Text className="text-base text-gray-600">
                     Insira imagens e informações sobre ancoragem A para ajudar em montagens futuras
                   </Text>
@@ -94,7 +94,7 @@ const HighlineFormScreen = ({ navigation, route }: HighlineFormScreenProps) => {
                 </View>
                 <Divider />
                 <View>
-                  <Text className="text-xl font-bold flex-1">Ancoragem 🅱️</Text>
+                  <Text className="flex-1 text-xl font-bold">Ancoragem 🅱️</Text>
                   <Text className="text-base text-gray-600">
                     Insira imagens e informações sobre ancoragem A para ajudar em montagens futuras
                   </Text>
@@ -110,14 +110,14 @@ const HighlineFormScreen = ({ navigation, route }: HighlineFormScreenProps) => {
                   />
                 </View>
                 <TouchableOpacity
-                  className="w-3/4 rounded-lg mx-auto mt-4 mb-8"
+                  className="mx-auto mt-4 mb-8 w-3/4 rounded-lg"
                   onPress={() => handleSubmit()}>
                   <LinearGradient
                     className="rounded-lg"
                     colors={['#4caf50', '#2196f3']}
                     start={{ x: -1, y: 1 }}
                     end={{ x: 3, y: 4 }}>
-                    <Text className="text-white text-base font-bold text-center my-4">
+                    <Text className="my-4 text-center text-base font-bold text-white">
                       CADASTRAR VIA
                     </Text>
                   </LinearGradient>

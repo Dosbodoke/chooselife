@@ -20,14 +20,14 @@ const PickerButton = ({ markersLength, onPress }: Props) => {
 
   return (
     <TouchableOpacity
-      className="absolute bottom-8 left-1/2 trasnform -translate-x-28"
+      className="trasnform absolute bottom-8 left-1/2 -translate-x-28"
       onPress={onPress}>
       <LinearGradient
         className="w-56 rounded-lg"
         colors={['#4caf50', '#2196f3']}
         start={{ x: -1, y: 1 }}
         end={{ x: 3, y: 4 }}>
-        <Text className="text-white text-base font-bold text-center my-4">{renderText()}</Text>
+        <Text className="my-4 text-center text-base font-bold text-white">{renderText()}</Text>
       </LinearGradient>
     </TouchableOpacity>
   );

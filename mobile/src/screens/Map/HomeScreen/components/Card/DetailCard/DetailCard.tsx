@@ -59,15 +59,15 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
   return (
     <GestureDetector gesture={Gesture.Race(FlingUp, FlingDown)}>
       <Animated.View style={animatedStyle}>
-        <View className="w-2/12 h-2 bg-slate-300 rounded-md mx-auto mb-3" />
+        <View className="mx-auto mb-3 h-2 w-2/12 rounded-md bg-slate-300" />
         <View className="flex flex-row ">
           <Image
-            className="w-2/6 h-40 rounded-lg object-contain"
+            className="h-40 w-2/6 rounded-lg object-contain"
             source={{
               uri: 'https://naturalextremo.com/wp-content/uploads/2020/01/Virada-Esportiva-Highline-Natural-Extremo-@angelomaragno-@naturalextremobrasil-14-e1589735926438.jpg',
             }}
           />
-          <View className="flex-1 ml-2">
+          <View className="ml-2 flex-1">
             <View className="flex flex-row">
               <View className="flex-1">
                 <Text className="text-xl font-extrabold">{data?.name}</Text>
@@ -75,24 +75,24 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
                 <Text className="text-gray-500">comprimento: {data?.height}</Text>
               </View>
               <View>
-                <TouchableOpacity className="w-6 h-6" onPress={() => setIsFavorite(!isFavorite)}>
+                <TouchableOpacity className="h-6 w-6" onPress={() => setIsFavorite(!isFavorite)}>
                   {isFavorite ? <HeartFilledSvg /> : <HeartOutlinedSvg />}
                 </TouchableOpacity>
                 <View
-                  className={`mt-2 w-6 h-6 rounded-full ${
+                  className={`mt-2 h-6 w-6 rounded-full ${
                     data?.isRigged ? 'bg-green-500' : 'bg-red-500'
                   }`}
                 />
               </View>
             </View>
             <View>
-              <Text className="text-lg font-bold mt-2">Conquistadores</Text>
+              <Text className="mt-2 text-lg font-bold">Conquistadores</Text>
               <ScrollView horizontal className="py-2">
                 {conquerors.length &&
                   conquerors.map((conquerer, idx) => (
                     <TouchableOpacity
                       key={conquerer}
-                      className="w-12 h-12 rounded-full bg-slate-800 mr-1"
+                      className="mr-1 h-12 w-12 rounded-full bg-slate-800"
                     />
                   ))}
               </ScrollView>

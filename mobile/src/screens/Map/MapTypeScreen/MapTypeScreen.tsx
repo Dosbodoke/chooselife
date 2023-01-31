@@ -15,15 +15,15 @@ const MapTypeScreen = ({ navigation }: MapTypeScreenProps) => {
   }
 
   return (
-    <View className="flex-1 justify-end relative">
+    <View className="relative flex-1 justify-end">
       <View
-        className="bg-black opacity-30 h-full w-full absolute"
+        className="absolute h-full w-full bg-black opacity-30"
         onTouchStart={() => navigation.goBack()}
         testID="goBack"
       />
 
-      <View className="bg-white rounded-t-2xl pb-5">
-        <Text className="text-center text-xl font-bold my-3">Tipo de mapa</Text>
+      <View className="rounded-t-2xl bg-white pb-5">
+        <Text className="my-3 text-center text-xl font-bold">Tipo de mapa</Text>
         <View className="flex-row justify-around">
           <MapTypeButton
             selectedType={mapType}

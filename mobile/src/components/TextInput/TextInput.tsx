@@ -50,13 +50,13 @@ const TextInput = ({
   }
 
   return (
-    <View className="flex-1 mt-3" pointerEvents={disabled ? 'none' : 'auto'}>
+    <View className="mt-3 flex-1" pointerEvents={disabled ? 'none' : 'auto'}>
       <Pressable
         accessibilityRole="text"
         onPress={() => {
           if (!disabled) setIsFocused(true);
         }}
-        className={`relative border-[1px] rounded-md px-2 h-16 focus:border-black ${getStatusClass({
+        className={`relative h-16 rounded-md border-[1px] px-2 focus:border-black ${getStatusClass({
           neutral: 'border-gray-400',
           error: 'border-red-500',
           success: 'border-green-500',
@@ -66,12 +66,12 @@ const TextInput = ({
             neutral: 'text-gray-400',
             error: 'text-red-500',
             success: 'text-green-500',
-          })} ${showValue ? ['text-base'] : ['text-xl top-4']}`}>
+          })} ${showValue ? ['text-base'] : ['top-4 text-xl']}`}>
           {label}
         </Animated.Text>
 
         {showValue && (
-          <View className="flex flex-row mt-6 ">
+          <View className="mt-6 flex flex-row ">
             <RNTextInput
               keyboardType={isNumeric ? 'number-pad' : 'default'}
               returnKeyType="done"
@@ -87,7 +87,7 @@ const TextInput = ({
               onBlur={handleOnBlur}
               autoFocus={!disabled}
               accessibilityHint={accessibilityHint}
-              className="text-xl flex-1 leading-6"
+              className="flex-1 text-xl leading-6"
               selectionColor="#23a2a2">
               {value}
             </RNTextInput>
@@ -95,7 +95,7 @@ const TextInput = ({
           </View>
         )}
       </Pressable>
-      <Text className="text-red-500 text-sm h-5 ml-2">{touched && error}</Text>
+      <Text className="ml-2 h-5 text-sm text-red-500">{touched && error}</Text>
     </View>
   );
 };

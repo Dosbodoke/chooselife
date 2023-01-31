@@ -63,7 +63,7 @@ const LocationPickerScreen = ({ navigation, route }: LocationPickerScreenProps) 
       )}
 
       <TouchableOpacity
-        className="absolute left-3 top-10 w-12 h-12 bg-gray-600 rounded-full"
+        className="absolute left-3 top-10 h-12 w-12 rounded-full bg-gray-600"
         onPress={() => navigation.goBack()}>
         <ArrowBackCircleSvg color="#e7e5e4" className="fill-neutral-200" />
       </TouchableOpacity>

@@ -7,7 +7,7 @@ interface Props {
 
 const NewLocationButton = ({ onPress }: Props) => {
   return (
-    <TouchableOpacity className="w-8 h-8" onPress={onPress}>
+    <TouchableOpacity className="h-8 w-8" onPress={onPress}>
       <PlusSvg className="fill-slate-800" />
     </TouchableOpacity>
   );
