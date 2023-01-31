@@ -1,40 +1,33 @@
-import { ArrowBackSvg } from '@src/assets';
-import TextInput from '@src/components/TextInput/TextInput';
+import { TextInput, ImageInput, PageHeader, TextArea, Divider } from '@src/components';
 import { HighlineFormScreenProps } from '@src/navigation/types';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Formik } from 'formik';
-import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, Button } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { z } from 'zod';
 
-interface Props {
-  navigation: HighlineFormScreenProps['navigation'];
-}
-
-const HighlineFormScreen = ({ navigation }: Props) => {
+const HighlineFormScreen = ({ navigation, route }: HighlineFormScreenProps) => {
   const validationSchema = z.object({
     name: z.string().min(3).max(15),
     height: z.string().regex(/^\d+$/),
-    anchorA: z.string(),
-    anchorB: z.string(),
+    textA: z.string(),
+    imagesAnchorA: z.string().array(),
+    textB: z.string(),
+    imagesAnchorB: z.string().array(),
   });
 
   return (
-    <ScrollView className="h-full bg-white pb-8 px-4">
-      <SafeAreaView>
-        <TouchableOpacity
-          className="w-12 h-12 rounded-full -ml-2"
-          onPress={() => navigation.goBack()}>
-          <ArrowBackSvg color="#1f2937" />
-        </TouchableOpacity>
-
-        <Text className="text-3xl font-bold flex-1">Informações da via</Text>
-
+    <View className="px-4 bg-white flex-1">
+      <PageHeader text="Informações da via" goBack={() => navigation.goBack()} />
+      <KeyboardAwareScrollView showsVerticalScrollIndicator={false} extraHeight={140}>
         <Formik
           initialValues={{
             name: '',
-            lenght: '12',
             height: '',
-            anchorA: '',
-            anchorB: '',
+            textA: '',
+            imagesAnchorA: [],
+            textB: '',
+            imagesAnchorB: [],
           }}
           validate={(values) => {
             const result = validationSchema.safeParse(values);
@@ -63,9 +56,7 @@ const HighlineFormScreen = ({ navigation }: Props) => {
                     isNumeric
                     disabled
                     suffix="m"
-                    touched={Boolean(touched.lenght)}
-                    error={errors.lenght}
-                    value={values.lenght}
+                    value={route.params.lenght}
                     onChangeText={handleChange('lenght')}
                     onBlur={handleBlur('lenght')}
                     label="Comprimento"
@@ -84,13 +75,59 @@ const HighlineFormScreen = ({ navigation }: Props) => {
                     accessibilityHint="Altura da via"
                   />
                 </View>
-                <Button title="Enviar" onPress={() => handleSubmit()} />
+                <Divider />
+                <View>
+                  <Text className="text-xl font-bold flex-1">Ancoragem 🅰️</Text>
+                  <Text className="text-base text-gray-600">
+                    Insira imagens e informações sobre ancoragem A para ajudar em montagens futuras
+                  </Text>
+                  <ImageInput />
+                  <TextArea
+                    value={values.textA}
+                    accessibilityHint="Decrição ancoragem A"
+                    onChangeText={handleChange('textA')}
+                    onBlur={handleBlur('textA')}
+                    placeholder={
+                      'Exemplo de descrição:\n🪨 ancoragem de bolt\n⚠️ É necessario rapel para acesso'
+                    }
+                  />
+                </View>
+                <Divider />
+                <View>
+                  <Text className="text-xl font-bold flex-1">Ancoragem 🅱️</Text>
+                  <Text className="text-base text-gray-600">
+                    Insira imagens e informações sobre ancoragem A para ajudar em montagens futuras
+                  </Text>
+                  <ImageInput />
+                  <TextArea
+                    value={values.textB}
+                    accessibilityHint="Decrição ancoragem B"
+                    onChangeText={handleChange('textB')}
+                    onBlur={handleBlur('textB')}
+                    placeholder={
+                      'Exemplo de descrição:\n🌲 ancoragem natural\n🪢 levar 6 metros de corda'
+                    }
+                  />
+                </View>
+                <TouchableOpacity
+                  className="w-3/4 rounded-lg mx-auto mt-4 mb-8"
+                  onPress={() => handleSubmit()}>
+                  <LinearGradient
+                    className="rounded-lg"
+                    colors={['#4caf50', '#2196f3']}
+                    start={{ x: -1, y: 1 }}
+                    end={{ x: 3, y: 4 }}>
+                    <Text className="text-white text-base font-bold text-center my-4">
+                      CADASTRAR VIA
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
               </View>
             );
           }}
         </Formik>
-      </SafeAreaView>
-    </ScrollView>
+      </KeyboardAwareScrollView>
+    </View>
   );
 };
 

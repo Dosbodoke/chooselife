@@ -1,5 +1,6 @@
-import { renderWithProviders, createTestProps } from '@src/utils/test-utils';
+import { renderWithProviders } from '@src/utils/test-utils';
 import { cleanup, screen, fireEvent } from '@testing-library/react-native';
+
 import TextInput from './TextInput';
 
 describe('TextInput', () => {

@@ -12,8 +12,8 @@ import {
 interface Props {
   label: string;
   value: string;
-  touched: boolean | undefined;
-  error: string | undefined;
+  touched?: boolean;
+  error?: string;
   accessibilityHint: string;
   isNumeric?: true;
   disabled?: true;
@@ -37,14 +37,11 @@ const TextInput = ({
   const [isFocused, setIsFocused] = useState(false);
   const [hasChanged, setHasChanged] = useState(false);
   const showValue = Boolean(value) || isFocused;
-  const hasError = touched && Boolean(error);
 
-  function getStatusClass(neutral: string, error: string, success: string): string {
-    if (touched) {
-      if (hasError) return error;
-      if (hasChanged) return success;
-    }
-    return neutral;
+  function getStatusClass(classes: { neutral: string; error: string; success: string }): string {
+    if (touched && error) return classes.error;
+    if (hasChanged && !error) return classes.success;
+    return classes.neutral;
   }
 
   function handleOnBlur(e: NativeSyntheticEvent<TextInputFocusEventData>) {
@@ -59,17 +56,17 @@ const TextInput = ({
         onPress={() => {
           if (!disabled) setIsFocused(true);
         }}
-        className={`relative border-[1px] rounded-md px-2 h-16 focus:border-black ${getStatusClass(
-          'border-gray-400',
-          'border-red-500',
-          'border-green-500'
-        )} ${disabled && 'bg-gray-100'}`}>
+        className={`relative border-[1px] rounded-md px-2 h-16 focus:border-black ${getStatusClass({
+          neutral: 'border-gray-400',
+          error: 'border-red-500',
+          success: 'border-green-500',
+        })} ${disabled && 'bg-gray-100'}`}>
         <Animated.Text
-          className={`absolute ml-2 ${getStatusClass(
-            'text-gray-400',
-            'text-red-500',
-            'text-green-500'
-          )} ${showValue ? ['text-base'] : ['text-xl top-4']}`}>
+          className={`absolute ml-2 ${getStatusClass({
+            neutral: 'text-gray-400',
+            error: 'text-red-500',
+            success: 'text-green-500',
+          })} ${showValue ? ['text-base'] : ['text-xl top-4']}`}>
           {label}
         </Animated.Text>
 
@@ -98,7 +95,7 @@ const TextInput = ({
           </View>
         )}
       </Pressable>
-      <Text className="text-red-500 text-sm h-5 ml-2">{hasError && error}</Text>
+      <Text className="text-red-500 text-sm h-5 ml-2">{touched && error}</Text>
     </View>
   );
 };

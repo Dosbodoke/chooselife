@@ -1,0 +1,41 @@
+import { ImageUploadSvg } from '@src/assets';
+import * as ImagePicker from 'expo-image-picker';
+import React, { useState } from 'react';
+import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
+
+const ImageInput = () => {
+  const [images, setImages] = useState<string[]>([]);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 1,
+    });
+    if (!result.canceled) {
+      setImages((prev) => [...prev, ...result.assets.map((asset) => asset.uri)]);
+    }
+  };
+
+  return (
+    <ScrollView horizontal className="my-2">
+      {images.map((uri) => (
+        <Image
+          key={uri}
+          source={{ uri }}
+          className="mr-2 border-gray-200 border-2 rounded-xl w-64 h-64"
+        />
+      ))}
+      <TouchableOpacity
+        onPress={pickImage}
+        className="mr-2 flex justify-center border-gray-300 border-2 rounded-xl w-64 h-64">
+        <View className="h-20">
+          <ImageUploadSvg color="#2196f3" className="fill-sky-500" />
+        </View>
+        <Text className="mt-4 text-center text-lg text-neutral-500">selecionar imagem</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+};
+
+export default ImageInput;

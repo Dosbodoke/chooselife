@@ -9,7 +9,9 @@ export type RootStackParamList = {
   LocationPicker: {
     camera?: Camera;
   };
-  HighlineFormScreen: undefined;
+  HighlineFormScreen: {
+    lenght: string;
+  };
 };
 
 export type HomeScreenProps = StackScreenProps<RootStackParamList, 'Home'>;

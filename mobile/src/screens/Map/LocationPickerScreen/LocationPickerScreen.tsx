@@ -23,13 +23,13 @@ const LocationPickerScreen = ({ navigation, route }: LocationPickerScreenProps) 
 
   async function handlePickLocation() {
     if (markers.length === 2) {
-      navigation.navigate('HighlineFormScreen');
-    } else {
-      const camera = await mapRef.current?.getCamera();
-      if (camera?.center) {
-        setMarkers([...markers, camera.center]);
-      }
+      navigation.navigate('HighlineFormScreen', {
+        lenght: getDistance(markers[0], markers[1]).toString(),
+      });
+      return;
     }
+    const camera = await mapRef.current?.getCamera();
+    if (camera?.center) setMarkers([...markers, camera.center]);
   }
 
   function onMapReady() {
