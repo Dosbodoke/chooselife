@@ -13,6 +13,8 @@ import { regionToBoundingBox, getMyLocation } from '../../utils';
 import ClusteredMarker from './Marker/ClusteredMarker';
 import HighlineMarker from './Marker/HighlineMarker';
 
+import { trpc } from '../../../../utils/trpc';
+
 interface PointProperties {
   cluster: boolean;
   category: string;
@@ -35,6 +37,8 @@ const ClusteredMap = forwardRef<ForwardedRef>((props, ref) => {
     isOnMyLocation: false,
     goToMyLocationWasCalled: false,
   });
+  const markers = trpc.marker.all.useQuery();
+  if (markers.status === 'success') console.log(markers.data);
 
   useImperativeHandle(ref, () => ({
     goToMyLocation,
