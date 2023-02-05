@@ -3,6 +3,7 @@ import { WINDOW_HEIGHT } from '@src/constants';
 import database from '@src/database';
 import type { HomeScreenProps } from '@src/navigation/types';
 import { useAppDispatch } from '@src/redux/hooks';
+import { trpc } from '@src/utils/trpc';
 import { useState } from 'react';
 import { View, Text, Image, ScrollView } from 'react-native';
 import {
@@ -30,7 +31,7 @@ interface Props {
 const DetailCard = ({ highlitedMarker, navigation }: Props) => {
   const dispatch = useAppDispatch();
 
-  const data = database.highline.find((high) => high.id === highlitedMarker.id);
+  const { data: highline } = trpc.highline.getById.useQuery(highlitedMarker.id);
   const [isFavorite, setIsFavorite] = useState(false);
   const conquerors = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // TO-DO: get array of coquerors, those should be User: {id: string; profilePic: ?}
 
@@ -70,9 +71,9 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
           <View className="ml-2 flex-1">
             <View className="flex flex-row">
               <View className="flex-1">
-                <Text className="text-xl font-extrabold">{data?.name}</Text>
-                <Text className="text-gray-500">altura: {data?.length}</Text>
-                <Text className="text-gray-500">comprimento: {data?.height}</Text>
+                <Text className="text-xl font-extrabold">{highline?.name}</Text>
+                <Text className="text-gray-500">altura: {highline?.length}</Text>
+                <Text className="text-gray-500">comprimento: {highline?.height}</Text>
               </View>
               <View>
                 <TouchableOpacity className="h-6 w-6" onPress={() => setIsFavorite(!isFavorite)}>
@@ -80,7 +81,7 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
                 </TouchableOpacity>
                 <View
                   className={`mt-2 h-6 w-6 rounded-full ${
-                    data?.isRigged ? 'bg-green-500' : 'bg-red-500'
+                    highline?.isRigged ? 'bg-green-500' : 'bg-red-500'
                   }`}
                 />
               </View>

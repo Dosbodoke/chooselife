@@ -8,6 +8,11 @@ const anchor = z.object({
 });
 
 export const highlineRouter = router({
+  getById: publicProcedure
+    .input(z.string().uuid())
+    .query(async ({ input, ctx }) => {
+      return await ctx.prisma?.highline.findUnique({ where: { uuid: input } });
+    }),
   createHighline: publicProcedure
     .input(
       z.object({

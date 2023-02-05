@@ -37,8 +37,7 @@ const ClusteredMap = forwardRef<ForwardedRef>((props, ref) => {
     isOnMyLocation: false,
     goToMyLocationWasCalled: false,
   });
-  const markers = trpc.marker.all.useQuery();
-  if (markers.status === 'success') console.log(markers.data);
+  const { data: highlines } = trpc.marker.all.useQuery();
 
   useImperativeHandle(ref, () => ({
     goToMyLocation,
@@ -95,20 +94,35 @@ const ClusteredMap = forwardRef<ForwardedRef>((props, ref) => {
   };
 
   const points = useMemo<PointFeature<GeoJsonProperties & PointProperties>[]>(() => {
-    return database?.highline.map((h) => ({
-      type: 'Feature',
-      properties: {
-        cluster: false,
-        category: 'highline',
-        highId: h.id,
-        anchorB: h.anchorB,
-      },
-      geometry: {
-        type: 'Point',
-        coordinates: [h.anchorA.longitude, h.anchorA.latitude],
-      },
-    }));
-  }, [database?.highline]);
+    if (!highlines) return [];
+    return highlines.map((h) => {
+      // TO-DO: certify that has 2 elements
+      // if (h.anchors.length != 2) return
+      let anchorA;
+      let anchorB;
+      if (h.anchors[0].anchorSide === 'A') {
+        anchorA = h.anchors[0];
+        anchorB = h.anchors[1];
+      } else {
+        anchorA = h.anchors[1];
+        anchorB = h.anchors[0];
+      }
+
+      return {
+        type: 'Feature',
+        properties: {
+          cluster: false,
+          category: 'highline',
+          highId: h.uuid,
+          anchorB: anchorB,
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [anchorA.longitude, anchorA.latitude],
+        },
+      };
+    });
+  }, [highlines]);
 
   const { clusters, supercluster } = useSuperCluster({
     points,
