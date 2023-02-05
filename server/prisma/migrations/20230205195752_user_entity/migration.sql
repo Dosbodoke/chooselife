@@ -24,8 +24,5 @@ CREATE TABLE "Highline" (
     CONSTRAINT "Highline_pkey" PRIMARY KEY ("uuid")
 );
 
--- CreateIndex
-CREATE UNIQUE INDEX "HighlineAnchor_highlineId_key" ON "HighlineAnchor"("highlineId");
-
 -- AddForeignKey
 ALTER TABLE "HighlineAnchor" ADD CONSTRAINT "HighlineAnchor_highlineId_fkey" FOREIGN KEY ("highlineId") REFERENCES "Highline"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;

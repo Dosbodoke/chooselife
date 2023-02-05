@@ -19,8 +19,8 @@ export const highlineRouter = router({
         anchorB: anchor,
       })
     )
-    .mutation(({ input, ctx }) => {
-      ctx.prisma?.highline.create({
+    .mutation(async ({ input, ctx }) => {
+      const highline = await ctx.prisma?.highline.create({
         data: {
           name: input.name,
           height: input.height,
@@ -46,5 +46,6 @@ export const highlineRouter = router({
           },
         },
       });
+      return highline;
     }),
 });

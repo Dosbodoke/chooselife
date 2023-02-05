@@ -25,6 +25,7 @@ const LocationPickerScreen = ({ navigation, route }: LocationPickerScreenProps) 
     if (markers.length === 2) {
       navigation.navigate('HighlineFormScreen', {
         lenght: getDistance(markers[0], markers[1]).toString(),
+        markers,
       });
       return;
     }
