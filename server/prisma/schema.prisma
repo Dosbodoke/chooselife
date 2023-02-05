@@ -10,21 +10,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Coordinates {
-  uuid           String           @id @default(uuid())
-  latitude       Float
-  longitude      Float
-  HighlineAnchor HighlineAnchor[]
-}
-
 model HighlineAnchor {
-  uuid          String      @id @default(uuid())
-  description   String
-  coordinates   Coordinates @relation(fields: [coordinatesId], references: [uuid])
-  coordinatesId String
-  anchorSide    AnchorSide  @default(A)
-  highline      Highline    @relation(fields: [highlineId], references: [uuid])
-  highlineId    String      @unique
+  uuid        String     @id @default(uuid())
+  description String
+  latitude    Float
+  longitude   Float
+  anchorSide  AnchorSide @default(A)
+  highline    Highline   @relation(fields: [highlineId], references: [uuid])
+  highlineId  String     @unique
 }
 
 model Highline {

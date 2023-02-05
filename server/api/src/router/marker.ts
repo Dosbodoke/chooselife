@@ -6,10 +6,6 @@ export const markerRouter = router({
     const prismaData = ctx.prisma?.highlineAnchor.findMany({
       where: { anchorSide: "A" },
     });
-    console.log({ prismaData });
     return prismaData;
-  }),
-  foo: publicProcedure.query(({ ctx }) => {
-    return "fooMessage";
   }),
 });
