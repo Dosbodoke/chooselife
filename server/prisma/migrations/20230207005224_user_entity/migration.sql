@@ -25,4 +25,4 @@ CREATE TABLE "Highline" (
 );
 
 -- AddForeignKey
-ALTER TABLE "HighlineAnchor" ADD CONSTRAINT "HighlineAnchor_highlineId_fkey" FOREIGN KEY ("highlineId") REFERENCES "Highline"("uuid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "HighlineAnchor" ADD CONSTRAINT "HighlineAnchor_highlineId_fkey" FOREIGN KEY ("highlineId") REFERENCES "Highline"("uuid") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -16,7 +16,7 @@ model HighlineAnchor {
   latitude    Float
   longitude   Float
   anchorSide  AnchorSide @default(A)
-  highline    Highline   @relation(fields: [highlineId], references: [uuid])
+  highline    Highline   @relation(fields: [highlineId], references: [uuid], onDelete: Cascade)
   highlineId  String
 }
 
