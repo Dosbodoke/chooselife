@@ -1,12 +1,33 @@
+import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 import { SearchSvg } from '@src/assets';
 import type { HomeScreenProps } from '@src/navigation/types';
+import { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { z } from 'zod';
 
 import LastHighline from './LastHighline';
 import NewLocationButton from './NewLocationButton';
-import useLastHighline from './useLastHighline';
 
 type NavigationProp = HomeScreenProps['navigation'];
+
+export const highline = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    length: z.number(),
+    height: z.number(),
+    coords: z
+      .array(
+        z.object({
+          latitude: z.number(),
+          longitude: z.number(),
+        })
+      )
+      .length(2),
+  })
+  .strict();
+
+type Highline = z.infer<typeof highline>;
 
 interface Props {
   onNewLocation: () => void;
@@ -14,7 +35,26 @@ interface Props {
 }
 
 const SearchCard = ({ onNewLocation, navigation }: Props) => {
-  const lastHighline = useLastHighline();
+  const [lastHighline, setLastHighline] = useState<Highline[]>([]);
+  const { getItem, removeItem } = useAsyncStorage('lastHighline');
+
+  const readItemFromStorage = async () => {
+    try {
+      const item = await getItem();
+      if (item !== null) {
+        const parsed = JSON.parse(item);
+        parsed.forEach((i: any) => highline.parse(i));
+        setLastHighline(parsed);
+      }
+    } catch (error) {
+      await removeItem();
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    readItemFromStorage();
+  }, []);
 
   return (
     <>

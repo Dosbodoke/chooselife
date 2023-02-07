@@ -7,9 +7,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { View, Text, TouchableOpacity, Button } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { z } from 'zod';
+import { useAppDispatch } from '@src/redux/hooks';
+import { highlightMarker } from '../mapSlice';
 
 const validationSchema = z.object({
-  name: z.string().min(3).max(15),
+  name: z.string().min(3).max(32),
   height: z.string().regex(/^\d+$/),
   textA: z.string(),
   imagesAnchorA: z.string().array(),
@@ -20,8 +22,21 @@ const validationSchema = z.object({
 type ValidationSchema = z.infer<typeof validationSchema>;
 
 const HighlineFormScreen = ({ navigation, route }: HighlineFormScreenProps) => {
-  // TO-DO: Handle redirect onSucess
-  const mutation = trpc.highline.createHighline.useMutation();
+  const dispatch = useAppDispatch();
+  const mutation = trpc.highline.createHighline.useMutation({
+    onSuccess: (data) => {
+      if (!data) return;
+      dispatch(
+        highlightMarker({
+          type: 'Highline',
+          id: data.uuid,
+          coords: [route.params.markers[0], route.params.markers[1]],
+          shouldTriggerUseQueryRefetch: true,
+        })
+      );
+      navigation.popToTop();
+    },
+  });
 
   const {
     control,
@@ -192,124 +207,6 @@ const HighlineFormScreen = ({ navigation, route }: HighlineFormScreenProps) => {
             <Text className="my-4 text-center text-base font-bold text-white">CADASTRAR VIA</Text>
           </LinearGradient>
         </TouchableOpacity>
-        {/* <Formik
-          validate={(values) => {
-            const result = validationSchema.safeParse(values);
-            if (result.success) return;
-            const errors: Record<string, string> = {};
-            result.error.issues.forEach((error) => {
-              errors[error.path[0]] = error.message;
-            });
-            return errors;
-          }}
-          onSubmit={(values: z.infer<typeof validationSchema>) => {
-            const mutation = trpc.highline.createHighline.useMutation();
-            trpc.highline.createHighline.useMutation;
-
-            mutation.mutate({
-              name: values.name,
-              height: parseInt(values.height),
-              length: parseInt(route.params.lenght),
-              isRigged: false,
-              anchorA: {
-                description: values.textA,
-                latitude: route.params.markers[0].latitude,
-                longitude: route.params.markers[0].longitude,
-              },
-              anchorB: {
-                description: values.textB,
-                latitude: route.params.markers[1].latitude,
-                longitude: route.params.markers[1].longitude,
-              },
-            });
-          }}>
-          {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => {
-            return (
-              <View>
-                <TextInput
-                  touched={Boolean(touched.name)}
-                  error={errors.name}
-                  value={values.name}
-                  onChangeText={handleChange('name')}
-                  onBlur={handleBlur('name')}
-                  label="Nome"
-                  accessibilityHint="Nome da via"
-                />
-                <View className="flex flex-row items-center">
-                  <TextInput
-                    isNumeric
-                    disabled
-                    suffix="m"
-                    value={route.params.lenght}
-                    onChangeText={handleChange('lenght')}
-                    onBlur={handleBlur('lenght')}
-                    label="Comprimento"
-                    accessibilityHint="Comprimento da via"
-                  />
-                  <View className="flex-0 mx-2 h-[1] w-6 bg-gray-600" />
-                  <TextInput
-                    isNumeric
-                    suffix="m"
-                    touched={Boolean(touched.height)}
-                    error={errors.height}
-                    value={values.height}
-                    onChangeText={handleChange('height')}
-                    onBlur={handleBlur('height')}
-                    label="Altura"
-                    accessibilityHint="Altura da via"
-                  />
-                </View>
-                <Divider />
-                <View>
-                  <Text className="flex-1 text-xl font-bold">Ancoragem 🅰️</Text>
-                  <Text className="text-base text-gray-600">
-                    Insira imagens e informações sobre ancoragem A para ajudar em montagens futuras
-                  </Text>
-                  <ImageInput />
-                  <TextArea
-                    value={values.textA}
-                    accessibilityHint="Decrição ancoragem A"
-                    onChangeText={handleChange('textA')}
-                    onBlur={handleBlur('textA')}
-                    placeholder={
-                      'Exemplo de descrição:\n🪨 ancoragem de bolt\n⚠️ É necessario rapel para acesso'
-                    }
-                  />
-                </View>
-                <Divider />
-                <View>
-                  <Text className="flex-1 text-xl font-bold">Ancoragem 🅱️</Text>
-                  <Text className="text-base text-gray-600">
-                    Insira imagens e informações sobre ancoragem A para ajudar em montagens futuras
-                  </Text>
-                  <ImageInput />
-                  <TextArea
-                    value={values.textB}
-                    accessibilityHint="Decrição ancoragem B"
-                    onChangeText={handleChange('textB')}
-                    onBlur={handleBlur('textB')}
-                    placeholder={
-                      'Exemplo de descrição:\n🌲 ancoragem natural\n🪢 levar 6 metros de corda'
-                    }
-                  />
-                </View>
-                <TouchableOpacity
-                  className="mx-auto mt-4 mb-8 w-3/4 rounded-lg"
-                  onPress={() => handleSubmit()}>
-                  <LinearGradient
-                    className="rounded-lg"
-                    colors={['#4caf50', '#2196f3']}
-                    start={{ x: -1, y: 1 }}
-                    end={{ x: 3, y: 4 }}>
-                    <Text className="my-4 text-center text-base font-bold text-white">
-                      CADASTRAR VIA
-                    </Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-            );
-          }}
-        </Formik> */}
       </KeyboardAwareScrollView>
     </View>
   );

@@ -1,10 +1,10 @@
+import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 import { HeartFilledSvg, HeartOutlinedSvg } from '@src/assets';
 import { WINDOW_HEIGHT } from '@src/constants';
-import database from '@src/database';
 import type { HomeScreenProps } from '@src/navigation/types';
 import { useAppDispatch } from '@src/redux/hooks';
 import { trpc } from '@src/utils/trpc';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, Image, ScrollView } from 'react-native';
 import {
   Directions,
@@ -30,8 +30,40 @@ interface Props {
 
 const DetailCard = ({ highlitedMarker, navigation }: Props) => {
   const dispatch = useAppDispatch();
+  const { getItem, setItem, removeItem } = useAsyncStorage('lastHighline');
 
-  const { data: highline } = trpc.highline.getById.useQuery(highlitedMarker.id);
+  const { data: highline, isFetchedAfterMount } = trpc.highline.getById.useQuery(
+    highlitedMarker.id
+  );
+
+  //TO-DO: Create a hook "useLastHighline" with tests and type-safety
+  async function updateStorageWithNewHighline() {
+    try {
+      const highlines = await getItem();
+      if (!highline) return;
+      const newHighline = {
+        id: highline.uuid,
+        name: highline.name,
+        height: highline.height,
+        length: highline.length,
+        coords: highlitedMarker.coords,
+      };
+      const updatedStorage = [newHighline];
+      if (highlines !== null) {
+        const parsed = JSON.parse(highlines);
+        const parsedTail = parsed.at(-1);
+        if (parsedTail && parsedTail.id !== highline?.uuid) updatedStorage.push(parsedTail);
+      }
+      await setItem(JSON.stringify(updatedStorage));
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  useEffect(() => {
+    updateStorageWithNewHighline();
+  }, [isFetchedAfterMount]);
+
   const [isFavorite, setIsFavorite] = useState(false);
   const conquerors = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // TO-DO: get array of coquerors, those should be User: {id: string; profilePic: ?}
 

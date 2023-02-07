@@ -1,9 +1,9 @@
 import { HistorySvg, HeightSvg, LengthSvg } from '@src/assets';
-import type { Highline } from '@src/database';
 import { useAppDispatch } from '@src/redux/hooks';
 import { TouchableOpacity, Text, View } from 'react-native';
 
 import { highlightMarker } from '../../../../mapSlice';
+import { type Highline } from './SearchCard';
 
 interface Props {
   highline: Highline;
@@ -13,11 +13,12 @@ const LastHighline = ({ highline }: Props) => {
   const dispatch = useAppDispatch();
 
   const handleOnPress = () => {
+    console.log({ highline });
     dispatch(
       highlightMarker({
         type: 'Highline',
         id: highline.id,
-        coords: [highline.anchorA, highline.anchorB],
+        coords: highline.coords,
       })
     );
   };

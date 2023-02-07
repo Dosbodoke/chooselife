@@ -37,7 +37,7 @@ const ClusteredMap = forwardRef<ForwardedRef>((props, ref) => {
     isOnMyLocation: false,
     goToMyLocationWasCalled: false,
   });
-  const { data: highlines } = trpc.marker.all.useQuery();
+  const { data: highlines, refetch } = trpc.marker.all.useQuery();
 
   useImperativeHandle(ref, () => ({
     goToMyLocation,
@@ -96,7 +96,7 @@ const ClusteredMap = forwardRef<ForwardedRef>((props, ref) => {
   const points = useMemo<PointFeature<GeoJsonProperties & PointProperties>[]>(() => {
     if (!highlines) return [];
     return highlines.map((h) => {
-      // TO-DO: certify that has 2 elements
+      // TO-DO: certify that has 2 elements and improve this logic
       // if (h.anchors.length != 2) return
       let anchorA;
       let anchorB;
@@ -122,7 +122,7 @@ const ClusteredMap = forwardRef<ForwardedRef>((props, ref) => {
         },
       };
     });
-  }, [highlines]);
+  }, [highlines, highlitedMarker?.shouldTriggerUseQueryRefetch]);
 
   const { clusters, supercluster } = useSuperCluster({
     points,
@@ -134,6 +134,7 @@ const ClusteredMap = forwardRef<ForwardedRef>((props, ref) => {
   // Handle marker highlightning
   useEffect(() => {
     if (highlitedMarker === null) return;
+    if (highlitedMarker.shouldTriggerUseQueryRefetch) refetch();
     mapRef.current?.fitToCoordinates(highlitedMarker.coords, {
       edgePadding: {
         top: 200,
