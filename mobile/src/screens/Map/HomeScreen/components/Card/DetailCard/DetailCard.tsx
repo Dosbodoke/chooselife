@@ -20,6 +20,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { HighlitedMarker, minimizeMarker } from '../../../../mapSlice';
+import { type Highline } from '../SearchCard/SearchCard';
 
 type NavigationProp = HomeScreenProps['navigation'];
 
@@ -51,8 +52,8 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
       const updatedStorage = [newHighline];
       if (highlines !== null) {
         const parsed = JSON.parse(highlines);
-        const parsedTail = parsed.at(-1);
-        if (parsedTail && parsedTail.id !== highline?.uuid) updatedStorage.push(parsedTail);
+        const differentVisitedHighline = parsed.find((p: Highline) => p.id !== highline.uuid);
+        if (differentVisitedHighline) updatedStorage.push(differentVisitedHighline);
       }
       await setItem(JSON.stringify(updatedStorage));
     } catch (error) {

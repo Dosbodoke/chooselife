@@ -6,7 +6,7 @@ import { Camera, LatLng } from 'react-native-maps';
 export interface HighlitedMarker {
   type: 'Highline';
   id: string;
-  coords: [LatLng, LatLng];
+  coords: LatLng[];
   shouldTriggerUseQueryRefetch?: boolean;
 }
 

@@ -27,7 +27,7 @@ export const highline = z
   })
   .strict();
 
-type Highline = z.infer<typeof highline>;
+export type Highline = z.infer<typeof highline>;
 
 interface Props {
   onNewLocation: () => void;

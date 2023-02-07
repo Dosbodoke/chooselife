@@ -74,6 +74,7 @@ const HighlineFormScreen = ({ navigation, route }: HighlineFormScreenProps) => {
     });
   };
 
+  //TO-DO: Handle onInvalid
   const onInvalid: SubmitErrorHandler<ValidationSchema> = (errors) => console.log({ errors });
 
   return (
