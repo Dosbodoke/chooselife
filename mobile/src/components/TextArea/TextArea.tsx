@@ -15,6 +15,7 @@ interface Props {
   accessibilityHint: string;
   disabled?: true;
   placeholder?: string;
+  isDirty?: boolean;
   onChangeText: (e: string) => void;
   onBlur: (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
 }
@@ -26,14 +27,13 @@ const TextArea = ({
   accessibilityHint,
   disabled,
   placeholder,
+  isDirty,
   onChangeText,
   onBlur,
 }: Props) => {
-  const [hasChanged, setHasChanged] = useState(false);
-
   function getStatusClass(classes: { neutral: string; error: string; success: string }): string {
     if (touched && error) return classes.error;
-    if (hasChanged && !error) return classes.success;
+    if (isDirty && !error) return classes.success;
     return classes.neutral;
   }
 
@@ -50,7 +50,6 @@ const TextArea = ({
           multiline
           textAlignVertical="top"
           onChangeText={(value) => {
-            if (hasChanged === false) setHasChanged(true);
             onChangeText(value);
           }}
           onEndEditing={(e) => onChangeText(e.nativeEvent.text.trim())}

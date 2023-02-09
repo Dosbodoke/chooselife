@@ -1,5 +1,5 @@
 import { StackScreenProps } from '@react-navigation/stack';
-import { Camera } from 'react-native-maps';
+import { Camera, LatLng } from 'react-native-maps';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -11,6 +11,7 @@ export type RootStackParamList = {
   };
   HighlineFormScreen: {
     lenght: string;
+    markers: LatLng[];
   };
 };
 

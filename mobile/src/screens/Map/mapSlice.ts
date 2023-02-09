@@ -1,12 +1,13 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Coordinates } from '@src/database';
+// import { Coordinates } from '@src/database';
 import { RootState } from '@src/redux/store';
-import { Camera } from 'react-native-maps';
+import { Camera, LatLng } from 'react-native-maps';
 
 export interface HighlitedMarker {
   type: 'Highline';
   id: string;
-  coords: Coordinates[];
+  coords: LatLng[];
+  shouldTriggerUseQueryRefetch?: boolean;
 }
 
 export type MapType = 'standard' | 'satellite' | 'terrain';
@@ -30,10 +31,12 @@ export const mapSlice = createSlice({
   initialState,
   reducers: {
     highlightMarker: (state, action: PayloadAction<HighlitedMarker>) => {
+      const { id, coords, shouldTriggerUseQueryRefetch } = action.payload;
       state.highlitedMarker = {
         type: 'Highline',
-        id: action.payload.id,
-        coords: action.payload.coords,
+        id: id,
+        coords: coords,
+        shouldTriggerUseQueryRefetch: shouldTriggerUseQueryRefetch,
       };
     },
     minimizeMarker: (state) => {

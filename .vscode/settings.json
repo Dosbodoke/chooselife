@@ -2,4 +2,6 @@
   "eslint.workingDirectories": [
     "./mobile", 
   ],
+  "editor.formatOnSave": true
+
 }

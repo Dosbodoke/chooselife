@@ -1,0 +1,35 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model HighlineAnchor {
+  uuid        String     @id @default(uuid())
+  description String
+  latitude    Float
+  longitude   Float
+  anchorSide  AnchorSide @default(A)
+  highline    Highline   @relation(fields: [highlineId], references: [uuid], onDelete: Cascade)
+  highlineId  String
+}
+
+model Highline {
+  uuid     String           @id @default(uuid())
+  name     String
+  height   Int
+  length   Int
+  isRigged Boolean
+  anchors  HighlineAnchor[]
+}
+
+enum AnchorSide {
+  A
+  B
+}

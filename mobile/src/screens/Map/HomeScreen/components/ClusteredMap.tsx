@@ -13,6 +13,8 @@ import { regionToBoundingBox, getMyLocation } from '../../utils';
 import ClusteredMarker from './Marker/ClusteredMarker';
 import HighlineMarker from './Marker/HighlineMarker';
 
+import { trpc } from '../../../../utils/trpc';
+
 interface PointProperties {
   cluster: boolean;
   category: string;
@@ -35,6 +37,7 @@ const ClusteredMap = forwardRef<ForwardedRef>((props, ref) => {
     isOnMyLocation: false,
     goToMyLocationWasCalled: false,
   });
+  const { data: highlines, refetch } = trpc.marker.all.useQuery();
 
   useImperativeHandle(ref, () => ({
     goToMyLocation,
@@ -91,20 +94,35 @@ const ClusteredMap = forwardRef<ForwardedRef>((props, ref) => {
   };
 
   const points = useMemo<PointFeature<GeoJsonProperties & PointProperties>[]>(() => {
-    return database?.highline.map((h) => ({
-      type: 'Feature',
-      properties: {
-        cluster: false,
-        category: 'highline',
-        highId: h.id,
-        anchorB: h.anchorB,
-      },
-      geometry: {
-        type: 'Point',
-        coordinates: [h.anchorA.longitude, h.anchorA.latitude],
-      },
-    }));
-  }, [database?.highline]);
+    if (!highlines) return [];
+    return highlines.map((h) => {
+      // TO-DO: certify that has 2 elements and improve this logic
+      // if (h.anchors.length != 2) return
+      let anchorA;
+      let anchorB;
+      if (h.anchors[0].anchorSide === 'A') {
+        anchorA = h.anchors[0];
+        anchorB = h.anchors[1];
+      } else {
+        anchorA = h.anchors[1];
+        anchorB = h.anchors[0];
+      }
+
+      return {
+        type: 'Feature',
+        properties: {
+          cluster: false,
+          category: 'highline',
+          highId: h.uuid,
+          anchorB: anchorB,
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [anchorA.longitude, anchorA.latitude],
+        },
+      };
+    });
+  }, [highlines, highlitedMarker?.shouldTriggerUseQueryRefetch]);
 
   const { clusters, supercluster } = useSuperCluster({
     points,
@@ -116,6 +134,7 @@ const ClusteredMap = forwardRef<ForwardedRef>((props, ref) => {
   // Handle marker highlightning
   useEffect(() => {
     if (highlitedMarker === null) return;
+    if (highlitedMarker.shouldTriggerUseQueryRefetch) refetch();
     mapRef.current?.fitToCoordinates(highlitedMarker.coords, {
       edgePadding: {
         top: 200,

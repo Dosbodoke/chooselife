@@ -1,9 +1,10 @@
+import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 import { HeartFilledSvg, HeartOutlinedSvg } from '@src/assets';
 import { WINDOW_HEIGHT } from '@src/constants';
-import database from '@src/database';
 import type { HomeScreenProps } from '@src/navigation/types';
 import { useAppDispatch } from '@src/redux/hooks';
-import { useState } from 'react';
+import { trpc } from '@src/utils/trpc';
+import { useEffect, useState } from 'react';
 import { View, Text, Image, ScrollView } from 'react-native';
 import {
   Directions,
@@ -19,6 +20,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { HighlitedMarker, minimizeMarker } from '../../../../mapSlice';
+import { type Highline } from '../SearchCard/SearchCard';
 
 type NavigationProp = HomeScreenProps['navigation'];
 
@@ -29,8 +31,40 @@ interface Props {
 
 const DetailCard = ({ highlitedMarker, navigation }: Props) => {
   const dispatch = useAppDispatch();
+  const { getItem, setItem, removeItem } = useAsyncStorage('lastHighline');
 
-  const data = database.highline.find((high) => high.id === highlitedMarker.id);
+  const { data: highline, isFetchedAfterMount } = trpc.highline.getById.useQuery(
+    highlitedMarker.id
+  );
+
+  //TO-DO: Create a hook "useLastHighline" with tests and type-safety
+  async function updateStorageWithNewHighline() {
+    try {
+      const highlines = await getItem();
+      if (!highline) return;
+      const newHighline = {
+        id: highline.uuid,
+        name: highline.name,
+        height: highline.height,
+        length: highline.length,
+        coords: highlitedMarker.coords,
+      };
+      const updatedStorage = [newHighline];
+      if (highlines !== null) {
+        const parsed = JSON.parse(highlines);
+        const differentVisitedHighline = parsed.find((p: Highline) => p.id !== highline.uuid);
+        if (differentVisitedHighline) updatedStorage.push(differentVisitedHighline);
+      }
+      await setItem(JSON.stringify(updatedStorage));
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  useEffect(() => {
+    updateStorageWithNewHighline();
+  }, [isFetchedAfterMount]);
+
   const [isFavorite, setIsFavorite] = useState(false);
   const conquerors = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // TO-DO: get array of coquerors, those should be User: {id: string; profilePic: ?}
 
@@ -70,9 +104,9 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
           <View className="ml-2 flex-1">
             <View className="flex flex-row">
               <View className="flex-1">
-                <Text className="text-xl font-extrabold">{data?.name}</Text>
-                <Text className="text-gray-500">altura: {data?.length}</Text>
-                <Text className="text-gray-500">comprimento: {data?.height}</Text>
+                <Text className="text-xl font-extrabold">{highline?.name}</Text>
+                <Text className="text-gray-500">altura: {highline?.length}</Text>
+                <Text className="text-gray-500">comprimento: {highline?.height}</Text>
               </View>
               <View>
                 <TouchableOpacity className="h-6 w-6" onPress={() => setIsFavorite(!isFavorite)}>
@@ -80,7 +114,7 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
                 </TouchableOpacity>
                 <View
                   className={`mt-2 h-6 w-6 rounded-full ${
-                    data?.isRigged ? 'bg-green-500' : 'bg-red-500'
+                    highline?.isRigged ? 'bg-green-500' : 'bg-red-500'
                   }`}
                 />
               </View>

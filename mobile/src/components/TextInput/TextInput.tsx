@@ -18,6 +18,7 @@ interface Props {
   isNumeric?: true;
   disabled?: true;
   suffix?: string;
+  isDirty?: boolean;
   onChangeText: (e: string) => void;
   onBlur: (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
 }
@@ -31,16 +32,16 @@ const TextInput = ({
   isNumeric,
   disabled,
   suffix,
+  isDirty,
   onChangeText,
   onBlur,
 }: Props) => {
   const [isFocused, setIsFocused] = useState(false);
-  const [hasChanged, setHasChanged] = useState(false);
   const showValue = Boolean(value) || isFocused;
 
   function getStatusClass(classes: { neutral: string; error: string; success: string }): string {
     if (touched && error) return classes.error;
-    if (hasChanged && !error) return classes.success;
+    if (isDirty && !error) return classes.success;
     return classes.neutral;
   }
 
@@ -76,7 +77,6 @@ const TextInput = ({
               keyboardType={isNumeric ? 'number-pad' : 'default'}
               returnKeyType="done"
               onChangeText={(value) => {
-                if (hasChanged === false) setHasChanged(true);
                 let normalizedValue = value.replace(/\s+/g, ' ');
                 if (isNumeric) {
                   normalizedValue = normalizedValue.replace(/[^0-9]/g, '');
