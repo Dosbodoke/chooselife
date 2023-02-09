@@ -1,6 +1,6 @@
-import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 import { HeartFilledSvg, HeartOutlinedSvg } from '@src/assets';
 import { WINDOW_HEIGHT } from '@src/constants';
+import useLastHighline from '@src/hooks/useLastHighline';
 import type { HomeScreenProps } from '@src/navigation/types';
 import { useAppDispatch } from '@src/redux/hooks';
 import { trpc } from '@src/utils/trpc';
@@ -20,7 +20,6 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { HighlitedMarker, minimizeMarker } from '../../../../mapSlice';
-import { type Highline } from '../SearchCard/SearchCard';
 
 type NavigationProp = HomeScreenProps['navigation'];
 
@@ -31,38 +30,21 @@ interface Props {
 
 const DetailCard = ({ highlitedMarker, navigation }: Props) => {
   const dispatch = useAppDispatch();
-  const { getItem, setItem, removeItem } = useAsyncStorage('lastHighline');
+  const { updateStorageWithNewHighline } = useLastHighline();
 
   const { data: highline, isFetchedAfterMount } = trpc.highline.getById.useQuery(
     highlitedMarker.id
   );
 
-  //TO-DO: Create a hook "useLastHighline" with tests and type-safety
-  async function updateStorageWithNewHighline() {
-    try {
-      const highlines = await getItem();
-      if (!highline) return;
-      const newHighline = {
-        id: highline.uuid,
-        name: highline.name,
-        height: highline.height,
-        length: highline.length,
-        coords: highlitedMarker.coords,
-      };
-      const updatedStorage = [newHighline];
-      if (highlines !== null) {
-        const parsed = JSON.parse(highlines);
-        const differentVisitedHighline = parsed.find((p: Highline) => p.id !== highline.uuid);
-        if (differentVisitedHighline) updatedStorage.push(differentVisitedHighline);
-      }
-      await setItem(JSON.stringify(updatedStorage));
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
   useEffect(() => {
-    updateStorageWithNewHighline();
+    if (!highline) return;
+    updateStorageWithNewHighline({
+      name: highline.name,
+      height: highline.height,
+      length: highline.length,
+      id: highline.uuid,
+      coords: highlitedMarker.coords,
+    });
   }, [isFetchedAfterMount]);
 
   const [isFavorite, setIsFavorite] = useState(false);
@@ -79,7 +61,10 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
         easing: Easing.in(Easing.quad),
       });
     })
-    .onEnd(() => navigation.navigate('DetailScreen'));
+    .onEnd(() => {
+      if (!highline) return;
+      navigation.navigate('DetailScreen');
+    });
 
   const FlingDown = Gesture.Fling()
     .direction(Directions.DOWN)
