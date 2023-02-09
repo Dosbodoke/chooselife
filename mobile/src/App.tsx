@@ -1,7 +1,7 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Provider } from 'react-redux';
-import { TRPCProvider } from "./utils/trpc"
+import { TRPCProvider } from './utils/trpc';
 import 'react-native-gesture-handler';
 
 import { RootStackParamList } from './navigation/types';
