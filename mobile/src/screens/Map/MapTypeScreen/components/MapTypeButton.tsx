@@ -1,5 +1,5 @@
 import { MapType } from '../../mapSlice';
-import { TouchableOpacity, Text, Image, ImageSourcePropType } from 'react-native';
+import { View, TouchableOpacity, Text, Image, ImageSourcePropType } from 'react-native';
 
 interface Props {
   onPress: () => void;
@@ -16,10 +16,9 @@ const MapTypeButton = ({ onPress, type, selectedType, image, title }: Props) => 
 
   return (
     <TouchableOpacity onPress={onPress}>
-      <Image
-        className={`h-20 w-20 rounded-lg ${isSelected && highlitedImageStyle}`}
-        source={image}
-      />
+      <View className={`h-20 w-20 rounded-lg ${isSelected && highlitedImageStyle}`}>
+        <Image className="h-full w-full" source={image} />
+      </View>
       <Text className={`my-2 text-center ${isSelected && highlitedTextStyle}`}>{title}</Text>
     </TouchableOpacity>
   );
