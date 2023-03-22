@@ -96,7 +96,7 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
               </View>
               <View>
                 <TouchableOpacity className="h-6 w-6" onPress={() => toggleFavorite()}>
-                  {<HeartSvg />}
+                  {<HeartSvg strokeColor="#000" />}
                 </TouchableOpacity>
                 <View
                   className={`mt-2 h-6 w-6 rounded-full ${
