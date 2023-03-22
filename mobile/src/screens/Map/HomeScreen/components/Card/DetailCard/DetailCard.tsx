@@ -63,7 +63,7 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
     })
     .onEnd(() => {
       if (!highline) return;
-      navigation.navigate('DetailScreen');
+      navigation.navigate('Details', { highline });
     });
 
   const FlingDown = Gesture.Fling()
