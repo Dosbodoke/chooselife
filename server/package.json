@@ -6,7 +6,8 @@
   "main": "index.ts",
   "scripts": {
     "dev": "node --watch --experimental-specifier-resolution=node --loader ts-node/esm ./index.ts",
-    "db:migrate": "npx prisma migrate dev --name user-entity --create-only && yarn prisma generate",
+    "dev:deploy": "prisma migrate deploy && yarn prisma generate && yarn run dev",
+    "db:migrate": "npx prisma migrate dev --name chooselife --create-only && yarn prisma generate",
     "db:push": "npx prisma db push"
   },
   "dependencies": {

@@ -1,5 +1,24 @@
 version: "3.9"
 services:
+  server:
+    build:
+      context: server
+      dockerfile: Dockerfile
+    container_name: chooselife_server
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: chooselife
+      POSTGRES_HOST: postgres
+      POSTGRES_HOSTNAME: 127.0.1.1
+      DATABASE_URL: postgresql://postgres:postgres@chooselife_postgres:5432/chooselife?schema=public
+    command: dev:deploy
+
   postgres:
     image: postgres:latest
     container_name: chooselife_postgres
