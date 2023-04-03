@@ -1,4 +1,4 @@
-import Svg, { Path, Circle, SvgProps } from 'react-native-svg';
+import Svg, { Path, Circle, SvgProps, LinearGradient, Defs, Stop } from 'react-native-svg';
 
 import MapSatellitePng from './map_satellite.png';
 import MapStandardPng from './map_standard.png';
@@ -92,9 +92,9 @@ export const MapTypeSvg = (props: SvgProps) => {
   );
 };
 
-export const HeartFilledSvg = () => (
+export const HeartFilledSvg = (props: SvgProps) => (
   // SVG Link => https://www.svgrepo.com/svg/111213/like
-  <Svg viewBox="0 0 50 50">
+  <Svg viewBox="0 0 50 50" {...props}>
     <Path
       fill="#d75a4a"
       d="M24.85 10.126c2.018-4.783 6.628-8.125 11.99-8.125 7.223 0 12.425 6.179 13.079 13.543 0 0 .353 1.828-.424 5.119-1.058 4.482-3.545 8.464-6.898 11.503L24.85 48 7.402 32.165c-3.353-3.038-5.84-7.021-6.898-11.503-.777-3.291-.424-5.119-.424-5.119C.734 8.179 5.936 2 13.159 2c5.363 0 9.673 3.343 11.691 8.126z"
@@ -102,15 +102,15 @@ export const HeartFilledSvg = () => (
   </Svg>
 );
 
-export const HeartOutlinedSvg = () => (
+export const HeartOutlinedSvg = (props: SvgProps) => (
   // https://www.svgrepo.com/svg/138916/like
-  <Svg viewBox="0 0 51.997 51.997">
+  <Svg viewBox="0 0 51.997 51.997" {...props}>
     <Path
-      fill="#000"
+      fill="currentColor"
       d="M51.911 16.242c-.759-8.354-6.672-14.415-14.072-14.415-4.93 0-9.444 2.653-11.984 6.905-2.517-4.307-6.846-6.906-11.697-6.906C6.759 1.826.845 7.887.087 16.241c-.06.369-.306 2.311.442 5.478 1.078 4.568 3.568 8.723 7.199 12.013l18.115 16.439 18.426-16.438c3.631-3.291 6.121-7.445 7.199-12.014.748-3.166.502-5.108.443-5.477zm-2.39 5.019c-.984 4.172-3.265 7.973-6.59 10.985L25.855 47.481 9.072 32.25c-3.331-3.018-5.611-6.818-6.596-10.99-.708-2.997-.417-4.69-.416-4.701l.015-.101c.65-7.319 5.731-12.632 12.083-12.632 4.687 0 8.813 2.88 10.771 7.515l.921 2.183.921-2.183c1.927-4.564 6.271-7.514 11.069-7.514 6.351 0 11.433 5.313 12.096 12.727.002.016.293 1.71-.415 4.707z"
     />
     <Path
-      fill="#000"
+      fill="currentColor"
       d="M15.999 7.904c-5.514 0-10 4.486-10 10a1 1 0 1 0 2 0c0-4.411 3.589-8 8-8a1 1 0 1 0 0-2z"
     />
   </Svg>
@@ -152,11 +152,60 @@ export const ArrowBackSvg = (props: SvgProps) => (
   </Svg>
 );
 
+export const ArrowLeftSvg = (props: SvgProps) => {
+  // icon:arrow-left-s-line | Remix Icon https://remixicon.com/ | Remix Design
+  return (
+    <Svg viewBox="0 0 24 24" fill="currentColor" height="100%" width="100%" {...props}>
+      <Path d="M10.828 12l4.95 4.95-1.414 1.414L8 12l6.364-6.364 1.414 1.414z" />
+    </Svg>
+  );
+};
+
 export const ImageUploadSvg = (props: SvgProps) => {
   // icon:image-upload | Unicons https://iconscout.com/unicons | Iconscout
   return (
     <Svg viewBox="0 0 24 24" fill="currentColor" height="100%" width="100%" {...props}>
       <Path d="M19 13a1 1 0 00-1 1v.38l-1.48-1.48a2.79 2.79 0 00-3.93 0l-.7.7-2.48-2.48a2.85 2.85 0 00-3.93 0L4 12.6V7a1 1 0 011-1h7a1 1 0 000-2H5a3 3 0 00-3 3v12a3 3 0 003 3h12a3 3 0 003-3v-5a1 1 0 00-1-1zM5 20a1 1 0 01-1-1v-3.57l2.9-2.9a.79.79 0 011.09 0l3.17 3.17 4.3 4.3zm13-1a.89.89 0 01-.18.53L13.31 15l.7-.7a.77.77 0 011.1 0L18 17.21zm4.71-14.71l-3-3a1 1 0 00-.33-.21 1 1 0 00-.76 0 1 1 0 00-.33.21l-3 3a1 1 0 001.42 1.42L18 4.41V10a1 1 0 002 0V4.41l1.29 1.3a1 1 0 001.42 0 1 1 0 000-1.42z" />
+    </Svg>
+  );
+};
+
+export const ShareSvg = (props: SvgProps) => {
+  // icon:share | Feathericons https://feathericons.com/ | Cole Bemis
+  return (
+    <Svg
+      fill="none"
+      stroke="#fff"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+      height="100%"
+      width="100%"
+      {...props}>
+      <Path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
+    </Svg>
+  );
+};
+
+export const GoldenCrownSvg = (props: SvgProps) => {
+  // icon:golden-crown-fill | svgrepo https://www.svgrepo.com/svg/410403/crown | svgrepo
+  return (
+    <Svg width="24px" height="24px" viewBox="0 -6 34 34" {...props}>
+      <Defs>
+        <LinearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="a">
+          <Stop stopColor="#FFC923" offset="0%" />
+          <Stop stopColor="#FFAD41" offset="100%" />
+        </LinearGradient>
+      </Defs>
+      <Path
+        d="M1480.917 170.22c.422.214.755.57.936 1.007l3.795 9.178 7.796-9.5a2.022 2.022 0 012.813-.293c.47.373.743.936.743 1.531v16.904c0 1.63-1.343 2.953-3 2.953h-28c-1.657 0-3-1.322-3-2.953v-16.904c0-1.088.895-1.97 2-1.97.604 0 1.176.27 1.556.732l7.798 9.5 3.794-9.178a2.01 2.01 0 012.459-1.134l.147.053.163.073z"
+        transform="translate(-1513 -2041) translate(50 1871)"
+        fill="url(#a)"
+        fillRule="nonzero"
+        stroke="none"
+        strokeWidth={1}
+      />
     </Svg>
   );
 };

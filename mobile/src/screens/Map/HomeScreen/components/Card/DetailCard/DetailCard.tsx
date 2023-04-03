@@ -1,10 +1,4 @@
-import { HeartFilledSvg, HeartOutlinedSvg } from '@src/assets';
-import { WINDOW_HEIGHT } from '@src/constants';
-import useLastHighline from '@src/hooks/useLastHighline';
-import type { HomeScreenProps } from '@src/navigation/types';
-import { useAppDispatch } from '@src/redux/hooks';
-import { trpc } from '@src/utils/trpc';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { View, Text, Image, ScrollView } from 'react-native';
 import {
   Directions,
@@ -19,6 +13,13 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 
+import { WINDOW_HEIGHT } from '@src/constants';
+import useLastHighline from '@src/hooks/useLastHighline';
+import useIsFavorite from '@src/hooks/useIsFavorite';
+import type { HomeScreenProps } from '@src/navigation/types';
+import { useAppDispatch } from '@src/redux/hooks';
+import { trpc } from '@src/utils/trpc';
+
 import { HighlitedMarker, minimizeMarker } from '../../../../mapSlice';
 
 type NavigationProp = HomeScreenProps['navigation'];
@@ -31,6 +32,7 @@ interface Props {
 const DetailCard = ({ highlitedMarker, navigation }: Props) => {
   const dispatch = useAppDispatch();
   const { updateStorageWithNewHighline } = useLastHighline();
+  const [HeartSvg, toggleFavorite] = useIsFavorite(false);
 
   const { data: highline, isFetchedAfterMount } = trpc.highline.getById.useQuery(
     highlitedMarker.id
@@ -47,7 +49,6 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
     });
   }, [isFetchedAfterMount]);
 
-  const [isFavorite, setIsFavorite] = useState(false);
   const conquerors = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // TO-DO: get array of coquerors, those should be User: {id: string; profilePic: ?}
 
   const paddingBottom = useSharedValue<number>(0);
@@ -63,7 +64,7 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
     })
     .onEnd(() => {
       if (!highline) return;
-      navigation.navigate('DetailScreen');
+      navigation.navigate('Details', { highline });
     });
 
   const FlingDown = Gesture.Fling()
@@ -94,8 +95,8 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
                 <Text className="text-gray-500">comprimento: {highline?.height}</Text>
               </View>
               <View>
-                <TouchableOpacity className="h-6 w-6" onPress={() => setIsFavorite(!isFavorite)}>
-                  {isFavorite ? <HeartFilledSvg /> : <HeartOutlinedSvg />}
+                <TouchableOpacity className="h-6 w-6" onPress={() => toggleFavorite()}>
+                  {<HeartSvg strokeColor="#000" />}
                 </TouchableOpacity>
                 <View
                   className={`mt-2 h-6 w-6 rounded-full ${
@@ -108,7 +109,7 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
               <Text className="mt-2 text-lg font-bold">Conquistadores</Text>
               <ScrollView horizontal className="py-2">
                 {conquerors.length &&
-                  conquerors.map((conquerer, idx) => (
+                  conquerors.map((conquerer) => (
                     <TouchableOpacity
                       key={conquerer}
                       className="mr-1 h-12 w-12 rounded-full bg-slate-800"

@@ -37,7 +37,7 @@ export default function App() {
               options={{ presentation: 'transparentModal' }}
             />
             <Stack.Screen
-              name="DetailScreen"
+              name="Details"
               component={DetailScreen}
               options={{ presentation: 'card' }}
             />
