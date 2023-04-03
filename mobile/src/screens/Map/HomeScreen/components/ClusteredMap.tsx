@@ -1,10 +1,8 @@
 import { MIN_MARKER_SIZE, INITIAL_REGION } from '@src/constants';
-import type { Coordinates } from '@src/database';
-import database from '@src/database';
 import { useAppSelector } from '@src/redux/hooks';
 import { BBox, GeoJsonProperties } from 'geojson';
 import { useState, useRef, useMemo, useEffect, forwardRef, useImperativeHandle } from 'react';
-import MapView, { Details, Camera, Region } from 'react-native-maps';
+import MapView, { Details, Camera, Region, type LatLng } from 'react-native-maps';
 import { PointFeature } from 'supercluster';
 import useSuperCluster from 'use-supercluster';
 
@@ -19,7 +17,7 @@ interface PointProperties {
   cluster: boolean;
   category: string;
   highId: string;
-  anchorB: Coordinates;
+  anchorB: LatLng;
 }
 
 interface ForwardedRef {
@@ -80,7 +78,7 @@ const ClusteredMap = forwardRef<ForwardedRef>((props, ref) => {
     // leaves && fitMapToCoords(leaves?.map((l): Coordinates => l.properties.anchorB));
     leaves &&
       mapRef.current?.fitToCoordinates(
-        leaves?.map((l): Coordinates => l.properties.anchorB),
+        leaves?.map((l): LatLng => l.properties.anchorB),
         {
           edgePadding: {
             top: 200,

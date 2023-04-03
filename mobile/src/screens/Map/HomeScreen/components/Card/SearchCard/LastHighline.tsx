@@ -3,10 +3,10 @@ import { useAppDispatch } from '@src/redux/hooks';
 import { TouchableOpacity, Text, View } from 'react-native';
 
 import { highlightMarker } from '../../../../mapSlice';
-import { type Highline } from './SearchCard';
+import { type StorageHighline } from '@src/hooks/useLastHighline';
 
 interface Props {
-  highline: Highline;
+  highline: StorageHighline;
 }
 
 const LastHighline = ({ highline }: Props) => {

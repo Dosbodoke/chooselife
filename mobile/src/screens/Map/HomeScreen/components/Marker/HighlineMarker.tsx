@@ -1,4 +1,4 @@
-import type { Coordinates } from '@src/database';
+import type { LatLng } from 'react-native-maps';
 import { useAppDispatch } from '@src/redux/hooks';
 import { Marker, Polyline } from 'react-native-maps';
 
@@ -7,8 +7,8 @@ import { highlightMarker, minimizeMarker } from '../../../mapSlice';
 interface Props {
   id: string;
   isHighlited?: boolean;
-  coordinateA: Coordinates;
-  coordinateB: Coordinates;
+  coordinateA: LatLng;
+  coordinateB: LatLng;
 }
 
 const HighlineMarker = (props: Props) => {

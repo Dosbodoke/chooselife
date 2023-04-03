@@ -1,7 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-// import { Coordinates } from '@src/database';
 import { RootState } from '@src/redux/store';
-import { Camera, LatLng } from 'react-native-maps';
+import { Camera, type LatLng } from 'react-native-maps';
 
 export interface HighlitedMarker {
   type: 'Highline';

@@ -2,7 +2,7 @@ import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 import { z } from 'zod';
 import { useState, useEffect } from 'react';
 
-const highline = z
+const storageHighlineSchema = z
   .object({
     id: z.string(),
     name: z.string(),
@@ -19,18 +19,18 @@ const highline = z
   })
   .strict();
 
-type Highline = z.infer<typeof highline>;
+export type StorageHighline = z.infer<typeof storageHighlineSchema>;
 
 const useLastHighline = (readItem?: boolean) => {
-  const [lastHighline, setLastHighline] = useState<Highline[] | null>(null);
+  const [lastHighline, setLastHighline] = useState<StorageHighline[] | null>(null);
   const { getItem, removeItem, setItem } = useAsyncStorage('lastHighline');
 
-  async function readAndParseItemFromStorage(): Promise<Highline[] | null> {
+  async function readAndParseItemFromStorage(): Promise<StorageHighline[] | null> {
     try {
       const item = await getItem();
       if (item !== null) {
         const parsed = JSON.parse(item);
-        parsed.forEach((i: any) => highline.parse(i));
+        parsed.forEach((i: any) => storageHighlineSchema.parse(i));
         return parsed;
       }
     } catch (error) {
@@ -40,7 +40,7 @@ const useLastHighline = (readItem?: boolean) => {
     return null;
   }
 
-  async function updateStorageWithNewHighline(newHighline: Highline) {
+  async function updateStorageWithNewHighline(newHighline: StorageHighline) {
     try {
       const highlines = await readAndParseItemFromStorage();
       if (highlines === null) return;
