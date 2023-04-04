@@ -1,6 +1,6 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Provider } from 'react-redux';
+import { Provider as ReduxProvider } from 'react-redux';
 import { TRPCProvider } from './utils/trpc';
 import 'react-native-gesture-handler';
 
@@ -22,7 +22,7 @@ const store = setupStore();
 export default function App() {
   return (
     <TRPCProvider>
-      <Provider store={store}>
+      <ReduxProvider store={store}>
         <NavigationContainer>
           <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Home" component={HomeScreen} />
@@ -45,7 +45,7 @@ export default function App() {
             <Stack.Screen name="HighlineFormScreen" component={HighlineFormScreen} />
           </Stack.Navigator>
         </NavigationContainer>
-      </Provider>
+      </ReduxProvider>
     </TRPCProvider>
   );
 }
