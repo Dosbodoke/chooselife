@@ -4,6 +4,7 @@ import { Provider as ReduxProvider } from 'react-redux';
 import { TRPCProvider } from './utils/trpc';
 
 import { setupStore } from './redux/store';
+import { AuthProvider } from './contexts/auth';
 
 import Routes from './navigation';
 
@@ -14,7 +15,9 @@ export default function App() {
     <TRPCProvider>
       <ReduxProvider store={store}>
         <NavigationContainer>
-          <Routes />
+          <AuthProvider>
+            <Routes />
+          </AuthProvider>
         </NavigationContainer>
       </ReduxProvider>
     </TRPCProvider>
