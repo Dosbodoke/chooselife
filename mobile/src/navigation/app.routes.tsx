@@ -1,5 +1,7 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
+import { Camera, LatLng } from 'react-native-maps';
+import { RouterOutput } from '@src/utils/trpc';
 import {
   HomeScreen,
   SearchScreen,
@@ -9,7 +11,21 @@ import {
   HighlineFormScreen,
 } from '@src/screens';
 
-import { RootStackParamList } from './types';
+export type RootStackParamList = {
+  Home: undefined;
+  Search: undefined;
+  MapType: undefined;
+  Details: {
+    highline: RouterOutput['highline']['createHighline'];
+  };
+  LocationPicker: {
+    camera?: Camera;
+  };
+  HighlineFormScreen: {
+    lenght: string;
+    markers: LatLng[];
+  };
+};
 
 const RootStack = createStackNavigator<RootStackParamList>();
 

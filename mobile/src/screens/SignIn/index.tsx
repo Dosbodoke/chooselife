@@ -1,14 +1,14 @@
 import { View, SafeAreaView, Text, StatusBar } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
-// import { useAuth } from '@src/contexts/auth';
+import { SignInScreenProps } from '@src/navigation/types';
 import { useWarmUpBrowser } from '@src/hooks/useWarmUpBrowser';
 
 import LogInWithGoogle from './LogInWithGoogle';
 import LogInWithApple from './LogInWithApple';
 import LogInWithEmail from './LogInWithEmail';
 
-const SignIn = () => {
+const SignIn = ({ navigation }: SignInScreenProps) => {
   // Warm up the android browser to improve UX
   // https://docs.expo.dev/guides/authentication/#improving-user-experience
   useWarmUpBrowser();
@@ -31,7 +31,7 @@ const SignIn = () => {
           <Text className="text-gray-400">ou</Text>
           <View className="h-[1px] flex-1 bg-gray-400" />
         </View>
-        <LogInWithEmail />
+        <LogInWithEmail navigation={navigation} />
       </View>
     </KeyboardAwareScrollView>
   );

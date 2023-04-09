@@ -3,7 +3,12 @@ import { SignIn, SignUp } from '@src/screens';
 
 import { createStackNavigator } from '@react-navigation/stack';
 
-const AuthStack = createStackNavigator();
+export type AuthStackParamList = {
+  SignIn: undefined;
+  SignUp: undefined;
+};
+
+const AuthStack = createStackNavigator<AuthStackParamList>();
 
 const AuthRoutes: React.FC = () => (
   <AuthStack.Navigator initialRouteName="SignIn" screenOptions={{ headerShown: false }}>

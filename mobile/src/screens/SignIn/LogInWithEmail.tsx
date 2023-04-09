@@ -5,15 +5,20 @@ import { useForm, SubmitHandler, Controller, SubmitErrorHandler } from 'react-ho
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSignIn } from '@clerk/clerk-expo';
 
+import { SignInScreenProps } from '@src/navigation/types';
 import { CheckBox, TextInput } from '@src/components';
 import { TouchableOpacity } from 'react-native-gesture-handler';
+
+interface Props {
+  navigation: SignInScreenProps['navigation'];
+}
 
 const validationSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
 
-const LogInWithEmail = () => {
+const LogInWithEmail = ({ navigation }: Props) => {
   const { signIn, setActive, isLoaded } = useSignIn();
   const [isChecked, setIsChecked] = useState(false);
 
@@ -106,7 +111,9 @@ const LogInWithEmail = () => {
       </TouchableOpacity>
       <View className="mt-4 flex flex-row">
         <Text className="text-gray-500">Não tem conta?</Text>
-        <Text className="ml-1 font-bold text-blue-600">Crie uma aqui</Text>
+        <TouchableOpacity onPress={() => navigation.replace('SignUp')}>
+          <Text className="ml-1 font-bold text-blue-600">Crie uma aqui</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
