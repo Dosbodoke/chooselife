@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useSignIn } from '@clerk/clerk-expo';
 
 import { SignInScreenProps } from '@src/navigation/types';
-import { CheckBox, TextInput } from '@src/components';
+import { CheckBox, TextInput, PrimaryButton } from '@src/components';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 
 interface Props {
@@ -104,11 +104,7 @@ const LogInWithEmail = ({ navigation }: Props) => {
           <Text className="text-blue-600">Esqueceu a senha?</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        className="mt-4 flex items-center justify-center rounded-lg bg-blue-600 py-3"
-        onPress={onSignInPress}>
-        <Text className="text-base text-white">Entrar</Text>
-      </TouchableOpacity>
+      <PrimaryButton onPress={onSignInPress} label="Entrar" />
       <View className="mt-4 flex flex-row">
         <Text className="text-gray-500">Não tem conta?</Text>
         <TouchableOpacity onPress={() => navigation.replace('SignUp')}>
