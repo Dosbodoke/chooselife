@@ -55,7 +55,7 @@ const TextInput = ({
   }
 
   return (
-    <View className="mt-3 flex-1" pointerEvents={disabled ? 'none' : 'auto'}>
+    <View className="mt-3 grow" pointerEvents={disabled ? 'none' : 'auto'}>
       <Pressable
         accessibilityRole="text"
         onPress={() => {
