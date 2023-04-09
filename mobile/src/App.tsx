@@ -1,23 +1,26 @@
 import 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { Provider as ReduxProvider } from 'react-redux';
-import { TRPCProvider } from './utils/trpc';
+import { ClerkProvider } from '@clerk/clerk-expo';
+import Constants from 'expo-constants';
 
+import { TRPCProvider } from './utils/trpc';
 import { setupStore } from './redux/store';
-import { AuthProvider } from './contexts/auth';
 
 import Routes from './navigation';
 
 const store = setupStore();
+
+const publishableKey = Constants?.manifest?.extra?.publishableKey;
 
 export default function App() {
   return (
     <TRPCProvider>
       <ReduxProvider store={store}>
         <NavigationContainer>
-          <AuthProvider>
+          <ClerkProvider publishableKey={publishableKey}>
             <Routes />
-          </AuthProvider>
+          </ClerkProvider>
         </NavigationContainer>
       </ReduxProvider>
     </TRPCProvider>

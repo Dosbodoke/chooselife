@@ -5,6 +5,7 @@ import LocationPickerScreen from './Map/LocationPickerScreen/LocationPickerScree
 import MapTypeScreen from './Map/MapTypeScreen/MapTypeScreen';
 import SearchScreen from './SearchScreen/SearchScreen';
 import SignIn from './SignIn';
+import SignUp from './SignUp';
 
 export {
   HomeScreen,
@@ -14,4 +15,5 @@ export {
   LocationPickerScreen,
   HighlineFormScreen,
   SignIn,
+  SignUp,
 };

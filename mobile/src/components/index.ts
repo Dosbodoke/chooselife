@@ -4,5 +4,6 @@ import PageHeader from './PageHeader/PageHeader';
 import TextArea from './TextArea/TextArea';
 import TextInput from './TextInput/TextInput';
 import RankingPodium from './RankingPodium/RankingPodium';
+import CheckBox from './CheckBox/CheckBox';
 
-export { ImageInput, TextInput, PageHeader, TextArea, Divider, RankingPodium };
+export { ImageInput, TextInput, PageHeader, TextArea, Divider, RankingPodium, CheckBox };
