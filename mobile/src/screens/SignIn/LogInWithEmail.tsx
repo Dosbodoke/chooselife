@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text } from 'react-native';
 import { z } from 'zod';
 import { useForm, SubmitHandler, Controller, SubmitErrorHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useSignIn } from '@clerk/clerk-expo';
 
 import { CheckBox, TextInput } from '@src/components';
 import { TouchableOpacity } from 'react-native-gesture-handler';
@@ -13,11 +14,30 @@ const validationSchema = z.object({
 });
 
 const LogInWithEmail = () => {
+  const { signIn, setActive, isLoaded } = useSignIn();
   const [isChecked, setIsChecked] = useState(false);
+
+  const onSignInPress = useCallback(async () => {
+    if (!isLoaded) {
+      return;
+    }
+    const values = getValues();
+    try {
+      const completeSignIn = await signIn.create({
+        identifier: values.email,
+        password: values.password,
+      });
+      // This is an important step,
+      // This indicates the user is signed in
+      await setActive({ session: completeSignIn.createdSessionId });
+    } catch (err: any) {
+      console.log(err);
+    }
+  }, []);
 
   const {
     control,
-    handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm<z.infer<typeof validationSchema>>({
     mode: 'onTouched',
@@ -36,6 +56,7 @@ const LogInWithEmail = () => {
         render={({ field: { onChange, onBlur, value }, fieldState: { isTouched, isDirty } }) => {
           return (
             <TextInput
+              keyboardType="email-address"
               onBlur={onBlur}
               onChangeText={onChange}
               value={value}
@@ -44,6 +65,7 @@ const LogInWithEmail = () => {
               isDirty={isDirty}
               label="Email"
               accessibilityHint="email"
+              autoCapitalize="none"
             />
           );
         }}
@@ -60,13 +82,14 @@ const LogInWithEmail = () => {
               touched={isTouched}
               error={errors.password?.message}
               isDirty={isDirty}
+              secureTextEntry={true}
               label="Senha"
               accessibilityHint="password"
             />
           );
         }}
       />
-      <View className="flex flex-row items-center justify-between">
+      <View className="mt-2 flex flex-row items-center justify-between">
         <CheckBox
           label="Lembrar senha"
           onToggle={() => setIsChecked(!isChecked)}
@@ -76,7 +99,9 @@ const LogInWithEmail = () => {
           <Text className="text-blue-600">Esqueceu a senha?</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity className="mt-4 flex items-center justify-center rounded-lg bg-blue-600 py-3">
+      <TouchableOpacity
+        className="mt-4 flex items-center justify-center rounded-lg bg-blue-600 py-3"
+        onPress={onSignInPress}>
         <Text className="text-base text-white">Entrar</Text>
       </TouchableOpacity>
       <View className="mt-4 flex flex-row">
