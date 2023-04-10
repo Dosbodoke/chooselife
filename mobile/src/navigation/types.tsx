@@ -15,6 +15,6 @@ export type LocationPickerScreenProps = StackScreenProps<RootStackParamList, 'Lo
 
 export type HighlineFormScreenProps = StackScreenProps<RootStackParamList, 'HighlineFormScreen'>;
 
-export type SignInScreenProps = StackScreenProps<AuthStackParamList, 'SignIn'>;
+export type LogInScreenProps = StackScreenProps<AuthStackParamList, 'LogIn'>;
 
 export type SignUpScreenProps = StackScreenProps<AuthStackParamList, 'SignUp'>;

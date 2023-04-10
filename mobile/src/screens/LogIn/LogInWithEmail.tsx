@@ -5,12 +5,12 @@ import { useForm, SubmitHandler, Controller, SubmitErrorHandler } from 'react-ho
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSignIn } from '@clerk/clerk-expo';
 
-import { SignInScreenProps } from '@src/navigation/types';
+import { LogInScreenProps } from '@src/navigation/types';
 import { CheckBox, TextInput, PrimaryButton } from '@src/components';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 
 interface Props {
-  navigation: SignInScreenProps['navigation'];
+  navigation: LogInScreenProps['navigation'];
 }
 
 const validationSchema = z.object({

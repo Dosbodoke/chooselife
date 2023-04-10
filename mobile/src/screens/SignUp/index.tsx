@@ -77,7 +77,7 @@ const SignUp = ({ navigation }: SignUpScreenProps) => {
       )}
       <TouchableOpacity
         className="mt-4 flex flex-row justify-center"
-        onPress={() => navigation.replace('SignIn')}>
+        onPress={() => navigation.replace('LogIn')}>
         <Text className="text-gray-500">Já tem uma conta?</Text>
         <Text className="ml-1 font-bold text-blue-600">entre aqui</Text>
       </TouchableOpacity>
