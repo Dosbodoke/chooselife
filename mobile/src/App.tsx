@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { Provider as ReduxProvider } from 'react-redux';
 import { ClerkProvider } from '@clerk/clerk-expo';
 import Constants from 'expo-constants';
+import * as SecureStore from 'expo-secure-store';
 
 import { TRPCProvider } from './utils/trpc';
 import { setupStore } from './redux/store';
@@ -13,12 +14,29 @@ const store = setupStore();
 
 const publishableKey = Constants?.manifest?.extra?.publishableKey;
 
+const tokenCache = {
+  async getToken(key: string) {
+    try {
+      return SecureStore.getItemAsync(key);
+    } catch (err) {
+      return null;
+    }
+  },
+  async saveToken(key: string, value: string) {
+    try {
+      return SecureStore.setItemAsync(key, value);
+    } catch (err) {
+      return;
+    }
+  },
+};
+
 export default function App() {
   return (
     <TRPCProvider>
       <ReduxProvider store={store}>
         <NavigationContainer>
-          <ClerkProvider publishableKey={publishableKey}>
+          <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
             <Routes />
           </ClerkProvider>
         </NavigationContainer>
