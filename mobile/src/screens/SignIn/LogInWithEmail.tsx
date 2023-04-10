@@ -94,7 +94,7 @@ const LogInWithEmail = ({ navigation }: Props) => {
           );
         }}
       />
-      <View className="mt-2 flex flex-row items-center justify-between">
+      <View className="mt-2 mb-4 flex flex-row items-center justify-between">
         <CheckBox
           label="Lembrar senha"
           onToggle={() => setIsChecked(!isChecked)}
@@ -105,12 +105,12 @@ const LogInWithEmail = ({ navigation }: Props) => {
         </TouchableOpacity>
       </View>
       <PrimaryButton onPress={onSignInPress} label="Entrar" />
-      <View className="mt-4 flex flex-row">
+      <TouchableOpacity
+        onPress={() => navigation.replace('SignUp')}
+        className="mt-4 flex flex-row justify-center">
         <Text className="text-gray-500">Não tem conta?</Text>
-        <TouchableOpacity onPress={() => navigation.replace('SignUp')}>
-          <Text className="ml-1 font-bold text-blue-600">Crie uma aqui</Text>
-        </TouchableOpacity>
-      </View>
+        <Text className="ml-1 font-bold text-blue-600">Crie uma aqui</Text>
+      </TouchableOpacity>
     </View>
   );
 };

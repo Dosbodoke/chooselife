@@ -29,9 +29,9 @@ const SignIn = ({ navigation }: SignInScreenProps) => {
           <LogInWithGoogle />
           <LogInWithApple />
         </View>
-        <View className="mt-3 flex flex-row items-center" style={{ columnGap: 15 }}>
+        <View className="my-5 flex flex-row items-center" style={{ columnGap: 15 }}>
           <View className="h-[1px] flex-1 bg-gray-400" />
-          <Text className="text-gray-400">ou</Text>
+          <Text className="text-gray-400">OU CONTINUE COM</Text>
           <View className="h-[1px] flex-1 bg-gray-400" />
         </View>
         <LogInWithEmail navigation={navigation} />
