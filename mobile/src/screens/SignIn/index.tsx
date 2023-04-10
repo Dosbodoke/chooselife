@@ -3,6 +3,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 
 import { SignInScreenProps } from '@src/navigation/types';
 import { useWarmUpBrowser } from '@src/hooks/useWarmUpBrowser';
+import { ChooselifeSvg } from '@src/assets';
 
 import LogInWithGoogle from './LogInWithGoogle';
 import LogInWithApple from './LogInWithApple';
@@ -21,7 +22,9 @@ const SignIn = ({ navigation }: SignInScreenProps) => {
       <StatusBar barStyle="dark-content" />
       <SafeAreaView />
       <View className="mx-2">
-        <Text className="my-10 text-center text-2xl font-bold">Bem vindo Highliner!</Text>
+        <View className="my-10 mx-auto h-44 w-44">
+          <ChooselifeSvg />
+        </View>
         <View className="mt-2 flex" style={{ rowGap: 8 }}>
           <LogInWithGoogle />
           <LogInWithApple />
