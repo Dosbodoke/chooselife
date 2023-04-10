@@ -2,13 +2,17 @@ import { TouchableOpacity, Text } from 'react-native';
 
 interface Props {
   label: string;
+  isDisabled?: boolean;
   onPress: () => void;
 }
 
-const PrimaryButton = ({ label, onPress }: Props) => {
+const PrimaryButton = ({ label, isDisabled, onPress }: Props) => {
   return (
     <TouchableOpacity
-      className="mt-4 flex items-center justify-center rounded-lg bg-blue-600 py-3"
+      className={`flex items-center justify-center rounded-lg py-3 ${
+        isDisabled ? 'bg-blue-400' : 'bg-blue-600'
+      }`}
+      disabled={isDisabled}
       onPress={onPress}>
       <Text className="text-base font-bold text-white">{label}</Text>
     </TouchableOpacity>
