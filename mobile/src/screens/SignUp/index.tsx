@@ -1,17 +1,24 @@
-import * as React from 'react';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { View, StatusBar, SafeAreaView, Text, TouchableOpacity } from 'react-native';
 import { useSignUp } from '@clerk/clerk-expo';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
-const SignUp = () => {
+import { ChooselifeSvg } from '@src/assets';
+import { SignUpScreenProps } from '@src/navigation/types';
+
+import Verification from './Verification';
+import AuthForm from './AuthForm';
+
+const SignUp = ({ navigation }: SignUpScreenProps) => {
   const { isLoaded, signUp, setActive } = useSignUp();
-
-  const [emailAddress, setEmailAddress] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [pendingVerification, setPendingVerification] = React.useState(false);
-  const [code, setCode] = React.useState('');
+  const [pendingVerification, setPendingVerification] = useState(false);
 
   // start the sign up process.
-  const onSignUpPress = async () => {
+  const onSignUpPress = async (
+    emailAddress: string,
+    password: string,
+    handleError: (error: string) => void
+  ) => {
     if (!isLoaded) {
       return;
     }
@@ -28,12 +35,14 @@ const SignUp = () => {
       // change the UI to our pending section.
       setPendingVerification(true);
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
+      if (err.errors[0].code === 'form_identifier_exists') {
+        handleError('Email já cadastrado, tente outro');
+      }
     }
   };
 
   // This verifies the user using email code that is delivered.
-  const onPressVerify = async () => {
+  const onPressVerify = async (code: string, handleError: (error: string) => void) => {
     if (!isLoaded) {
       return;
     }
@@ -45,49 +54,34 @@ const SignUp = () => {
 
       await setActive({ session: completeSignUp.createdSessionId });
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
+      if (err.errors[0]?.code === 'form_code_incorrect') {
+        handleError('Código incorreto!');
+      }
     }
   };
 
   return (
-    <View>
-      {!pendingVerification && (
-        <View>
-          <View>
-            <TextInput
-              autoCapitalize="none"
-              value={emailAddress}
-              placeholder="Email..."
-              onChangeText={(email) => setEmailAddress(email)}
-            />
-          </View>
-
-          <View>
-            <TextInput
-              value={password}
-              placeholder="Password..."
-              placeholderTextColor="#000"
-              secureTextEntry={true}
-              onChangeText={(password) => setPassword(password)}
-            />
-          </View>
-
-          <TouchableOpacity onPress={onSignUpPress}>
-            <Text>Sign up</Text>
-          </TouchableOpacity>
-        </View>
+    <KeyboardAwareScrollView
+      showsVerticalScrollIndicator={false}
+      extraHeight={140}
+      className="flex flex-1 bg-white px-2">
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView />
+      <View className="my-10 mx-auto h-44 w-44">
+        <ChooselifeSvg />
+      </View>
+      {pendingVerification ? (
+        <Verification onPressVerify={onPressVerify} />
+      ) : (
+        <AuthForm onSignUpPress={onSignUpPress} />
       )}
-      {pendingVerification && (
-        <View>
-          <View>
-            <TextInput value={code} placeholder="Code..." onChangeText={(code) => setCode(code)} />
-          </View>
-          <TouchableOpacity onPress={onPressVerify}>
-            <Text>Verify Email</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
+      <TouchableOpacity
+        className="mt-4 flex flex-row justify-center"
+        onPress={() => navigation.replace('SignIn')}>
+        <Text className="text-gray-500">Já tem uma conta?</Text>
+        <Text className="ml-1 font-bold text-blue-600">entre aqui</Text>
+      </TouchableOpacity>
+    </KeyboardAwareScrollView>
   );
 };
 
