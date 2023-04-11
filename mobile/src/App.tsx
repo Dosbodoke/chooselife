@@ -12,6 +12,9 @@ import Routes from './navigation';
 
 const store = setupStore();
 
+if (!process.env.REACT_APP_CLERK_PUBLISHABLE_KEY) {
+  throw new Error('Missing Clerk Publishable Key, set it on .env file');
+}
 const clerkPublishableKey = Constants?.manifest?.extra?.clerkPublishableKey;
 
 const tokenCache = {

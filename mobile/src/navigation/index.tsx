@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, ActivityIndicator } from 'react-native';
 
-// import { useAuth } from '@src/contexts/auth';
 import { useAuth } from '@clerk/clerk-expo';
 
 import RootRoutes from './app.routes';

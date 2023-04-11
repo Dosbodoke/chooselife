@@ -35,7 +35,7 @@ const SignUp = ({ navigation }: SignUpScreenProps) => {
       // change the UI to our pending section.
       setPendingVerification(true);
     } catch (err: any) {
-      if (err.errors[0].code === 'form_identifier_exists') {
+      if (err.errors[0]?.code === 'form_identifier_exists') {
         handleError('Email já cadastrado, tente outro');
       }
     }
