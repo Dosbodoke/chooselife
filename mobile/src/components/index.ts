@@ -4,7 +4,7 @@ import PageHeader from './PageHeader/PageHeader';
 import TextArea from './TextArea/TextArea';
 import TextInput from './TextInput/TextInput';
 import RankingPodium from './RankingPodium/RankingPodium';
-import CheckBox from './CheckBox/CheckBox';
+import CheckBox from './Buttons/CheckBox';
 import PrimaryButton from './Buttons/PrimaryButton';
 
 export {
