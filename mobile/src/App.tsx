@@ -12,7 +12,7 @@ import Routes from './navigation';
 
 const store = setupStore();
 
-const publishableKey = Constants?.manifest?.extra?.publishableKey;
+const clerkPublishableKey = Constants?.manifest?.extra?.clerkPublishableKey;
 
 const tokenCache = {
   async getToken(key: string) {
@@ -36,7 +36,7 @@ export default function App() {
     <TRPCProvider>
       <ReduxProvider store={store}>
         <NavigationContainer>
-          <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+          <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
             <Routes />
           </ClerkProvider>
         </NavigationContainer>

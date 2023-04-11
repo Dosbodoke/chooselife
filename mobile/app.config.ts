@@ -10,7 +10,7 @@ export default {
     icon: './src/assets/icon.png',
     userInterfaceStyle: 'light',
     extra: {
-      publishableKey: process.env.PUBLISHABLE_KEY,
+      clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY,
     },
     splash: {
       image: './src/assets/splash.png',
