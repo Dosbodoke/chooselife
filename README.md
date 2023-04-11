@@ -6,15 +6,38 @@ This repository is composed by two modules
 
 `./mobile/`: A mobile app built with React Native (EXPO).
 
-`./server/`: Type safed api built with tRPC and Prisma.
+`./server/`: Type safe api built with Express + tRPC + Prisma.
 
 # Table of contents
 
-- [CHOOSELIFE](#chooselife)
-  - [Run Locally](#run-locally)
-    - [Database](#database)
-    - [Server](#server)
-    - [Mobile](#mobile)
+- [Setup clerk](#setup-clerk)
+- [Run Locally](#run-locally)
+  - [Database](#database)
+  - [Server](#server)
+  - [Mobile](#mobile)
+
+## Setup clerk
+
+The project uses clerk for authentication and user management. It should be configured in order to run both locally and on production.
+
+- Create a new application on [clerk dashboard](https://dashboard.clerk.com/)
+
+- On the tab **configure => User & Authentication => Email, Phone, Username** enable the following buttons:
+
+  - Email address
+  - Password
+  - Email verification code
+
+- On the tab **configure => User & Authentication => Social Connections** enable the following services:
+
+  - Google
+  - Apple
+
+- On the tab **developers => API KEYS** copy the Publishable key and paste it on `mobile/.env`
+
+```
+CLERK_PUBLISHABLE_KEY= # KEY FROM YOUR CLERK APPLICATION
+```
 
 ## Run Locally
 
@@ -82,6 +105,6 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:${db_port}/${db_name}?sch
 
 ### Mobile
 
-Go to _mobile/_ and run `yarn install` & `yarn start` to start the application.
+Go to `mobile/` and run `yarn install && yarn start` to start the application.
 
 You will need expo installed in order to ran the application, follow this guide for the [installation guide](https://docs.expo.dev/get-started/installation/)

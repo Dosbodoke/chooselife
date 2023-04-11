@@ -102,7 +102,7 @@ const HighlineFormScreen = ({ navigation, route }: HighlineFormScreenProps) => {
         {/* Lenght and Height */}
         <View className="flex flex-row items-center">
           <TextInput
-            isNumeric
+            keyboardType="number-pad"
             disabled
             suffix="m"
             value={route.params.lenght}
@@ -120,7 +120,7 @@ const HighlineFormScreen = ({ navigation, route }: HighlineFormScreenProps) => {
               fieldState: { isTouched, isDirty },
             }) => (
               <TextInput
-                isNumeric
+                keyboardType="number-pad"
                 suffix="m"
                 onBlur={onBlur}
                 onChangeText={onChange}

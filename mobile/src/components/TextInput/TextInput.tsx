@@ -15,10 +15,12 @@ interface Props {
   touched?: boolean;
   error?: string;
   accessibilityHint: string;
-  isNumeric?: true;
+  keyboardType?: 'number-pad' | 'default' | 'email-address';
   disabled?: true;
   suffix?: string;
   isDirty?: boolean;
+  secureTextEntry?: boolean;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   onChangeText: (e: string) => void;
   onBlur: (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
 }
@@ -29,10 +31,12 @@ const TextInput = ({
   touched,
   error,
   accessibilityHint,
-  isNumeric,
+  keyboardType,
   disabled,
   suffix,
   isDirty,
+  secureTextEntry,
+  autoCapitalize,
   onChangeText,
   onBlur,
 }: Props) => {
@@ -51,7 +55,7 @@ const TextInput = ({
   }
 
   return (
-    <View className="mt-3 flex-1" pointerEvents={disabled ? 'none' : 'auto'}>
+    <View className="mt-3 grow" pointerEvents={disabled ? 'none' : 'auto'}>
       <Pressable
         accessibilityRole="text"
         onPress={() => {
@@ -74,11 +78,13 @@ const TextInput = ({
         {showValue && (
           <View className="mt-6 flex flex-row ">
             <RNTextInput
-              keyboardType={isNumeric ? 'number-pad' : 'default'}
+              keyboardType={keyboardType || 'default'}
               returnKeyType="done"
+              autoCapitalize={autoCapitalize || 'sentences'}
+              secureTextEntry={secureTextEntry}
               onChangeText={(value) => {
                 let normalizedValue = value.replace(/\s+/g, ' ');
-                if (isNumeric) {
+                if (keyboardType === 'number-pad') {
                   normalizedValue = normalizedValue.replace(/[^0-9]/g, '');
                 }
                 onChangeText(normalizedValue);
