@@ -3,7 +3,9 @@
 An open source API and a mobile client made for Highliners!
 
 This repository is composed by two modules:
+
 `./mobile/`: A mobile app built with React Native (EXPO).
+
 `./server/`: Type safe api built with Express + tRPC + Prisma.
 
 # Table of contents
