@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "license": "MIT",
   "type": "module",
-  "main": "index.ts",
   "scripts": {
-    "dev": "node --watch --experimental-specifier-resolution=node --loader ts-node/esm ./index.ts",
+    "dev": "node --watch --experimental-specifier-resolution=node --loader ts-node/esm ./api/index.ts",
     "dev:deploy": "prisma migrate deploy && yarn prisma generate && yarn run dev",
     "db:migrate": "npx prisma migrate dev --name chooselife --create-only && yarn prisma generate",
     "db:push": "npx prisma db push"

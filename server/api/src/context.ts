@@ -1,6 +1,6 @@
 import { inferAsyncReturnType } from "@trpc/server";
 import * as trpcExpress from "@trpc/server/adapters/express";
-import connectDB from "../../prisma";
+import connectDB from "../../prisma/prisma";
 
 connectDB();
 
