@@ -17,6 +17,8 @@ services:
       POSTGRES_HOST: postgres
       POSTGRES_HOSTNAME: 127.0.1.1
       DATABASE_URL: postgresql://postgres:postgres@chooselife_postgres:5432/chooselife?schema=public
+    volumes:
+      - ./server:/app/server
     command: dev:deploy
 
   postgres:
