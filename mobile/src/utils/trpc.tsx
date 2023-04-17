@@ -1,5 +1,10 @@
 import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '../../../server/api/index';
+
+/**
+ *  Clerk hook to acess the authentication token
+ */
+import { useAuth } from '@clerk/clerk-expo';
 /**
  * Extend this function when going to production by
  * setting the baseUrl to your production API URL.
@@ -11,7 +16,7 @@ import Constants from 'expo-constants';
  */
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { httpBatchLink } from '@trpc/client';
 import superjson from 'superjson';
 import { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
@@ -37,12 +42,19 @@ const getBaseUrl = () => {
 export const TRPCProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
+  const { getToken } = useAuth();
   const [queryClient] = React.useState(() => new QueryClient());
   const [trpcClient] = React.useState(() =>
     trpc.createClient({
       transformer: superjson,
       links: [
         httpBatchLink({
+          async headers() {
+            const authToken = await getToken();
+            return {
+              Authorization: authToken ?? undefined,
+            };
+          },
           url: `${getBaseUrl()}/api/trpc`,
         }),
       ],
