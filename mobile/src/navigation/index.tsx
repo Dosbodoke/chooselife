@@ -1,15 +1,15 @@
 import React from 'react';
 import { View, ActivityIndicator } from 'react-native';
 
-import { useAuth } from '@clerk/clerk-expo';
+import { useProfile } from '@src/hooks/useProfile';
 
 import RootRoutes from './app.routes';
 import AuthRoutes from './auth.routes';
 
 const Routes: React.FC = () => {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { data, isLoading } = useProfile();
 
-  if (!isLoaded) {
+  if (isLoading) {
     return (
       <View className="flex flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#666" />
@@ -17,7 +17,7 @@ const Routes: React.FC = () => {
     );
   }
 
-  return isSignedIn ? <RootRoutes /> : <AuthRoutes />;
+  return data ? <RootRoutes /> : <AuthRoutes />;
 };
 
 export default Routes;
