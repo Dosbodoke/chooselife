@@ -16,7 +16,11 @@ const DetailScreen = ({ navigation, route }: DetailScreenProps) => {
 
   return (
     <ScrollView className="flex flex-1">
-      <ImageHeader isRigged={highline.isRigged} goBack={() => navigation.goBack()} />
+      <ImageHeader
+        isRigged={highline.isRigged}
+        goBack={() => navigation.goBack()}
+        highlineId={highline.uuid}
+      />
       <View className="mx-2">
         <Text className="text-2xl font-extrabold">{highline.name}</Text>
         <FirstCadena />

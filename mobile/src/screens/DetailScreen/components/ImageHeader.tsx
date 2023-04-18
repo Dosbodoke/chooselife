@@ -6,13 +6,13 @@ import { ShareSvg, ArrowLeftSvg } from '@src/assets';
 import useIsFavorite from '@src/hooks/useIsFavorite';
 
 interface Props {
+  highlineId: string;
   isRigged?: boolean;
   goBack: () => void;
 }
 
-const ImageHeader = ({ isRigged, goBack }: Props) => {
-  const isFavorite = false;
-  const [HeartSvg, toggleFavorite] = useIsFavorite(isFavorite);
+const ImageHeader = ({ highlineId, isRigged, goBack }: Props) => {
+  const [HeartSvg, toggleFavorite] = useIsFavorite(highlineId);
 
   return (
     <ImageBackground

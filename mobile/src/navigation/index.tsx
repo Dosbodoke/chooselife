@@ -7,9 +7,9 @@ import RootRoutes from './app.routes';
 import AuthRoutes from './auth.routes';
 
 const Routes: React.FC = () => {
-  const { data, isLoading } = useProfile();
+  const { profile, isLoaded } = useProfile();
 
-  if (isLoading) {
+  if (!isLoaded) {
     return (
       <View className="flex flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#666" />
@@ -17,7 +17,7 @@ const Routes: React.FC = () => {
     );
   }
 
-  return data ? <RootRoutes /> : <AuthRoutes />;
+  return profile ? <RootRoutes /> : <AuthRoutes />;
 };
 
 export default Routes;

@@ -4,16 +4,16 @@ import { useAuth } from '@clerk/clerk-expo';
 import { trpc } from '@src/utils/trpc';
 
 export const useProfile = () => {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded } = useAuth();
 
-  const { data, isLoading, mutate } = trpc.auth.upsertProfile.useMutation({});
+  const profileMutation = trpc.auth.upsertProfile.useMutation({});
 
   useEffect(() => {
     if (isSignedIn) {
       // When user Log in, create user profile if it doesn't exist
-      mutate();
+      profileMutation.mutate();
     }
   }, [isSignedIn]);
 
-  return { data, isLoading };
+  return { profile: profileMutation.data, isLoaded: !profileMutation.isLoading && isLoaded };
 };

@@ -32,7 +32,7 @@ interface Props {
 const DetailCard = ({ highlitedMarker, navigation }: Props) => {
   const dispatch = useAppDispatch();
   const { updateStorageWithNewHighline } = useLastHighline();
-  const [HeartSvg, toggleFavorite] = useIsFavorite(false);
+  const [HeartSvg, toggleFavorite] = useIsFavorite(highlitedMarker.id);
 
   const { data: highline, isFetchedAfterMount } = trpc.highline.getById.useQuery(
     highlitedMarker.id
