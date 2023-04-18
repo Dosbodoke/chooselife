@@ -15,7 +15,6 @@ const store = setupStore();
 if (!Constants?.manifest?.extra?.clerkPublishableKey) {
   throw new Error('Missing Clerk Publishable Key, set it on .env file');
 }
-const clerkPublishableKey = Constants?.manifest?.extra?.clerkPublishableKey;
 
 const tokenCache = {
   async getToken(key: string) {
@@ -36,14 +35,16 @@ const tokenCache = {
 
 export default function App() {
   return (
-    <TRPCProvider>
+    <ClerkProvider
+      publishableKey={Constants?.manifest?.extra?.clerkPublishableKey}
+      tokenCache={tokenCache}>
       <ReduxProvider store={store}>
-        <NavigationContainer>
-          <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
+        <TRPCProvider>
+          <NavigationContainer>
             <Routes />
-          </ClerkProvider>
-        </NavigationContainer>
+          </NavigationContainer>
+        </TRPCProvider>
       </ReduxProvider>
-    </TRPCProvider>
+    </ClerkProvider>
   );
 }

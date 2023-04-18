@@ -15,6 +15,7 @@ app.use(
     origin: ["*"],
   })
 );
+
 app.use(
   "/api/trpc",
   createExpressMiddleware({
