@@ -2,8 +2,11 @@ import { useCallback, useState } from 'react';
 import { HeartOutlinedSvg, HeartFilledSvg } from '@src/assets';
 
 import { trpc } from '@src/utils/trpc';
+import { useQueryClient } from '@tanstack/react-query';
+import { getQueryKey } from '@trpc/react-query';
 
-type UseIsFavorite = [React.FC<HeartStyledProps>, () => void];
+// Return the heart icon a function to toggle the favorite, and if it is loading
+type UseIsFavorite = [React.FC<HeartStyledProps>, () => void, boolean];
 
 interface HeartStyledProps {
   strokeColor: '#000' | '#fff';
@@ -11,31 +14,38 @@ interface HeartStyledProps {
 }
 
 function useIsFavorite(highlineId: string): UseIsFavorite {
-  const [isFavorite, setIsFavorite] = useState<boolean | null>(null);
+  const qc = useQueryClient();
 
-  const { refetch, isFetching } = trpc.highline.checkIsFavorited.useQuery(
-    { highlineId },
-    {
-      onSuccess: (data) => setIsFavorite(!!data),
-    }
-  );
+  const { data: isFavorite, isLoading } = trpc.highline.checkIsFavorited.useQuery({ highlineId });
+
+  const checkIsFavoriteKey = getQueryKey(trpc.highline.checkIsFavorited, { highlineId }, 'query');
 
   const favoriteMutation = trpc.highline.favorite.useMutation({
-    onSuccess: () => refetch(),
+    onMutate: () => {
+      qc.setQueryData(checkIsFavoriteKey, () => true);
+    },
+    onError: () => {
+      qc.setQueryData(checkIsFavoriteKey, () => false);
+    },
   });
 
   const unfavoriteMutation = trpc.highline.unfavorite.useMutation({
-    onSuccess: () => refetch(),
+    onMutate: () => {
+      qc.setQueryData(checkIsFavoriteKey, () => false);
+    },
+    onError: () => {
+      qc.setQueryData(checkIsFavoriteKey, () => true);
+    },
   });
 
-  const toggleFavorite = useCallback(() => {
-    if (isFetching) return;
+  function toggleFavorite() {
+    if (favoriteMutation.isLoading || unfavoriteMutation.isLoading) return;
     if (isFavorite) {
       unfavoriteMutation.mutate({ highlineId });
     } else {
       favoriteMutation.mutate({ highlineId });
     }
-  }, [isFavorite, isFetching]);
+  }
 
   const HeartIcon: React.FC<HeartStyledProps> = ({ strokeColor, strokeWidth }) => {
     return (
@@ -49,7 +59,7 @@ function useIsFavorite(highlineId: string): UseIsFavorite {
     );
   };
 
-  return [HeartIcon, toggleFavorite];
+  return [HeartIcon, toggleFavorite, isLoading];
 }
 
 export default useIsFavorite;
