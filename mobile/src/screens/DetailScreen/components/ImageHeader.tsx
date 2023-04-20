@@ -1,4 +1,4 @@
-import { View, Text, SafeAreaView, ImageBackground } from 'react-native';
+import { View, Text, SafeAreaView, ImageBackground, Platform } from 'react-native';
 import React from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import GlassButton from './GlassButton';
@@ -22,7 +22,7 @@ const ImageHeader = ({ highlineId, isRigged, goBack }: Props) => {
         uri: 'https://naturalextremo.com/wp-content/uploads/2020/01/Virada-Esportiva-Highline-Natural-Extremo-@angelomaragno-@naturalextremobrasil-14-e1589735926438.jpg',
       }}>
       <SafeAreaView />
-      <View className="flex flex-1 justify-between">
+      <View className={`flex flex-1 justify-between ${Platform.OS === 'android' && 'mt-3'}`}>
         <View className="mx-2 flex flex-row justify-between">
           <View>
             <GlassButton
