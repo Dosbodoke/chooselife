@@ -58,7 +58,7 @@ const AuthForm = ({ onSignUpPress }: Props) => {
   return (
     <View>
       <Text className="text-2xl font-bold">Crie sua conta</Text>
-      <Text className="mt-2 text-gray-500">
+      <Text className="mb-2 text-base text-gray-500">
         Participe da maior e mais conectada comunidade de Highline
       </Text>
       <Controller

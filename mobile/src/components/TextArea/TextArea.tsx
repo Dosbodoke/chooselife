@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   View,
   Text,
@@ -38,7 +37,7 @@ const TextArea = ({
   }
 
   return (
-    <View className="mt-3 flex-1" pointerEvents={disabled ? 'none' : 'auto'}>
+    <View className="flex-1" pointerEvents={disabled ? 'none' : 'auto'}>
       <Pressable
         accessibilityRole="text"
         className={`relative h-40 rounded-md border-[1px] p-2 focus:border-black ${getStatusClass({

@@ -20,7 +20,7 @@ const ImageInput = () => {
   return (
     <ScrollView horizontal className="my-2">
       {images.map((uri) => (
-        <View key={uri} className="mr-2 h-64 w-64 rounded-xl border-2 border-gray-200">
+        <View key={uri} className="mr-2 h-64 w-64 rounded-xl border-2 border-gray-400">
           <Image className="h-full w-full rounded-xl" source={{ uri }} />
         </View>
       ))}

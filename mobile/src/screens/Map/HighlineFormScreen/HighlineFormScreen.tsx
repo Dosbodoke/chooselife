@@ -80,7 +80,10 @@ const HighlineFormScreen = ({ navigation, route }: HighlineFormScreenProps) => {
   return (
     <View className="flex-1 bg-white px-4">
       <PageHeader text="Informações da via" goBack={() => navigation.goBack()} />
-      <KeyboardAwareScrollView showsVerticalScrollIndicator={false} extraHeight={140}>
+      <KeyboardAwareScrollView
+        showsVerticalScrollIndicator={false}
+        extraHeight={140}
+        className="pt-5">
         <Controller
           control={control}
           name="name"
@@ -141,6 +144,7 @@ const HighlineFormScreen = ({ navigation, route }: HighlineFormScreenProps) => {
             Insira imagens e informações sobre ancoragem A para ajudar em montagens futuras
           </Text>
           <ImageInput />
+          <View className="mt-3" />
           <Controller
             control={control}
             name="textA"
@@ -172,6 +176,7 @@ const HighlineFormScreen = ({ navigation, route }: HighlineFormScreenProps) => {
             Insira imagens e informações sobre ancoragem A para ajudar em montagens futuras
           </Text>
           <ImageInput />
+          <View className="mt-3" />
           <Controller
             control={control}
             name="textB"

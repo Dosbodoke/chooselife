@@ -94,7 +94,7 @@ const LogInWithEmail = ({ navigation }: Props) => {
           );
         }}
       />
-      <View className="mt-2 mb-4 flex flex-row items-center justify-between">
+      <View className="mb-4 flex flex-row items-center justify-between">
         <CheckBox
           label="Lembrar senha"
           onToggle={() => setIsChecked(!isChecked)}
