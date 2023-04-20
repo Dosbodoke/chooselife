@@ -33,6 +33,10 @@ const LocationPickerScreen = ({ navigation, route }: LocationPickerScreenProps) 
     if (camera?.center) setMarkers([...markers, camera.center]);
   }
 
+  function resetMarkers() {
+    setMarkers((prev) => prev.slice(0, prev.length - 1));
+  }
+
   function onMapReady() {
     if (route.params.camera) mapRef.current?.setCamera(route.params.camera);
   }
@@ -69,7 +73,11 @@ const LocationPickerScreen = ({ navigation, route }: LocationPickerScreenProps) 
         <ArrowBackCircleSvg color="#e7e5e4" className="fill-neutral-200" />
       </TouchableOpacity>
 
-      <PickerButton markersLength={markers.length} onPress={handlePickLocation} />
+      <PickerButton
+        markersLength={markers.length}
+        onPress={handlePickLocation}
+        reset={resetMarkers}
+      />
     </View>
   );
 };
