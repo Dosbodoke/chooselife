@@ -12,6 +12,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { WINDOW_HEIGHT } from '@src/constants';
 import useLastHighline from '@src/hooks/useLastHighline';
@@ -30,13 +31,14 @@ interface Props {
 }
 
 const DetailCard = ({ highlitedMarker, navigation }: Props) => {
-  const dispatch = useAppDispatch();
-  const { updateStorageWithNewHighline } = useLastHighline();
   const [HeartSvg, toggleFavorite] = useIsFavorite(highlitedMarker.id);
+  const { updateStorageWithNewHighline } = useLastHighline();
 
   const { data: highline, isFetchedAfterMount } = trpc.highline.getById.useQuery(
     highlitedMarker.id
   );
+
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (!highline) return;
@@ -52,6 +54,15 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
   const conquerors = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // TO-DO: get array of coquerors, those should be User: {id: string; profilePic: ?}
 
   const paddingBottom = useSharedValue<number>(0);
+
+  /*
+   * When the user FlingUp, the paddingBottom is set to the window height
+   * so the whole screen turns white, and when the user navigates back to this screen
+   * it should return the paddingBottom to 0
+   */
+  useFocusEffect(() => {
+    paddingBottom.value = 0;
+  });
 
   const FlingUp = Gesture.Fling()
     .direction(Directions.UP)
