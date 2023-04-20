@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, ActivityIndicator } from 'react-native';
 
-import { useAuth } from '@clerk/clerk-expo';
+import { useProfile } from '@src/hooks/useProfile';
 
 import RootRoutes from './app.routes';
 import AuthRoutes from './auth.routes';
 
 const Routes: React.FC = () => {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { profile, isLoaded } = useProfile();
 
   if (!isLoaded) {
     return (
@@ -17,7 +17,7 @@ const Routes: React.FC = () => {
     );
   }
 
-  return isSignedIn ? <RootRoutes /> : <AuthRoutes />;
+  return profile ? <RootRoutes /> : <AuthRoutes />;
 };
 
 export default Routes;

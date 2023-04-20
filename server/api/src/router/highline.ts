@@ -1,4 +1,4 @@
-import { router, publicProcedure } from "../trpc";
+import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { z } from "zod";
 
 const anchor = z.object({
@@ -52,5 +52,40 @@ export const highlineRouter = router({
         },
       });
       return highline;
+    }),
+  checkIsFavorited: protectedProcedure
+    .input(z.object({ highlineId: z.string().uuid() }))
+    .query(async ({ input, ctx }) => {
+      const isFavorite = await ctx.prisma?.favoritedHighline.findUnique({
+        where: {
+          profileId_highlineId: {
+            profileId: ctx.userId,
+            highlineId: input.highlineId,
+          },
+        },
+      });
+      return !!isFavorite;
+    }),
+  favorite: protectedProcedure
+    .input(z.object({ highlineId: z.string().uuid() }))
+    .mutation(async ({ input, ctx }) => {
+      await ctx.prisma?.favoritedHighline.create({
+        data: {
+          profileId: ctx.userId,
+          highlineId: input.highlineId,
+        },
+      });
+    }),
+  unfavorite: protectedProcedure
+    .input(z.object({ highlineId: z.string().uuid() }))
+    .mutation(async ({ input, ctx }) => {
+      await ctx.prisma?.favoritedHighline.delete({
+        where: {
+          profileId_highlineId: {
+            profileId: ctx.userId,
+            highlineId: input.highlineId,
+          },
+        },
+      });
     }),
 });
