@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "EditorConfig.EditorConfig",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "yoavbls.pretty-ts-errors",
+    "bradlc.vscode-tailwindcss",
+    "byCedric.vscode-expo",
+    "Prisma.prisma",
+    "stivo.tailwind-fold",
+  ]
+}
