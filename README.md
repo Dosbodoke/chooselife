@@ -15,6 +15,7 @@ This repository is composed by two modules:
   - [Database](#database)
   - [Server](#server)
   - [Mobile](#mobile)
+- [Recommended VSCode extensions](#recommended-vscode-extensions)
 
 ## Setup clerk
 
@@ -101,3 +102,13 @@ Go to `mobile/` and run `yarn install && yarn start` to start the application.
 You will need expo installed in order to ran the application, follow this guide for the [installation guide](https://docs.expo.dev/get-started/installation/)
 
 Set-up the `.env` file following the `.env.example` schema
+
+## Recommended VSCode extensions
+
+For any reasons, if the notification doesn't show up we can manually open up Recommended Extensions settings
+
+- Open the command palette CMD + Shift + p
+- Type Show Recommended Extensions
+- All the extensions can be installed together or only required extensions can be installed
+
+To understand more, refer to [this article from Krishna Pravin](https://dev.to/askrishnapravin/recommend-vs-code-extensions-to-your-future-teammates-4gkb)
