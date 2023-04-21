@@ -23,7 +23,7 @@ export type StorageHighline = z.infer<typeof storageHighlineSchema>;
 
 const useLastHighline = (readItem?: boolean) => {
   const [lastHighline, setLastHighline] = useState<StorageHighline[] | null>(null);
-  const { getItem, removeItem, setItem } = useAsyncStorage('lastHighline');
+  const { getItem, removeItem, setItem } = useAsyncStorage('@lastHighline');
 
   async function readAndParseItemFromStorage(): Promise<StorageHighline[] | null> {
     try {
@@ -43,11 +43,11 @@ const useLastHighline = (readItem?: boolean) => {
   async function updateStorageWithNewHighline(newHighline: StorageHighline) {
     try {
       const highlines = await readAndParseItemFromStorage();
-      if (highlines === null) return;
-
       const updatedStorage = [newHighline];
-      const differentVisitedHighline = highlines.find((h) => h.id !== newHighline.id);
-      if (differentVisitedHighline) updatedStorage.push(differentVisitedHighline);
+      if (highlines !== null && highlines.length !== 0) {
+        const differentVisitedHighline = highlines.find((h) => h.id !== newHighline.id);
+        if (differentVisitedHighline) updatedStorage.push(differentVisitedHighline);
+      }
       await setItem(JSON.stringify(updatedStorage));
     } catch (error) {
       console.error(

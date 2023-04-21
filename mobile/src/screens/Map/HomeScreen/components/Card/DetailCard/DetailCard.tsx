@@ -49,7 +49,7 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
       id: highline.uuid,
       coords: highlitedMarker.coords,
     });
-  }, [isFetchedAfterMount]);
+  }, [highline]);
 
   const conquerors = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // TO-DO: get array of coquerors, those should be User: {id: string; profilePic: ?}
 
