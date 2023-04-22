@@ -26,16 +26,14 @@ const Description = ({ description }: Props) => {
 
   return (
     <View>
-      <Text
-        onTextLayout={onTextLayout}
-        numberOfLines={limitLines ? DEFAULT_NUMBER_OF_LINES : undefined}>
-        {description}
-      </Text>
-      {showMore && (
-        <TouchableOpacity onPress={toggleNumberOfLines}>
-          <Text className="text-blue-500">{limitLines ? 'Ver mais' : 'Menos'}</Text>
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity onPress={toggleNumberOfLines} disabled={!showMore}>
+        <Text
+          onTextLayout={onTextLayout}
+          numberOfLines={limitLines ? DEFAULT_NUMBER_OF_LINES : undefined}>
+          {description}
+        </Text>
+        {showMore && <Text className="text-blue-500">{limitLines ? 'Ver mais' : 'Menos'}</Text>}
+      </TouchableOpacity>
     </View>
   );
 };
