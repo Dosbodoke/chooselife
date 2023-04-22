@@ -34,19 +34,18 @@ const DetailCard = ({ highlitedMarker, navigation }: Props) => {
   const [HeartSvg, toggleFavorite] = useIsFavorite(highlitedMarker.id);
   const { updateStorageWithNewHighline } = useLastHighline();
 
-  const { data: highline, isFetchedAfterMount } = trpc.highline.getById.useQuery(
-    highlitedMarker.id
-  );
+  const { data: highline } = trpc.highline.getById.useQuery(highlitedMarker.id);
 
   const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (!highline) return;
     updateStorageWithNewHighline({
+      uuid: highline.uuid,
       name: highline.name,
       height: highline.height,
       length: highline.length,
-      id: highline.uuid,
+      isRigged: highline.isRigged,
       coords: highlitedMarker.coords,
     });
   }, [highline]);

@@ -1,25 +1,30 @@
 import { useAsyncStorage } from '@react-native-async-storage/async-storage';
-import { z } from 'zod';
 import { useState, useEffect } from 'react';
+import { z } from 'zod';
+import { RouterOutput } from '@src/utils/trpc';
 
-const storageHighlineSchema = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    length: z.number(),
-    height: z.number(),
-    coords: z
-      .array(
-        z.object({
-          latitude: z.number(),
-          longitude: z.number(),
-        })
-      )
-      .length(2),
-  })
-  .strict();
+const storageHighlineSchema = z.object({
+  uuid: z.string(),
+  name: z.string(),
+  length: z.number(),
+  height: z.number(),
+  isRigged: z.boolean(),
+  coords: z
+    .array(
+      z.object({
+        latitude: z.number(),
+        longitude: z.number(),
+      })
+    )
+    .length(2),
+});
 
-export type StorageHighline = z.infer<typeof storageHighlineSchema>;
+export type StorageHighline = NonNullable<RouterOutput['highline']['getById']> & {
+  coords: {
+    latitude: number;
+    longitude: number;
+  }[];
+};
 
 const useLastHighline = (readItem?: boolean) => {
   const [lastHighline, setLastHighline] = useState<StorageHighline[] | null>(null);
@@ -28,14 +33,16 @@ const useLastHighline = (readItem?: boolean) => {
   async function readAndParseItemFromStorage(): Promise<StorageHighline[] | null> {
     try {
       const item = await getItem();
-      if (item !== null) {
-        const parsed = JSON.parse(item);
-        parsed.forEach((i: any) => storageHighlineSchema.parse(i));
-        return parsed;
-      }
+      if (!item) return null;
+      const parsedItem = JSON.parse(item);
+      if (!Array.isArray(parsedItem)) throw new Error('Item is not an array');
+      // Check if all itens on Array has the right shape
+      // if '.parse(item)' fails, it will throw an error
+      parsedItem.forEach((item) => storageHighlineSchema.parse(item));
+      return parsedItem;
     } catch (error) {
+      // if there is an error, wipe the storage
       await removeItem();
-      console.error(error);
     }
     return null;
   }
@@ -45,7 +52,7 @@ const useLastHighline = (readItem?: boolean) => {
       const highlines = await readAndParseItemFromStorage();
       const updatedStorage = [newHighline];
       if (highlines !== null && highlines.length !== 0) {
-        const differentVisitedHighline = highlines.find((h) => h.id !== newHighline.id);
+        const differentVisitedHighline = highlines.find((h) => h.uuid !== newHighline.uuid);
         if (differentVisitedHighline) updatedStorage.push(differentVisitedHighline);
       }
       await setItem(JSON.stringify(updatedStorage));

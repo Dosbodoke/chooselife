@@ -30,7 +30,7 @@ const SearchCard = ({ onNewLocation, navigation }: Props) => {
 
       <View>
         {lastHighline?.map((high) => (
-          <LastHighline key={high.id} highline={high} />
+          <LastHighline key={high.uuid} highline={high} />
         ))}
       </View>
     </>
