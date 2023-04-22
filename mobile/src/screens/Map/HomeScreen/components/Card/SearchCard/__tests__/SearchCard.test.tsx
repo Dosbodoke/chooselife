@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { Highline } from '@src/database';
 import { renderWithProviders, createTestProps } from '@src/utils/test-utils';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
+import useLastHighline, { type StorageHighline } from '@src/hooks/useLastHighline';
 import SearchCard from '../SearchCard';
-import useLastHighline from '../useLastHighline';
 
-jest.mock('../useLastHighline', () => ({
+jest.mock('@src/hooks/useLastHighline', () => ({
   __esModule: true,
   default: jest.fn(),
 }));
@@ -26,27 +25,31 @@ describe('SearchCard', () => {
     expect(props.navigation.navigate).toBeCalledWith('Search');
   });
 
-  it('Show last 2 visited highlines', () => {
+  it('Shows last 2 visited highlines', () => {
     // given
     const props: any = createTestProps({});
-    const lastHighline: Highline[] = [
+    const lastHighline: StorageHighline[] = [
       {
-        id: '1',
+        uuid: '1',
         name: 'Pangaré Figueiredo',
         height: 15,
         length: 42,
-        anchorA: { latitude: -15.782699598577715, longitude: -47.93240706636002 },
-        anchorB: { latitude: -15.782857045014248, longitude: -47.932031557107194 },
         isRigged: false,
+        coords: [
+          { latitude: -15.782699598577715, longitude: -47.93240706636002 },
+          { latitude: -15.782857045014248, longitude: -47.932031557107194 },
+        ],
       },
       {
-        id: '2',
+        uuid: '2',
         name: 'Varal de Cabaré',
         height: 24,
         length: 84,
-        anchorA: { latitude: -16.40110401623181, longitude: -48.98699219976841 },
-        anchorB: { latitude: -16.39990690739436, longitude: -48.98303872861332 },
         isRigged: true,
+        coords: [
+          { latitude: -16.40110401623181, longitude: -48.98699219976841 },
+          { latitude: -16.39990690739436, longitude: -48.98303872861332 },
+        ],
       },
     ];
     (useLastHighline as jest.Mock).mockReturnValue(lastHighline);

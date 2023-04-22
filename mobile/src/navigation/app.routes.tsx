@@ -16,7 +16,7 @@ export type RootStackParamList = {
   Search: undefined;
   MapType: undefined;
   Details: {
-    highline: RouterOutput['highline']['createHighline'];
+    highline: NonNullable<RouterOutput['highline']['getById']>;
   };
   LocationPicker: {
     camera?: Camera;

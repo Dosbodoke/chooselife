@@ -16,7 +16,7 @@ const LastHighline = ({ highline }: Props) => {
     dispatch(
       highlightMarker({
         type: 'Highline',
-        id: highline.id,
+        id: highline.uuid,
         coords: highline.coords,
       })
     );

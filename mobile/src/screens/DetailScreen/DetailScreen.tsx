@@ -12,8 +12,6 @@ import { Divider } from '@src/components';
 const DetailScreen = ({ navigation, route }: DetailScreenProps) => {
   const highline = route.params.highline;
 
-  if (!highline) return null;
-
   return (
     <ScrollView className="flex flex-1">
       <ImageHeader
