@@ -120,7 +120,7 @@ const ClusteredMap = forwardRef<ForwardedRef>((props, ref) => {
         },
       };
     });
-  }, [highlines, highlitedMarker?.shouldTriggerUseQueryRefetch]);
+  }, [highlines]);
 
   const { clusters, supercluster } = useSuperCluster({
     points,
