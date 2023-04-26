@@ -22,7 +22,9 @@ const SearchCard = ({ onNewLocation, navigation }: Props) => {
         <TouchableOpacity
           className="flex-1 flex-row items-center rounded-xl bg-gray-100 py-3 px-2 shadow-md"
           onPress={() => navigation.navigate('Search')}>
-          <SearchSvg />
+          <View className="h-6 w-6">
+            <SearchSvg className="stroke-sky-600" />
+          </View>
           <Text className="ml-2 text-xl font-bold">Encontre um Highline</Text>
         </TouchableOpacity>
         <NewLocationButton onPress={onNewLocation} />

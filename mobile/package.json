@@ -16,6 +16,7 @@
     "@react-navigation/native": "^6.0.13",
     "@react-navigation/stack": "^6.3.2",
     "@reduxjs/toolkit": "^1.8.6",
+    "@shopify/flash-list": "1.4.0",
     "@tanstack/react-query": "^4.24.4",
     "@trpc/client": "^10.10.0",
     "@trpc/react-query": "^10.10.0",
