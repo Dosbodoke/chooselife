@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ImageBackground, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 
 import { HeightSvg, LengthSvg } from '@src/assets';
 import useIsFavorite from '@src/hooks/useIsFavorite';

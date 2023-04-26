@@ -1,11 +1,9 @@
-import { useState } from 'react';
 import { View, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { ArrowBackSvg } from '@src/assets';
 
 interface Props {
-  // nameFilter: string;
   onSearch: (filter: string) => void;
   goBack: () => void;
 }
@@ -21,11 +19,7 @@ const Header = ({ onSearch, goBack }: Props) => {
         <TextInput
           className="grow rounded-md border-[1px] border-gray-300 bg-gray-50 py-2 px-3 leading-6"
           placeholder="Nome da Via"
-          // onChangeText={(value) => {
-          //   onSearch(value);
-          // }}
           onSubmitEditing={(e) => {
-            console.log(e.nativeEvent.text.trim());
             onSearch(e.nativeEvent.text.trim());
           }}
           autoFocus

@@ -1,4 +1,4 @@
-import Svg, { Path, Circle, SvgProps, LinearGradient, Defs, Stop, G } from 'react-native-svg';
+import Svg, { Path, Circle, SvgProps, LinearGradient, Defs, Stop } from 'react-native-svg';
 
 import MapSatellitePng from './map_satellite.png';
 import MapStandardPng from './map_standard.png';

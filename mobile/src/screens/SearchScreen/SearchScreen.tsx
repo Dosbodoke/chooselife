@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { View, Text, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, SafeAreaView, ActivityIndicator } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 
 import { trpc } from '@src/utils/trpc';
