@@ -15,6 +15,7 @@ This repository is composed by two modules:
   - [Database](#database)
   - [Server](#server)
   - [Mobile](#mobile)
+- [Tech Stack](#tech-stack)
 - [Recommended VSCode extensions](#recommended-vscode-extensions)
 
 ## Setup clerk
@@ -102,6 +103,22 @@ Go to `mobile/` and run `yarn install && yarn start` to start the application.
 You will need expo installed in order to ran the application, follow this guide for the [installation guide](https://docs.expo.dev/get-started/installation/)
 
 Set-up the `.env` file following the `.env.example` schema
+
+## Tech Stack 💜
+
+**📱 Mobile:**
+
+- [Expo](https://github.com/expo/expo)
+- [TypeScript](https://github.com/microsoft/TypeScript)
+- [NativeWind](https://github.com/marklawlor/nativewind) _(Tailwind para o React Native)_
+
+**🏧 Server:**
+
+- [Express](https://github.com/expressjs/express) `(REST)`
+- [tRPC](https://github.com/trpc/trpc)
+- [Prisma](https://github.com/prisma/prisma)
+- [PostgreSQL](https://github.com/postgres)
+- [TypeScript](https://github.com/microsoft/TypeScript)
 
 ## Recommended VSCode extensions
 
