@@ -32,7 +32,7 @@ const RootStack = createStackNavigator<RootStackParamList>();
 const RootRoutes: React.FC = () => (
   <RootStack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
     <RootStack.Screen name="Home" component={HomeScreen} />
-    <RootStack.Screen name="Search" component={SearchScreen} options={{ presentation: 'modal' }} />
+    <RootStack.Screen name="Search" component={SearchScreen} />
     <RootStack.Screen
       name="MapType"
       component={MapTypeScreen}
