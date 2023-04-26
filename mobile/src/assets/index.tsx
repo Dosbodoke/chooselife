@@ -6,9 +6,9 @@ import MapTerrainPng from './map_terrain.png';
 
 export { MapSatellitePng, MapStandardPng, MapTerrainPng };
 
-export const SearchSvg = () => {
+export const SearchSvg = (props: SvgProps) => {
   return (
-    <Svg viewBox="0 0 24 24" strokeWidth={2.5} className="h-6 w-6 stroke-sky-600">
+    <Svg height="100%" width="100%" viewBox="0 0 24 24" strokeWidth={2.5} {...props}>
       <Path
         strokeLinecap="round"
         strokeLinejoin="round"
