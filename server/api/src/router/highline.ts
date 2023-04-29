@@ -100,7 +100,6 @@ export const highlineRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      console.log("CALLED");
       const { skip, cursor, nameFilter } = input;
       const limit = input.limit ?? 50;
       const items = await ctx.prisma?.highline.findMany({
