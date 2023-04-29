@@ -1,4 +1,6 @@
 version: "3.9"
+
+# All services should have the prefix chooselife_ on the container name
 services:
   server:
     build:
@@ -40,7 +42,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
-    container_name: pgadmin
+    container_name: chooselife_pgadmin
     depends_on:
       - postgres
     ports:
@@ -52,13 +54,13 @@ services:
       - pgadmin-data:/var/lib/pgadmin
     restart: unless-stopped
 
-  redis:
-    image: redis:latest
-    container_name: chooselife_redis
-    ports:
-      - '6379:6379'
-    volumes:
-      - redis:/data
+  # redis:
+  #   image: redis:latest
+  #   container_name: chooselife_redis
+  #   ports:
+  #     - '6379:6379'
+  #   volumes:
+  #     - redis:/data
 
 volumes:
   postgres-data:
