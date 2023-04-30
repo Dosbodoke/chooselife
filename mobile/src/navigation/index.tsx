@@ -3,8 +3,8 @@ import { View, ActivityIndicator } from 'react-native';
 
 import { useProfile } from '@src/hooks/useProfile';
 
-import RootRoutes from './app.routes';
 import AuthRoutes from './auth.routes';
+import TabRoutes from './tab.routes';
 
 const Routes: React.FC = () => {
   const { profile, isLoaded } = useProfile();
@@ -17,7 +17,7 @@ const Routes: React.FC = () => {
     );
   }
 
-  return profile ? <RootRoutes /> : <AuthRoutes />;
+  return profile ? <TabRoutes /> : <AuthRoutes />;
 };
 
 export default Routes;

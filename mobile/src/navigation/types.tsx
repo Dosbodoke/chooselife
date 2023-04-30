@@ -1,19 +1,19 @@
 import { StackScreenProps } from '@react-navigation/stack';
 
-import { RootStackParamList } from './app.routes';
+import { MapStackParamList } from './map.routes';
 import { AuthStackParamList } from './auth.routes';
 
-export type HomeScreenProps = StackScreenProps<RootStackParamList, 'Home'>;
+export type HomeScreenProps = StackScreenProps<MapStackParamList, 'Home'>;
 
-export type SearchScreenProps = StackScreenProps<RootStackParamList, 'Search'>;
+export type SearchScreenProps = StackScreenProps<MapStackParamList, 'Search'>;
 
-export type MapTypeScreenProps = StackScreenProps<RootStackParamList, 'MapType'>;
+export type MapTypeScreenProps = StackScreenProps<MapStackParamList, 'MapType'>;
 
-export type DetailScreenProps = StackScreenProps<RootStackParamList, 'Details'>;
+export type DetailScreenProps = StackScreenProps<MapStackParamList, 'Details'>;
 
-export type LocationPickerScreenProps = StackScreenProps<RootStackParamList, 'LocationPicker'>;
+export type LocationPickerScreenProps = StackScreenProps<MapStackParamList, 'LocationPicker'>;
 
-export type HighlineFormScreenProps = StackScreenProps<RootStackParamList, 'HighlineFormScreen'>;
+export type HighlineFormScreenProps = StackScreenProps<MapStackParamList, 'HighlineFormScreen'>;
 
 export type LogInScreenProps = StackScreenProps<AuthStackParamList, 'LogIn'>;
 

@@ -1,9 +1,9 @@
+import { useRef, useState } from 'react';
 import { ArrowBackCircleSvg } from '@src/assets';
 import { INITIAL_REGION } from '@src/constants';
 import { LocationPickerScreenProps } from '@src/navigation/types';
 import { useAppSelector } from '@src/redux/hooks';
 import { getDistance } from 'geolib';
-import { useRef, useState } from 'react';
 import { View, StatusBar, TouchableOpacity } from 'react-native';
 import MapView, { Region, Details, LatLng } from 'react-native-maps';
 

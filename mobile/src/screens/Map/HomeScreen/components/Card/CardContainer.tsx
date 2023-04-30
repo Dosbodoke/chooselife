@@ -18,9 +18,7 @@ const CardContainer = ({ onLayout, onNewLocation, navigation }: Props) => {
   const highlitedMarker = useAppSelector(selectHighlitedMarker);
 
   return (
-    <View
-      className="absolute bottom-0 w-full rounded-t-3xl bg-white px-4 pb-8 pt-4"
-      onLayout={onLayout}>
+    <View className="absolute bottom-0 w-full rounded-t-3xl bg-white px-4 pt-4" onLayout={onLayout}>
       {highlitedMarker ? (
         <DetailCard highlitedMarker={highlitedMarker} navigation={navigation} />
       ) : (
