@@ -6,6 +6,7 @@ import MapTypeScreen from './Map/MapTypeScreen/MapTypeScreen';
 import SearchScreen from './SearchScreen/SearchScreen';
 import LogIn from './LogIn';
 import SignUp from './SignUp';
+import Profile from './Profile/Profile';
 
 export {
   HomeScreen,
@@ -16,4 +17,5 @@ export {
   HighlineFormScreen,
   LogIn,
   SignUp,
+  Profile,
 };
