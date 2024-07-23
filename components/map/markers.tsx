@@ -1,11 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { RefObject, useEffect, useMemo } from "react";
-import { View, Text } from "react-native";
+import { View } from "react-native";
 import MapView, { LatLng, Marker, Polyline } from "react-native-maps";
 import { PointFeature } from "supercluster";
 import useSuperCluster from "use-supercluster";
 import type { BBox, GeoJsonProperties } from "geojson";
 
+import { Text } from "../ui/text";
 import { type Highline } from "~/hooks/useHighline";
 import { MarkerCL } from "~/lib/icons/MarkerCL";
 
@@ -232,12 +233,10 @@ const ClusteredMarker = ({
   return (
     <Marker coordinate={coordinate} onPress={onPress}>
       <View
-        className="flex items-center justify-center rounded-full bg-popover"
+        className="flex items-center justify-center rounded-full bg-popover shadow-lg"
         style={{ width: size, height: size }}
       >
-        <Text className="text-center text-xl font-bold text-white">
-          {pointCount}
-        </Text>
+        <Text className="text-center text-xl font-bold">{pointCount}</Text>
       </View>
     </Marker>
   );

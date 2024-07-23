@@ -9,6 +9,7 @@ import { H2, Muted } from "~/components/ui/typography";
 import { useAuth } from "~/context/auth";
 import { supabase } from "~/lib/supabase";
 import { Separator } from "~/components/ui/separator";
+import { SelectTheme } from "~/components/settings/select-theme";
 
 function getShortName(fullName: string) {
   const nameParts = fullName.trim().split(/\s+/);
@@ -26,7 +27,7 @@ export default function SettingsPage() {
   if (profile) {
     return (
       <SafeAreaView className="flex-1">
-        <View className="flex gap-4 p-4">
+        <View className="flex gap-4 p-4 pt-8">
           <Link href={`profile/${profile.username}`} asChild>
             <TouchableOpacity className="flex flex-row gap-4">
               <Avatar className="h-16 w-16" alt="Foto do perfil">
@@ -51,6 +52,10 @@ export default function SettingsPage() {
 
           <Separator />
 
+          <SelectTheme />
+
+          <Separator />
+
           <Button variant="link" onPress={signOut}>
             <Text className="text-foreground underline">Sair da conta</Text>
           </Button>
@@ -61,12 +66,16 @@ export default function SettingsPage() {
 
   return (
     <SafeAreaView className="flex-1">
-      <View className="p-4">
-        <Link
-          href={`/login?redirect_to=settings`}
-          className="w-fit bg-primary text-center py-4 text-primary-foreground"
-        >
-          Entrar
+      <View className="p-4 gap-4 flex justify-end h-full">
+        <Separator />
+
+        <SelectTheme />
+
+        <Separator />
+        <Link href={`/login?redirect_to=settings`} asChild>
+          <Button className="w-fit bg-primary text-center py-4 text-primary-foreground">
+            <Text>Entrar</Text>
+          </Button>
         </Link>
       </View>
     </SafeAreaView>

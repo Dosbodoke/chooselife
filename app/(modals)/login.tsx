@@ -7,8 +7,10 @@ import { Input } from "~/components/ui/input";
 import { useAuth } from "~/context/auth";
 import { GoogleIcon } from "~/lib/icons/Google";
 import { AppleIcon } from "~/lib/icons/Apple";
+import { useColorScheme } from "~/lib/useColorScheme";
 
 const Page = () => {
+  const { colorScheme } = useColorScheme();
   const { signIn, performOAuth } = useAuth();
   const router = useRouter();
 
@@ -63,9 +65,9 @@ const Page = () => {
       </View>
 
       <View className="gap-5">
-        <Button variant="outline" className="flex flex-row gap-2 items-center">
-          <View className="size-6">
-            <AppleIcon className="fill-black dark:fill-white opacity-100" />
+        <Button variant="outline" className="flex flex-row gap-3 items-center">
+          <View className="h-6 w-6">
+            <AppleIcon fill={colorScheme === "dark" ? "#FFFFFF" : "#000000"} />
           </View>
           <Text className="text-primary">Continuar com Apple</Text>
         </Button>
@@ -78,9 +80,9 @@ const Page = () => {
             }
           }}
           variant="outline"
-          className="flex flex-row gap-2 items-center"
+          className="flex flex-row gap-3 items-center"
         >
-          <View className="size-6">
+          <View className="h-6 w-6">
             <GoogleIcon />
           </View>
           <Text className="text-primary">Continuar com Google</Text>
