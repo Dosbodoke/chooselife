@@ -1,4 +1,5 @@
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import * as Linking from "expo-linking";
+import { useLocalSearchParams, useNavigation, usePathname } from "expo-router";
 import React, { useLayoutEffect } from "react";
 import {
   View,
@@ -14,25 +15,29 @@ import Animated, {
   useAnimatedStyle,
   useScrollViewOffset,
 } from "react-native-reanimated";
-import { supabase } from "~/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
+
+import { supabase } from "~/lib/supabase";
 import { Button } from "~/components/ui/button";
 import { H1, Lead } from "~/components/ui/typography";
 import { Text } from "~/components/ui/text";
 import { FavoriteHighline } from "../../components/highline/favorite-button";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { useAuth } from "~/context/auth";
 
 const { width } = Dimensions.get("window");
 const IMG_HEIGHT = 300;
 
 export default function HighlinePage() {
+  const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: highline, isPending } = useQuery({
     queryKey: ["highline", id],
     queryFn: async () => {
       const result = await supabase.rpc("get_highline", {
         searchid: [id as string],
+        userid: user?.id,
       });
       return result.data && result.data.length > 0 ? result.data[0] : null;
     },
@@ -46,7 +51,7 @@ export default function HighlinePage() {
     try {
       await Share.share({
         title: highline?.name,
-        url: `https://chooselife.club/${highline.id}`,
+        url: Linking.createURL(`highline/${highline.id}`),
       });
     } catch (err) {
       console.log(err);

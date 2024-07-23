@@ -14,7 +14,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { NAV_THEME } from "~/lib/constants";
 import { useColorScheme } from "~/lib/useColorScheme";
 import queryClient from "~/lib/react-query";
-import { SessionProvider } from "~/context/auth";
+import { AuthProvider } from "~/context/auth";
 
 const LIGHT_THEME: Theme = {
   dark: false,
@@ -74,7 +74,7 @@ export default function RootLayout() {
   }
 
   return (
-    <SessionProvider>
+    <AuthProvider>
       <QueryClientProvider client={queryClient}>
         <GestureHandlerRootView>
           <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
@@ -90,7 +90,7 @@ export default function RootLayout() {
                 name="(modals)/login"
                 options={{
                   presentation: "modal",
-                  title: "Log in or sign up",
+                  title: "Entrar ou criar conta",
                 }}
               />
             </Stack>
@@ -98,6 +98,6 @@ export default function RootLayout() {
           </ThemeProvider>
         </GestureHandlerRootView>
       </QueryClientProvider>
-    </SessionProvider>
+    </AuthProvider>
   );
 }

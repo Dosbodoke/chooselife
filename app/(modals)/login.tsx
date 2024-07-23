@@ -1,14 +1,15 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { View, StyleSheet, Text } from "react-native";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-
-import { useSession } from "~/context/auth";
 import { useRouter } from "expo-router";
 
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { useAuth } from "~/context/auth";
+import { GoogleIcon } from "~/lib/icons/Google";
+import { AppleIcon } from "~/lib/icons/Apple";
+
 const Page = () => {
-  const { signIn, performOAuth } = useSession();
+  const { signIn, performOAuth } = useAuth();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -35,8 +36,8 @@ const Page = () => {
         />
         <Button
           onPress={async () => {
-            const response = await signIn(email, password);
-            if (response?.data) {
+            const { data } = await signIn(email, password);
+            if (data) {
               router.back();
             }
           }}
@@ -62,29 +63,26 @@ const Page = () => {
       </View>
 
       <View className="gap-5">
-        <Button
-          variant="outline"
-          disabled
-          className="flex flex-row gap-2 items-center"
-        >
-          <Ionicons
-            className="text-muted-foreground"
-            name="logo-apple"
-            size={24}
-          />
+        <Button variant="outline" className="flex flex-row gap-2 items-center">
+          <View className="size-6">
+            <AppleIcon className="fill-black dark:fill-white opacity-100" />
+          </View>
           <Text className="text-primary">Continuar com Apple</Text>
         </Button>
 
         <Button
-          onPress={performOAuth}
+          onPress={async () => {
+            const { data } = await performOAuth();
+            if (data) {
+              router.back();
+            }
+          }}
           variant="outline"
           className="flex flex-row gap-2 items-center"
         >
-          <Ionicons
-            className="text-muted-foreground"
-            name="logo-google"
-            size={24}
-          />
+          <View className="size-6">
+            <GoogleIcon />
+          </View>
           <Text className="text-primary">Continuar com Google</Text>
         </Button>
       </View>

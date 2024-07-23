@@ -7,14 +7,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { supabase } from "~/lib/supabase";
 import { useEffect, useState } from "react";
 import { Database } from "~/utils/database.types";
-import { useSession } from "~/context/auth";
+import { useAuth } from "~/context/auth";
 
 export default function Profile() {
-  const { user } = useSession();
+  const { profile } = useAuth();
 
-  const [profile, setProfile] = useState<
-    Database["public"]["Tables"]["profiles"]["Row"] | null
-  >(null);
   const [stats, setStats] = useState<{
     total_distance_walked: number;
     total_cadenas: number;
@@ -22,35 +19,21 @@ export default function Profile() {
   } | null>(null);
 
   useEffect(() => {
-    getProfile();
-  }, [user]);
+    getStats();
+  }, [profile]);
 
-  async function getProfile() {
-    if (!user) return;
+  async function getStats() {
+    if (!profile) return;
     try {
-      const profile = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (profile.data) {
-        setProfile(profile.data);
-      }
-
       const stats = await supabase
         .rpc("profile_stats", {
-          username: `@${profile.data?.username}`,
+          username: `@${profile.username}`,
         })
         .single();
 
       if (stats.data) {
         setStats(stats.data);
       }
-
-      // if (error && status !== 406) {
-      //   throw error;
-      // }
     } catch (error) {
       if (error instanceof Error) {
         Alert.alert(error.message);

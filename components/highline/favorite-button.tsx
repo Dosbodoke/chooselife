@@ -16,7 +16,7 @@ import Animated, {
 import { supabase } from "~/lib/supabase";
 import { Heart } from "~/lib/icons/Heart";
 import type { Highline } from "~/hooks/useHighline";
-import { useSession } from "~/context/auth";
+import { useAuth } from "~/context/auth";
 
 export function FavoriteHighline({
   isFavorite,
@@ -25,7 +25,7 @@ export function FavoriteHighline({
   isFavorite: boolean;
   id?: string;
 }) {
-  const { user } = useSession();
+  const { user } = useAuth();
 
   const [favorite, setFavorite] = useState(isFavorite);
   const queryClient = useQueryClient();
@@ -51,7 +51,7 @@ export function FavoriteHighline({
     },
     onMutate: async () => {
       if (!user) {
-        router.push("/(modals)/login");
+        router.push(`/(modals)/login?redirect_to=highline/${id}`);
         throw new Error("User not logged in");
       }
       // Start animation
