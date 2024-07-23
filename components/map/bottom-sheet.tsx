@@ -30,10 +30,10 @@ const ListingsBottomSheet = ({ highlines }: Props) => {
       snapPoints={snapPoints}
       enablePanDownToClose={false}
       handleIndicatorStyle={{
-        backgroundColor: colorScheme === "light" ? "#f4f4f5" : "#27272a",
+        backgroundColor: colorScheme === "light" ? "#71717a" : "#27272a",
       }}
       handleStyle={{
-        backgroundColor: colorScheme === "light" ? "#000064" : "#09090b",
+        backgroundColor: colorScheme === "light" ? "#f4f4f5" : "#09090b",
       }}
       style={{
         elevation: 4,
