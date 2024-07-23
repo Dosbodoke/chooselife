@@ -43,21 +43,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
-        options={{
-          headerShown: false,
-          title: "Perfil",
-          tabBarIcon: ({ focused }) => (
-            <User
-              className={cn(
-                "w-4 h-4",
-                focused ? "text-blue-500" : "text-muted-foreground"
-              )}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="settings"
         options={{
           headerShown: false,

@@ -1,50 +1,59 @@
-import { View, Text, Alert } from "react-native";
+import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useQuery } from "@tanstack/react-query";
 
+import { Text } from "~/components/ui/text";
 import { Card, CardContent } from "~/components/ui/card";
 import { H1, H2, H3, Lead, Muted, P } from "~/components/ui/typography";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { supabase } from "~/lib/supabase";
-import { useEffect, useState } from "react";
 import { Database } from "~/utils/database.types";
-import { useAuth } from "~/context/auth";
+import { Link, useLocalSearchParams } from "expo-router";
+import { Button } from "~/components/ui/button";
 
 export default function Profile() {
-  const { profile } = useAuth();
+  const { username } = useLocalSearchParams<{ username: string }>();
 
-  const [stats, setStats] = useState<{
-    total_distance_walked: number;
-    total_cadenas: number;
-    total_full_lines: number;
-  } | null>(null);
+  const { data: profile } = useQuery({
+    queryKey: ["profile", username],
+    queryFn: async () => {
+      if (!username) throw new Error("No username provided");
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("username", username)
+        .single();
+      return data;
+    },
+    enabled: !!username,
+  });
 
-  useEffect(() => {
-    getStats();
-  }, [profile]);
-
-  async function getStats() {
-    if (!profile) return;
-    try {
+  const { data: stats } = useQuery({
+    queryKey: ["profile", username, "stats"],
+    queryFn: async () => {
+      if (!profile) throw new Error("Profile doesn't exists");
       const stats = await supabase
         .rpc("profile_stats", {
           username: `@${profile.username}`,
         })
         .single();
 
-      if (stats.data) {
-        setStats(stats.data);
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        Alert.alert(error.message);
-      }
-    }
-  }
+      return stats.data;
+    },
+    enabled: !!profile,
+  });
 
   if (!profile) {
     return (
       <SafeAreaView className="flex-1">
-        <Text>Faça login</Text>
+        <View className="flex items-center justify-center h-full gap-4">
+          <H2>Usuário não existe</H2>
+          <Link href="/" asChild>
+            <Button>
+              <Text>voltar à página inicial</Text>
+            </Button>
+          </Link>
+        </View>
       </SafeAreaView>
     );
   }

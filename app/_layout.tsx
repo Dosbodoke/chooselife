@@ -93,6 +93,12 @@ export default function RootLayout() {
                   title: "Entrar ou criar conta",
                 }}
               />
+              <Stack.Screen
+                name="profile/[username]"
+                options={{
+                  headerShown: false,
+                }}
+              />
             </Stack>
             <PortalHost />
           </ThemeProvider>
