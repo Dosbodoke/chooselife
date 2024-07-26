@@ -17,3 +17,9 @@ export const regionToBoundingBox = (region: Region): BBox => {
 export const calculateZoomLevel = (latitudeDelta: number): number => {
   return Math.round(Math.log2(360 / latitudeDelta));
 };
+
+export function transformTimeStringToSeconds(timeString: string): number {
+  const [minutes, seconds] = timeString.split(":").map(Number);
+  const totalSeconds = minutes * 60 + seconds;
+  return totalSeconds;
+}

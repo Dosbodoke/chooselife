@@ -7,7 +7,6 @@ import { SplashScreen, Stack } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { Platform } from "react-native";
 import { PortalHost } from "@rn-primitives/portal";
 import { QueryClientProvider, onlineManager } from "@tanstack/react-query";
 import NetInfo from "@react-native-community/netinfo";
@@ -74,8 +73,8 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
-        <GestureHandlerRootView>
-          <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+        <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+          <GestureHandlerRootView>
             <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
             <Stack>
               <Stack.Screen
@@ -92,6 +91,12 @@ export default function RootLayout() {
                 }}
               />
               <Stack.Screen
+                name="highline"
+                options={{
+                  headerShown: false,
+                }}
+              />
+              <Stack.Screen
                 name="profile/[username]"
                 options={{
                   headerShown: false,
@@ -99,8 +104,8 @@ export default function RootLayout() {
               />
             </Stack>
             <PortalHost />
-          </ThemeProvider>
-        </GestureHandlerRootView>
+          </GestureHandlerRootView>
+        </ThemeProvider>
       </QueryClientProvider>
     </AuthProvider>
   );

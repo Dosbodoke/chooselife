@@ -1,5 +1,10 @@
 import * as Linking from "expo-linking";
-import { useLocalSearchParams, useNavigation, usePathname } from "expo-router";
+import {
+  Link,
+  useLocalSearchParams,
+  useNavigation,
+  usePathname,
+} from "expo-router";
 import React, { useLayoutEffect } from "react";
 import {
   View,
@@ -21,7 +26,7 @@ import { supabase } from "~/lib/supabase";
 import { Button } from "~/components/ui/button";
 import { H1, Lead } from "~/components/ui/typography";
 import { Text } from "~/components/ui/text";
-import { FavoriteHighline } from "../../components/highline/favorite-button";
+import { FavoriteHighline } from "~/components/highline/favorite-button";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useAuth } from "~/context/auth";
@@ -150,11 +155,13 @@ export default function HighlinePage() {
                 <Lead>foo in bar</Lead>
               </View>
               <View className="flex flex-row gap-4">
-                <Button>
-                  <Text className="text-primary-foreground">
-                    Registrar rolê
-                  </Text>
-                </Button>
+                <Link href={`/highline/${id}/register`} asChild>
+                  <Button>
+                    <Text className="text-primary-foreground">
+                      Registrar rolê
+                    </Text>
+                  </Button>
+                </Link>
                 <Button variant="outline">
                   <Text className="text-primary">Adicionar ao mapa</Text>
                 </Button>
