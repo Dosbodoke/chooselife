@@ -15,6 +15,7 @@ import { NAV_THEME } from "~/lib/constants";
 import { useColorScheme } from "~/lib/useColorScheme";
 import queryClient from "~/lib/react-query";
 import { AuthProvider } from "~/context/auth";
+import useLinking from "~/hooks/useLinking";
 
 const LIGHT_THEME: Theme = {
   dark: false,
@@ -34,6 +35,7 @@ export {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  useLinking();
   const { colorScheme, setColorScheme, isDarkColorScheme } = useColorScheme();
   const [isColorSchemeLoaded, setIsColorSchemeLoaded] = useState(false);
 
@@ -47,7 +49,6 @@ export default function RootLayout() {
   useEffect(() => {
     (async () => {
       const theme = await AsyncStorage.getItem("theme");
-      console.log({ theme });
       if (!theme) {
         AsyncStorage.setItem("theme", colorScheme);
         setIsColorSchemeLoaded(true);
