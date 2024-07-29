@@ -16,6 +16,7 @@ import { useColorScheme } from "~/lib/useColorScheme";
 import queryClient from "~/lib/react-query";
 import { AuthProvider } from "~/context/auth";
 import useLinking from "~/hooks/useLinking";
+import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
 
 const LIGHT_THEME: Theme = {
   dark: false,
@@ -50,11 +51,13 @@ export default function RootLayout() {
     (async () => {
       const theme = await AsyncStorage.getItem("theme");
       if (!theme) {
+        setAndroidNavigationBar(colorScheme);
         AsyncStorage.setItem("theme", colorScheme);
         setIsColorSchemeLoaded(true);
         return;
       }
       const colorTheme = theme === "dark" ? "dark" : "light";
+      setAndroidNavigationBar(colorScheme);
       if (colorTheme !== colorScheme) {
         setColorScheme(colorTheme);
 
