@@ -4,13 +4,13 @@ export default function HighlineLayout() {
   return (
     <Stack>
       <Stack.Screen
-        name="[id]/index"
+        name="index"
         options={{
           headerShown: false,
         }}
       />
       <Stack.Screen
-        name="[id]/register"
+        name="register"
         options={{
           presentation: "modal",
           title: "Registrar rolê",

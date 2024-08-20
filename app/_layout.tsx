@@ -95,7 +95,7 @@ export default function RootLayout() {
                 }}
               />
               <Stack.Screen
-                name="highline"
+                name="highline/[id]"
                 options={{
                   headerShown: false,
                 }}
