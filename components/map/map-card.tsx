@@ -28,8 +28,8 @@ const HighlineCard: React.FC<HighlineCardProps> = ({
     <Pressable
       onPress={() => onPress(highline)}
       className={cn(
-        "inline-block rounded-lg border border-border bg-accent text-accent-foreground shadow-sm shadow-foreground/10",
-        "h-32 min-w-[20rem]",
+        "inline-block rounded-lg border border-border bg-accent text-accent-foreground shadow shadow-foreground/10",
+        "h-32 min-w-[24rem]",
         isFocused ? "border border-blue-500 dark:border-blue-600" : "border-0"
       )}
     >
@@ -89,17 +89,12 @@ export const MapCardList = ({
     <Animated.View
       entering={FadeIn.duration(300).easing(Easing.inOut(Easing.ease))}
       exiting={FadeOut.duration(300).easing(Easing.inOut(Easing.ease))}
-      style={{ position: "absolute", bottom: 28, left: 0, right: 0 }}
+      style={{ position: "absolute", bottom: 96, left: 0, right: 0 }}
     >
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          columnGap: 16,
-          paddingRight: 16,
-          paddingLeft: 16,
-        }}
-        className="absolute bottom-28"
+        contentContainerClassName="px-2 gap-4"
       >
         {highlines.map((high) => (
           <HighlineCard

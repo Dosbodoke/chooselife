@@ -101,14 +101,14 @@ export default function Screen() {
         mapType={mapType}
         setMapType={setMapType}
       />
-      <ListingsBottomSheet highlines={highlines} />
-      {clusterMarkers && clusterMarkers.length !== 0 && (
+      {clusterMarkers && clusterMarkers.length !== 0 ? (
         <MapCardList
-          highlines={clusterMarkers || []}
+          highlines={clusterMarkers}
           focusedMarker={highlightedMarker}
           changeFocusedMarker={(high) => setHighlightedMarker(high)}
         />
-      )}
+      ) : null}
+      <ListingsBottomSheet highlines={highlines} />
     </View>
   );
 }
