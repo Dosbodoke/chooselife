@@ -5,10 +5,10 @@ import {
   View,
   TouchableOpacity,
 } from "react-native";
-import { Eye, EyeOff } from "lucide-react-native";
 
 import { cn } from "~/lib/utils";
 import { Label } from "~/components/ui/label";
+import { LucideIcon } from "~/lib/icons/lucide-icon";
 
 interface InputProps extends TextInputProps {
   rightIcon?: React.ReactNode;
@@ -84,9 +84,19 @@ const PasswordInput = ({
           secureTextEntry={!isVisible} // For React Native; use 'type' for web
           rightIcon={
             isVisible ? (
-              <EyeOff size={16} strokeWidth={2} color="#000" />
+              <LucideIcon
+                name="EyeOff"
+                size={16}
+                strokeWidth={2}
+                className="color-foreground"
+              />
             ) : (
-              <Eye size={16} strokeWidth={2} color="#000" />
+              <LucideIcon
+                name="Eye"
+                size={16}
+                strokeWidth={2}
+                className="color-foreground"
+              />
             )
           }
           onRightIconPress={toggleVisibility}

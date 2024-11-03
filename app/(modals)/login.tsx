@@ -43,7 +43,7 @@ const Page = () => {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-background">
       <KeyboardAwareScrollView
         contentContainerClassName="px-6 pt-3 pb-8 gap-4"
         keyboardShouldPersistTaps="handled"
@@ -68,7 +68,7 @@ const Page = () => {
 const LogoSection = () => {
   return (
     <View className="items-center gap-2 pt-8">
-      <ChooselifeIcon width={96} height={96} fill="black" />
+      <ChooselifeIcon width={96} height={96} className="fill-foreground" />
       <Text className="text-center">
         O único aplicativo feito para Highliners
       </Text>
