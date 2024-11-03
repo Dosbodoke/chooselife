@@ -22,7 +22,7 @@ function getShortName(fullName: string) {
 }
 
 export default function SettingsPage() {
-  const { profile, signOut } = useAuth();
+  const { profile, logout } = useAuth();
 
   if (profile) {
     return (
@@ -56,7 +56,7 @@ export default function SettingsPage() {
 
           <Separator />
 
-          <Button variant="link" onPress={signOut}>
+          <Button variant="link" onPress={logout}>
             <Text className="text-foreground underline">Sair da conta</Text>
           </Button>
         </View>

@@ -2,15 +2,16 @@ import * as Linking from "expo-linking";
 import * as QueryParams from "expo-auth-session/build/QueryParams";
 import * as WebBrowser from "expo-web-browser";
 import React, { useContext, useEffect, useState } from "react";
-import type { Session, User } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 import { makeRedirectUri } from "expo-auth-session";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { supabase } from "~/lib/supabase";
 import { Database } from "~/utils/database.types";
+import { useStorageState } from "~/hooks/useStorageState";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
-// Define the AuthContextValue interface
 interface SignInResponse {
   data: User | undefined | null;
   error: Error | undefined;
@@ -22,18 +23,14 @@ interface SignOutResponse {
 }
 
 interface AuthContextValue {
-  signIn: (e: string, p: string) => Promise<SignInResponse>;
-  signUp: (e: string, p: string, n: string) => Promise<SignInResponse>;
-  signOut: () => Promise<SignOutResponse>;
+  login: (email: string, password: string) => Promise<SignInResponse>;
+  signUp: (email: string, password: string) => Promise<SignInResponse>;
+  logout: () => Promise<SignOutResponse>;
   performOAuth: () => Promise<SignInResponse>;
   user: User | null | undefined;
   profile: Profile | null;
+  session: string | null;
   isLoading: boolean;
-}
-
-// Define the Provider component
-interface ProviderProps {
-  children: React.ReactNode;
 }
 
 // Create the AuthContext
@@ -42,11 +39,9 @@ const AuthContext = React.createContext<AuthContextValue | undefined>(
 );
 
 export function AuthProvider(props: React.PropsWithChildren) {
-  const [user, setUser] = React.useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [[isLoading, session], setSession] = useStorageState("session");
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [user, setUser] = React.useState<User | null>(null);
 
   // Handle linking into app from email app.
   const url = Linking.useURL();
@@ -54,25 +49,20 @@ export function AuthProvider(props: React.PropsWithChildren) {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase.auth.getSession();
-      setSession(data.session);
-      setUser(data.session?.user || null);
-      const { data: authListener } = supabase.auth.onAuthStateChange(
-        (_, session) => {
-          setSession(session);
-          setUser(session?.user || null);
-
-          if (!isLoading) {
-            setIsLoading(true);
-          }
-        }
-      );
-
-      return () => {
-        authListener!.subscription.unsubscribe();
-      };
+      const storedUser = await AsyncStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
     })();
   }, []);
+
+  const storeUserInAsyncStorage = async (user: User | null) => {
+    if (user) {
+      await AsyncStorage.setItem("user", JSON.stringify(user));
+    } else {
+      await AsyncStorage.removeItem("user");
+    }
+  };
 
   useEffect(
     function getProfile() {
@@ -94,127 +84,107 @@ export function AuthProvider(props: React.PropsWithChildren) {
     [user]
   );
 
-  /**
-   *
-   * @returns
-   */
-  const logout = async (): Promise<SignOutResponse> => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      return { error: undefined, data: true };
-    } catch (error) {
-      return { error, data: undefined };
-    } finally {
-      setUser(null);
-    }
-  };
-  /**
-   *
-   * @param email
-   * @param password
-   * @returns
-   */
-  const login = async (
-    email: string,
-    password: string
-  ): Promise<SignInResponse> => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) throw error;
-
-      setUser(data.user);
-      setSession(data.session);
-      return { data: user, error: undefined };
-    } catch (error) {
-      setUser(null);
-      setSession(null);
-      return { error: error as Error, data: undefined };
-    }
-  };
-
-  /**
-   *
-   * @param email
-   * @param password
-   * @param username
-   * @returns
-   */
-  const createAcount = async (
-    email: string,
-    password: string,
-    username: string
-  ): Promise<SignInResponse> => {
-    try {
-      // create the user
-      const signUpResp = await supabase.auth.signUp({ email, password });
-      if (signUpResp.error) throw signUpResp.error;
-
-      const updateResp = await supabase.auth.updateUser({
-        data: { name: username },
-      });
-      if (updateResp.error) throw updateResp.error;
-      updateResp.data.user;
-
-      // set user
-      setUser(updateResp.data.user);
-
-      // set session
-      setSession(signUpResp.data.session);
-      return { data: updateResp.data.user, error: undefined };
-    } catch (error) {
-      setUser(null);
-      setSession(null);
-      return { error: error as Error, data: undefined };
-    }
-  };
-
-  const performOAuth = async (): Promise<SignInResponse> => {
-    try {
-      const redirectTo = makeRedirectUri();
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo,
-          skipBrowserRedirect: true,
-        },
-      });
-
-      if (error) throw error;
-
-      const res = await WebBrowser.openAuthSessionAsync(
-        data?.url ?? "",
-        redirectTo
-      );
-
-      if (res.type === "success") {
-        const { url } = res;
-        const session = await createSessionFromUrl(url);
-        return { data: session?.user, error: undefined };
-      }
-
-      throw new Error("Couldn't create session");
-    } catch (error) {
-      setUser(null);
-      setSession(null);
-      return { error: error as Error, data: undefined };
-    }
-  };
-
   return (
     <AuthContext.Provider
       value={{
-        signIn: login,
-        signOut: logout,
-        signUp: createAcount,
-        performOAuth,
         user,
         profile,
+        session,
         isLoading,
+        login: async (
+          email: string,
+          password: string
+        ): Promise<SignInResponse> => {
+          try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+              email,
+              password,
+            });
+            if (error) throw error;
+
+            setUser(data.user);
+            await storeUserInAsyncStorage(data.user);
+
+            // Remove metadata, store only the token
+            const { user, ...session } = data.session;
+            setSession(JSON.stringify(session));
+            return { data: user, error: undefined };
+          } catch (error) {
+            setUser(null);
+            await storeUserInAsyncStorage(null);
+            setSession(null);
+            return { error: error as Error, data: undefined };
+          }
+        },
+        logout: async (): Promise<SignOutResponse> => {
+          try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+            return { error: undefined, data: true };
+          } catch (error) {
+            return { error, data: undefined };
+          } finally {
+            setUser(null);
+            await storeUserInAsyncStorage(null);
+          }
+        },
+        signUp: async (
+          email: string,
+          password: string
+        ): Promise<SignInResponse> => {
+          try {
+            // create the user
+            const { data, error } = await supabase.auth.signUp({
+              email,
+              password,
+            });
+            if (error) throw error;
+
+            const { user, ...session } = data.session || {};
+            if (!user) throw new Error("User session is undefined");
+            setSession(JSON.stringify(session));
+            setUser(user);
+            await storeUserInAsyncStorage(user);
+
+            return { data: user, error: undefined };
+          } catch (error) {
+            setUser(null);
+            setSession(null);
+            return { data: undefined, error: error as Error };
+          }
+        },
+        performOAuth: async (): Promise<SignInResponse> => {
+          try {
+            const redirectTo = makeRedirectUri();
+
+            const { data, error } = await supabase.auth.signInWithOAuth({
+              provider: "google",
+              options: {
+                redirectTo,
+                skipBrowserRedirect: true,
+              },
+            });
+
+            if (error) throw error;
+
+            const res = await WebBrowser.openAuthSessionAsync(
+              data?.url ?? "",
+              redirectTo
+            );
+
+            if (res.type === "success") {
+              const { url } = res;
+              const session = await createSessionFromUrl(url);
+              return { data: session?.user, error: undefined };
+            }
+
+            throw new Error("Couldn't create session");
+          } catch (error) {
+            setUser(null);
+            setSession(null);
+            return { error: error as Error, data: undefined };
+          }
+        },
       }}
     >
       {props.children}
