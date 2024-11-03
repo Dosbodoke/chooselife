@@ -26,7 +26,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<SignInResponse>;
   signUp: (email: string, password: string) => Promise<SignInResponse>;
   logout: () => Promise<SignOutResponse>;
-  performOAuth: () => Promise<SignInResponse>;
+  performOAuth: (method: "apple" | "google") => Promise<SignInResponse>;
   user: User | null | undefined;
   profile: Profile | null;
   session: string | null;
@@ -41,20 +41,11 @@ const AuthContext = React.createContext<AuthContextValue | undefined>(
 export function AuthProvider(props: React.PropsWithChildren) {
   const [[isLoading, session], setSession] = useStorageState("session");
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [user, setUser] = React.useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   // Handle linking into app from email app.
   const url = Linking.useURL();
   if (url) createSessionFromUrl(url);
-
-  useEffect(() => {
-    (async () => {
-      const storedUser = await AsyncStorage.getItem("user");
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-    })();
-  }, []);
 
   const storeUserInAsyncStorage = async (user: User | null) => {
     if (user) {
@@ -64,25 +55,37 @@ export function AuthProvider(props: React.PropsWithChildren) {
     }
   };
 
-  useEffect(
-    function getProfile() {
-      (async () => {
-        if (user) {
-          const { data } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", user.id)
-            .single();
-          if (data) {
-            setProfile(data);
-            return;
-          }
-        }
+  const fetchStoredUser = async () => {
+    const storedUser = await AsyncStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  };
+
+  const fetchUserProfile = async () => {
+    if (user) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      if (data) {
+        setProfile(data);
+      } else {
         setProfile(null);
-      })();
-    },
-    [user]
-  );
+      }
+    } else {
+      setProfile(null);
+    }
+  };
+
+  useEffect(() => {
+    fetchStoredUser();
+  }, []);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [user]);
 
   return (
     <AuthContext.Provider
@@ -153,12 +156,14 @@ export function AuthProvider(props: React.PropsWithChildren) {
             return { data: undefined, error: error as Error };
           }
         },
-        performOAuth: async (): Promise<SignInResponse> => {
+        performOAuth: async (
+          method: "apple" | "google"
+        ): Promise<SignInResponse> => {
           try {
             const redirectTo = makeRedirectUri();
 
             const { data, error } = await supabase.auth.signInWithOAuth({
-              provider: "google",
+              provider: method,
               options: {
                 redirectTo,
                 skipBrowserRedirect: true,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pressable, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -87,6 +87,14 @@ const OAuthButtons = ({
   const router = useRouter();
   const { colorScheme } = useColorScheme();
 
+  const handleLogin = async (method: "apple" | "google") => {
+    const response = await performOAuth(method);
+    if (response?.data) {
+      await saveLoginMethod(method);
+      router.back();
+    }
+  };
+
   return (
     <View className="gap-2">
       {lastLoginMethod ? (
@@ -99,13 +107,7 @@ const OAuthButtons = ({
       ) : null}
 
       <Button
-        onPress={async () => {
-          const response = await performOAuth();
-          if (response?.data) {
-            await saveLoginMethod("apple");
-            router.back();
-          }
-        }}
+        onPress={() => handleLogin("apple")}
         variant="outline"
         className="flex-row gap-3 items-center"
       >
@@ -118,13 +120,7 @@ const OAuthButtons = ({
         ) : null}
       </Button>
       <Button
-        onPress={async () => {
-          const response = await performOAuth();
-          if (response?.data) {
-            await saveLoginMethod("google");
-            router.back();
-          }
-        }}
+        onPress={() => handleLogin("google")}
         variant="outline"
         className="relative flex-row gap-3 items-center"
       >
@@ -186,11 +182,11 @@ const EmailLoginSection = ({
 
       <View>
         <Text className="text-center">Não tem uma conta?</Text>
-        <Pressable>
+        <TouchableOpacity>
           <Text className="text-blue-600 text-center hover:underline">
             Criar uma
           </Text>
-        </Pressable>
+        </TouchableOpacity>
       </View>
     </View>
   );
