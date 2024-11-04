@@ -4,7 +4,7 @@ import BottomSheet from "@gorhom/bottom-sheet";
 
 import { type Highline } from "~/hooks/useHighline";
 import Listings from "~/components/map/listing";
-import { Map } from "~/lib/icons/Map";
+import { LucideIcon } from "~/lib/icons/lucide-icon";
 import { useColorScheme } from "~/lib/useColorScheme";
 
 interface Props {
@@ -54,7 +54,10 @@ const ListingsBottomSheet = ({ highlines }: Props) => {
             className="bg-primary p-3 h-12 rounded-3xl flex gap-2 flex-row my-auto items-center"
           >
             <Text className="text-primary-foreground">Mapa</Text>
-            <Map className="text-primary-foreground" />
+            <LucideIcon
+              name="Map"
+              className="h-6 w-6 text-primary-foreground"
+            />
           </TouchableOpacity>
         </View>
       </View>

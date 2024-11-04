@@ -9,11 +9,7 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 
-import { Locate } from "~/lib/icons/Locate";
-import { LocateFixed } from "~/lib/icons/Locate-fixed";
-import { Map } from "~/lib/icons/Map";
-import { Layers2 } from "~/lib/icons/Layers2";
-import { Satellite } from "~/lib/icons/Satellite";
+import { LucideIcon } from "~/lib/icons/lucide-icon";
 import { H4, P } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
@@ -36,7 +32,19 @@ const MapControls = ({
         className="h-12 w-12 items-center justify-center"
         onPress={goToMyLocation}
       >
-        {isOnMyLocation ? <LocateFixed /> : <Locate />}
+        {isOnMyLocation ? (
+          <LucideIcon
+            name="LocateFixed"
+            className="w-6 h-6 text-black"
+            strokeWidth={2}
+          />
+        ) : (
+          <LucideIcon
+            name="Locate"
+            className="w-6 h-6 text-black"
+            strokeWidth={2}
+          />
+        )}
       </TouchableOpacity>
 
       <View className="w-full h-px bg-muted"></View>
@@ -44,7 +52,11 @@ const MapControls = ({
       <Popover>
         <PopoverTrigger asChild>
           <TouchableOpacity className="h-12 w-12 items-center justify-center">
-            <Layers2 />
+            <LucideIcon
+              name="Layers2"
+              className="w-6 h-6 text-black"
+              strokeWidth={2}
+            />
           </TouchableOpacity>
         </PopoverTrigger>
         <PopoverContent className="w-80 bg-popover/90 backdrop-blur-sm">
@@ -62,7 +74,11 @@ const MapControls = ({
                   mapType === "standard" ? "bg-accent" : ""
                 )}
               >
-                <Map className="h-6 w-6" />
+                <LucideIcon
+                  name="Map"
+                  className="w-6 h-6 text-black"
+                  strokeWidth={2}
+                />
                 <P>Mapa</P>
               </TouchableOpacity>
 
@@ -73,7 +89,11 @@ const MapControls = ({
                   mapType === "satellite" ? "bg-accent" : ""
                 )}
               >
-                <Satellite className="h-6 w-6" />
+                <LucideIcon
+                  name="Satellite"
+                  className="w-6 h-6 text-black"
+                  strokeWidth={2}
+                />
                 <P>Satélite</P>
               </TouchableOpacity>
             </View>
