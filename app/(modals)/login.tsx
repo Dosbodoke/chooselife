@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { KeyboardAwareScrollView } from "~/components/KeyboardAwareScrollView";
-import { Button } from "~/components/ui/button";
+import { Button, buttonTextVariants } from "~/components/ui/button";
 import { Input, PasswordInput } from "~/components/ui/input";
 import { Text } from "~/components/ui/text";
 import { useAuth } from "~/context/auth";
@@ -14,6 +14,8 @@ import { AppleIcon } from "~/lib/icons/Apple";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { Separator } from "~/components/ui/separator";
 import ChooselifeIcon from "~/lib/icons/chooselife-icon";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { cn } from "~/lib/utils";
 
 type LastUsedLoginMethod = "apple" | "google" | "email";
 
@@ -152,6 +154,8 @@ const EmailLoginSection = ({
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   return (
     <View className="gap-4">
@@ -171,18 +175,39 @@ const EmailLoginSection = ({
       />
       <Button
         onPress={async () => {
-          const { success } = await login(email, password);
-          if (success) {
-            await saveLoginMethod("email");
-            router.back();
+          try {
+            setIsLoading(true);
+            const response = await login(email, password);
+            console.log({ response });
+            if (response.success) {
+              await saveLoginMethod("email");
+              router.back();
+            } else {
+              setError(response.errorMessage || "");
+            }
+          } finally {
+            setIsLoading(false);
           }
         }}
+        disabled={isLoading}
       >
-        <Text className="text-primary-foreground">Entrar com email</Text>
+        {isLoading ? (
+          <ActivityIndicator
+            className={cn(buttonTextVariants({ variant: "default" }))}
+          />
+        ) : (
+          <Text>Entrar com email</Text>
+        )}
         {lastLoginMethod === "email" ? (
           <View className="absolute right-4 top-1/2 translate-y-1/2  w-2 h-2 rounded-full bg-green-500" />
         ) : null}
       </Button>
+
+      {error ? (
+        <Animated.View entering={FadeIn} exiting={FadeOut}>
+          <Text className="text-red-500 text-center">{error}</Text>
+        </Animated.View>
+      ) : null}
 
       <View>
         <Text className="text-center">Não tem uma conta?</Text>

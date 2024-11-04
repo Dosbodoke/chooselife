@@ -86,10 +86,13 @@ export function AuthProvider(props: React.PropsWithChildren) {
             if (error) throw error;
             return { success: true };
           } catch (error) {
-            if (error instanceof AuthError) {
-              return { success: false, errorMessage: error.message };
+            if ((error as AuthError).code === "invalid_credentials") {
+              return { success: false, errorMessage: "Credenciais inválidas" };
             }
-            return { success: false };
+            return {
+              success: false,
+              errorMessage: "Erro no login. Por favor tente novamente.",
+            };
           }
         },
         logout: async () => {
