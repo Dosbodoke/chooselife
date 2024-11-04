@@ -12,16 +12,6 @@ import { useRouter } from "expo-router";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
-// interface SignInResponse {
-//   data: User | undefined | null;
-//   error: Error | undefined;
-// }
-
-// interface SignOutResponse {
-//   error: any | undefined;
-//   data: {} | undefined;
-// }
-
 type AuthMethodResponse = Promise<
   { success: true } | { success: false; errorMessage?: string }
 >;
@@ -31,6 +21,7 @@ interface AuthContextValue {
   signUp: (email: string, password: string) => AuthMethodResponse;
   logout: () => AuthMethodResponse;
   performOAuth: (method: "apple" | "google") => AuthMethodResponse;
+  setProfile: React.Dispatch<React.SetStateAction<Profile | null>>;
   profile: Profile | null;
   session: Session | null;
 }
@@ -60,7 +51,6 @@ export function AuthProvider(props: React.PropsWithChildren) {
   if (url) createSessionFromUrl(url);
 
   const getUserProfile = async () => {
-    console.log({ session });
     if (session) {
       const { data } = await supabase
         .from("profiles")
@@ -86,6 +76,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
       value={{
         profile,
         session,
+        setProfile,
         login: async (email: string, password: string) => {
           try {
             const { error } = await supabase.auth.signInWithPassword({

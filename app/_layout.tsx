@@ -3,7 +3,7 @@ import "~/global.css";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Theme, ThemeProvider } from "@react-navigation/native";
-import { SplashScreen, Stack } from "expo-router";
+import { router, SplashScreen, Stack } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
@@ -14,7 +14,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { NAV_THEME } from "~/lib/constants";
 import { useColorScheme } from "~/lib/useColorScheme";
 import queryClient from "~/lib/react-query";
-import { AuthProvider } from "~/context/auth";
+import { AuthProvider, useAuth } from "~/context/auth";
 import useLinking from "~/hooks/useLinking";
 import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
 
@@ -102,6 +102,12 @@ export default function RootLayout() {
               />
               <Stack.Screen
                 name="profile/[username]"
+                options={{
+                  headerShown: false,
+                }}
+              />
+              <Stack.Screen
+                name="setProfile"
                 options={{
                   headerShown: false,
                 }}

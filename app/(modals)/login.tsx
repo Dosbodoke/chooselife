@@ -43,7 +43,7 @@ const Page = () => {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1">
       <KeyboardAwareScrollView
         contentContainerClassName="px-6 pt-3 pb-8 gap-4"
         keyboardShouldPersistTaps="handled"
