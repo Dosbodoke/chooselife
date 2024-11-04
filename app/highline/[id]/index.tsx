@@ -21,14 +21,14 @@ export default function HighlinePage() {
   const [tab, setTab] = useState("info");
   const insets = useSafeAreaInsets();
 
-  const { user } = useAuth();
+  const { session } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: highline, isPending } = useQuery({
     queryKey: ["highline", id],
     queryFn: async () => {
       const result = await supabase.rpc("get_highline", {
         searchid: [id as string],
-        userid: user?.id,
+        userid: session?.user.id,
       });
       return result.data && result.data.length > 0 ? result.data[0] : null;
     },

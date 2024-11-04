@@ -1,19 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
-import { ScrollView, View } from "react-native";
+import { View } from "react-native";
 import { Text } from "~/components/ui/text";
 import { useAuth } from "~/context/auth";
 import { supabase } from "~/lib/supabase";
 
 export default function Info() {
-  const { user } = useAuth();
+  const { session } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: highline } = useQuery({
     queryKey: ["highline", id],
     queryFn: async () => {
       const result = await supabase.rpc("get_highline", {
         searchid: [id as string],
-        userid: user?.id,
+        userid: session?.user.id,
       });
       return result.data && result.data.length > 0 ? result.data[0] : null;
     },

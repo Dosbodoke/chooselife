@@ -25,7 +25,7 @@ export function FavoriteHighline({
   isFavorite: boolean;
   id?: string;
 }) {
-  const { user } = useAuth();
+  const { session } = useAuth();
 
   const [favorite, setFavorite] = useState(isFavorite);
   const queryClient = useQueryClient();
@@ -33,24 +33,24 @@ export function FavoriteHighline({
 
   const { mutate, isPending } = useMutation({
     mutationFn: async () => {
-      if (!user || !id) return;
+      if (!session?.user || !id) return;
       if (favorite) {
         // Delete from favorites
         const { error } = await supabase
           .from("favorite_highline")
           .delete()
-          .match({ highline_id: id, profile_id: user.id });
+          .match({ highline_id: id, profile_id: session.user.id });
         if (error) throw new Error(error.message);
       } else {
         // Insert into favorites
         const { error } = await supabase
           .from("favorite_highline")
-          .insert({ highline_id: id, profile_id: user.id });
+          .insert({ highline_id: id, profile_id: session.user.id });
         if (error) throw new Error(error.message);
       }
     },
     onMutate: async () => {
-      if (!user) {
+      if (!session?.user) {
         router.push(`/(modals)/login?redirect_to=highline/${id}`);
         throw new Error("User not logged in");
       }

@@ -1,4 +1,4 @@
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { View, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -10,6 +10,7 @@ import { useAuth } from "~/context/auth";
 import { supabase } from "~/lib/supabase";
 import { Separator } from "~/components/ui/separator";
 import { SelectTheme } from "~/components/settings/select-theme";
+import { useEffect } from "react";
 
 function getShortName(fullName: string) {
   const nameParts = fullName.trim().split(/\s+/);
@@ -22,7 +23,26 @@ function getShortName(fullName: string) {
 }
 
 export default function SettingsPage() {
-  const { profile, logout } = useAuth();
+  const { profile, session, logout } = useAuth();
+
+  if (!session) {
+    return (
+      <SafeAreaView className="flex-1">
+        <View className="p-4 gap-4 flex justify-end h-full">
+          <Separator />
+
+          <SelectTheme />
+
+          <Separator />
+          <Link href={`/login?redirect_to=settings`} asChild>
+            <Button className="w-fit bg-primary text-center py-4 text-primary-foreground">
+              <Text>Entrar</Text>
+            </Button>
+          </Link>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (profile) {
     return (
@@ -63,21 +83,4 @@ export default function SettingsPage() {
       </SafeAreaView>
     );
   }
-
-  return (
-    <SafeAreaView className="flex-1">
-      <View className="p-4 gap-4 flex justify-end h-full">
-        <Separator />
-
-        <SelectTheme />
-
-        <Separator />
-        <Link href={`/login?redirect_to=settings`} asChild>
-          <Button className="w-fit bg-primary text-center py-4 text-primary-foreground">
-            <Text>Entrar</Text>
-          </Button>
-        </Link>
-      </View>
-    </SafeAreaView>
-  );
 }

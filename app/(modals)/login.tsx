@@ -88,10 +88,14 @@ const OAuthButtons = ({
   const { colorScheme } = useColorScheme();
 
   const handleLogin = async (method: "apple" | "google") => {
-    const response = await performOAuth(method);
-    if (response?.data) {
+    const { success } = await performOAuth(method);
+    if (success) {
       await saveLoginMethod(method);
-      router.back();
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/");
+      }
     }
   };
 
@@ -167,8 +171,8 @@ const EmailLoginSection = ({
       />
       <Button
         onPress={async () => {
-          const response = await login(email, password);
-          if (!response.error) {
+          const { success } = await login(email, password);
+          if (success) {
             await saveLoginMethod("email");
             router.back();
           }
