@@ -4,7 +4,7 @@ import { iconWithClassName } from "./iconWithClassName";
 const LucideIcon = ({
   name,
   size,
-  strokeWidth = 1,
+  strokeWidth = 2,
   className,
 }: {
   name: keyof typeof icons;

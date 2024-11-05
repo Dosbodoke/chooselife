@@ -14,8 +14,8 @@ import { useAuth } from "~/context/auth";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "~/components/ui/text";
 import Info from "~/components/highline/info";
-import { Earth } from "lucide-react-native";
 import { MarkerCL } from "~/lib/icons/MarkerCL";
+import { LucideIcon } from "~/lib/icons/lucide-icon";
 
 export default function HighlinePage() {
   const [tab, setTab] = useState("info");
@@ -149,7 +149,7 @@ export default function HighlinePage() {
           >
             {highline.anchor_a_lat ? (
               <>
-                <Earth className="size-4 text-primary" />
+                <LucideIcon name="Earth" className="size-4 text-primary" />
                 <Text className="text-primary">Ver no mapa</Text>
               </>
             ) : (
