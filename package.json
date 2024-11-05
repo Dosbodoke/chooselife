@@ -54,6 +54,7 @@
     "react-dom": "18.2.0",
     "react-hook-form": "^7.52.1",
     "react-native": "0.74.2",
+    "react-native-date-picker": "^5.0.7",
     "react-native-gesture-handler": "~2.16.1",
     "react-native-maps": "1.14.0",
     "react-native-pager-view": "6.3.0",

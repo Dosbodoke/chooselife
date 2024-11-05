@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { Keyboard, Pressable, TextInput, View, Image } from "react-native";
+import {
+  Keyboard,
+  Pressable,
+  TextInput,
+  View,
+  Image,
+  TouchableOpacity,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -17,6 +24,7 @@ import {
   UseFormReturn,
 } from "react-hook-form";
 import { z } from "zod";
+import DatePicker from "react-native-date-picker";
 
 import { supabase } from "~/lib/supabase";
 import { useAuth } from "~/context/auth";
@@ -26,12 +34,13 @@ import { KeyboardAwareScrollView } from "~/components/KeyboardAwareScrollView";
 import { H2, H3, Muted } from "~/components/ui/typography";
 import { Text } from "~/components/ui/text";
 import { useColorScheme } from "~/lib/useColorScheme";
-import { Onboarding } from "~/components/profileOnboard";
+import { Onboarding } from "~/components/onboard";
 import { SupabaseAvatar } from "~/components/ui/avatar";
 import { Textarea } from "~/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { cn } from "~/lib/utils";
 import { LucideIcon } from "~/lib/icons/lucide-icon";
+import { Input } from "~/components/ui/input";
 
 // Define Zod schema for form validation
 const profileSchema = z.object({
@@ -40,7 +49,8 @@ const profileSchema = z.object({
     .min(3, "O nome de usuário deve ter pelo menos 3 caracteres."),
   name: z.string().min(1, "Preencha o seu nome"),
   profilePicture: z.string().optional(),
-  bio: z.string().optional(),
+  description: z.string().optional(),
+  birthday: z.string().optional(),
 });
 
 // Define TypeScript type based on Zod schema
@@ -60,6 +70,10 @@ export default function SetProfile() {
       username: "",
       name: profile?.name || "",
       profilePicture: profile?.profile_picture || undefined,
+      description: profile?.description || "",
+      birthday: profile?.birthday
+        ? profile?.birthday
+        : new Date().toDateString(),
     },
   });
 
@@ -74,6 +88,8 @@ export default function SetProfile() {
           username: `@${data.username}`,
           name: data.name,
           profile_picture: data.profilePicture,
+          description: data.description,
+          birthday: data.birthday,
         })
         .select()
         .single();
@@ -251,6 +267,17 @@ const ProfileInfoForm = ({
 }: {
   form: UseFormReturn<ProfileFormData>;
 }) => {
+  const colorScheme = useColorScheme();
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const handleDateChange = (date: Date) => {
+    setShowDatePicker(false);
+    console.log({ date, isoDate: date.toISOString() });
+    if (date) {
+      form.setValue("birthday", date.toISOString().split("T")[0]); // Set date in YYYY-MM-DD format
+    }
+  };
+
   return (
     <Animated.View
       className="gap-4"
@@ -304,7 +331,45 @@ const ProfileInfoForm = ({
 
         <Controller
           control={form.control}
-          name="bio"
+          name="birthday"
+          render={({ field: { value } }) => (
+            <View className="gap-2">
+              <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                <Input
+                  label="Data de Nascimento:"
+                  editable={false}
+                  value={
+                    value
+                      ? new Date(value).toLocaleDateString("pt-BR")
+                      : "Selecione a data"
+                  }
+                  placeholder="Selecione a data"
+                />
+              </TouchableOpacity>
+              <DatePicker
+                modal
+                open={showDatePicker}
+                mode="date"
+                locale="pt-BR"
+                date={value ? new Date(value) : new Date()}
+                maximumDate={new Date()}
+                onConfirm={(date) => {
+                  setShowDatePicker(false);
+                  handleDateChange(date);
+                }}
+                onCancel={() => {
+                  setShowDatePicker(false);
+                }}
+                timeZoneOffsetInMinutes={0} // https://github.com/henninghall/react-native-date-picker/issues/841
+                theme={colorScheme.colorScheme}
+              />
+            </View>
+          )}
+        />
+
+        <Controller
+          control={form.control}
+          name="description"
           render={({ field: { onChange }, fieldState: { error } }) => (
             <Textarea
               keyboardType="default"
