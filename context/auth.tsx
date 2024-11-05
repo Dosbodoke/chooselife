@@ -58,10 +58,8 @@ export function AuthProvider(props: React.PropsWithChildren) {
         .eq("id", session.user.id)
         .single();
 
-      if (data?.username) {
-        setProfile(data);
-      } else {
-        // Navigate user to the screen where he will set the profile
+      setProfile(data);
+      if (!data?.username) {
         router.replace("/setProfile");
       }
     }

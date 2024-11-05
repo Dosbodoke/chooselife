@@ -39,6 +39,7 @@
     "expo-auth-session": "~5.5.2",
     "expo-crypto": "~13.0.2",
     "expo-dev-client": "~4.0.19",
+    "expo-image-picker": "~15.0.7",
     "expo-linking": "~6.3.1",
     "expo-location": "~17.0.1",
     "expo-navigation-bar": "~3.0.6",

@@ -1,7 +1,12 @@
 import { Link, useRouter } from "expo-router";
 import { View, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  SupabaseAvatar,
+} from "~/components/ui/avatar";
 
 import { Text } from "~/components/ui/text";
 import { Button } from "~/components/ui/button";
@@ -50,19 +55,10 @@ export default function SettingsPage() {
         <View className="flex gap-4 p-4 pt-8">
           <Link href={`profile/${profile.username}`} asChild>
             <TouchableOpacity className="flex flex-row gap-4">
-              <Avatar className="h-16 w-16" alt="Foto do perfil">
-                <AvatarImage
-                  source={{
-                    uri: supabase.storage
-                      .from("images")
-                      .getPublicUrl(profile.profile_picture || "").data
-                      .publicUrl,
-                  }}
-                />
-                <AvatarFallback>
-                  <Text>{getShortName(profile.name || "")}</Text>
-                </AvatarFallback>
-              </Avatar>
+              <SupabaseAvatar
+                profilePicture={profile.profile_picture || ""}
+                name={profile.name || ""}
+              />
               <View>
                 <H2>{profile.name}</H2>
                 <Muted>Mostrar perfil</Muted>
