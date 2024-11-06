@@ -34,7 +34,7 @@ import { KeyboardAwareScrollView } from "~/components/KeyboardAwareScrollView";
 import { H2, H3, Muted } from "~/components/ui/typography";
 import { Text } from "~/components/ui/text";
 import { useColorScheme } from "~/lib/useColorScheme";
-import { Onboarding } from "~/components/onboard";
+import { OnboardNavigator, OnboardPaginator } from "~/components/onboard";
 import { SupabaseAvatar } from "~/components/ui/avatar";
 import { Textarea } from "~/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -46,6 +46,7 @@ import { Input } from "~/components/ui/input";
 const profileSchema = z.object({
   username: z
     .string()
+    .trim()
     .min(3, "O nome de usuário deve ter pelo menos 3 caracteres."),
   name: z.string().min(1, "Preencha o seu nome"),
   profilePicture: z.string().optional(),
@@ -169,7 +170,7 @@ export default function SetProfile() {
       if (!isUsernameValid) return;
     }
 
-    // Validate the username in the first step
+    // Manually trigger the validation of a required field
     if (index === 1) {
       const validName = await form.trigger("name");
       if (!validName) return;
@@ -187,6 +188,8 @@ export default function SetProfile() {
         contentContainerClassName="min-h-screen px-6 py-8 gap-4"
         keyboardShouldPersistTaps="handled"
       >
+        <OnboardPaginator total={steps.length} selectedIndex={index} />
+
         <H2 className="text-center border-0">Estamos quase lá!</H2>
         <HighlineIllustration
           mode={colorSchema.colorScheme}
@@ -196,7 +199,7 @@ export default function SetProfile() {
         {steps[index]}
 
         <View className="mt-auto">
-          <Onboarding
+          <OnboardNavigator
             total={steps.length}
             selectedIndex={index}
             onIndexChange={handleNextStep}
@@ -234,7 +237,7 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
               </Text>
               <TextInput
                 value={value}
-                onChangeText={onChange}
+                onChangeText={(text) => onChange(text.trim())}
                 placeholder="Seu username"
                 autoCapitalize="none"
                 returnKeyType="done"

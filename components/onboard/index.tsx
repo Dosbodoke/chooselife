@@ -109,7 +109,7 @@ function PaginationIndicator({
   );
 }
 
-export function Pagination({
+function OnboardPaginator({
   selectedIndex,
   total,
 }: {
@@ -132,78 +132,77 @@ export function Pagination({
   );
 }
 
-export function Onboarding({
-  total,
+function OnboardNavigator({
   selectedIndex,
+  total,
   onIndexChange,
   onFinish,
   isLoading,
 }: {
-  total: number;
   selectedIndex: number;
+  total: number;
   onIndexChange: (index: number) => void;
   onFinish: () => void;
   isLoading?: boolean;
 }) {
   return (
-    <View className="gap-4">
-      <Pagination total={total} selectedIndex={selectedIndex} />
-      <View className="flex-row gap-2">
-        {selectedIndex > 0 && (
-          <Button
-            className={cn(buttonVariants({ variant: "outline" }))}
-            onPress={() => {
-              onIndexChange(selectedIndex - 1);
-            }}
-            disabled={isLoading}
-          >
-            <Text
-              className={cn(
-                buttonTextVariants({ variant: "outline" }),
-                "font-bold"
-              )}
-            >
-              Back
-            </Text>
-          </Button>
-        )}
+    <View className="flex-row gap-2">
+      {selectedIndex > 0 && (
         <Button
-          className={cn(buttonVariants({ variant: "default" }), "flex-1")}
+          className={cn(buttonVariants({ variant: "outline" }))}
           onPress={() => {
-            if (selectedIndex >= total - 1) {
-              onFinish();
-              return;
-            }
-            onIndexChange(selectedIndex + 1);
+            onIndexChange(selectedIndex - 1);
           }}
           disabled={isLoading}
         >
-          {isLoading ? (
-            <ActivityIndicator
-              className={cn(buttonTextVariants({ variant: "default" }))}
-            />
-          ) : selectedIndex === total - 1 ? (
-            <Animated.Text
-              key="finish"
-              className={cn(buttonTextVariants({ variant: "default" }))}
-              entering={FadeInDown.springify().damping(80).stiffness(200)}
-              exiting={FadeOutUp.springify().damping(80).stiffness(200)}
-            >
-              Finalizar
-            </Animated.Text>
-          ) : (
-            <Animated.Text
-              key="continue"
-              className={cn(buttonTextVariants({ variant: "default" }))}
-              layout={_layoutTransition}
-              entering={FadeInDown.springify().damping(80).stiffness(200)}
-              exiting={FadeOutUp.springify().damping(80).stiffness(200)}
-            >
-              Continuar
-            </Animated.Text>
-          )}
+          <Text
+            className={cn(
+              buttonTextVariants({ variant: "outline" }),
+              "font-bold"
+            )}
+          >
+            Voltar
+          </Text>
         </Button>
-      </View>
+      )}
+      <Button
+        className={cn(buttonVariants({ variant: "default" }), "flex-1")}
+        onPress={() => {
+          if (selectedIndex >= total - 1) {
+            onFinish();
+            return;
+          }
+          onIndexChange(selectedIndex + 1);
+        }}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <ActivityIndicator
+            className={cn(buttonTextVariants({ variant: "default" }))}
+          />
+        ) : selectedIndex === total - 1 ? (
+          <Animated.Text
+            key="finish"
+            className={cn(buttonTextVariants({ variant: "default" }))}
+            entering={FadeInDown.springify().damping(80).stiffness(200)}
+            exiting={FadeOutUp.springify().damping(80).stiffness(200)}
+          >
+            Finalizar
+          </Animated.Text>
+        ) : (
+          <Animated.Text
+            key="continue"
+            className={cn(buttonTextVariants({ variant: "default" }))}
+            layout={_layoutTransition}
+            entering={FadeInDown.springify().damping(80).stiffness(200)}
+            exiting={FadeOutUp.springify().damping(80).stiffness(200)}
+          >
+            Continuar
+          </Animated.Text>
+        )}
+      </Button>
     </View>
   );
 }
+
+export { OnboardNavigator, OnboardPaginator };
