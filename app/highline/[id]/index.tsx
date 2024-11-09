@@ -1,24 +1,35 @@
 import * as Linking from "expo-linking";
 import { Link, useLocalSearchParams, useNavigation } from "expo-router";
-import React, { useState } from "react";
-import { View, TouchableOpacity, Share, ScrollView, Image } from "react-native";
+import React, { useState, useRef } from "react";
+import {
+  View,
+  TouchableOpacity,
+  Share,
+  ScrollView,
+  Image,
+  type LayoutChangeEvent,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 
-import { supabase } from "~/lib/supabase";
-import { Button } from "~/components/ui/button";
-import { H1, Lead } from "~/components/ui/typography";
-import { FavoriteHighline } from "~/components/highline/favorite-button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useAuth } from "~/context/auth";
+import { supabase } from "~/lib/supabase";
+import { FavoriteHighline } from "~/components/highline/favorite-button";
+import Info from "~/components/highline/info";
+import { HighlineSkeleton } from "~/components/highline/skeleton";
+
+import { Button } from "~/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "~/components/ui/text";
-import Info from "~/components/highline/info";
 import { MarkerCL } from "~/lib/icons/MarkerCL";
 import { LucideIcon } from "~/lib/icons/lucide-icon";
 
+type HighlineTabs = "details" | "ranking";
+
 export default function HighlinePage() {
-  const [tab, setTab] = useState("info");
+  const [tab, setTab] = useState<HighlineTabs>("details");
+  const bottomActionsHeightRef = useRef(0);
   const insets = useSafeAreaInsets();
 
   const { session } = useAuth();
@@ -49,11 +60,7 @@ export default function HighlinePage() {
   };
 
   if (isPending) {
-    return (
-      <View className="flex-1 items-center justify-center">
-        <Text>CARREGANDO...</Text>
-      </View>
-    );
+    return <HighlineSkeleton />;
   }
 
   if (!highline) {
@@ -66,7 +73,11 @@ export default function HighlinePage() {
 
   return (
     <>
-      <ScrollView contentContainerClassName="flex-1">
+      <ScrollView
+        contentContainerStyle={{
+          paddingBottom: bottomActionsHeightRef.current + 26,
+        }}
+      >
         <View
           className="absolute px-4 flex-row justify-between w-full top-0 z-50"
           style={{
@@ -104,71 +115,104 @@ export default function HighlinePage() {
           resizeMode="cover"
         />
 
-        <View className="p-4 gap-6">
-          <View>
-            <H1>{highline?.name}</H1>
-            {highline?.description ? <Lead>{highline.description}</Lead> : null}
-          </View>
-          <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="flex-row mb-6">
-              <TabsTrigger className="rounded-lg" value="info">
-                <Text>Informações</Text>
+        <View className="px-4 pt-4 gap-6 flex-1">
+          <Tabs
+            className="flex-1"
+            value={tab}
+            onValueChange={(val) => setTab(val as HighlineTabs)}
+          >
+            <TabsList className="flex-row">
+              <TabsTrigger
+                className="rounded-lg flex-1"
+                value={"details" satisfies HighlineTabs}
+              >
+                <Text>Detalhes</Text>
               </TabsTrigger>
-              <TabsTrigger className="rounded-lg" value="comments">
-                <Text>Comentários</Text>
-              </TabsTrigger>
-              <TabsTrigger className="rounded-lg" value="rakning">
+              <TabsTrigger
+                className="rounded-lg flex-1"
+                value={"ranking" satisfies HighlineTabs}
+              >
                 <Text>Ranking</Text>
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="info">
+            <TabsContent
+              className="flex-1 mt-6"
+              value={"details" satisfies HighlineTabs}
+            >
               <Info />
             </TabsContent>
-            <TabsContent value="comments">
-              <Text>BAR CONTENT</Text>
+            <TabsContent value={"ranking" satisfies HighlineTabs}>
+              <Text>Ranking</Text>
             </TabsContent>
           </Tabs>
         </View>
       </ScrollView>
 
-      {/* BOTTOM ACTIONS */}
-      <View
-        className="absolute bottom-0 flex flex-row gap-4 w-full p-2 pt-4 border-t border-muted"
-        style={{
-          paddingBottom: insets.bottom,
-        }}
-      >
-        <Link
-          className="flex-1"
-          href={`/?focusedMarker=${highline.id}`}
-          asChild
-        >
-          <Button
-            className="flex-1 flex-row gap-2 items-center"
-            variant="outline"
-          >
-            {highline.anchor_a_lat ? (
-              <>
-                <LucideIcon name="Earth" className="size-4 text-primary" />
-                <Text className="text-primary">Ver no mapa</Text>
-              </>
-            ) : (
-              <>
-                <View className="size-8 text-primary">
-                  <MarkerCL props={{}} active={false} />
-                </View>
-                <Text className="text-primary">Adicionar ao mapa</Text>
-              </>
-            )}
-          </Button>
-        </Link>
-
-        <Link className="flex-1" href={`/highline/${id}/register`} asChild>
-          <Button>
-            <Text className="text-primary-foreground">Registrar rolê</Text>
-          </Button>
-        </Link>
-      </View>
+      {tab === "details" ? (
+        <BottomActions
+          hasLocation={!!highline.anchor_a_lat}
+          onLayout={(event) => {
+            bottomActionsHeightRef.current = event.nativeEvent.layout.height;
+          }}
+        />
+      ) : null}
     </>
   );
 }
+
+const BottomActions = ({
+  hasLocation,
+  onLayout,
+}: {
+  hasLocation: boolean;
+  onLayout: (event: LayoutChangeEvent) => void;
+}) => {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View
+      onLayout={onLayout}
+      className="absolute bottom-0 flex flex-row gap-4 w-full bg-background px-2 pt-4 border-t border-muted"
+      style={{
+        paddingBottom: insets.bottom,
+        shadowColor: "#000",
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.23,
+        shadowRadius: 2.62,
+
+        elevation: 4,
+      }}
+    >
+      <Link className="flex-1" href={`/?focusedMarker=${id}`} asChild>
+        <Button
+          className="flex-1 flex-row gap-2 items-center"
+          variant="outline"
+        >
+          {hasLocation ? (
+            <>
+              <LucideIcon name="Earth" className="size-4 text-primary" />
+              <Text className="text-primary">Ver no mapa</Text>
+            </>
+          ) : (
+            <>
+              <View className="size-8 text-primary">
+                <MarkerCL props={{}} active={false} />
+              </View>
+              <Text className="text-primary">Adicionar ao mapa</Text>
+            </>
+          )}
+        </Button>
+      </Link>
+
+      <Link className="flex-1" href={`/highline/${id}/register`} asChild>
+        <Button>
+          <Text className="text-primary-foreground">Registrar rolê</Text>
+        </Button>
+      </Link>
+    </View>
+  );
+};

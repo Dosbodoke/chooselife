@@ -1,9 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 import { View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { Text } from "~/components/ui/text";
 import { useAuth } from "~/context/auth";
+import { LucideIcon } from "~/lib/icons/lucide-icon";
 import { supabase } from "~/lib/supabase";
+import { Button } from "../ui/button";
+import { MarkerCL } from "~/lib/icons/MarkerCL";
+import { H1, Lead } from "../ui/typography";
 
 export default function Info() {
   const { session } = useAuth();
@@ -23,16 +29,21 @@ export default function Info() {
   if (!highline) return null;
 
   return (
-    <View className="gap-2">
-      <InfoItem label={"Altura"} value={highline?.height.toString()} />
-      <InfoItem label={"Comprimento"} value={highline?.lenght.toString()} />
-      <InfoItem label={"Fita principal"} value={highline?.main_webbing} />
-      <InfoItem label={"Fita backup"} value={highline?.backup_webbing} />
+    <View className="gap-2 flex-1">
+      <View>
+        <H1>{highline.name}</H1>
+        {highline.description ? <Lead>{highline.description}</Lead> : null}
+      </View>
+
+      <InfoItem label={"Altura"} value={highline.height.toString()} />
+      <InfoItem label={"Comprimento"} value={highline.lenght.toString()} />
+      <InfoItem label={"Fita principal"} value={highline.main_webbing} />
+      <InfoItem label={"Fita backup"} value={highline.backup_webbing} />
     </View>
   );
 }
 
-function InfoItem({ label, value }: { label: string; value: string }) {
+const InfoItem = ({ label, value }: { label: string; value: string }) => {
   return (
     <View className="flex flex-row gap-2 items-center">
       <Text className="text-muted-foreground">{label}:</Text>
@@ -40,4 +51,4 @@ function InfoItem({ label, value }: { label: string; value: string }) {
       <Text className="font-medium text-primary">{value}</Text>
     </View>
   );
-}
+};
