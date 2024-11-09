@@ -20,6 +20,7 @@
     "@react-navigation/material-top-tabs": "^6.6.14",
     "@react-navigation/native": "^6.0.2",
     "@rn-primitives/avatar": "^1.1.0",
+    "@rn-primitives/dropdown-menu": "^1.1.0",
     "@rn-primitives/label": "^1.1.0",
     "@rn-primitives/popover": "^1.1.0",
     "@rn-primitives/portal": "^1.1.0",

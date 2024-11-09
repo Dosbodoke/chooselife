@@ -1,14 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Text } from "~/components/ui/text";
 import { useAuth } from "~/context/auth";
-import { LucideIcon } from "~/lib/icons/lucide-icon";
 import { supabase } from "~/lib/supabase";
-import { Button } from "../ui/button";
-import { MarkerCL } from "~/lib/icons/MarkerCL";
 import { H1, Lead } from "../ui/typography";
 
 export default function Info() {

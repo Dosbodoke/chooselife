@@ -1,6 +1,6 @@
 import * as Linking from "expo-linking";
 import { Link, useLocalSearchParams, useNavigation } from "expo-router";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import {
   View,
   TouchableOpacity,
@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "~/components/ui/text";
 import { MarkerCL } from "~/lib/icons/MarkerCL";
 import { LucideIcon } from "~/lib/icons/lucide-icon";
+import { Ranking } from "~/components/ranking";
 
 type HighlineTabs = "details" | "ranking";
 
@@ -58,6 +59,22 @@ export default function HighlinePage() {
       console.log(err);
     }
   };
+
+  const tabs = useMemo(
+    () => [
+      {
+        id: "details",
+        label: "Detalhes",
+        content: <Info />,
+      },
+      {
+        id: "ranking",
+        label: "Ranking",
+        content: <Ranking highlines_ids={[highline?.id || ""]} />,
+      },
+    ],
+    [highline?.id]
+  );
 
   if (isPending) {
     return <HighlineSkeleton />;
@@ -122,28 +139,25 @@ export default function HighlinePage() {
             onValueChange={(val) => setTab(val as HighlineTabs)}
           >
             <TabsList className="flex-row">
-              <TabsTrigger
-                className="rounded-lg flex-1"
-                value={"details" satisfies HighlineTabs}
-              >
-                <Text>Detalhes</Text>
-              </TabsTrigger>
-              <TabsTrigger
-                className="rounded-lg flex-1"
-                value={"ranking" satisfies HighlineTabs}
-              >
-                <Text>Ranking</Text>
-              </TabsTrigger>
+              {tabs.map((tabItem) => (
+                <TabsTrigger
+                  key={tabItem.id}
+                  className="rounded-lg flex-1"
+                  value={tabItem.id as HighlineTabs}
+                >
+                  <Text>{tabItem.label}</Text>
+                </TabsTrigger>
+              ))}
             </TabsList>
-            <TabsContent
-              className="flex-1 mt-6"
-              value={"details" satisfies HighlineTabs}
-            >
-              <Info />
-            </TabsContent>
-            <TabsContent value={"ranking" satisfies HighlineTabs}>
-              <Text>Ranking</Text>
-            </TabsContent>
+            {tabs.map((tabItem) => (
+              <TabsContent
+                key={tabItem.id}
+                className="flex-1 mt-6"
+                value={tabItem.id as HighlineTabs}
+              >
+                {tabItem.content}
+              </TabsContent>
+            ))}
           </Tabs>
         </View>
       </ScrollView>

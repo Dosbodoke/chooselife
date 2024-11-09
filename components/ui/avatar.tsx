@@ -67,7 +67,7 @@ function getShortName(fullName: string) {
 const SupabaseAvatar = ({
   profilePicture,
   name,
-  size = 150,
+  size,
   onUpload,
 }: {
   profilePicture: string | undefined;
@@ -77,7 +77,6 @@ const SupabaseAvatar = ({
 }) => {
   const [imageUrl, setImageUrl] = React.useState(profilePicture);
   const [uploading, setUploading] = React.useState(false);
-  const avatarSize = { height: size, width: size };
 
   React.useEffect(() => {
     const googleUrlRegex =
@@ -150,7 +149,10 @@ const SupabaseAvatar = ({
 
   return (
     <View className="flex-row gap-2 relative items-center">
-      <Avatar className="h-16 w-16" alt="Foto do perfil">
+      <Avatar
+        className={size ? `size-${size}` : `size-16`}
+        alt="Foto do perfil"
+      >
         <AvatarImage source={{ uri: imageUrl }} />
         <AvatarFallback>
           <Text>{getShortName(name)}</Text>
