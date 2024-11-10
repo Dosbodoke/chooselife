@@ -202,13 +202,10 @@ const BottomActions = ({
       }}
     >
       <Link className="flex-1" href={`/?focusedMarker=${id}`} asChild>
-        <Button
-          className="flex-1 flex-row gap-2 items-center"
-          variant="outline"
-        >
+        <Button className="flex-1 flex-row gap-2 items-start" variant="outline">
           {hasLocation ? (
             <>
-              <LucideIcon name="Earth" className="size-4 text-primary" />
+              <LucideIcon name="Earth" className="size-6 text-primary" />
               <Text className="text-primary">Ver no mapa</Text>
             </>
           ) : (
