@@ -1,4 +1,5 @@
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 
@@ -8,13 +9,12 @@ import { H1, H2, H3, Lead, Muted, P } from "~/components/ui/typography";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { supabase } from "~/lib/supabase";
 import { Database } from "~/utils/database.types";
-import { Link, useLocalSearchParams } from "expo-router";
 import { Button } from "~/components/ui/button";
 
 export default function Profile() {
   const { username } = useLocalSearchParams<{ username: string }>();
 
-  const { data: profile } = useQuery({
+  const { data: profile, isPending: profilePending } = useQuery({
     queryKey: ["profile", username],
     queryFn: async () => {
       if (!username) throw new Error("No username provided");
@@ -43,31 +43,26 @@ export default function Profile() {
     enabled: !!profile,
   });
 
-  if (!profile) {
+  if (profilePending) {
     return (
-      <SafeAreaView className="flex-1">
-        <View className="flex items-center justify-center h-full gap-4">
-          <H2>Usuário não existe</H2>
-          <Link href="/" asChild>
-            <Button>
-              <Text>voltar à página inicial</Text>
-            </Button>
-          </Link>
-        </View>
-      </SafeAreaView>
+      <View className="flex-1 items-center justify-center">
+        <ActivityIndicator size="large" />
+      </View>
     );
   }
 
+  if (!profile) {
+    return <UserNotFound username={username ?? ""} />;
+  }
+
   return (
-    <SafeAreaView className="flex-1">
-      <View className="flex gap-4 pt-4 px-2">
-        <UserHeader profile={profile} username={`${profile?.username}`} />
-        <Stats
-          total_cadenas={stats?.total_cadenas || 0}
-          total_distance_walked={stats?.total_distance_walked || 0}
-          total_full_lines={stats?.total_full_lines || 0}
-        />
-      </View>
+    <SafeAreaView className="flex-1 gap-4 pt-4 px-2">
+      <UserHeader profile={profile} username={`${profile?.username}`} />
+      <Stats
+        total_cadenas={stats?.total_cadenas || 0}
+        total_distance_walked={stats?.total_distance_walked || 0}
+        total_full_lines={stats?.total_full_lines || 0}
+      />
     </SafeAreaView>
   );
 }
@@ -160,26 +155,30 @@ const Stats = ({
     <Card>
       <CardContent className="flex flex-row justify-evenly items-center px-2 py-4 sm:gap-8">
         <View className="flex items-center justify-center gap-2">
-          <H2 className="font-extrabold">
-            {displayDistanceInKM
-              ? total_distance_walked / 1000
-              : total_distance_walked}
-            <Text>{displayDistanceInKM ? "km" : "m"}</Text>
-          </H2>
+          <View className="flex-row">
+            <Text className="text-3xl font-extrabold">
+              {displayDistanceInKM
+                ? total_distance_walked / 1000
+                : total_distance_walked}
+            </Text>
+            <Text className="text-3xl font-extrabold text-muted-foreground">
+              {displayDistanceInKM ? "km" : "m"}
+            </Text>
+          </View>
           <Lead className="text-base">Walked</Lead>
         </View>
 
         <View className="bg-gray-200 w-px h-full"></View>
 
         <View className="flex items-center justify-center gap-2">
-          <H2 className="font-extrabold">{total_cadenas}</H2>
+          <Text className="text-3xl font-extrabold">{total_cadenas}</Text>
           <Lead className="text-base">Cadenas</Lead>
         </View>
 
         <View className="bg-gray-200 w-px h-full"></View>
 
         <View className="flex items-center justify-center gap-2">
-          <H2 className="font-extrabold">{total_full_lines}</H2>
+          <Text className="text-3xl font-extrabold">{total_full_lines}</Text>
           <Lead className="text-base">Full lines</Lead>
         </View>
       </CardContent>
@@ -188,19 +187,24 @@ const Stats = ({
 };
 
 function UserNotFound({ username }: { username: string }) {
+  const router = useRouter();
+
+  const canGoBack = router.canGoBack();
+
   return (
-    <View className="mx-auto max-w-screen-xl px-4 py-8 lg:px-6 lg:py-16">
-      <View className="mx-auto max-w-screen-sm text-center">
-        <P className="mb-4 text-3xl font-bold tracking-tight text-gray-900 dark:text-white md:text-4xl">
-          FOO
-        </P>
-        <P className="mb-4 text-lg font-light text-gray-500 dark:text-gray-400">
-          usuário @{username} não existe
-        </P>
-        <View className="my-4 flex justify-center gap-4">
-          <Text>foo</Text>
-        </View>
+    <SafeAreaView className="flex-1">
+      <View className="flex items-center justify-center h-full gap-4">
+        <H2>usuário {username} não existe</H2>
+        <Button
+          onPress={() => {
+            if (canGoBack) {
+              router.back();
+            }
+          }}
+        >
+          <Text>{canGoBack ? "Voltar" : "Ir para página inicial"}</Text>
+        </Button>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
