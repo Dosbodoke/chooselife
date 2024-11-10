@@ -178,7 +178,6 @@ const EmailLoginSection = ({
           try {
             setIsLoading(true);
             const response = await login(email, password);
-            console.log({ response });
             if (response.success) {
               await saveLoginMethod("email");
               router.back();
