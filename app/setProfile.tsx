@@ -275,7 +275,6 @@ const ProfileInfoForm = ({
 
   const handleDateChange = (date: Date) => {
     setShowDatePicker(false);
-    console.log({ date, isoDate: date.toISOString() });
     if (date) {
       form.setValue("birthday", date.toISOString().split("T")[0]); // Set date in YYYY-MM-DD format
     }
