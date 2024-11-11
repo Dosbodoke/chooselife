@@ -10,7 +10,7 @@ export const useHighline = () => {
   const [highlightedMarker, setHighlightedMarker] = useState<Highline | null>(
     null
   );
-  const [clusterMarkers, setClusterMarkers] = useState<Highline[] | null>(null);
+  const [clusterMarkers, setClusterMarkers] = useState<Highline[]>([]);
 
   const {
     data: highlines,

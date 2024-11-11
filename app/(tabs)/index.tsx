@@ -1,5 +1,5 @@
 import * as Location from "expo-location";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { View } from "react-native";
 import MapView, { type Region, type MapType } from "react-native-maps";
 import type { BBox } from "geojson";
@@ -11,6 +11,7 @@ import { MapCardList } from "~/components/map/map-card";
 
 import { useHighline } from "~/hooks/useHighline";
 import { Markers } from "~/components/map/markers";
+import { useLocalSearchParams } from "expo-router";
 
 // Constants
 const INITIAL_REGION = {
@@ -28,6 +29,8 @@ export default function Screen() {
   const [bounds, setBounds] = useState<BBox>(
     regionToBoundingBox(INITIAL_REGION)
   );
+
+  const { focusedMarker } = useLocalSearchParams<{ focusedMarker: string }>();
 
   const {
     highlines,
@@ -59,6 +62,41 @@ export default function Screen() {
     setIsOnMyLocation(true);
   }
 
+  // Effect to handle focusing on the highline if `focusedMarker` exists
+  useEffect(() => {
+    if (!focusedMarker || !highlines) return;
+
+    const highlineToFocus = highlines.find(
+      (highline) => highline.id === focusedMarker
+    );
+
+    if (highlineToFocus) {
+      setHighlightedMarker(highlineToFocus);
+      setClusterMarkers([highlineToFocus]);
+      mapRef.current?.fitToCoordinates(
+        [
+          {
+            latitude: highlineToFocus.anchor_a_lat,
+            longitude: highlineToFocus.anchor_a_long,
+          },
+          {
+            latitude: highlineToFocus.anchor_b_lat,
+            longitude: highlineToFocus.anchor_b_long,
+          },
+        ],
+        {
+          edgePadding: {
+            top: 200,
+            right: 50,
+            bottom: 250,
+            left: 50,
+          },
+          animated: true,
+        }
+      );
+    }
+  }, [focusedMarker, highlines]);
+
   return (
     <View className="flex-1">
       <MapView
@@ -79,7 +117,7 @@ export default function Screen() {
         onPress={() => {
           if (highlightedMarker) {
             setHighlightedMarker(null);
-            setClusterMarkers(null);
+            setClusterMarkers([]);
           }
         }}
       >
@@ -101,14 +139,17 @@ export default function Screen() {
         mapType={mapType}
         setMapType={setMapType}
       />
-      {clusterMarkers && clusterMarkers.length !== 0 ? (
+      {clusterMarkers.length > 0 ? (
         <MapCardList
           highlines={clusterMarkers}
           focusedMarker={highlightedMarker}
           changeFocusedMarker={(high) => setHighlightedMarker(high)}
         />
       ) : null}
-      <ListingsBottomSheet highlines={highlines} />
+      <ListingsBottomSheet
+        highlines={highlines}
+        highlightedMarker={highlightedMarker}
+      />
     </View>
   );
 }

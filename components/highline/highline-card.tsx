@@ -3,8 +3,7 @@ import { Link } from "expo-router";
 import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
 
 import { supabase } from "~/lib/supabase";
-import { UnfoldHorizontal } from "~/lib/icons/UnfoldHorizontal";
-import { UnfoldVertical } from "~/lib/icons/UnfoldVertical";
+import { LucideIcon } from "~/lib/icons/lucide-icon";
 import { FavoriteHighline } from "./favorite-button";
 import type { Highline } from "~/hooks/useHighline";
 
@@ -31,11 +30,17 @@ export const HighlineCard = ({ item }: { item: Highline }) => {
           <Text className="text-base text-foreground">{item.name}</Text>
           <View className="flex flex-row items-center gap-4 text-sm text-muted-foreground">
             <View className="flex flex-row gap-2 items-center">
-              <UnfoldVertical className="text-muted-foreground" />
+              <LucideIcon
+                name="UnfoldVertical"
+                className="size-4 mr-2 text-primary opacity-70"
+              />
               <Text className="text-muted-foreground">{item.height}m</Text>
             </View>
             <View className="flex flex-row gap-2 items-center">
-              <UnfoldHorizontal className="text-muted-foreground" />
+              <LucideIcon
+                name="UnfoldHorizontal"
+                className="size-4 mr-2 text-primary opacity-70"
+              />
               <Text className="text-muted-foreground">{item.lenght}m</Text>
             </View>
           </View>

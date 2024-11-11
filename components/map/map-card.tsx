@@ -1,17 +1,16 @@
 import React from "react";
-import { View, Pressable, Image } from "react-native";
-import { UnfoldHorizontal } from "~/lib/icons/UnfoldHorizontal";
-import { UnfoldVertical } from "~/lib/icons/UnfoldVertical";
-import { ArrowRight } from "~/lib/icons/ArrowRight";
-import { Link } from "expo-router";
-import { H4, Small } from "../ui/typography";
-import { Text } from "../ui/text";
-import { ScrollView } from "react-native-gesture-handler";
+import { View, Pressable, Image, TouchableOpacity } from "react-native";
 import Animated, { FadeIn, FadeOut, Easing } from "react-native-reanimated";
+import { ScrollView } from "react-native-gesture-handler";
+import { Link } from "expo-router";
 
 import type { Highline } from "~/hooks/useHighline";
 import { cn } from "~/lib/utils";
 import { supabase } from "~/lib/supabase";
+import { LucideIcon } from "~/lib/icons/lucide-icon";
+
+import { H4, Small } from "~/components/ui/typography";
+import { Text } from "~/components/ui/text";
 
 interface HighlineCardProps {
   highline: Highline;
@@ -49,24 +48,29 @@ const HighlineCard: React.FC<HighlineCardProps> = ({
           <H4 className="text-sm font-semibold">{highline.name}</H4>
           <View className="flex gap-2 flex-row">
             <View className="flex items-center pt-2 flex-row">
-              <UnfoldVertical className="mr-2 h-4 w-4 opacity-70" />
+              <LucideIcon
+                name="UnfoldVertical"
+                className="size-4 mr-2 text-primary opacity-70"
+              />
               <Small className="text-xs text-muted-foreground">
                 {highline.height}m
               </Small>
             </View>
             <View className="flex items-center pt-2 flex-row">
-              <UnfoldHorizontal className="mr-2 h-4 w-4 opacity-70" />
+              <LucideIcon
+                name="UnfoldHorizontal"
+                className="size-4 mr-2 text-primary opacity-70"
+              />
               <Small className="text-xs text-muted-foreground">
                 {highline.lenght}m
               </Small>
             </View>
           </View>
-          <Link
-            className="mt-auto flex flex-row items-center"
-            href={`/highline/${highline.id}`}
-          >
-            <Text className="text-blue-500">Ver detalhes</Text>
-            <ArrowRight className="text-blue-500 ml-2 size-3" />
+          <Link href={`/highline/${highline.id}`} asChild>
+            <TouchableOpacity className="flex-row gap-1 mt-auto items-center">
+              <Text className="text-blue-500">Ver detalhes</Text>
+              <LucideIcon name="ArrowRight" className="size-4 text-blue-500" />
+            </TouchableOpacity>
           </Link>
         </View>
       </View>
