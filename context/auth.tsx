@@ -24,6 +24,7 @@ interface AuthContextValue {
   setProfile: React.Dispatch<React.SetStateAction<Profile | null>>;
   profile: Profile | null;
   session: Session | null;
+  loading: boolean;
 }
 
 // Create the AuthContext
@@ -35,10 +36,12 @@ export function AuthProvider(props: React.PropsWithChildren) {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      setLoading(false);
     });
 
     supabase.auth.onAuthStateChange((_event, session) => {
@@ -74,6 +77,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
       value={{
         profile,
         session,
+        loading,
         setProfile,
         login: async (email: string, password: string) => {
           try {

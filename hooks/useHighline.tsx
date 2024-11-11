@@ -3,10 +3,13 @@ import { useState } from "react";
 
 import type { Functions } from "~/utils/database.types";
 import { supabase } from "~/lib/supabase";
+import { useAuth } from "~/context/auth";
 
 export type Highline = Functions["get_highline"]["Returns"][0];
 
 export const useHighline = () => {
+  const { session, loading: sessionLoading } = useAuth();
+
   const [highlightedMarker, setHighlightedMarker] = useState<Highline | null>(
     null
   );
@@ -14,14 +17,17 @@ export const useHighline = () => {
 
   const {
     data: highlines,
-    isLoading,
+    isPending,
     error,
   } = useQuery({
     queryKey: ["highlines"],
     queryFn: async () => {
-      const result = await supabase.rpc("get_highline");
+      const result = await supabase.rpc("get_highline", {
+        ...(session?.user?.id ? { userid: session.user.id } : {}),
+      });
       return result.data || [];
     },
+    enabled: !sessionLoading,
   });
 
   return {
@@ -30,7 +36,7 @@ export const useHighline = () => {
     clusterMarkers,
     setHighlightedMarker,
     setClusterMarkers,
-    isLoading,
+    isPending,
     error,
   };
 };

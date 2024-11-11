@@ -23,7 +23,7 @@ export function FavoriteHighline({
   id,
 }: {
   isFavorite: boolean;
-  id?: string;
+  id: string;
 }) {
   const { session } = useAuth();
 
@@ -31,9 +31,11 @@ export function FavoriteHighline({
   const queryClient = useQueryClient();
   const router = useRouter();
 
+  const liked = useSharedValue(isFavorite ? 1 : 0);
+
   const { mutate, isPending } = useMutation({
     mutationFn: async () => {
-      if (!session?.user || !id) return;
+      if (!session?.user) return;
       if (favorite) {
         // Delete from favorites
         const { error } = await supabase
@@ -82,8 +84,6 @@ export function FavoriteHighline({
       queryClient.setQueryData(["highline", id], context);
     },
   });
-
-  const liked = useSharedValue(0);
 
   const outlineStyle = useAnimatedStyle(() => {
     return {

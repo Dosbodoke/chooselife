@@ -7,7 +7,7 @@ import { LucideIcon } from "~/lib/icons/lucide-icon";
 import { FavoriteHighline } from "./favorite-button";
 import type { Highline } from "~/hooks/useHighline";
 
-export const HighlineCard = ({ item }: { item: Highline }) => {
+export const HighlineCard: React.FC<{ item: Highline }> = ({ item }) => {
   return (
     <Link href={`/highline/${item.id}`} asChild>
       <TouchableOpacity>
