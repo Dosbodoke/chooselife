@@ -51,12 +51,15 @@ export default function HighlinePage() {
   const shareListing = async () => {
     if (!highline) return;
     try {
+      const url = Linking.createURL(`highline/${highline.id}`);
+      const message = `🚀 Confira esse Highline incrível no APP Chooselife: "${highline.name}"!\n\nBaixe o app para explorar mais locais, rankings e atividades exclusivas no mundo das highlines.\n\n🔗 Acesse agora: ${url}`;
+
       await Share.share({
-        title: highline?.name,
-        url: Linking.createURL(`highline/${highline.id}`),
+        title: "Veja no Chooselife",
+        message, // Usamos "message" para compatibilidade com Android e iOS
       });
     } catch (err) {
-      console.log(err);
+      console.log("Erro ao compartilhar a highline:", err);
     }
   };
 
