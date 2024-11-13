@@ -5,6 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   "name": "Chooselife",
   "slug": "chooselife",
   "version": "1.0.0",
+  "newArchEnabled": false,
   "orientation": "portrait",
   "icon": "./assets/images/icon.png",
   "scheme": "com.chooselife",

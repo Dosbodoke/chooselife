@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "expo-sqlite/kv-store";
 import Animated, {
   FadeIn,
   FadeInRight,
@@ -100,7 +100,7 @@ export default function SetProfile() {
       }
 
       setProfile(profileData);
-      router.replace("/");
+      router.replace("/(tabs)");
     } catch (error) {
       if ((error as PostgrestError).code === "23505") {
         form.setError("username", {
@@ -377,7 +377,7 @@ const ProfileInfoForm = ({
               keyboardType="default"
               returnKeyType="done"
               placeholder="Nos diga um pouco sobre você"
-              blurOnSubmit={true}
+              submitBehavior="blurAndSubmit"
               className={error && "border-destructive"}
               onSubmitEditing={() => Keyboard.dismiss()}
               onChangeText={onChange}

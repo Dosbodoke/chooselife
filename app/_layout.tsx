@@ -1,9 +1,10 @@
 // Import your global CSS file
 import "~/global.css";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Theme, ThemeProvider } from "@react-navigation/native";
-import { router, SplashScreen, Stack } from "expo-router";
+import AsyncStorage from "expo-sqlite/kv-store";
+import { Theme, ThemeProvider, DefaultTheme } from "@react-navigation/native";
+import { router, Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
@@ -14,15 +15,17 @@ import NetInfo from "@react-native-community/netinfo";
 import { NAV_THEME } from "~/lib/constants";
 import { useColorScheme } from "~/lib/useColorScheme";
 import queryClient from "~/lib/react-query";
-import { AuthProvider, useAuth } from "~/context/auth";
+import { AuthProvider } from "~/context/auth";
 import useLinking from "~/hooks/useLinking";
 import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
 
 const LIGHT_THEME: Theme = {
+  ...DefaultTheme,
   dark: false,
   colors: NAV_THEME.light,
 };
 const DARK_THEME: Theme = {
+  ...DefaultTheme,
   dark: true,
   colors: NAV_THEME.dark,
 };

@@ -2,7 +2,7 @@ import 'react-native-url-polyfill/auto'
 import 'react-native-get-random-values'
 import { AppState } from 'react-native'
 import { createClient } from '@supabase/supabase-js'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import AsyncStorage from "expo-sqlite/kv-store";
 import * as SecureStore from 'expo-secure-store'
 import * as aesjs from 'aes-js'
 

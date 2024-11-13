@@ -1,7 +1,11 @@
 import * as Location from "expo-location";
 import { useState, useRef, useEffect } from "react";
 import { View } from "react-native";
-import MapView, { type Region, type MapType } from "react-native-maps";
+import MapView, {
+  type Region,
+  type MapType,
+  PROVIDER_GOOGLE,
+} from "react-native-maps";
 import type { BBox } from "geojson";
 
 import ListingsBottomSheet from "~/components/map/bottom-sheet";
@@ -120,6 +124,7 @@ export default function Screen() {
             setClusterMarkers([]);
           }
         }}
+        provider={PROVIDER_GOOGLE}
       >
         <Markers
           mapRef={mapRef}

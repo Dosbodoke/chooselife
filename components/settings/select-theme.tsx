@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "expo-sqlite/kv-store";
 import { Pressable, View } from "react-native";
 
 import { useColorScheme } from "~/lib/useColorScheme";

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "expo-sqlite/kv-store";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { KeyboardAwareScrollView } from "~/components/KeyboardAwareScrollView";
@@ -96,7 +96,7 @@ const OAuthButtons = ({
       if (router.canGoBack()) {
         router.back();
       } else {
-        router.replace("/");
+        router.replace("/(tabs)");
       }
     }
   };
