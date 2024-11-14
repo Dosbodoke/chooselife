@@ -130,6 +130,15 @@ const UserHeader: React.FC<{
           />
           <View className="flex flex-1">
             <H3 numberOfLines={1}>{profile.name}</H3>
+            {profile.birthday ? (
+              <View className="flex-row gap-1">
+                <LucideIcon
+                  name="Calendar"
+                  className="size-4 text-muted-foreground"
+                />
+                <Muted>{calculateAge(profile.birthday)}</Muted>
+              </View>
+            ) : null}
           </View>
         </View>
         <P>{profile.description}</P>
