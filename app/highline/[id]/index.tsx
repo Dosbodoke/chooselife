@@ -1,5 +1,5 @@
 import * as Linking from "expo-linking";
-import { Link, useLocalSearchParams, useNavigation } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState, useRef, useMemo } from "react";
 import {
   View,
@@ -10,9 +10,6 @@ import {
   type LayoutChangeEvent,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
-
-import { useAuth } from "~/context/auth";
 import { supabase } from "~/lib/supabase";
 import { FavoriteHighline } from "~/components/highline/favorite-button";
 import Info from "~/components/highline/info";
@@ -38,7 +35,7 @@ export default function HighlinePage() {
 
   const { highline, isPending } = useHighline({ id });
 
-  const navigation = useNavigation();
+  const router = useRouter();
 
   const shareListing = async () => {
     if (!highline) return;
@@ -97,17 +94,19 @@ export default function HighlinePage() {
           }}
         >
           <TouchableOpacity
-            className="size-10 rounded-full bg-white items-center justify-center"
-            onPress={() => navigation.goBack()}
+            className="p-2 rounded-full bg-white items-center justify-center"
+            onPress={() =>
+              router.canGoBack() ? router.back() : router.replace("/(tabs)")
+            }
           >
-            <Ionicons name="chevron-back" size={24} color={"#000"} />
+            <LucideIcon name="ChevronLeft" className="text-primary size-6" />
           </TouchableOpacity>
           <View className="flex-row items-center justify-center gap-3">
             <TouchableOpacity
-              className="size-10 rounded-full bg-white items-center justify-center"
+              className="p-2 rounded-full bg-white items-center justify-center"
               onPress={shareListing}
             >
-              <Ionicons name="share-outline" size={22} color={"#000"} />
+              <LucideIcon name="Share" className="text-primary size-6" />
             </TouchableOpacity>
             <FavoriteHighline
               isFavorite={!!highline?.is_favorite}

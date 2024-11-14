@@ -1,4 +1,4 @@
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
@@ -6,12 +6,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Text } from "~/components/ui/text";
 import { Card, CardContent } from "~/components/ui/card";
 import { H1, H2, H3, Lead, Muted, P } from "~/components/ui/typography";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { SupabaseAvatar } from "~/components/ui/avatar";
 import { supabase } from "~/lib/supabase";
 import { Database } from "~/utils/database.types";
 import { Button } from "~/components/ui/button";
+import { LucideIcon } from "~/lib/icons/lucide-icon";
 
 export default function Profile() {
+  const router = useRouter();
   const { username } = useLocalSearchParams<{ username: string }>();
 
   const { data: profile, isPending: profilePending } = useQuery({
@@ -57,6 +59,17 @@ export default function Profile() {
 
   return (
     <SafeAreaView className="flex-1 gap-4 pt-4 px-2">
+      <View className="flex-row items-center">
+        <TouchableOpacity
+          className="p-2 rounded-full items-center justify-center"
+          onPress={() =>
+            router.canGoBack() ? router.back() : router.replace("/(tabs)")
+          }
+        >
+          <LucideIcon name="ChevronLeft" className="text-primary size-6" />
+        </TouchableOpacity>
+        <Text className="text-primary font-semibold text-xl">{username}</Text>
+      </View>
       <UserHeader profile={profile} username={`${profile?.username}`} />
       <Stats
         total_cadenas={stats?.total_cadenas || 0}
@@ -98,7 +111,7 @@ const UserHeader = ({
     return (
       <Card>
         <CardContent className="flex flex-row gap-4 overflow-hidden px-2 py-4">
-          <ProfileAvatar />
+          <SupabaseAvatar name={""} profilePicture={""} />
           <View className="flex gap-3">
             <H1>{username}</H1>
             <View className="rounded-lg bg-red-50 p-2 text-center text-sm text-red-500 dark:bg-red-100 dark:text-red-700 md:p-4">
@@ -114,29 +127,17 @@ const UserHeader = ({
     <Card>
       <CardContent className="flex gap-4 overflow-hidden px-2 py-4">
         <View className="flex flex-row mt-4 gap-4">
-          <ProfileAvatar />
+          <SupabaseAvatar
+            name={profile.name ?? ""}
+            profilePicture={profile.profile_picture ?? ""}
+          />
           <View className="flex flex-1">
             <H3 numberOfLines={1}>{profile.name}</H3>
-            <Muted className="text-lg">{username}</Muted>
           </View>
         </View>
         <P>{profile.description}</P>
       </CardContent>
     </Card>
-  );
-};
-
-const ProfileAvatar = () => {
-  return (
-    <Avatar
-      alt="Zach Nugent's Avatar"
-      className="w-full h-full max-w-24 max-h-24"
-    >
-      <AvatarImage source={{ uri: "https://github.com/mrzachnugent.png" }} />
-      <AvatarFallback>
-        <Text>ZN</Text>
-      </AvatarFallback>
-    </Avatar>
   );
 };
 
