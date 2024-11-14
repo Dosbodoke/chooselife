@@ -80,13 +80,10 @@ export default function Profile() {
   );
 }
 
-const UserHeader = ({
-  profile,
-  username,
-}: {
+const UserHeader: React.FC<{
   profile: Database["public"]["Tables"]["profiles"]["Row"] | null;
   username: string;
-}) => {
+}> = ({ profile, username }) => {
   function calculateAge(birthday: string) {
     const birthdate = new Date(birthday);
     const today = new Date();
@@ -141,15 +138,11 @@ const UserHeader = ({
   );
 };
 
-const Stats = ({
-  total_distance_walked,
-  total_cadenas,
-  total_full_lines,
-}: {
+const Stats: React.FC<{
   total_distance_walked: number;
   total_cadenas: number;
   total_full_lines: number;
-}) => {
+}> = ({ total_distance_walked, total_cadenas, total_full_lines }) => {
   const displayDistanceInKM = total_distance_walked > 10000;
 
   return (
@@ -187,7 +180,7 @@ const Stats = ({
   );
 };
 
-function UserNotFound({ username }: { username: string }) {
+const UserNotFound: React.FC<{ username: string }> = ({ username }) => {
   const router = useRouter();
 
   const canGoBack = router.canGoBack();
@@ -208,4 +201,4 @@ function UserNotFound({ username }: { username: string }) {
       </View>
     </SafeAreaView>
   );
-}
+};
