@@ -44,6 +44,7 @@ export default function Screen() {
     clusterMarkers,
     setHighlightedMarker,
     setClusterMarkers,
+    isLoading,
   } = useHighlineList({ searchTerm });
 
   async function getMyLocation(): Promise<Region | undefined> {
@@ -161,6 +162,7 @@ export default function Screen() {
       <ListingsBottomSheet
         highlines={highlines}
         highlightedMarker={highlightedMarker}
+        isLoading={isLoading}
       />
     </View>
   );

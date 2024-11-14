@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import BottomSheet from "@gorhom/bottom-sheet";
 
-import { type Highline } from "~/hooks/useHighline";
+import { type Highline } from "~/hooks/use-highline";
 import Listings from "~/components/map/listing";
 import { LucideIcon } from "~/lib/icons/lucide-icon";
 import { useColorScheme } from "~/lib/useColorScheme";
@@ -11,7 +11,8 @@ import { useColorScheme } from "~/lib/useColorScheme";
 const ListingsBottomSheet: React.FC<{
   highlines: Highline[];
   highlightedMarker: Highline | null;
-}> = ({ highlines, highlightedMarker }) => {
+  isLoading: boolean;
+}> = ({ highlines, highlightedMarker, isLoading }) => {
   const { colorScheme } = useColorScheme();
   const snapPoints = useMemo(() => ["10%", "100%"], []);
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -52,7 +53,11 @@ const ListingsBottomSheet: React.FC<{
       }}
     >
       <View className="flex-1 bg-background">
-        <Listings highlines={highlines} refresh={refresh} />
+        <Listings
+          highlines={highlines}
+          refresh={refresh}
+          isLoading={isLoading}
+        />
         <View className="absolute bottom-6 w-full items-center">
           <TouchableOpacity
             onPress={onShowMap}

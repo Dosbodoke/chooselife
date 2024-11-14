@@ -5,15 +5,14 @@ import {
   BottomSheetFlatListMethods,
 } from "@gorhom/bottom-sheet";
 
-import type { Highline } from "~/hooks/useHighline";
+import type { Highline } from "~/hooks/use-highline";
 import { HighlineCard } from "../highline/highline-card";
 
-interface Props {
+const Listings: React.FC<{
   highlines: Highline[];
   refresh: number;
-}
-
-const Listings = ({ highlines, refresh }: Props) => {
+  isLoading: boolean;
+}> = ({ highlines, refresh, isLoading }) => {
   const listRef = useRef<BottomSheetFlatListMethods>(null);
 
   // Update the view to scroll the list back top
@@ -32,7 +31,9 @@ const Listings = ({ highlines, refresh }: Props) => {
         ref={listRef}
         ListHeaderComponent={
           <Text className="text-center text-lg mt-1 text-primary">
-            {highlines.length} highlines
+            {isLoading
+              ? "procurando highlines..."
+              : `${highlines.length} highlines`}
           </Text>
         }
       />

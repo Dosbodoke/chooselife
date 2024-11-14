@@ -7,7 +7,7 @@ import useSuperCluster from "use-supercluster";
 import type { BBox, GeoJsonProperties } from "geojson";
 
 import { Text } from "../ui/text";
-import { type Highline } from "~/hooks/useHighline";
+import { type Highline } from "~/hooks/use-highline";
 import { MarkerCL } from "~/lib/icons/MarkerCL";
 
 const MIN_MARKER_SIZE = 30;

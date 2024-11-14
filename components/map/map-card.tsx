@@ -4,7 +4,7 @@ import Animated, { FadeIn, FadeOut, Easing } from "react-native-reanimated";
 import { ScrollView } from "react-native-gesture-handler";
 import { Link } from "expo-router";
 
-import type { Highline } from "~/hooks/useHighline";
+import type { Highline } from "~/hooks/use-highline";
 import { cn } from "~/lib/utils";
 import { supabase } from "~/lib/supabase";
 import { LucideIcon } from "~/lib/icons/lucide-icon";

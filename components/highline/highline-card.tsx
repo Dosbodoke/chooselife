@@ -5,7 +5,7 @@ import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
 import { supabase } from "~/lib/supabase";
 import { LucideIcon } from "~/lib/icons/lucide-icon";
 import { FavoriteHighline } from "./favorite-button";
-import type { Highline } from "~/hooks/useHighline";
+import type { Highline } from "~/hooks/use-highline";
 
 export const HighlineCard: React.FC<{ item: Highline }> = ({ item }) => {
   return (
