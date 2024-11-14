@@ -25,6 +25,7 @@ import { Text } from "~/components/ui/text";
 import { MarkerCL } from "~/lib/icons/MarkerCL";
 import { LucideIcon } from "~/lib/icons/lucide-icon";
 import { Ranking } from "~/components/ranking";
+import { useHighline } from "~/hooks/use-highline";
 
 type HighlineTabs = "details" | "ranking";
 
@@ -33,19 +34,10 @@ export default function HighlinePage() {
   const bottomActionsHeightRef = useRef(0);
   const insets = useSafeAreaInsets();
 
-  const { session } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: highline, isPending } = useQuery({
-    queryKey: ["highline", id],
-    queryFn: async () => {
-      const result = await supabase.rpc("get_highline", {
-        searchid: [id as string],
-        userid: session?.user.id,
-      });
-      return result.data && result.data.length > 0 ? result.data[0] : null;
-    },
-    enabled: !!id,
-  });
+
+  const { highline, isPending } = useHighline({ id });
+
   const navigation = useNavigation();
 
   const shareListing = async () => {
@@ -204,7 +196,11 @@ const BottomActions = ({
         elevation: 4,
       }}
     >
-      <Link className="flex-1" href={`/?focusedMarker=${id}`} asChild>
+      <Link
+        className="flex-1"
+        href={{ pathname: "/(tabs)", params: { focusedMarker: id } }}
+        asChild
+      >
         <Button className="flex-1 flex-row gap-2 items-start" variant="outline">
           {hasLocation ? (
             <>

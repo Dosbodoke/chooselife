@@ -1,13 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-
-import type { Functions } from "~/utils/database.types";
 import { supabase } from "~/lib/supabase";
 import { useAuth } from "~/context/auth";
+import type { Functions } from "~/utils/database.types";
 
 export type Highline = Functions["get_highline"]["Returns"][0];
 
-export const useHighline = ({ searchTerm }: { searchTerm: string }) => {
+export const useHighlineList = ({ searchTerm }: { searchTerm?: string }) => {
   const { session, loading: sessionLoading } = useAuth();
 
   const [highlightedMarker, setHighlightedMarker] = useState<Highline | null>(
@@ -17,17 +16,18 @@ export const useHighline = ({ searchTerm }: { searchTerm: string }) => {
 
   const {
     data: highlines,
-    isPending,
+    isLoading,
     error,
-  } = useQuery({
+  } = useQuery<Highline[]>({
     queryKey: ["highlines"],
     queryFn: async () => {
-      const result = await supabase.rpc("get_highline", {
+      const { data } = await supabase.rpc("get_highline", {
         ...(session?.user?.id ? { userid: session.user.id } : {}),
       });
-      return result.data || [];
+      return data || [];
     },
     enabled: !sessionLoading,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Filter highlines based on the search term
@@ -40,11 +40,11 @@ export const useHighline = ({ searchTerm }: { searchTerm: string }) => {
 
   return {
     highlines: filteredHighlines,
+    isLoading,
+    error,
     highlightedMarker,
     clusterMarkers,
     setHighlightedMarker,
     setClusterMarkers,
-    isPending,
-    error,
   };
 };

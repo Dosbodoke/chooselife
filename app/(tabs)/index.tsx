@@ -13,7 +13,7 @@ import MapControls from "~/components/map/controls";
 import { calculateZoomLevel, regionToBoundingBox } from "~/utils";
 import { MapCardList } from "~/components/map/map-card";
 
-import { useHighline } from "~/hooks/useHighline";
+import { useHighlineList } from "~/hooks/use-highline-list";
 import { Markers } from "~/components/map/markers";
 import { Stack, useLocalSearchParams } from "expo-router";
 import ExploreHeader from "~/components/map/explore-header";
@@ -44,7 +44,7 @@ export default function Screen() {
     clusterMarkers,
     setHighlightedMarker,
     setClusterMarkers,
-  } = useHighline({ searchTerm });
+  } = useHighlineList({ searchTerm });
 
   async function getMyLocation(): Promise<Region | undefined> {
     const { status } = await Location.requestForegroundPermissionsAsync();
