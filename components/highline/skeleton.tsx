@@ -1,8 +1,12 @@
-import { View } from "react-native";
+import { useRouter } from "expo-router";
+import { TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { Skeleton } from "~/components/ui/skeleton";
+import { LucideIcon } from "~/lib/icons/lucide-icon";
 
 const HighlineSkeleton = () => {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   return (
@@ -14,7 +18,14 @@ const HighlineSkeleton = () => {
           paddingTop: insets.top,
         }}
       >
-        <Skeleton className="size-10 rounded-full" />
+        <TouchableOpacity
+          className="p-2 rounded-full bg-white items-center justify-center"
+          onPress={() =>
+            router.canGoBack() ? router.back() : router.replace("/(tabs)")
+          }
+        >
+          <LucideIcon name="ChevronLeft" className="text-primary size-6" />
+        </TouchableOpacity>
 
         <View className="flex-row items-center justify-center gap-3">
           <Skeleton className="size-10 rounded-full" />

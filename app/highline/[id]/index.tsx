@@ -9,12 +9,11 @@ import {
   Image,
   type LayoutChangeEvent,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+
 import { supabase } from "~/lib/supabase";
 import { FavoriteHighline } from "~/components/highline/favorite-button";
 import Info from "~/components/highline/info";
 import { HighlineSkeleton } from "~/components/highline/skeleton";
-
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,6 +22,7 @@ import { MarkerCL } from "~/lib/icons/MarkerCL";
 import { LucideIcon } from "~/lib/icons/lucide-icon";
 import { Ranking } from "~/components/ranking";
 import { useHighline } from "~/hooks/use-highline";
+import { HighlineNotFound } from "~/components/highline/not-found";
 
 type HighlineTabs = "details" | "ranking";
 
@@ -73,11 +73,7 @@ export default function HighlinePage() {
   }
 
   if (!highline) {
-    return (
-      <View className="flex-1 items-center justify-center">
-        <Text>Highline não existe</Text>
-      </View>
-    );
+    return <HighlineNotFound />;
   }
 
   return (
