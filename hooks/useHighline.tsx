@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { Functions } from "~/utils/database.types";
 import { supabase } from "~/lib/supabase";
@@ -7,7 +7,7 @@ import { useAuth } from "~/context/auth";
 
 export type Highline = Functions["get_highline"]["Returns"][0];
 
-export const useHighline = () => {
+export const useHighline = ({ searchTerm }: { searchTerm: string }) => {
   const { session, loading: sessionLoading } = useAuth();
 
   const [highlightedMarker, setHighlightedMarker] = useState<Highline | null>(
@@ -30,8 +30,16 @@ export const useHighline = () => {
     enabled: !sessionLoading,
   });
 
+  // Filter highlines based on the search term
+  const filteredHighlines = useMemo(() => {
+    if (!searchTerm) return highlines || [];
+    return (highlines || []).filter((highline) =>
+      highline.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [highlines, searchTerm]);
+
   return {
-    highlines: highlines || [],
+    highlines: filteredHighlines,
     highlightedMarker,
     clusterMarkers,
     setHighlightedMarker,

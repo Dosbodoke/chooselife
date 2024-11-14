@@ -15,7 +15,8 @@ import { MapCardList } from "~/components/map/map-card";
 
 import { useHighline } from "~/hooks/useHighline";
 import { Markers } from "~/components/map/markers";
-import { useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
+import ExploreHeader from "~/components/map/explore-header";
 
 // Constants
 const INITIAL_REGION = {
@@ -33,6 +34,7 @@ export default function Screen() {
   const [bounds, setBounds] = useState<BBox>(
     regionToBoundingBox(INITIAL_REGION)
   );
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { focusedMarker } = useLocalSearchParams<{ focusedMarker: string }>();
 
@@ -42,7 +44,7 @@ export default function Screen() {
     clusterMarkers,
     setHighlightedMarker,
     setClusterMarkers,
-  } = useHighline();
+  } = useHighline({ searchTerm });
 
   async function getMyLocation(): Promise<Region | undefined> {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -103,6 +105,11 @@ export default function Screen() {
 
   return (
     <View className="flex-1">
+      <Stack.Screen
+        options={{
+          header: () => <ExploreHeader onSearchChange={setSearchTerm} />,
+        }}
+      />
       <MapView
         ref={mapRef}
         style={{ width: "100%", height: "100%" }}

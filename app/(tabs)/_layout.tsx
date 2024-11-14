@@ -12,8 +12,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          headerShown: false,
           title: "Explorar",
+          tabBarHideOnKeyboard: true,
           tabBarIcon: ({ focused }) => (
             <LucideIcon
               name="Earth"

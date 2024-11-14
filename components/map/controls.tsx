@@ -13,21 +13,14 @@ import { LucideIcon } from "~/lib/icons/lucide-icon";
 import { H4, P } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
-interface Props {
+const MapControls: React.FC<{
   mapType: MapType;
   isOnMyLocation: boolean;
   goToMyLocation: () => void;
   setMapType: React.Dispatch<React.SetStateAction<MapType>>;
-}
-
-const MapControls = ({
-  mapType,
-  isOnMyLocation,
-  goToMyLocation,
-  setMapType,
-}: Props) => {
+}> = ({ mapType, isOnMyLocation, goToMyLocation, setMapType }) => {
   return (
-    <View className="absolute right-2 mb-3 top-16 rounded-md bg-card">
+    <View className="absolute right-2 top-6 rounded-md bg-card">
       <TouchableOpacity
         className="h-12 w-12 items-center justify-center"
         onPress={goToMyLocation}

@@ -28,6 +28,7 @@ const Listings = ({ highlines, refresh }: Props) => {
       <BottomSheetFlatList
         renderItem={({ item }) => <HighlineCard item={item} />}
         data={highlines}
+        keyExtractor={(item) => item.id}
         ref={listRef}
         ListHeaderComponent={
           <Text className="text-center text-lg mt-1 text-primary">

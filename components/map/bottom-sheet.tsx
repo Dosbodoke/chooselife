@@ -13,7 +13,7 @@ const ListingsBottomSheet: React.FC<{
   highlightedMarker: Highline | null;
 }> = ({ highlines, highlightedMarker }) => {
   const { colorScheme } = useColorScheme();
-  const snapPoints = useMemo(() => ["8%", "95%"], []);
+  const snapPoints = useMemo(() => ["10%", "100%"], []);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [refresh, setRefresh] = useState<number>(0);
 
@@ -35,10 +35,10 @@ const ListingsBottomSheet: React.FC<{
       snapPoints={snapPoints}
       enablePanDownToClose={false}
       handleIndicatorStyle={{
-        backgroundColor: colorScheme === "light" ? "#71717a" : "#27272a",
+        backgroundColor: colorScheme === "light" ? "#71717A" : "#A1A1AA",
       }}
       handleStyle={{
-        backgroundColor: colorScheme === "light" ? "#f4f4f5" : "#09090b",
+        backgroundColor: colorScheme === "light" ? "#FFF" : "#09090B",
       }}
       style={{
         elevation: 4,
