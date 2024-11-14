@@ -1,10 +1,7 @@
-"use client";
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { Session } from "@supabase/supabase-js";
 import Animated, {
   interpolate,
   useAnimatedStyle,
@@ -14,9 +11,9 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { supabase } from "~/lib/supabase";
-import { Heart } from "~/lib/icons/Heart";
-import type { Highline } from "~/hooks/useHighline";
+import type { Highline } from "~/hooks/use-highline";
 import { useAuth } from "~/context/auth";
+import { LucideIcon } from "~/lib/icons/lucide-icon";
 
 export function FavoriteHighline({
   isFavorite,
@@ -114,11 +111,11 @@ export function FavoriteHighline({
         className="items-center justify-center "
         style={[StyleSheet.absoluteFillObject, outlineStyle]}
       >
-        <Heart className="w-6 h-6 text-black" />
+        <LucideIcon name="Heart" className="size-6 text-black" />
       </Animated.View>
 
       <Animated.View className="items-center justify-center" style={fillStyle}>
-        <Heart className="w-6 h-6 text-red-500 fill-red-500" />
+        <LucideIcon name="Heart" className="size-6 text-red-500 fill-red-500" />
       </Animated.View>
     </Pressable>
   );
