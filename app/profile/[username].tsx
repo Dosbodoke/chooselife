@@ -1,16 +1,27 @@
-import { ActivityIndicator, TouchableOpacity, View } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import {
+  ActivityIndicator,
+  Pressable,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 
 import { Text } from "~/components/ui/text";
-import { Card, CardContent } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { H1, H2, H3, Lead, Muted, P } from "~/components/ui/typography";
 import { SupabaseAvatar } from "~/components/ui/avatar";
 import { supabase } from "~/lib/supabase";
 import { Database } from "~/utils/database.types";
 import { Button } from "~/components/ui/button";
 import { LucideIcon } from "~/lib/icons/lucide-icon";
+import { FlashList } from "@shopify/flash-list";
+import { transformSecondsToTimeString } from "~/utils";
+import { KeyboardAwareScrollView } from "~/components/KeyboardAwareScrollView";
+import { EnduranceIcon, SpeedlineIcon } from "~/lib/icons";
+import { cn } from "~/lib/utils";
+import { Skeleton } from "~/components/ui/skeleton";
 
 export default function Profile() {
   const router = useRouter();
@@ -58,24 +69,30 @@ export default function Profile() {
   }
 
   return (
-    <SafeAreaView className="flex-1 gap-4 pt-4 px-2">
-      <View className="flex-row items-center">
-        <TouchableOpacity
-          className="p-2 rounded-full items-center justify-center"
-          onPress={() =>
-            router.canGoBack() ? router.back() : router.replace("/(tabs)")
-          }
-        >
-          <LucideIcon name="ChevronLeft" className="text-primary size-6" />
-        </TouchableOpacity>
-        <Text className="text-primary font-semibold text-xl">{username}</Text>
-      </View>
-      <UserHeader profile={profile} username={`${profile?.username}`} />
-      <Stats
-        total_cadenas={stats?.total_cadenas || 0}
-        total_distance_walked={stats?.total_distance_walked || 0}
-        total_full_lines={stats?.total_full_lines || 0}
-      />
+    <SafeAreaView className="flex-1 bg-background">
+      <KeyboardAwareScrollView
+        contentContainerClassName="min-h-screen px-2 py-4 gap-4"
+        keyboardShouldPersistTaps="handled"
+      >
+        <View className="flex-row items-center">
+          <TouchableOpacity
+            className="p-2 rounded-full items-center justify-center"
+            onPress={() =>
+              router.canGoBack() ? router.back() : router.replace("/(tabs)")
+            }
+          >
+            <LucideIcon name="ChevronLeft" className="text-primary size-6" />
+          </TouchableOpacity>
+          <Text className="text-primary font-semibold text-xl">{username}</Text>
+        </View>
+        <UserHeader profile={profile} username={`${profile?.username}`} />
+        <Stats
+          total_cadenas={stats?.total_cadenas || 0}
+          total_distance_walked={stats?.total_distance_walked || 0}
+          total_full_lines={stats?.total_full_lines || 0}
+        />
+        <LastWalks username={username} />
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }
@@ -209,5 +226,133 @@ const UserNotFound: React.FC<{ username: string }> = ({ username }) => {
         </Button>
       </View>
     </SafeAreaView>
+  );
+};
+
+const LastWalks: React.FC<{ username: string }> = ({ username }) => {
+  const { data, isPending } = useQuery({
+    queryKey: ["profile", username, "walks"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("entry")
+        .select(
+          `
+            *,
+            highline (*)
+          `
+        )
+        .eq("instagram", `${username}`)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      return data;
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Ultimos rolês</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <FlashList
+          data={data}
+          renderItem={({ item, index }) => {
+            const isFirstItem = index === 0;
+            const isLastItem = data ? index === data.length - 1 : false;
+
+            return (
+              <View
+                className={cn(
+                  isFirstItem ? "pb-4" : "py-4",
+                  isLastItem ? "" : "border-b border-muted"
+                )}
+              >
+                <Link href={`/highline/${item.highline_id}`} asChild>
+                  <Pressable>
+                    <Text className="truncate text-base font-semibold leading-none text-blue-500 dark:text-blue-400">
+                      {item.highline?.name}
+                    </Text>
+                  </Pressable>
+                </Link>
+                <Text className="text-muted-foreground">
+                  {new Date(item.created_at).toLocaleDateString("pt-BR", {
+                    dateStyle: "medium",
+                  })}
+                </Text>
+                <View className="flex-row gap-4 py-1">
+                  <View className="flex-row gap-2">
+                    <EnduranceIcon className="text-primary" />
+                    <View>
+                      <Text className="text-muted-foreground text-sm">
+                        Distância caminhada
+                      </Text>
+                      <Text className="text-primary text-base">
+                        {item.distance_walked}m
+                      </Text>
+                    </View>
+                  </View>
+                  {item.crossing_time ? (
+                    <View className="flex-row gap-2">
+                      <SpeedlineIcon className="text-primary" />
+                      <View>
+                        <Text className="text-muted-foreground text-sm">
+                          Melhor tempo
+                        </Text>
+                        <Text className="text-primary text-base">
+                          {transformSecondsToTimeString(item.crossing_time)}
+                        </Text>
+                      </View>
+                    </View>
+                  ) : null}
+                </View>
+                {item.comment ? (
+                  <Text className="text-primary">{item.comment}</Text>
+                ) : null}
+              </View>
+            );
+          }}
+          estimatedItemSize={100}
+          ListEmptyComponent={() =>
+            isPending ? (
+              Array.from({ length: 5 }).map((_, index) => {
+                const isFirstItem = index === 0;
+                const isLastItem = index === 4;
+
+                return (
+                  <View
+                    key={`walk-loading-${index}`}
+                    className={cn(
+                      "gap-1",
+                      isFirstItem ? "pb-4" : "py-4",
+                      isLastItem ? "" : "border-b border-muted"
+                    )}
+                  >
+                    <Skeleton className="w-2/5 h-6" />
+                    <Skeleton className="w-3/6 h-4" />
+                    <View className="flex-row gap-4 py-1">
+                      <Skeleton className="w-20 h-14" />
+                      <Skeleton className="w-20 h-14" />
+                    </View>
+                    <Skeleton className="w-full h-4" />
+                    <Skeleton className="w-3/6 h-4" />
+                  </View>
+                );
+              })
+            ) : (
+              <View className="items-center">
+                <LucideIcon
+                  name="Frown"
+                  className="size-40 text-muted-foreground"
+                  strokeWidth={0.5}
+                />
+                <Text className="text-center text-muted-foreground">
+                  Você ainda não deu nenhum rolê
+                </Text>
+              </View>
+            )
+          }
+        />
+      </CardContent>
+    </Card>
   );
 };
