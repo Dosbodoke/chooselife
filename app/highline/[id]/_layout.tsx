@@ -1,4 +1,4 @@
-import { Stack } from "expo-router";
+import { Stack } from 'expo-router';
 
 export default function HighlineLayout() {
   return (
@@ -12,8 +12,8 @@ export default function HighlineLayout() {
       <Stack.Screen
         name="register"
         options={{
-          presentation: "modal",
-          title: "Registrar rolê",
+          presentation: 'modal',
+          title: 'Registrar rolê',
         }}
       />
     </Stack>

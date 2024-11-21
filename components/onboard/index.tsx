@@ -1,13 +1,11 @@
 import {
-  type PressableProps,
-  View,
-  Text,
-  Pressable,
   ActivityIndicator,
-} from "react-native";
-import { buttonTextVariants, buttonVariants } from "../ui/button";
+  Pressable,
+  Text,
+  View,
+  type PressableProps,
+} from 'react-native';
 import Animated, {
-  type AnimatedProps,
   FadeInDown,
   FadeInLeft,
   FadeOutLeft,
@@ -18,20 +16,24 @@ import Animated, {
   useAnimatedStyle,
   useDerivedValue,
   withSpring,
-} from "react-native-reanimated";
-import { cn } from "~/lib/utils";
+  type AnimatedProps,
+} from 'react-native-reanimated';
+
+import { cn } from '~/lib/utils';
+
+import { buttonTextVariants, buttonVariants } from '../ui/button';
 
 const _layoutTransition = LinearTransition.springify()
   .damping(80)
   .stiffness(200);
 const _dotContainer = 24;
 const _dotSize = _dotContainer / 3;
-const _activeDot = "#fff";
-const _inactiveDot = "#aaa";
+const _activeDot = '#fff';
+const _inactiveDot = '#aaa';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-function Button({ children, style, ...rest }: AnimatedProps<PressableProps>) {
+function Button({ children, ...rest }: AnimatedProps<PressableProps>) {
   return (
     <AnimatedPressable
       entering={FadeInLeft.springify().damping(80).stiffness(200)}
@@ -56,7 +58,7 @@ function Dot({
       backgroundColor: interpolateColor(
         animation.value,
         [index - 1, index, index + 1],
-        [_inactiveDot, _activeDot, _activeDot]
+        [_inactiveDot, _activeDot, _activeDot],
       ),
     };
   });
@@ -66,8 +68,8 @@ function Dot({
       style={{
         width: _dotContainer,
         height: _dotContainer,
-        justifyContent: "center",
-        alignItems: "center",
+        justifyContent: 'center',
+        alignItems: 'center',
       }}
     >
       <Animated.View
@@ -95,11 +97,11 @@ function PaginationIndicator({
     <Animated.View
       style={[
         {
-          backgroundColor: "#29BE56",
+          backgroundColor: '#29BE56',
           height: _dotContainer,
           width: _dotContainer,
           borderRadius: _dotContainer,
-          position: "absolute",
+          position: 'absolute',
           left: 0,
           top: 0,
         },
@@ -149,7 +151,7 @@ function OnboardNavigator({
     <View className="flex-row gap-2">
       {selectedIndex > 0 && (
         <Button
-          className={cn(buttonVariants({ variant: "outline" }))}
+          className={cn(buttonVariants({ variant: 'outline' }))}
           onPress={() => {
             onIndexChange(selectedIndex - 1);
           }}
@@ -157,8 +159,8 @@ function OnboardNavigator({
         >
           <Text
             className={cn(
-              buttonTextVariants({ variant: "outline" }),
-              "font-bold"
+              buttonTextVariants({ variant: 'outline' }),
+              'font-bold',
             )}
           >
             Voltar
@@ -166,7 +168,7 @@ function OnboardNavigator({
         </Button>
       )}
       <Button
-        className={cn(buttonVariants({ variant: "default" }), "flex-1")}
+        className={cn(buttonVariants({ variant: 'default' }), 'flex-1')}
         onPress={() => {
           if (selectedIndex >= total - 1) {
             onFinish();
@@ -178,12 +180,12 @@ function OnboardNavigator({
       >
         {isLoading ? (
           <ActivityIndicator
-            className={cn(buttonTextVariants({ variant: "default" }))}
+            className={cn(buttonTextVariants({ variant: 'default' }))}
           />
         ) : selectedIndex === total - 1 ? (
           <Animated.Text
             key="finish"
-            className={cn(buttonTextVariants({ variant: "default" }))}
+            className={cn(buttonTextVariants({ variant: 'default' }))}
             entering={FadeInDown.springify().damping(80).stiffness(200)}
             exiting={FadeOutUp.springify().damping(80).stiffness(200)}
           >
@@ -192,7 +194,7 @@ function OnboardNavigator({
         ) : (
           <Animated.Text
             key="continue"
-            className={cn(buttonTextVariants({ variant: "default" }))}
+            className={cn(buttonTextVariants({ variant: 'default' }))}
             layout={_layoutTransition}
             entering={FadeInDown.springify().damping(80).stiffness(200)}
             exiting={FadeOutUp.springify().damping(80).stiffness(200)}

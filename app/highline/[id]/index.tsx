@@ -1,34 +1,33 @@
-import * as Linking from "expo-linking";
-import { Link, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState, useRef, useMemo } from "react";
+import * as Linking from 'expo-linking';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useMemo, useRef, useState } from 'react';
 import {
-  View,
-  TouchableOpacity,
-  Share,
   ScrollView,
-  Image,
+  Share,
+  TouchableOpacity,
+  View,
   type LayoutChangeEvent,
-} from "react-native";
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { supabase } from "~/lib/supabase";
-import { FavoriteHighline } from "~/components/highline/favorite-button";
-import Info from "~/components/highline/info";
-import { HighlineSkeleton } from "~/components/highline/skeleton";
-import { Button } from "~/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Text } from "~/components/ui/text";
-import { MarkerCL } from "~/lib/icons/MarkerCL";
-import { LucideIcon } from "~/lib/icons/lucide-icon";
-import { Ranking } from "~/components/ranking";
-import { useHighline } from "~/hooks/use-highline";
-import { HighlineNotFound } from "~/components/highline/not-found";
-import { HighlineImage } from "~/components/highline/highline-image";
+import { useHighline } from '~/hooks/use-highline';
+import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { MarkerCL } from '~/lib/icons/MarkerCL';
 
-type HighlineTabs = "details" | "ranking";
+import { FavoriteHighline } from '~/components/highline/favorite-button';
+import { HighlineImage } from '~/components/highline/highline-image';
+import Info from '~/components/highline/info';
+import { HighlineNotFound } from '~/components/highline/not-found';
+import { HighlineSkeleton } from '~/components/highline/skeleton';
+import { Ranking } from '~/components/ranking';
+import { Button } from '~/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
+import { Text } from '~/components/ui/text';
+
+type HighlineTabs = 'details' | 'ranking';
 
 export default function HighlinePage() {
-  const [tab, setTab] = useState<HighlineTabs>("details");
+  const [tab, setTab] = useState<HighlineTabs>('details');
   const bottomActionsHeightRef = useRef(0);
   const insets = useSafeAreaInsets();
 
@@ -45,28 +44,28 @@ export default function HighlinePage() {
       const message = `🚀 Confira esse Highline incrível no APP Chooselife: "${highline.name}"!\n\nBaixe o app para explorar mais locais, rankings e atividades exclusivas no mundo das highlines.\n\n🔗 Acesse agora: ${url}`;
 
       await Share.share({
-        title: "Veja no Chooselife",
+        title: 'Veja no Chooselife',
         message, // Usamos "message" para compatibilidade com Android e iOS
       });
     } catch (err) {
-      console.log("Erro ao compartilhar a highline:", err);
+      console.log('Erro ao compartilhar a highline:', err);
     }
   };
 
   const tabs = useMemo(
     () => [
       {
-        id: "details",
-        label: "Detalhes",
+        id: 'details',
+        label: 'Detalhes',
         content: <Info />,
       },
       {
-        id: "ranking",
-        label: "Ranking",
-        content: <Ranking highlines_ids={[highline?.id || ""]} />,
+        id: 'ranking',
+        label: 'Ranking',
+        content: <Ranking highlines_ids={[highline?.id || '']} />,
       },
     ],
-    [highline?.id]
+    [highline?.id],
   );
 
   if (isPending) {
@@ -93,7 +92,7 @@ export default function HighlinePage() {
           <TouchableOpacity
             className="p-2 rounded-full bg-white items-center justify-center"
             onPress={() =>
-              router.canGoBack() ? router.back() : router.replace("/(tabs)")
+              router.canGoBack() ? router.back() : router.replace('/(tabs)')
             }
           >
             <LucideIcon name="ChevronLeft" className="text-primary size-6" />
@@ -147,7 +146,7 @@ export default function HighlinePage() {
         </View>
       </ScrollView>
 
-      {tab === "details" ? (
+      {tab === 'details' ? (
         <BottomActions
           hasLocation={!!highline.anchor_a_lat}
           onLayout={(event) => {
@@ -175,7 +174,7 @@ const BottomActions = ({
       className="absolute bottom-0 flex flex-row gap-4 w-full bg-background px-2 pt-4 border-t border-muted"
       style={{
         paddingBottom: insets.bottom,
-        shadowColor: "#000",
+        shadowColor: '#000',
         shadowOffset: {
           width: 0,
           height: 2,
@@ -188,7 +187,7 @@ const BottomActions = ({
     >
       <Link
         className="flex-1"
-        href={{ pathname: "/(tabs)", params: { focusedMarker: id } }}
+        href={{ pathname: '/(tabs)', params: { focusedMarker: id } }}
         asChild
       >
         <Button className="flex-1 flex-row gap-2 items-start" variant="outline">

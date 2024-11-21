@@ -1,27 +1,28 @@
-import { View } from "react-native";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { View } from 'react-native';
 
-import { supabase } from "~/lib/supabase";
-import { Functions } from "~/utils/database.types";
-import { Leaderboard } from "./leaderboard";
-import { Text } from "../ui/text";
-import { LoadingLeaderboard, LoadingRows } from "./loading-skeleton";
-import SeeMore from "./see-more";
+import { supabase } from '~/lib/supabase';
+import { Functions } from '~/utils/database.types';
+
+import { Text } from '../ui/text';
+import { Leaderboard } from './leaderboard';
+import { LoadingLeaderboard, LoadingRows } from './loading-skeleton';
+import SeeMore from './see-more';
 
 type LeaderboardFunctions = Extract<
   keyof Functions,
-  | "get_crossing_time"
-  | "get_highline"
-  | "get_total_cadenas"
-  | "get_total_full_lines"
-  | "get_total_walked"
+  | 'get_crossing_time'
+  | 'get_highline'
+  | 'get_total_cadenas'
+  | 'get_total_full_lines'
+  | 'get_total_walked'
 >;
 
 interface UseLeaderboardQueryProps<TFunc extends LeaderboardFunctions> {
   rpcFunction: TFunc;
   queryKey: Array<string | string[]>;
   highlineIds: string | string[];
-  params: Omit<Functions[TFunc]["Args"], "page_number" | "page_size">;
+  params: Omit<Functions[TFunc]['Args'], 'page_number' | 'page_size'>;
 }
 
 type EntryTransformReturn = {
@@ -34,9 +35,9 @@ type EntryTransformReturn = {
 interface LeaderboardContainerProps<TFunc extends LeaderboardFunctions>
   extends UseLeaderboardQueryProps<TFunc> {
   entryTransform: (
-    entry: Functions[TFunc]["Returns"][number],
+    entry: Functions[TFunc]['Returns'][number],
     index: number,
-    pageIndex: number
+    pageIndex: number,
   ) => EntryTransformReturn | null;
 }
 
@@ -102,7 +103,7 @@ const LeaderboardContainer = <TFunc extends LeaderboardFunctions>({
 
   const transformedEntries = entries?.pages.flatMap(
     (page, pageIdx) =>
-      page?.map((entry, idx) => entryTransform(entry, idx, pageIdx)) || []
+      page?.map((entry, idx) => entryTransform(entry, idx, pageIdx)) || [],
   ) || [null, null, null];
 
   return (
@@ -124,7 +125,7 @@ const Cadenas: React.FC<{
   return (
     <LeaderboardContainer
       rpcFunction="get_total_cadenas"
-      queryKey={["entry", highlines_ids, "cadenas"]}
+      queryKey={['entry', highlines_ids, 'cadenas']}
       highlineIds={highlines_ids}
       params={{
         highline_ids: highlines_ids,
@@ -149,7 +150,7 @@ const Distance: React.FC<{
   return (
     <LeaderboardContainer
       rpcFunction="get_total_walked"
-      queryKey={["entry", highlines_ids, "distance"]}
+      queryKey={['entry', highlines_ids, 'distance']}
       highlineIds={highlines_ids}
       params={{
         highline_ids: highlines_ids,
@@ -174,7 +175,7 @@ const FullLine: React.FC<{
   return (
     <LeaderboardContainer
       rpcFunction="get_total_full_lines"
-      queryKey={["entry", highlines_ids, "fullLine"]}
+      queryKey={['entry', highlines_ids, 'fullLine']}
       highlineIds={highlines_ids}
       params={{
         highline_ids: highlines_ids,
@@ -197,7 +198,7 @@ const Speedline: React.FC<{
   return (
     <LeaderboardContainer
       rpcFunction="get_crossing_time"
-      queryKey={["entry", highline_id, "speedline"]}
+      queryKey={['entry', highline_id, 'speedline']}
       highlineIds={highline_id}
       params={{
         highline_id,
@@ -208,7 +209,7 @@ const Speedline: React.FC<{
           name: entry.instagram,
           position: pageIdx * 5 + idx + 1,
           value: transformSecondsToTimeString(entry.crossing_time),
-          profilePicture: entry.profile_picture || "",
+          profilePicture: entry.profile_picture || '',
         };
       }}
     />
@@ -223,7 +224,7 @@ function transformSecondsToTimeString(totalSeconds: number): string {
 }
 
 function padZero(num: number): string {
-  return num.toString().padStart(2, "0");
+  return num.toString().padStart(2, '0');
 }
 
 export { Speedline, Cadenas, Distance, FullLine };

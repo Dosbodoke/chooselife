@@ -1,13 +1,13 @@
-import { View, TouchableOpacity, TextInput } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useRef, useState } from 'react';
+import { TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { LucideIcon } from "~/lib/icons/lucide-icon";
-import { useRef, useState } from "react";
+import { LucideIcon } from '~/lib/icons/lucide-icon';
 
 const ExploreHeader: React.FC<{ onSearchChange: (text: string) => void }> = ({
   onSearchChange,
 }) => {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const searchInputRef = useRef<TextInput>(null);
 
   const handleSearchChange = (text: string) => {

@@ -1,11 +1,12 @@
-import { View, Text, TouchableOpacity } from "react-native";
-import { Link } from "expo-router";
-import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
+import { Link } from 'expo-router';
+import { Text, TouchableOpacity, View } from 'react-native';
+import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 
-import { LucideIcon } from "~/lib/icons/lucide-icon";
-import { FavoriteHighline } from "./favorite-button";
-import type { Highline } from "~/hooks/use-highline";
-import { HighlineImage } from "./highline-image";
+import type { Highline } from '~/hooks/use-highline';
+import { LucideIcon } from '~/lib/icons/lucide-icon';
+
+import { FavoriteHighline } from './favorite-button';
+import { HighlineImage } from './highline-image';
 
 export const HighlineCard: React.FC<{ item: Highline }> = ({ item }) => {
   return (

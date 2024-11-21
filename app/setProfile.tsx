@@ -1,54 +1,55 @@
-import React, { useState } from "react";
-import {
-  Keyboard,
-  Pressable,
-  TextInput,
-  View,
-  Image,
-  TouchableOpacity,
-} from "react-native";
-import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from "expo-sqlite/kv-store";
-import Animated, {
-  FadeIn,
-  FadeInRight,
-  FadeOut,
-  FadeOutLeft,
-} from "react-native-reanimated";
-import { PostgrestError } from "@supabase/supabase-js";
+/* eslint-disable @typescript-eslint/no-require-imports */
+import { zodResolver } from '@hookform/resolvers/zod';
+import { PostgrestError } from '@supabase/supabase-js';
+import { useRouter } from 'expo-router';
+import AsyncStorage from 'expo-sqlite/kv-store';
+import React, { useState } from 'react';
 import {
   Controller,
   SubmitHandler,
   useForm,
   UseFormReturn,
-} from "react-hook-form";
-import { z } from "zod";
-import DatePicker from "react-native-date-picker";
+} from 'react-hook-form';
+import {
+  Image,
+  Keyboard,
+  Pressable,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import DatePicker from 'react-native-date-picker';
+import Animated, {
+  FadeIn,
+  FadeInRight,
+  FadeOut,
+  FadeOutLeft,
+} from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { z } from 'zod';
 
-import { supabase } from "~/lib/supabase";
-import { useAuth } from "~/context/auth";
+import { useAuth } from '~/context/auth';
+import HighlineIllustration from '~/lib/icons/highline-illustration';
+import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { supabase } from '~/lib/supabase';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from '~/lib/utils';
 
-import HighlineIllustration from "~/lib/icons/highline-illustration";
-import { KeyboardAwareScrollView } from "~/components/KeyboardAwareScrollView";
-import { H2, H3, Muted } from "~/components/ui/typography";
-import { Text } from "~/components/ui/text";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { OnboardNavigator, OnboardPaginator } from "~/components/onboard";
-import { SupabaseAvatar } from "~/components/ui/avatar";
-import { Textarea } from "~/components/ui/textarea";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { cn } from "~/lib/utils";
-import { LucideIcon } from "~/lib/icons/lucide-icon";
-import { Input } from "~/components/ui/input";
+import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
+import { OnboardNavigator, OnboardPaginator } from '~/components/onboard';
+import { SupabaseAvatar } from '~/components/ui/avatar';
+import { Input } from '~/components/ui/input';
+import { Text } from '~/components/ui/text';
+import { Textarea } from '~/components/ui/textarea';
+import { H2, H3, Muted } from '~/components/ui/typography';
 
 // Define Zod schema for form validation
 const profileSchema = z.object({
   username: z
     .string()
     .trim()
-    .min(3, "O nome de usuário deve ter pelo menos 3 caracteres."),
-  name: z.string().min(1, "Preencha o seu nome"),
+    .min(3, 'O nome de usuário deve ter pelo menos 3 caracteres.'),
+  name: z.string().min(1, 'Preencha o seu nome'),
   profilePicture: z.string().optional(),
   description: z.string().optional(),
   birthday: z.string().optional(),
@@ -66,13 +67,13 @@ export default function SetProfile() {
   const [isLoading, setIsLoading] = useState(false);
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    mode: "onChange",
+    mode: 'onChange',
     defaultValues: {
-      username: "",
-      name: profile?.name || "",
+      username: '',
+      name: profile?.name || '',
       profilePicture: profile?.profile_picture || undefined,
-      description: profile?.description || "",
-      birthday: profile?.birthday ? profile?.birthday : "",
+      description: profile?.description || '',
+      birthday: profile?.birthday ? profile?.birthday : '',
     },
   });
 
@@ -81,7 +82,7 @@ export default function SetProfile() {
     try {
       setIsLoading(true);
       const { data: profileData, error: upsertError } = await supabase
-        .from("profiles")
+        .from('profiles')
         .upsert({
           id: session.user.id,
           username: `@${data.username}`,
@@ -98,15 +99,15 @@ export default function SetProfile() {
       }
 
       setProfile(profileData);
-      router.replace("/(tabs)");
+      router.replace('/(tabs)');
     } catch (error) {
-      if ((error as PostgrestError).code === "23505") {
-        form.setError("username", {
-          message: "Nome já escolhido, tente outro",
+      if ((error as PostgrestError).code === '23505') {
+        form.setError('username', {
+          message: 'Nome já escolhido, tente outro',
         });
       } else {
-        form.setError("root", {
-          message: "Erro ao salvar o perfil. Tente novamente.",
+        form.setError('root', {
+          message: 'Erro ao salvar o perfil. Tente novamente.',
         });
       }
     } finally {
@@ -117,28 +118,28 @@ export default function SetProfile() {
   const validateUsername = async () => {
     try {
       setIsLoading(true);
-      form.clearErrors("username");
-      const username = form.getValues("username");
+      form.clearErrors('username');
+      const username = form.getValues('username');
 
-      const valid = await form.trigger("username");
+      const valid = await form.trigger('username');
       if (!valid) return false;
 
       const { data, error } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("username", `@${username.trim()}`)
+        .from('profiles')
+        .select('username')
+        .eq('username', `@${username.trim()}`)
         .single();
 
       // Check if the username is available
-      if (error && error.code !== "PGRST116") {
-        console.error("Erro ao verificar nome de usuário:", error);
-        form.setError("username", {
-          message: "Erro ao verificar disponibilidade. Tente novamente.",
+      if (error && error.code !== 'PGRST116') {
+        console.error('Erro ao verificar nome de usuário:', error);
+        form.setError('username', {
+          message: 'Erro ao verificar disponibilidade. Tente novamente.',
         });
         return false;
       } else if (data) {
-        form.setError("username", {
-          message: "Nome já escolhido, tente outro.",
+        form.setError('username', {
+          message: 'Nome já escolhido, tente outro.',
         });
         return false;
       }
@@ -170,7 +171,7 @@ export default function SetProfile() {
 
     // Manually trigger the validation of a required field
     if (index === 1) {
-      const validName = await form.trigger("name");
+      const validName = await form.trigger('name');
       if (!validName) return;
     }
 
@@ -240,8 +241,8 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
                 autoCapitalize="none"
                 returnKeyType="done"
                 className={cn(
-                  error?.message ? "border-red-500" : "border-muted-foreground",
-                  "text-foreground placeholder:text-muted-foreground border-b-hairline"
+                  error?.message ? 'border-red-500' : 'border-muted-foreground',
+                  'text-foreground placeholder:text-muted-foreground border-b-hairline',
                 )}
               />
             </View>
@@ -277,7 +278,7 @@ const ProfileInfoForm = ({
   const handleDateChange = (date: Date) => {
     setShowDatePicker(false);
     if (date) {
-      form.setValue("birthday", date.toISOString().split("T")[0]); // Set date in YYYY-MM-DD format
+      form.setValue('birthday', date.toISOString().split('T')[0]); // Set date in YYYY-MM-DD format
     }
   };
 
@@ -300,7 +301,7 @@ const ProfileInfoForm = ({
           name="profilePicture"
           render={({ field: { value, onChange } }) => (
             <SupabaseAvatar
-              name={form.getValues("name") || ""}
+              name={form.getValues('name') || ''}
               profilePicture={value}
               onUpload={onChange}
             />
@@ -319,8 +320,8 @@ const ProfileInfoForm = ({
                 autoCapitalize="none"
                 returnKeyType="done"
                 className={cn(
-                  error?.message ? "border-red-500" : "border-muted-foreground",
-                  "text-foreground placeholder:text-muted-foreground border-b-hairline"
+                  error?.message ? 'border-red-500' : 'border-muted-foreground',
+                  'text-foreground placeholder:text-muted-foreground border-b-hairline',
                 )}
               />
               {error && (
@@ -343,8 +344,8 @@ const ProfileInfoForm = ({
                   editable={false}
                   value={
                     value
-                      ? new Date(value).toLocaleDateString("pt-BR")
-                      : "Selecione a data"
+                      ? new Date(value).toLocaleDateString('pt-BR')
+                      : 'Selecione a data'
                   }
                   placeholder="Selecione a data"
                 />
@@ -379,7 +380,7 @@ const ProfileInfoForm = ({
               returnKeyType="done"
               placeholder="Nos diga um pouco sobre você"
               submitBehavior="blurAndSubmit"
-              className={error && "border-destructive"}
+              className={error && 'border-destructive'}
               onSubmitEditing={() => Keyboard.dismiss()}
               onChangeText={onChange}
             />
@@ -393,14 +394,14 @@ const ProfileInfoForm = ({
 const PrefferedTheme = () => {
   const items = [
     {
-      id: "light",
-      label: "Claro",
-      image: require("~/assets/images/ui_light.webp"),
+      id: 'light',
+      label: 'Claro',
+      image: require('~/assets/images/ui_light.webp'),
     },
     {
-      id: "dark",
-      label: "Escuro",
-      image: require("~/assets/images/ui_dark.webp"),
+      id: 'dark',
+      label: 'Escuro',
+      image: require('~/assets/images/ui_dark.webp'),
     },
   ];
 
@@ -408,7 +409,7 @@ const PrefferedTheme = () => {
 
   const handleSelect = async (theme: typeof colorScheme) => {
     setColorScheme(theme);
-    await AsyncStorage.setItem("theme", theme);
+    await AsyncStorage.setItem('theme', theme);
   };
 
   return (
@@ -430,10 +431,10 @@ const PrefferedTheme = () => {
             key={item.id}
             onPress={() => handleSelect(item.id as typeof colorScheme)}
             className={cn(
-              "items-center justify-center overflow-hidden rounded-lg border w-28 shadow-lg",
+              'items-center justify-center overflow-hidden rounded-lg border w-28 shadow-lg',
               colorScheme === item.id
-                ? "border-blue-500 bg-accent "
-                : "border-border bg-muted"
+                ? 'border-blue-500 bg-accent'
+                : 'border-border bg-muted',
             )}
           >
             <Image
@@ -455,10 +456,10 @@ const PrefferedTheme = () => {
               )}
               <Text
                 className={cn(
-                  "text-sm ml-1 font-medium",
+                  'text-sm ml-1 font-medium',
                   colorScheme === item.id
-                    ? "text-accent-foreground"
-                    : "text-muted-foreground"
+                    ? 'text-accent-foreground'
+                    : 'text-muted-foreground',
                 )}
               >
                 {item.label}

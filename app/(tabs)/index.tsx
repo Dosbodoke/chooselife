@@ -1,22 +1,22 @@
-import * as Location from "expo-location";
-import { useState, useRef, useEffect } from "react";
-import { View } from "react-native";
+import * as Location from 'expo-location';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import type { BBox } from 'geojson';
+import { useEffect, useRef, useState } from 'react';
+import { View } from 'react-native';
 import MapView, {
-  type Region,
-  type MapType,
   PROVIDER_GOOGLE,
-} from "react-native-maps";
-import type { BBox } from "geojson";
+  type MapType,
+  type Region,
+} from 'react-native-maps';
 
-import ListingsBottomSheet from "~/components/map/bottom-sheet";
-import MapControls from "~/components/map/controls";
-import { calculateZoomLevel, regionToBoundingBox } from "~/utils";
-import { MapCardList } from "~/components/map/map-card";
+import { useHighlineList } from '~/hooks/use-highline-list';
+import { calculateZoomLevel, regionToBoundingBox } from '~/utils';
 
-import { useHighlineList } from "~/hooks/use-highline-list";
-import { Markers } from "~/components/map/markers";
-import { Stack, useLocalSearchParams } from "expo-router";
-import ExploreHeader from "~/components/map/explore-header";
+import ListingsBottomSheet from '~/components/map/bottom-sheet';
+import MapControls from '~/components/map/controls';
+import ExploreHeader from '~/components/map/explore-header';
+import { MapCardList } from '~/components/map/map-card';
+import { Markers } from '~/components/map/markers';
 
 // Constants
 const INITIAL_REGION = {
@@ -29,12 +29,12 @@ const INITIAL_REGION = {
 export default function Screen() {
   const mapRef = useRef<MapView>(null);
   const [isOnMyLocation, setIsOnMyLocation] = useState(false);
-  const [mapType, setMapType] = useState<MapType>("standard");
+  const [mapType, setMapType] = useState<MapType>('standard');
   const [zoom, setZoom] = useState(10);
   const [bounds, setBounds] = useState<BBox>(
-    regionToBoundingBox(INITIAL_REGION)
+    regionToBoundingBox(INITIAL_REGION),
   );
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
 
   const { focusedMarker } = useLocalSearchParams<{ focusedMarker: string }>();
 
@@ -49,7 +49,7 @@ export default function Screen() {
 
   async function getMyLocation(): Promise<Region | undefined> {
     const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") return;
+    if (status !== 'granted') return;
 
     const { latitude, longitude } = (await Location.getCurrentPositionAsync({}))
       .coords;
@@ -74,7 +74,7 @@ export default function Screen() {
     if (!focusedMarker || !highlines) return;
 
     const highlineToFocus = highlines.find(
-      (highline) => highline.id === focusedMarker
+      (highline) => highline.id === focusedMarker,
     );
 
     if (highlineToFocus) {
@@ -99,7 +99,7 @@ export default function Screen() {
             left: 50,
           },
           animated: true,
-        }
+        },
       );
     }
   }, [focusedMarker, highlines]);
@@ -113,7 +113,7 @@ export default function Screen() {
       />
       <MapView
         ref={mapRef}
-        style={{ width: "100%", height: "100%" }}
+        style={{ width: '100%', height: '100%' }}
         showsUserLocation
         showsMyLocationButton={false}
         initialRegion={INITIAL_REGION}

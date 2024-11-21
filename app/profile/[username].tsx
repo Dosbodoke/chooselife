@@ -1,40 +1,39 @@
+import { FlashList } from '@shopify/flash-list';
+import { useQuery } from '@tanstack/react-query';
+import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
+import { SupabaseAvatar } from '~/components/ui/avatar';
+import { Button } from '~/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { Skeleton } from '~/components/ui/skeleton';
+import { Text } from '~/components/ui/text';
+import { H1, H2, H3, Lead, Muted, P } from '~/components/ui/typography';
+import { EnduranceIcon, SpeedlineIcon } from '~/lib/icons';
+import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { supabase } from '~/lib/supabase';
+import { cn } from '~/lib/utils';
+import { transformSecondsToTimeString } from '~/utils';
+import { Database } from '~/utils/database.types';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActivityIndicator,
   Pressable,
   TouchableOpacity,
   View,
-} from "react-native";
-import { Link, useLocalSearchParams, useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useQuery } from "@tanstack/react-query";
-
-import { Text } from "~/components/ui/text";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { H1, H2, H3, Lead, Muted, P } from "~/components/ui/typography";
-import { SupabaseAvatar } from "~/components/ui/avatar";
-import { supabase } from "~/lib/supabase";
-import { Database } from "~/utils/database.types";
-import { Button } from "~/components/ui/button";
-import { LucideIcon } from "~/lib/icons/lucide-icon";
-import { FlashList } from "@shopify/flash-list";
-import { transformSecondsToTimeString } from "~/utils";
-import { KeyboardAwareScrollView } from "~/components/KeyboardAwareScrollView";
-import { EnduranceIcon, SpeedlineIcon } from "~/lib/icons";
-import { cn } from "~/lib/utils";
-import { Skeleton } from "~/components/ui/skeleton";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Profile() {
   const router = useRouter();
   const { username } = useLocalSearchParams<{ username: string }>();
 
   const { data: profile, isPending: profilePending } = useQuery({
-    queryKey: ["profile", username],
+    queryKey: ['profile', username],
     queryFn: async () => {
-      if (!username) throw new Error("No username provided");
+      if (!username) throw new Error('No username provided');
       const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("username", username)
+        .from('profiles')
+        .select('*')
+        .eq('username', username)
         .single();
       return data;
     },
@@ -42,11 +41,11 @@ export default function Profile() {
   });
 
   const { data: stats } = useQuery({
-    queryKey: ["profile", username, "stats"],
+    queryKey: ['profile', username, 'stats'],
     queryFn: async () => {
       if (!profile) throw new Error("Profile doesn't exists");
       const stats = await supabase
-        .rpc("profile_stats", {
+        .rpc('profile_stats', {
           username: `@${profile.username}`,
         })
         .single();
@@ -65,7 +64,7 @@ export default function Profile() {
   }
 
   if (!profile) {
-    return <UserNotFound username={username ?? ""} />;
+    return <UserNotFound username={username ?? ''} />;
   }
 
   return (
@@ -78,7 +77,7 @@ export default function Profile() {
           <TouchableOpacity
             className="p-2 rounded-full items-center justify-center"
             onPress={() =>
-              router.canGoBack() ? router.back() : router.replace("/(tabs)")
+              router.canGoBack() ? router.back() : router.replace('/(tabs)')
             }
           >
             <LucideIcon name="ChevronLeft" className="text-primary size-6" />
@@ -98,7 +97,7 @@ export default function Profile() {
 }
 
 const UserHeader: React.FC<{
-  profile: Database["public"]["Tables"]["profiles"]["Row"] | null;
+  profile: Database['public']['Tables']['profiles']['Row'] | null;
   username: string;
 }> = ({ profile, username }) => {
   function calculateAge(birthday: string) {
@@ -125,7 +124,7 @@ const UserHeader: React.FC<{
     return (
       <Card>
         <CardContent className="flex flex-row gap-4 overflow-hidden px-2 py-4">
-          <SupabaseAvatar name={""} profilePicture={""} />
+          <SupabaseAvatar name={''} profilePicture={''} />
           <View className="flex gap-3">
             <H1>{username}</H1>
             <View className="rounded-lg bg-red-50 p-2 text-center text-sm text-red-500 dark:bg-red-100 dark:text-red-700 md:p-4">
@@ -142,8 +141,8 @@ const UserHeader: React.FC<{
       <CardContent className="flex gap-4 overflow-hidden px-2 py-4">
         <View className="flex flex-row mt-4 gap-4">
           <SupabaseAvatar
-            name={profile.name ?? ""}
-            profilePicture={profile.profile_picture ?? ""}
+            name={profile.name ?? ''}
+            profilePicture={profile.profile_picture ?? ''}
           />
           <View className="flex flex-1">
             <H3 numberOfLines={1}>{profile.name}</H3>
@@ -182,7 +181,7 @@ const Stats: React.FC<{
                 : total_distance_walked}
             </Text>
             <Text className="text-3xl font-extrabold text-muted-foreground">
-              {displayDistanceInKM ? "km" : "m"}
+              {displayDistanceInKM ? 'km' : 'm'}
             </Text>
           </View>
           <Lead className="text-base">Walked</Lead>
@@ -222,7 +221,7 @@ const UserNotFound: React.FC<{ username: string }> = ({ username }) => {
             }
           }}
         >
-          <Text>{canGoBack ? "Voltar" : "Ir para página inicial"}</Text>
+          <Text>{canGoBack ? 'Voltar' : 'Ir para página inicial'}</Text>
         </Button>
       </View>
     </SafeAreaView>
@@ -231,18 +230,18 @@ const UserNotFound: React.FC<{ username: string }> = ({ username }) => {
 
 const LastWalks: React.FC<{ username: string }> = ({ username }) => {
   const { data, isPending } = useQuery({
-    queryKey: ["profile", username, "walks"],
+    queryKey: ['profile', username, 'walks'],
     queryFn: async () => {
       const { data } = await supabase
-        .from("entry")
+        .from('entry')
         .select(
           `
             *,
             highline (*)
-          `
+          `,
         )
-        .eq("instagram", `${username}`)
-        .order("created_at", { ascending: false })
+        .eq('instagram', `${username}`)
+        .order('created_at', { ascending: false })
         .limit(5);
       return data;
     },
@@ -263,8 +262,8 @@ const LastWalks: React.FC<{ username: string }> = ({ username }) => {
             return (
               <View
                 className={cn(
-                  isFirstItem ? "pb-4" : "py-4",
-                  isLastItem ? "" : "border-b border-muted"
+                  isFirstItem ? 'pb-4' : 'py-4',
+                  isLastItem ? '' : 'border-b border-muted',
                 )}
               >
                 <Link href={`/highline/${item.highline_id}`} asChild>
@@ -275,8 +274,8 @@ const LastWalks: React.FC<{ username: string }> = ({ username }) => {
                   </Pressable>
                 </Link>
                 <Text className="text-muted-foreground">
-                  {new Date(item.created_at).toLocaleDateString("pt-BR", {
-                    dateStyle: "medium",
+                  {new Date(item.created_at).toLocaleDateString('pt-BR', {
+                    dateStyle: 'medium',
                   })}
                 </Text>
                 <View className="flex-row gap-4 py-1">
@@ -322,9 +321,9 @@ const LastWalks: React.FC<{ username: string }> = ({ username }) => {
                   <View
                     key={`walk-loading-${index}`}
                     className={cn(
-                      "gap-1",
-                      isFirstItem ? "pb-4" : "py-4",
-                      isLastItem ? "" : "border-b border-muted"
+                      'gap-1',
+                      isFirstItem ? 'pb-4' : 'py-4',
+                      isLastItem ? '' : 'border-b border-muted',
                     )}
                   >
                     <Skeleton className="w-2/5 h-6" />

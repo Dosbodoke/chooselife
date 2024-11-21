@@ -1,16 +1,16 @@
 // From https://lad-tech.github.io/mobydick/docs/components/keyboardAware/KeyboardAwareScrollView
 
+import { ReactElement, useEffect, useRef } from 'react';
 import {
   Animated,
   Keyboard,
   Platform,
   ScrollView,
-  type ScrollViewProps,
   StatusBar,
   TextInput,
   View,
-} from "react-native";
-import { ReactElement, useEffect, useRef } from "react";
+  type ScrollViewProps,
+} from 'react-native';
 
 const androidStatusBarOffset = StatusBar.currentHeight ?? 0;
 
@@ -53,7 +53,7 @@ const KeyboardAwareScrollView = ({
     };
 
     const didShowListener = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       (frames) => {
         const keyboardY = frames.endCoordinates.screenY;
         const duration = frames.duration;
@@ -61,7 +61,7 @@ const KeyboardAwareScrollView = ({
         Animated.timing(keyboardHeightRef, {
           toValue: frames.endCoordinates.height,
           duration,
-          useNativeDriver: Platform.OS !== "ios",
+          useNativeDriver: Platform.OS !== 'ios',
         }).start(() => {
           bottomRef.current?.measureInWindow(
             (_BottomX, _BottomY, _BottomWidth, bottomHeight) => {
@@ -69,22 +69,22 @@ const KeyboardAwareScrollView = ({
                 keyboardY,
                 bottomHeight: bottomHeight ?? 0,
               });
-            }
+            },
           );
         });
-      }
+      },
     );
 
     const didHideListener = Keyboard.addListener(
-      "keyboardWillHide",
+      'keyboardWillHide',
       (frames) => {
         const duration = frames.duration;
         Animated.timing(keyboardHeightRef, {
           toValue: 0,
           duration,
-          useNativeDriver: Platform.OS !== "ios",
+          useNativeDriver: Platform.OS !== 'ios',
         }).start();
-      }
+      },
     );
 
     return () => {
@@ -109,7 +109,7 @@ const KeyboardAwareScrollView = ({
       </View>
       <Animated.View
         style={[
-          Platform.OS === "ios"
+          Platform.OS === 'ios'
             ? { height: keyboardHeightRef }
             : {
                 transform: [{ translateY: keyboardHeightRef }],

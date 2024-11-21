@@ -1,12 +1,13 @@
-import { View, Text } from "react-native";
-import { useEffect, useRef } from "react";
 import {
   BottomSheetFlatList,
   BottomSheetFlatListMethods,
-} from "@gorhom/bottom-sheet";
+} from '@gorhom/bottom-sheet';
+import { useEffect, useRef } from 'react';
+import { Text, View } from 'react-native';
 
-import type { Highline } from "~/hooks/use-highline";
-import { HighlineCard } from "../highline/highline-card";
+import type { Highline } from '~/hooks/use-highline';
+
+import { HighlineCard } from '../highline/highline-card';
 
 const Listings: React.FC<{
   highlines: Highline[];
@@ -32,7 +33,7 @@ const Listings: React.FC<{
         ListHeaderComponent={
           <Text className="text-center text-lg mt-1 text-primary">
             {isLoading
-              ? "procurando highlines..."
+              ? 'procurando highlines...'
               : `${highlines.length} highlines`}
           </Text>
         }

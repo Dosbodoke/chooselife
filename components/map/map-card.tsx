@@ -1,16 +1,17 @@
-import React from "react";
-import { View, Pressable, TouchableOpacity } from "react-native";
-import Animated, { FadeIn, FadeOut, Easing } from "react-native-reanimated";
-import { ScrollView } from "react-native-gesture-handler";
-import { Link } from "expo-router";
+import { Link } from 'expo-router';
+import React from 'react';
+import { Pressable, TouchableOpacity, View } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
+import Animated, { Easing, FadeIn, FadeOut } from 'react-native-reanimated';
 
-import type { Highline } from "~/hooks/use-highline";
-import { cn } from "~/lib/utils";
-import { LucideIcon } from "~/lib/icons/lucide-icon";
+import type { Highline } from '~/hooks/use-highline';
+import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { cn } from '~/lib/utils';
 
-import { H4, Small } from "~/components/ui/typography";
-import { Text } from "~/components/ui/text";
-import { HighlineImage } from "../highline/highline-image";
+import { Text } from '~/components/ui/text';
+import { H4, Small } from '~/components/ui/typography';
+
+import { HighlineImage } from '../highline/highline-image';
 
 interface HighlineCardProps {
   highline: Highline;
@@ -27,9 +28,9 @@ const HighlineCard: React.FC<HighlineCardProps> = ({
     <Pressable
       onPress={() => onPress(highline)}
       className={cn(
-        "inline-block rounded-lg border border-border bg-background shadow shadow-foreground/10",
-        "h-32 min-w-[24rem]",
-        isFocused ? "border border-blue-500 dark:border-blue-600" : "border-0"
+        'inline-block rounded-lg border border-border bg-background shadow shadow-foreground/10',
+        'h-32 min-w-[24rem]',
+        isFocused ? 'border border-blue-500 dark:border-blue-600' : 'border-0',
       )}
     >
       <View className="flex flex-row h-full gap-2 p-0">
@@ -89,7 +90,7 @@ export const MapCardList = ({
     <Animated.View
       entering={FadeIn.duration(300).easing(Easing.inOut(Easing.ease))}
       exiting={FadeOut.duration(300).easing(Easing.inOut(Easing.ease))}
-      style={{ position: "absolute", bottom: 96, left: 0, right: 0 }}
+      style={{ position: 'absolute', bottom: 96, left: 0, right: 0 }}
     >
       <ScrollView
         horizontal

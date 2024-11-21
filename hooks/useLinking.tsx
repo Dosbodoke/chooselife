@@ -1,6 +1,6 @@
-import * as Linking from "expo-linking";
-import { useEffect } from "react";
-import { useRootNavigationState, useRouter } from "expo-router";
+import * as Linking from 'expo-linking';
+import { useRootNavigationState, useRouter } from 'expo-router';
+import { useEffect } from 'react';
 
 // Handle linking
 function useLinking() {
@@ -13,7 +13,8 @@ function useLinking() {
 
   useEffect(() => {
     if (url && isNavigationReady) {
-      const { path, queryParams, hostname, scheme } = Linking.parse(url);
+      const { path } = Linking.parse(url);
+      // @ts-expect-error - path can't be strongly typed
       if (path) router.push(path);
     }
   }, [url, isNavigationReady]);

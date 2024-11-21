@@ -1,12 +1,13 @@
-import AsyncStorage from "expo-sqlite/kv-store";
-import { Pressable, View } from "react-native";
+import AsyncStorage from 'expo-sqlite/kv-store';
+import { Pressable, View } from 'react-native';
 
-import { useColorScheme } from "~/lib/useColorScheme";
-import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
-import { MoonStar } from "~/lib/icons/MoonStar";
-import { Sun } from "~/lib/icons/Sun";
-import { cn } from "~/lib/utils";
-import { H4 } from "~/components/ui/typography";
+import { setAndroidNavigationBar } from '~/lib/android-navigation-bar';
+import { MoonStar } from '~/lib/icons/MoonStar';
+import { Sun } from '~/lib/icons/Sun';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from '~/lib/utils';
+
+import { H4 } from '~/components/ui/typography';
 
 export const SelectTheme = () => {
   const { isDarkColorScheme, setColorScheme } = useColorScheme();
@@ -16,18 +17,18 @@ export const SelectTheme = () => {
       <H4>Tema</H4>
       <Pressable
         onPress={() => {
-          const newTheme = isDarkColorScheme ? "light" : "dark";
+          const newTheme = isDarkColorScheme ? 'light' : 'dark';
           setColorScheme(newTheme);
           setAndroidNavigationBar(newTheme);
-          AsyncStorage.setItem("theme", newTheme);
+          AsyncStorage.setItem('theme', newTheme);
         }}
         className="web:ring-offset-background web:transition-colors web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2"
       >
         {({ pressed }) => (
           <View
             className={cn(
-              "flex-1 aspect-square pt-0.5 justify-center items-start web:px-5",
-              pressed && "opacity-70"
+              'flex-1 aspect-square pt-0.5 justify-center items-start web:px-5',
+              pressed && 'opacity-70',
             )}
           >
             {isDarkColorScheme ? (

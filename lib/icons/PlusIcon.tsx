@@ -1,4 +1,6 @@
-import { PlusIcon } from "lucide-react-native";
-import { iconWithClassName } from "./iconWithClassName";
+import { PlusIcon } from 'lucide-react-native';
+
+import { iconWithClassName } from './iconWithClassName';
+
 iconWithClassName(PlusIcon);
 export { PlusIcon };

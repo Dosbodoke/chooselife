@@ -1,16 +1,15 @@
-import * as Linking from "expo-linking";
-import * as QueryParams from "expo-auth-session/build/QueryParams";
-import * as WebBrowser from "expo-web-browser";
-import React, { useContext, useEffect, useState } from "react";
-import type { User } from "@supabase/supabase-js";
-import { AuthError, makeRedirectUri } from "expo-auth-session";
-import type { Session } from "@supabase/supabase-js";
+import type { Session } from '@supabase/supabase-js';
+import { AuthError, makeRedirectUri } from 'expo-auth-session';
+import * as QueryParams from 'expo-auth-session/build/QueryParams';
+import * as Linking from 'expo-linking';
+import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import React, { useContext, useEffect, useState } from 'react';
 
-import { supabase } from "~/lib/supabase";
-import { Database } from "~/utils/database.types";
-import { useRouter } from "expo-router";
+import { supabase } from '~/lib/supabase';
+import { Database } from '~/utils/database.types';
 
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 type AuthMethodResponse = Promise<
   { success: true } | { success: false; errorMessage?: string }
@@ -20,7 +19,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => AuthMethodResponse;
   signUp: (email: string, password: string) => AuthMethodResponse;
   logout: () => AuthMethodResponse;
-  performOAuth: (method: "apple" | "google") => AuthMethodResponse;
+  performOAuth: (method: 'apple' | 'google') => AuthMethodResponse;
   setProfile: React.Dispatch<React.SetStateAction<Profile | null>>;
   profile: Profile | null;
   session: Session | null;
@@ -29,7 +28,7 @@ interface AuthContextValue {
 
 // Create the AuthContext
 const AuthContext = React.createContext<AuthContextValue | undefined>(
-  undefined
+  undefined,
 );
 
 export function AuthProvider(props: React.PropsWithChildren) {
@@ -56,14 +55,14 @@ export function AuthProvider(props: React.PropsWithChildren) {
   const getUserProfile = async () => {
     if (session) {
       const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", session.user.id)
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
         .single();
 
       setProfile(data);
       if (!data?.username) {
-        router.replace("/setProfile");
+        router.replace('/setProfile');
       }
     }
   };
@@ -88,12 +87,12 @@ export function AuthProvider(props: React.PropsWithChildren) {
             if (error) throw error;
             return { success: true };
           } catch (error) {
-            if ((error as AuthError).code === "invalid_credentials") {
-              return { success: false, errorMessage: "Credenciais inválidas" };
+            if ((error as AuthError).code === 'invalid_credentials') {
+              return { success: false, errorMessage: 'Credenciais inválidas' };
             }
             return {
               success: false,
-              errorMessage: "Erro no login. Por favor tente novamente.",
+              errorMessage: 'Erro no login. Por favor tente novamente.',
             };
           }
         },
@@ -124,7 +123,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
             return { success: false };
           }
         },
-        performOAuth: async (method: "apple" | "google") => {
+        performOAuth: async (method: 'apple' | 'google') => {
           try {
             const redirectTo = makeRedirectUri();
 
@@ -139,11 +138,11 @@ export function AuthProvider(props: React.PropsWithChildren) {
             if (error) throw error;
 
             const res = await WebBrowser.openAuthSessionAsync(
-              data?.url ?? "",
-              redirectTo
+              data?.url ?? '',
+              redirectTo,
             );
 
-            if (res.type === "success") {
+            if (res.type === 'success') {
               const { url } = res;
               await createSessionFromUrl(url);
               return { success: true };
@@ -169,7 +168,7 @@ export const useAuth = () => {
   const authContext = useContext(AuthContext);
 
   if (!authContext) {
-    throw new Error("useAuth must be used within an AuthContextProvider");
+    throw new Error('useAuth must be used within an AuthContextProvider');
   }
 
   return authContext;

@@ -1,9 +1,9 @@
-import { useRouter } from "expo-router";
-import { SafeAreaView, View } from "react-native";
+import { useRouter } from 'expo-router';
+import { SafeAreaView, View } from 'react-native';
 
-import { Text } from "~/components/ui/text";
-import { H2 } from "~/components/ui/typography";
-import { Button } from "~/components/ui/button";
+import { Button } from '~/components/ui/button';
+import { Text } from '~/components/ui/text';
+import { H2 } from '~/components/ui/typography';
 
 const HighlineNotFound: React.FC = () => {
   const router = useRouter();
@@ -21,7 +21,7 @@ const HighlineNotFound: React.FC = () => {
             }
           }}
         >
-          <Text>{canGoBack ? "Voltar" : "Ir para página inicial"}</Text>
+          <Text>{canGoBack ? 'Voltar' : 'Ir para página inicial'}</Text>
         </Button>
       </View>
     </SafeAreaView>

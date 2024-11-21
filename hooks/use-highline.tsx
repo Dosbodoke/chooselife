@@ -1,9 +1,10 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "~/lib/supabase";
-import { useAuth } from "~/context/auth";
-import type { Functions } from "~/utils/database.types";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-export type Highline = Functions["get_highline"]["Returns"][0];
+import { useAuth } from '~/context/auth';
+import { supabase } from '~/lib/supabase';
+import type { Functions } from '~/utils/database.types';
+
+export type Highline = Functions['get_highline']['Returns'][0];
 
 export const useHighline = ({ id }: { id: string }) => {
   const { session, loading: sessionLoading } = useAuth();
@@ -14,9 +15,9 @@ export const useHighline = ({ id }: { id: string }) => {
     isPending,
     error,
   } = useQuery<Highline | null>({
-    queryKey: ["highline", id],
+    queryKey: ['highline', id],
     queryFn: async () => {
-      const { data } = await supabase.rpc("get_highline", {
+      const { data } = await supabase.rpc('get_highline', {
         searchid: [id],
         userid: session?.user.id,
       });
@@ -24,10 +25,10 @@ export const useHighline = ({ id }: { id: string }) => {
     },
     initialData: () =>
       queryClient
-        .getQueryData<Highline[]>(["highlines"])
+        .getQueryData<Highline[]>(['highlines'])
         ?.find((hl) => hl.id === id),
     initialDataUpdatedAt: () =>
-      queryClient.getQueryState(["highlines"])?.dataUpdatedAt,
+      queryClient.getQueryState(['highlines'])?.dataUpdatedAt,
     enabled: !!id && !sessionLoading,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

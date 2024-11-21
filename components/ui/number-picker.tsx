@@ -1,16 +1,14 @@
-import React, { useState } from "react";
-import { View, TouchableOpacity } from "react-native";
+import { MinusIcon } from '~/lib/icons/MinusIcon';
+import { PlusIcon } from '~/lib/icons/PlusIcon';
+import { cn } from '~/lib/utils';
+import React, { useState } from 'react';
+import { TouchableOpacity, View } from 'react-native';
 import Animated, {
   FadeInDown,
   FadeInUp,
   FadeOutDown,
   FadeOutUp,
-} from "react-native-reanimated";
-
-import { Text } from "~/components/ui/text";
-import { MinusIcon } from "~/lib/icons/MinusIcon";
-import { PlusIcon } from "~/lib/icons/PlusIcon";
-import { cn } from "~/lib/utils";
+} from 'react-native-reanimated';
 
 interface Props {
   value: number;
@@ -35,7 +33,7 @@ function NumberPicker({ value, className, onChange }: Props) {
   const exitingAnimation = previousValue > value ? FadeOutDown : FadeOutUp;
 
   return (
-    <View className={cn("flex flex-row items-center gap-3", className)}>
+    <View className={cn('flex flex-row items-center gap-3', className)}>
       <TouchableOpacity
         className="size-10 justify-center items-center rounded-lg bg-gray-50 dark:bg-gray-700"
         onPress={handleDecrement}

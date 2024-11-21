@@ -1,21 +1,21 @@
-import { useQuery } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
-import { View } from "react-native";
+import { useQuery } from '@tanstack/react-query';
+import { useLocalSearchParams } from 'expo-router';
+import { View } from 'react-native';
 
-import { useAuth } from "~/context/auth";
-import { supabase } from "~/lib/supabase";
+import { useAuth } from '~/context/auth';
+import { supabase } from '~/lib/supabase';
 
-import { Text } from "~/components/ui/text";
-import { H1, Lead } from "~/components/ui/typography";
-import { Card, CardContent } from "~/components/ui/card";
+import { Card, CardContent } from '~/components/ui/card';
+import { Text } from '~/components/ui/text';
+import { H1, Lead } from '~/components/ui/typography';
 
 export default function Info() {
   const { session } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: highline } = useQuery({
-    queryKey: ["highline", id],
+    queryKey: ['highline', id],
     queryFn: async () => {
-      const result = await supabase.rpc("get_highline", {
+      const result = await supabase.rpc('get_highline', {
         searchid: [id as string],
         userid: session?.user.id,
       });
@@ -35,8 +35,8 @@ export default function Info() {
 
       <HighlineDimensions height={highline.height} distance={highline.lenght} />
 
-      <InfoItem label={"Fita principal"} value={highline.main_webbing} />
-      <InfoItem label={"Fita backup"} value={highline.backup_webbing} />
+      <InfoItem label={'Fita principal'} value={highline.main_webbing} />
+      <InfoItem label={'Fita backup'} value={highline.backup_webbing} />
     </View>
   );
 }

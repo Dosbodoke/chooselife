@@ -1,9 +1,10 @@
-import { useRouter } from "expo-router";
-import { TouchableOpacity, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from 'expo-router';
+import { TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Skeleton } from "~/components/ui/skeleton";
-import { LucideIcon } from "~/lib/icons/lucide-icon";
+import { LucideIcon } from '~/lib/icons/lucide-icon';
+
+import { Skeleton } from '~/components/ui/skeleton';
 
 const HighlineSkeleton = () => {
   const router = useRouter();
@@ -21,7 +22,7 @@ const HighlineSkeleton = () => {
         <TouchableOpacity
           className="p-2 rounded-full bg-white items-center justify-center"
           onPress={() =>
-            router.canGoBack() ? router.back() : router.replace("/(tabs)")
+            router.canGoBack() ? router.back() : router.replace('/(tabs)')
           }
         >
           <LucideIcon name="ChevronLeft" className="text-primary size-6" />

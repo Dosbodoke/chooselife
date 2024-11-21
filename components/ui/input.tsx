@@ -1,14 +1,13 @@
-import * as React from "react";
+import { Label } from '~/components/ui/label';
+import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { cn } from '~/lib/utils';
+import * as React from 'react';
 import {
   TextInput,
-  type TextInputProps,
-  View,
   TouchableOpacity,
-} from "react-native";
-
-import { cn } from "~/lib/utils";
-import { Label } from "~/components/ui/label";
-import { LucideIcon } from "~/lib/icons/lucide-icon";
+  View,
+  type TextInputProps,
+} from 'react-native';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -27,7 +26,7 @@ const Input = React.forwardRef<React.ElementRef<typeof TextInput>, InputProps>(
       onRightIconPress,
       ...props
     },
-    ref
+    ref,
   ) => {
     return (
       <View className="gap-2">
@@ -37,14 +36,14 @@ const Input = React.forwardRef<React.ElementRef<typeof TextInput>, InputProps>(
             ref={ref}
             id={id}
             className={cn(
-              "flex-1 web:flex h-10 native:h-12 web:w-full rounded-md border border-input bg-background px-3 web:py-2 text-base lg:text-sm native:text-lg native:leading-[1.25] text-foreground placeholder:text-muted-foreground web:ring-offset-background file:border-0 file:bg-transparent file:font-medium web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2",
-              props.editable === false && "opacity-50 web:cursor-not-allowed",
-              rightIcon && "pr-9", // Add padding to accommodate the icon
-              className
+              'flex-1 web:flex h-10 native:h-12 web:w-full rounded-md border border-input bg-background px-3 web:py-2 text-base lg:text-sm native:text-lg native:leading-[1.25] text-foreground placeholder:text-muted-foreground web:ring-offset-background file:border-0 file:bg-transparent file:font-medium web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2',
+              props.editable === false && 'opacity-50 web:cursor-not-allowed',
+              rightIcon && 'pr-9', // Add padding to accommodate the icon
+              className,
             )}
             placeholderClassName={cn(
-              "text-muted-foreground",
-              placeholderClassName
+              'text-muted-foreground',
+              placeholderClassName,
             )}
             {...props}
           />
@@ -60,10 +59,10 @@ const Input = React.forwardRef<React.ElementRef<typeof TextInput>, InputProps>(
         </View>
       </View>
     );
-  }
+  },
 );
 
-Input.displayName = "Input";
+Input.displayName = 'Input';
 
 interface PasswordInputProps {
   id: string;
@@ -77,7 +76,7 @@ interface PasswordInputProps {
 const PasswordInput = ({
   label,
   id,
-  placeholder = "Password",
+  placeholder = 'Password',
   value,
   onChangeText,
   editable = true,

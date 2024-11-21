@@ -1,8 +1,10 @@
-import { useMemo } from "react";
-import { TouchableOpacity } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
+import { TouchableOpacity } from 'react-native';
+import Animated from 'react-native-reanimated';
 
-import { LucideIcon } from "~/lib/icons/lucide-icon";
+import { LucideIcon } from '~/lib/icons/lucide-icon';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,11 +13,10 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+} from '~/components/ui/dropdown-menu';
 
-import { type Category } from "./index";
-import { Text } from "../ui/text";
-import Animated from "react-native-reanimated";
+import { Text } from '../ui/text';
+import { type Category } from './index';
 
 interface Props {
   selectedCategory: Category;
@@ -29,12 +30,12 @@ export const CategoryDropdown = ({
   const router = useRouter();
   const categories = useMemo<Record<Category, { label: string }>>(
     () => ({
-      speedline: { label: "Speedline" },
-      cadenas: { label: "Cadenas" },
-      distance: { label: "Distância" },
-      fullLine: { label: "Full Lines" },
+      speedline: { label: 'Speedline' },
+      cadenas: { label: 'Cadenas' },
+      distance: { label: 'Distância' },
+      fullLine: { label: 'Full Lines' },
     }),
-    []
+    [],
   );
 
   return (

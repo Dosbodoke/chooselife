@@ -1,52 +1,53 @@
-import React from "react";
-import { Keyboard, View } from "react-native";
-import { useLocalSearchParams, Link } from "expo-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Controller, FieldErrors, useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link, useLocalSearchParams } from 'expo-router';
+import React from 'react';
+import { Controller, FieldErrors, useForm } from 'react-hook-form';
+import { Keyboard, View } from 'react-native';
+import { z } from 'zod';
 
-import { Textarea } from "~/components/ui/textarea";
-import { Input } from "~/components/ui/input";
-import { Button } from "~/components/ui/button";
-import { Text } from "~/components/ui/text";
-import { supabase } from "~/lib/supabase";
-import { transformTimeStringToSeconds } from "~/utils";
-import { Label } from "~/components/ui/label";
-import NumberPicker from "~/components/ui/number-picker";
-import { H1, Muted, Small } from "~/components/ui/typography";
-import { KeyboardAwareScrollView } from "~/components/KeyboardAwareScrollView";
-import SuccessAnimation from "~/components/animations/success-animation";
+import { supabase } from '~/lib/supabase';
+import { transformTimeStringToSeconds } from '~/utils';
+
+import SuccessAnimation from '~/components/animations/success-animation';
+import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
+import { Button } from '~/components/ui/button';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import NumberPicker from '~/components/ui/number-picker';
+import { Text } from '~/components/ui/text';
+import { Textarea } from '~/components/ui/textarea';
+import { H1, Muted, Small } from '~/components/ui/typography';
 
 const formSchema = z.object({
   instagram: z
     .string()
     .trim()
-    .startsWith("@", "O usuário deve começar com @")
-    .min(3, "Deve conter ao menos 3 caracteres"),
+    .startsWith('@', 'O usuário deve começar com @')
+    .min(3, 'Deve conter ao menos 3 caracteres'),
   cadenas: z.number().nonnegative(),
   full_lines: z.number().nonnegative(),
   distance: z.coerce
     .number({
-      required_error: "Insira quantos metros você andou",
-      invalid_type_error: "Insira um número",
+      required_error: 'Insira quantos metros você andou',
+      invalid_type_error: 'Insira um número',
     })
-    .positive("Distância não pode ser negativa"),
+    .positive('Distância não pode ser negativa'),
   time: z
     .string()
     .optional()
     .refine(
       (value) =>
         value === undefined ||
-        value === "" ||
+        value === '' ||
         /^([0-9]|[0-5][0-9]):[0-5][0-9]$/.test(value),
-      "Inválido, use o formato mm:ss"
+      'Inválido, use o formato mm:ss',
     ),
   witness: z
     .string()
     .refine(
       (w) => /^(?=.*@[^,\s]+,.*@[^,\s]+).*$/.test(w),
-      "Inválido, coloque o instagram de duas pessoas, separado por vírgula."
+      'Inválido, coloque o instagram de duas pessoas, separado por vírgula.',
     ),
   comment: z.string(),
 });
@@ -54,27 +55,27 @@ const formSchema = z.object({
 type FormSchema = z.infer<typeof formSchema>;
 
 const RegisterHighline = () => {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
 
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      instagram: "",
+      instagram: '',
       cadenas: 0,
       full_lines: 0,
       distance: 0,
-      time: "",
-      witness: "",
-      comment: "",
+      time: '',
+      witness: '',
+      comment: '',
     },
   });
 
   // Similar useMutation setup
   const formMutation = useMutation({
     mutationFn: async (formData: FormSchema) => {
-      if (!id) throw new Error("No highline ID provided");
-      const response = await supabase.from("entry").insert({
+      if (!id) throw new Error('No highline ID provided');
+      const response = await supabase.from('entry').insert({
         highline_id: id,
         instagram: formData.instagram.toLowerCase(),
         cadenas: formData.cadenas,
@@ -84,7 +85,7 @@ const RegisterHighline = () => {
           ? transformTimeStringToSeconds(formData.time)
           : null,
         comment: formData.comment,
-        witness: formData.witness?.replace(" ", "").split(","),
+        witness: formData.witness?.replace(' ', '').split(','),
         is_highliner: true, // TODO: Remove this field from database
       });
 
@@ -95,7 +96,7 @@ const RegisterHighline = () => {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["entry"] });
+      queryClient.invalidateQueries({ queryKey: ['entry'] });
     },
   });
 
@@ -125,7 +126,13 @@ const RegisterHighline = () => {
             Seu rolê está registrado e será usado para calcular as suas
             estatísticas.
           </Text>
-          <Link href={`highline/${id}`} asChild>
+          <Link
+            href={{
+              pathname: '/highline/[id]',
+              params: { id: id },
+            }}
+            asChild
+          >
             <Button>
               <Text>Ver o Highline</Text>
             </Button>
@@ -148,7 +155,7 @@ const RegisterHighline = () => {
                 <Input
                   placeholder="Instagram"
                   aria-labelledby="entry-instagram"
-                  className={fieldState.error && "border-destructive"}
+                  className={fieldState.error && 'border-destructive'}
                   {...field}
                   onChangeText={field.onChange}
                 />
@@ -206,7 +213,7 @@ const RegisterHighline = () => {
                 <Input
                   aria-labelledby="entry-distance"
                   keyboardType="number-pad"
-                  className={fieldState.error && "border-destructive"}
+                  className={fieldState.error && 'border-destructive'}
                   {...field}
                   onChangeText={(text) => field.onChange(+text || 0)}
                   value={field.value?.toString()}
@@ -236,7 +243,7 @@ const RegisterHighline = () => {
                   placeholder="Exemplo.: 4:20"
                   aria-labelledby="entry-time"
                   keyboardType="numbers-and-punctuation"
-                  className={fieldState.error && "border-destructive"}
+                  className={fieldState.error && 'border-destructive'}
                   {...field}
                   onChangeText={field.onChange}
                 />
@@ -264,7 +271,7 @@ const RegisterHighline = () => {
                 <Input
                   placeholder="@festivalchooselife, @juangsandrade"
                   aria-labelledby="entry-witness"
-                  className={fieldState.error && "border-destructive"}
+                  className={fieldState.error && 'border-destructive'}
                   {...field}
                   onChangeText={field.onChange}
                 />
@@ -290,7 +297,7 @@ const RegisterHighline = () => {
                   returnKeyType="done"
                   placeholder="Boa choosen 🤘🆑 Conta pra gente como foi ese rolê, o que achou da fita, da conexão..."
                   aria-labelledby="entry-comment"
-                  className={fieldState.error && "border-destructive"}
+                  className={fieldState.error && 'border-destructive'}
                   {...field}
                   blurOnSubmit={true}
                   onSubmitEditing={() => {
@@ -312,7 +319,7 @@ const RegisterHighline = () => {
             disabled={formMutation.isPending}
           >
             <Text>
-              {formMutation.isPending ? "Registrando..." : "Registrar rolê"}
+              {formMutation.isPending ? 'Registrando...' : 'Registrar rolê'}
             </Text>
           </Button>
         </>

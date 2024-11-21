@@ -1,23 +1,24 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, TouchableOpacity, View } from "react-native";
-import { useRouter } from "expo-router";
-import AsyncStorage from "expo-sqlite/kv-store";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from 'expo-router';
+import AsyncStorage from 'expo-sqlite/kv-store';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { KeyboardAwareScrollView } from "~/components/KeyboardAwareScrollView";
-import { Button, buttonTextVariants } from "~/components/ui/button";
-import { Input, PasswordInput } from "~/components/ui/input";
-import { Text } from "~/components/ui/text";
-import { useAuth } from "~/context/auth";
-import { GoogleIcon } from "~/lib/icons/Google";
-import { AppleIcon } from "~/lib/icons/Apple";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { Separator } from "~/components/ui/separator";
-import ChooselifeIcon from "~/lib/icons/chooselife-icon";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
-import { cn } from "~/lib/utils";
+import { useAuth } from '~/context/auth';
+import { AppleIcon } from '~/lib/icons/Apple';
+import ChooselifeIcon from '~/lib/icons/chooselife-icon';
+import { GoogleIcon } from '~/lib/icons/Google';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from '~/lib/utils';
 
-type LastUsedLoginMethod = "apple" | "google" | "email";
+import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
+import { Button, buttonTextVariants } from '~/components/ui/button';
+import { Input, PasswordInput } from '~/components/ui/input';
+import { Separator } from '~/components/ui/separator';
+import { Text } from '~/components/ui/text';
+
+type LastUsedLoginMethod = 'apple' | 'google' | 'email';
 
 const Page = () => {
   const [lastLoginMethod, setLastLoginMethod] =
@@ -25,18 +26,18 @@ const Page = () => {
 
   const saveLoginMethod = async (method: LastUsedLoginMethod) => {
     try {
-      await AsyncStorage.setItem("lastLoginMethod", method);
+      await AsyncStorage.setItem('lastLoginMethod', method);
     } catch (error) {
-      console.error("Failed to save the login method:", error);
+      console.error('Failed to save the login method:', error);
     }
   };
 
   const loadLastLoginMethod = async () => {
     try {
-      const method = await AsyncStorage.getItem("lastLoginMethod");
+      const method = await AsyncStorage.getItem('lastLoginMethod');
       setLastLoginMethod(method as LastUsedLoginMethod);
     } catch (error) {
-      console.error("Failed to load the login method:", error);
+      console.error('Failed to load the login method:', error);
     }
   };
 
@@ -89,14 +90,14 @@ const OAuthButtons = ({
   const router = useRouter();
   const { colorScheme } = useColorScheme();
 
-  const handleLogin = async (method: "apple" | "google") => {
+  const handleLogin = async (method: 'apple' | 'google') => {
     const { success } = await performOAuth(method);
     if (success) {
       await saveLoginMethod(method);
       if (router.canGoBack()) {
         router.back();
       } else {
-        router.replace("/(tabs)");
+        router.replace('/(tabs)');
       }
     }
   };
@@ -113,20 +114,20 @@ const OAuthButtons = ({
       ) : null}
 
       <Button
-        onPress={() => handleLogin("apple")}
+        onPress={() => handleLogin('apple')}
         variant="outline"
         className="flex-row gap-3 items-center"
       >
         <View className="h-6 w-6">
-          <AppleIcon fill={colorScheme === "dark" ? "#FFFFFF" : "#000000"} />
+          <AppleIcon fill={colorScheme === 'dark' ? '#FFFFFF' : '#000000'} />
         </View>
         <Text className="text-primary">Continuar com Apple</Text>
-        {lastLoginMethod === "apple" ? (
+        {lastLoginMethod === 'apple' ? (
           <View className="absolute right-4 top-1/2 translate-y-1/2  w-2 h-2 rounded-full bg-green-500" />
         ) : null}
       </Button>
       <Button
-        onPress={() => handleLogin("google")}
+        onPress={() => handleLogin('google')}
         variant="outline"
         className="relative flex-row gap-3 items-center"
       >
@@ -134,7 +135,7 @@ const OAuthButtons = ({
           <GoogleIcon />
         </View>
         <Text className="text-primary">Continuar com Google</Text>
-        {lastLoginMethod === "google" ? (
+        {lastLoginMethod === 'google' ? (
           <View className="absolute right-4 top-1/2 translate-y-1/2  w-2 h-2 rounded-full bg-green-500" />
         ) : null}
       </Button>
@@ -152,9 +153,9 @@ const EmailLoginSection = ({
   const { login } = useAuth();
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   return (
@@ -179,10 +180,10 @@ const EmailLoginSection = ({
             setIsLoading(true);
             const response = await login(email, password);
             if (response.success) {
-              await saveLoginMethod("email");
+              await saveLoginMethod('email');
               router.back();
             } else {
-              setError(response.errorMessage || "");
+              setError(response.errorMessage || '');
             }
           } finally {
             setIsLoading(false);
@@ -192,12 +193,12 @@ const EmailLoginSection = ({
       >
         {isLoading ? (
           <ActivityIndicator
-            className={cn(buttonTextVariants({ variant: "default" }))}
+            className={cn(buttonTextVariants({ variant: 'default' }))}
           />
         ) : (
           <Text>Entrar com email</Text>
         )}
-        {lastLoginMethod === "email" ? (
+        {lastLoginMethod === 'email' ? (
           <View className="absolute right-4 top-1/2 translate-y-1/2  w-2 h-2 rounded-full bg-green-500" />
         ) : null}
       </Button>

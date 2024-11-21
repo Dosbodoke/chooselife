@@ -1,10 +1,10 @@
-import { View } from "react-native";
+import { View } from 'react-native';
 
-import { LucideIcon } from "~/lib/icons/lucide-icon";
-import { cn } from "~/lib/utils";
-import { Text } from "../ui/text";
+import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { cn } from '~/lib/utils';
 
-import { podiumVariants } from "./leaderboard";
+import { Text } from '../ui/text';
+import { podiumVariants } from './leaderboard';
 
 const LoadingLeaderboard: React.FC = () => {
   return (
@@ -16,7 +16,7 @@ const LoadingLeaderboard: React.FC = () => {
               <View className="flex flex-col items-center gap-1">
                 <LucideIcon
                   name="Crown"
-                  className={cn("size-6", podiumVariants({ text: "silver" }))}
+                  className={cn('size-6', podiumVariants({ text: 'silver' }))}
                 />
                 <View className="h-16 w-16 rounded-full bg-gray-200 dark:bg-gray-700"></View>
               </View>
@@ -36,7 +36,7 @@ const LoadingLeaderboard: React.FC = () => {
               <View className="flex flex-col items-center gap-1">
                 <LucideIcon
                   name="Crown"
-                  className={cn("size-6", podiumVariants({ text: "gold" }))}
+                  className={cn('size-6', podiumVariants({ text: 'gold' }))}
                 />
                 <View className="h-16 w-16 rounded-full bg-gray-200 dark:bg-gray-700"></View>
               </View>
@@ -56,7 +56,7 @@ const LoadingLeaderboard: React.FC = () => {
               <View className="flex flex-col items-center gap-1">
                 <LucideIcon
                   name="Crown"
-                  className={cn("size-6", podiumVariants({ text: "bronze" }))}
+                  className={cn('size-6', podiumVariants({ text: 'bronze' }))}
                 />
                 {/* <CrownIcon className="mb-2 h-12 w-12 rounded-full text-2xl opacity-70 md:text-4xl" /> */}
                 <View className="h-16 w-16 rounded-full bg-gray-200 dark:bg-gray-700"></View>

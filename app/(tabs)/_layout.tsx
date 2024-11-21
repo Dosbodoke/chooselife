@@ -1,7 +1,7 @@
-import { Tabs } from "expo-router";
+import { Tabs } from 'expo-router';
 
-import { cn } from "~/lib/utils";
-import { LucideIcon } from "~/lib/icons/lucide-icon";
+import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { cn } from '~/lib/utils';
 
 // Custom styled tab bar
 // import TabBar from "~/components/tab-bar";
@@ -12,14 +12,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Explorar",
+          title: 'Explorar',
           tabBarHideOnKeyboard: true,
           tabBarIcon: ({ focused }) => (
             <LucideIcon
               name="Earth"
               className={cn(
-                "size-6",
-                focused ? "text-blue-500" : "text-muted-foreground"
+                'size-6',
+                focused ? 'text-blue-500' : 'text-muted-foreground',
               )}
             />
           ),
@@ -29,13 +29,13 @@ export default function TabLayout() {
         name="ranking"
         options={{
           headerShown: false,
-          title: "Ranking",
+          title: 'Ranking',
           tabBarIcon: ({ focused }) => (
             <LucideIcon
               name="Trophy"
               className={cn(
-                "size-6",
-                focused ? "text-blue-500" : "text-muted-foreground"
+                'size-6',
+                focused ? 'text-blue-500' : 'text-muted-foreground',
               )}
             />
           ),
@@ -45,13 +45,13 @@ export default function TabLayout() {
         name="settings"
         options={{
           headerShown: false,
-          title: "Configurações",
+          title: 'Configurações',
           tabBarIcon: ({ focused }) => (
             <LucideIcon
               name="Settings"
               className={cn(
-                "size-6",
-                focused ? "text-blue-500" : "text-muted-foreground"
+                'size-6',
+                focused ? 'text-blue-500' : 'text-muted-foreground',
               )}
             />
           ),

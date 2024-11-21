@@ -1,5 +1,5 @@
-import Svg, { SvgProps, Path } from "react-native-svg";
-import { cssInterop } from "nativewind";
+import { cssInterop } from 'nativewind';
+import Svg, { Path, SvgProps } from 'react-native-svg';
 
 export const SpeedlineIcon = (props: SvgProps) => (
   <Svg width="28" height="29" viewBox="0 0 28 29" fill="none" {...props}>
@@ -12,7 +12,7 @@ export const SpeedlineIcon = (props: SvgProps) => (
 
 cssInterop(SpeedlineIcon, {
   className: {
-    target: "style",
+    target: 'style',
     nativeStyleToProp: {
       color: true,
       opacity: true,
@@ -35,7 +35,7 @@ export const EnduranceIcon = (props: SvgProps) => (
 
 cssInterop(EnduranceIcon, {
   className: {
-    target: "style",
+    target: 'style',
     nativeStyleToProp: {
       color: true,
       opacity: true,

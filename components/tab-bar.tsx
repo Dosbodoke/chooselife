@@ -1,17 +1,17 @@
-import { View, Pressable } from "react-native";
-import React, { ReactNode, useEffect } from "react";
+import type {
+  BottomTabBarProps,
+  BottomTabNavigationOptions,
+} from '@react-navigation/bottom-tabs';
+import React, { ReactNode, useEffect } from 'react';
+import { Pressable, View } from 'react-native';
 import Animated, {
   interpolate,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-} from "react-native-reanimated";
-import type {
-  BottomTabBarProps,
-  BottomTabNavigationOptions,
-} from "@react-navigation/bottom-tabs";
+} from 'react-native-reanimated';
 
-import { cn } from "~/lib/utils";
+import { cn } from '~/lib/utils';
 
 const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   return (
@@ -26,16 +26,16 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
             options.tabBarLabel !== undefined
               ? options.tabBarLabel
               : options.title !== undefined
-              ? options.title
-              : route.name;
+                ? options.title
+                : route.name;
 
-          if (["_sitemap", "+not-found"].includes(route.name)) return null;
+          if (['_sitemap', '+not-found'].includes(route.name)) return null;
 
           const isFocused = state.index === index;
 
           const onPress = () => {
             const event = navigation.emit({
-              type: "tabPress",
+              type: 'tabPress',
               target: route.key,
               canPreventDefault: true,
             });
@@ -47,7 +47,7 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
 
           const onLongPress = () => {
             navigation.emit({
-              type: "tabLongPress",
+              type: 'tabLongPress',
               target: route.key,
             });
           };
@@ -62,7 +62,7 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
                 options.tabBarIcon
                   ? options.tabBarIcon({
                       focused: isFocused,
-                      color: "",
+                      color: '',
                       size: 16,
                     })
                   : null
@@ -86,7 +86,7 @@ const TabBarButton = ({
   onLongPress,
 }: {
   isFocused: boolean;
-  label: BottomTabNavigationOptions["tabBarLabel"];
+  label: BottomTabNavigationOptions['tabBarLabel'];
   icon: ReactNode;
   onPress: () => void;
   onLongPress: () => void;
@@ -95,8 +95,8 @@ const TabBarButton = ({
 
   useEffect(() => {
     scale.value = withSpring(
-      typeof isFocused === "boolean" ? (isFocused ? 1 : 0) : isFocused,
-      { duration: 350 }
+      typeof isFocused === 'boolean' ? (isFocused ? 1 : 0) : isFocused,
+      { duration: 350 },
     );
   }, [scale, isFocused]);
 
@@ -119,11 +119,11 @@ const TabBarButton = ({
       <Animated.View style={[animatedIconStyle]}>{icon}</Animated.View>
       <Animated.Text
         className={cn(
-          "text-xs",
-          isFocused ? "text-primary-foreground" : "text-muted-foreground"
+          'text-xs',
+          isFocused ? 'text-primary-foreground' : 'text-muted-foreground',
         )}
       >
-        {typeof label === "string" ? label : null}
+        {typeof label === 'string' ? label : null}
       </Animated.Text>
     </Pressable>
   );

@@ -1,23 +1,23 @@
 // Import your global CSS file
-import "~/global.css";
+import '~/global.css';
 
-import AsyncStorage from "expo-sqlite/kv-store";
-import { Theme, ThemeProvider, DefaultTheme } from "@react-navigation/native";
-import { router, Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
-import { PortalHost } from "@rn-primitives/portal";
-import { QueryClientProvider, onlineManager } from "@tanstack/react-query";
-import NetInfo from "@react-native-community/netinfo";
+import NetInfo from '@react-native-community/netinfo';
+import { DefaultTheme, Theme, ThemeProvider } from '@react-navigation/native';
+import { PortalHost } from '@rn-primitives/portal';
+import { onlineManager, QueryClientProvider } from '@tanstack/react-query';
+import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import AsyncStorage from 'expo-sqlite/kv-store';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { NAV_THEME } from "~/lib/constants";
-import { useColorScheme } from "~/lib/useColorScheme";
-import queryClient from "~/lib/react-query";
-import { AuthProvider } from "~/context/auth";
-import useLinking from "~/hooks/useLinking";
-import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
+import { AuthProvider } from '~/context/auth';
+import useLinking from '~/hooks/useLinking';
+import { setAndroidNavigationBar } from '~/lib/android-navigation-bar';
+import { NAV_THEME } from '~/lib/constants';
+import queryClient from '~/lib/react-query';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 const LIGHT_THEME: Theme = {
   ...DefaultTheme,
@@ -33,7 +33,7 @@ const DARK_THEME: Theme = {
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
-} from "expo-router";
+} from 'expo-router';
 
 // Prevent the splash screen from auto-hiding before getting the color scheme.
 SplashScreen.preventAutoHideAsync();
@@ -52,14 +52,14 @@ export default function RootLayout() {
 
   useEffect(() => {
     (async () => {
-      const theme = await AsyncStorage.getItem("theme");
+      const theme = await AsyncStorage.getItem('theme');
       if (!theme) {
         setAndroidNavigationBar(colorScheme);
-        AsyncStorage.setItem("theme", colorScheme);
+        AsyncStorage.setItem('theme', colorScheme);
         setIsColorSchemeLoaded(true);
         return;
       }
-      const colorTheme = theme === "dark" ? "dark" : "light";
+      const colorTheme = theme === 'dark' ? 'dark' : 'light';
       setAndroidNavigationBar(colorScheme);
       if (colorTheme !== colorScheme) {
         setColorScheme(colorTheme);
@@ -82,7 +82,7 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
           <GestureHandlerRootView>
-            <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
+            <StatusBar style={isDarkColorScheme ? 'light' : 'dark'} />
             <Stack>
               <Stack.Screen
                 name="(tabs)"
@@ -93,8 +93,8 @@ export default function RootLayout() {
               <Stack.Screen
                 name="(modals)/login"
                 options={{
-                  presentation: "modal",
-                  title: "Entrar ou criar conta",
+                  presentation: 'modal',
+                  title: 'Entrar ou criar conta',
                 }}
               />
               <Stack.Screen

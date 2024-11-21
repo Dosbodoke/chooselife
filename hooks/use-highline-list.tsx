@@ -1,16 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { supabase } from "~/lib/supabase";
-import { useAuth } from "~/context/auth";
-import type { Functions } from "~/utils/database.types";
+import { useQuery } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
 
-export type Highline = Functions["get_highline"]["Returns"][0];
+import { useAuth } from '~/context/auth';
+import { supabase } from '~/lib/supabase';
+import type { Functions } from '~/utils/database.types';
+
+export type Highline = Functions['get_highline']['Returns'][0];
 
 export const useHighlineList = ({ searchTerm }: { searchTerm?: string }) => {
   const { session, loading: sessionLoading } = useAuth();
 
   const [highlightedMarker, setHighlightedMarker] = useState<Highline | null>(
-    null
+    null,
   );
   const [clusterMarkers, setClusterMarkers] = useState<Highline[]>([]);
 
@@ -19,9 +20,9 @@ export const useHighlineList = ({ searchTerm }: { searchTerm?: string }) => {
     isLoading,
     error,
   } = useQuery<Highline[]>({
-    queryKey: ["highlines"],
+    queryKey: ['highlines'],
     queryFn: async () => {
-      const { data } = await supabase.rpc("get_highline", {
+      const { data } = await supabase.rpc('get_highline', {
         ...(session?.user?.id ? { userid: session.user.id } : {}),
       });
       return data || [];
@@ -34,7 +35,7 @@ export const useHighlineList = ({ searchTerm }: { searchTerm?: string }) => {
   const filteredHighlines = useMemo(() => {
     if (!searchTerm) return highlines || [];
     return (highlines || []).filter((highline) =>
-      highline.name.toLowerCase().includes(searchTerm.toLowerCase())
+      highline.name.toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [highlines, searchTerm]);
 

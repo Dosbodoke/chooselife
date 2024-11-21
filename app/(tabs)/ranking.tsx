@@ -1,5 +1,6 @@
-import { SafeAreaView, View } from "react-native";
-import { H1 } from "~/components/ui/typography";
+import { SafeAreaView } from 'react-native';
+
+import { H1 } from '~/components/ui/typography';
 
 export default function Ranking() {
   return (

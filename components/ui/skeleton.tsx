@@ -1,3 +1,4 @@
+import { cn } from '~/lib/utils';
 import * as React from 'react';
 import Animated, {
   useAnimatedStyle,
@@ -6,7 +7,6 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { cn } from '~/lib/utils';
 
 const duration = 1000;
 
@@ -19,7 +19,7 @@ function Skeleton({
   React.useEffect(() => {
     sv.value = withRepeat(
       withSequence(withTiming(0.5, { duration }), withTiming(1, { duration })),
-      -1
+      -1,
     );
   }, []);
 

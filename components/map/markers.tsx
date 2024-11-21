@@ -1,14 +1,15 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { RefObject, useEffect, useMemo } from "react";
-import { View } from "react-native";
-import MapView, { LatLng, Marker, Polyline } from "react-native-maps";
-import { PointFeature } from "supercluster";
-import useSuperCluster from "use-supercluster";
-import type { BBox, GeoJsonProperties } from "geojson";
+import { useQueryClient } from '@tanstack/react-query';
+import type { BBox, GeoJsonProperties } from 'geojson';
+import { RefObject, useEffect, useMemo } from 'react';
+import { View } from 'react-native';
+import MapView, { LatLng, Marker, Polyline } from 'react-native-maps';
+import { PointFeature } from 'supercluster';
+import useSuperCluster from 'use-supercluster';
 
-import { Text } from "../ui/text";
-import { type Highline } from "~/hooks/use-highline";
-import { MarkerCL } from "~/lib/icons/MarkerCL";
+import { type Highline } from '~/hooks/use-highline';
+import { MarkerCL } from '~/lib/icons/MarkerCL';
+
+import { Text } from '../ui/text';
 
 const MIN_MARKER_SIZE = 30;
 interface PointProperties {
@@ -41,7 +42,7 @@ export const Markers = ({
     // Check if user can zoom more in the current cluster
     const expansionZoom = Math.min(
       supercluster?.getClusterExpansionZoom(cluster_id) || 20,
-      17
+      17,
     );
     const shouldHighlightCards = expansionZoom <= zoom;
 
@@ -53,7 +54,7 @@ export const Markers = ({
       leaves.forEach((l) => {
         if (shouldHighlightCards) {
           const highline = queryClient
-            .getQueryData<Highline[]>(["highlines"])
+            .getQueryData<Highline[]>(['highlines'])
             ?.find((high) => high.id === l.properties.highID);
           if (highline) highlines.push(highline);
         }
@@ -103,7 +104,7 @@ export const Markers = ({
           left: 50,
         },
         animated: true,
-      }
+      },
     );
   }, [highlightedMarker]);
 
@@ -113,10 +114,10 @@ export const Markers = ({
     if (!highlines) return [];
     return highlines.map((h) => {
       return {
-        type: "Feature",
+        type: 'Feature',
         properties: {
           cluster: false,
-          category: "highline",
+          category: 'highline',
           highID: h.id,
           anchorB: {
             latitude: h.anchor_b_lat,
@@ -124,7 +125,7 @@ export const Markers = ({
           },
         },
         geometry: {
-          type: "Point",
+          type: 'Point',
           coordinates: [h.anchor_a_long, h.anchor_a_lat], // [lng, lat]
         },
       };
@@ -142,7 +143,7 @@ export const Markers = ({
     <>
       {clusters?.map((point) => {
         const [longitude, latitude] = point.geometry.coordinates;
-        if (typeof longitude !== "number" || typeof latitude !== "number")
+        if (typeof longitude !== 'number' || typeof latitude !== 'number')
           return;
         const coordinateA = { latitude, longitude };
         const properties = point.properties;
@@ -150,7 +151,7 @@ export const Markers = ({
         if (properties?.cluster) {
           const size = Math.max(
             (properties.point_count * 40) / (points.length || 1),
-            MIN_MARKER_SIZE
+            MIN_MARKER_SIZE,
           );
           return (
             <ClusteredMarker
@@ -170,7 +171,7 @@ export const Markers = ({
             onPress={async (e) => {
               e.stopPropagation();
               const highline = queryClient
-                .getQueryData<Highline[]>(["highlines"])
+                .getQueryData<Highline[]>(['highlines'])
                 ?.find((high) => high.id === properties.highID);
               if (highline) {
                 updateMarkers([highline], highline);

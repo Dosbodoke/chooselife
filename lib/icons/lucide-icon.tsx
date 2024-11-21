@@ -1,5 +1,6 @@
-import { icons } from "lucide-react-native";
-import { iconWithClassName } from "./iconWithClassName";
+import { icons } from 'lucide-react-native';
+
+import { iconWithClassName } from './iconWithClassName';
 
 const LucideIcon = ({
   name,

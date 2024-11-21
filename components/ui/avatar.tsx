@@ -1,12 +1,12 @@
-import * as React from "react";
-import { Alert, Text, TouchableOpacity, View } from "react-native";
-import * as ImagePicker from "expo-image-picker";
+import * as AvatarPrimitive from '@rn-primitives/avatar';
+import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { supabase } from '~/lib/supabase';
+import { cn } from '~/lib/utils';
+import * as ImagePicker from 'expo-image-picker';
+import * as React from 'react';
+import { Alert, Text, View } from 'react-native';
 
-import * as AvatarPrimitive from "@rn-primitives/avatar";
-import { supabase } from "~/lib/supabase";
-import { cn } from "~/lib/utils";
-import { LucideIcon } from "~/lib/icons/lucide-icon";
-import { Button } from "./button";
+import { Button } from './button';
 
 const AvatarPrimitiveRoot = AvatarPrimitive.Root;
 const AvatarPrimitiveImage = AvatarPrimitive.Image;
@@ -19,8 +19,8 @@ const Avatar = React.forwardRef<
   <AvatarPrimitiveRoot
     ref={ref}
     className={cn(
-      "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
-      className
+      'relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full',
+      className,
     )}
     {...props}
   />
@@ -33,7 +33,7 @@ const AvatarImage = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AvatarPrimitiveImage
     ref={ref}
-    className={cn("aspect-square h-full w-full", className)}
+    className={cn('aspect-square h-full w-full', className)}
     {...props}
   />
 ));
@@ -46,8 +46,8 @@ const AvatarFallback = React.forwardRef<
   <AvatarPrimitiveFallback
     ref={ref}
     className={cn(
-      "flex h-full w-full items-center justify-center rounded-full bg-muted",
-      className
+      'flex h-full w-full items-center justify-center rounded-full bg-muted',
+      className,
     )}
     {...props}
   />
@@ -60,7 +60,7 @@ function getShortName(fullName: string) {
     .filter((part) => part.length > 0) // Exclude empty parts in case of multiple spaces
     .map((part) => part[0].toUpperCase()) // Get the first letter and convert to uppercase
     .filter((letter, index, array) => index === 0 || index === array.length - 1) // Get first and last initials
-    .join("");
+    .join('');
   return shortName;
 }
 
@@ -84,7 +84,7 @@ const SupabaseAvatar = ({
 
     if (profilePicture && !googleUrlRegex.test(profilePicture)) {
       const { data } = supabase.storage
-        .from("avatars")
+        .from('avatars')
         .getPublicUrl(profilePicture);
 
       if (data?.publicUrl) {
@@ -112,19 +112,19 @@ const SupabaseAvatar = ({
       const image = result.assets[0];
 
       if (!image.uri) {
-        throw new Error("No image uri!"); // Realistically, this should never happen, but just in case...
+        throw new Error('No image uri!'); // Realistically, this should never happen, but just in case...
       }
 
       const arraybuffer = await fetch(image.uri).then((res) =>
-        res.arrayBuffer()
+        res.arrayBuffer(),
       );
 
-      const fileExt = image.uri?.split(".").pop()?.toLowerCase() ?? "jpeg";
+      const fileExt = image.uri?.split('.').pop()?.toLowerCase() ?? 'jpeg';
       const path = `${Date.now()}.${fileExt}`;
       const { data, error: uploadError } = await supabase.storage
-        .from("avatars")
+        .from('avatars')
         .upload(path, arraybuffer, {
-          contentType: image.mimeType ?? "image/jpeg",
+          contentType: image.mimeType ?? 'image/jpeg',
         });
 
       if (uploadError) {

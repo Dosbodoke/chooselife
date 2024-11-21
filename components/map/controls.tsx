@@ -1,17 +1,16 @@
-import type React from "react";
-import type { MapType } from "react-native-maps";
+import type React from 'react';
+import { TouchableOpacity, View } from 'react-native';
+import type { MapType } from 'react-native-maps';
 
-import { View, TouchableOpacity } from "react-native";
+import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { cn } from '~/lib/utils';
 
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "~/components/ui/popover";
-
-import { LucideIcon } from "~/lib/icons/lucide-icon";
-import { H4, P } from "~/components/ui/typography";
-import { cn } from "~/lib/utils";
+} from '~/components/ui/popover';
+import { H4, P } from '~/components/ui/typography';
 
 const MapControls: React.FC<{
   mapType: MapType;
@@ -61,10 +60,10 @@ const MapControls: React.FC<{
 
             <View className="flex flex-row gap-2">
               <TouchableOpacity
-                onPress={() => setMapType("standard")}
+                onPress={() => setMapType('standard')}
                 className={cn(
-                  "flex flex-1 gap-6 rounded-md border-2 border-border p-4 hover:border-ring",
-                  mapType === "standard" ? "bg-accent" : ""
+                  'flex flex-1 gap-6 rounded-md border-2 border-border p-4 hover:border-ring',
+                  mapType === 'standard' ? 'bg-accent' : '',
                 )}
               >
                 <LucideIcon
@@ -76,10 +75,10 @@ const MapControls: React.FC<{
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() => setMapType("satellite")}
+                onPress={() => setMapType('satellite')}
                 className={cn(
-                  "flex flex-1 gap-6 rounded-md border-2 border-border p-4 hover:border-ring",
-                  mapType === "satellite" ? "bg-accent" : ""
+                  'flex flex-1 gap-6 rounded-md border-2 border-border p-4 hover:border-ring',
+                  mapType === 'satellite' ? 'bg-accent' : '',
                 )}
               >
                 <LucideIcon

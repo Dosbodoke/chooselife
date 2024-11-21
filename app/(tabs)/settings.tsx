@@ -1,31 +1,15 @@
-import { Link, useRouter } from "expo-router";
-import { View, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  SupabaseAvatar,
-} from "~/components/ui/avatar";
+import { Link } from 'expo-router';
+import { TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Text } from "~/components/ui/text";
-import { Button } from "~/components/ui/button";
-import { H2, Muted } from "~/components/ui/typography";
-import { useAuth } from "~/context/auth";
-import { supabase } from "~/lib/supabase";
-import { Separator } from "~/components/ui/separator";
-import { SelectTheme } from "~/components/settings/select-theme";
-import { useEffect } from "react";
+import { useAuth } from '~/context/auth';
 
-function getShortName(fullName: string) {
-  const nameParts = fullName.trim().split(/\s+/);
-  const shortName = nameParts
-    .filter((part) => part.length > 0) // Exclude empty parts in case of multiple spaces
-    .map((part) => part[0].toUpperCase()) // Get the first letter and convert to uppercase
-    .filter((letter, index, array) => index === 0 || index === array.length - 1) // Get first and last initials
-    .join("");
-  return shortName;
-}
+import { SelectTheme } from '~/components/settings/select-theme';
+import { SupabaseAvatar } from '~/components/ui/avatar';
+import { Button } from '~/components/ui/button';
+import { Separator } from '~/components/ui/separator';
+import { Text } from '~/components/ui/text';
+import { H2, Muted } from '~/components/ui/typography';
 
 export default function SettingsPage() {
   const { profile, session, logout } = useAuth();
@@ -49,15 +33,21 @@ export default function SettingsPage() {
     );
   }
 
-  if (profile) {
+  if (profile && profile.username) {
     return (
       <SafeAreaView className="flex-1">
         <View className="flex gap-4 p-4 pt-8">
-          <Link href={`profile/${profile.username}`} asChild>
+          <Link
+            href={{
+              pathname: '/profile/[username]',
+              params: { username: profile.username },
+            }}
+            asChild
+          >
             <TouchableOpacity className="flex flex-row gap-4">
               <SupabaseAvatar
-                profilePicture={profile.profile_picture || ""}
-                name={profile.name || ""}
+                profilePicture={profile.profile_picture || ''}
+                name={profile.name || ''}
               />
               <View>
                 <H2>{profile.name}</H2>
