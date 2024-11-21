@@ -1,18 +1,5 @@
 import { FlashList } from '@shopify/flash-list';
 import { useQuery } from '@tanstack/react-query';
-import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
-import { SupabaseAvatar } from '~/components/ui/avatar';
-import { Button } from '~/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Skeleton } from '~/components/ui/skeleton';
-import { Text } from '~/components/ui/text';
-import { H1, H2, H3, Lead, Muted, P } from '~/components/ui/typography';
-import { EnduranceIcon, SpeedlineIcon } from '~/lib/icons';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
-import { supabase } from '~/lib/supabase';
-import { cn } from '~/lib/utils';
-import { transformSecondsToTimeString } from '~/utils';
-import { Database } from '~/utils/database.types';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActivityIndicator,
@@ -21,6 +8,21 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { EnduranceIcon, SpeedlineIcon } from '~/lib/icons';
+import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { supabase } from '~/lib/supabase';
+import { cn } from '~/lib/utils';
+import { transformSecondsToTimeString } from '~/utils';
+import { Database } from '~/utils/database.types';
+
+import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
+import { SupabaseAvatar } from '~/components/ui/avatar';
+import { Button } from '~/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { Skeleton } from '~/components/ui/skeleton';
+import { Text } from '~/components/ui/text';
+import { H1, H2, H3, Lead, Muted, P } from '~/components/ui/typography';
 
 export default function Profile() {
   const router = useRouter();
@@ -213,7 +215,9 @@ const UserNotFound: React.FC<{ username: string }> = ({ username }) => {
   return (
     <SafeAreaView className="flex-1">
       <View className="flex items-center justify-center h-full gap-4">
-        <H2>usuário {username} não existe</H2>
+        <H2 className="text-center">
+          usuário {username} não está registrado no app
+        </H2>
         <Button
           onPress={() => {
             if (canGoBack) {
