@@ -72,9 +72,7 @@ export default function SetProfile() {
       name: profile?.name || "",
       profilePicture: profile?.profile_picture || undefined,
       description: profile?.description || "",
-      birthday: profile?.birthday
-        ? profile?.birthday
-        : new Date().toDateString(),
+      birthday: profile?.birthday ? profile?.birthday : "",
     },
   });
 
@@ -183,9 +181,9 @@ export default function SetProfile() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 min-h-screen bg-background">
       <KeyboardAwareScrollView
-        contentContainerClassName="min-h-screen px-6 py-8 gap-4"
+        contentContainerClassName="flex-1 px-6 py-8 gap-4"
         keyboardShouldPersistTaps="handled"
       >
         <OnboardPaginator total={steps.length} selectedIndex={index} />
@@ -273,6 +271,9 @@ const ProfileInfoForm = ({
   const colorScheme = useColorScheme();
   const [showDatePicker, setShowDatePicker] = useState(false);
 
+  const date18YearsAgo = new Date();
+  date18YearsAgo.setFullYear(date18YearsAgo.getFullYear() - 18);
+
   const handleDateChange = (date: Date) => {
     setShowDatePicker(false);
     if (date) {
@@ -353,7 +354,7 @@ const ProfileInfoForm = ({
                 open={showDatePicker}
                 mode="date"
                 locale="pt-BR"
-                date={value ? new Date(value) : new Date()}
+                date={value ? new Date(value) : date18YearsAgo}
                 maximumDate={new Date()}
                 onConfirm={(date) => {
                   setShowDatePicker(false);
@@ -394,12 +395,12 @@ const PrefferedTheme = () => {
     {
       id: "light",
       label: "Claro",
-      image: require("~/assets/images/ui-light.webp"),
+      image: require("~/assets/images/ui_light.webp"),
     },
     {
       id: "dark",
       label: "Escuro",
-      image: require("~/assets/images/ui-dark.webp"),
+      image: require("~/assets/images/ui_dark.webp"),
     },
   ];
 
