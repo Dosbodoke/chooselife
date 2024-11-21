@@ -22,7 +22,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   "android": {
     "softwareKeyboardLayoutMode": "pan",
     "adaptiveIcon": {
-      "foregroundImage": "./assets/images/adaptive-icon.png",
+      "foregroundImage": "./assets/images/adaptive_icon.png",
       "backgroundColor": "#ffffff"
     },
     "permissions": [
@@ -47,6 +47,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "expo-location",
       {
         "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+      }
+    ],
+    [
+      "expo-asset",
+      {
+        "assets": ["./assets/images/chooselife_black.png", "./assets/images/ui_dark.webp", "./assets/images/ui_light.webp"]
       }
     ]
   ],

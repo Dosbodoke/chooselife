@@ -23,6 +23,7 @@ import { LucideIcon } from "~/lib/icons/lucide-icon";
 import { Ranking } from "~/components/ranking";
 import { useHighline } from "~/hooks/use-highline";
 import { HighlineNotFound } from "~/components/highline/not-found";
+import { HighlineImage } from "~/components/highline/highline-image";
 
 type HighlineTabs = "details" | "ranking";
 
@@ -110,16 +111,10 @@ export default function HighlinePage() {
             />
           </View>
         </View>
-        <Image
+
+        <HighlineImage
+          coverImageId={highline.cover_image}
           className="w-full h-96"
-          source={{
-            uri: highline?.cover_image
-              ? supabase.storage
-                  .from("images")
-                  .getPublicUrl(highline.cover_image).data.publicUrl
-              : "",
-          }}
-          resizeMode="cover"
         />
 
         <View className="px-4 pt-4 gap-6 flex-1">

@@ -2,10 +2,10 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { Link } from "expo-router";
 import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
 
-import { supabase } from "~/lib/supabase";
 import { LucideIcon } from "~/lib/icons/lucide-icon";
 import { FavoriteHighline } from "./favorite-button";
 import type { Highline } from "~/hooks/use-highline";
+import { HighlineImage } from "./highline-image";
 
 export const HighlineCard: React.FC<{ item: Highline }> = ({ item }) => {
   return (
@@ -16,12 +16,8 @@ export const HighlineCard: React.FC<{ item: Highline }> = ({ item }) => {
           entering={FadeInRight}
           exiting={FadeOutLeft}
         >
-          <Animated.Image
-            source={{
-              uri: supabase.storage
-                .from("images")
-                .getPublicUrl(item.cover_image).data.publicUrl,
-            }}
+          <HighlineImage
+            coverImageId={item.cover_image}
             className="w-full h-80 rounded-xl bg-muted"
           />
           <View className="absolute right-7 top-7">

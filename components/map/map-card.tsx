@@ -1,16 +1,16 @@
 import React from "react";
-import { View, Pressable, Image, TouchableOpacity } from "react-native";
+import { View, Pressable, TouchableOpacity } from "react-native";
 import Animated, { FadeIn, FadeOut, Easing } from "react-native-reanimated";
 import { ScrollView } from "react-native-gesture-handler";
 import { Link } from "expo-router";
 
 import type { Highline } from "~/hooks/use-highline";
 import { cn } from "~/lib/utils";
-import { supabase } from "~/lib/supabase";
 import { LucideIcon } from "~/lib/icons/lucide-icon";
 
 import { H4, Small } from "~/components/ui/typography";
 import { Text } from "~/components/ui/text";
+import { HighlineImage } from "../highline/highline-image";
 
 interface HighlineCardProps {
   highline: Highline;
@@ -27,21 +27,17 @@ const HighlineCard: React.FC<HighlineCardProps> = ({
     <Pressable
       onPress={() => onPress(highline)}
       className={cn(
-        "inline-block rounded-lg border border-border bg-accent text-accent-foreground shadow shadow-foreground/10",
+        "inline-block rounded-lg border border-border bg-background shadow shadow-foreground/10",
         "h-32 min-w-[24rem]",
         isFocused ? "border border-blue-500 dark:border-blue-600" : "border-0"
       )}
     >
       <View className="flex flex-row h-full gap-2 p-0">
         <View className="relative h-full w-20 rounded-l-md bg-muted-foreground">
-          <Image
-            source={{
-              uri: supabase.storage
-                .from("images")
-                .getPublicUrl(highline.cover_image).data.publicUrl,
-            }}
+          <HighlineImage
+            coverImageId={highline.cover_image}
             className="w-full h-full rounded-l-md"
-            resizeMode="cover"
+            dotSize="small"
           />
         </View>
         <View className="flex flex-1 py-2 pr-2">
