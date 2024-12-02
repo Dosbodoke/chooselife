@@ -173,7 +173,7 @@ const BottomActions = ({
       onLayout={onLayout}
       className="absolute bottom-0 flex flex-row gap-4 w-full bg-background px-2 pt-4 border-t border-muted"
       style={{
-        paddingBottom: insets.bottom,
+        paddingBottom: insets.bottom + 16,
         shadowColor: '#000',
         shadowOffset: {
           width: 0,
