@@ -9,6 +9,8 @@ import { Card, CardContent } from '~/components/ui/card';
 import { Text } from '~/components/ui/text';
 import { H1, Lead } from '~/components/ui/typography';
 
+import { HighlineHistory } from './history';
+
 export default function Info() {
   const { session } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,6 +36,7 @@ export default function Info() {
       </View>
 
       <HighlineDimensions height={highline.height} distance={highline.lenght} />
+      <HighlineHistory highline={highline} />
 
       <InfoItem label={'Fita principal'} value={highline.main_webbing} />
       <InfoItem label={'Fita backup'} value={highline.backup_webbing} />

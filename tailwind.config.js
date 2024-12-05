@@ -7,6 +7,12 @@ module.exports = {
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
+      backgroundImage: {
+        'dotted-pattern': 'radial-gradient(circle, gray 1px, transparent 1px)',
+      },
+      backgroundSize: {
+        'dotted-pattern': '20px 20px',
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
