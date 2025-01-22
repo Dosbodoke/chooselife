@@ -28,15 +28,15 @@ export const HighlineCard: React.FC<{ item: Highline }> = ({ item }) => {
           <View className="flex flex-row items-center gap-4 text-sm text-muted-foreground">
             <View className="flex flex-row gap-2 items-center">
               <LucideIcon
-                name="UnfoldVertical"
-                className="size-4 mr-2 text-primary opacity-70"
+                name="MoveVertical"
+                className="size-4 text-primary opacity-70"
               />
               <Text className="text-muted-foreground">{item.height}m</Text>
             </View>
             <View className="flex flex-row gap-2 items-center">
               <LucideIcon
-                name="UnfoldHorizontal"
-                className="size-4 mr-2 text-primary opacity-70"
+                name="MoveHorizontal"
+                className="size-4 text-primary opacity-70"
               />
               <Text className="text-muted-foreground">{item.lenght}m</Text>
             </View>
