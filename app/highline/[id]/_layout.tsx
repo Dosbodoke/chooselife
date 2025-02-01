@@ -19,6 +19,7 @@ export default function HighlineLayout() {
       <Stack.Screen
         name="rig"
         options={{
+          headerShown: false,
           presentation: 'modal',
           title: 'Montar highline',
         }}

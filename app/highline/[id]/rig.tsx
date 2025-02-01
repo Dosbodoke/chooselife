@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React, {
   useCallback,
   useContext,
@@ -25,6 +25,7 @@ import Animated, {
   FadeOutLeft,
   LinearTransition,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
 import { useHighline } from '~/hooks/use-highline';
@@ -129,6 +130,7 @@ export function useRiggingForm() {
 }
 
 export default function HighlineSetup() {
+  const router = useRouter();
   const { id: highlineId } = useLocalSearchParams<{ id: string }>();
   const { highline } = useHighline({ id: highlineId });
   if (!highline) return null;
@@ -349,7 +351,7 @@ export default function HighlineSetup() {
 
   if (mutation.isSuccess) {
     return (
-      <View className="items-center justify-center gap-8 flex-1">
+      <SafeAreaView className="items-center justify-center gap-8 flex-1">
         <View>
           <H1 className="text-center">BOA CHOOSEN</H1>
           <Text className="text-3xl text-center">🆑 🆑 🆑 🆑 🆑</Text>
@@ -373,7 +375,7 @@ export default function HighlineSetup() {
             <Text>Ver o Highline</Text>
           </Button>
         </Link>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -388,7 +390,7 @@ export default function HighlineSetup() {
         setFocusedWebbing,
       }}
     >
-      <View className="flex-1">
+      <SafeAreaView className="flex-1">
         {/* Parent takes full screen height */}
         <KeyboardAwareScrollView
           contentContainerClassName="flex-grow px-6 pt-8 gap-4"
@@ -414,11 +416,12 @@ export default function HighlineSetup() {
               selectedIndex={step}
               onIndexChange={handleNextStep}
               onFinish={form.handleSubmit(handleSave)}
+              goBack={router.back}
               isLoading={mutation.isPending}
             />
           </View>
         </KeyboardAwareScrollView>
-      </View>
+      </SafeAreaView>
     </RiggingFormContext.Provider>
   );
 }
