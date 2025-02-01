@@ -150,6 +150,7 @@ export default function HighlineSetup() {
             length: highline?.length.toString(),
             leftLoop: true,
             rightLoop: true,
+            tagName: getWebbingName(null),
           },
         ],
         backup: [
@@ -157,6 +158,7 @@ export default function HighlineSetup() {
             length: highline?.length.toString(),
             leftLoop: true,
             rightLoop: true,
+            tagName: getWebbingName(null),
           },
         ],
       },
