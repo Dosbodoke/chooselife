@@ -7,7 +7,6 @@ import { numberAsString } from '~/utils/zod';
 import { Switch } from '~/components/ui/switch';
 
 export const webbingSchema = z.object({
-  model: z.string().optional(),
   length: numberAsString({
     acceptZero: false,
     positiveOnly: true,

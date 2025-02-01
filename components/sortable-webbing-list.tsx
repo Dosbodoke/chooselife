@@ -395,7 +395,7 @@ const WebRow: React.FC<{
       >
         <View className="flex-row gap-1">
           <Text className="text-muted-foreground">{`#${POSITION}`}</Text>
-          <Text>{webbing.model || `Fita não registrada`}</Text>
+          <Text>{webbing.tagName}</Text>
         </View>
         <View className="flex-row gap-1 items-center">
           <LucideIcon

@@ -28,13 +28,13 @@ import Animated, {
 import { z } from 'zod';
 
 import { useHighline } from '~/hooks/use-highline';
-import { useWebbings } from '~/hooks/useWebbings';
+import { useWebbings, type WebbingWithModel } from '~/hooks/useWebbings';
 import HighlineRigIllustration from '~/lib/icons/highline-rig';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
-import type { Tables, TablesInsert } from '~/utils/database.types';
+import type { TablesInsert } from '~/utils/database.types';
 
 import SuccessAnimation from '~/components/animations/success-animation';
 import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
@@ -61,11 +61,7 @@ import {
 import { Separator } from '~/components/ui/separator';
 import { Text } from '~/components/ui/text';
 import { H1, H3, Muted } from '~/components/ui/typography';
-import {
-  WebbingInput,
-  webbingSchema,
-  type WebbingSchema,
-} from '~/components/webbing-input';
+import { WebbingInput, webbingSchema } from '~/components/webbing-input';
 import {
   WebbingSetup,
   type WebbingValidationErrors,
@@ -82,6 +78,7 @@ const AnimatedCard = Animated.createAnimatedComponent(Card);
 const webbingSchemaWithPreffiled = webbingSchema.extend({
   // Id of the webbing from "webbing" table
   webbingId: z.string().optional(),
+  tagName: z.string(),
 });
 const rigSchema = z.object({
   webbing: z.object({
@@ -182,7 +179,7 @@ export default function HighlineSetup() {
         .select(
           `
             *,
-            rig_setup_webbing ( * )
+            rig_setup_webbing ( *, webbing_id ( *, model ( * ) ) )
           `,
         )
         .eq('highline_id', highlineId)
@@ -198,24 +195,24 @@ export default function HighlineSetup() {
   useEffect(
     function hydrateForm() {
       if (savedRig) {
-        const main = savedRig.rig_setup_webbing
+        const main: WebbingSchemaWithPreffiled[] = savedRig.rig_setup_webbing
           .filter((row) => row.webbing_type === 'main')
           .map((row) => ({
             length: row.length.toString(),
             leftLoop: row.left_loop,
             rightLoop: row.right_loop,
             webbingId: row.webbing_id ? row.webbing_id.toString() : undefined,
-            model: undefined,
+            tagName: getWebbingName(row.webbing_id),
           }));
 
-        const backup = savedRig.rig_setup_webbing
+        const backup: WebbingSchemaWithPreffiled[] = savedRig.rig_setup_webbing
           .filter((row) => row.webbing_type === 'backup')
           .map((row) => ({
             length: row.length.toString(),
             leftLoop: row.left_loop,
             rightLoop: row.right_loop,
             webbingId: row.webbing_id ? row.webbing_id.toString() : undefined,
-            model: undefined,
+            tagName: getWebbingName(row.webbing_id),
           }));
 
         // Reset the form with the saved values.
@@ -474,11 +471,11 @@ const Equipments: React.FC<{
     useState<WebbingValidationErrors>({});
 
   const handleNewSection = useCallback((type: WebType) => {
-    const webbing: WebbingSchema = {
+    const webbing: WebbingSchemaWithPreffiled = {
       length: '50',
       leftLoop: false,
       rightLoop: false,
-      model: '',
+      tagName: getWebbingName(null),
     };
 
     if (type === 'main') {
@@ -615,7 +612,7 @@ const WebForm: React.FC = () => {
   );
 
   const handleSelectWebbing = useCallback(
-    (webbing: Tables<'webbing'> | null) => {
+    (webbing: WebbingWithModel[number] | null) => {
       if (!focusedWebbing) return;
 
       const path =
@@ -630,6 +627,7 @@ const WebForm: React.FC = () => {
               leftLoop: webbing.left_loop,
               rightLoop: webbing.right_loop,
               length: webbing.length.toString(),
+              tagName: getWebbingName(webbing),
             }
           : { webbingId: undefined }),
       };
@@ -688,26 +686,43 @@ const WebForm: React.FC = () => {
 
 const SelectMyWebbing: React.FC<{
   webbing: WebbingSchemaWithPreffiled;
-  onSelectWebbing: (webbing: Tables<'webbing'> | null) => void;
+  onSelectWebbing: (webbing: WebbingWithModel[number] | null) => void;
 }> = ({ webbing, onSelectWebbing }) => {
   const id = useId();
   const [triggerWidth, setTriggerWidth] = useState<number>(0);
-
   const { data, isPending } = useWebbings();
 
-  function getDefaultValue(): Option {
+  // Access the current rigging form values
+  const { main, backup, focusedWebbing } = useRiggingForm();
+
+  // Build a set of ID's of webbings that are in use on the current form
+  const usedWebbingIds = new Set<string>();
+  main.fields.forEach((item, index) => {
+    const isSelected =
+      focusedWebbing?.type === 'main' && focusedWebbing.index === index;
+    if (!isSelected && item.webbingId) {
+      usedWebbingIds.add(item.webbingId);
+    }
+  });
+  backup.fields.forEach((item, index) => {
+    const isSelected =
+      focusedWebbing?.type === 'main' && focusedWebbing.index === index;
+    if (!isSelected && item.webbingId) {
+      usedWebbingIds.add(item.webbingId);
+    }
+  });
+
+  const getDefaultValue = (): Option | undefined => {
+    if (!webbing.webbingId) return undefined;
     const selectedWebbingData = data?.find(
       (web) => web.id.toString() === webbing.webbingId,
     );
-    if (!selectedWebbingData) return;
+    if (!selectedWebbingData) return undefined;
     return {
       value: selectedWebbingData.id.toString(),
-      label:
-        selectedWebbingData.model?.name ||
-        selectedWebbingData.tag_name ||
-        `Fita ${selectedWebbingData.id.toString()}`,
+      label: getWebbingName(selectedWebbingData),
     };
-  }
+  };
 
   return (
     <View className="gap-2 w-full">
@@ -719,11 +734,15 @@ const SelectMyWebbing: React.FC<{
         <SelectTriggerSkeleton />
       ) : (
         <Select
-          defaultValue={webbing.webbingId ? getDefaultValue() : undefined}
+          defaultValue={getDefaultValue()}
           onValueChange={(opt) => {
             if (opt) {
-              const web = data?.find((web) => web.id.toString() === opt.value);
-              if (web) onSelectWebbing({ ...web });
+              const selectedWeb = data?.find(
+                (web) => web.id.toString() === opt.value,
+              );
+              if (selectedWeb) onSelectWebbing(selectedWeb);
+            } else {
+              onSelectWebbing(null);
             }
           }}
         >
@@ -747,19 +766,23 @@ const SelectMyWebbing: React.FC<{
               contentContainerStyle={{ flexGrow: 1 }}
               keyboardShouldPersistTaps="handled"
             >
-              {data?.map((webbing) => (
-                <SelectItem
-                  key={webbing.id}
-                  value={webbing.id.toString()}
-                  label={
-                    webbing.model?.name ||
-                    webbing.tag_name ||
-                    `Fita ${webbing.id.toString()}`
-                  }
-                />
-              ))}
+              {data?.map((item) => {
+                const itemId = item.id.toString();
+                const isUsed = usedWebbingIds.has(itemId) || item.isUsed;
+                // Append a note to the label if this webbing is already in use.
+                const label =
+                  getWebbingName(item) + (isUsed ? ' (em uso)' : '');
+                return (
+                  <SelectItem
+                    key={item.id}
+                    value={itemId}
+                    label={label}
+                    disabled={isUsed}
+                  />
+                );
+              })}
               <Separator />
-              <Button variant="ghost">
+              <Button variant="ghost" onPress={() => onSelectWebbing(null)}>
                 <Text>limpar</Text>
               </Button>
             </ScrollView>
@@ -769,3 +792,9 @@ const SelectMyWebbing: React.FC<{
     </View>
   );
 };
+
+function getWebbingName(
+  webbing: Omit<WebbingWithModel[number], 'rig_setup_webbing'> | null,
+) {
+  return webbing?.model?.name || webbing?.tag_name || `Fita não registrada`;
+}

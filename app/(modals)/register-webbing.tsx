@@ -15,6 +15,7 @@ import { View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
 import RegisterWebbingIllustration from '~/lib/icons/register-webbing';
@@ -33,18 +34,19 @@ import {
   SelectValue,
 } from '~/components/ui/select';
 import { H3, Muted } from '~/components/ui/typography';
-import {
-  WebbingInput,
-  webbingSchema,
-  type WebbingSchema,
-} from '~/components/webbing-input';
+import { WebbingInput, webbingSchema } from '~/components/webbing-input';
+
+const webbingSchemaWithModel = webbingSchema.extend({
+  model: z.string().optional(),
+});
+type WebbingSchemaWithModel = z.infer<typeof webbingSchemaWithModel>;
 
 export default function RegisterWebbing() {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const router = useRouter();
-  const form = useForm<WebbingSchema>({
-    resolver: zodResolver(webbingSchema),
+  const form = useForm<WebbingSchemaWithModel>({
+    resolver: zodResolver(webbingSchemaWithModel),
     mode: 'onChange',
     defaultValues: {
       model: '',
@@ -55,7 +57,7 @@ export default function RegisterWebbing() {
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: WebbingSchema) => {
+    mutationFn: async (data: WebbingSchemaWithModel) => {
       if (!profile) throw new Error('User not authenticated');
 
       const { error } = await supabase
@@ -76,11 +78,11 @@ export default function RegisterWebbing() {
     },
   });
 
-  const onSubmit: SubmitHandler<WebbingSchema> = async (data) => {
+  const onSubmit: SubmitHandler<WebbingSchemaWithModel> = async (data) => {
     await mutation.mutateAsync(data);
   };
 
-  const onError = (e: FieldErrors<WebbingSchema>) => {
+  const onError = (e: FieldErrors<WebbingSchemaWithModel>) => {
     console.log({ e });
   };
 
@@ -108,9 +110,9 @@ export default function RegisterWebbing() {
   );
 }
 
-const PrefillForm: React.FC<{ form: UseFormReturn<WebbingSchema> }> = ({
-  form,
-}) => {
+const PrefillForm: React.FC<{
+  form: UseFormReturn<WebbingSchemaWithModel>;
+}> = ({ form }) => {
   const [leftLoop, rightLoop, length] = useWatch({
     control: form.control,
     name: ['leftLoop', 'rightLoop', 'length'],
@@ -146,7 +148,7 @@ const PrefillForm: React.FC<{ form: UseFormReturn<WebbingSchema> }> = ({
   );
 };
 
-const SelectWebbing: React.FC<{ control: Control<WebbingSchema> }> = ({
+const SelectWebbing: React.FC<{ control: Control<WebbingSchemaWithModel> }> = ({
   control,
 }) => {
   const id = useId();
