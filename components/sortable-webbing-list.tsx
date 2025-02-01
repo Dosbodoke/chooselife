@@ -1,11 +1,6 @@
 // The drag & drop list was implemented using the following article as reference
 // https://medium.com/@varunkukade999/part-1-react-native-drag-drop-list-60-fps-from-scratch-using-reanimated-3-rngh-63c934189bfe
 
-import type {
-  FocusedWebbing,
-  WebbingWithId,
-  WebType,
-} from '~/app/highline/[id]/rig';
 import { useEffect } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -25,6 +20,11 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 
+import type {
+  FocusedWebbing,
+  WebbingWithId,
+  WebType,
+} from '~/context/rig-form';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
 

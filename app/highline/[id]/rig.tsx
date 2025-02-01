@@ -1,22 +1,12 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useId,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useCallback, useId, useMemo, useState } from 'react';
+import { Controller, type SubmitHandler } from 'react-hook-form';
 import {
-  Controller,
-  SubmitHandler,
-  useFieldArray,
-  useForm,
-  UseFormReturn,
-} from 'react-hook-form';
-import { ScrollView, TouchableOpacity, View } from 'react-native';
+  ActivityIndicator,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import Animated, {
   FadeInDown,
@@ -25,17 +15,20 @@ import Animated, {
   FadeOutLeft,
   LinearTransition,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { z } from 'zod';
 
-import { useHighline } from '~/hooks/use-highline';
+import {
+  getWebbingName,
+  RigFormProvider,
+  RigSchema,
+  useRiggingForm,
+  type WebbingSchemaWithPreffiled,
+  type WebType,
+} from '~/context/rig-form';
 import { useWebbings, type WebbingWithModel } from '~/hooks/useWebbings';
 import HighlineRigIllustration from '~/lib/icons/highline-rig';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
-import { supabase } from '~/lib/supabase';
 import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
-import type { TablesInsert } from '~/utils/database.types';
 
 import SuccessAnimation from '~/components/animations/success-animation';
 import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
@@ -62,274 +55,38 @@ import {
 import { Separator } from '~/components/ui/separator';
 import { Text } from '~/components/ui/text';
 import { H1, H3, Muted } from '~/components/ui/typography';
-import { WebbingInput, webbingSchema } from '~/components/webbing-input';
+import { WebbingInput } from '~/components/webbing-input';
 import {
   WebbingSetup,
   type WebbingValidationErrors,
 } from '~/components/webbing-setup';
 
 const DAMPING = 14;
-
 export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
 export const _exitingAnimation = FadeOut.springify().damping(DAMPING);
 export const _enteringAnimation = FadeInDown.springify().damping(DAMPING);
+
 const AnimatedCard = Animated.createAnimatedComponent(Card);
 
-// SCHEMA related schema and types
-const webbingSchemaWithPreffiled = webbingSchema.extend({
-  // Id of the webbing from "webbing" table
-  webbingId: z.string().optional(),
-  tagName: z.string(),
-});
-const rigSchema = z.object({
-  webbing: z.object({
-    main: z.array(webbingSchemaWithPreffiled),
-    backup: z.array(webbingSchemaWithPreffiled),
-  }),
-  rigDate: z.date(),
-});
-export type RigSchema = z.infer<typeof rigSchema>;
-type WebbingSchemaWithPreffiled = RigSchema['webbing']['main'][number];
-// React hook form `useFieldArray` add's id to each item in the array
-export type WebbingWithId = WebbingSchemaWithPreffiled & {
-  id: string;
-};
+export default function Screen() {
+  const { id: highlineId } = useLocalSearchParams<{ id: string }>();
 
-export type WebType = 'main' | 'backup';
-export type FocusedWebbing = {
-  type: WebType;
-  index: number;
-} | null;
-
-type SectionContext = {
-  fields: WebbingWithId[];
-  append: (webbing: WebbingSchemaWithPreffiled) => void;
-  update: (index: number, webbing: WebbingSchemaWithPreffiled) => void;
-  remove: (index: number) => void;
-  swap: (indexA: number, indexB: number) => void;
-};
-type RiggingFormContextType = {
-  form: UseFormReturn<RigSchema>;
-  main: SectionContext;
-  backup: SectionContext;
-  focusedWebbing: FocusedWebbing;
-  highlineLength: number;
-  setFocusedWebbing: React.Dispatch<React.SetStateAction<FocusedWebbing>>;
-};
-
-const RiggingFormContext = React.createContext<RiggingFormContextType | null>(
-  null,
-);
-
-export function useRiggingForm() {
-  const context = useContext(RiggingFormContext);
-  if (!context) {
-    throw new Error('useRiggingForm must be used within a RiggingFormProvider');
-  }
-  return context;
+  return (
+    <RigFormProvider highlineID={highlineId}>
+      <HighlineSetup />
+    </RigFormProvider>
+  );
 }
 
-export default function HighlineSetup() {
+export const HighlineSetup: React.FC = () => {
+  const { form, mutation, highline, setupIsPending } = useRiggingForm();
   const router = useRouter();
-  const { id: highlineId } = useLocalSearchParams<{ id: string }>();
-  const { highline } = useHighline({ id: highlineId });
-  if (!highline) return null;
 
   const [step, setStep] = useState(0);
-  const [focusedWebbing, setFocusedWebbing] = useState<FocusedWebbing | null>(
-    null,
-  );
-
-  const form = useForm<RigSchema>({
-    resolver: zodResolver(rigSchema),
-    mode: 'onChange',
-    defaultValues: {
-      webbing: {
-        main: [
-          {
-            length: highline?.length.toString(),
-            leftLoop: true,
-            rightLoop: true,
-            tagName: getWebbingName(null),
-          },
-        ],
-        backup: [
-          {
-            length: highline?.length.toString(),
-            leftLoop: true,
-            rightLoop: true,
-            tagName: getWebbingName(null),
-          },
-        ],
-      },
-      rigDate: new Date(),
-    },
-  });
-
-  // ---------------------------
-  // 1. Fetch saved rig setup data
-  // ---------------------------
-  // This query fetches the rig setup row for this highline along with its related webbing rows.
-  const {
-    data: savedRig,
-    isPending: isRigPending,
-    error: rigError,
-  } = useQuery({
-    queryKey: ['rigSetup', highlineId],
-    queryFn: async () => {
-      // We assume that a relationship exists between rig_setup and rig_setup_webbing
-      const { data, error } = await supabase
-        .from('rig_setup')
-        .select(
-          `
-            *,
-            rig_setup_webbing ( *, webbing_id ( *, model ( * ) ) )
-          `,
-        )
-        .eq('highline_id', highlineId)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // ---------------------------
-  // 2. Hydrate the form with the saved data
-  // ---------------------------
-  useEffect(
-    function hydrateForm() {
-      if (savedRig) {
-        const main: WebbingSchemaWithPreffiled[] = savedRig.rig_setup_webbing
-          .filter((row) => row.webbing_type === 'main')
-          .map((row) => ({
-            length: row.length.toString(),
-            leftLoop: row.left_loop,
-            rightLoop: row.right_loop,
-            webbingId: row.webbing_id ? row.webbing_id.toString() : undefined,
-            tagName: getWebbingName(row.webbing_id),
-          }));
-
-        const backup: WebbingSchemaWithPreffiled[] = savedRig.rig_setup_webbing
-          .filter((row) => row.webbing_type === 'backup')
-          .map((row) => ({
-            length: row.length.toString(),
-            leftLoop: row.left_loop,
-            rightLoop: row.right_loop,
-            webbingId: row.webbing_id ? row.webbing_id.toString() : undefined,
-            tagName: getWebbingName(row.webbing_id),
-          }));
-
-        // Reset the form with the saved values.
-        form.reset({
-          rigDate: new Date(savedRig.rig_date),
-          webbing: { main, backup },
-        });
-      }
-    },
-    [savedRig, form],
-  );
-
-  const mutation = useMutation({
-    mutationFn: async (data: RigSchema) => {
-      let setupId: number;
-
-      // Check if a saved rig setup already exists
-      if (savedRig) {
-        setupId = savedRig.id;
-
-        // Delete existing webbing rows associated with this rig setup.
-        // This way we avoid having to individually update or delete each row.
-        const { error: deleteError } = await supabase
-          .from('rig_setup_webbing')
-          .delete()
-          .eq('setup_id', setupId);
-
-        if (deleteError) {
-          throw new Error(deleteError.message);
-        }
-      } else {
-        // No rig exists yet, so insert a new rig_setup row.
-        const rigSetupInsert = {
-          highline_id: highlineId,
-          rig_date: data.rigDate.toISOString(), // converting Date to string
-          riggers: [],
-          unrigged_at: null,
-        };
-
-        const { data: rigSetupData, error: rigSetupError } = await supabase
-          .from('rig_setup')
-          .insert(rigSetupInsert)
-          .select()
-          .single();
-
-        if (rigSetupError || !rigSetupData) {
-          throw new Error(
-            rigSetupError?.message || 'Failed to insert rig setup',
-          );
-        }
-
-        setupId = rigSetupData.id;
-      }
-
-      // Prepare webbing rows for insertion into `rig_setup_webbing`
-      // We assume that the types for rig_setup_webbing rows have been imported
-      const webbingRows: TablesInsert<'rig_setup_webbing'>[] = [];
-
-      // Process the "main" webbing items
-      data.webbing.main.forEach((item) => {
-        webbingRows.push({
-          left_loop: item.leftLoop,
-          length: Number(item.length), // convert the string to a number
-          right_loop: item.rightLoop,
-          setup_id: setupId,
-          webbing_id: item.webbingId ? Number(item.webbingId) : null,
-          webbing_type: 'main',
-        });
-      });
-
-      // Process the "backup" webbing items
-      data.webbing.backup.forEach((item) => {
-        webbingRows.push({
-          left_loop: item.leftLoop,
-          length: Number(item.length),
-          right_loop: item.rightLoop,
-          setup_id: setupId,
-          webbing_id: item.webbingId ? Number(item.webbingId) : null,
-          webbing_type: 'backup',
-        });
-      });
-
-      // Insert the new webbing rows for the current setup
-      const { data: webbingData, error: webbingError } = await supabase
-        .from('rig_setup_webbing')
-        .insert(webbingRows)
-        .select();
-
-      if (webbingError) {
-        throw new Error(webbingError.message);
-      }
-
-      return { rigSetup: setupId, webbing: webbingData };
-    },
-    onSuccess: (result) => {
-      console.log('Rig setup saved successfully:', result);
-    },
-    onError: (error) => {
-      console.error('Error saving rig setup:', error);
-    },
-  });
-
-  // Implement handleSave to call the mutation.
-  const handleSave: SubmitHandler<RigSchema> = async (data) => {
-    await mutation.mutateAsync(data);
-  };
 
   const steps = useMemo(
-    () => [
-      <DateForm key="DateForm" form={form} />,
-      <Equipments key="Equipments" form={form} />,
-    ],
-    [form],
+    () => [<DateForm key="DateForm" />, <Equipments key="Equipments" />],
+    [],
   );
 
   const handleNextStep = async (newStep: number) => {
@@ -345,15 +102,14 @@ export default function HighlineSetup() {
     }
   };
 
-  const main = useFieldArray({ control: form.control, name: 'webbing.main' });
-  const backup = useFieldArray({
-    control: form.control,
-    name: 'webbing.backup',
-  });
+  // Implement handleSave to call the mutation.
+  const handleSave: SubmitHandler<RigSchema> = async (data) => {
+    await mutation.mutateAsync(data);
+  };
 
   if (mutation.isSuccess) {
     return (
-      <SafeAreaView className="items-center justify-center gap-8 flex-1">
+      <View className="h-full items-center justify-center gap-8">
         <View>
           <H1 className="text-center">BOA CHOOSEN</H1>
           <Text className="text-3xl text-center">🆑 🆑 🆑 🆑 🆑</Text>
@@ -363,8 +119,8 @@ export default function HighlineSetup() {
         </View>
         <Text className="text-center w-3/4">
           A montagem está planejada para{' '}
-          {form.getValues('rigDate').toDateString()}, você pode voltar e fazer
-          modificações quando precisar.
+          {form.getValues('rigDate').toLocaleDateString('pt-BR')}, você pode
+          voltar e fazer modificações quando precisar.
         </Text>
         <Link
           href={{
@@ -377,58 +133,50 @@ export default function HighlineSetup() {
             <Text>Ver o Highline</Text>
           </Button>
         </Link>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <RiggingFormContext.Provider
-      value={{
-        form,
-        main: { ...main, fields: main.fields },
-        backup: { ...backup, fields: backup.fields },
-        focusedWebbing,
-        highlineLength: highline.length,
-        setFocusedWebbing,
-      }}
+    <KeyboardAwareScrollView
+      /* Parent takes full screen height */
+      contentContainerClassName="flex-grow px-6 pt-8 gap-4"
+      keyboardShouldPersistTaps="handled"
     >
-      <SafeAreaView className="flex-1">
-        {/* Parent takes full screen height */}
-        <KeyboardAwareScrollView
-          contentContainerClassName="flex-grow px-6 pt-8 gap-4"
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Step content - sizes naturally */}
-          <Animated.View
-            className="gap-4 items-center"
-            entering={FadeInRight}
-            exiting={FadeOutLeft}
-          >
-            {steps[step]}
-          </Animated.View>
+      <Animated.View
+        /* Step content - sizes naturally */
+        className="gap-4 items-center"
+        entering={FadeInRight}
+        exiting={FadeOutLeft}
+      >
+        {steps[step]}
+      </Animated.View>
 
-          {/* Spacer to push paginator down */}
-          <View className="flex-grow" />
+      <View
+        className="flex-grow"
+        /* Spacer to push paginator down */
+      />
 
-          {/* Paginator/Navigator - stays at bottom when content is short */}
-          <View className="gap-4 pb-8">
-            <OnboardPaginator total={steps.length} selectedIndex={step} />
-            <OnboardNavigator
-              total={steps.length}
-              selectedIndex={step}
-              onIndexChange={handleNextStep}
-              onFinish={form.handleSubmit(handleSave)}
-              goBack={router.back}
-              isLoading={mutation.isPending}
-            />
-          </View>
-        </KeyboardAwareScrollView>
-      </SafeAreaView>
-    </RiggingFormContext.Provider>
+      <View
+        className="gap-4 pb-8"
+        /* Paginator/Navigator - stays at bottom when content is short */
+      >
+        <OnboardPaginator total={steps.length} selectedIndex={step} />
+        <OnboardNavigator
+          total={steps.length}
+          selectedIndex={step}
+          onIndexChange={handleNextStep}
+          onFinish={form.handleSubmit(handleSave)}
+          goBack={router.back}
+          isLoading={mutation.isPending || setupIsPending}
+        />
+      </View>
+    </KeyboardAwareScrollView>
   );
-}
+};
 
-const DateForm: React.FC<{ form: UseFormReturn<RigSchema> }> = ({ form }) => {
+const DateForm: React.FC = () => {
+  const { form, setupIsPending } = useRiggingForm();
   const colorScheme = useColorScheme();
 
   return (
@@ -438,62 +186,51 @@ const DateForm: React.FC<{ form: UseFormReturn<RigSchema> }> = ({ form }) => {
         className="w-full h-auto"
       />
 
-      <View>
-        <H3 className="text-center">Primeiro, escolha uma data</H3>
-        <Muted className="text-center">
-          A data em que a missão irá acontecer
-        </Muted>
-      </View>
+      {setupIsPending ? (
+        <ActivityIndicator size="large" />
+      ) : (
+        <>
+          <View>
+            <H3 className="text-center">Primeiro, escolha uma data</H3>
+            <Muted className="text-center">
+              A data em que a missão irá acontecer
+            </Muted>
+          </View>
 
-      <Controller
-        control={form.control}
-        name="rigDate"
-        render={({ field: { value } }) => (
-          <DatePicker
-            mode="date"
-            locale="pt-BR"
-            date={value}
-            minimumDate={new Date()}
-            onConfirm={(date) => {
-              form.setValue('rigDate', date);
-            }}
-            timeZoneOffsetInMinutes={0} // https://github.com/henninghall/react-native-date-picker/issues/841
-            theme={colorScheme.colorScheme}
+          <Controller
+            control={form.control}
+            name="rigDate"
+            render={({ field: { value, onChange } }) => (
+              <DatePicker
+                mode="date"
+                locale="pt-BR"
+                date={value}
+                minimumDate={new Date()}
+                onDateChange={(date) => onChange(date)}
+                timeZoneOffsetInMinutes={0} // https://github.com/henninghall/react-native-date-picker/issues/841
+                theme={colorScheme.colorScheme}
+              />
+            )}
           />
-        )}
-      />
+        </>
+      )}
     </>
   );
 };
 
-const Equipments: React.FC<{
-  form: UseFormReturn<RigSchema>;
-}> = ({ form }) => {
-  const { main, backup, focusedWebbing, highlineLength, setFocusedWebbing } =
-    useRiggingForm();
+const Equipments: React.FC = () => {
+  const {
+    form,
+    main,
+    backup,
+    focusedWebbing,
+    highlineLength,
+    setFocusedWebbing,
+    handleNewSection,
+  } = useRiggingForm();
 
   const [webbingValidationErrors, setWebbingValidationErrors] =
     useState<WebbingValidationErrors>({});
-
-  const handleNewSection = useCallback((type: WebType) => {
-    const webbing: WebbingSchemaWithPreffiled = {
-      length: '50',
-      leftLoop: false,
-      rightLoop: false,
-      tagName: getWebbingName(null),
-    };
-
-    if (type === 'main') {
-      main.append(webbing);
-    } else if (type === 'backup') {
-      backup.append(webbing);
-    }
-
-    setFocusedWebbing({
-      type,
-      index: type === 'main' ? main.fields.length : backup.fields.length,
-    });
-  }, []);
 
   return (
     <AnimatedCard layout={_layoutAnimation} className="w-full">
@@ -797,9 +534,3 @@ const SelectMyWebbing: React.FC<{
     </View>
   );
 };
-
-function getWebbingName(
-  webbing: Omit<WebbingWithModel[number], 'rig_setup_webbing'> | null,
-) {
-  return webbing?.model?.name || webbing?.tag_name || `Fita não registrada`;
-}
