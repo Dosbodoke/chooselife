@@ -59,7 +59,7 @@ const HighlineCard: React.FC<HighlineCardProps> = ({
                 className="size-4 mr-2 text-primary opacity-70"
               />
               <Small className="text-xs text-muted-foreground">
-                {highline.lenght}m
+                {highline.length}m
               </Small>
             </View>
           </View>

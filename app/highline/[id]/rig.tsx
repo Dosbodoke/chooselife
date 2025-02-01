@@ -1,62 +1,46 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Canvas,
-  Circle,
-  Group,
-  Line,
-  Path,
-  Skia,
-} from '@shopify/react-native-skia';
-import { PostgrestError } from '@supabase/supabase-js';
-import AsyncStorage from 'expo-sqlite/kv-store';
-import React, { useMemo, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Link, useLocalSearchParams } from 'expo-router';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+} from 'react';
 import {
   Controller,
   SubmitHandler,
+  useFieldArray,
   useForm,
   UseFormReturn,
 } from 'react-hook-form';
-import {
-  Image,
-  Keyboard,
-  Pressable,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
 import DatePicker from 'react-native-date-picker';
-import {
-  Gesture,
-  GestureDetector,
-  GestureEvent,
-  PanGestureHandler,
-  PinchGestureHandler,
-  PinchGestureHandlerEventPayload,
-} from 'react-native-gesture-handler';
 import Animated, {
-  FadeIn,
+  FadeInDown,
   FadeInRight,
   FadeOut,
   FadeOutLeft,
-  useAnimatedProps,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
+  LinearTransition,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
-import { useAuth } from '~/context/auth';
+import { useHighline } from '~/hooks/use-highline';
+import { useWebbings } from '~/hooks/useWebbings';
 import HighlineRigIllustration from '~/lib/icons/highline-rig';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
+import type { Tables, TablesInsert } from '~/utils/database.types';
 
+import SuccessAnimation from '~/components/animations/success-animation';
 import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
 import { OnboardNavigator, OnboardPaginator } from '~/components/onboard';
-import { SupabaseAvatar } from '~/components/ui/avatar';
+import { WebList } from '~/components/sortable-webbing-list';
+import { Button } from '~/components/ui/button';
 import {
   Card,
   CardContent,
@@ -64,99 +48,389 @@ import {
   CardHeader,
   CardTitle,
 } from '~/components/ui/card';
+import { Label } from '~/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectTriggerSkeleton,
+  SelectValue,
+  type Option,
+} from '~/components/ui/select';
+import { Separator } from '~/components/ui/separator';
 import { Text } from '~/components/ui/text';
-import { Textarea } from '~/components/ui/textarea';
-import { H2, H3, Muted } from '~/components/ui/typography';
+import { H1, H3, Muted } from '~/components/ui/typography';
+import {
+  WebbingInput,
+  webbingSchema,
+  type WebbingSchema,
+} from '~/components/webbing-input';
+import {
+  WebbingSetup,
+  type WebbingValidationErrors,
+} from '~/components/webbing-setup';
 
-const webbing = z.object({
-  length: z.string(),
-  left_loop: z.boolean(),
-  right_loop: z.boolean(),
+const DAMPING = 14;
+
+export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
+export const _exitingAnimation = FadeOut.springify().damping(DAMPING);
+export const _enteringAnimation = FadeInDown.springify().damping(DAMPING);
+const AnimatedCard = Animated.createAnimatedComponent(Card);
+
+// SCHEMA related schema and types
+const webbingSchemaWithPreffiled = webbingSchema.extend({
+  // Id of the webbing from "webbing" table
+  webbingId: z.string().optional(),
 });
-
-// Define Zod schema for form validation
-const profileSchema = z.object({
-  webbing: z
-    .object({
-      mainWebbing: z.array(webbing),
-      backupWebbing: z.array(webbing),
-    })
-    .refine(({ mainWebbing, backupWebbing }) => {}),
-  rig_date: z.date(),
+const rigSchema = z.object({
+  webbing: z.object({
+    main: z.array(webbingSchemaWithPreffiled),
+    backup: z.array(webbingSchemaWithPreffiled),
+  }),
+  rigDate: z.date(),
 });
+export type RigSchema = z.infer<typeof rigSchema>;
+type WebbingSchemaWithPreffiled = RigSchema['webbing']['main'][number];
+// React hook form `useFieldArray` add's id to each item in the array
+export type WebbingWithId = WebbingSchemaWithPreffiled & {
+  id: string;
+};
 
-// Define TypeScript type based on Zod schema
-type ProfileFormData = z.infer<typeof profileSchema>;
+export type WebType = 'main' | 'backup';
+export type FocusedWebbing = {
+  type: WebType;
+  index: number;
+} | null;
 
-export default function SetProfile() {
-  const { session, profile } = useAuth();
+type SectionContext = {
+  fields: WebbingWithId[];
+  append: (webbing: WebbingSchemaWithPreffiled) => void;
+  update: (index: number, webbing: WebbingSchemaWithPreffiled) => void;
+  remove: (index: number) => void;
+  swap: (indexA: number, indexB: number) => void;
+};
+type RiggingFormContextType = {
+  form: UseFormReturn<RigSchema>;
+  main: SectionContext;
+  backup: SectionContext;
+  focusedWebbing: FocusedWebbing;
+  highlineLength: number;
+  setFocusedWebbing: React.Dispatch<React.SetStateAction<FocusedWebbing>>;
+};
 
-  const [index, setIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const form = useForm<ProfileFormData>({
-    resolver: zodResolver(profileSchema),
+const RiggingFormContext = React.createContext<RiggingFormContextType | null>(
+  null,
+);
+
+export function useRiggingForm() {
+  const context = useContext(RiggingFormContext);
+  if (!context) {
+    throw new Error('useRiggingForm must be used within a RiggingFormProvider');
+  }
+  return context;
+}
+
+export default function HighlineSetup() {
+  const { id: highlineId } = useLocalSearchParams<{ id: string }>();
+  const { highline } = useHighline({ id: highlineId });
+  if (!highline) return null;
+
+  const [step, setStep] = useState(0);
+  const [focusedWebbing, setFocusedWebbing] = useState<FocusedWebbing | null>(
+    null,
+  );
+
+  const form = useForm<RigSchema>({
+    resolver: zodResolver(rigSchema),
     mode: 'onChange',
     defaultValues: {
       webbing: {
-        backupWebbing: [],
-        mainWebbing: [],
+        main: [
+          {
+            length: highline?.length.toString(),
+            leftLoop: true,
+            rightLoop: true,
+          },
+        ],
+        backup: [
+          {
+            length: highline?.length.toString(),
+            leftLoop: true,
+            rightLoop: true,
+          },
+        ],
       },
-      rig_date: new Date(),
+      rigDate: new Date(),
     },
   });
 
-  const handleSave: SubmitHandler<ProfileFormData> = async (data) => {
-    return;
+  // ---------------------------
+  // 1. Fetch saved rig setup data
+  // ---------------------------
+  // This query fetches the rig setup row for this highline along with its related webbing rows.
+  const {
+    data: savedRig,
+    isPending: isRigPending,
+    error: rigError,
+  } = useQuery({
+    queryKey: ['rigSetup', highlineId],
+    queryFn: async () => {
+      // We assume that a relationship exists between rig_setup and rig_setup_webbing
+      const { data, error } = await supabase
+        .from('rig_setup')
+        .select(
+          `
+            *,
+            rig_setup_webbing ( * )
+          `,
+        )
+        .eq('highline_id', highlineId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // ---------------------------
+  // 2. Hydrate the form with the saved data
+  // ---------------------------
+  useEffect(
+    function hydrateForm() {
+      if (savedRig) {
+        const main = savedRig.rig_setup_webbing
+          .filter((row) => row.webbing_type === 'main')
+          .map((row) => ({
+            length: row.length.toString(),
+            leftLoop: row.left_loop,
+            rightLoop: row.right_loop,
+            webbingId: row.webbing_id ? row.webbing_id.toString() : undefined,
+            model: undefined,
+          }));
+
+        const backup = savedRig.rig_setup_webbing
+          .filter((row) => row.webbing_type === 'backup')
+          .map((row) => ({
+            length: row.length.toString(),
+            leftLoop: row.left_loop,
+            rightLoop: row.right_loop,
+            webbingId: row.webbing_id ? row.webbing_id.toString() : undefined,
+            model: undefined,
+          }));
+
+        // Reset the form with the saved values.
+        form.reset({
+          rigDate: new Date(savedRig.rig_date),
+          webbing: { main, backup },
+        });
+      }
+    },
+    [savedRig, form],
+  );
+
+  const mutation = useMutation({
+    mutationFn: async (data: RigSchema) => {
+      let setupId: number;
+
+      // Check if a saved rig setup already exists
+      if (savedRig) {
+        setupId = savedRig.id;
+
+        // Delete existing webbing rows associated with this rig setup.
+        // This way we avoid having to individually update or delete each row.
+        const { error: deleteError } = await supabase
+          .from('rig_setup_webbing')
+          .delete()
+          .eq('setup_id', setupId);
+
+        if (deleteError) {
+          throw new Error(deleteError.message);
+        }
+      } else {
+        // No rig exists yet, so insert a new rig_setup row.
+        const rigSetupInsert = {
+          highline_id: highlineId,
+          rig_date: data.rigDate.toISOString(), // converting Date to string
+          riggers: [],
+          unrigged_at: null,
+        };
+
+        const { data: rigSetupData, error: rigSetupError } = await supabase
+          .from('rig_setup')
+          .insert(rigSetupInsert)
+          .select()
+          .single();
+
+        if (rigSetupError || !rigSetupData) {
+          throw new Error(
+            rigSetupError?.message || 'Failed to insert rig setup',
+          );
+        }
+
+        setupId = rigSetupData.id;
+      }
+
+      // Prepare webbing rows for insertion into `rig_setup_webbing`
+      // We assume that the types for rig_setup_webbing rows have been imported
+      const webbingRows: TablesInsert<'rig_setup_webbing'>[] = [];
+
+      // Process the "main" webbing items
+      data.webbing.main.forEach((item) => {
+        webbingRows.push({
+          left_loop: item.leftLoop,
+          length: Number(item.length), // convert the string to a number
+          right_loop: item.rightLoop,
+          setup_id: setupId,
+          webbing_id: item.webbingId ? Number(item.webbingId) : null,
+          webbing_type: 'main',
+        });
+      });
+
+      // Process the "backup" webbing items
+      data.webbing.backup.forEach((item) => {
+        webbingRows.push({
+          left_loop: item.leftLoop,
+          length: Number(item.length),
+          right_loop: item.rightLoop,
+          setup_id: setupId,
+          webbing_id: item.webbingId ? Number(item.webbingId) : null,
+          webbing_type: 'backup',
+        });
+      });
+
+      // Insert the new webbing rows for the current setup
+      const { data: webbingData, error: webbingError } = await supabase
+        .from('rig_setup_webbing')
+        .insert(webbingRows)
+        .select();
+
+      if (webbingError) {
+        throw new Error(webbingError.message);
+      }
+
+      return { rigSetup: setupId, webbing: webbingData };
+    },
+    onSuccess: (result) => {
+      console.log('Rig setup saved successfully:', result);
+    },
+    onError: (error) => {
+      console.error('Error saving rig setup:', error);
+    },
+  });
+
+  // Implement handleSave to call the mutation.
+  const handleSave: SubmitHandler<RigSchema> = async (data) => {
+    await mutation.mutateAsync(data);
   };
 
-  const steps = [
-    <DateForm key="DateForm" form={form} />,
-    <Equipments key="Equipments" form={form} />,
-  ];
+  const steps = useMemo(
+    () => [
+      <DateForm key="DateForm" form={form} />,
+      <Equipments key="Equipments" form={form} />,
+    ],
+    [form],
+  );
 
   const handleNextStep = async (newStep: number) => {
     // Move back
-    if (newStep >= 0 && newStep < index) {
-      setIndex((prevIndex) => prevIndex - 1);
+    if (newStep >= 0 && newStep < step) {
+      setStep((prevStep) => prevStep - 1);
       return;
     }
 
     // Move forward
-    if (index < steps.length - 1) {
-      setIndex((prevIndex) => prevIndex + 1);
+    if (step < steps.length - 1) {
+      setStep((prevStep) => prevStep + 1);
     }
   };
 
-  return (
-    <KeyboardAwareScrollView
-      contentContainerClassName="flex-1 px-6 py-8 gap-4"
-      keyboardShouldPersistTaps="handled"
-    >
-      {steps[index]}
+  const main = useFieldArray({ control: form.control, name: 'webbing.main' });
+  const backup = useFieldArray({
+    control: form.control,
+    name: 'webbing.backup',
+  });
 
-      <View className="gap-4">
-        <OnboardPaginator total={steps.length} selectedIndex={index} />
-        <OnboardNavigator
-          total={steps.length}
-          selectedIndex={index}
-          onIndexChange={handleNextStep}
-          onFinish={form.handleSubmit(handleSave)}
-          isLoading={isLoading}
-        />
+  if (mutation.isSuccess) {
+    return (
+      <View className="items-center justify-center gap-8 flex-1">
+        <View>
+          <H1 className="text-center">BOA CHOOSEN</H1>
+          <Text className="text-3xl text-center">🆑 🆑 🆑 🆑 🆑</Text>
+        </View>
+        <View className="h-52 items-center justify-center">
+          <SuccessAnimation />
+        </View>
+        <Text className="text-center w-3/4">
+          A montagem está planejada para{' '}
+          {form.getValues('rigDate').toDateString()}, você pode voltar e fazer
+          modificações quando precisar.
+        </Text>
+        <Link
+          href={{
+            pathname: '/highline/[id]',
+            params: { id: highline.id },
+          }}
+          asChild
+        >
+          <Button>
+            <Text>Ver o Highline</Text>
+          </Button>
+        </Link>
       </View>
-    </KeyboardAwareScrollView>
+    );
+  }
+
+  return (
+    <RiggingFormContext.Provider
+      value={{
+        form,
+        main: { ...main, fields: main.fields },
+        backup: { ...backup, fields: backup.fields },
+        focusedWebbing,
+        highlineLength: highline.length,
+        setFocusedWebbing,
+      }}
+    >
+      <View className="flex-1">
+        {/* Parent takes full screen height */}
+        <KeyboardAwareScrollView
+          contentContainerClassName="flex-grow px-6 pt-8 gap-4"
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Step content - sizes naturally */}
+          <Animated.View
+            className="gap-4 items-center"
+            entering={FadeInRight}
+            exiting={FadeOutLeft}
+          >
+            {steps[step]}
+          </Animated.View>
+
+          {/* Spacer to push paginator down */}
+          <View className="flex-grow" />
+
+          {/* Paginator/Navigator - stays at bottom when content is short */}
+          <View className="gap-4 pb-8">
+            <OnboardPaginator total={steps.length} selectedIndex={step} />
+            <OnboardNavigator
+              total={steps.length}
+              selectedIndex={step}
+              onIndexChange={handleNextStep}
+              onFinish={form.handleSubmit(handleSave)}
+              isLoading={mutation.isPending}
+            />
+          </View>
+        </KeyboardAwareScrollView>
+      </View>
+    </RiggingFormContext.Provider>
   );
 }
 
-const DateForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
+const DateForm: React.FC<{ form: UseFormReturn<RigSchema> }> = ({ form }) => {
   const colorScheme = useColorScheme();
 
   return (
-    <Animated.View
-      className="gap-4 items-center flex-1"
-      entering={FadeInRight}
-      exiting={FadeOutLeft}
-    >
+    <>
       <HighlineRigIllustration
         mode={colorScheme.colorScheme}
         className="w-full h-auto"
@@ -171,7 +445,7 @@ const DateForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
 
       <Controller
         control={form.control}
-        name="rig_date"
+        name="rigDate"
         render={({ field: { value } }) => (
           <DatePicker
             mode="date"
@@ -179,195 +453,319 @@ const DateForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
             date={value}
             minimumDate={new Date()}
             onConfirm={(date) => {
-              form.setValue('rig_date', date);
+              form.setValue('rigDate', date);
             }}
             timeZoneOffsetInMinutes={0} // https://github.com/henninghall/react-native-date-picker/issues/841
             theme={colorScheme.colorScheme}
           />
         )}
       />
-    </Animated.View>
+    </>
   );
 };
 
-const Equipments = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
-  // CANVAS PADDING CONSTANS
-  const CANVA_PADDING = 50;
+const Equipments: React.FC<{
+  form: UseFormReturn<RigSchema>;
+}> = ({ form }) => {
+  const { main, backup, focusedWebbing, highlineLength, setFocusedWebbing } =
+    useRiggingForm();
 
-  const handleNewSection = () => {};
+  const [webbingValidationErrors, setWebbingValidationErrors] =
+    useState<WebbingValidationErrors>({});
 
-  // Gesture handling values
-  const scale = useSharedValue(1);
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
-  const savedScale = useSharedValue(1);
-  const savedTranslateX = useSharedValue(0);
-  const savedTranslateY = useSharedValue(0);
+  const handleNewSection = useCallback((type: WebType) => {
+    const webbing: WebbingSchema = {
+      length: '50',
+      leftLoop: false,
+      rightLoop: false,
+      model: '',
+    };
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: translateX.value },
-      { translateY: translateY.value },
-      { scale: scale.value },
-    ],
-  }));
+    if (type === 'main') {
+      main.append(webbing);
+    } else if (type === 'backup') {
+      backup.append(webbing);
+    }
 
-  const panGesture = Gesture.Pan()
-    .onStart(() => {
-      savedTranslateX.value = translateX.value;
-      savedTranslateY.value = translateY.value;
-    })
-    .onUpdate((event) => {
-      console.log({ savedTranslateY, ty: event.translationY });
-      translateX.value = savedTranslateX.value + event.translationX;
-      translateY.value = savedTranslateY.value + event.translationY;
+    setFocusedWebbing({
+      type,
+      index: type === 'main' ? main.fields.length : backup.fields.length,
     });
+  }, []);
 
-  const pinchGesture = Gesture.Pinch()
-    .onStart(() => {
-      savedScale.value = scale.value;
-    })
-    .onUpdate((event) => {
-      const newScale = savedScale.value * event.scale;
+  return (
+    <AnimatedCard layout={_layoutAnimation} className="w-full">
+      <CardHeader className="gap-3">
+        <CardTitle>Setup da fita</CardTitle>
+        <View className="flex-row justify-between">
+          <View className="flex-row gap-1 items-center">
+            <View className="w-6 h-2 bg-red-500" />
+            <Text className="text-muted-foreground">Principal</Text>
+          </View>
 
-      // Limit zoom range
-      scale.value = Math.max(0.5, Math.min(newScale, 3));
-    });
+          <View className="flex-row gap-1 items-center">
+            <View className="w-6 h-2 bg-blue-500" />
+            <Text className="text-muted-foreground">Backup</Text>
+          </View>
 
-  const doubleTapGesture = Gesture.Tap()
-    .numberOfTaps(2)
-    .onEnd(() => {
-      scale.value = withTiming(1, { duration: 200 });
-      translateX.value = withTiming(0, { duration: 200 });
-      translateY.value = withTiming(0, { duration: 200 });
-    });
+          <View className="flex-row gap-1 items-center">
+            <View className="w-4 h-2 bg-black" />
+            <Text className="text-muted-foreground">Loop</Text>
+          </View>
 
-  const composedGesture = Gesture.Simultaneous(
-    panGesture,
-    pinchGesture,
-    doubleTapGesture,
+          <View className="flex-row gap-1 items-center">
+            <View className="w-4 h-2 bg-green-500" />
+            <Text className="text-muted-foreground">Conexão</Text>
+          </View>
+        </View>
+      </CardHeader>
+      <CardContent className="p-0 overflow-hidden">
+        <WebbingSetup
+          form={form}
+          mainSections={main.fields}
+          backupSections={backup.fields}
+          focusedWebbing={focusedWebbing}
+          highlineLength={highlineLength}
+          setFocusedWebbing={setFocusedWebbing}
+          onValidationError={setWebbingValidationErrors}
+        />
+      </CardContent>
+
+      <CardFooter className="border-border border-t pt-4">
+        {focusedWebbing ? (
+          <WebForm />
+        ) : (
+          <WebList
+            backupSections={backup.fields}
+            mainSections={main.fields}
+            errorMessages={webbingValidationErrors}
+            setFocusedWebbing={setFocusedWebbing}
+            swapMain={main.swap}
+            swapBackup={backup.swap}
+            handleNewSection={handleNewSection}
+          />
+        )}
+      </CardFooter>
+    </AnimatedCard>
+  );
+};
+
+const WebForm: React.FC = () => {
+  const { form, main, backup, focusedWebbing, setFocusedWebbing } =
+    useRiggingForm();
+
+  if (!focusedWebbing) return;
+
+  const webbing = form.watch(
+    `webbing.${focusedWebbing.type}.${focusedWebbing.index}`,
   );
 
-  // Example webbing sections
-  const webbingSections = {
-    main: [
-      { length: 50 },
-      { length: 50 },
-      { length: 100 },
-      { length: 50 },
-      { length: 50 },
-    ],
-    backup: [{ length: 100 }, { length: 100 }, { length: 50 }, { length: 50 }],
-  };
+  const handleDeleteSection = useCallback((type: WebType, index: number) => {
+    if (type === 'main') {
+      main.remove(index);
+    } else {
+      backup.remove(index);
+    }
+    setFocusedWebbing(null);
+  }, []);
 
-  const generateWebbingPaths = (
-    sections: Array<{ length: number }>,
-    type: 'main' | 'backup',
-    padding: number,
-  ) => {
-    const paths: string[] = [];
-    sections.reduce(
-      (acc, curr, idx, arr) => {
-        // const startY = type === 'main' ? 100 : 150;
-        console.log({ acc, curr, idx, arr });
-        const startY = 100;
-        const startX = acc.length;
-        const endX = startX + arr[idx].length;
-        const middleX = startX + arr[idx].length / 2;
+  const handleLoopChange = useCallback(
+    (loopType: 'leftLoop' | 'rightLoop') => (checked: boolean) => {
+      if (!focusedWebbing) return;
 
-        if (type === 'main') {
-          paths.push(`M${startX},${startY} L${endX},${startY}`);
-        } else {
-          paths.push(
-            `M${startX},${startY} C${startX},${startY} ${middleX},${startY + 50} ${endX},${startY}`,
-          );
-        }
+      const path =
+        `webbing.${focusedWebbing.type}.${focusedWebbing.index}` as const;
+      const webbing = form.getValues(path);
 
-        return { length: endX };
-      },
-      { length: padding },
-    );
-    return paths;
-  };
+      const updatedWebbing: WebbingSchemaWithPreffiled = {
+        ...webbing,
+        ...(loopType === 'leftLoop' ? { leftLoop: checked } : {}),
+        ...(loopType === 'rightLoop' ? { rightLoop: checked } : {}),
+      };
 
-  const mainWebbingPaths = generateWebbingPaths(
-    webbingSections.main,
-    'main',
-    CANVA_PADDING,
+      if (focusedWebbing.type === 'main') {
+        main.update(focusedWebbing.index, updatedWebbing);
+      } else {
+        backup.update(focusedWebbing.index, updatedWebbing);
+      }
+    },
+    [focusedWebbing],
   );
-  const backupWebbingPaths = generateWebbingPaths(
-    webbingSections.backup,
-    'backup',
-    CANVA_PADDING,
+
+  const handleChangeLength = useCallback(
+    (txt: string) => {
+      if (!focusedWebbing) return;
+
+      const path =
+        `webbing.${focusedWebbing.type}.${focusedWebbing.index}` as const;
+      const webbing = form.getValues(path);
+
+      const updatedWebbing: WebbingSchemaWithPreffiled = {
+        ...webbing,
+        length: txt,
+      };
+
+      if (focusedWebbing.type === 'main') {
+        main.update(focusedWebbing.index, updatedWebbing);
+      } else {
+        backup.update(focusedWebbing.index, updatedWebbing);
+      }
+    },
+    [focusedWebbing],
+  );
+
+  const handleSelectWebbing = useCallback(
+    (webbing: Tables<'webbing'> | null) => {
+      if (!focusedWebbing) return;
+
+      const path =
+        `webbing.${focusedWebbing.type}.${focusedWebbing.index}` as const;
+      const formWebbing = form.getValues(path);
+
+      const updatedWebbing: WebbingSchemaWithPreffiled = {
+        ...formWebbing,
+        ...(webbing
+          ? {
+              webbingId: webbing.id.toString(),
+              leftLoop: webbing.left_loop,
+              rightLoop: webbing.right_loop,
+              length: webbing.length.toString(),
+            }
+          : { webbingId: undefined }),
+      };
+
+      if (focusedWebbing.type === 'main') {
+        main.update(focusedWebbing.index, updatedWebbing);
+      } else {
+        backup.update(focusedWebbing.index, updatedWebbing);
+      }
+    },
+    [focusedWebbing],
   );
 
   return (
     <Animated.View
-      className="gap-4 flex-1"
-      entering={FadeInRight}
-      exiting={FadeOutLeft}
+      entering={_enteringAnimation}
+      exiting={_exitingAnimation}
+      className="flex-1 items-center gap-6"
     >
-      <Card>
-        <CardHeader>
-          <CardTitle>Fita</CardTitle>
-        </CardHeader>
-        <CardContent className="text-center p-0 relative">
-          <View className="absolute inset-0 bg-gray-100">
-            {/* Custom dot pattern */}
-            {/* <View className="absolute inset-0 bg-dotted-pattern opacity-20" /> */}
-          </View>
-          <View className="relative w-full h-64 overflow-hidden">
-            <GestureDetector gesture={composedGesture}>
-              <Animated.View
-                style={[
-                  {
-                    flex: 1,
-                  },
-                  animatedStyle,
-                ]}
-              >
-                <Canvas
-                  style={{
-                    flex: 1,
-                    minWidth: 300 + CANVA_PADDING * 2,
-                    backgroundColor: '#f87171',
-                  }}
-                >
-                  {/* Render main webbing paths */}
-                  {mainWebbingPaths.map((path, index) => (
-                    <Path
-                      key={`main-${index}`}
-                      path={path}
-                      color="blue"
-                      style="stroke"
-                      strokeWidth={3}
-                    />
-                  ))}
+      <View className="flex-row justify-between w-full">
+        <TouchableOpacity
+          onPress={() => setFocusedWebbing(null)}
+          className="p-1"
+        >
+          <LucideIcon
+            name="ChevronLeft"
+            size={16}
+            className="text-primary text-center"
+          />
+        </TouchableOpacity>
 
-                  {/* Render backup webbing paths */}
-                  {backupWebbingPaths.map((path, index) => (
-                    <Path
-                      key={`backup-${index}`}
-                      path={path}
-                      color="red"
-                      style="stroke"
-                      strokeWidth={3}
-                    />
-                  ))}
-                </Canvas>
-              </Animated.View>
-            </GestureDetector>
-          </View>
-        </CardContent>
-        <CardFooter className="flex-row justify-between border-border border-t p-4">
-          <TouchableOpacity onPress={handleNewSection}>
-            <Text className="text-blue-500 text-base">Adicionar seção</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleNewSection}>
-            <Text className="text-blue-500 text-base">Adicionar backup</Text>
-          </TouchableOpacity>
-        </CardFooter>
-      </Card>
+        <TouchableOpacity onPress={() => handleDeleteSection} className="p-1">
+          <LucideIcon
+            name="Trash"
+            size={16}
+            className="text-red-500 text-center"
+          />
+        </TouchableOpacity>
+      </View>
+      <SelectMyWebbing
+        webbing={webbing}
+        onSelectWebbing={handleSelectWebbing}
+      />
+      <WebbingInput
+        leftLoop={webbing.leftLoop}
+        rightLoop={webbing.rightLoop}
+        length={webbing.length.toString()}
+        disabled={!!webbing.webbingId}
+        onLeftLoopChange={handleLoopChange('leftLoop')}
+        onRightLoopChange={handleLoopChange('rightLoop')}
+        onLengthChange={handleChangeLength}
+      />
     </Animated.View>
+  );
+};
+
+const SelectMyWebbing: React.FC<{
+  webbing: WebbingSchemaWithPreffiled;
+  onSelectWebbing: (webbing: Tables<'webbing'> | null) => void;
+}> = ({ webbing, onSelectWebbing }) => {
+  const id = useId();
+  const [triggerWidth, setTriggerWidth] = useState<number>(0);
+
+  const { data, isPending } = useWebbings();
+
+  function getDefaultValue(): Option {
+    const selectedWebbingData = data?.find(
+      (web) => web.id.toString() === webbing.webbingId,
+    );
+    if (!selectedWebbingData) return;
+    return {
+      value: selectedWebbingData.id.toString(),
+      label:
+        selectedWebbingData.model?.name ||
+        selectedWebbingData.tag_name ||
+        `Fita ${selectedWebbingData.id.toString()}`,
+    };
+  }
+
+  return (
+    <View className="gap-2 w-full">
+      <Label htmlFor={id} nativeID={id}>
+        Minhas fitas
+      </Label>
+
+      {isPending ? (
+        <SelectTriggerSkeleton />
+      ) : (
+        <Select
+          defaultValue={webbing.webbingId ? getDefaultValue() : undefined}
+          onValueChange={(opt) => {
+            if (opt) {
+              const web = data?.find((web) => web.id.toString() === opt.value);
+              if (web) onSelectWebbing({ ...web });
+            }
+          }}
+        >
+          <SelectTrigger
+            id={id}
+            aria-labelledby={id}
+            onLayout={(e) => {
+              const { width } = e.nativeEvent.layout;
+              setTriggerWidth(width);
+            }}
+          >
+            <SelectValue
+              className={cn(
+                webbing.webbingId ? 'text-primary' : 'text-muted-foreground',
+              )}
+              placeholder="Ex.: Brasileirinha"
+            />
+          </SelectTrigger>
+          <SelectContent style={{ width: triggerWidth }}>
+            <ScrollView
+              contentContainerStyle={{ flexGrow: 1 }}
+              keyboardShouldPersistTaps="handled"
+            >
+              {data?.map((webbing) => (
+                <SelectItem
+                  key={webbing.id}
+                  value={webbing.id.toString()}
+                  label={
+                    webbing.model?.name ||
+                    webbing.tag_name ||
+                    `Fita ${webbing.id.toString()}`
+                  }
+                />
+              ))}
+              <Separator />
+              <Button variant="ghost">
+                <Text>limpar</Text>
+              </Button>
+            </ScrollView>
+          </SelectContent>
+        </Select>
+      )}
+    </View>
   );
 };

@@ -98,6 +98,13 @@ export default function RootLayout() {
                 }}
               />
               <Stack.Screen
+                name="(modals)/register-webbing"
+                options={{
+                  presentation: 'modal',
+                  headerShown: false,
+                }}
+              />
+              <Stack.Screen
                 name="highline/[id]"
                 options={{
                   headerShown: false,

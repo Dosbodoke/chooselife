@@ -38,7 +38,7 @@ export const HighlineCard: React.FC<{ item: Highline }> = ({ item }) => {
                 name="MoveHorizontal"
                 className="size-4 text-primary opacity-70"
               />
-              <Text className="text-muted-foreground">{item.lenght}m</Text>
+              <Text className="text-muted-foreground">{item.length}m</Text>
             </View>
           </View>
         </Animated.View>

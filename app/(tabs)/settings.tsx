@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
 
+import { MyWebbings } from '~/components/settings/my-webbing';
 import { SelectTheme } from '~/components/settings/select-theme';
 import { SupabaseAvatar } from '~/components/ui/avatar';
 import { Button } from '~/components/ui/button';
@@ -35,8 +36,8 @@ export default function SettingsPage() {
 
   if (profile && profile.username) {
     return (
-      <SafeAreaView className="flex-1">
-        <View className="flex gap-4 p-4 pt-8">
+      <SafeAreaView className="justify-between flex-1 p-4 pt-8">
+        <View className="gap-4">
           <Link
             href={{
               pathname: '/profile/[username]',
@@ -51,15 +52,17 @@ export default function SettingsPage() {
               />
               <View>
                 <H2>{profile.name}</H2>
-                <Muted>Mostrar perfil</Muted>
+                <Muted>Visualizar perfil</Muted>
               </View>
             </TouchableOpacity>
           </Link>
 
+          <MyWebbings />
+        </View>
+
+        <View className="gap-4">
           <Separator />
-
           <SelectTheme />
-
           <Separator />
 
           <Button variant="link" onPress={logout}>

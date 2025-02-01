@@ -35,11 +35,8 @@ export default function Info() {
         {highline.description ? <Lead>{highline.description}</Lead> : null}
       </View>
 
-      <HighlineDimensions height={highline.height} distance={highline.lenght} />
+      <HighlineDimensions height={highline.height} distance={highline.length} />
       <HighlineHistory highline={highline} />
-
-      <InfoItem label={'Fita principal'} value={highline.main_webbing} />
-      <InfoItem label={'Fita backup'} value={highline.backup_webbing} />
     </View>
   );
 }
@@ -74,13 +71,3 @@ const HighlineDimensions: React.FC<{
     </CardContent>
   </Card>
 );
-
-const InfoItem = ({ label, value }: { label: string; value: string }) => {
-  return (
-    <View className="flex flex-row gap-2 items-center">
-      <Text className="text-muted-foreground">{label}:</Text>
-      <View className="flex-1 bg-border h-[1px]"></View>
-      <Text className="font-medium text-primary">{value}</Text>
-    </View>
-  );
-};

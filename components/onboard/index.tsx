@@ -1,10 +1,4 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  Text,
-  View,
-  type PressableProps,
-} from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import Animated, {
   FadeInDown,
   FadeInLeft,
@@ -16,35 +10,25 @@ import Animated, {
   useAnimatedStyle,
   useDerivedValue,
   withSpring,
-  type AnimatedProps,
 } from 'react-native-reanimated';
 
 import { cn } from '~/lib/utils';
 
-import { buttonTextVariants, buttonVariants } from '../ui/button';
+import { Button, buttonTextVariants } from '~/components/ui/button';
+import { Text } from '~/components/ui/text';
 
 const _layoutTransition = LinearTransition.springify()
   .damping(80)
   .stiffness(200);
+const _entering = FadeInLeft.springify().damping(80).stiffness(200);
+const _exiting = FadeOutLeft.springify().damping(80).stiffness(200);
 const _dotContainer = 24;
 const _dotSize = _dotContainer / 3;
 const _activeDot = '#fff';
 const _inactiveDot = '#aaa';
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-function Button({ children, ...rest }: AnimatedProps<PressableProps>) {
-  return (
-    <AnimatedPressable
-      entering={FadeInLeft.springify().damping(80).stiffness(200)}
-      exiting={FadeOutLeft.springify().damping(80).stiffness(200)}
-      layout={_layoutTransition}
-      {...rest}
-    >
-      {children}
-    </AnimatedPressable>
-  );
-}
+const AnimatedButton = Animated.createAnimatedComponent(Button);
+const AnimatedText = Animated.createAnimatedComponent(Text);
 
 function Dot({
   index,
@@ -64,7 +48,8 @@ function Dot({
   });
 
   return (
-    <View
+    <Animated.View
+      layout={_layoutTransition}
       style={{
         width: _dotContainer,
         height: _dotContainer,
@@ -78,7 +63,7 @@ function Dot({
           { width: _dotSize, height: _dotSize, borderRadius: _dotSize },
         ]}
       />
-    </View>
+    </Animated.View>
   );
 }
 
@@ -95,6 +80,7 @@ function PaginationIndicator({
 
   return (
     <Animated.View
+      layout={_layoutTransition}
       style={[
         {
           backgroundColor: '#29BE56',
@@ -139,60 +125,77 @@ function OnboardNavigator({
   total,
   onIndexChange,
   onFinish,
+  goBack,
   isLoading,
+  finishText = 'Finalizar',
 }: {
   selectedIndex: number;
   total: number;
   onIndexChange: (index: number) => void;
   onFinish: () => void;
+  // Show back button even if on the first step, intended to navigate out from modals
+  goBack?: () => void;
   isLoading?: boolean;
+  // Text to be shown on the button when the last step is reached
+  finishText?: string;
 }) {
+  const handleBack = () => {
+    if (selectedIndex === 0 && goBack) {
+      goBack();
+      return;
+    }
+
+    if (selectedIndex > 0) {
+      onIndexChange(selectedIndex - 1);
+    }
+  };
+
+  const handleForward = () => {
+    if (selectedIndex >= total - 1) {
+      onFinish();
+      return;
+    }
+    onIndexChange(selectedIndex + 1);
+  };
+
   return (
     <View className="flex-row gap-2">
-      {selectedIndex > 0 && (
-        <Button
-          className={cn(buttonVariants({ variant: 'outline' }))}
-          onPress={() => {
-            onIndexChange(selectedIndex - 1);
-          }}
+      {selectedIndex > 0 || goBack ? (
+        <AnimatedButton
+          variant="outline"
+          onPress={handleBack}
           disabled={isLoading}
+          entering={_entering}
+          exiting={_exiting}
+          layout={_layoutTransition}
         >
-          <Text
-            className={cn(
-              buttonTextVariants({ variant: 'outline' }),
-              'font-bold',
-            )}
-          >
-            Voltar
-          </Text>
-        </Button>
-      )}
-      <Button
-        className={cn(buttonVariants({ variant: 'default' }), 'flex-1')}
-        onPress={() => {
-          if (selectedIndex >= total - 1) {
-            onFinish();
-            return;
-          }
-          onIndexChange(selectedIndex + 1);
-        }}
+          <Text>Voltar</Text>
+        </AnimatedButton>
+      ) : null}
+      <AnimatedButton
+        className="flex-1"
+        variant="default"
+        onPress={handleForward}
         disabled={isLoading}
+        entering={_entering}
+        exiting={_exiting}
+        layout={_layoutTransition}
       >
         {isLoading ? (
           <ActivityIndicator
             className={cn(buttonTextVariants({ variant: 'default' }))}
           />
         ) : selectedIndex === total - 1 ? (
-          <Animated.Text
+          <AnimatedText
             key="finish"
             className={cn(buttonTextVariants({ variant: 'default' }))}
             entering={FadeInDown.springify().damping(80).stiffness(200)}
             exiting={FadeOutUp.springify().damping(80).stiffness(200)}
           >
-            Finalizar
-          </Animated.Text>
+            {finishText}
+          </AnimatedText>
         ) : (
-          <Animated.Text
+          <AnimatedText
             key="continue"
             className={cn(buttonTextVariants({ variant: 'default' }))}
             layout={_layoutTransition}
@@ -200,9 +203,9 @@ function OnboardNavigator({
             exiting={FadeOutUp.springify().damping(80).stiffness(200)}
           >
             Continuar
-          </Animated.Text>
+          </AnimatedText>
         )}
-      </Button>
+      </AnimatedButton>
     </View>
   );
 }
