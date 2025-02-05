@@ -17,6 +17,8 @@ import type { Tables, TablesInsert } from '~/utils/database.types';
 
 import { webbingSchema } from '~/components/webbing-input';
 
+import { useAuth } from './auth';
+
 // SCHEMA related schema and types
 const webbingSchemaWithPreffiled = webbingSchema.extend({
   // Id of the webbing from "webbing" table
@@ -77,6 +79,7 @@ export const RigFormProvider: React.FC<{
   highlineID: string;
   children: React.ReactNode;
 }> = ({ highlineID, children }) => {
+  const { profile } = useAuth();
   const queryClient = useQueryClient();
   const { highline } = useHighline({ id: highlineID });
   if (!highline) return null;
@@ -185,7 +188,6 @@ export const RigFormProvider: React.FC<{
           .from('rig_setup')
           .update({
             rig_date: data.rigDate.toISOString(), // converting Date to string
-            riggers: [],
           })
           .eq('id', setupID)
           .select()
@@ -202,7 +204,7 @@ export const RigFormProvider: React.FC<{
           .insert({
             highline_id: highlineID,
             rig_date: data.rigDate.toISOString(), // converting Date to string
-            riggers: [],
+            riggers: profile?.id ? [profile.id] : [],
             unrigged_at: null,
           })
           .select()

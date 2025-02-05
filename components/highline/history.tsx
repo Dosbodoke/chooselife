@@ -1,3 +1,4 @@
+import { useQueries } from '@tanstack/react-query';
 import { Link, useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { TouchableOpacity, View } from 'react-native';
@@ -5,8 +6,10 @@ import { TouchableOpacity, View } from 'react-native';
 import { Highline } from '~/hooks/use-highline';
 import { Setup, useRigSetup, type RigStatuses } from '~/hooks/use-rig-setup';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 
+import { SupabaseAvatar } from '~/components/ui/avatar';
 import {
   Card,
   CardContent,
@@ -14,9 +17,8 @@ import {
   CardHeader,
   CardTitle,
 } from '~/components/ui/card';
+import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
-
-import { Skeleton } from '../ui/skeleton';
 
 export const HighlineHistory: React.FC<{ highline: Highline }> = ({
   highline,
@@ -75,42 +77,40 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
   }, [latestSetup]);
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <View className="flex-row justify-between items-center">
-            <CardTitle>Histórico de montagem</CardTitle>
-            {isPending ? <Skeleton className="w-16 h-4" /> : actionButton}
-          </View>
-          <CardDescription>
-            Registrar a montagem é mais do que manter a história da via, é se
-            preocupar com a segurança.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isPending ? (
-            <>
-              {Array.from({ length: 3 }).map((_, index) => (
-                <Skeleton key={index} className="h-4 w-full mb-3" />
-              ))}
-            </>
-          ) : data && data.length > 0 ? (
-            data.map((setup, index) => (
-              <TimelineItem
-                key={setup.id}
-                setup={setup}
-                isLast={index === data.length - 1}
-                isFirst={index === 0}
-              />
-            ))
-          ) : (
-            <Text className="text-muted-foreground">
-              Nenhum registro de montagem
-            </Text>
-          )}
-        </CardContent>
-      </Card>
-    </>
+    <Card>
+      <CardHeader>
+        <View className="flex-row justify-between items-center">
+          <CardTitle>Histórico de montagem</CardTitle>
+          {isPending ? <Skeleton className="w-16 h-4" /> : actionButton}
+        </View>
+        <CardDescription>
+          Registrar a montagem é mais do que manter a história da via, é se
+          preocupar com a segurança.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isPending ? (
+          <>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Skeleton key={index} className="h-4 w-full mb-3" />
+            ))}
+          </>
+        ) : data && data.length > 0 ? (
+          data.map((setup, index) => (
+            <TimelineItem
+              key={setup.id}
+              setup={setup}
+              isLast={index === data.length - 1}
+              isFirst={index === 0}
+            />
+          ))
+        ) : (
+          <Text className="text-muted-foreground">
+            Nenhum registro de montagem
+          </Text>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
@@ -172,9 +172,83 @@ const TimelineItem: React.FC<{
         <View className={cn('size-3 rounded-full', dotStyle[status])} />
         {!isLast && <View className="flex-1 w-1 bg-gray-200" />}
       </View>
-      <View className="flex-row flex-wrap gap-2 items-center pb-4">
-        {content}
+
+      <View className="pb-6 gap-4">
+        <View className="flex-row flex-wrap gap-2 items-center">{content}</View>
+        <Riggers riggers={setup.riggers} />
       </View>
+    </View>
+  );
+};
+
+export const Riggers: React.FC<{ riggers: string[] }> = ({ riggers }) => {
+  // We'll display the first 5 riggers as individual avatars.
+  const displayIds = riggers.slice(0, 5);
+  // If there are more than 5, compute how many remain.
+  const extraCount = riggers.length > 5 ? riggers.length - 5 : 0;
+
+  // Use useQueries to fetch each profile in parallel.
+  const profileQueries = useQueries({
+    queries: displayIds.map((id) => ({
+      queryKey: ['profile', id],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', id)
+          .single();
+        if (error) {
+          throw new Error(error.message);
+        }
+        return data;
+      },
+      // Mark the data as fresh so that it never refetches automatically.
+      staleTime: Infinity,
+    })),
+  });
+
+  return (
+    <View className="flex-row">
+      {profileQueries.map((query, index) => {
+        // For overlapping, all avatars (except the first) get a negative left margin.
+        const marginStyle = { marginLeft: index === 0 ? 0 : -6 };
+        // While the query is loading or if data isn’t there, show a fallback.
+        if (query.isPending || !query.data) {
+          return (
+            <View
+              key={displayIds[index]}
+              style={marginStyle}
+              className="border border-background rounded-full"
+            >
+              <Skeleton className="size-9 rounded-full" />
+            </View>
+          );
+        }
+        const profile = query.data;
+        return (
+          <View
+            key={displayIds[index]}
+            style={marginStyle}
+            className="border border-background rounded-full"
+          >
+            <SupabaseAvatar
+              profilePicture={profile.profile_picture}
+              name={profile.name || ''}
+              size={9}
+            />
+          </View>
+        );
+      })}
+
+      {/* If there are extra riggers, render an extra circle with the count */}
+      {extraCount > 0 && (
+        <View
+          className="flex items-center justify-center rounded-full bg-muted size-9 border border-background"
+          style={{ marginLeft: -6 }}
+        >
+          <Text className="text-xs font-bold">+{extraCount}</Text>
+        </View>
+      )}
     </View>
   );
 };

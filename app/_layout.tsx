@@ -78,8 +78,8 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
         <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
           <GestureHandlerRootView>
             <StatusBar style={isDarkColorScheme ? 'light' : 'dark'} />
@@ -126,7 +126,7 @@ export default function RootLayout() {
             <PortalHost />
           </GestureHandlerRootView>
         </ThemeProvider>
-      </QueryClientProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

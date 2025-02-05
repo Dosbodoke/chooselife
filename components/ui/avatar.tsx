@@ -1,10 +1,11 @@
 import * as AvatarPrimitive from '@rn-primitives/avatar';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
-import { supabase } from '~/lib/supabase';
-import { cn } from '~/lib/utils';
 import * as ImagePicker from 'expo-image-picker';
 import * as React from 'react';
 import { Alert, Text, View } from 'react-native';
+
+import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { supabase } from '~/lib/supabase';
+import { cn } from '~/lib/utils';
 
 import { Button } from './button';
 
@@ -70,18 +71,17 @@ const SupabaseAvatar = ({
   size,
   onUpload,
 }: {
-  profilePicture: string | undefined;
+  profilePicture?: string | null;
   name: string;
   size?: number;
   onUpload?: (filePath: string) => void;
 }) => {
+  const googleUrlRegex =
+    /^https?:\/\/(?:[a-zA-Z0-9-]+\.)*google(?:usercontent)?\.com/;
   const [imageUrl, setImageUrl] = React.useState(profilePicture);
   const [uploading, setUploading] = React.useState(false);
 
   React.useEffect(() => {
-    const googleUrlRegex =
-      /^https?:\/\/(?:[a-zA-Z0-9-]+\.)*google(?:usercontent)?\.com/;
-
     if (profilePicture && !googleUrlRegex.test(profilePicture)) {
       const { data } = supabase.storage
         .from('avatars')
@@ -151,7 +151,7 @@ const SupabaseAvatar = ({
         className={size ? `size-${size}` : `size-16`}
         alt="Foto do perfil"
       >
-        <AvatarImage source={{ uri: imageUrl }} />
+        <AvatarImage source={{ uri: imageUrl || undefined }} />
         <AvatarFallback>
           <Text>{getShortName(name)}</Text>
         </AvatarFallback>
