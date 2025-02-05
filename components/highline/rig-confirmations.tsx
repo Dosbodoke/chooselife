@@ -130,6 +130,7 @@ const UnrigSetup: React.FC<UnrigSetupProps> = ({ setup, closeModal }) => {
         .from('rig_setup')
         .update({
           unrigged_at: new Date().toISOString(),
+          is_rigged: false,
         })
         .eq('id', setupID)
         .select()
@@ -142,9 +143,25 @@ const UnrigSetup: React.FC<UnrigSetupProps> = ({ setup, closeModal }) => {
       return rigSetupData;
     },
     onSuccess: (response) => {
-      queryClient.invalidateQueries({
-        queryKey: ['rigSetup', response.highline_id],
-      });
+      // Update the cached list of setups for this highline
+      queryClient.setQueryData<Setup>(
+        rigQueryKeys.all(response.highline_id),
+        (oldData) => {
+          return oldData?.map((item) =>
+            item.id === response.id ? { ...item, ...response } : item,
+          );
+        },
+      );
+
+      // Update the specfici setups cache
+      queryClient.setQueryData<Setup[number]>(
+        rigQueryKeys.single(response.highline_id),
+        (oldData) => {
+          if (!oldData) return;
+          return { ...oldData, ...response };
+        },
+      );
+
       closeModal();
     },
     onError: (error) => {
@@ -207,9 +224,25 @@ const ConfirmDate: React.FC<ConfirmDateProps> = ({ setup, closeModal }) => {
       return rigSetupData;
     },
     onSuccess: (response) => {
-      queryClient.invalidateQueries({
-        queryKey: rigQueryKeys.all(response.highline_id),
-      });
+      // Update the cached list of setups for this highline
+      queryClient.setQueryData<Setup>(
+        rigQueryKeys.all(response.highline_id),
+        (oldData) => {
+          return oldData?.map((item) =>
+            item.id === response.id ? { ...item, ...response } : item,
+          );
+        },
+      );
+
+      // Update the specfici setups cache
+      queryClient.setQueryData<Setup[number]>(
+        rigQueryKeys.single(response.highline_id),
+        (oldData) => {
+          if (!oldData) return;
+          return { ...oldData, ...response };
+        },
+      );
+
       closeModal();
     },
     onError: (error) => {
