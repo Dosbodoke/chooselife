@@ -29,19 +29,7 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
   });
 
   const actionButton = useMemo(() => {
-    if (!latestSetup) {
-      return (
-        <Link asChild href={`/highline/${highline.id}/rig`}>
-          <TouchableOpacity className="p-1">
-            <Text className="text-base font-semibold text-blue-500">
-              montar
-            </Text>
-          </TouchableOpacity>
-        </Link>
-      );
-    }
-
-    if (latestSetup.is_rigged) {
+    if (latestSetup?.is_rigged) {
       return (
         <TouchableOpacity
           className="p-1"
@@ -56,23 +44,33 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
       );
     }
 
-    return (
-      <TouchableOpacity
-        className="p-1"
-        onPress={() => {
-          const now = new Date();
-          // If rig date is in the past, show modal so the user can confirm if the highline was rigged
-          if (new Date(latestSetup.rig_date) < now) {
-            router.setParams({ setupID: latestSetup.id });
-            return;
-          }
+    if (latestSetup?.rig_date && !latestSetup.unrigged_at) {
+      return (
+        <TouchableOpacity
+          className="p-1"
+          onPress={() => {
+            const now = new Date();
+            // If rig date is in the past, show modal so the user can confirm if the highline was rigged
+            if (new Date(latestSetup.rig_date) < now) {
+              router.setParams({ setupID: latestSetup.id });
+              return;
+            }
 
-          // Otherwise, go to the rig page so the user can edit it.
-          router.push(`/highline/${highline.id}/rig`);
-        }}
-      >
-        <Text className="text-base font-semibold text-amber-500">editar</Text>
-      </TouchableOpacity>
+            // Otherwise, go to the rig page so the user can edit it.
+            router.push(`/highline/${highline.id}/rig`);
+          }}
+        >
+          <Text className="text-base font-semibold text-amber-500">editar</Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <Link asChild href={`/highline/${highline.id}/rig`}>
+        <TouchableOpacity className="p-1">
+          <Text className="text-base font-semibold text-blue-500">montar</Text>
+        </TouchableOpacity>
+      </Link>
     );
   }, [latestSetup]);
 
