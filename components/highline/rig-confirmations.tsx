@@ -207,9 +207,25 @@ const ConfirmDate: React.FC<ConfirmDateProps> = ({ setup, closeModal }) => {
       return rigSetupData;
     },
     onSuccess: (response) => {
-      queryClient.invalidateQueries({
-        queryKey: rigQueryKeys.all(response.highline_id),
-      });
+      // Update the cached list of setups for this highline
+      queryClient.setQueryData<Setup>(
+        rigQueryKeys.all(response.highline_id),
+        (oldData) => {
+          return oldData?.map((item) =>
+            item.id === response.id ? { ...item, is_rigged: true } : item,
+          );
+        },
+      );
+
+      // Update the specfici setups cache
+      queryClient.setQueryData<Setup[number]>(
+        rigQueryKeys.single(response.highline_id),
+        (oldData) => {
+          if (!oldData) return;
+          return { ...oldData, is_rigged: true };
+        },
+      );
+
       closeModal();
     },
     onError: (error) => {
