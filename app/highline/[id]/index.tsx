@@ -18,6 +18,7 @@ import { FavoriteHighline } from '~/components/highline/favorite-button';
 import { HighlineImage } from '~/components/highline/highline-image';
 import Info from '~/components/highline/info';
 import { HighlineNotFound } from '~/components/highline/not-found';
+import { RigModal } from '~/components/highline/rig-confirmations';
 import { HighlineSkeleton } from '~/components/highline/skeleton';
 import { Ranking } from '~/components/ranking';
 import { Button } from '~/components/ui/button';
@@ -27,25 +28,23 @@ import { Text } from '~/components/ui/text';
 type HighlineTabs = 'details' | 'ranking';
 
 export default function HighlinePage() {
+  const { id } = useLocalSearchParams<{
+    id: string;
+  }>();
   const [tab, setTab] = useState<HighlineTabs>('details');
+
   const bottomActionsHeightRef = useRef(0);
   const insets = useSafeAreaInsets();
-
-  const { id } = useLocalSearchParams<{ id: string }>();
-
-  const { highline, isPending } = useHighline({ id });
-
   const router = useRouter();
+  const { highline, isPending } = useHighline({ id });
 
   const shareListing = async () => {
     if (!highline) return;
     try {
       const url = Linking.createURL(`highline/${highline.id}`);
-      const message = `🚀 Confira esse Highline incrível no APP Chooselife: "${highline.name}"!\n\nBaixe o app para explorar mais locais, rankings e atividades exclusivas no mundo das highlines.\n\n🔗 Acesse agora: ${url}`;
-
       await Share.share({
         title: 'Veja no Chooselife',
-        message, // Usamos "message" para compatibilidade com Android e iOS
+        message: `🚀 Confira esse Highline incrível no APP Chooselife: "${highline.name}"!\n\nBaixe o app para explorar mais locais, rankings e atividades exclusivas no mundo das highlines.\n\n🔗 Acesse agora: ${url}`,
       });
     } catch (err) {
       console.log('Erro ao compartilhar a highline:', err);
@@ -154,6 +153,8 @@ export default function HighlinePage() {
           }}
         />
       ) : null}
+
+      <RigModal />
     </>
   );
 }

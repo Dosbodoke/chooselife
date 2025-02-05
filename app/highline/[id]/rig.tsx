@@ -127,6 +127,7 @@ export const HighlineSetup: React.FC = () => {
             pathname: '/highline/[id]',
             params: { id: highline.id },
           }}
+          replace
           asChild
         >
           <Button>
@@ -193,7 +194,7 @@ const DateForm: React.FC = () => {
           <View>
             <H3 className="text-center">Primeiro, escolha uma data</H3>
             <Muted className="text-center">
-              A data em que a missão irá acontecer
+              A dia que a missão irá acontecer
             </Muted>
           </View>
 

@@ -1,8 +1,11 @@
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
+import React, { useMemo } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 
 import { Highline } from '~/hooks/use-highline';
+import { Setup, useRigSetup, type RigStatuses } from '~/hooks/use-rig-setup';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { cn } from '~/lib/utils';
 
 import {
   Card,
@@ -13,57 +16,177 @@ import {
 } from '~/components/ui/card';
 import { Text } from '~/components/ui/text';
 
-const HighlineHistory: React.FC<{ highline: Highline }> = ({ highline }) => (
-  <Card>
-    <CardHeader>
-      <View className="flex-row justify-between">
-        <CardTitle>Histórico de montagem</CardTitle>
+import { Skeleton } from '../ui/skeleton';
+
+export const HighlineHistory: React.FC<{ highline: Highline }> = ({
+  highline,
+}) => {
+  const router = useRouter();
+  const { data, latestSetup, isPending } = useRigSetup({
+    highlineID: highline.id,
+  });
+
+  const actionButton = useMemo(() => {
+    if (!latestSetup) {
+      return (
         <Link asChild href={`/highline/${highline.id}/rig`}>
-          <TouchableOpacity>
-            <Text className="text-sm text-blue-500">montar</Text>
+          <TouchableOpacity className="p-1">
+            <Text className="text-base font-semibold text-blue-500">
+              montar
+            </Text>
           </TouchableOpacity>
         </Link>
-      </View>
-      <CardDescription>
-        Registrar a montagem é mais do que manter a história da via, é se
-        preocupar com a segurança.
-      </CardDescription>
-    </CardHeader>
-    <CardContent>
-      <View className="flex-row gap-2">
-        <View className="items-center">
-          <View className="size-3 rounded-full bg-green-500" />
-          <View className="flex-1 w-1 rounded-sm bg-green-500" />
-        </View>
-        <View>
-          <View className="flex-row gap-2">
-            <Text className="text-primary font-semibold text-lg">
-              Montada desde
+      );
+    }
+
+    if (latestSetup.is_rigged) {
+      return (
+        <TouchableOpacity
+          className="p-1"
+          onPress={() => {
+            router.setParams({ setupID: latestSetup.id });
+          }}
+        >
+          <Text className="text-base font-semibold text-red-500">
+            desmontar
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <TouchableOpacity
+        className="p-1"
+        onPress={() => {
+          const now = new Date();
+          // If rig date is in the past, show modal so the user can confirm if the highline was rigged
+          if (new Date(latestSetup.rig_date) < now) {
+            router.setParams({ setupID: latestSetup.id });
+            return;
+          }
+
+          // Otherwise, go to the rig page so the user can edit it.
+          router.push(`/highline/${highline.id}/rig`);
+        }}
+      >
+        <Text className="text-base font-semibold text-amber-500">editar</Text>
+      </TouchableOpacity>
+    );
+  }, [latestSetup]);
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <View className="flex-row justify-between items-center">
+            <CardTitle>Histórico de montagem</CardTitle>
+            {isPending ? <Skeleton className="w-16 h-4" /> : actionButton}
+          </View>
+          <CardDescription>
+            Registrar a montagem é mais do que manter a história da via, é se
+            preocupar com a segurança.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isPending ? (
+            <>
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Skeleton key={index} className="h-4 w-full mb-3" />
+              ))}
+            </>
+          ) : data && data.length > 0 ? (
+            data.map((setup, index) => (
+              <TimelineItem
+                key={setup.id}
+                setup={setup}
+                isLast={index === data.length - 1}
+                isFirst={index === 0}
+              />
+            ))
+          ) : (
+            <Text className="text-muted-foreground">
+              Nenhum registro de montagem
             </Text>
-            <CalendarBadge date="21/02/2024" />
-          </View>
-          <View>
-            <Text>Principal: Sky 2d</Text>
-            <Text>Principal: Sky 2d</Text>
-          </View>
-        </View>
+          )}
+        </CardContent>
+      </Card>
+    </>
+  );
+};
+
+const TimelineItem: React.FC<{
+  setup: Setup[number];
+  isLast: boolean;
+  isFirst: boolean;
+}> = ({ setup, isLast, isFirst }) => {
+  const rigDate = new Date(setup.rig_date);
+  let status: RigStatuses = 'unrigged';
+  let content: React.ReactNode = null;
+
+  const dotStyle: Record<RigStatuses, string> = {
+    planned: 'bg-amber-300',
+    rigged: 'bg-green-500',
+    unrigged: 'bg-muted border border-muted-foreground',
+  };
+
+  if (setup.is_rigged) {
+    status = 'rigged';
+    content = (
+      <>
+        <Text className="text-primary font-semibold text-lg">
+          Montada desde
+        </Text>
+        <CalendarBadge date={rigDate.toLocaleDateString('pt-BR')} />
+      </>
+    );
+  } else if (setup.unrigged_at) {
+    status = 'unrigged';
+    content = (
+      <>
+        <Text className="text-primary font-semibold text-lg">De</Text>
+        <CalendarBadge date={rigDate.toLocaleDateString('pt-BR')} />
+        <Text className="text-primary font-semibold text-lg">até</Text>
+        <CalendarBadge
+          date={new Date(setup.unrigged_at).toLocaleDateString('pt-BR')}
+        />
+      </>
+    );
+  } else {
+    status = 'planned';
+    content = (
+      <>
+        <Text className="text-primary font-semibold text-lg">
+          Planejado para
+        </Text>
+        <CalendarBadge date={rigDate.toLocaleDateString('pt-BR')} />
+      </>
+    );
+  }
+
+  return (
+    <View className="flex-row gap-2">
+      <View className="items-center">
+        <View
+          className={cn('h-2 w-1', isFirst ? 'bg-transparent' : 'bg-gray-200')}
+        />
+        <View className={cn('size-3 rounded-full', dotStyle[status])} />
+        {!isLast && <View className="flex-1 w-1 bg-gray-200" />}
       </View>
-    </CardContent>
-  </Card>
-);
+      <View className="flex-row flex-wrap gap-2 items-center pb-4">
+        {content}
+      </View>
+    </View>
+  );
+};
 
 const CalendarBadge: React.FC<{ date: string }> = ({ date }) => (
   <View
     style={{
       shadowColor: '#000',
-      shadowOffset: {
-        width: 0,
-        height: 1,
-      },
-      shadowOpacity: 0.22,
-      shadowRadius: 2.22,
-
-      elevation: 3,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.25,
+      shadowRadius: 0.1,
+      elevation: 5,
     }}
     className="flex-row gap-1 items-center bg-muted border-border rounded-sm px-2"
   >
@@ -71,5 +194,3 @@ const CalendarBadge: React.FC<{ date: string }> = ({ date }) => (
     <Text className="text-muted-foreground font-semibold">{date}</Text>
   </View>
 );
-
-export { HighlineHistory };

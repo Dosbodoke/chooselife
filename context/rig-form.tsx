@@ -84,7 +84,7 @@ export const RigFormProvider: React.FC<{
   const [focusedWebbing, setFocusedWebbing] =
     React.useState<FocusedWebbing | null>(null);
 
-  const { data: savedRig, isPending: setupIsPending } = useRigSetup({
+  const { isPending: setupIsPending, latestSetup } = useRigSetup({
     highlineID,
   });
 
@@ -110,7 +110,7 @@ export const RigFormProvider: React.FC<{
           },
         ],
       },
-      rigDate: savedRig ? new Date(savedRig.rig_date) : new Date(),
+      rigDate: new Date(),
     },
   });
 
@@ -125,8 +125,13 @@ export const RigFormProvider: React.FC<{
   // ---------------------------
   React.useEffect(
     function hydrateForm() {
-      if (savedRig) {
-        const main: WebbingSchemaWithPreffiled[] = savedRig.rig_setup_webbing
+      // Rig is planned
+      if (
+        latestSetup &&
+        latestSetup.is_rigged === false &&
+        !latestSetup.unrigged_at
+      ) {
+        const main: WebbingSchemaWithPreffiled[] = latestSetup.rig_setup_webbing
           .filter((row) => row.webbing_type === 'main')
           .map((row) => ({
             length: row.length.toString(),
@@ -136,24 +141,25 @@ export const RigFormProvider: React.FC<{
             tagName: getWebbingName(row.webbing_id),
           }));
 
-        const backup: WebbingSchemaWithPreffiled[] = savedRig.rig_setup_webbing
-          .filter((row) => row.webbing_type === 'backup')
-          .map((row) => ({
-            length: row.length.toString(),
-            leftLoop: row.left_loop,
-            rightLoop: row.right_loop,
-            webbingId: row.webbing_id ? row.webbing_id.toString() : undefined,
-            tagName: getWebbingName(row.webbing_id),
-          }));
+        const backup: WebbingSchemaWithPreffiled[] =
+          latestSetup.rig_setup_webbing
+            .filter((row) => row.webbing_type === 'backup')
+            .map((row) => ({
+              length: row.length.toString(),
+              leftLoop: row.left_loop,
+              rightLoop: row.right_loop,
+              webbingId: row.webbing_id ? row.webbing_id.toString() : undefined,
+              tagName: getWebbingName(row.webbing_id),
+            }));
 
         // Reset the form with the saved values.
         form.reset({
-          rigDate: new Date(savedRig.rig_date),
+          rigDate: new Date(latestSetup.rig_date),
           webbing: { main, backup },
         });
       }
     },
-    [savedRig],
+    [latestSetup],
   );
 
   const mutation = useMutation({
@@ -161,8 +167,8 @@ export const RigFormProvider: React.FC<{
       let setupID: number;
 
       // Check if a saved rig setup already exists
-      if (savedRig) {
-        setupID = savedRig.id;
+      if (latestSetup) {
+        setupID = latestSetup.id;
 
         // Delete existing webbing rows associated with this rig setup.
         // This way we avoid having to individually update or delete each row.

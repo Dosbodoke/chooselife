@@ -1,9 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 
-import { useAuth } from '~/context/auth';
-import { supabase } from '~/lib/supabase';
+import { useHighline } from '~/hooks/use-highline';
 
 import { Card, CardContent } from '~/components/ui/card';
 import { Text } from '~/components/ui/text';
@@ -12,19 +10,8 @@ import { H1, Lead } from '~/components/ui/typography';
 import { HighlineHistory } from './history';
 
 export default function Info() {
-  const { session } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: highline } = useQuery({
-    queryKey: ['highline', id],
-    queryFn: async () => {
-      const result = await supabase.rpc('get_highline', {
-        searchid: [id as string],
-        userid: session?.user.id,
-      });
-      return result.data && result.data.length > 0 ? result.data[0] : null;
-    },
-    enabled: !!id,
-  });
+  const { highline } = useHighline({ id });
 
   if (!highline) return null;
 

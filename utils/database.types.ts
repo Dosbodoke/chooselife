@@ -206,6 +206,7 @@ export type Database = {
         Row: {
           highline_id: string
           id: number
+          is_rigged: boolean
           rig_date: string
           riggers: string[]
           unrigged_at: string | null
@@ -213,6 +214,7 @@ export type Database = {
         Insert: {
           highline_id: string
           id?: never
+          is_rigged?: boolean
           rig_date: string
           riggers: string[]
           unrigged_at?: string | null
@@ -220,6 +222,7 @@ export type Database = {
         Update: {
           highline_id?: string
           id?: never
+          is_rigged?: boolean
           rig_date?: string
           riggers?: string[]
           unrigged_at?: string | null
