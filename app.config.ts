@@ -7,22 +7,22 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   version: '1.0.0',
   newArchEnabled: false,
   orientation: 'portrait',
-  icon: './assets/images/icon.png',
   scheme: 'com.chooselife',
   userInterfaceStyle: 'automatic',
-  splash: {
-    image: './assets/images/splash.png',
-    resizeMode: 'contain',
-    backgroundColor: '#ffffff',
-  },
   assetBundlePatterns: ['**/*'],
   ios: {
     supportsTablet: true,
+    icon: {
+      light: './assets/icons/ios-light.png',
+      dark: './assets/icons/ios-dark.png',
+      tinted: './assets/icons/ios-tinted.png',
+    }
   },
   android: {
     softwareKeyboardLayoutMode: 'pan',
     adaptiveIcon: {
-      foregroundImage: './assets/images/adaptive_icon.png',
+      foregroundImage: './assets/icons/adaptive-icon.png',
+      monochromeImage: './assets/icons/adaptive-icon.png',
       backgroundColor: '#ffffff',
     },
     permissions: [
@@ -39,10 +39,23 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   web: {
     bundler: 'metro',
     output: 'static',
-    favicon: './assets/images/favicon.png',
+    favicon: './assets/icons/favicon.png',
   },
   plugins: [
     'expo-router',
+    [
+      "expo-splash-screen",
+      {
+        image: './assets/icons/splash-icon-dark.png',
+        imageWidth: 200,
+        resizeMode: "contain",
+        backgroundColor: "#FFFFFF",
+        dark: {
+          image: './assets/icons/splash-icon-light.png',
+          backgroundColor: "#000000",
+        }
+      }
+    ],
     [
       'expo-location',
       {
