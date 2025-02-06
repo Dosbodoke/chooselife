@@ -17,7 +17,6 @@ import RigCarabiner from '~/lib/icons/rig-carabiner';
 import { supabase } from '~/lib/supabase';
 
 import { Button } from '~/components/ui/button';
-// 1. Import the Skeleton component
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 

@@ -1,7 +1,8 @@
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 
+import { useAuth } from '~/context/auth';
 import { Highline } from '~/hooks/use-highline';
 import { Setup, useRigSetup, type RigStatuses } from '~/hooks/use-rig-setup';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
@@ -21,6 +22,7 @@ import { Text } from '~/components/ui/text';
 export const HighlineHistory: React.FC<{ highline: Highline }> = ({
   highline,
 }) => {
+  const { session } = useAuth();
   const router = useRouter();
   const { data, latestSetup, isPending } = useRigSetup({
     highlineID: highline.id,
@@ -32,6 +34,10 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
         <TouchableOpacity
           className="p-1"
           onPress={() => {
+            if (!session?.user) {
+              router.push(`/(modals)/login`);
+              return;
+            }
             router.setParams({ setupID: latestSetup.id });
           }}
         >
@@ -47,15 +53,25 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
         <TouchableOpacity
           className="p-1"
           onPress={() => {
-            const now = new Date();
             // If rig date is in the past, show modal so the user can confirm if the highline was rigged
+            const now = new Date();
             if (new Date(latestSetup.rig_date) < now) {
+              if (!session?.user) {
+                router.push(`/(modals)/login`);
+                return;
+              }
+
               router.setParams({ setupID: latestSetup.id });
               return;
             }
 
+            const route = `/highline/${highline.id}/rig` as const;
+            if (!session?.user) {
+              router.push(`/(modals)/login?redirect_to=${route}`);
+              return;
+            }
             // Otherwise, go to the rig page so the user can edit it.
-            router.push(`/highline/${highline.id}/rig`);
+            router.push(route);
           }}
         >
           <Text className="text-base font-semibold text-amber-500">editar</Text>
@@ -64,11 +80,19 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
     }
 
     return (
-      <Link asChild href={`/highline/${highline.id}/rig`}>
-        <TouchableOpacity className="p-1">
-          <Text className="text-base font-semibold text-blue-500">montar</Text>
-        </TouchableOpacity>
-      </Link>
+      <TouchableOpacity
+        className="p-1"
+        onPress={() => {
+          const route = `/highline/${highline.id}/rig` as const;
+          if (!session?.user) {
+            router.push(`/(modals)/login?redirect_to=${route}`);
+            return;
+          }
+          router.push(route);
+        }}
+      >
+        <Text className="text-base font-semibold text-blue-500">montar</Text>
+      </TouchableOpacity>
     );
   }, [latestSetup]);
 

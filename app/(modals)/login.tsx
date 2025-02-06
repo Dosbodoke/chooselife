@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from 'expo-sqlite/kv-store';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
@@ -86,6 +86,7 @@ const OAuthButtons = ({
   lastLoginMethod: LastUsedLoginMethod | null;
   saveLoginMethod: (method: LastUsedLoginMethod) => Promise<void>;
 }) => {
+  const { rediret_to } = useLocalSearchParams<{ rediret_to?: string }>();
   const { performOAuth } = useAuth();
   const router = useRouter();
   const { colorScheme } = useColorScheme();
@@ -94,6 +95,12 @@ const OAuthButtons = ({
     const { success } = await performOAuth(method);
     if (success) {
       await saveLoginMethod(method);
+      if (rediret_to) {
+        // TODO: Make a route path validarot
+        // @ts-expect-error redirect_to can't be typed as it's a search parameter
+        router.replace(rediret_to);
+        return;
+      }
       if (router.canGoBack()) {
         router.back();
       } else {
@@ -150,6 +157,7 @@ const EmailLoginSection = ({
   lastLoginMethod: LastUsedLoginMethod | null;
   saveLoginMethod: (method: LastUsedLoginMethod) => Promise<void>;
 }) => {
+  const { redirect_to } = useLocalSearchParams<{ redirect_to?: string }>();
   const { login } = useAuth();
   const router = useRouter();
 
@@ -157,6 +165,30 @@ const EmailLoginSection = ({
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async () => {
+    try {
+      setIsLoading(true);
+      const response = await login(email, password);
+
+      if (response.success) {
+        await saveLoginMethod('email');
+
+        if (redirect_to) {
+          // TODO: Make a route path validator
+          // @ts-expect-error redirect_to can't be typed as it's a search parameter
+          router.replace(decodeURI(redirect_to));
+          return;
+        }
+
+        router.back();
+      } else {
+        setError(response.errorMessage || '');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View className="gap-4">
@@ -174,23 +206,7 @@ const EmailLoginSection = ({
         value={password}
         onChangeText={(text) => setPassword(text)}
       />
-      <Button
-        onPress={async () => {
-          try {
-            setIsLoading(true);
-            const response = await login(email, password);
-            if (response.success) {
-              await saveLoginMethod('email');
-              router.back();
-            } else {
-              setError(response.errorMessage || '');
-            }
-          } finally {
-            setIsLoading(false);
-          }
-        }}
-        disabled={isLoading}
-      >
+      <Button onPress={handleLogin} disabled={isLoading}>
         {isLoading ? (
           <ActivityIndicator
             className={cn(buttonTextVariants({ variant: 'default' }))}
