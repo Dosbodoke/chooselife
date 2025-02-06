@@ -16,6 +16,14 @@ export default function HighlineLayout() {
           title: 'Registrar rolê',
         }}
       />
+      <Stack.Screen
+        name="rig"
+        options={{
+          headerShown: false,
+          presentation: 'modal',
+          title: 'Montar highline',
+        }}
+      />
     </Stack>
   );
 }

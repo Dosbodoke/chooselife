@@ -1,15 +1,11 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PostgrestError } from '@supabase/supabase-js';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import AsyncStorage from 'expo-sqlite/kv-store';
 import React, { useState } from 'react';
-import {
-  Controller,
-  SubmitHandler,
-  useForm,
-  UseFormReturn,
-} from 'react-hook-form';
+import { Controller, useForm, UseFormReturn } from 'react-hook-form';
 import {
   Image,
   Keyboard,
@@ -29,6 +25,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
+import { type Profile } from '~/hooks/use-profile';
 import HighlineIllustration from '~/lib/icons/highline-illustration';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
@@ -37,7 +34,7 @@ import { cn } from '~/lib/utils';
 
 import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
 import { OnboardNavigator, OnboardPaginator } from '~/components/onboard';
-import { SupabaseAvatar } from '~/components/ui/avatar';
+import { AvatarUploader, SupabaseAvatar } from '~/components/supabase-avatar';
 import { Input } from '~/components/ui/input';
 import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
@@ -59,12 +56,13 @@ const profileSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function SetProfile() {
+  const queryClient = useQueryClient();
   const colorSchema = useColorScheme();
   const router = useRouter();
-  const { session, profile, setProfile } = useAuth();
+  const { session, profile } = useAuth();
+  const [isValidating, setIsValidating] = useState(false);
 
   const [index, setIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     mode: 'onChange',
@@ -77,10 +75,9 @@ export default function SetProfile() {
     },
   });
 
-  const handleSaveProfile: SubmitHandler<ProfileFormData> = async (data) => {
-    if (!session) return;
-    try {
-      setIsLoading(true);
+  const mutation = useMutation({
+    mutationFn: async (data: ProfileFormData) => {
+      if (!session) throw Error('No session found');
       const { data: profileData, error: upsertError } = await supabase
         .from('profiles')
         .upsert({
@@ -97,10 +94,13 @@ export default function SetProfile() {
       if (upsertError) {
         throw upsertError;
       }
-
-      setProfile(profileData);
+      return profileData;
+    },
+    onSuccess: (profileData: Profile) => {
+      queryClient.setQueryData(['profile', profileData.id], profile);
       router.replace('/(tabs)');
-    } catch (error) {
+    },
+    onError: (error) => {
       if ((error as PostgrestError).code === '23505') {
         form.setError('username', {
           message: 'Nome já escolhido, tente outro',
@@ -110,14 +110,12 @@ export default function SetProfile() {
           message: 'Erro ao salvar o perfil. Tente novamente.',
         });
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+  });
 
   const validateUsername = async () => {
     try {
-      setIsLoading(true);
+      setIsValidating(true);
       form.clearErrors('username');
       const username = form.getValues('username');
 
@@ -146,7 +144,7 @@ export default function SetProfile() {
 
       return true;
     } finally {
-      setIsLoading(false);
+      setIsValidating(false);
     }
   };
 
@@ -202,8 +200,8 @@ export default function SetProfile() {
             total={steps.length}
             selectedIndex={index}
             onIndexChange={handleNextStep}
-            onFinish={form.handleSubmit(handleSaveProfile)}
-            isLoading={isLoading}
+            onFinish={form.handleSubmit((data) => mutation.mutate(data))}
+            isLoading={mutation.isPending || isValidating}
           />
         </View>
       </KeyboardAwareScrollView>
@@ -300,11 +298,10 @@ const ProfileInfoForm = ({
           control={form.control}
           name="profilePicture"
           render={({ field: { value, onChange } }) => (
-            <SupabaseAvatar
-              name={form.getValues('name') || ''}
-              profilePicture={value}
-              onUpload={onChange}
-            />
+            <View className="flex-row gap-4">
+              <SupabaseAvatar URL={value} />
+              <AvatarUploader onUpload={onChange} />
+            </View>
           )}
         />
 

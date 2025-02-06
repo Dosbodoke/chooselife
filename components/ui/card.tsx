@@ -1,8 +1,10 @@
 import type { TextRef, ViewRef } from '@rn-primitives/types';
-import { TextClassContext } from '~/components/ui/text';
-import { cn } from '~/lib/utils';
 import * as React from 'react';
 import { Text, View } from 'react-native';
+
+import { cn } from '~/lib/utils';
+
+import { TextClassContext } from '~/components/ui/text';
 
 const Card = React.forwardRef<
   ViewRef,
@@ -25,7 +27,10 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <View
     ref={ref}
-    className={cn('flex flex-col space-y-1.5 p-6', className)}
+    className={cn(
+      'flex flex-col space-y-1.5 p-4 border-b border-border',
+      className,
+    )}
     {...props}
   />
 ));
@@ -65,7 +70,7 @@ const CardContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof View>
 >(({ className, ...props }, ref) => (
   <TextClassContext.Provider value="text-card-foreground">
-    <View ref={ref} className={cn('p-6 pt-0', className)} {...props} />
+    <View ref={ref} className={cn('p-4', className)} {...props} />
   </TextClassContext.Provider>
 ));
 CardContent.displayName = 'CardContent';

@@ -1,6 +1,6 @@
 {
   "name": "@rnr/starter-base",
-  "main": "index.js",
+  "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
     "dev": "expo start",
@@ -13,7 +13,7 @@
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\""
   },
   "dependencies": {
-    "@gorhom/bottom-sheet": "^5.0.5",
+    "@gorhom/bottom-sheet": "^5.0.6",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-progress": "^1.0.3",
     "@radix-ui/react-tooltip": "^1.0.7",
@@ -34,7 +34,8 @@
     "@rn-primitives/tooltip": "~1.0.3",
     "@rn-primitives/types": "^1.1.0",
     "@shopify/flash-list": "1.7.1",
-    "@supabase/supabase-js": "^2.44.1",
+    "@shopify/react-native-skia": "^1.6.0",
+    "@supabase/supabase-js": "^2.48.0",
     "@tanstack/react-query": "^5.48.0",
     "aes-js": "^3.1.2",
     "class-variance-authority": "^0.7.0",

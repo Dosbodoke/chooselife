@@ -17,7 +17,7 @@ import { transformSecondsToTimeString } from '~/utils';
 import { Database } from '~/utils/database.types';
 
 import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
-import { SupabaseAvatar } from '~/components/ui/avatar';
+import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
@@ -48,7 +48,7 @@ export default function Profile() {
       if (!profile) throw new Error("Profile doesn't exists");
       const stats = await supabase
         .rpc('profile_stats', {
-          username: `@${profile.username}`,
+          username: `${profile.username}`,
         })
         .single();
 
@@ -126,7 +126,7 @@ const UserHeader: React.FC<{
     return (
       <Card>
         <CardContent className="flex flex-row gap-4 overflow-hidden px-2 py-4">
-          <SupabaseAvatar name={''} profilePicture={''} />
+          <SupabaseAvatar size={16} />
           <View className="flex gap-3">
             <H1>{username}</H1>
             <View className="rounded-lg bg-red-50 p-2 text-center text-sm text-red-500 dark:bg-red-100 dark:text-red-700 md:p-4">
@@ -142,10 +142,7 @@ const UserHeader: React.FC<{
     <Card>
       <CardContent className="flex gap-4 overflow-hidden px-2 py-4">
         <View className="flex flex-row mt-4 gap-4">
-          <SupabaseAvatar
-            name={profile.name ?? ''}
-            profilePicture={profile.profile_picture ?? ''}
-          />
+          <SupabaseAvatar size={16} profileID={profile.id} />
           <View className="flex flex-1">
             <H3 numberOfLines={1}>{profile.name}</H3>
             {profile.birthday ? (

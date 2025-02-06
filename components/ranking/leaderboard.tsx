@@ -1,11 +1,12 @@
 import { cva } from 'class-variance-authority';
 import { Link } from 'expo-router';
+import React from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
 
-import { SupabaseAvatar } from '../ui/avatar';
+import { SupabaseAvatar } from '~/components/supabase-avatar';
 
 interface PodiumProps {
   username: string;
@@ -61,7 +62,7 @@ const Podium = ({ username, value, position, profilePicture }: PodiumProps) => {
                   name="Crown"
                   className={cn('size-6', podiumVariants({ text: variant }))}
                 />
-                <SupabaseAvatar name="" profilePicture={profilePicture} />
+                <SupabaseAvatar URL={profilePicture} size={16} />
               </View>
               <View className="flex flex-col items-center gap-0.5">
                 <Text className="text-xs font-normal text-neutral-800 dark:text-neutral-50">
@@ -99,7 +100,7 @@ const LeaderboardRow = ({
 }: PodiumProps) => (
   <View className="flex-row py-3 items-center gap-2">
     <RankingPosition position={position} />
-    <SupabaseAvatar name="" size={12} profilePicture={profilePicture} />
+    <SupabaseAvatar size={12} URL={profilePicture} />
     <Link
       href={{
         pathname: '/profile/[username]',

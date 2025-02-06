@@ -6,10 +6,8 @@ import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useContext, useEffect, useState } from 'react';
 
+import { useProfile, type Profile } from '~/hooks/use-profile';
 import { supabase } from '~/lib/supabase';
-import { Database } from '~/utils/database.types';
-
-type Profile = Database['public']['Tables']['profiles']['Row'];
 
 type AuthMethodResponse = Promise<
   { success: true } | { success: false; errorMessage?: string }
@@ -20,7 +18,6 @@ interface AuthContextValue {
   signUp: (email: string, password: string) => AuthMethodResponse;
   logout: () => AuthMethodResponse;
   performOAuth: (method: 'apple' | 'google') => AuthMethodResponse;
-  setProfile: React.Dispatch<React.SetStateAction<Profile | null>>;
   profile: Profile | null;
   session: Session | null;
   loading: boolean;
@@ -33,9 +30,11 @@ const AuthContext = React.createContext<AuthContextValue | undefined>(
 
 export function AuthProvider(props: React.PropsWithChildren) {
   const router = useRouter();
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const { data: profile, isPending: profilePending } = useProfile(
+    session?.user.id,
+  );
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -52,32 +51,18 @@ export function AuthProvider(props: React.PropsWithChildren) {
   const url = Linking.useURL();
   if (url) createSessionFromUrl(url);
 
-  const getUserProfile = async () => {
-    if (session) {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-
-      setProfile(data);
-      if (!data?.username) {
-        router.replace('/setProfile');
-      }
-    }
-  };
-
   useEffect(() => {
-    getUserProfile();
-  }, [session]);
+    if (!profilePending && !profile?.username) {
+      router.replace('/setProfile');
+    }
+  }, [profile]);
 
   return (
     <AuthContext.Provider
       value={{
-        profile,
+        profile: profile || null,
         session,
         loading,
-        setProfile,
         login: async (email: string, password: string) => {
           try {
             const { error } = await supabase.auth.signInWithPassword({
@@ -163,7 +148,6 @@ export function AuthProvider(props: React.PropsWithChildren) {
   );
 }
 
-// Define the useAuth hook
 export const useAuth = () => {
   const authContext = useContext(AuthContext);
 

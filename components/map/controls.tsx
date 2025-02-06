@@ -55,7 +55,6 @@ const MapControls: React.FC<{
           <View className="flex gap-4">
             <View>
               <H4>Tipo do mapa</H4>
-              <P>Escolher tipo do mapa</P>
             </View>
 
             <View className="flex flex-row gap-2">

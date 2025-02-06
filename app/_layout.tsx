@@ -78,8 +78,8 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
         <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
           <GestureHandlerRootView>
             <StatusBar style={isDarkColorScheme ? 'light' : 'dark'} />
@@ -95,6 +95,13 @@ export default function RootLayout() {
                 options={{
                   presentation: 'modal',
                   title: 'Entrar ou criar conta',
+                }}
+              />
+              <Stack.Screen
+                name="(modals)/register-webbing"
+                options={{
+                  presentation: 'modal',
+                  headerShown: false,
                 }}
               />
               <Stack.Screen
@@ -119,7 +126,7 @@ export default function RootLayout() {
             <PortalHost />
           </GestureHandlerRootView>
         </ThemeProvider>
-      </QueryClientProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

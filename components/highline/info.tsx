@@ -1,28 +1,17 @@
-import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 
-import { useAuth } from '~/context/auth';
-import { supabase } from '~/lib/supabase';
+import { useHighline } from '~/hooks/use-highline';
 
 import { Card, CardContent } from '~/components/ui/card';
 import { Text } from '~/components/ui/text';
 import { H1, Lead } from '~/components/ui/typography';
 
+import { HighlineHistory } from './history';
+
 export default function Info() {
-  const { session } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: highline } = useQuery({
-    queryKey: ['highline', id],
-    queryFn: async () => {
-      const result = await supabase.rpc('get_highline', {
-        searchid: [id as string],
-        userid: session?.user.id,
-      });
-      return result.data && result.data.length > 0 ? result.data[0] : null;
-    },
-    enabled: !!id,
-  });
+  const { highline } = useHighline({ id });
 
   if (!highline) return null;
 
@@ -33,10 +22,8 @@ export default function Info() {
         {highline.description ? <Lead>{highline.description}</Lead> : null}
       </View>
 
-      <HighlineDimensions height={highline.height} distance={highline.lenght} />
-
-      <InfoItem label={'Fita principal'} value={highline.main_webbing} />
-      <InfoItem label={'Fita backup'} value={highline.backup_webbing} />
+      <HighlineDimensions height={highline.height} distance={highline.length} />
+      <HighlineHistory highline={highline} />
     </View>
   );
 }
@@ -71,13 +58,3 @@ const HighlineDimensions: React.FC<{
     </CardContent>
   </Card>
 );
-
-const InfoItem = ({ label, value }: { label: string; value: string }) => {
-  return (
-    <View className="flex flex-row gap-2 items-center">
-      <Text className="text-muted-foreground">{label}:</Text>
-      <View className="flex-1 bg-border h-[1px]"></View>
-      <Text className="font-medium text-primary">{value}</Text>
-    </View>
-  );
-};
