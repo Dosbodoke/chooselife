@@ -175,8 +175,6 @@ export default function SetProfile() {
         contentContainerClassName="flex-1 px-6 py-8 gap-4"
         keyboardShouldPersistTaps="handled"
       >
-        <OnboardPaginator total={steps.length} selectedIndex={index} />
-
         <H2 className="text-center border-0">Estamos quase lá!</H2>
         <HighlineIllustration
           mode={colorSchema.colorScheme}
@@ -185,7 +183,9 @@ export default function SetProfile() {
 
         {steps[index]}
 
-        <View className="mt-auto">
+        <View className="mt-auto gap-2">
+          <OnboardPaginator total={steps.length} selectedIndex={index} />
+
           <OnboardNavigator
             total={steps.length}
             selectedIndex={index}
@@ -288,8 +288,8 @@ const ProfileInfoForm = ({
           control={form.control}
           name="profilePicture"
           render={({ field: { value, onChange } }) => (
-            <View className="flex-row gap-4">
-              <SupabaseAvatar URL={value} />
+            <View className="flex-row gap-4 items-end">
+              <SupabaseAvatar size={16} URL={value} />
               <AvatarUploader onUpload={onChange} />
             </View>
           )}

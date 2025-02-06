@@ -88,7 +88,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
             return { success: true };
           } catch (error) {
             if (error instanceof AuthError) {
-              return { success: true, errorMessage: error.message };
+              return { success: false, errorMessage: error.message };
             }
             return { success: false };
           }
@@ -103,7 +103,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
             return { success: true };
           } catch (error) {
             if (error instanceof AuthError) {
-              return { success: true, errorMessage: error.message };
+              return { success: false, errorMessage: error.message };
             }
             return { success: false };
           }
@@ -136,7 +136,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
             throw new Error("Couldn't create session");
           } catch (error) {
             if (error instanceof AuthError) {
-              return { success: true, errorMessage: error.message };
+              return { success: false, errorMessage: error.message };
             }
             return { success: false };
           }

@@ -115,16 +115,12 @@ export const AvatarUploader: React.FC<{
 
   return (
     <Button
-      className="flex-row items-center justify-center gap-1"
+      className="flex-row items-center justify-center gap-2"
       variant="outline"
       onPress={uploadAvatar}
       disabled={uploading}
     >
-      <LucideIcon
-        name="Camera"
-        className="w-4 h-4 text-black"
-        strokeWidth={2}
-      />
+      <LucideIcon name="Camera" className="size-5 text-black" strokeWidth={2} />
       <Text>Trocar foto</Text>
     </Button>
   );
@@ -135,7 +131,7 @@ function getShortName(fullName: string) {
   const shortName = nameParts
     .filter((part) => part.length > 0) // Exclude empty parts in case of multiple spaces
     .map((part) => part[0].toUpperCase()) // Get the first letter and convert to uppercase
-    .filter((letter, index, array) => index === 0 || index === array.length - 1) // Get first and last initials
+    .filter((_, index, array) => index === 0 || index === array.length - 1) // Get first and last initials
     .join('');
   return shortName;
 }
