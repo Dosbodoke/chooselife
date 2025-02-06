@@ -86,7 +86,7 @@ const OAuthButtons = ({
   lastLoginMethod: LastUsedLoginMethod | null;
   saveLoginMethod: (method: LastUsedLoginMethod) => Promise<void>;
 }) => {
-  const { rediret_to } = useLocalSearchParams<{ rediret_to?: string }>();
+  const { redirect_to } = useLocalSearchParams<{ redirect_to?: string }>();
   const { performOAuth } = useAuth();
   const router = useRouter();
   const { colorScheme } = useColorScheme();
@@ -95,10 +95,10 @@ const OAuthButtons = ({
     const { success } = await performOAuth(method);
     if (success) {
       await saveLoginMethod(method);
-      if (rediret_to) {
+      if (redirect_to) {
         // TODO: Make a route path validarot
         // @ts-expect-error redirect_to can't be typed as it's a search parameter
-        router.replace(rediret_to);
+        router.replace(redirect_to);
         return;
       }
       if (router.canGoBack()) {
@@ -177,7 +177,7 @@ const EmailLoginSection = ({
         if (redirect_to) {
           // TODO: Make a route path validator
           // @ts-expect-error redirect_to can't be typed as it's a search parameter
-          router.replace(decodeURI(redirect_to));
+          router.replace(redirect_to);
           return;
         }
 

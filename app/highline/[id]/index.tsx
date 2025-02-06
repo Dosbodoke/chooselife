@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAuth } from '~/context/auth';
 import { useHighline } from '~/hooks/use-highline';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { MarkerCL } from '~/lib/icons/MarkerCL';
@@ -166,6 +167,8 @@ const BottomActions = ({
   hasLocation: boolean;
   onLayout: (event: LayoutChangeEvent) => void;
 }) => {
+  const router = useRouter();
+  const { profile } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
@@ -208,11 +211,19 @@ const BottomActions = ({
         </Button>
       </Link>
 
-      <Link className="flex-1" href={`/highline/${id}/register`} asChild>
-        <Button>
-          <Text className="text-primary-foreground">Registrar rolê</Text>
-        </Button>
-      </Link>
+      <Button
+        className="flex-1"
+        onPress={() => {
+          const route = `/highline/${id}/register` as const;
+          if (!profile) {
+            router.push(`/(modals)/login?redirect_to=${route}`);
+            return;
+          }
+          router.push(route);
+        }}
+      >
+        <Text className="text-primary-foreground">Registrar rolê</Text>
+      </Button>
     </View>
   );
 };

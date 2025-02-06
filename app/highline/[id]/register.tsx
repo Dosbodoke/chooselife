@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { Controller, FieldErrors, useForm } from 'react-hook-form';
 import { Keyboard, View } from 'react-native';
 import { z } from 'zod';
 
+import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
 import { transformTimeStringToSeconds } from '~/utils';
 
@@ -55,13 +56,19 @@ const formSchema = z.object({
 type FormSchema = z.infer<typeof formSchema>;
 
 const RegisterHighline = () => {
+  const router = useRouter();
+  const { profile } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
+
+  if (!profile) {
+    router.push('/(modals)/login');
+  }
 
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      instagram: '',
+      instagram: profile?.username || '',
       cadenas: 0,
       full_lines: 0,
       distance: 0,
@@ -140,34 +147,6 @@ const RegisterHighline = () => {
         </View>
       ) : (
         <>
-          <Controller
-            control={form.control}
-            name="instagram"
-            render={({ field, fieldState }) => (
-              <View className="gap-2">
-                <View>
-                  <Label nativeID="entry-instagram">Highliner</Label>
-
-                  <Muted>
-                    Nome de usuário no APP Chooselife ou o @ do instagram
-                  </Muted>
-                </View>
-                <Input
-                  placeholder="Instagram"
-                  aria-labelledby="entry-instagram"
-                  className={fieldState.error && 'border-destructive'}
-                  {...field}
-                  onChangeText={field.onChange}
-                />
-                {fieldState.error ? (
-                  <Small className="text-destructive">
-                    {fieldState.error.message}
-                  </Small>
-                ) : null}
-              </View>
-            )}
-          />
-
           <Controller
             control={form.control}
             name="cadenas"
