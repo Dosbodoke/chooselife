@@ -29,7 +29,7 @@ const INITIAL_REGION = {
 export default function Screen() {
   const mapRef = useRef<MapView>(null);
   const [isOnMyLocation, setIsOnMyLocation] = useState(false);
-  const [mapType, setMapType] = useState<MapType>('standard');
+  const [mapType, setMapType] = useState<MapType>('satellite');
   const [zoom, setZoom] = useState(10);
   const [bounds, setBounds] = useState<BBox>(
     regionToBoundingBox(INITIAL_REGION),

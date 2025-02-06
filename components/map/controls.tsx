@@ -3,14 +3,6 @@ import { TouchableOpacity, View } from 'react-native';
 import type { MapType } from 'react-native-maps';
 
 import { LucideIcon } from '~/lib/icons/lucide-icon';
-import { cn } from '~/lib/utils';
-
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '~/components/ui/popover';
-import { H4, P } from '~/components/ui/typography';
 
 const MapControls: React.FC<{
   mapType: MapType;
@@ -41,56 +33,18 @@ const MapControls: React.FC<{
 
       <View className="w-full h-px bg-muted"></View>
 
-      <Popover>
-        <PopoverTrigger asChild>
-          <TouchableOpacity className="h-12 w-12 items-center justify-center">
-            <LucideIcon
-              name="Layers2"
-              className="w-6 h-6 text-black"
-              strokeWidth={2}
-            />
-          </TouchableOpacity>
-        </PopoverTrigger>
-        <PopoverContent className="w-80 bg-popover/90 backdrop-blur-sm">
-          <View className="flex gap-4">
-            <View>
-              <H4>Tipo do mapa</H4>
-            </View>
-
-            <View className="flex flex-row gap-2">
-              <TouchableOpacity
-                onPress={() => setMapType('standard')}
-                className={cn(
-                  'flex flex-1 gap-6 rounded-md border-2 border-border p-4 hover:border-ring',
-                  mapType === 'standard' ? 'bg-accent' : '',
-                )}
-              >
-                <LucideIcon
-                  name="Map"
-                  className="w-6 h-6 text-black"
-                  strokeWidth={2}
-                />
-                <P>Mapa</P>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setMapType('satellite')}
-                className={cn(
-                  'flex flex-1 gap-6 rounded-md border-2 border-border p-4 hover:border-ring',
-                  mapType === 'satellite' ? 'bg-accent' : '',
-                )}
-              >
-                <LucideIcon
-                  name="Satellite"
-                  className="w-6 h-6 text-black"
-                  strokeWidth={2}
-                />
-                <P>Satélite</P>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </PopoverContent>
-      </Popover>
+      <TouchableOpacity
+        onPress={() =>
+          setMapType((old) => (old === 'standard' ? 'satellite' : 'standard'))
+        }
+        className="size-12 items-center justify-center"
+      >
+        <LucideIcon
+          name={mapType === 'standard' ? 'Map' : 'Satellite'}
+          className="w-6 h-6 text-black"
+          strokeWidth={2}
+        />
+      </TouchableOpacity>
     </View>
   );
 };
