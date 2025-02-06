@@ -5,10 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '~/context/auth';
 
 import { MyWebbings } from '~/components/settings/my-webbing';
-import { SelectTheme } from '~/components/settings/select-theme';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
-import { Separator } from '~/components/ui/separator';
 import { Text } from '~/components/ui/text';
 import { H2, Muted } from '~/components/ui/typography';
 
@@ -19,11 +17,6 @@ export default function SettingsPage() {
     return (
       <SafeAreaView className="flex-1">
         <View className="p-4 gap-4 flex justify-end h-full">
-          <Separator />
-
-          <SelectTheme />
-
-          <Separator />
           <Link href={`/login?redirect_to=settings`} asChild>
             <Button className="w-fit bg-primary text-center py-4 text-primary-foreground">
               <Text>Entrar</Text>
@@ -58,10 +51,6 @@ export default function SettingsPage() {
         </View>
 
         <View className="gap-4">
-          <Separator />
-          <SelectTheme />
-          <Separator />
-
           <Button variant="link" onPress={logout}>
             <Text className="text-foreground underline">Sair da conta</Text>
           </Button>

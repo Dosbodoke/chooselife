@@ -1,19 +1,10 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PostgrestError } from '@supabase/supabase-js';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import AsyncStorage from 'expo-sqlite/kv-store';
 import React, { useState } from 'react';
 import { Controller, useForm, UseFormReturn } from 'react-hook-form';
-import {
-  Image,
-  Keyboard,
-  Pressable,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Keyboard, TextInput, TouchableOpacity, View } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import Animated, {
   FadeIn,
@@ -27,7 +18,6 @@ import { z } from 'zod';
 import { useAuth } from '~/context/auth';
 import { type Profile } from '~/hooks/use-profile';
 import HighlineIllustration from '~/lib/icons/highline-illustration';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
@@ -151,7 +141,7 @@ export default function SetProfile() {
   const steps = [
     <UsernameForm key="username" form={form} />,
     <ProfileInfoForm key="profileInfo" form={form} />,
-    <PrefferedTheme key="theme" />,
+    // <PrefferedTheme key="theme" />,
   ];
 
   const handleNextStep = async (newStep: number) => {
@@ -388,83 +378,83 @@ const ProfileInfoForm = ({
   );
 };
 
-const PrefferedTheme = () => {
-  const items = [
-    {
-      id: 'light',
-      label: 'Claro',
-      image: require('~/assets/images/ui_light.webp'),
-    },
-    {
-      id: 'dark',
-      label: 'Escuro',
-      image: require('~/assets/images/ui_dark.webp'),
-    },
-  ];
+// const PrefferedTheme = () => {
+//   const items = [
+//     {
+//       id: 'light',
+//       label: 'Claro',
+//       image: require('~/assets/images/ui_light.webp'),
+//     },
+//     {
+//       id: 'dark',
+//       label: 'Escuro',
+//       image: require('~/assets/images/ui_dark.webp'),
+//     },
+//   ];
 
-  const { colorScheme, setColorScheme } = useColorScheme();
+//   const { colorScheme, setColorScheme } = useColorScheme();
 
-  const handleSelect = async (theme: typeof colorScheme) => {
-    setColorScheme(theme);
-    await AsyncStorage.setItem('theme', theme);
-  };
+//   const handleSelect = async (theme: typeof colorScheme) => {
+//     setColorScheme(theme);
+//     await AsyncStorage.setItem('theme', theme);
+//   };
 
-  return (
-    <Animated.View
-      className="gap-4"
-      entering={FadeInRight}
-      exiting={FadeOutLeft}
-    >
-      <View>
-        <H3 className="text-center">Escolha um tema</H3>
-        <Muted className="text-center">
-          Selecione o tema de sua preferência para o aplicativo.
-        </Muted>
-      </View>
+//   return (
+//     <Animated.View
+//       className="gap-4"
+//       entering={FadeInRight}
+//       exiting={FadeOutLeft}
+//     >
+//       <View>
+//         <H3 className="text-center">Escolha um tema</H3>
+//         <Muted className="text-center">
+//           Selecione o tema de sua preferência para o aplicativo.
+//         </Muted>
+//       </View>
 
-      <View className="flex-row gap-3 items-center w-full justify-center">
-        {items.map((item) => (
-          <Pressable
-            key={item.id}
-            onPress={() => handleSelect(item.id as typeof colorScheme)}
-            className={cn(
-              'items-center justify-center overflow-hidden rounded-lg border w-28 shadow-lg',
-              colorScheme === item.id
-                ? 'border-blue-500 bg-accent'
-                : 'border-border bg-muted',
-            )}
-          >
-            <Image
-              source={item.image}
-              className="w-full h-auto rounded-lg rounded-b-none"
-              resizeMode="cover"
-            />
-            <View className="flex-row items-center my-3">
-              {colorScheme === item.id ? (
-                <LucideIcon
-                  name="Check"
-                  className="w-4 h-4 text-accent-foreground"
-                />
-              ) : (
-                <LucideIcon
-                  name="Minus"
-                  className="w-4 h-4 text-muted-foreground"
-                />
-              )}
-              <Text
-                className={cn(
-                  'text-sm ml-1 font-medium',
-                  colorScheme === item.id
-                    ? 'text-accent-foreground'
-                    : 'text-muted-foreground',
-                )}
-              >
-                {item.label}
-              </Text>
-            </View>
-          </Pressable>
-        ))}
-      </View>
-    </Animated.View>
-  );
-};
+//       <View className="flex-row gap-3 items-center w-full justify-center">
+//         {items.map((item) => (
+//           <Pressable
+//             key={item.id}
+//             onPress={() => handleSelect(item.id as typeof colorScheme)}
+//             className={cn(
+//               'items-center justify-center overflow-hidden rounded-lg border w-28 shadow-lg',
+//               colorScheme === item.id
+//                 ? 'border-blue-500 bg-accent'
+//                 : 'border-border bg-muted',
+//             )}
+//           >
+//             <Image
+//               source={item.image}
+//               className="w-full h-auto rounded-lg rounded-b-none"
+//               resizeMode="cover"
+//             />
+//             <View className="flex-row items-center my-3">
+//               {colorScheme === item.id ? (
+//                 <LucideIcon
+//                   name="Check"
+//                   className="w-4 h-4 text-accent-foreground"
+//                 />
+//               ) : (
+//                 <LucideIcon
+//                   name="Minus"
+//                   className="w-4 h-4 text-muted-foreground"
+//                 />
+//               )}
+//               <Text
+//                 className={cn(
+//                   'text-sm ml-1 font-medium',
+//                   colorScheme === item.id
+//                     ? 'text-accent-foreground'
+//                     : 'text-muted-foreground',
+//                 )}
+//               >
+//                 {item.label}
+//               </Text>
+//             </View>
+//           </Pressable>
+//         ))}
+//       </View>
+//     </Animated.View>
+//   );
+// };

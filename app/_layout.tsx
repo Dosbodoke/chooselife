@@ -7,9 +7,8 @@ import { PortalHost } from '@rn-primitives/portal';
 import { onlineManager, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import AsyncStorage from 'expo-sqlite/kv-store';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AuthProvider } from '~/context/auth';
@@ -17,17 +16,12 @@ import useLinking from '~/hooks/useLinking';
 import { setAndroidNavigationBar } from '~/lib/android-navigation-bar';
 import { NAV_THEME } from '~/lib/constants';
 import queryClient from '~/lib/react-query';
-import { useColorScheme } from '~/lib/useColorScheme';
 
+// Only one theme is needed now.
 const LIGHT_THEME: Theme = {
   ...DefaultTheme,
   dark: false,
   colors: NAV_THEME.light,
-};
-const DARK_THEME: Theme = {
-  ...DefaultTheme,
-  dark: true,
-  colors: NAV_THEME.dark,
 };
 
 export {
@@ -35,54 +29,32 @@ export {
   ErrorBoundary,
 } from 'expo-router';
 
-// Prevent the splash screen from auto-hiding before getting the color scheme.
+// Prevent the splash screen from auto-hiding.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useLinking();
-  const { colorScheme, setColorScheme, isDarkColorScheme } = useColorScheme();
-  const [isColorSchemeLoaded, setIsColorSchemeLoaded] = useState(false);
 
+  // Listen for connectivity changes.
   useEffect(() => {
-    return NetInfo.addEventListener((state) => {
-      const status = !!state.isConnected;
-      onlineManager.setOnline(status);
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      onlineManager.setOnline(!!state.isConnected);
     });
+    return unsubscribe;
   }, []);
 
+  // Set the Android navigation bar theme to light and hide the splash screen.
   useEffect(() => {
-    (async () => {
-      const theme = await AsyncStorage.getItem('theme');
-      if (!theme) {
-        setAndroidNavigationBar(colorScheme);
-        AsyncStorage.setItem('theme', colorScheme);
-        setIsColorSchemeLoaded(true);
-        return;
-      }
-      const colorTheme = theme === 'dark' ? 'dark' : 'light';
-      setAndroidNavigationBar(colorScheme);
-      if (colorTheme !== colorScheme) {
-        setColorScheme(colorTheme);
-
-        setIsColorSchemeLoaded(true);
-        return;
-      }
-      setIsColorSchemeLoaded(true);
-    })().finally(() => {
-      SplashScreen.hideAsync();
-    });
+    setAndroidNavigationBar('light');
+    SplashScreen.hideAsync();
   }, []);
-
-  if (!isColorSchemeLoaded) {
-    return null;
-  }
 
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+        <ThemeProvider value={LIGHT_THEME}>
           <GestureHandlerRootView>
-            <StatusBar style={isDarkColorScheme ? 'light' : 'dark'} />
+            <StatusBar style="dark" />
             <Stack>
               <Stack.Screen
                 name="(tabs)"
