@@ -127,7 +127,7 @@ function OnboardNavigator({
   onFinish,
   goBack,
   isLoading,
-  finishText = 'Finalizar',
+  finishLabel = 'Finalizar',
 }: {
   selectedIndex: number;
   total: number;
@@ -137,7 +137,7 @@ function OnboardNavigator({
   goBack?: () => void;
   isLoading?: boolean;
   // Text to be shown on the button when the last step is reached
-  finishText?: string;
+  finishLabel?: string;
 }) {
   const handleBack = () => {
     if (selectedIndex === 0 && goBack) {
@@ -192,7 +192,7 @@ function OnboardNavigator({
             entering={FadeInDown.springify().damping(80).stiffness(200)}
             exiting={FadeOutUp.springify().damping(80).stiffness(200)}
           >
-            {finishText}
+            {finishLabel}
           </AnimatedText>
         ) : (
           <AnimatedText

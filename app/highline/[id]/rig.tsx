@@ -174,6 +174,7 @@ export const HighlineSetup: React.FC = () => {
           selectedIndex={step}
           onIndexChange={handleNextStep}
           onFinish={form.handleSubmit(handleSave)}
+          finishLabel="Planejar montagem"
           goBack={router.back}
           isLoading={mutation.isPending || setupIsPending}
         />

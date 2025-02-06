@@ -102,7 +102,7 @@ export default function RegisterWebbing() {
             onFinish={form.handleSubmit(onSubmit, onError)}
             goBack={router.back}
             isLoading={mutation.isPending}
-            finishText="Cadastrar"
+            finishLabel="Cadastrar"
           />
         </View>
       </KeyboardAwareScrollView>
