@@ -29,8 +29,10 @@ const MyWebbings: React.FC = () => {
         <View className="flex-row justify-between">
           <CardTitle>Minhas fitas</CardTitle>
           <Link asChild href={`/(modals)/register-webbing`}>
-            <TouchableOpacity>
-              <Text className="text-sm text-blue-500">adicionar</Text>
+            <TouchableOpacity className="p-1">
+              <Text className="text-base font-semibold text-blue-500">
+                adicionar
+              </Text>
             </TouchableOpacity>
           </Link>
         </View>

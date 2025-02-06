@@ -16,7 +16,7 @@ export default function SettingsPage() {
   if (profile && profile.username) {
     return (
       <SafeAreaView className="justify-between flex-1 p-4 pt-8">
-        <View className="gap-4">
+        <View className="gap-6">
           <Link
             href={{
               pathname: '/profile/[username]',
