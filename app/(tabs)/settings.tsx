@@ -11,7 +11,7 @@ import { Text } from '~/components/ui/text';
 import { H2, Muted } from '~/components/ui/typography';
 
 export default function SettingsPage() {
-  const { profile, session, logout } = useAuth();
+  const { profile, logout } = useAuth();
 
   if (profile && profile.username) {
     return (
