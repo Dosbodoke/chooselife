@@ -1,7 +1,18 @@
 import * as Haptics from 'expo-haptics';
 import { icons } from 'lucide-react-native';
-import { useRef, useState } from 'react';
-import { ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import {
+  LayoutChangeEvent,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { type HighlineCategory } from '~/hooks/use-highline-list';
@@ -17,7 +28,7 @@ const categories: Array<{
 }> = [
   {
     category: 'favorites',
-    name: 'favoritos',
+    name: 'Favoritos',
     icon: 'Heart',
   },
   {
@@ -50,7 +61,19 @@ const ExploreHeader: React.FC<{
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const searchInputRef = useRef<TextInput>(null);
-  const itemsRef = useRef<Array<View | null>>([]);
+
+  // Shared values for the indicator’s horizontal position and width
+  const indicatorX = useSharedValue(0);
+  const indicatorWidth = useSharedValue(0);
+
+  // Store each category’s layout (x and width)
+  const categoryLayouts = useRef<Array<{ x: number; width: number }>>([]);
+
+  // Create an animated style for the indicator using our shared values.
+  const animatedIndicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: indicatorX.value }],
+    width: indicatorWidth.value,
+  }));
 
   const handleSearchChange = (text: string) => {
     setSearch(text);
@@ -62,19 +85,27 @@ const ExploreHeader: React.FC<{
   };
 
   const selectCategory = (index: number) => {
-    // Unselect
+    // Unselect if tapping the active category
     if (activeIndex === index) {
       setActiveIndex(null);
       onCategoryChange(null);
+      // Optionally animate the indicator out (e.g. shrink width)
+      indicatorWidth.value = withTiming(0, { duration: 250 });
       return;
     }
-    const selected = itemsRef.current[index];
+
     setActiveIndex(index);
-    selected?.measure((x) => {
-      scrollRef.current?.scrollTo({ x: x - 16, y: 0, animated: true });
-    });
+    const layout = categoryLayouts.current[index];
+    if (layout) {
+      // Animate the indicator to the new x position and width
+      indicatorX.value = withTiming(layout.x, { duration: 250 });
+      indicatorWidth.value = withTiming(layout.width, { duration: 250 });
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onCategoryChange(categories[index].category);
+
+    // Optionally scroll the category into view.
+    scrollRef.current?.scrollTo({ x: layout.x - 16, y: 0, animated: true });
   };
 
   return (
@@ -96,43 +127,62 @@ const ExploreHeader: React.FC<{
           </TouchableOpacity>
         </View>
 
-        <ScrollView
-          horizontal
-          ref={scrollRef}
-          showsHorizontalScrollIndicator={false}
-          contentContainerClassName="items-center gap-8 px-4"
-        >
-          {categories.map((item, index) => (
-            <TouchableOpacity
-              ref={(el) => (itemsRef.current[index] = el)}
-              key={item.category}
-              className={cn(
-                'items-center justify-center',
-                activeIndex === index && 'border-b-2 border-primary',
-              )}
-              onPress={() => selectCategory(index)}
-            >
-              <LucideIcon
-                name={item.icon}
-                className={cn(
-                  'size-6',
-                  activeIndex === index
-                    ? 'text-primary'
-                    : 'text-muted-foreground',
-                )}
-              />
-              <Text
-                className={cn(
-                  activeIndex === index
-                    ? 'text-primary'
-                    : 'text-muted-foreground',
-                )}
+        <View className="relative">
+          <ScrollView
+            horizontal
+            ref={scrollRef}
+            showsHorizontalScrollIndicator={false}
+            contentContainerClassName="relative items-center px-4 pb-1"
+          >
+            {categories.map((item, index) => (
+              <TouchableOpacity
+                key={item.category}
+                onPress={() => selectCategory(index)}
+                // Capture the layout of this category
+                onLayout={(event: LayoutChangeEvent) => {
+                  const { x, width } = event.nativeEvent.layout;
+                  categoryLayouts.current[index] = { x, width };
+                  // If this category is active on first render, update the indicator immediately.
+                  if (activeIndex === index) {
+                    indicatorX.value = x;
+                    indicatorWidth.value = width;
+                  }
+                }}
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginHorizontal: 8,
+                }}
               >
-                {item.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <LucideIcon
+                  name={item.icon}
+                  className={cn(
+                    'size-6',
+                    activeIndex === index
+                      ? 'text-primary'
+                      : 'text-muted-foreground',
+                  )}
+                />
+                <Text
+                  className={cn(
+                    activeIndex === index
+                      ? 'text-primary'
+                      : 'text-muted-foreground',
+                  )}
+                >
+                  {item.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+
+            {activeIndex !== null && (
+              <Animated.View
+                className="h-[2px] bg-primary absolute bottom-0"
+                style={animatedIndicatorStyle}
+              />
+            )}
+          </ScrollView>
+        </View>
       </View>
     </SafeAreaView>
   );
