@@ -26,22 +26,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="ranking"
-        options={{
-          headerShown: false,
-          title: 'Ranking',
-          tabBarIcon: ({ focused }) => (
-            <LucideIcon
-              name="Trophy"
-              className={cn(
-                'size-6',
-                focused ? 'text-blue-500' : 'text-muted-foreground',
-              )}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="settings"
         options={{
           headerShown: false,
