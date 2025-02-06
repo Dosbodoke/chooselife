@@ -36,7 +36,7 @@ export default function Screen() {
   );
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { focusedMarker } = useLocalSearchParams<{ focusedMarker: string }>();
+  const { focusedMarker } = useLocalSearchParams<{ focusedMarker?: string }>();
 
   const {
     highlines,
@@ -71,7 +71,11 @@ export default function Screen() {
 
   // Effect to handle focusing on the highline if `focusedMarker` exists
   useEffect(() => {
-    if (!focusedMarker || !highlines) return;
+    if (!focusedMarker || !highlines) {
+      setHighlightedMarker(null);
+      setClusterMarkers([]);
+      return;
+    }
 
     const highlineToFocus = highlines.find(
       (highline) => highline.id === focusedMarker,
@@ -118,7 +122,9 @@ export default function Screen() {
         showsMyLocationButton={false}
         initialRegion={INITIAL_REGION}
         mapType={mapType}
-        onMapReady={() => goToMyLocation()}
+        onMapReady={() => {
+          if (!focusedMarker) goToMyLocation();
+        }}
         onTouchMove={() => setIsOnMyLocation(false)}
         onRegionChangeComplete={async (region) => {
           const zoom = calculateZoomLevel(region.latitudeDelta);
@@ -161,7 +167,7 @@ export default function Screen() {
       ) : null}
       <ListingsBottomSheet
         highlines={highlines}
-        highlightedMarker={highlightedMarker}
+        hasFocusedMarker={!!focusedMarker}
         isLoading={isLoading}
       />
     </View>

@@ -1,5 +1,5 @@
 import BottomSheet from '@gorhom/bottom-sheet';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 
 import { type Highline } from '~/hooks/use-highline';
@@ -11,9 +11,9 @@ import Listings from '~/components/map/listing';
 // Bottom sheet that wraps our Listings component
 const ListingsBottomSheet: React.FC<{
   highlines: Highline[];
-  highlightedMarker: Highline | null;
+  hasFocusedMarker: boolean;
   isLoading: boolean;
-}> = ({ highlines, highlightedMarker, isLoading }) => {
+}> = ({ highlines, hasFocusedMarker, isLoading }) => {
   const { colorScheme } = useColorScheme();
   const snapPoints = useMemo(() => ['10%', '100%'], []);
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -24,16 +24,10 @@ const ListingsBottomSheet: React.FC<{
     setRefresh(refresh + 1);
   };
 
-  useEffect(() => {
-    if (highlightedMarker) {
-      onShowMap();
-    }
-  }, [highlightedMarker]);
-
   return (
     <BottomSheet
       ref={bottomSheetRef}
-      index={1}
+      index={hasFocusedMarker ? 0 : 1}
       snapPoints={snapPoints}
       enablePanDownToClose={false}
       handleIndicatorStyle={{
