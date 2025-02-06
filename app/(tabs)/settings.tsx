@@ -13,20 +13,6 @@ import { H2, Muted } from '~/components/ui/typography';
 export default function SettingsPage() {
   const { profile, session, logout } = useAuth();
 
-  if (!session) {
-    return (
-      <SafeAreaView className="flex-1">
-        <View className="p-4 gap-4 flex justify-end h-full">
-          <Link href={`/login?redirect_to=settings`} asChild>
-            <Button className="w-fit bg-primary text-center py-4 text-primary-foreground">
-              <Text>Entrar</Text>
-            </Button>
-          </Link>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   if (profile && profile.username) {
     return (
       <SafeAreaView className="justify-between flex-1 p-4 pt-8">
@@ -58,4 +44,16 @@ export default function SettingsPage() {
       </SafeAreaView>
     );
   }
+
+  return (
+    <SafeAreaView className="flex-1">
+      <View className="p-4 gap-4 flex justify-end h-full">
+        <Link href={`/login?redirect_to=settings`} asChild>
+          <Button className="w-fit bg-primary text-center py-4 text-primary-foreground">
+            <Text>Entrar</Text>
+          </Button>
+        </Link>
+      </View>
+    </SafeAreaView>
+  );
 }

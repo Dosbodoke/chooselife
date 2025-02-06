@@ -87,7 +87,10 @@ export default function SetProfile() {
       return profileData;
     },
     onSuccess: (profileData: Profile) => {
-      queryClient.setQueryData(['profile', profileData.id], profile);
+      queryClient.setQueryData<Profile>(
+        ['profile', profileData.id],
+        profileData,
+      );
       router.replace('/(tabs)');
     },
     onError: (error) => {
