@@ -64,8 +64,9 @@ const ExploreHeader: React.FC<{
   const selectCategory = (index: number) => {
     // Unselect
     if (activeIndex === index) {
-      setActiveIndex(0);
+      setActiveIndex(null);
       onCategoryChange(null);
+      return;
     }
     const selected = itemsRef.current[index];
     setActiveIndex(index);
@@ -104,7 +105,7 @@ const ExploreHeader: React.FC<{
           {categories.map((item, index) => (
             <TouchableOpacity
               ref={(el) => (itemsRef.current[index] = el)}
-              key={index}
+              key={item.category}
               className={cn(
                 'items-center justify-center',
                 activeIndex === index && 'border-b-2 border-primary',
