@@ -44,6 +44,7 @@ export default function Screen() {
     clusterMarkers,
     setHighlightedMarker,
     setClusterMarkers,
+    setSelectedCategory,
     isLoading,
   } = useHighlineList({ searchTerm });
 
@@ -112,7 +113,12 @@ export default function Screen() {
     <View className="flex-1">
       <Stack.Screen
         options={{
-          header: () => <ExploreHeader onSearchChange={setSearchTerm} />,
+          header: () => (
+            <ExploreHeader
+              onSearchChange={setSearchTerm}
+              onCategoryChange={(category) => setSelectedCategory(category)}
+            />
+          ),
         }}
       />
       <MapView

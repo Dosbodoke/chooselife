@@ -407,6 +407,7 @@ export type Database = {
           anchor_b_long: number
           anchor_b_lat: number
           is_favorite: boolean
+          status: string
         }[]
       }
       get_total_cadenas: {

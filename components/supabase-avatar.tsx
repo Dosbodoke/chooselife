@@ -47,7 +47,7 @@ export const SupabaseAvatar: React.FC<{
   }
 
   return (
-    <Avatar className={`size-${size}`} alt="Foto do perfil">
+    <Avatar className={`w-${size} h-${size}`} alt="Foto do perfil">
       <AvatarImage source={{ uri: URL || imageURL }} />
       <AvatarFallback>
         <Text>{getShortName(data?.name || '')}</Text>
@@ -66,7 +66,7 @@ export const AvatarUploader: React.FC<{
       setUploading(true);
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, // Restrict to only images
+        mediaTypes: ['images'], // Restrict to only images
         allowsMultipleSelection: false, // Can only select one image
         allowsEditing: true, // Allows the user to crop / rotate their photo before uploading it
         quality: 1,

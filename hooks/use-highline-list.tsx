@@ -7,9 +7,18 @@ import type { Functions } from '~/utils/database.types';
 
 export type Highline = Functions['get_highline']['Returns'][0];
 
+export type HighlineCategory =
+  | 'favorites'
+  | 'big line'
+  | 'rigged'
+  | 'unrigged'
+  | 'planned';
+
 export const useHighlineList = ({ searchTerm }: { searchTerm?: string }) => {
   const { session, loading: sessionLoading } = useAuth();
 
+  const [selectedCategory, setSelectedCategory] =
+    useState<HighlineCategory | null>(null);
   const [highlightedMarker, setHighlightedMarker] = useState<Highline | null>(
     null,
   );
@@ -31,13 +40,52 @@ export const useHighlineList = ({ searchTerm }: { searchTerm?: string }) => {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Filter highlines based on the search term
+  // Combine filtering based on both the search term and the selected category
   const filteredHighlines = useMemo(() => {
-    if (!searchTerm) return highlines || [];
-    return (highlines || []).filter((highline) =>
-      highline.name.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
-  }, [highlines, searchTerm]);
+    if (!highlines) return [];
+
+    let filtered = highlines;
+
+    // Filter by search term if provided
+    if (searchTerm) {
+      filtered = filtered.filter((highline) =>
+        highline.name.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+    }
+
+    // Filter by selected category if any
+    if (selectedCategory) {
+      switch (selectedCategory) {
+        case 'favorites':
+          // Assumes a boolean "isFavorited" property on highline
+          filtered = filtered.filter((highline) => highline.is_favorite);
+          break;
+        case 'big line':
+          // Assumes a "length" property in meters
+          filtered = filtered.filter((highline) => highline.length > 300);
+          break;
+        case 'rigged':
+          filtered = filtered.filter(
+            (highline) => highline.status === 'rigged',
+          );
+          break;
+        case 'unrigged':
+          filtered = filtered.filter(
+            (highline) => highline.status === 'unrigged',
+          );
+          break;
+        case 'planned':
+          filtered = filtered.filter(
+            (highline) => highline.status === 'planned',
+          );
+          break;
+        default:
+          break;
+      }
+    }
+
+    return filtered;
+  }, [highlines, searchTerm, selectedCategory]);
 
   return {
     highlines: filteredHighlines,
@@ -47,5 +95,6 @@ export const useHighlineList = ({ searchTerm }: { searchTerm?: string }) => {
     clusterMarkers,
     setHighlightedMarker,
     setClusterMarkers,
+    setSelectedCategory,
   };
 };
