@@ -1,7 +1,7 @@
 import { Link } from 'expo-router';
 import { TouchableOpacity, View } from 'react-native';
 
-import { useWebbings } from '~/hooks/useWebbings';
+import { useWebbings } from '~/hooks/use-webbings';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { Tables } from '~/utils/database.types';
 

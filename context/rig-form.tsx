@@ -11,7 +11,7 @@ import { z } from 'zod';
 
 import { useHighline, type Highline } from '~/hooks/use-highline';
 import { useRigSetup } from '~/hooks/use-rig-setup';
-import { type WebbingWithModel } from '~/hooks/useWebbings';
+import { type WebbingWithModel } from '~/hooks/use-webbings';
 import { supabase } from '~/lib/supabase';
 import type { Tables, TablesInsert } from '~/utils/database.types';
 

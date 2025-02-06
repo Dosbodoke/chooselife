@@ -6,7 +6,7 @@ import { useAuth } from '~/context/auth';
 
 import { MyWebbings } from '~/components/settings/my-webbing';
 import { SelectTheme } from '~/components/settings/select-theme';
-import { SupabaseAvatar } from '~/components/ui/avatar';
+import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
 import { Separator } from '~/components/ui/separator';
 import { Text } from '~/components/ui/text';
@@ -46,10 +46,7 @@ export default function SettingsPage() {
             asChild
           >
             <TouchableOpacity className="flex flex-row gap-4">
-              <SupabaseAvatar
-                profilePicture={profile.profile_picture || ''}
-                name={profile.name || ''}
-              />
+              <SupabaseAvatar profileID={profile.id} size={16} />
               <View>
                 <H2>{profile.name}</H2>
                 <Muted>Visualizar perfil</Muted>

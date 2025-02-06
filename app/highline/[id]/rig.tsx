@@ -24,7 +24,12 @@ import {
   type WebbingSchemaWithPreffiled,
   type WebType,
 } from '~/context/rig-form';
-import { useWebbings, type WebbingWithModel } from '~/hooks/useWebbings';
+import { useProfile } from '~/hooks/use-profile';
+import {
+  useWebbing,
+  useWebbings,
+  type WebbingWithModel,
+} from '~/hooks/use-webbings';
 import HighlineRigIllustration from '~/lib/icons/highline-rig';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { useColorScheme } from '~/lib/useColorScheme';
@@ -53,6 +58,7 @@ import {
   type Option,
 } from '~/components/ui/select';
 import { Separator } from '~/components/ui/separator';
+import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 import { H1, H3, Muted } from '~/components/ui/typography';
 import { WebbingInput } from '~/components/webbing-input';
@@ -402,6 +408,8 @@ const WebForm: React.FC = () => {
           />
         </TouchableOpacity>
 
+        {webbing.webbingId && <WebbingOwner webbingID={+webbing.webbingId} />}
+
         <TouchableOpacity onPress={() => handleDeleteSection} className="p-1">
           <LucideIcon
             name="Trash"
@@ -424,6 +432,36 @@ const WebForm: React.FC = () => {
         onLengthChange={handleChangeLength}
       />
     </Animated.View>
+  );
+};
+
+const WebbingOwner: React.FC<{ webbingID: number }> = ({ webbingID }) => {
+  const { data } = useWebbing(webbingID);
+
+  if (!data) return;
+
+  const { data: owner, isPending } = useProfile(data.user_id);
+
+  if (isPending) {
+    <Skeleton className="w-10 h-4" />;
+  }
+
+  if (!owner || !owner.username) return;
+
+  return (
+    <View className="flex-row max-w-56 overflow-hidden">
+      <Text className="text-muted-foreground">Fita de: </Text>
+      <Link
+        href={{
+          pathname: '/profile/[username]',
+          params: { username: owner.username },
+        }}
+      >
+        <Text className="text-blue-500" numberOfLines={1}>
+          {owner.username}
+        </Text>
+      </Link>
+    </View>
   );
 };
 

@@ -25,12 +25,15 @@ import type {
   WebbingWithId,
   WebType,
 } from '~/context/rig-form';
+import { useWebbing } from '~/hooks/use-webbings';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
 
 import { Alert } from '~/components/ui/alert';
 import { Text } from '~/components/ui/text';
 import type { WebbingValidationErrors } from '~/components/webbing-setup';
+
+import { SupabaseAvatar } from './supabase-avatar';
 
 export const ROW_HEIGHT = 48;
 
@@ -391,13 +394,16 @@ const WebRow: React.FC<{
 
       <TouchableOpacity
         onPress={onPressWebbing}
-        className="flex-row justify-between flex-1"
+        className="flex-row justify-between items-center flex-1"
       >
         <View className="flex-row gap-1">
           <Text className="text-muted-foreground">{`#${POSITION}`}</Text>
           <Text>{webbing.tagName}</Text>
         </View>
         <View className="flex-row gap-1 items-center">
+          {webbing.webbingId ? (
+            <WebRowAvatar webbingID={+webbing.webbingId} />
+          ) : null}
           <LucideIcon
             name="MoveHorizontal"
             className="size-4 text-primary opacity-70"
@@ -407,6 +413,14 @@ const WebRow: React.FC<{
       </TouchableOpacity>
     </Animated.View>
   );
+};
+
+const WebRowAvatar: React.FC<{ webbingID: number }> = ({ webbingID }) => {
+  const { data } = useWebbing(webbingID);
+
+  if (!data) return;
+
+  return <SupabaseAvatar size={8} profileID={data.user_id} />;
 };
 
 const AddSectionButton: React.FC<{

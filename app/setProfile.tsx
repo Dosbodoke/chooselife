@@ -34,7 +34,7 @@ import { cn } from '~/lib/utils';
 
 import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
 import { OnboardNavigator, OnboardPaginator } from '~/components/onboard';
-import { SupabaseAvatar } from '~/components/ui/avatar';
+import { AvatarUploader, SupabaseAvatar } from '~/components/supabase-avatar';
 import { Input } from '~/components/ui/input';
 import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
@@ -298,11 +298,10 @@ const ProfileInfoForm = ({
           control={form.control}
           name="profilePicture"
           render={({ field: { value, onChange } }) => (
-            <SupabaseAvatar
-              name={form.getValues('name') || ''}
-              profilePicture={value}
-              onUpload={onChange}
-            />
+            <View className="flex-row gap-4">
+              <SupabaseAvatar URL={value} />
+              <AvatarUploader onUpload={onChange} />
+            </View>
           )}
         />
 

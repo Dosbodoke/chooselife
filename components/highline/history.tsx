@@ -1,4 +1,3 @@
-import { useQueries } from '@tanstack/react-query';
 import { Link, useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { TouchableOpacity, View } from 'react-native';
@@ -6,10 +5,9 @@ import { TouchableOpacity, View } from 'react-native';
 import { Highline } from '~/hooks/use-highline';
 import { Setup, useRigSetup, type RigStatuses } from '~/hooks/use-rig-setup';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
-import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 
-import { SupabaseAvatar } from '~/components/ui/avatar';
+import { SupabaseAvatar } from '~/components/supabase-avatar';
 import {
   Card,
   CardContent,
@@ -185,55 +183,18 @@ export const Riggers: React.FC<{ riggers: string[] }> = ({ riggers }) => {
   // If there are more than 5, compute how many remain.
   const extraCount = riggers.length > 5 ? riggers.length - 5 : 0;
 
-  // Use useQueries to fetch each profile in parallel.
-  const profileQueries = useQueries({
-    queries: displayIds.map((id) => ({
-      queryKey: ['profile', id],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', id)
-          .single();
-        if (error) {
-          throw new Error(error.message);
-        }
-        return data;
-      },
-      // Mark the data as fresh so that it never refetches automatically.
-      staleTime: Infinity,
-    })),
-  });
-
   return (
     <View className="flex-row">
-      {profileQueries.map((query, index) => {
-        // For overlapping, all avatars (except the first) get a negative left margin.
+      {displayIds.map((id, index) => {
         const marginStyle = { marginLeft: index === 0 ? 0 : -6 };
-        // While the query is loading or if data isn’t there, show a fallback.
-        if (query.isPending || !query.data) {
-          return (
-            <View
-              key={displayIds[index]}
-              style={marginStyle}
-              className="border border-background rounded-full"
-            >
-              <Skeleton className="size-9 rounded-full" />
-            </View>
-          );
-        }
-        const profile = query.data;
+
         return (
           <View
-            key={displayIds[index]}
+            key={id}
             style={marginStyle}
             className="border border-background rounded-full"
           >
-            <SupabaseAvatar
-              profilePicture={profile.profile_picture}
-              name={profile.name || ''}
-              size={9}
-            />
+            <SupabaseAvatar profileID={id} size={9} />
           </View>
         );
       })}
