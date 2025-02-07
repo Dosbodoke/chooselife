@@ -94,6 +94,12 @@ export default function RootLayout() {
                   headerShown: false,
                 }}
               />
+              <Stack.Screen
+                name="register-highline"
+                options={{
+                  headerShown: false,
+                }}
+              />
             </Stack>
             <PortalHost />
           </GestureHandlerRootView>
