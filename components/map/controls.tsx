@@ -11,37 +11,29 @@ const MapControls: React.FC<{
   setMapType: React.Dispatch<React.SetStateAction<MapType>>;
 }> = ({ mapType, isOnMyLocation, goToMyLocation, setMapType }) => {
   return (
-    <View className="absolute right-2 top-6 rounded-md bg-card">
+    <View className="absolute right-2 top-6 rounded-lg bg-card p-2">
       <TouchableOpacity
-        className="h-12 w-12 items-center justify-center"
+        className="p-1 items-center justify-center pb-2"
         onPress={goToMyLocation}
       >
-        {isOnMyLocation ? (
-          <LucideIcon
-            name="LocateFixed"
-            className="w-6 h-6 text-black"
-            strokeWidth={2}
-          />
-        ) : (
-          <LucideIcon
-            name="Locate"
-            className="w-6 h-6 text-black"
-            strokeWidth={2}
-          />
-        )}
+        <LucideIcon
+          name={isOnMyLocation ? 'LocateFixed' : 'Locate'}
+          className="size-6 text-black"
+          strokeWidth={2}
+        />
       </TouchableOpacity>
 
-      <View className="w-full h-px bg-muted"></View>
+      <View className="w-full h-px bg-muted-foreground" />
 
       <TouchableOpacity
+        className="p-1 items-center justify-center pt-2"
         onPress={() =>
           setMapType((old) => (old === 'standard' ? 'satellite' : 'standard'))
         }
-        className="size-12 items-center justify-center"
       >
         <LucideIcon
           name={mapType === 'standard' ? 'Map' : 'Satellite'}
-          className="w-6 h-6 text-black"
+          className="size-6 text-black"
           strokeWidth={2}
         />
       </TouchableOpacity>
