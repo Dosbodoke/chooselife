@@ -2,7 +2,8 @@ import {
   BottomSheetFlatList,
   BottomSheetFlatListMethods,
 } from '@gorhom/bottom-sheet';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { useAtomValue } from 'jotai';
 import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 
@@ -11,6 +12,8 @@ import type { Highline } from '~/hooks/use-highline';
 import { HighlineCard } from '~/components/highline/highline-card';
 import { Button } from '~/components/ui/button';
 import { Text } from '~/components/ui/text';
+
+import { cameraStateAtom } from './utils';
 
 const Listings: React.FC<{
   highlines: Highline[];
@@ -41,15 +44,28 @@ const Listings: React.FC<{
                 : `${highlines.length} highlines`}
             </Text>
 
-            <Link asChild href="/register-highline">
-              <Button>
-                <Text>Adicionar</Text>
-              </Button>
-            </Link>
+            <AddHighlineButton />
           </View>
         }
       />
     </View>
+  );
+};
+
+const AddHighlineButton: React.FC = () => {
+  const router = useRouter();
+  const atomValue = useAtomValue(cameraStateAtom);
+
+  return (
+    <Button
+      onPress={() => {
+        router.push(
+          `/register-highline?lat=${atomValue.center[1]}&lng=${atomValue.center[0]}&zoom=${atomValue.zoom}`,
+        );
+      }}
+    >
+      <Text>Adicionar</Text>
+    </Button>
   );
 };
 

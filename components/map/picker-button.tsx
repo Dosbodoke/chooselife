@@ -33,7 +33,7 @@ export const PickerControls: React.FC<{
         <AnimatedTouchableOpacity
           onPress={onUndo}
           layout={LinearTransition.springify().damping(80).stiffness(200)}
-          className="p-2 border-r-hairline border-border"
+          className="p-3 border-r-hairline border-border"
         >
           <LucideIcon
             name={stage === 'initial' ? 'ChevronLeft' : 'MapPinOff'}
@@ -53,7 +53,7 @@ export const PickerControls: React.FC<{
         <AnimatedTouchableOpacity
           onPress={onPick}
           layout={LinearTransition.springify().damping(80).stiffness(200)}
-          className="p-2 border-l-hairline border-border"
+          className="p-3 border-l-hairline border-border"
         >
           <LucideIcon
             name={stage === 'final' ? 'Check' : 'MapPinned'}

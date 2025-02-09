@@ -1,8 +1,9 @@
 import type React from 'react';
 import { TouchableOpacity, View } from 'react-native';
-import type { MapType } from 'react-native-maps';
 
 import { LucideIcon } from '~/lib/icons/lucide-icon';
+
+type MapType = 'satellite' | 'standard';
 
 const MapControls: React.FC<{
   mapType: MapType;

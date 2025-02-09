@@ -66,11 +66,13 @@ EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
-### Google maps API keys
+### Mapbox KEY's
 
-Expo has a extensive documentation for setting up Google Maps on a EXPO project
+Get the public key from your MAPBOX account
 
-[Follow the instructions here](https://docs.expo.dev/versions/latest/sdk/map-view/#deploy-app-with-google-maps)
+Put it under `EXPO_PUBLIC_MAPBOX_PUBLIC_KEY` on your `.env`
+
+Also, you should create a new token with all public scopes and **DOWNLOADS:READ** Secret Scope, put it under `MAPBOX_DOWNLOAD_TOKEN` in your `.env`. Not setting it will cause the build to fail.
 
 ### Push Notifications
 

@@ -1,6 +1,3 @@
-import { Label } from '~/components/ui/label';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
-import { cn } from '~/lib/utils';
 import * as React from 'react';
 import {
   TextInput,
@@ -9,7 +6,12 @@ import {
   type TextInputProps,
 } from 'react-native';
 
-interface InputProps extends TextInputProps {
+import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { cn } from '~/lib/utils';
+
+import { Label } from '~/components/ui/label';
+
+export interface InputProps extends TextInputProps {
   label?: string;
   rightIcon?: React.ReactNode;
   onRightIconPress?: () => void;
