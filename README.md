@@ -44,6 +44,10 @@ npx supabase db push
 
 #### Configure oAuth
 
+On the Supabase dashboard, go to auth > URL Configuration and add a Site URL so the auth methods can redirect back to the project, it should match the specified `scheme` in your `app.config.ts`
+
+On my case, it was `com.bodok.chooselife://*`
+
 You also need to **enable Google and Apple social auth**
 
 Follow these guides:
