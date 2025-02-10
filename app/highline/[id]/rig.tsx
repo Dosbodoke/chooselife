@@ -213,6 +213,7 @@ const DateForm: React.FC = () => {
                 mode="date"
                 locale="pt-BR"
                 date={value}
+                minimumDate={new Date()}
                 onDateChange={(date) => onChange(date)}
                 timeZoneOffsetInMinutes={0} // https://github.com/henninghall/react-native-date-picker/issues/841
                 theme={colorScheme.colorScheme}
