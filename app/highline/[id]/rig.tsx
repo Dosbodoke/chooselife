@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import DatePicker from 'react-native-date-picker';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
   FadeInDown,
   FadeInRight,
@@ -36,7 +37,6 @@ import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
 
 import SuccessAnimation from '~/components/animations/success-animation';
-import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
 import { OnboardNavigator, OnboardPaginator } from '~/components/onboard';
 import { WebList } from '~/components/sortable-webbing-list';
 import { Button } from '~/components/ui/button';

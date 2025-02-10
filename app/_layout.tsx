@@ -10,6 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { AuthProvider } from '~/context/auth';
 import useLinking from '~/hooks/useLinking';
@@ -50,61 +51,63 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ThemeProvider value={LIGHT_THEME}>
-          <GestureHandlerRootView>
-            <StatusBar style="dark" />
-            <Stack>
-              <Stack.Screen
-                name="(tabs)"
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="(modals)/login"
-                options={{
-                  presentation: 'modal',
-                  title: 'Entrar ou criar conta',
-                }}
-              />
-              <Stack.Screen
-                name="(modals)/register-webbing"
-                options={{
-                  presentation: 'modal',
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="highline/[id]"
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="profile/[username]"
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="setProfile"
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="register-highline"
-                options={{
-                  headerShown: false,
-                }}
-              />
-            </Stack>
-            <PortalHost />
-          </GestureHandlerRootView>
-        </ThemeProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <KeyboardProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ThemeProvider value={LIGHT_THEME}>
+            <GestureHandlerRootView>
+              <StatusBar style="dark" />
+              <Stack>
+                <Stack.Screen
+                  name="(tabs)"
+                  options={{
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="(modals)/login"
+                  options={{
+                    presentation: 'modal',
+                    title: 'Entrar ou criar conta',
+                  }}
+                />
+                <Stack.Screen
+                  name="(modals)/register-webbing"
+                  options={{
+                    presentation: 'modal',
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="highline/[id]"
+                  options={{
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="profile/[username]"
+                  options={{
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="setProfile"
+                  options={{
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="register-highline"
+                  options={{
+                    headerShown: false,
+                  }}
+                />
+              </Stack>
+              <PortalHost />
+            </GestureHandlerRootView>
+          </ThemeProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </KeyboardProvider>
   );
 }

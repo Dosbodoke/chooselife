@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EnduranceIcon, SpeedlineIcon } from '~/lib/icons';
@@ -16,7 +17,6 @@ import { cn } from '~/lib/utils';
 import { transformSecondsToTimeString } from '~/utils';
 import { Database } from '~/utils/database.types';
 
-import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';

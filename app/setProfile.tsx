@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { Controller, useForm, UseFormReturn } from 'react-hook-form';
 import { Keyboard, TextInput, TouchableOpacity, View } from 'react-native';
 import DatePicker from 'react-native-date-picker';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
   FadeIn,
   FadeInRight,
@@ -22,7 +23,6 @@ import { supabase } from '~/lib/supabase';
 import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
 
-import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
 import { OnboardNavigator, OnboardPaginator } from '~/components/onboard';
 import { AvatarUploader, SupabaseAvatar } from '~/components/supabase-avatar';
 import { Input } from '~/components/ui/input';

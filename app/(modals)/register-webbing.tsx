@@ -13,6 +13,7 @@ import {
 } from 'react-hook-form';
 import { View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
@@ -21,7 +22,6 @@ import { useAuth } from '~/context/auth';
 import RegisterWebbingIllustration from '~/lib/icons/register-webbing';
 import { supabase } from '~/lib/supabase';
 
-import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
 import { OnboardNavigator } from '~/components/onboard';
 import { Label } from '~/components/ui/label';
 import {
@@ -89,22 +89,25 @@ export default function RegisterWebbing() {
   return (
     <SafeAreaView className="flex-1">
       <KeyboardAwareScrollView
-        contentContainerClassName="flex-1 px-6 py-8 gap-4"
+        contentContainerClassName="flex-grow px-6 pt-8 gap-4"
         keyboardShouldPersistTaps="handled"
       >
         <PrefillForm form={form} />
 
-        <View className="gap-4">
-          <OnboardNavigator
-            total={1}
-            selectedIndex={0}
-            onIndexChange={() => {}} // There is only one step
-            onFinish={form.handleSubmit(onSubmit, onError)}
-            goBack={router.back}
-            isLoading={mutation.isPending}
-            finishLabel="Cadastrar"
-          />
-        </View>
+        <View
+          className="flex-grow"
+          /* Spacer to push paginator down */
+        />
+
+        <OnboardNavigator
+          total={1}
+          selectedIndex={0}
+          onIndexChange={() => {}} // There is only one step
+          onFinish={form.handleSubmit(onSubmit, onError)}
+          goBack={router.back}
+          isLoading={mutation.isPending}
+          finishLabel="Cadastrar"
+        />
       </KeyboardAwareScrollView>
     </SafeAreaView>
   );

@@ -4,6 +4,7 @@ import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { Controller, FieldErrors, useForm } from 'react-hook-form';
 import { Keyboard, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
@@ -11,7 +12,6 @@ import { supabase } from '~/lib/supabase';
 import { transformTimeStringToSeconds } from '~/utils';
 
 import SuccessAnimation from '~/components/animations/success-animation';
-import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';

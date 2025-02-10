@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from 'expo-sqlite/kv-store';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
   Easing,
   FadeInDown,
@@ -23,7 +24,6 @@ import { GoogleIcon } from '~/lib/icons/Google';
 import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
 
-import { KeyboardAwareScrollView } from '~/components/KeyboardAwareScrollView';
 import { Button, buttonTextVariants } from '~/components/ui/button';
 import { Input, PasswordInput } from '~/components/ui/input';
 import { Separator } from '~/components/ui/separator';
