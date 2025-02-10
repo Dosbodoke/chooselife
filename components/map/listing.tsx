@@ -1,10 +1,10 @@
 import {
-  BottomSheetFlatList,
-  BottomSheetFlatListMethods,
+  BottomSheetVirtualizedList,
+  BottomSheetVirtualizedListMethods,
 } from '@gorhom/bottom-sheet';
 import { useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
-import { useEffect, useRef } from 'react';
+import React from 'react';
 import { View } from 'react-native';
 
 import type { Highline } from '~/hooks/use-highline';
@@ -20,35 +20,40 @@ const Listings: React.FC<{
   refresh: number;
   isLoading: boolean;
 }> = ({ highlines, refresh, isLoading }) => {
-  const listRef = useRef<BottomSheetFlatListMethods>(null);
+  const listRef = React.useRef<BottomSheetVirtualizedListMethods>(null);
 
   // Update the view to scroll the list back top
-  useEffect(() => {
+  React.useEffect(() => {
     if (refresh) {
       listRef.current?.scrollToOffset({ offset: 0, animated: true });
     }
   }, [refresh]);
 
-  return (
-    <View className="flex-1">
-      <BottomSheetFlatList
-        renderItem={({ item }) => <HighlineCard item={item} />}
-        data={highlines}
-        keyExtractor={(item) => item.id}
-        ref={listRef}
-        ListHeaderComponent={
-          <View className="flex-row justify-between items-center px-4">
-            <Text className="text-center text-2xl font-bold text-primary">
-              {isLoading
-                ? 'procurando highlines...'
-                : `${highlines.length} highlines`}
-            </Text>
+  const renderItem = React.useCallback(
+    ({ item }: { item: Highline }) => <HighlineCard item={item} />,
+    [],
+  );
 
-            <AddHighlineButton />
-          </View>
-        }
-      />
-    </View>
+  return (
+    <BottomSheetVirtualizedList<Highline>
+      data={highlines}
+      keyExtractor={(item) => item.id}
+      renderItem={renderItem}
+      getItemCount={(data) => data.length}
+      getItem={(data, index) => data[index]}
+      ref={listRef}
+      ListHeaderComponent={
+        <View className="flex-row justify-between items-center px-4">
+          <Text className="text-center text-2xl font-bold text-primary">
+            {isLoading
+              ? 'procurando highlines...'
+              : `${highlines.length} highlines`}
+          </Text>
+
+          <AddHighlineButton />
+        </View>
+      }
+    />
   );
 };
 

@@ -1,4 +1,4 @@
-import BottomSheet from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { useMemo, useRef, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
@@ -51,7 +51,7 @@ const ListingsBottomSheet: React.FC<{
         },
       }}
     >
-      <View className="flex-1 bg-background">
+      <BottomSheetView className="flex-1 bg-background">
         <Listings
           highlines={highlines}
           refresh={refresh}
@@ -69,7 +69,7 @@ const ListingsBottomSheet: React.FC<{
             />
           </TouchableOpacity>
         </View>
-      </View>
+      </BottomSheetView>
     </BottomSheet>
   );
 };
