@@ -2,12 +2,12 @@ import { ConfigContext, ExpoConfig } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'Chooselife',
+  name: 'ChooseLife',
   slug: 'chooselife',
   version: '1.0.0',
   newArchEnabled: true,
   orientation: 'portrait',
-  scheme: 'com.chooselife',
+  scheme: 'com.bodok.chooselife',
   userInterfaceStyle: 'automatic',
   assetBundlePatterns: ['**/*'],
   ios: {
@@ -29,7 +29,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'android.permission.ACCESS_COARSE_LOCATION',
       'android.permission.ACCESS_FINE_LOCATION',
     ],
-    package: 'com.chooselife',
+    package: 'com.bodok.chooselife',
   },
   web: {
     bundler: 'metro',
