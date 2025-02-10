@@ -1,16 +1,10 @@
 import * as React from 'react';
 import Svg, { Path, SvgProps } from 'react-native-svg';
 
-export const MarkerCL = ({
-  props,
-  active,
-}: {
-  props: SvgProps;
-  active: boolean;
-}) => (
+export const MarkerCL = (props: SvgProps & { active: boolean }) => (
   <Svg fill="none" viewBox="0 0 24 24" {...props}>
     <Path
-      fill={active ? '#3b82f6' : '#000'}
+      fill={props.active ? '#3b82f6' : '#000'}
       stroke="#000"
       strokeLinecap="round"
       strokeLinejoin="round"

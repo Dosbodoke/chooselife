@@ -203,7 +203,7 @@ const BottomActions = ({
           ) : (
             <>
               <View className="size-8 text-primary">
-                <MarkerCL props={{}} active={false} />
+                <MarkerCL active={false} />
               </View>
               <Text className="text-primary">Adicionar ao mapa</Text>
             </>

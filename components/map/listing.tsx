@@ -2,12 +2,18 @@ import {
   BottomSheetFlatList,
   BottomSheetFlatListMethods,
 } from '@gorhom/bottom-sheet';
+import { useRouter } from 'expo-router';
+import { useAtomValue } from 'jotai';
 import { useEffect, useRef } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import type { Highline } from '~/hooks/use-highline';
 
-import { HighlineCard } from '../highline/highline-card';
+import { HighlineCard } from '~/components/highline/highline-card';
+import { Button } from '~/components/ui/button';
+import { Text } from '~/components/ui/text';
+
+import { cameraStateAtom } from './utils';
 
 const Listings: React.FC<{
   highlines: Highline[];
@@ -31,14 +37,35 @@ const Listings: React.FC<{
         keyExtractor={(item) => item.id}
         ref={listRef}
         ListHeaderComponent={
-          <Text className="text-center text-lg mt-1 text-primary">
-            {isLoading
-              ? 'procurando highlines...'
-              : `${highlines.length} highlines`}
-          </Text>
+          <View className="flex-row justify-between items-center px-4">
+            <Text className="text-center text-2xl font-bold text-primary">
+              {isLoading
+                ? 'procurando highlines...'
+                : `${highlines.length} highlines`}
+            </Text>
+
+            <AddHighlineButton />
+          </View>
         }
       />
     </View>
+  );
+};
+
+const AddHighlineButton: React.FC = () => {
+  const router = useRouter();
+  const atomValue = useAtomValue(cameraStateAtom);
+
+  return (
+    <Button
+      onPress={() => {
+        router.push(
+          `/register-highline?lat=${atomValue.center[1]}&lng=${atomValue.center[0]}&zoom=${atomValue.zoom}`,
+        );
+      }}
+    >
+      <Text>Adicionar</Text>
+    </Button>
   );
 };
 
