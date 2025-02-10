@@ -278,7 +278,7 @@ const RegisterHighline = () => {
                   aria-labelledby="entry-comment"
                   className={fieldState.error && 'border-destructive'}
                   {...field}
-                  blurOnSubmit={true}
+                  submitBehavior="blurAndSubmit"
                   onSubmitEditing={() => {
                     Keyboard.dismiss();
                   }}

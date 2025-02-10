@@ -1,41 +1,82 @@
+import Mapbox from '@rnmapbox/maps';
 import * as Location from 'expo-location';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import type { BBox } from 'geojson';
+import { useSetAtom } from 'jotai';
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
-import MapView, {
-  PROVIDER_GOOGLE,
-  type MapType,
-  type Region,
-} from 'react-native-maps';
 
 import { useHighlineList } from '~/hooks/use-highline-list';
-import { calculateZoomLevel, regionToBoundingBox } from '~/utils';
+import { calculateZoomLevel } from '~/utils';
 
 import ListingsBottomSheet from '~/components/map/bottom-sheet';
 import MapControls from '~/components/map/controls';
 import ExploreHeader from '~/components/map/explore-header';
 import { MapCardList } from '~/components/map/map-card';
 import { Markers } from '~/components/map/markers';
+import {
+  cameraStateAtom,
+  DEFAULT_LATITUDE,
+  DEFAULT_LONGITUDE,
+  DEFAULT_ZOOM,
+} from '~/components/map/utils';
 
-// Constants
-const INITIAL_REGION = {
-  latitude: -15.7782081,
-  longitude: -47.93371,
-  latitudeDelta: 80,
-  longitudeDelta: 80,
+const getMapStyle = (mapType: string) => {
+  return mapType === 'satellite'
+    ? Mapbox.StyleURL.SatelliteStreet
+    : Mapbox.StyleURL.Outdoors;
 };
 
-export default function Screen() {
-  const mapRef = useRef<MapView>(null);
-  const [isOnMyLocation, setIsOnMyLocation] = useState(false);
-  const [mapType, setMapType] = useState<MapType>('satellite');
-  const [zoom, setZoom] = useState(10);
-  const [bounds, setBounds] = useState<BBox>(
-    regionToBoundingBox(INITIAL_REGION),
-  );
-  const [searchTerm, setSearchTerm] = useState('');
+async function getMyLocation(): Promise<
+  | {
+      latitude: number;
+      longitude: number;
+      latitudeDelta: number;
+      longitudeDelta: number;
+    }
+  | undefined
+> {
+  try {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      console.warn('Location permission not granted');
+      return;
+    }
 
+    let location;
+    try {
+      // Try to fetch the current location.
+      location = await Location.getCurrentPositionAsync({});
+    } catch (error) {
+      console.warn(
+        'Error fetching current position, trying last known position',
+        error,
+      );
+      location = await Location.getLastKnownPositionAsync({});
+      if (!location) {
+        throw new Error('Unable to obtain a location fix');
+      }
+    }
+
+    const { latitude, longitude } = location.coords;
+    return {
+      latitude,
+      longitude,
+      latitudeDelta: 0.1,
+      longitudeDelta: 0.1,
+    };
+  } catch (error) {
+    console.error('Error fetching location:', error);
+    return;
+  }
+}
+export default function Screen() {
+  const mapRef = useRef<Mapbox.MapView>(null);
+  const cameraRef = useRef<Mapbox.Camera>(null);
+
+  const [isOnMyLocation, setIsOnMyLocation] = useState(false);
+  const [mapType, setMapType] = useState<'satellite' | 'standard'>('satellite');
+  const setCamera = useSetAtom(cameraStateAtom);
+  const [searchTerm, setSearchTerm] = useState('');
   const { focusedMarker } = useLocalSearchParams<{ focusedMarker?: string }>();
 
   const {
@@ -48,29 +89,19 @@ export default function Screen() {
     isLoading,
   } = useHighlineList({ searchTerm });
 
-  async function getMyLocation(): Promise<Region | undefined> {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') return;
-
-    const { latitude, longitude } = (await Location.getCurrentPositionAsync({}))
-      .coords;
-    const region = {
-      latitude,
-      longitude,
-      latitudeDelta: 0.1,
-      longitudeDelta: 0.1,
-    };
-    return region;
-  }
-
   async function goToMyLocation() {
     const region = await getMyLocation();
     if (!region) return;
-    mapRef.current?.animateToRegion(region, 1000);
+    const newZoom = calculateZoomLevel(region.latitudeDelta);
+    cameraRef.current?.setCamera({
+      centerCoordinate: [region.longitude, region.latitude],
+      zoomLevel: newZoom,
+      animationDuration: 1000,
+      animationMode: 'flyTo',
+    });
     setIsOnMyLocation(true);
   }
 
-  // Effect to handle focusing on the highline if `focusedMarker` exists
   useEffect(() => {
     if (!focusedMarker || !highlines) {
       setHighlightedMarker(null);
@@ -85,32 +116,35 @@ export default function Screen() {
     if (highlineToFocus) {
       setHighlightedMarker(highlineToFocus);
       setClusterMarkers([highlineToFocus]);
-      mapRef.current?.fitToCoordinates(
-        [
-          {
-            latitude: highlineToFocus.anchor_a_lat,
-            longitude: highlineToFocus.anchor_a_long,
-          },
-          {
-            latitude: highlineToFocus.anchor_b_lat,
-            longitude: highlineToFocus.anchor_b_long,
-          },
-        ],
-        {
-          edgePadding: {
-            top: 200,
-            right: 50,
-            bottom: 250,
-            left: 50,
-          },
-          animated: true,
-        },
+
+      // Calculate the southwest and northeast bounds from the two anchors.
+      const minLat = Math.min(
+        highlineToFocus.anchor_a_lat,
+        highlineToFocus.anchor_b_lat,
+      );
+      const maxLat = Math.max(
+        highlineToFocus.anchor_a_lat,
+        highlineToFocus.anchor_b_lat,
+      );
+      const minLng = Math.min(
+        highlineToFocus.anchor_a_long,
+        highlineToFocus.anchor_b_long,
+      );
+      const maxLng = Math.max(
+        highlineToFocus.anchor_a_long,
+        highlineToFocus.anchor_b_long,
+      );
+
+      cameraRef.current?.fitBounds(
+        [maxLng, maxLat], // northeast [lng, lat]
+        [minLng, minLat], // southwest [lng, lat]
+        [0, 50, 200, 250, 1000],
       );
     }
   }, [focusedMarker, highlines]);
 
   return (
-    <View className="flex-1">
+    <View style={{ flex: 1 }}>
       <Stack.Screen
         options={{
           header: () => (
@@ -121,22 +155,26 @@ export default function Screen() {
           ),
         }}
       />
-      <MapView
+
+      <Mapbox.MapView
         ref={mapRef}
-        style={{ width: '100%', height: '100%' }}
-        showsUserLocation
-        showsMyLocationButton={false}
-        initialRegion={INITIAL_REGION}
-        mapType={mapType}
-        onMapReady={() => {
-          if (!focusedMarker) goToMyLocation();
+        style={{ flex: 1 }}
+        styleURL={getMapStyle(mapType)}
+        scaleBarEnabled={false}
+        onMapIdle={(state) => {
+          setIsOnMyLocation(false);
+
+          const { sw, ne } = state.properties.bounds;
+          setCamera({
+            center: state.properties.center,
+            zoom: state.properties.zoom,
+            bounds: [sw[0], sw[1], ne[0], ne[1]],
+          });
         }}
-        onTouchMove={() => setIsOnMyLocation(false)}
-        onRegionChangeComplete={async (region) => {
-          const zoom = calculateZoomLevel(region.latitudeDelta);
-          const bounds = regionToBoundingBox(region);
-          setZoom(zoom);
-          setBounds(bounds);
+        onDidFinishRenderingMap={() => {
+          if (!focusedMarker) {
+            goToMyLocation();
+          }
         }}
         onPress={() => {
           if (highlightedMarker) {
@@ -144,33 +182,41 @@ export default function Screen() {
             setClusterMarkers([]);
           }
         }}
-        provider={PROVIDER_GOOGLE}
       >
+        <Mapbox.Camera
+          ref={cameraRef}
+          zoomLevel={DEFAULT_ZOOM}
+          centerCoordinate={[DEFAULT_LONGITUDE, DEFAULT_LATITUDE]}
+        />
+
+        <Mapbox.UserLocation showsUserHeadingIndicator />
+
         <Markers
-          mapRef={mapRef}
+          cameraRef={cameraRef}
           highlines={highlines}
           highlightedMarker={highlightedMarker}
-          zoom={zoom}
-          bounds={bounds}
           updateMarkers={(highlines, focused) => {
             setClusterMarkers(highlines);
             setHighlightedMarker(focused);
           }}
         />
-      </MapView>
+      </Mapbox.MapView>
+
       <MapControls
         isOnMyLocation={isOnMyLocation}
-        goToMyLocation={() => goToMyLocation()}
+        goToMyLocation={goToMyLocation}
         mapType={mapType}
         setMapType={setMapType}
       />
-      {clusterMarkers.length > 0 ? (
+
+      {clusterMarkers.length > 0 && (
         <MapCardList
           highlines={clusterMarkers}
           focusedMarker={highlightedMarker}
           changeFocusedMarker={(high) => setHighlightedMarker(high)}
         />
-      ) : null}
+      )}
+
       <ListingsBottomSheet
         highlines={highlines}
         hasFocusedMarker={!!focusedMarker}

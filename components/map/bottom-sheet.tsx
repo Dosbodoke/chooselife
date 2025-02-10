@@ -1,10 +1,10 @@
 import BottomSheet from '@gorhom/bottom-sheet';
+import * as Haptics from 'expo-haptics';
 import { useMemo, useRef, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 
 import { type Highline } from '~/hooks/use-highline';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
-import { useColorScheme } from '~/lib/useColorScheme';
 
 import Listings from '~/components/map/listing';
 
@@ -14,8 +14,7 @@ const ListingsBottomSheet: React.FC<{
   hasFocusedMarker: boolean;
   isLoading: boolean;
 }> = ({ highlines, hasFocusedMarker, isLoading }) => {
-  const { colorScheme } = useColorScheme();
-  const snapPoints = useMemo(() => ['10%', '100%'], []);
+  const snapPoints = useMemo(() => ['15%', '100%'], []);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [refresh, setRefresh] = useState<number>(0);
 
@@ -30,15 +29,20 @@ const ListingsBottomSheet: React.FC<{
       index={hasFocusedMarker ? 0 : 1}
       snapPoints={snapPoints}
       enablePanDownToClose={false}
+      enableDynamicSizing={false}
+      onChange={() => {
+        Haptics.selectionAsync();
+      }}
       handleIndicatorStyle={{
-        backgroundColor: colorScheme === 'light' ? '#71717A' : '#A1A1AA',
+        backgroundColor: '#71717A',
       }}
       handleStyle={{
-        backgroundColor: colorScheme === 'light' ? '#FFF' : '#09090B',
+        backgroundColor: '#FFF',
       }}
       style={{
+        overflow: 'hidden',
         elevation: 4,
-        shadowColor: colorScheme === 'light' ? '#000' : '#f8fafc',
+        shadowColor: '#000',
         shadowOpacity: 0.3,
         shadowRadius: 4,
         shadowOffset: {

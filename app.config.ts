@@ -5,7 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: 'Chooselife',
   slug: 'chooselife',
   version: '1.0.0',
-  newArchEnabled: false,
+  newArchEnabled: true,
   orientation: 'portrait',
   scheme: 'com.chooselife',
   userInterfaceStyle: 'automatic',
@@ -30,11 +30,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'android.permission.ACCESS_FINE_LOCATION',
     ],
     package: 'com.chooselife',
-    config: {
-      googleMaps: {
-        apiKey: 'AIzaSyA3gcdtvNDyhcuv4F0_vHcJttOabyglhhU',
-      },
-    },
   },
   web: {
     bundler: 'metro',
@@ -54,6 +49,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           image: './assets/icons/splash-icon-light.png',
           backgroundColor: "#000000",
         }
+      }
+    ],
+    [
+      "@rnmapbox/maps",
+      {
+        "RNMapboxMapsDownloadToken": process.env.MAPBOX_DOWNLOAD_TOKEN 
       }
     ],
     [
