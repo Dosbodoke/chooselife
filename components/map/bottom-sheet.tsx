@@ -1,22 +1,26 @@
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import { bottomSheetHandlerHeightAtom } from '~/app/(tabs)';
+import BottomSheet, {
+  BottomSheetFlashList,
+  BottomSheetView,
+} from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { atom } from 'jotai';
 import { useAtomValue, useSetAtom } from 'jotai/react';
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 
 import { type Highline } from '~/hooks/use-highline';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
 
-import Listings from '~/components/map/listing';
-
+import { HighlineCard } from '../highline/highline-card';
 import { Button } from '../ui/button';
 import { Text } from '../ui/text';
 import { cameraStateAtom } from './utils';
 
-// Bottom sheet that wraps our Listings component
+// Keep track of the handle height so the Highlited marker card can be positioned correctly and the minimum snap point fits only the handler
+export const bottomSheetHandlerHeightAtom = atom<number>(0);
+
 const ListingsBottomSheet: React.FC<{
   highlines: Highline[];
   hasFocusedMarker: boolean;
@@ -30,12 +34,15 @@ const ListingsBottomSheet: React.FC<{
     return [headerHeight > 0 ? headerHeight : '15%', '100%'];
   }, [headerHeight]);
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const [refresh, setRefresh] = useState<number>(0);
 
   const onShowMap = () => {
     bottomSheetRef.current?.collapse();
-    setRefresh(refresh + 1);
   };
+
+  const renderItem = React.useCallback(
+    ({ item }: { item: Highline }) => <HighlineCard item={item} />,
+    [],
+  );
 
   return (
     <BottomSheet
@@ -66,7 +73,12 @@ const ListingsBottomSheet: React.FC<{
       }}
     >
       <BottomSheetView className="flex-1 bg-background">
-        <Listings highlines={highlines} refresh={refresh} />
+        <BottomSheetFlashList<Highline>
+          data={highlines}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          estimatedItemSize={390}
+        />
         <View className="absolute bottom-6 w-full items-center">
           <TouchableOpacity
             onPress={onShowMap}

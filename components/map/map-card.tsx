@@ -1,4 +1,3 @@
-import { bottomSheetHandlerHeightAtom } from '~/app/(tabs)';
 import { Link } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import React from 'react';
@@ -14,6 +13,7 @@ import { Text } from '~/components/ui/text';
 import { H4, Small } from '~/components/ui/typography';
 
 import { HighlineImage } from '../highline/highline-image';
+import { bottomSheetHandlerHeightAtom } from './bottom-sheet';
 
 interface HighlineCardProps {
   highline: Highline;
