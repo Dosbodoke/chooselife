@@ -1,4 +1,6 @@
+import { bottomSheetHandlerHeightAtom } from '~/app/(tabs)';
 import { Link } from 'expo-router';
+import { useAtomValue } from 'jotai';
 import React from 'react';
 import { Pressable, TouchableOpacity, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
@@ -86,11 +88,17 @@ export const MapCardList = ({
   focusedMarker: Highline | null;
   changeFocusedMarker: (high: Highline) => void;
 }) => {
+  const bottomSheetHandlerHeight = useAtomValue(bottomSheetHandlerHeightAtom);
   return (
     <Animated.View
       entering={FadeIn.duration(300).easing(Easing.inOut(Easing.ease))}
       exiting={FadeOut.duration(300).easing(Easing.inOut(Easing.ease))}
-      style={{ position: 'absolute', bottom: 96, left: 0, right: 0 }}
+      style={{
+        position: 'absolute',
+        bottom: bottomSheetHandlerHeight + 16, // Bottom sheet handle + padding
+        left: 0,
+        right: 0,
+      }}
     >
       <ScrollView
         horizontal

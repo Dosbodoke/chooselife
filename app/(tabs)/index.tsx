@@ -1,7 +1,7 @@
 import Mapbox from '@rnmapbox/maps';
 import * as Location from 'expo-location';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useSetAtom } from 'jotai';
+import { atom, useSetAtom } from 'jotai';
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
@@ -19,6 +19,9 @@ import {
   DEFAULT_LONGITUDE,
   DEFAULT_ZOOM,
 } from '~/components/map/utils';
+
+// Keep track of the handle height so the Highlited marker card can be positioned correctly and the minimum snap point fits only the handler
+export const bottomSheetHandlerHeightAtom = atom<number>(0);
 
 const getMapStyle = (mapType: string) => {
   return mapType === 'satellite'
