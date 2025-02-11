@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TouchableOpacity } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -27,12 +28,13 @@ export const CategoryDropdown = ({
   selectedCategory,
   visibleCategories,
 }: Props) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const categories = useMemo<Record<Category, { label: string }>>(
     () => ({
       speedline: { label: 'Speedline' },
-      cadenas: { label: 'Cadenas' },
-      distance: { label: 'Distância' },
+      cadenas: { label: t('components.ranking.category-dropdown.sent') },
+      distance: { label: t('components.ranking.category-dropdown.distance') },
       fullLine: { label: 'Full Lines' },
     }),
     [],
@@ -55,7 +57,9 @@ export const CategoryDropdown = ({
         </TouchableOpacity>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="start">
-        <DropdownMenuLabel>Trocar modalidade</DropdownMenuLabel>
+        <DropdownMenuLabel>
+          {t('components.ranking.category-dropdown.menuLabel')}
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup
           value={selectedCategory}

@@ -1,6 +1,7 @@
 import { Link } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, TouchableOpacity, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import Animated, { Easing, FadeIn, FadeOut } from 'react-native-reanimated';
@@ -15,17 +16,14 @@ import { H4, Small } from '~/components/ui/typography';
 import { HighlineImage } from '../highline/highline-image';
 import { bottomSheetHandlerHeightAtom } from './bottom-sheet';
 
-interface HighlineCardProps {
+interface MapCardProps {
   highline: Highline;
   isFocused: boolean;
   onPress: (high: Highline) => void;
 }
 
-const HighlineCard: React.FC<HighlineCardProps> = ({
-  highline,
-  isFocused,
-  onPress,
-}) => {
+const MapCard: React.FC<MapCardProps> = ({ highline, isFocused, onPress }) => {
+  const { t } = useTranslation();
   return (
     <Pressable
       onPress={() => onPress(highline)}
@@ -67,7 +65,9 @@ const HighlineCard: React.FC<HighlineCardProps> = ({
           </View>
           <Link href={`/highline/${highline.id}`} asChild>
             <TouchableOpacity className="flex-row gap-1 mt-auto items-center">
-              <Text className="text-blue-500">Ver detalhes</Text>
+              <Text className="text-blue-500">
+                {t('components.map.map-card.seeDatails')}
+              </Text>
               <LucideIcon name="ArrowRight" className="size-4 text-blue-500" />
             </TouchableOpacity>
           </Link>
@@ -76,8 +76,6 @@ const HighlineCard: React.FC<HighlineCardProps> = ({
     </Pressable>
   );
 };
-
-export default HighlineCard;
 
 export const MapCardList = ({
   highlines,
@@ -106,7 +104,7 @@ export const MapCardList = ({
         contentContainerClassName="px-2 gap-4"
       >
         {highlines.map((high) => (
-          <HighlineCard
+          <MapCard
             key={`highline-card-${high.id}`}
             highline={high}
             isFocused={high.id === focusedMarker?.id}

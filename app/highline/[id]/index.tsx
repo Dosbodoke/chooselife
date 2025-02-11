@@ -1,6 +1,7 @@
 import * as Linking from 'expo-linking';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ScrollView,
   Share,
@@ -167,6 +168,7 @@ const BottomActions = ({
   hasLocation: boolean;
   onLayout: (event: LayoutChangeEvent) => void;
 }) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { profile } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -198,14 +200,18 @@ const BottomActions = ({
           {hasLocation ? (
             <>
               <LucideIcon name="Earth" className="size-6 text-primary" />
-              <Text className="text-primary">Ver no mapa</Text>
+              <Text className="text-primary">
+                {t('app.highline.index.BottomActions.seeOnMap')}
+              </Text>
             </>
           ) : (
             <>
               <View className="size-8 text-primary">
                 <MarkerCL active={false} />
               </View>
-              <Text className="text-primary">Adicionar ao mapa</Text>
+              <Text className="text-primary">
+                {t('app.highline.index.BottomActions.addToMap')}
+              </Text>
             </>
           )}
         </Button>
@@ -222,7 +228,9 @@ const BottomActions = ({
           router.push(route);
         }}
       >
-        <Text className="text-primary-foreground">Registrar rolê</Text>
+        <Text className="text-primary-foreground">
+          {t('app.highline.index.BottomActions.register')}
+        </Text>
       </Button>
     </View>
   );

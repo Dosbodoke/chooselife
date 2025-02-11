@@ -12,8 +12,10 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { Link, useRouter } from 'expo-router';
 import { Position } from 'geojson';
+import i18next from 'i18next';
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import {
   Dimensions,
   TextInput,
@@ -47,19 +49,27 @@ const ACCEPTED_IMAGE_TYPES = [
 ];
 
 const formSchema = z.object({
-  name: z.string().min(3, 'Deve conter ao menos 3 caracteres'),
+  name: z.string().min(3, i18next.t('components.map.register-modal.name.min')),
   height: z.coerce
     .number({
-      required_error: 'Insira a altura do Highline',
-      invalid_type_error: 'Insira um número',
+      required_error: i18next.t(
+        'components.map.register-modal.height.required',
+      ),
+      invalid_type_error: i18next.t(
+        'components.map.register-modal.height.invalid',
+      ),
     })
-    .positive('Altura não pode ser negativa'),
+    .positive(i18next.t('components.map.register-modal.height.positive')),
   length: z.coerce
     .number({
-      required_error: 'Insira o comprimento do Highline',
-      invalid_type_error: 'Insira um número',
+      required_error: i18next.t(
+        'components.map.register-modal.length.required',
+      ),
+      invalid_type_error: i18next.t(
+        'components.map.register-modal.length.invalid',
+      ),
     })
-    .positive('Comprimento não pode ser negativo'),
+    .positive(i18next.t('components.map.register-modal.length.positive')),
   description: z.string().optional(),
   image: z
     .custom<ImagePicker.ImagePickerAsset>()
@@ -67,13 +77,13 @@ const formSchema = z.object({
     .refine(
       (file) =>
         !file || (file.fileSize ? file.fileSize <= MAX_FILE_SIZE : true),
-      `Tamanho máximo do arquivo é 6MB`,
+      i18next.t('components.map.register-modal.image.maxSize'), // "Tamanho máximo do arquivo é 6MB"
     )
     .refine(
       (file) =>
         !file ||
         (file.mimeType ? ACCEPTED_IMAGE_TYPES.includes(file.mimeType) : false),
-      'Formatos aceitos são: .jpg, .jpeg, .png e .webp',
+      i18next.t('components.map.register-modal.image.accepted'), // "Formatos aceitos são: .jpg, .jpeg, .png e .webp"
     ),
 });
 
@@ -85,6 +95,7 @@ export const RegisterHighlineModal: React.FC<{
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }> = ({ anchorA, anchorB, open, setOpen }) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const bottomSheetRef = React.useRef<BottomSheet>(null);
   const [newHighlineUUID, setNewHighlineUUID] = React.useState<string | null>(
@@ -114,7 +125,7 @@ export const RegisterHighlineModal: React.FC<{
     mutationFn: async ({ name, height, length, description, image }) => {
       if (!anchorA || !anchorB) throw new Error('Anchors not defined');
 
-      // Upload image, as said on documentation, to upload from RN it need's to be a base64 https://supabase.com/docs/reference/javascript/storage-from-upload
+      // Upload image if provided (converted to base64)
       let imageID: string | null = null;
       if (image && image.base64 && image.mimeType) {
         const extension = image.mimeType.split('/')[1];
@@ -176,7 +187,6 @@ export const RegisterHighlineModal: React.FC<{
         if (mutation.isSuccess) {
           router.replace('/');
         }
-
         setOpen(false);
       }}
       enablePanDownToClose
@@ -198,10 +208,7 @@ export const RegisterHighlineModal: React.FC<{
         shadowColor: '#000',
         shadowOpacity: 0.3,
         shadowRadius: 4,
-        shadowOffset: {
-          width: 1,
-          height: 1,
-        },
+        shadowOffset: { width: 1, height: 1 },
       }}
     >
       <BottomSheetScrollView contentContainerClassName="p-4 pb-8 gap-4">
@@ -212,130 +219,122 @@ export const RegisterHighlineModal: React.FC<{
             <Controller
               control={highlineForm.control}
               name="name"
-              render={({ field, fieldState }) => {
-                return (
-                  <BottomSheetInput
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    label="Nome da via"
-                    className={fieldState.error && 'border-destructive'}
-                  />
-                );
-              }}
+              render={({ field, fieldState }) => (
+                <BottomSheetInput
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  label={t('components.map.register-modal.name.label')}
+                  className={fieldState.error && 'border-destructive'}
+                />
+              )}
             />
 
             <Controller
               control={highlineForm.control}
               name="height"
-              render={({ field, fieldState }) => {
-                return (
-                  <BottomSheetInput
-                    value={field.value.toString()}
-                    onChangeText={(text) => field.onChange(+text || 0)}
-                    label="Altura (em metros)"
-                    keyboardType="number-pad"
-                    className={fieldState.error && 'border-destructive'}
-                  />
-                );
-              }}
+              render={({ field, fieldState }) => (
+                <BottomSheetInput
+                  value={field.value.toString()}
+                  onChangeText={(text) => field.onChange(+text || 0)}
+                  label={t('components.map.register-modal.height.label')}
+                  keyboardType="number-pad"
+                  className={fieldState.error && 'border-destructive'}
+                />
+              )}
             />
 
             <Controller
               control={highlineForm.control}
               name="length"
-              render={({ field, fieldState }) => {
-                return (
-                  <BottomSheetInput
-                    value={field.value.toString()}
-                    onChangeText={(text) => field.onChange(+text || 0)}
-                    label="Comprimento (em metros)"
-                    contextMenuHidden={true}
-                    editable={false}
-                    keyboardType="number-pad"
-                    className={fieldState.error && 'border-destructive'}
-                  />
-                );
-              }}
+              render={({ field, fieldState }) => (
+                <BottomSheetInput
+                  value={field.value.toString()}
+                  onChangeText={(text) => field.onChange(+text || 0)}
+                  label={t('components.map.register-modal.length.label')}
+                  contextMenuHidden={true}
+                  editable={false}
+                  keyboardType="number-pad"
+                  className={fieldState.error && 'border-destructive'}
+                />
+              )}
             />
 
             <Controller
               control={highlineForm.control}
               name="description"
-              render={({ field, fieldState }) => {
-                return (
-                  <BottomSheetTextArea
-                    keyboardType="default"
-                    returnKeyType="done"
-                    placeholder="Fale um pouco sobre este Highline. Aqui é o lugar perfeito para dar informações de acesso, segurança, dica para montagem ou rolê, etc..."
-                    {...field}
-                    submitBehavior="blurAndSubmit"
-                    onChangeText={(text) => field.onChange(text)}
-                    value={field.value}
-                    onChange={field.onChange}
-                    label="Descrição"
-                    className={fieldState.error && 'border-destructive'}
-                  />
-                );
-              }}
+              render={({ field, fieldState }) => (
+                <BottomSheetTextArea
+                  keyboardType="default"
+                  returnKeyType="done"
+                  placeholder={t(
+                    'components.map.register-modal.description.placeholder',
+                  )}
+                  {...field}
+                  submitBehavior="blurAndSubmit"
+                  onChangeText={(text) => field.onChange(text)}
+                  value={field.value}
+                  label={t('components.map.register-modal.description.label')}
+                  className={fieldState.error && 'border-destructive'}
+                />
+              )}
             />
 
             <Controller
               control={highlineForm.control}
               name="image"
-              render={({ field, fieldState }) => {
-                return (
-                  <View
-                    className={cn(
-                      'flex items-center justify-center border border-border rounded-lg w-full aspect-video bg-background overflow-hidden',
-                      fieldState.error ? 'border-destructive' : null,
-                    )}
-                  >
-                    {field.value ? (
-                      <Image
-                        source={{ uri: field.value.uri }}
-                        contentFit="cover"
-                        alt="Image of the Highline"
-                        style={{ width: '100%', height: '100%' }}
-                        className="rounded-lg"
-                      />
-                    ) : (
-                      <View className="flex items-center justify-center p-4">
-                        <TouchableOpacity
-                          onPress={async () => {
-                            const result =
-                              await ImagePicker.launchImageLibraryAsync({
-                                mediaTypes: 'images',
-                                allowsEditing: true,
-                                quality: 1,
-                                aspect: [16, 9],
-                                selectionLimit: 1,
-                                base64: true,
-                              });
-                            if (!result.canceled) {
-                              field.onChange(result.assets[0]);
-                            }
-                          }}
-                          className="flex items-center gap-2"
-                        >
-                          <View className="p-3 items-center justify-center rounded-md bg-muted">
-                            <LucideIcon
-                              name="Upload"
-                              className="text-muted-foreground size-8"
-                            />
-                          </View>
-                          <Text className="text-lg text-center text-primary">
-                            Foto do highline
-                          </Text>
-                          <Text className="text-sm text-center text-muted-foreground">
-                            Clique aqui para escolher a foto que será usada como
-                            capa para este Highline
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  </View>
-                );
-              }}
+              render={({ field, fieldState }) => (
+                <View
+                  className={cn(
+                    'flex items-center justify-center border border-border rounded-lg w-full aspect-video bg-background overflow-hidden',
+                    fieldState.error ? 'border-destructive' : null,
+                  )}
+                >
+                  {field.value ? (
+                    <Image
+                      source={{ uri: field.value.uri }}
+                      contentFit="cover"
+                      alt="Image of the Highline"
+                      style={{ width: '100%', height: '100%' }}
+                      className="rounded-lg"
+                    />
+                  ) : (
+                    <View className="flex items-center justify-center p-4">
+                      <TouchableOpacity
+                        onPress={async () => {
+                          const result =
+                            await ImagePicker.launchImageLibraryAsync({
+                              mediaTypes: 'images',
+                              allowsEditing: true,
+                              quality: 1,
+                              aspect: [16, 9],
+                              selectionLimit: 1,
+                              base64: true,
+                            });
+                          if (!result.canceled) {
+                            field.onChange(result.assets[0]);
+                          }
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <View className="p-3 items-center justify-center rounded-md bg-muted">
+                          <LucideIcon
+                            name="Upload"
+                            className="text-muted-foreground size-8"
+                          />
+                        </View>
+                        <Text className="text-lg text-center text-primary">
+                          {t('components.map.register-modal.image.label')}
+                        </Text>
+                        <Text className="text-sm text-center text-muted-foreground">
+                          {t(
+                            'components.map.register-modal.image.instructions',
+                          )}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              )}
             />
 
             <Button
@@ -347,7 +346,7 @@ export const RegisterHighlineModal: React.FC<{
               )}
               disabled={mutation.isPending}
             >
-              <Text>Registrar Highline</Text>
+              <Text>{t('components.map.register-modal.submit')}</Text>
             </Button>
           </>
         )}
@@ -357,17 +356,22 @@ export const RegisterHighlineModal: React.FC<{
 };
 
 const SuccessMessage: React.FC<{ id: string }> = ({ id }) => {
+  const { t } = useTranslation();
   return (
     <View className="items-center gap-8">
       <View>
-        <H1 className="text-center">BOA CHOOSEN</H1>
-        <Text className="text-3xl text-center">🆑 🆑 🆑 🆑 🆑</Text>
+        <H1 className="text-center">
+          {t('components.map.register-modal.success.title')}
+        </H1>
+        <Text className="text-3xl text-center">
+          {t('components.map.register-modal.success.subtitle')}
+        </Text>
       </View>
       <View className="h-52 items-center justify-center">
         <SuccessAnimation />
       </View>
       <Text className="text-center w-3/4">
-        O Highline foi criado, agora é so registrar o seu rolê!
+        {t('components.map.register-modal.success.message')}
       </Text>
       <Link
         href={{
@@ -378,7 +382,7 @@ const SuccessMessage: React.FC<{ id: string }> = ({ id }) => {
         asChild
       >
         <Button>
-          <Text>Ver o Highline</Text>
+          <Text>{t('components.map.register-modal.success.button')}</Text>
         </Button>
       </Link>
     </View>
@@ -387,9 +391,7 @@ const SuccessMessage: React.FC<{ id: string }> = ({ id }) => {
 
 const BottomSheetInput = React.forwardRef<TextInput, InputProps>(
   ({ onFocus, onBlur, ...rest }, ref) => {
-    //#region hooks
     const { shouldHandleKeyboardEvents } = useBottomSheetInternal();
-    //#endregion
 
     //#region callbacks
     const handleOnFocus = React.useCallback(

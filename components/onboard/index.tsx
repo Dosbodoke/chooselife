@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 import Animated, {
   FadeInDown,
@@ -127,7 +128,7 @@ function OnboardNavigator({
   onFinish,
   goBack,
   isLoading,
-  finishLabel = 'Finalizar',
+  finishLabel,
 }: {
   selectedIndex: number;
   total: number;
@@ -139,6 +140,7 @@ function OnboardNavigator({
   // Text to be shown on the button when the last step is reached
   finishLabel?: string;
 }) {
+  const { t } = useTranslation();
   const handleBack = () => {
     if (selectedIndex === 0 && goBack) {
       goBack();
@@ -169,7 +171,7 @@ function OnboardNavigator({
           exiting={_exiting}
           layout={_layoutTransition}
         >
-          <Text>Voltar</Text>
+          <Text>{t('components.onboard.goBack')}</Text>
         </AnimatedButton>
       ) : null}
       <AnimatedButton
@@ -192,7 +194,7 @@ function OnboardNavigator({
             entering={FadeInDown.springify().damping(80).stiffness(200)}
             exiting={FadeOutUp.springify().damping(80).stiffness(200)}
           >
-            {finishLabel}
+            {finishLabel ? finishLabel : t('components.onboard.finish')}
           </AnimatedText>
         ) : (
           <AnimatedText
@@ -202,7 +204,7 @@ function OnboardNavigator({
             entering={FadeInDown.springify().damping(80).stiffness(200)}
             exiting={FadeOutUp.springify().damping(80).stiffness(200)}
           >
-            Continuar
+            {t('components.onboard.continue')}
           </AnimatedText>
         )}
       </AnimatedButton>

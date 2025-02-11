@@ -1,6 +1,8 @@
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import i18next from 'i18next';
 import React, { useCallback, useId, useMemo, useState } from 'react';
 import { Controller, type SubmitHandler } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   ScrollView,
@@ -85,6 +87,7 @@ export default function Screen() {
 }
 
 export const HighlineSetup: React.FC = () => {
+  const { t } = useTranslation();
   const { form, mutation, highline, setupIsPending } = useRiggingForm();
   const router = useRouter();
 
@@ -101,7 +104,6 @@ export const HighlineSetup: React.FC = () => {
       setStep((prevStep) => prevStep - 1);
       return;
     }
-
     // Move forward
     if (step < steps.length - 1) {
       setStep((prevStep) => prevStep + 1);
@@ -117,16 +119,18 @@ export const HighlineSetup: React.FC = () => {
     return (
       <View className="h-full items-center justify-center gap-8">
         <View>
-          <H1 className="text-center">BOA CHOOSEN</H1>
-          <Text className="text-3xl text-center">🆑 🆑 🆑 🆑 🆑</Text>
+          <H1 className="text-center">{t('app.highline.rig.success.title')}</H1>
+          <Text className="text-3xl text-center">
+            {t('app.highline.rig.success.subtitle')}
+          </Text>
         </View>
         <View className="h-52 items-center justify-center">
           <SuccessAnimation />
         </View>
         <Text className="text-center w-3/4">
-          A montagem está planejada para{' '}
-          {form.getValues('rigDate').toLocaleDateString('pt-BR')}, você pode
-          voltar e fazer modificações quando precisar.
+          {t('app.highline.rig.success.message', {
+            date: form.getValues('rigDate').toLocaleDateString('pt-BR'),
+          })}
         </Text>
         <Link
           href={{
@@ -137,7 +141,7 @@ export const HighlineSetup: React.FC = () => {
           asChild
         >
           <Button>
-            <Text>Ver o Highline</Text>
+            <Text>{t('app.highline.rig.success.button')}</Text>
           </Button>
         </Link>
       </View>
@@ -146,12 +150,10 @@ export const HighlineSetup: React.FC = () => {
 
   return (
     <KeyboardAwareScrollView
-      /* Parent takes full screen height */
       contentContainerClassName="flex-grow px-6 pt-8 gap-4"
       keyboardShouldPersistTaps="handled"
     >
       <Animated.View
-        /* Step content - sizes naturally */
         className="gap-4 items-center"
         entering={FadeInRight}
         exiting={FadeOutLeft}
@@ -159,22 +161,15 @@ export const HighlineSetup: React.FC = () => {
         {steps[step]}
       </Animated.View>
 
-      <View
-        className="flex-grow"
-        /* Spacer to push paginator down */
-      />
-
-      <View
-        className="gap-4 pb-8"
-        /* Paginator/Navigator - stays at bottom when content is short */
-      >
+      <View className="flex-grow" />
+      <View className="gap-4 pb-8">
         <OnboardPaginator total={steps.length} selectedIndex={step} />
         <OnboardNavigator
           total={steps.length}
           selectedIndex={step}
           onIndexChange={handleNextStep}
           onFinish={form.handleSubmit(handleSave)}
-          finishLabel="Planejar montagem"
+          finishLabel={t('app.highline.rig.navigator.finishLabel')}
           goBack={router.back}
           isLoading={mutation.isPending || setupIsPending}
         />
@@ -184,6 +179,7 @@ export const HighlineSetup: React.FC = () => {
 };
 
 const DateForm: React.FC = () => {
+  const { t } = useTranslation();
   const { form, setupIsPending } = useRiggingForm();
   const colorScheme = useColorScheme();
 
@@ -199,9 +195,11 @@ const DateForm: React.FC = () => {
       ) : (
         <>
           <View>
-            <H3 className="text-center">Primeiro, escolha uma data</H3>
+            <H3 className="text-center">
+              {t('app.highline.rig.dateForm.title')}
+            </H3>
             <Muted className="text-center">
-              A dia que a missão irá acontecer
+              {t('app.highline.rig.dateForm.description')}
             </Muted>
           </View>
 
@@ -211,11 +209,11 @@ const DateForm: React.FC = () => {
             render={({ field: { value, onChange } }) => (
               <DatePicker
                 mode="date"
-                locale="pt-BR"
+                locale={i18next.language}
                 date={value}
                 minimumDate={new Date()}
                 onDateChange={(date) => onChange(date)}
-                timeZoneOffsetInMinutes={0} // https://github.com/henninghall/react-native-date-picker/issues/841
+                timeZoneOffsetInMinutes={0}
                 theme={colorScheme.colorScheme}
               />
             )}
@@ -227,6 +225,7 @@ const DateForm: React.FC = () => {
 };
 
 const Equipments: React.FC = () => {
+  const { t } = useTranslation();
   const {
     form,
     main,
@@ -243,26 +242,34 @@ const Equipments: React.FC = () => {
   return (
     <AnimatedCard layout={_layoutAnimation} className="w-full">
       <CardHeader className="gap-3">
-        <CardTitle>Setup da fita</CardTitle>
+        <CardTitle>{t('app.highline.rig.equipments.title')}</CardTitle>
         <View className="flex-row justify-between">
           <View className="flex-row gap-1 items-center">
             <View className="w-6 h-2 bg-red-500" />
-            <Text className="text-muted-foreground">Principal</Text>
+            <Text className="text-muted-foreground">
+              {t('app.highline.rig.equipments.main')}
+            </Text>
           </View>
 
           <View className="flex-row gap-1 items-center">
             <View className="w-6 h-2 bg-blue-500" />
-            <Text className="text-muted-foreground">Backup</Text>
+            <Text className="text-muted-foreground">
+              {t('app.highline.rig.equipments.backup')}
+            </Text>
           </View>
 
           <View className="flex-row gap-1 items-center">
             <View className="w-4 h-2 bg-black" />
-            <Text className="text-muted-foreground">Loop</Text>
+            <Text className="text-muted-foreground">
+              {t('app.highline.rig.equipments.loop')}
+            </Text>
           </View>
 
           <View className="flex-row gap-1 items-center">
             <View className="w-4 h-2 bg-green-500" />
-            <Text className="text-muted-foreground">Conexão</Text>
+            <Text className="text-muted-foreground">
+              {t('app.highline.rig.equipments.connection')}
+            </Text>
           </View>
         </View>
       </CardHeader>
@@ -301,74 +308,69 @@ const WebForm: React.FC = () => {
   const { form, main, backup, focusedWebbing, setFocusedWebbing } =
     useRiggingForm();
 
-  if (!focusedWebbing) return;
+  if (!focusedWebbing) return null;
 
   const webbing = form.watch(
     `webbing.${focusedWebbing.type}.${focusedWebbing.index}`,
   );
 
-  const handleDeleteSection = useCallback((type: WebType, index: number) => {
-    if (type === 'main') {
-      main.remove(index);
-    } else {
-      backup.remove(index);
-    }
-    setFocusedWebbing(null);
-  }, []);
+  const handleDeleteSection = useCallback(
+    (type: WebType, index: number) => {
+      if (type === 'main') {
+        main.remove(index);
+      } else {
+        backup.remove(index);
+      }
+      setFocusedWebbing(null);
+    },
+    [main, backup],
+  );
 
   const handleLoopChange = useCallback(
     (loopType: 'leftLoop' | 'rightLoop') => (checked: boolean) => {
       if (!focusedWebbing) return;
-
       const path =
         `webbing.${focusedWebbing.type}.${focusedWebbing.index}` as const;
       const webbing = form.getValues(path);
-
       const updatedWebbing: WebbingSchemaWithPreffiled = {
         ...webbing,
         ...(loopType === 'leftLoop' ? { leftLoop: checked } : {}),
         ...(loopType === 'rightLoop' ? { rightLoop: checked } : {}),
       };
-
       if (focusedWebbing.type === 'main') {
         main.update(focusedWebbing.index, updatedWebbing);
       } else {
         backup.update(focusedWebbing.index, updatedWebbing);
       }
     },
-    [focusedWebbing],
+    [focusedWebbing, form, main, backup],
   );
 
   const handleChangeLength = useCallback(
     (txt: string) => {
       if (!focusedWebbing) return;
-
       const path =
         `webbing.${focusedWebbing.type}.${focusedWebbing.index}` as const;
       const webbing = form.getValues(path);
-
       const updatedWebbing: WebbingSchemaWithPreffiled = {
         ...webbing,
         length: txt,
       };
-
       if (focusedWebbing.type === 'main') {
         main.update(focusedWebbing.index, updatedWebbing);
       } else {
         backup.update(focusedWebbing.index, updatedWebbing);
       }
     },
-    [focusedWebbing],
+    [focusedWebbing, form, main, backup],
   );
 
   const handleSelectWebbing = useCallback(
     (webbing: WebbingWithModel[number] | null) => {
       if (!focusedWebbing) return;
-
       const path =
         `webbing.${focusedWebbing.type}.${focusedWebbing.index}` as const;
       const formWebbing = form.getValues(path);
-
       const updatedWebbing: WebbingSchemaWithPreffiled = {
         ...formWebbing,
         ...(webbing
@@ -381,14 +383,13 @@ const WebForm: React.FC = () => {
             }
           : { webbingId: undefined }),
       };
-
       if (focusedWebbing.type === 'main') {
         main.update(focusedWebbing.index, updatedWebbing);
       } else {
         backup.update(focusedWebbing.index, updatedWebbing);
       }
     },
-    [focusedWebbing],
+    [focusedWebbing, form, main, backup],
   );
 
   return (
@@ -437,21 +438,24 @@ const WebForm: React.FC = () => {
 };
 
 const WebbingOwner: React.FC<{ webbingID: number }> = ({ webbingID }) => {
+  const { t } = useTranslation();
   const { data } = useWebbing(webbingID);
 
-  if (!data) return;
+  if (!data) return null;
 
   const { data: owner, isPending } = useProfile(data.user_id);
 
   if (isPending) {
-    <Skeleton className="w-10 h-4" />;
+    return <Skeleton className="w-10 h-4" />;
   }
 
-  if (!owner || !owner.username) return;
+  if (!owner || !owner.username) return null;
 
   return (
     <View className="flex-row max-w-56 overflow-hidden">
-      <Text className="text-muted-foreground">Fita de: </Text>
+      <Text className="text-muted-foreground">
+        {t('app.highline.rig.webbingOwner.label')}
+      </Text>
       <Link
         href={{
           pathname: '/profile/[username]',
@@ -470,6 +474,7 @@ const SelectMyWebbing: React.FC<{
   webbing: WebbingSchemaWithPreffiled;
   onSelectWebbing: (webbing: WebbingWithModel[number] | null) => void;
 }> = ({ webbing, onSelectWebbing }) => {
+  const { t } = useTranslation();
   const id = useId();
   const [triggerWidth, setTriggerWidth] = useState<number>(0);
   const { data, isPending } = useWebbings();
@@ -477,7 +482,7 @@ const SelectMyWebbing: React.FC<{
   // Access the current rigging form values
   const { main, backup, focusedWebbing } = useRiggingForm();
 
-  // Build a set of ID's of webbings that are in use on the current form
+  // Build a set of IDs of webbings that are in use on the current form
   const usedWebbingIds = new Set<string>();
   main.fields.forEach((item, index) => {
     const isSelected =
@@ -509,7 +514,7 @@ const SelectMyWebbing: React.FC<{
   return (
     <View className="gap-2 w-full">
       <Label htmlFor={id} nativeID={id}>
-        Minhas fitas
+        {t('app.highline.rig.selectMyWebbing.label')}
       </Label>
 
       {isPending ? (
@@ -540,7 +545,7 @@ const SelectMyWebbing: React.FC<{
               className={cn(
                 webbing.webbingId ? 'text-primary' : 'text-muted-foreground',
               )}
-              placeholder="Ex.: Brasileirinha"
+              placeholder={t('app.highline.rig.selectMyWebbing.placeholder')}
             />
           </SelectTrigger>
           <SelectContent style={{ width: triggerWidth }}>
@@ -551,9 +556,9 @@ const SelectMyWebbing: React.FC<{
               {data?.map((item) => {
                 const itemId = item.id.toString();
                 const isUsed = usedWebbingIds.has(itemId) || item.isUsed;
-                // Append a note to the label if this webbing is already in use.
+                const inUseLabel = t('app.highline.rig.selectMyWebbing.inUse');
                 const label =
-                  getWebbingName(item) + (isUsed ? ' (em uso)' : '');
+                  getWebbingName(item) + (isUsed ? ` ${inUseLabel}` : '');
                 return (
                   <SelectItem
                     key={item.id}
@@ -565,7 +570,7 @@ const SelectMyWebbing: React.FC<{
               })}
               <Separator />
               <Button variant="ghost" onPress={() => onSelectWebbing(null)}>
-                <Text>limpar</Text>
+                <Text>{t('app.highline.rig.selectMyWebbing.clear')}</Text>
               </Button>
             </ScrollView>
           </SelectContent>

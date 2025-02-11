@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 import Animated, {
   FadeIn,
@@ -18,10 +19,11 @@ export const PickerControls: React.FC<{
   onUndo: () => void;
   stage: Stage;
 }> = ({ onPick, onUndo, stage }) => {
+  const { t } = useTranslation();
   const labels: Record<Stage, string> = {
-    initial: 'Definir ancoragem A',
-    partial: 'Definir ancoragem B',
-    final: 'Confirmar',
+    initial: t('components.map.picker-buttons.setA'),
+    partial: t('components.map.picker-buttons.setB'),
+    final: t('components.map.picker-buttons.confirm'),
   };
 
   return (

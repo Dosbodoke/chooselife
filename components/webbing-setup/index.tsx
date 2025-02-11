@@ -1,19 +1,20 @@
 // Create a visual representation of a highline setup on a Skia Canvas
 
 import { Skia, SkPath } from '@shopify/react-native-skia';
-import type {
-  FocusedWebbing,
-  RigSchema,
-  WebbingWithId,
-  WebType,
-} from '~/app/highline/[id]/rig';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { View } from 'react-native';
 import {
   useAnimatedScrollHandler,
   useSharedValue,
 } from 'react-native-reanimated';
+
+import type {
+  FocusedWebbing,
+  RigSchema,
+  WebbingWithId,
+  WebType,
+} from '~/context/rig-form';
 
 import { CanvasGrid } from './canvas-grid';
 import { ScrollableCanvas } from './scrollable-canvas';
@@ -109,7 +110,7 @@ export const WebbingSetup: React.FC<{
     },
   });
 
-  const handleFocusWebbing = useCallback(
+  const handleFocusWebbing = React.useCallback(
     (type: WebType, index: number) => {
       if (focusedWebbing?.type === type && focusedWebbing?.index === index) {
         setFocusedWebbing(null);

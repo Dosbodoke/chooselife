@@ -5,6 +5,7 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useContext, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useProfile, type Profile } from '~/hooks/use-profile';
 import { supabase } from '~/lib/supabase';
@@ -29,6 +30,7 @@ const AuthContext = React.createContext<AuthContextValue | undefined>(
 );
 
 export function AuthProvider(props: React.PropsWithChildren) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,11 +75,14 @@ export function AuthProvider(props: React.PropsWithChildren) {
             return { success: true };
           } catch (error) {
             if ((error as AuthError).code === 'invalid_credentials') {
-              return { success: false, errorMessage: 'Credenciais inválidas' };
+              return {
+                success: false,
+                errorMessage: t('context.auth.invalidCredentials'),
+              };
             }
             return {
               success: false,
-              errorMessage: 'Erro no login. Por favor tente novamente.',
+              errorMessage: t('context.auth.loginError'),
             };
           }
         },
@@ -133,7 +138,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
               return { success: true };
             }
 
-            throw new Error("Couldn't create session");
+            throw new Error(t('context.auth.sessionCreationFailed'));
           } catch (error) {
             if (error instanceof AuthError) {
               return { success: false, errorMessage: error.message };
