@@ -1,7 +1,7 @@
 import Mapbox from '@rnmapbox/maps';
 import * as Location from 'expo-location';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useSetAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
@@ -15,9 +15,11 @@ import { MapCardList } from '~/components/map/map-card';
 import { Markers } from '~/components/map/markers';
 import {
   cameraStateAtom,
+  clusterMarkersAtom,
   DEFAULT_LATITUDE,
   DEFAULT_LONGITUDE,
   DEFAULT_ZOOM,
+  highlightedMarkerAtom,
 } from '~/components/map/utils';
 
 const getMapStyle = (mapType: string) => {
@@ -79,15 +81,13 @@ export default function Screen() {
   const [searchTerm, setSearchTerm] = useState('');
   const { focusedMarker } = useLocalSearchParams<{ focusedMarker?: string }>();
 
-  const {
-    highlines,
-    highlightedMarker,
-    clusterMarkers,
-    setHighlightedMarker,
-    setClusterMarkers,
-    setSelectedCategory,
-    isLoading,
-  } = useHighlineList({ searchTerm });
+  const [highlightedMarker, setHighlightedMarker] = useAtom(
+    highlightedMarkerAtom,
+  );
+  const [clusterMarkers, setClusterMarkers] = useAtom(clusterMarkersAtom);
+  const { highlines, setSelectedCategory, isLoading } = useHighlineList({
+    searchTerm,
+  });
 
   async function goToMyLocation() {
     const region = await getMyLocation();

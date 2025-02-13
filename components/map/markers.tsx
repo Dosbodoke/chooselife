@@ -2,7 +2,7 @@ import MapboxGL from '@rnmapbox/maps';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Feature, GeoJsonProperties } from 'geojson';
 import { useAtomValue } from 'jotai';
-import { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { View } from 'react-native';
 import { PointFeature } from 'supercluster';
 import useSuperCluster from 'use-supercluster';
@@ -34,24 +34,22 @@ export const Markers: React.FC<{
     PointFeature<GeoJsonProperties & PointProperties>[]
   >(() => {
     if (!highlines) return [];
-    return highlines.map((h) => {
-      return {
-        type: 'Feature',
-        properties: {
-          cluster: false,
-          category: 'highline',
-          highID: h.id,
-          anchorB: {
-            latitude: h.anchor_b_lat,
-            longitude: h.anchor_b_long,
-          },
+    return highlines.map((h) => ({
+      type: 'Feature',
+      properties: {
+        cluster: false,
+        category: 'highline',
+        highID: h.id,
+        anchorB: {
+          latitude: h.anchor_b_lat,
+          longitude: h.anchor_b_long,
         },
-        geometry: {
-          type: 'Point',
-          coordinates: [h.anchor_a_long, h.anchor_a_lat], // [lng, lat]
-        },
-      };
-    });
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: [h.anchor_a_long, h.anchor_a_lat], // [lng, lat]
+      },
+    }));
   }, [highlines]);
 
   const { clusters, supercluster } = useSuperCluster({
@@ -61,55 +59,51 @@ export const Markers: React.FC<{
     options: { radius: 50, maxZoom: 25 },
   });
 
-  // This function “zooms into” a cluster. We compute a new bounding box from the cluster’s leaves
-  // and then use the Camera’s fitBounds method.
+  // Zoom into a cluster by computing bounds from its leaves.
   const handleClusterPress = useCallback(
     (cluster_id: number): void => {
+      if (!supercluster) return;
       const expansionZoom = Math.min(
-        supercluster?.getClusterExpansionZoom(cluster_id) || 20,
+        supercluster.getClusterExpansionZoom(cluster_id) || 20,
         17,
       );
       const shouldHighlightCards = expansionZoom <= cameraState.zoom;
+      const leaves = supercluster.getLeaves(cluster_id);
 
-      const leaves = supercluster?.getLeaves(cluster_id);
+      // Cache highlines query data once per callback call.
+      const highlinesData =
+        queryClient.getQueryData<Highline[]>(['highlines']) || [];
       const highlinesFromLeaves: Highline[] = [];
-      const coordinates: { latitude: number; longitude: number }[] = [];
+      const lats: number[] = [];
+      const lngs: number[] = [];
 
-      if (leaves) {
-        leaves.forEach((l) => {
-          if (shouldHighlightCards) {
-            const highline = queryClient
-              .getQueryData<Highline[]>(['highlines'])
-              ?.find((high) => high.id === l.properties.highID);
-            if (highline) highlinesFromLeaves.push(highline);
-          }
-          // Collect both the anchor A (from geometry) and anchor B (from properties)
-          coordinates.push({
-            latitude: l.geometry.coordinates[1],
-            longitude: l.geometry.coordinates[0],
-          });
-          coordinates.push(l.properties.anchorB);
-        });
-
-        if (shouldHighlightCards && highlinesFromLeaves.length > 0) {
-          updateMarkers(highlinesFromLeaves, highlinesFromLeaves[0]);
+      leaves.forEach((l) => {
+        if (shouldHighlightCards) {
+          const highline = highlinesData.find(
+            (high) => high.id === l.properties.highID,
+          );
+          if (highline) highlinesFromLeaves.push(highline);
         }
+        const [lng, lat] = l.geometry.coordinates;
+        lats.push(lat, l.properties.anchorB.latitude);
+        lngs.push(lng, l.properties.anchorB.longitude);
+      });
 
-        // Compute bounds from the collected coordinates.
-        const lats = coordinates.map((c) => c.latitude);
-        const lngs = coordinates.map((c) => c.longitude);
-        const ne: [number, number] = [Math.max(...lngs), Math.max(...lats)];
-        const sw: [number, number] = [Math.min(...lngs), Math.min(...lats)];
-
-        cameraRef.current?.fitBounds(ne, sw, [50, 50, 200, 250], 1000);
+      if (shouldHighlightCards && highlinesFromLeaves.length > 0) {
+        updateMarkers(highlinesFromLeaves, highlinesFromLeaves[0]);
       }
+
+      // Compute bounds.
+      const ne: [number, number] = [Math.max(...lngs), Math.max(...lats)];
+      const sw: [number, number] = [Math.min(...lngs), Math.min(...lats)];
+      cameraRef.current?.fitBounds(ne, sw, [50, 50, 200, 250], 1000);
     },
     [queryClient, supercluster, cameraState.zoom, cameraRef, updateMarkers],
   );
 
-  // When a marker is highlighted, adjust the camera to show both anchors.
+  // Adjust camera when a marker is highlighted.
   useEffect(() => {
-    if (highlightedMarker === null) return;
+    if (!highlightedMarker) return;
     const ne: [number, number] = [
       Math.max(
         highlightedMarker.anchor_a_long,
@@ -125,13 +119,13 @@ export const Markers: React.FC<{
       Math.min(highlightedMarker.anchor_a_lat, highlightedMarker.anchor_b_lat),
     ];
     cameraRef.current?.fitBounds(ne, sw, [50, 50, 200, 250], 1000);
-  }, [highlightedMarker]);
+  }, [highlightedMarker, cameraRef]);
 
   const handleMarkerSelect = useCallback(
     (highID: string) => {
-      const highline = queryClient
-        .getQueryData<Highline[]>(['highlines'])
-        ?.find((high) => high.id === highID);
+      const highline = (
+        queryClient.getQueryData<Highline[]>(['highlines']) || []
+      ).find((high) => high.id === highID);
       if (highline) {
         updateMarkers([highline], highline);
       }
@@ -162,7 +156,7 @@ export const Markers: React.FC<{
           return null;
         // For Mapbox, the coordinate is an array: [lng, lat]
         const coordinate: [number, number] = [longitude, latitude];
-        const properties = point.properties;
+        const { properties } = point;
 
         if (properties?.cluster) {
           const size = Math.max(
@@ -182,7 +176,11 @@ export const Markers: React.FC<{
 
         return (
           <MapboxGL.PointAnnotation
-            key={`marker-high-${properties.highID}-A`}
+            key={`marker-high-${properties.highID}-A-${
+              properties.highID === highlightedMarker?.id
+                ? 'active'
+                : 'inactive'
+            }`}
             id={`marker-high-${properties.highID}-A`}
             coordinate={coordinate}
             onSelected={() => handleMarkerSelect(properties.highID)}
@@ -205,7 +203,7 @@ export const Markers: React.FC<{
             ]}
           >
             <View className="size-12">
-              <MarkerCL active={true} />
+              <MarkerCL active />
             </View>
           </MapboxGL.PointAnnotation>
 
@@ -229,18 +227,19 @@ export const Markers: React.FC<{
   );
 };
 
-const ClusteredMarker = ({
-  coordinate,
-  pointCount,
-  size,
-  onPress,
-}: {
-  coordinate: [number, number];
-  pointCount: number;
-  size: number;
-  onPress: () => void;
-}) => {
-  return (
+// Memoized ClusteredMarker to avoid unnecessary re-renders.
+const ClusteredMarker = React.memo(
+  ({
+    coordinate,
+    pointCount,
+    size,
+    onPress,
+  }: {
+    coordinate: [number, number];
+    pointCount: number;
+    size: number;
+    onPress: () => void;
+  }) => (
     <MapboxGL.PointAnnotation
       id={`cluster-${coordinate[0]}-${coordinate[1]}`}
       coordinate={coordinate}
@@ -253,5 +252,7 @@ const ClusteredMarker = ({
         <Text className="text-center text-xl font-bold">{pointCount}</Text>
       </View>
     </MapboxGL.PointAnnotation>
-  );
-};
+  ),
+);
+
+export default Markers;

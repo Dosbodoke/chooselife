@@ -1,6 +1,7 @@
 import Mapbox from "@rnmapbox/maps";
 import { BBox, Position } from "geojson";
 import { atom } from "jotai";
+import { Highline } from "~/hooks/use-highline";
 
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_PUBLIC_KEY!);
 
@@ -40,6 +41,8 @@ export const cameraStateAtom = atom<{zoom: number; center: Position; bounds: BBo
     bounds: regionToBoundingBox(INITIAL_REGION)
 });
 
+export const highlightedMarkerAtom = atom<Highline | null>(null);
+export const clusterMarkersAtom = atom<Highline[]>([]);
 
 export const haversineDistance = (
 lat1: number,
