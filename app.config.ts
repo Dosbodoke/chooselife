@@ -8,7 +8,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   newArchEnabled: true,
   orientation: 'portrait',
   scheme: 'com.bodok.chooselife',
-  userInterfaceStyle: 'automatic',
+  userInterfaceStyle: "light",
   assetBundlePatterns: ['**/*'],
   ios: {
     supportsTablet: true,

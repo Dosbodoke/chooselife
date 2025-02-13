@@ -24,6 +24,7 @@ import useLinking from '~/hooks/useLinking';
 import { setAndroidNavigationBar } from '~/lib/android-navigation-bar';
 import { NAV_THEME } from '~/lib/constants';
 import queryClient from '~/lib/react-query';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 export const resources = {
   pt: { translation: translationPt },
@@ -47,6 +48,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useLinking();
+  const { setColorScheme } = useColorScheme();
   const [languageLoaded, setLanguageLoaded] = React.useState(false);
   const [language, setLanguage] = React.useState<string | undefined>('en');
 
@@ -85,6 +87,8 @@ export default function RootLayout() {
 
   React.useEffect(() => {
     if (languageLoaded) {
+      // Enforce light mode
+      setColorScheme('light');
       setAndroidNavigationBar('light');
       SplashScreen.hideAsync();
     }
