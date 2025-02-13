@@ -1,5 +1,6 @@
 import '~/global.css';
 
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import NetInfo from '@react-native-community/netinfo';
 import { DefaultTheme, Theme, ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
@@ -101,52 +102,54 @@ export default function RootLayout() {
             <GestureHandlerRootView>
               <KeyboardProvider>
                 <StatusBar style="dark" />
-                <Stack>
-                  <Stack.Screen
-                    name="(tabs)"
-                    options={{
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(modals)/login"
-                    options={{
-                      presentation: 'modal',
-                      title: 'Entrar ou criar conta',
-                    }}
-                  />
-                  <Stack.Screen
-                    name="(modals)/register-webbing"
-                    options={{
-                      presentation: 'modal',
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="highline/[id]"
-                    options={{
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="profile/[username]"
-                    options={{
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="setProfile"
-                    options={{
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="register-highline"
-                    options={{
-                      headerShown: false,
-                    }}
-                  />
-                </Stack>
+                <BottomSheetModalProvider>
+                  <Stack>
+                    <Stack.Screen
+                      name="(tabs)"
+                      options={{
+                        headerShown: false,
+                      }}
+                    />
+                    <Stack.Screen
+                      name="(modals)/login"
+                      options={{
+                        presentation: 'modal',
+                        title: 'Entrar ou criar conta',
+                      }}
+                    />
+                    <Stack.Screen
+                      name="(modals)/register-webbing"
+                      options={{
+                        presentation: 'modal',
+                        headerShown: false,
+                      }}
+                    />
+                    <Stack.Screen
+                      name="highline/[id]"
+                      options={{
+                        headerShown: false,
+                      }}
+                    />
+                    <Stack.Screen
+                      name="profile/[username]"
+                      options={{
+                        headerShown: false,
+                      }}
+                    />
+                    <Stack.Screen
+                      name="setProfile"
+                      options={{
+                        headerShown: false,
+                      }}
+                    />
+                    <Stack.Screen
+                      name="register-highline"
+                      options={{
+                        headerShown: false,
+                      }}
+                    />
+                  </Stack>
+                </BottomSheetModalProvider>
                 <PortalHost />
               </KeyboardProvider>
             </GestureHandlerRootView>

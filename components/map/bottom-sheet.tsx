@@ -114,9 +114,10 @@ const CustomBottomSheetHandle: React.FC<{
       onLayout={(e) => {
         setBottomSheetHandlerHeight(e.nativeEvent.layout.height);
       }}
-      className="p-4 bg-white"
+      className="p-4 bg-white items-center gap-2"
     >
-      <View className="flex-row justify-between items-center">
+      <View className="w-10 h-1 bg-muted-foreground rounded-md"></View>
+      <View className="flex-row justify-between items-center w-full">
         <Text
           className={cn(
             'text-center font-bold text-2xl',

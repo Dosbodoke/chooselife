@@ -1,5 +1,6 @@
-import BottomSheet, {
+import {
   BottomSheetBackdrop,
+  BottomSheetModal,
   BottomSheetView,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
@@ -24,21 +25,21 @@ import { Text } from '~/components/ui/text';
 export const RigModal: React.FC = () => {
   const { setupID } = useLocalSearchParams<{ setupID?: string }>();
   const router = useRouter();
-  const bottomSheetRef = React.useRef<BottomSheet>(null);
+  const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
 
   const closeModal = () => {
-    bottomSheetRef.current?.close();
+    bottomSheetModalRef.current?.close();
   };
 
   React.useEffect(() => {
     if (setupID) {
-      bottomSheetRef.current?.expand({
+      bottomSheetModalRef.current?.present({
         velocity: 200,
         stiffness: 200,
         damping: 80,
       });
     } else {
-      bottomSheetRef.current?.close();
+      bottomSheetModalRef.current?.close();
     }
   }, [setupID]);
 
@@ -54,19 +55,17 @@ export const RigModal: React.FC = () => {
   );
 
   return (
-    <BottomSheet
-      ref={bottomSheetRef}
+    <BottomSheetModal
+      ref={bottomSheetModalRef}
       backdropComponent={renderBackdrop}
       handleComponent={null}
-      onClose={() => {
+      onDismiss={() => {
         if (setupID && setupID !== '') {
           router.setParams({ setupID: '' });
         }
       }}
       detached={true}
       bottomInset={46}
-      index={-1}
-      enablePanDownToClose={false}
       style={{
         marginHorizontal: 24,
         elevation: 4,
@@ -82,7 +81,7 @@ export const RigModal: React.FC = () => {
       <BottomSheetView className="p-4 items-center gap-4">
         <SheetBody setupID={setupID} closeModal={closeModal} />
       </BottomSheetView>
-    </BottomSheet>
+    </BottomSheetModal>
   );
 };
 

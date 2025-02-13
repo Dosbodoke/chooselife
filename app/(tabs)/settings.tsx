@@ -1,5 +1,10 @@
+import {
+  BottomSheetBackdrop,
+  BottomSheetBackdropProps,
+  BottomSheetModal,
+  BottomSheetView,
+} from '@gorhom/bottom-sheet';
 import { Link } from 'expo-router';
-import i18next from 'i18next';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
@@ -8,9 +13,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '~/context/auth';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 
+import { LanguageSwitcher } from '~/components/language-switcher';
 import { MyWebbings } from '~/components/settings/my-webbing';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
+import { Separator } from '~/components/ui/separator';
 import { Text } from '~/components/ui/text';
 import { H2, Muted } from '~/components/ui/typography';
 
@@ -69,21 +76,66 @@ export default function SettingsPage() {
 
 const ChangeLanguage: React.FC = () => {
   const { t } = useTranslation();
+  const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
 
-  const handleChangeLanguage = () => {
-    i18next.changeLanguage('en-US');
+  const openModal = () => {
+    bottomSheetModalRef.current?.present({
+      velocity: 200,
+      stiffness: 200,
+      damping: 80,
+    });
   };
 
+  const renderBackdrop = React.useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+      />
+    ),
+    [],
+  );
+
   return (
-    <TouchableOpacity
-      className="flex-row justify-between"
-      onPress={handleChangeLanguage}
-    >
-      <View className="flex-row gap-1">
-        <LucideIcon name="Languages" className="size-6 text-primary" />
-        <Text>{t('app.(tabs).settings.changeLanguage')}</Text>
-      </View>
-      <LucideIcon name="ChevronRight" className="size-6 text-primary" />
-    </TouchableOpacity>
+    <>
+      <TouchableOpacity className="gap-4" onPress={openModal}>
+        <Separator></Separator>
+        <View className="flex-row justify-between">
+          <View className="flex-row gap-2">
+            <LucideIcon
+              name="Languages"
+              className="size-6 text-muted-foreground"
+            />
+            <Text>{t('app.(tabs).settings.changeLanguage')}</Text>
+          </View>
+          <LucideIcon name="ChevronRight" className="size-6 text-foreground" />
+        </View>
+        <Separator></Separator>
+      </TouchableOpacity>
+      <BottomSheetModal
+        ref={bottomSheetModalRef}
+        backdropComponent={renderBackdrop}
+        handleComponent={null}
+        detached={true}
+        bottomInset={46}
+        enablePanDownToClose={true}
+        style={{
+          marginHorizontal: 24,
+          elevation: 4,
+          shadowColor: '#000',
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          shadowOffset: {
+            width: 1,
+            height: 1,
+          },
+        }}
+      >
+        <BottomSheetView className="p-4 items-center gap-4">
+          <LanguageSwitcher />
+        </BottomSheetView>
+      </BottomSheetModal>
+    </>
   );
 };

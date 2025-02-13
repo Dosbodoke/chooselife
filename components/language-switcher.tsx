@@ -7,7 +7,7 @@ export const LanguageSwitcher = () => {
   const { setLocale, locale } = useI18n();
 
   return (
-    <View className=" justify-center items-center gap-4 p-4">
+    <View className="justify-center items-center gap-4 p-4 w-full">
       <TouchableOpacity className="w-full" onPress={() => setLocale('en')}>
         <View
           className={`flex-row items-center p-3 rounded-full border-2 ${
