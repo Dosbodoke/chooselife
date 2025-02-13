@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
@@ -22,6 +23,7 @@ import { Text } from '~/components/ui/text';
 export const HighlineHistory: React.FC<{ highline: Highline }> = ({
   highline,
 }) => {
+  const { t } = useTranslation();
   const { session } = useAuth();
   const router = useRouter();
   const { data, latestSetup, isPending } = useRigSetup({
@@ -42,7 +44,7 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
           }}
         >
           <Text className="text-base font-semibold text-red-500">
-            desmontar
+            {t('components.highline.history.action.unrig')}
           </Text>
         </TouchableOpacity>
       );
@@ -60,11 +62,9 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
                 router.push(`/(modals)/login`);
                 return;
               }
-
               router.setParams({ setupID: latestSetup.id });
               return;
             }
-
             const route = `/highline/${highline.id}/rig` as const;
             if (!session?.user) {
               router.push(`/(modals)/login?redirect_to=${route}`);
@@ -74,7 +74,9 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
             router.push(route);
           }}
         >
-          <Text className="text-base font-semibold text-amber-500">editar</Text>
+          <Text className="text-base font-semibold text-amber-500">
+            {t('components.highline.history.action.edit')}
+          </Text>
         </TouchableOpacity>
       );
     }
@@ -91,21 +93,22 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
           router.push(route);
         }}
       >
-        <Text className="text-base font-semibold text-blue-500">montar</Text>
+        <Text className="text-base font-semibold text-blue-500">
+          {t('components.highline.history.action.rig')}
+        </Text>
       </TouchableOpacity>
     );
-  }, [latestSetup]);
+  }, [latestSetup, session, router, highline.id, t]);
 
   return (
     <Card>
       <CardHeader>
         <View className="flex-row justify-between items-center">
-          <CardTitle>Histórico de montagem</CardTitle>
+          <CardTitle>{t('components.highline.history.title')}</CardTitle>
           {isPending ? <Skeleton className="w-16 h-4" /> : actionButton}
         </View>
         <CardDescription>
-          Registrar a montagem é mais do que manter a história da via, é se
-          preocupar com a segurança.
+          {t('components.highline.history.description')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -126,7 +129,7 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
           ))
         ) : (
           <Text className="text-muted-foreground">
-            Nenhum registro de montagem
+            {t('components.highline.history.empty')}
           </Text>
         )}
       </CardContent>
@@ -139,6 +142,7 @@ const TimelineItem: React.FC<{
   isLast: boolean;
   isFirst: boolean;
 }> = ({ setup, isLast, isFirst }) => {
+  const { t } = useTranslation();
   const rigDate = new Date(setup.rig_date);
   let status: RigStatuses = 'unrigged';
   let content: React.ReactNode = null;
@@ -154,7 +158,7 @@ const TimelineItem: React.FC<{
     content = (
       <>
         <Text className="text-primary font-semibold text-lg">
-          Montada desde
+          {t('components.highline.history.timeline.riggedFrom')}
         </Text>
         <CalendarBadge date={rigDate.toLocaleDateString('pt-BR')} />
       </>
@@ -163,9 +167,13 @@ const TimelineItem: React.FC<{
     status = 'unrigged';
     content = (
       <>
-        <Text className="text-primary font-semibold text-lg">De</Text>
+        <Text className="text-primary font-semibold text-lg">
+          {t('components.highline.history.timeline.from')}
+        </Text>
         <CalendarBadge date={rigDate.toLocaleDateString('pt-BR')} />
-        <Text className="text-primary font-semibold text-lg">até</Text>
+        <Text className="text-primary font-semibold text-lg">
+          {t('components.highline.history.timeline.to')}
+        </Text>
         <CalendarBadge
           date={new Date(setup.unrigged_at).toLocaleDateString('pt-BR')}
         />
@@ -176,7 +184,7 @@ const TimelineItem: React.FC<{
     content = (
       <>
         <Text className="text-primary font-semibold text-lg">
-          Planejado para
+          {t('components.highline.history.timeline.plannedFor')}
         </Text>
         <CalendarBadge date={rigDate.toLocaleDateString('pt-BR')} />
       </>

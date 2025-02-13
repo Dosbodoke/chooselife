@@ -1,7 +1,7 @@
 {
-  "name": "@rnr/starter-base",
+  "name": "chooselife",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "scripts": {
     "dev": "expo start",
     "dev:web": "expo start -c --web",
@@ -10,7 +10,8 @@
     "ios": "expo run:ios",
     "web": "expo start -c --web",
     "lint": "eslint .",
-    "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\""
+    "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
+    "format:translations": "eslint --fix --format node_modules/eslint-plugin-i18n-json/formatter.js ./i18n/locales"
   },
   "dependencies": {
     "@gorhom/bottom-sheet": "^5.0.6",
@@ -51,6 +52,7 @@
     "expo-image": "~2.0.1",
     "expo-image-picker": "~16.0.1",
     "expo-linking": "~7.0.2",
+    "expo-localization": "~16.0.1",
     "expo-location": "~18.0.1",
     "expo-navigation-bar": "~4.0.2",
     "expo-notifications": "~0.29.6",
@@ -61,6 +63,7 @@
     "expo-status-bar": "~2.0.0",
     "expo-system-ui": "~4.0.2",
     "geojson": "^0.5.0",
+    "i18next": "^24.2.2",
     "jotai": "^2.11.3",
     "lodash": "^4.17.21",
     "lucide-react-native": "^0.378.0",
@@ -68,6 +71,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-hook-form": "^7.52.1",
+    "react-i18next": "^15.4.0",
     "react-native": "0.76.1",
     "react-native-date-picker": "^5.0.10",
     "react-native-gesture-handler": "~2.20.2",
@@ -102,6 +106,7 @@
     "@typescript-eslint/parser": "^8.15.0",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-i18n-json": "^4.0.1",
     "prettier": "^3.3.3",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.15.0"

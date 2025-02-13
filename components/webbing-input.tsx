@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Text, TextInput, View } from 'react-native';
 import { z } from 'zod';
 
@@ -27,16 +28,20 @@ const LoopSwitch = ({
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   disabled?: boolean;
-}) => (
-  <View className="items-center gap-1">
-    <Switch
-      disabled={disabled}
-      checked={checked}
-      onCheckedChange={onCheckedChange}
-    />
-    <Text>Olhal</Text>
-  </View>
-);
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <View className="items-center gap-1">
+      <Switch
+        disabled={disabled}
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+      />
+      <Text>{t('components.webbing-input.loop')}</Text>
+    </View>
+  );
+};
 
 const LoopIndicator = ({ loop }: { loop: boolean }) => (
   <View
@@ -66,6 +71,8 @@ export const WebbingInput: React.FC<{
   disabled,
   error,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <View className="w-full gap-4">
       <View className="flex-row items-center">
@@ -115,7 +122,7 @@ export const WebbingInput: React.FC<{
             )}
           />
           <Text className={cn('pt-1', error ? 'text-red-400' : 'text-primary')}>
-            Comprimento da fita
+            {t('components.webbing-input.webbingLength')}
           </Text>
         </View>
 

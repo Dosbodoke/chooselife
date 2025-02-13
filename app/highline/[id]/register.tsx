@@ -1,8 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import i18next from 'i18next';
 import React from 'react';
 import { Controller, FieldErrors, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Keyboard, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { z } from 'zod';
@@ -21,19 +23,20 @@ import { Textarea } from '~/components/ui/textarea';
 import { H1, Muted, Small } from '~/components/ui/typography';
 
 const formSchema = z.object({
-  instagram: z
-    .string()
-    .trim()
-    .startsWith('@', 'O usuário deve começar com @')
-    .min(3, 'Deve conter ao menos 3 caracteres'),
   cadenas: z.number().nonnegative(),
   full_lines: z.number().nonnegative(),
   distance: z.coerce
     .number({
-      required_error: 'Insira quantos metros você andou',
-      invalid_type_error: 'Insira um número',
+      required_error: i18next.t(
+        'app.highline.register.fields.distance.errors.required',
+      ),
+      invalid_type_error: i18next.t(
+        'app.highline.register.fields.distance.errors.invalid_type',
+      ),
     })
-    .positive('Distância não pode ser negativa'),
+    .positive(
+      i18next.t('app.highline.register.fields.distance.errors.positive'),
+    ),
   time: z
     .string()
     .optional()
@@ -42,13 +45,13 @@ const formSchema = z.object({
         value === undefined ||
         value === '' ||
         /^([0-9]|[0-5][0-9]):[0-5][0-9]$/.test(value),
-      'Inválido, use o formato mm:ss',
+      i18next.t('app.highline.register.fields.time.errors.invalid_format'),
     ),
   witness: z
     .string()
     .refine(
       (w) => /^(?=.*@[^,\s]+,.*@[^,\s]+).*$/.test(w),
-      'Inválido, coloque o instagram de duas pessoas, separado por vírgula.',
+      i18next.t('app.highline.register.fields.witness.errors.invalid_format'),
     ),
   comment: z.string(),
 });
@@ -56,6 +59,7 @@ const formSchema = z.object({
 type FormSchema = z.infer<typeof formSchema>;
 
 const RegisterHighline = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { profile } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -68,7 +72,6 @@ const RegisterHighline = () => {
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      instagram: profile?.username || '',
       cadenas: 0,
       full_lines: 0,
       distance: 0,
@@ -78,13 +81,13 @@ const RegisterHighline = () => {
     },
   });
 
-  // Similar useMutation setup
   const formMutation = useMutation({
     mutationFn: async (formData: FormSchema) => {
       if (!id) throw new Error('No highline ID provided');
+      if (!profile?.username) throw new Error("User doesn't have a profile");
       const response = await supabase.from('entry').insert({
         highline_id: id,
-        instagram: formData.instagram.toLowerCase(),
+        instagram: profile.username,
         cadenas: formData.cadenas,
         full_lines: formData.full_lines,
         distance_walked: formData.distance,
@@ -123,15 +126,18 @@ const RegisterHighline = () => {
       {formMutation.isSuccess ? (
         <View className="items-center gap-8">
           <View>
-            <H1 className="text-center">BOA CHOOSEN</H1>
-            <Text className="text-3xl text-center">🆑 🆑 🆑 🆑 🆑</Text>
+            <H1 className="text-center">
+              {t('app.highline.register.success.title')}
+            </H1>
+            <Text className="text-3xl text-center">
+              {t('app.highline.register.success.subtitle')}
+            </Text>
           </View>
           <View className="h-52 items-center justify-center">
             <SuccessAnimation />
           </View>
           <Text className="text-center w-3/4">
-            Seu rolê está registrado e será usado para calcular as suas
-            estatísticas.
+            {t('app.highline.register.success.message')}
           </Text>
           <Link
             href={{
@@ -141,7 +147,7 @@ const RegisterHighline = () => {
             asChild
           >
             <Button>
-              <Text>Ver o Highline</Text>
+              <Text>{t('app.highline.register.success.button')}</Text>
             </Button>
           </Link>
         </View>
@@ -153,9 +159,11 @@ const RegisterHighline = () => {
             render={({ field }) => (
               <View className="flex-row gap-3">
                 <View className="flex-1">
-                  <Label nativeID="entry-cadenas">Cadenas</Label>
+                  <Label nativeID="entry-cadenas">
+                    {t('app.highline.register.fields.cadenas.label')}
+                  </Label>
                   <Muted>
-                    Dropou no começo da fita e foi até o final sem cair
+                    {t('app.highline.register.fields.cadenas.description')}
                   </Muted>
                 </View>
                 <NumberPicker value={field.value} onChange={field.onChange} />
@@ -169,9 +177,11 @@ const RegisterHighline = () => {
             render={({ field }) => (
               <View className="flex-row gap-3">
                 <View className="flex-1">
-                  <Label nativeID="entry-full_lines">Full lines</Label>
+                  <Label nativeID="entry-full_lines">
+                    {t('app.highline.register.fields.full_lines.label')}
+                  </Label>
                   <Muted>
-                    Você cadenou a ida e a volta, sem descer na virada
+                    {t('app.highline.register.fields.full_lines.description')}
                   </Muted>
                 </View>
                 <NumberPicker value={field.value} onChange={field.onChange} />
@@ -185,15 +195,17 @@ const RegisterHighline = () => {
             render={({ field, fieldState }) => (
               <View className="gap-2">
                 <View>
-                  <Label nativeID="entry-distance">Distância caminhada</Label>
-
-                  <Muted>Quantos metros você andou</Muted>
+                  <Label nativeID="entry-distance">
+                    {t('app.highline.register.fields.distance.label')}
+                  </Label>
+                  <Muted>
+                    {t('app.highline.register.fields.distance.description')}
+                  </Muted>
                 </View>
                 <Input
                   aria-labelledby="entry-distance"
                   keyboardType="number-pad"
                   className={fieldState.error && 'border-destructive'}
-                  {...field}
                   onChangeText={(text) => field.onChange(+text || 0)}
                   value={field.value?.toString()}
                 />
@@ -213,18 +225,24 @@ const RegisterHighline = () => {
               <View className="gap-2">
                 <View>
                   <Label nativeID="entry-time">
-                    Speedline <Muted>*opcional</Muted>
+                    {t('app.highline.register.fields.time.label')}{' '}
+                    <Muted>
+                      {t('app.highline.register.fields.time.optional')}
+                    </Muted>
                   </Label>
-                  <Muted>Seu melhor tempo para o ranking do Speedline</Muted>
+                  <Muted>
+                    {t('app.highline.register.fields.time.description')}
+                  </Muted>
                 </View>
-
                 <Input
-                  placeholder="Exemplo.: 4:20"
+                  placeholder={t(
+                    'app.highline.register.fields.time.placeholder',
+                  )}
                   aria-labelledby="entry-time"
                   keyboardType="numbers-and-punctuation"
                   className={fieldState.error && 'border-destructive'}
-                  {...field}
                   onChangeText={field.onChange}
+                  value={field.value}
                 />
                 {fieldState.error ? (
                   <Small className="text-destructive">
@@ -241,18 +259,21 @@ const RegisterHighline = () => {
             render={({ field, fieldState }) => (
               <View className="gap-2">
                 <View>
-                  <Label nativeID="entry-witness">Testemunhas</Label>
+                  <Label nativeID="entry-witness">
+                    {t('app.highline.register.fields.witness.label')}
+                  </Label>
                   <Muted>
-                    Insira o nome de usuário ou instagram de duas pessoas,
-                    separado por vírgula.
+                    {t('app.highline.register.fields.witness.description')}
                   </Muted>
                 </View>
                 <Input
-                  placeholder="@festivalchooselife, @juangsandrade"
+                  placeholder={t(
+                    'app.highline.register.fields.witness.placeholder',
+                  )}
                   aria-labelledby="entry-witness"
                   className={fieldState.error && 'border-destructive'}
-                  {...field}
                   onChangeText={field.onChange}
+                  value={field.value}
                 />
                 {fieldState.error ? (
                   <Small className="text-destructive">
@@ -269,20 +290,25 @@ const RegisterHighline = () => {
             render={({ field, fieldState }) => (
               <View className="gap-2">
                 <Label nativeID="entry-comment">
-                  Comentário <Muted>*opcional</Muted>
+                  {t('app.highline.register.fields.comment.label')}
+                  <Muted>
+                    {t('app.highline.register.fields.comment.optional')}
+                  </Muted>
                 </Label>
                 <Textarea
                   keyboardType="default"
                   returnKeyType="done"
-                  placeholder="Boa choosen 🤘🆑 Conta pra gente como foi ese rolê, o que achou da fita, da conexão..."
+                  placeholder={t(
+                    'app.highline.register.fields.comment.placeholder',
+                  )}
                   aria-labelledby="entry-comment"
                   className={fieldState.error && 'border-destructive'}
-                  {...field}
+                  onChangeText={field.onChange}
+                  value={field.value}
                   submitBehavior="blurAndSubmit"
                   onSubmitEditing={() => {
                     Keyboard.dismiss();
                   }}
-                  onChangeText={(text) => field.onChange(text)}
                 />
                 {fieldState.error ? (
                   <Small className="text-destructive">
@@ -298,7 +324,9 @@ const RegisterHighline = () => {
             disabled={formMutation.isPending}
           >
             <Text>
-              {formMutation.isPending ? 'Registrando...' : 'Registrar rolê'}
+              {formMutation.isPending
+                ? t('app.highline.register.buttons.submit.loading')
+                : t('app.highline.register.buttons.submit.default')}
             </Text>
           </Button>
         </>

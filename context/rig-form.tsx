@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 import React from 'react';
 import { useFieldArray, useForm, type UseFormReturn } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
@@ -318,5 +319,10 @@ export function useRiggingForm() {
 export function getWebbingName(
   webbing: Omit<WebbingWithModel[number], 'rig_setup_webbing'> | null,
 ) {
-  return webbing?.model?.name || webbing?.tag_name || `Fita não registrada`;
+  const { t } = useTranslation();
+  return (
+    webbing?.model?.name ||
+    webbing?.tag_name ||
+    t('context.rig-form.unknownWebbing')
+  );
 }

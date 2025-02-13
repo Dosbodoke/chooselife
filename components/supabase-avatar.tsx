@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 
 import { useProfile } from '~/hooks/use-profile';
@@ -59,6 +60,7 @@ export const SupabaseAvatar: React.FC<{
 export const AvatarUploader: React.FC<{
   onUpload?: (filePath: string) => void;
 }> = ({ onUpload }) => {
+  const { t } = useTranslation();
   const [uploading, setUploading] = React.useState(false);
 
   async function uploadAvatar() {
@@ -121,7 +123,7 @@ export const AvatarUploader: React.FC<{
       disabled={uploading}
     >
       <LucideIcon name="Camera" className="size-5 text-black" strokeWidth={2} />
-      <Text>Trocar foto</Text>
+      <Text>{t('components.supabase-avatar.buttonLabel')}</Text>
     </Button>
   );
 };

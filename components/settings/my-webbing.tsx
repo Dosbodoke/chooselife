@@ -1,4 +1,5 @@
 import { Link } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 
 import { useWebbings } from '~/hooks/use-webbings';
@@ -21,23 +22,24 @@ type WebbingWithModel = Tables<'webbing'> & {
 };
 
 const MyWebbings: React.FC = () => {
+  const { t } = useTranslation();
   const { data: webbings, isPending } = useWebbings();
 
   return (
     <Card>
       <CardHeader>
         <View className="flex-row justify-between">
-          <CardTitle>Minhas fitas</CardTitle>
+          <CardTitle>{t('components.settings.my-webbing.title')}</CardTitle>
           <Link asChild href={`/(modals)/register-webbing`}>
             <TouchableOpacity className="p-1">
               <Text className="text-base font-semibold text-blue-500">
-                adicionar
+                {t('components.settings.my-webbing.add')}
               </Text>
             </TouchableOpacity>
           </Link>
         </View>
         <CardDescription>
-          Visualize e acompanhe o histórico de suas fitas.
+          {t('components.settings.my-webbing.description')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -57,20 +59,23 @@ const MyWebbings: React.FC = () => {
   );
 };
 
-const EmptyWebbing: React.FC = () => (
-  <View className="justify-center items-center">
-    <View>
-      <LucideIcon
-        name="Frown"
-        className="size-24 text-muted-foreground"
-        strokeWidth={1}
-      />
+const EmptyWebbing: React.FC = () => {
+  const { t } = useTranslation();
+  return (
+    <View className="justify-center items-center">
+      <View>
+        <LucideIcon
+          name="Frown"
+          className="size-24 text-muted-foreground"
+          strokeWidth={1}
+        />
+      </View>
+      <Text className="text-muted-foreground">
+        {t('components.settings.my-webbing.empty')}
+      </Text>
     </View>
-    <Text className="text-muted-foreground">
-      Você ainda não cadastrou nenhuma fita
-    </Text>
-  </View>
-);
+  );
+};
 
 const WebbingList: React.FC<{
   webbings: WebbingWithModel[];
@@ -116,7 +121,6 @@ const SkeletonWebbingitem: React.FC = () => {
     <View className="flex-row justify-between items-center gap-4">
       <View className="flex-1 gap-2">
         <Skeleton className="h-4 rounded-full w-[60%]" />
-
         <Skeleton className="h-3 rounded-full w-[40%]" />
       </View>
       <Skeleton className="h-6 w-6 rounded-full" />

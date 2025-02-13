@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { icons } from 'lucide-react-native';
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutChangeEvent,
   ScrollView,
@@ -21,42 +22,47 @@ import { cn } from '~/lib/utils';
 
 import { Text } from '~/components/ui/text';
 
-const categories: Array<{
-  category: HighlineCategory;
-  name: string;
-  icon: keyof typeof icons;
-}> = [
-  {
-    category: 'favorites',
-    name: 'Favoritos',
-    icon: 'Heart',
-  },
-  {
-    category: 'big line',
-    name: 'Big Line',
-    icon: 'Ruler',
-  },
-  {
-    category: 'rigged',
-    name: 'Montada',
-    icon: 'Activity',
-  },
-  {
-    category: 'unrigged',
-    name: 'Desmontada',
-    icon: 'PowerOff',
-  },
-  {
-    category: 'planned',
-    name: 'Planejada',
-    icon: 'CalendarClock',
-  },
-];
-
 const ExploreHeader: React.FC<{
   onSearchChange: (text: string) => void;
   onCategoryChange: (category: HighlineCategory | null) => void;
 }> = ({ onSearchChange, onCategoryChange }) => {
+  const { t } = useTranslation();
+
+  const categories: Array<{
+    category: HighlineCategory;
+    name: string;
+    icon: keyof typeof icons;
+  }> = useMemo(
+    () => [
+      {
+        category: 'favorites',
+        name: t('components.map.explore-header.categories.favorites'),
+        icon: 'Heart',
+      },
+      {
+        category: 'big line',
+        name: t('components.map.explore-header.categories.bigLine'),
+        icon: 'Ruler',
+      },
+      {
+        category: 'rigged',
+        name: t('components.map.explore-header.categories.rigged'),
+        icon: 'Activity',
+      },
+      {
+        category: 'unrigged',
+        name: t('components.map.explore-header.categories.unrigged'),
+        icon: 'PowerOff',
+      },
+      {
+        category: 'planned',
+        name: t('components.map.explore-header.categories.planned'),
+        icon: 'CalendarClock',
+      },
+    ],
+    [t],
+  );
+
   const [search, setSearch] = useState('');
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const scrollRef = useRef<ScrollView>(null);
@@ -119,7 +125,7 @@ const ExploreHeader: React.FC<{
             <LucideIcon name="Search" className="size-6 text-primary" />
             <TextInput
               ref={searchInputRef}
-              placeholder="Nome do Highline"
+              placeholder={t('components.map.explore-header.searchPlaceholder')}
               value={search}
               onChangeText={handleSearchChange}
               className="flex-1"

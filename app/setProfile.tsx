@@ -2,8 +2,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { PostgrestError } from '@supabase/supabase-js';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Controller, useForm, UseFormReturn } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Keyboard, TextInput, TouchableOpacity, View } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
@@ -23,6 +24,7 @@ import { supabase } from '~/lib/supabase';
 import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
 
+import { LanguageSwitcher } from '~/components/language-switcher';
 import { OnboardNavigator, OnboardPaginator } from '~/components/onboard';
 import { AvatarUploader, SupabaseAvatar } from '~/components/supabase-avatar';
 import { Input } from '~/components/ui/input';
@@ -30,29 +32,40 @@ import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
 import { H2, H3, Muted } from '~/components/ui/typography';
 
-// Define Zod schema for form validation
-const profileSchema = z.object({
-  username: z
-    .string()
-    .trim()
-    .min(3, 'O nome de usuário deve ter pelo menos 3 caracteres.'),
-  name: z.string().min(1, 'Preencha o seu nome'),
-  profilePicture: z.string().optional(),
-  description: z.string().optional(),
-  birthday: z.string().optional(),
-});
-
 // Define TypeScript type based on Zod schema
-type ProfileFormData = z.infer<typeof profileSchema>;
+type ProfileFormData = {
+  username: string;
+  name: string;
+  profilePicture?: string;
+  description?: string;
+  birthday?: string;
+};
 
 export default function SetProfile() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const colorSchema = useColorScheme();
   const router = useRouter();
   const { session, profile } = useAuth();
   const [isValidating, setIsValidating] = useState(false);
-
   const [index, setIndex] = useState(0);
+
+  // Create Zod schema using translation strings for error messages.
+  const profileSchema = useMemo(
+    () =>
+      z.object({
+        username: z
+          .string()
+          .trim()
+          .min(3, t('app.setProfile.errors.usernameValidation')),
+        name: z.string().min(1, t('app.setProfile.errors.nameRequired')),
+        profilePicture: z.string().optional(),
+        description: z.string().optional(),
+        birthday: z.string().optional(),
+      }),
+    [t],
+  );
+
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     mode: 'onChange',
@@ -61,7 +74,7 @@ export default function SetProfile() {
       name: profile?.name || '',
       profilePicture: profile?.profile_picture || undefined,
       description: profile?.description || '',
-      birthday: profile?.birthday ? profile?.birthday : '',
+      birthday: profile?.birthday || '',
     },
   });
 
@@ -96,11 +109,11 @@ export default function SetProfile() {
     onError: (error) => {
       if ((error as PostgrestError).code === '23505') {
         form.setError('username', {
-          message: 'Nome já escolhido, tente outro',
+          message: t('app.setProfile.errors.usernameTaken'),
         });
       } else {
         form.setError('root', {
-          message: 'Erro ao salvar o perfil. Tente novamente.',
+          message: t('app.setProfile.errors.saveProfile'),
         });
       }
     },
@@ -109,12 +122,10 @@ export default function SetProfile() {
   const validateUsername = async () => {
     try {
       setIsValidating(true);
-      form.clearErrors('username');
-      const username = form.getValues('username');
-
       const valid = await form.trigger('username');
       if (!valid) return false;
 
+      const username = form.getValues('username');
       const { data, error } = await supabase
         .from('profiles')
         .select('username')
@@ -123,14 +134,16 @@ export default function SetProfile() {
 
       // Check if the username is available
       if (error && error.code !== 'PGRST116') {
-        console.error('Erro ao verificar nome de usuário:', error);
+        console.log('ERROR VALIDATING');
+        console.error('Error checking username:', error);
         form.setError('username', {
-          message: 'Erro ao verificar disponibilidade. Tente novamente.',
+          message: t('app.setProfile.errors.usernameCheckError'),
         });
         return false;
       } else if (data) {
+        form.clearErrors('username');
         form.setError('username', {
-          message: 'Nome já escolhido, tente outro.',
+          message: t('app.setProfile.errors.usernameTaken'),
         });
         return false;
       }
@@ -142,6 +155,7 @@ export default function SetProfile() {
   };
 
   const steps = [
+    <LanguageSwitcher key="LanguageSwitcher" />,
     <UsernameForm key="username" form={form} />,
     <ProfileInfoForm key="profileInfo" form={form} />,
     // <PrefferedTheme key="theme" />,
@@ -155,13 +169,13 @@ export default function SetProfile() {
     }
 
     // Validate the username in the first step
-    if (index === 0) {
+    if (index === 1) {
       const isUsernameValid = await validateUsername();
       if (!isUsernameValid) return;
     }
 
     // Manually trigger the validation of a required field
-    if (index === 1) {
+    if (index === 2) {
       const validName = await form.trigger('name');
       if (!validName) return;
     }
@@ -178,13 +192,19 @@ export default function SetProfile() {
         contentContainerClassName="flex-1 px-6 py-8 gap-4"
         keyboardShouldPersistTaps="handled"
       >
-        <H2 className="text-center border-0">Estamos quase lá!</H2>
+        <H2 className="text-center border-0">{t('app.setProfile.title')}</H2>
         <HighlineIllustration
           mode={colorSchema.colorScheme}
           className="w-full h-auto"
         />
 
-        {steps[index]}
+        <Animated.View
+          key={`step-${index}`}
+          entering={FadeInRight}
+          exiting={FadeOutLeft}
+        >
+          {steps[index]}
+        </Animated.View>
 
         <View className="mt-auto gap-2">
           <OnboardPaginator total={steps.length} selectedIndex={index} />
@@ -203,16 +223,16 @@ export default function SetProfile() {
 }
 
 const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
+  const { t } = useTranslation();
+
   return (
-    <Animated.View
-      className="gap-4"
-      entering={FadeInRight}
-      exiting={FadeOutLeft}
-    >
+    <View className="gap-4">
       <View>
-        <H3 className="text-center">Primeiro, escolha um nome</H3>
+        <H3 className="text-center">
+          {t('app.setProfile.UsernameForm.title')}
+        </H3>
         <Muted className="text-center">
-          É assim que você será identificado no app
+          {t('app.setProfile.UsernameForm.subtitle')}
         </Muted>
       </View>
 
@@ -228,7 +248,7 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
               <TextInput
                 value={value}
                 onChangeText={(text) => onChange(text.trim())}
-                placeholder="Seu username"
+                placeholder={t('app.setProfile.UsernameForm.inputPlaceholder')}
                 autoCapitalize="none"
                 returnKeyType="done"
                 className={cn(
@@ -251,7 +271,7 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
           </View>
         )}
       />
-    </Animated.View>
+    </View>
   );
 };
 
@@ -260,6 +280,7 @@ const ProfileInfoForm = ({
 }: {
   form: UseFormReturn<ProfileFormData>;
 }) => {
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -269,20 +290,18 @@ const ProfileInfoForm = ({
   const handleDateChange = (date: Date) => {
     setShowDatePicker(false);
     if (date) {
-      form.setValue('birthday', date.toISOString().split('T')[0]); // Set date in YYYY-MM-DD format
+      form.setValue('birthday', date.toISOString().split('T')[0]); // YYYY-MM-DD format
     }
   };
 
   return (
-    <Animated.View
-      className="gap-4"
-      entering={FadeInRight}
-      exiting={FadeOutLeft}
-    >
+    <View className="gap-4">
       <View>
-        <H3 className="text-center">Vamos montar seu perfil</H3>
+        <H3 className="text-center">
+          {t('app.setProfile.ProfileInfoForm.title')}
+        </H3>
         <Muted className="text-center">
-          As pessoas poderão vé-lo. Capriche ✨
+          {t('app.setProfile.ProfileInfoForm.subtitle')}
         </Muted>
       </View>
 
@@ -306,7 +325,9 @@ const ProfileInfoForm = ({
               <TextInput
                 value={value}
                 onChangeText={onChange}
-                placeholder="Seu nome"
+                placeholder={t(
+                  'app.setProfile.ProfileInfoForm.inputPlaceholderName',
+                )}
                 autoCapitalize="none"
                 returnKeyType="done"
                 className={cn(
@@ -330,14 +351,14 @@ const ProfileInfoForm = ({
             <View className="gap-2">
               <TouchableOpacity onPress={() => setShowDatePicker(true)}>
                 <Input
-                  label="Data de Nascimento:"
+                  label={t('app.setProfile.ProfileInfoForm.birthdayLabel')}
                   editable={false}
                   value={
                     value
                       ? new Date(value).toLocaleDateString('pt-BR')
-                      : 'Selecione a data'
+                      : t('app.setProfile.ProfileInfoForm.selectDate')
                   }
-                  placeholder="Selecione a data"
+                  placeholder={t('app.setProfile.ProfileInfoForm.selectDate')}
                 />
               </TouchableOpacity>
               <DatePicker
@@ -368,7 +389,9 @@ const ProfileInfoForm = ({
             <Textarea
               keyboardType="default"
               returnKeyType="done"
-              placeholder="Nos diga um pouco sobre você"
+              placeholder={t(
+                'app.setProfile.ProfileInfoForm.descriptionPlaceholder',
+              )}
               submitBehavior="blurAndSubmit"
               className={error && 'border-destructive'}
               onSubmitEditing={() => Keyboard.dismiss()}
@@ -377,87 +400,6 @@ const ProfileInfoForm = ({
           )}
         />
       </View>
-    </Animated.View>
+    </View>
   );
 };
-
-// const PrefferedTheme = () => {
-//   const items = [
-//     {
-//       id: 'light',
-//       label: 'Claro',
-//       image: require('~/assets/images/ui_light.webp'),
-//     },
-//     {
-//       id: 'dark',
-//       label: 'Escuro',
-//       image: require('~/assets/images/ui_dark.webp'),
-//     },
-//   ];
-
-//   const { colorScheme, setColorScheme } = useColorScheme();
-
-//   const handleSelect = async (theme: typeof colorScheme) => {
-//     setColorScheme(theme);
-//     await AsyncStorage.setItem('theme', theme);
-//   };
-
-//   return (
-//     <Animated.View
-//       className="gap-4"
-//       entering={FadeInRight}
-//       exiting={FadeOutLeft}
-//     >
-//       <View>
-//         <H3 className="text-center">Escolha um tema</H3>
-//         <Muted className="text-center">
-//           Selecione o tema de sua preferência para o aplicativo.
-//         </Muted>
-//       </View>
-
-//       <View className="flex-row gap-3 items-center w-full justify-center">
-//         {items.map((item) => (
-//           <Pressable
-//             key={item.id}
-//             onPress={() => handleSelect(item.id as typeof colorScheme)}
-//             className={cn(
-//               'items-center justify-center overflow-hidden rounded-lg border w-28 shadow-lg',
-//               colorScheme === item.id
-//                 ? 'border-blue-500 bg-accent'
-//                 : 'border-border bg-muted',
-//             )}
-//           >
-//             <Image
-//               source={item.image}
-//               className="w-full h-auto rounded-lg rounded-b-none"
-//               resizeMode="cover"
-//             />
-//             <View className="flex-row items-center my-3">
-//               {colorScheme === item.id ? (
-//                 <LucideIcon
-//                   name="Check"
-//                   className="w-4 h-4 text-accent-foreground"
-//                 />
-//               ) : (
-//                 <LucideIcon
-//                   name="Minus"
-//                   className="w-4 h-4 text-muted-foreground"
-//                 />
-//               )}
-//               <Text
-//                 className={cn(
-//                   'text-sm ml-1 font-medium',
-//                   colorScheme === item.id
-//                     ? 'text-accent-foreground'
-//                     : 'text-muted-foreground',
-//                 )}
-//               >
-//                 {item.label}
-//               </Text>
-//             </View>
-//           </Pressable>
-//         ))}
-//       </View>
-//     </Animated.View>
-//   );
-// };

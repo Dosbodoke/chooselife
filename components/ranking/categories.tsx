@@ -1,4 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { supabase } from '~/lib/supabase';
@@ -80,6 +81,7 @@ const LeaderboardContainer = <TFunc extends LeaderboardFunctions>({
   params,
   entryTransform,
 }: LeaderboardContainerProps<TFunc>) => {
+  const { t } = useTranslation();
   const {
     data: entries,
     isLoading,
@@ -96,7 +98,7 @@ const LeaderboardContainer = <TFunc extends LeaderboardFunctions>({
   if (isError) {
     return (
       <View>
-        <Text>OOPS! Aconteceu algum error. Tente recarregar a página.</Text>
+        <Text>{t('components.ranking.categories.error')}</Text>
       </View>
     );
   }

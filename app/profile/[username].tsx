@@ -1,6 +1,7 @@
 import { FlashList } from '@shopify/flash-list';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Pressable,
@@ -15,23 +16,25 @@ import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 import { transformSecondsToTimeString } from '~/utils';
-import { Database } from '~/utils/database.types';
+import { Tables } from '~/utils/database.types';
 
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
-import { H1, H2, H3, Lead, Muted, P } from '~/components/ui/typography';
+import { H2, H3, Lead, Muted, P } from '~/components/ui/typography';
 
 export default function Profile() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { username } = useLocalSearchParams<{ username: string }>();
 
   const { data: profile, isPending: profilePending } = useQuery({
     queryKey: ['profile', username],
     queryFn: async () => {
-      if (!username) throw new Error('No username provided');
+      if (!username)
+        throw new Error(t('app.profile.[username].errors.noUsernameError'));
       const { data } = await supabase
         .from('profiles')
         .select('*')
@@ -45,7 +48,8 @@ export default function Profile() {
   const { data: stats } = useQuery({
     queryKey: ['profile', username, 'stats'],
     queryFn: async () => {
-      if (!profile) throw new Error("Profile doesn't exists");
+      if (!profile)
+        throw new Error(t('app.profile.[username].errors.profileNotExist'));
       const stats = await supabase
         .rpc('profile_stats', {
           username: `${profile.username}`,
@@ -86,7 +90,7 @@ export default function Profile() {
           </TouchableOpacity>
           <Text className="text-primary font-semibold text-xl">{username}</Text>
         </View>
-        <UserHeader profile={profile} username={`${profile?.username}`} />
+        <UserHeader profile={profile} />
         <Stats
           total_cadenas={stats?.total_cadenas || 0}
           total_distance_walked={stats?.total_distance_walked || 0}
@@ -99,9 +103,8 @@ export default function Profile() {
 }
 
 const UserHeader: React.FC<{
-  profile: Database['public']['Tables']['profiles']['Row'] | null;
-  username: string;
-}> = ({ profile, username }) => {
+  profile: Tables<'profiles'>;
+}> = ({ profile }) => {
   function calculateAge(birthday: string) {
     const birthdate = new Date(birthday);
     const today = new Date();
@@ -120,22 +123,6 @@ const UserHeader: React.FC<{
     }
 
     return age;
-  }
-
-  if (!profile) {
-    return (
-      <Card>
-        <CardContent className="flex flex-row gap-4 overflow-hidden px-2 py-4">
-          <SupabaseAvatar size={16} />
-          <View className="flex gap-3">
-            <H1>{username}</H1>
-            <View className="rounded-lg bg-red-50 p-2 text-center text-sm text-red-500 dark:bg-red-100 dark:text-red-700 md:p-4">
-              <Text>Usuário não é verificado</Text>
-            </View>
-          </View>
-        </CardContent>
-      </Card>
-    );
   }
 
   return (
@@ -167,6 +154,7 @@ const Stats: React.FC<{
   total_cadenas: number;
   total_full_lines: number;
 }> = ({ total_distance_walked, total_cadenas, total_full_lines }) => {
+  const { t } = useTranslation();
   const displayDistanceInKM = total_distance_walked > 10000;
 
   return (
@@ -183,21 +171,27 @@ const Stats: React.FC<{
               {displayDistanceInKM ? 'km' : 'm'}
             </Text>
           </View>
-          <Lead className="text-base">Walked</Lead>
+          <Lead className="text-base">
+            {t('app.profile.[username].Stats.walked')}
+          </Lead>
         </View>
 
         <View className="bg-gray-200 w-px h-full"></View>
 
         <View className="flex items-center justify-center gap-2">
           <Text className="text-3xl font-extrabold">{total_cadenas}</Text>
-          <Lead className="text-base">Cadenas</Lead>
+          <Lead className="text-base">
+            {t('app.profile.[username].Stats.sent')}
+          </Lead>
         </View>
 
         <View className="bg-gray-200 w-px h-full"></View>
 
         <View className="flex items-center justify-center gap-2">
           <Text className="text-3xl font-extrabold">{total_full_lines}</Text>
-          <Lead className="text-base">Full lines</Lead>
+          <Lead className="text-base">
+            {t('app.profile.[username].Stats.fullLine')}
+          </Lead>
         </View>
       </CardContent>
     </Card>
@@ -205,6 +199,7 @@ const Stats: React.FC<{
 };
 
 const UserNotFound: React.FC<{ username: string }> = ({ username }) => {
+  const { t } = useTranslation();
   const router = useRouter();
 
   const canGoBack = router.canGoBack();
@@ -213,7 +208,7 @@ const UserNotFound: React.FC<{ username: string }> = ({ username }) => {
     <SafeAreaView className="flex-1">
       <View className="flex items-center justify-center h-full gap-4">
         <H2 className="text-center">
-          usuário {username} não está registrado no app
+          {t('app.profile.[username].UserNotFound.title', { username })}
         </H2>
         <Button
           onPress={() => {
@@ -230,6 +225,7 @@ const UserNotFound: React.FC<{ username: string }> = ({ username }) => {
 };
 
 const LastWalks: React.FC<{ username: string }> = ({ username }) => {
+  const { t } = useTranslation();
   const { data, isPending } = useQuery({
     queryKey: ['profile', username, 'walks'],
     queryFn: async () => {
@@ -251,7 +247,7 @@ const LastWalks: React.FC<{ username: string }> = ({ username }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ultimos rolês</CardTitle>
+        <CardTitle>{t('app.profile.[username].LastWalks.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <FlashList
@@ -284,7 +280,7 @@ const LastWalks: React.FC<{ username: string }> = ({ username }) => {
                     <EnduranceIcon className="text-primary" />
                     <View>
                       <Text className="text-muted-foreground text-sm">
-                        Distância caminhada
+                        {t('app.profile.[username].LastWalks.distanceWalked')}
                       </Text>
                       <Text className="text-primary text-base">
                         {item.distance_walked}m
@@ -296,7 +292,7 @@ const LastWalks: React.FC<{ username: string }> = ({ username }) => {
                       <SpeedlineIcon className="text-primary" />
                       <View>
                         <Text className="text-muted-foreground text-sm">
-                          Melhor tempo
+                          {t('app.profile.[username].LastWalks.bestTime')}
                         </Text>
                         <Text className="text-primary text-base">
                           {transformSecondsToTimeString(item.crossing_time)}
@@ -346,7 +342,7 @@ const LastWalks: React.FC<{ username: string }> = ({ username }) => {
                   strokeWidth={0.5}
                 />
                 <Text className="text-center text-muted-foreground">
-                  Você ainda não deu nenhum rolê
+                  {t('app.profile.[username].LastWalks.empty')}
                 </Text>
               </View>
             )

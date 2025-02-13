@@ -1,11 +1,13 @@
-import BottomSheet, {
+import {
   BottomSheetBackdrop,
+  BottomSheetModal,
   BottomSheetView,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import {
@@ -23,21 +25,21 @@ import { Text } from '~/components/ui/text';
 export const RigModal: React.FC = () => {
   const { setupID } = useLocalSearchParams<{ setupID?: string }>();
   const router = useRouter();
-  const bottomSheetRef = React.useRef<BottomSheet>(null);
+  const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
 
   const closeModal = () => {
-    bottomSheetRef.current?.close();
+    bottomSheetModalRef.current?.close();
   };
 
   React.useEffect(() => {
     if (setupID) {
-      bottomSheetRef.current?.expand({
+      bottomSheetModalRef.current?.present({
         velocity: 200,
         stiffness: 200,
         damping: 80,
       });
     } else {
-      bottomSheetRef.current?.close();
+      bottomSheetModalRef.current?.close();
     }
   }, [setupID]);
 
@@ -53,19 +55,17 @@ export const RigModal: React.FC = () => {
   );
 
   return (
-    <BottomSheet
-      ref={bottomSheetRef}
+    <BottomSheetModal
+      ref={bottomSheetModalRef}
       backdropComponent={renderBackdrop}
       handleComponent={null}
-      onClose={() => {
+      onDismiss={() => {
         if (setupID && setupID !== '') {
           router.setParams({ setupID: '' });
         }
       }}
       detached={true}
       bottomInset={46}
-      index={-1}
-      enablePanDownToClose={false}
       style={{
         marginHorizontal: 24,
         elevation: 4,
@@ -81,7 +81,7 @@ export const RigModal: React.FC = () => {
       <BottomSheetView className="p-4 items-center gap-4">
         <SheetBody setupID={setupID} closeModal={closeModal} />
       </BottomSheetView>
-    </BottomSheet>
+    </BottomSheetModal>
   );
 };
 
@@ -115,13 +115,8 @@ interface UnrigSetupProps {
 }
 
 const UnrigSetup: React.FC<UnrigSetupProps> = ({ setup, closeModal }) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
-
-  const handleConfirmUnrig = () => {
-    if (setup.id) {
-      unrigMutation.mutate(setup.id);
-    }
-  };
 
   const unrigMutation = useMutation({
     mutationFn: async (setupID: number) => {
@@ -136,13 +131,12 @@ const UnrigSetup: React.FC<UnrigSetupProps> = ({ setup, closeModal }) => {
         .single();
 
       if (rigSetupError || !rigSetupData) {
-        throw new Error(rigSetupError?.message || 'Failed to insert rig setup');
+        throw new Error(rigSetupError?.message || 'Failed to update rig setup');
       }
-
       return rigSetupData;
     },
     onSuccess: (response) => {
-      // Update the cached list of setups for this highline
+      // Update cached setups
       queryClient.setQueryData<Setup>(
         rigQueryKeys.all(response.highline_id),
         (oldData) => {
@@ -151,8 +145,6 @@ const UnrigSetup: React.FC<UnrigSetupProps> = ({ setup, closeModal }) => {
           );
         },
       );
-
-      // Update the specfici setups cache
       queryClient.setQueryData<Setup[number]>(
         rigQueryKeys.single(response.highline_id),
         (oldData) => {
@@ -160,7 +152,6 @@ const UnrigSetup: React.FC<UnrigSetupProps> = ({ setup, closeModal }) => {
           return { ...oldData, ...response };
         },
       );
-
       closeModal();
     },
     onError: (error) => {
@@ -168,13 +159,20 @@ const UnrigSetup: React.FC<UnrigSetupProps> = ({ setup, closeModal }) => {
     },
   });
 
+  const handleConfirmUnrig = () => {
+    if (setup.id) {
+      unrigMutation.mutate(setup.id);
+    }
+  };
+
   return (
     <>
-      <Text className="text-2xl font-bold">Confirmar desmontagem</Text>
+      <Text className="text-2xl font-bold">
+        {t('components.highline.rig-confirmation.unrig.title')}
+      </Text>
       <RigCarabiner />
       <Text className="text-muted-foreground text-center">
-        O tempo que o Highline ficou montado será adicionado ao tempo de uso das
-        fitas que foram usadas no setup
+        {t('components.highline.rig-confirmation.unrig.description')}
       </Text>
       <Button
         variant="destructive"
@@ -182,7 +180,7 @@ const UnrigSetup: React.FC<UnrigSetupProps> = ({ setup, closeModal }) => {
         disabled={unrigMutation.isPending}
         className="w-full"
       >
-        <Text>Desmontar highline</Text>
+        <Text>{t('components.highline.rig-confirmation.unrig.button')}</Text>
       </Button>
       <Button
         variant="outline"
@@ -191,7 +189,7 @@ const UnrigSetup: React.FC<UnrigSetupProps> = ({ setup, closeModal }) => {
         }}
         className="w-full"
       >
-        <Text>Cancelar</Text>
+        <Text>{t('components.highline.rig-confirmation.unrig.cancel')}</Text>
       </Button>
     </>
   );
@@ -203,6 +201,7 @@ interface ConfirmDateProps {
 }
 
 const ConfirmDate: React.FC<ConfirmDateProps> = ({ setup, closeModal }) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
@@ -217,13 +216,11 @@ const ConfirmDate: React.FC<ConfirmDateProps> = ({ setup, closeModal }) => {
         .single();
 
       if (rigSetupError || !rigSetupData) {
-        throw new Error(rigSetupError?.message || 'Failed to insert rig setup');
+        throw new Error(rigSetupError?.message || 'Failed to update rig setup');
       }
-
       return rigSetupData;
     },
     onSuccess: (response) => {
-      // Update the cached list of setups for this highline
       queryClient.setQueryData<Setup>(
         rigQueryKeys.all(response.highline_id),
         (oldData) => {
@@ -232,8 +229,6 @@ const ConfirmDate: React.FC<ConfirmDateProps> = ({ setup, closeModal }) => {
           );
         },
       );
-
-      // Update the specfici setups cache
       queryClient.setQueryData<Setup[number]>(
         rigQueryKeys.single(response.highline_id),
         (oldData) => {
@@ -241,19 +236,24 @@ const ConfirmDate: React.FC<ConfirmDateProps> = ({ setup, closeModal }) => {
           return { ...oldData, ...response };
         },
       );
-
       closeModal();
     },
     onError: (error) => {
-      console.error('Error unrigging:', error);
+      console.error('Error updating rig setup:', error);
     },
   });
 
+  const rigDate = new Date(setup.rig_date);
+
   return (
     <>
-      <Text className="text-2xl font-bold">Esse highline foi montado?</Text>
+      <Text className="text-2xl font-bold">
+        {t('components.highline.rig-confirmation.confirm.title')}
+      </Text>
       <Text className="text-muted-foreground text-center">
-        A data planejada para montagem era 02/02/2024
+        {t('components.highline.rig-confirmation.confirm.description', {
+          date: rigDate.toLocaleDateString('pt-BR'),
+        })}
       </Text>
       <Button
         variant="default"
@@ -261,7 +261,9 @@ const ConfirmDate: React.FC<ConfirmDateProps> = ({ setup, closeModal }) => {
         disabled={mutation.isPending}
         className="w-full"
       >
-        <Text>Confirmar montagem</Text>
+        <Text>
+          {t('components.highline.rig-confirmation.confirm.buttonConfirm')}
+        </Text>
       </Button>
       <Link href={`/highline/${setup.highline_id}/rig`} asChild>
         <Button
@@ -269,7 +271,9 @@ const ConfirmDate: React.FC<ConfirmDateProps> = ({ setup, closeModal }) => {
           disabled={mutation.isPending}
           className="w-full"
         >
-          <Text>Trocar data</Text>
+          <Text>
+            {t('components.highline.rig-confirmation.confirm.buttonChange')}
+          </Text>
         </Button>
       </Link>
       <Button
@@ -280,7 +284,9 @@ const ConfirmDate: React.FC<ConfirmDateProps> = ({ setup, closeModal }) => {
         disabled={mutation.isPending}
         className="w-full"
       >
-        <Text>Voltar</Text>
+        <Text>
+          {t('components.highline.rig-confirmation.confirm.buttonBack')}
+        </Text>
       </Button>
     </>
   );
@@ -293,9 +299,7 @@ const ModalSkeleton: React.FC = () => (
       <Skeleton className="w-5/6 h-3" />
       <Skeleton className="w-3/5 h-3" />
     </View>
-
     <View className="h-12 w-full" />
-
     <Skeleton className="w-full h-14 rounded-md" />
   </>
 );
@@ -303,13 +307,15 @@ const ModalSkeleton: React.FC = () => (
 const SetupNotFound: React.FC<{ closeModal: () => void }> = ({
   closeModal,
 }) => {
+  const { t } = useTranslation();
   return (
     <>
-      <Text className="text-2xl font-bold">Setup não encontrado</Text>
+      <Text className="text-2xl font-bold">
+        {t('components.highline.rig-confirmation.notFound.title')}
+      </Text>
       <RigCarabiner />
       <Text className="text-muted-foreground text-center">
-        Algo de inesperado aconteceu e o setup não foi encontrado, por favor,
-        tente novamente mais tarde
+        {t('components.highline.rig-confirmation.notFound.description')}
       </Text>
       <Button
         variant="outline"
@@ -318,7 +324,9 @@ const SetupNotFound: React.FC<{ closeModal: () => void }> = ({
         }}
         className="w-full"
       >
-        <Text>Cancelar</Text>
+        <Text>
+          {t('components.highline.rig-confirmation.notFound.buttonCancel')}
+        </Text>
       </Button>
     </>
   );

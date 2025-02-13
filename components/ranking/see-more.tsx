@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { TouchableOpacity } from 'react-native';
 
 import { Text } from '../ui/text';
@@ -7,10 +8,11 @@ interface Props {
   disabled?: boolean;
 }
 function SeeMore({ onPress, disabled }: Props) {
+  const { t } = useTranslation();
   return (
     <TouchableOpacity onPress={onPress} disabled={disabled} className="mt-2">
       <Text className="text-sm font-medium text-blue-600 dark:text-blue-500">
-        Ver mais
+        {t('components.ranking.see-more')}
       </Text>
     </TouchableOpacity>
   );

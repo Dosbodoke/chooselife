@@ -11,6 +11,7 @@ import {
   UseFormReturn,
   useWatch,
 } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
@@ -36,12 +37,14 @@ import {
 import { H3, Muted } from '~/components/ui/typography';
 import { WebbingInput, webbingSchema } from '~/components/webbing-input';
 
+// Extend your existing webbing schema with a "model" field.
 const webbingSchemaWithModel = webbingSchema.extend({
   model: z.string().optional(),
 });
 type WebbingSchemaWithModel = z.infer<typeof webbingSchemaWithModel>;
 
 export default function RegisterWebbing() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const router = useRouter();
@@ -94,10 +97,7 @@ export default function RegisterWebbing() {
       >
         <PrefillForm form={form} />
 
-        <View
-          className="flex-grow"
-          /* Spacer to push paginator down */
-        />
+        <View className="flex-grow">{/* Spacer to push paginator down */}</View>
 
         <OnboardNavigator
           total={1}
@@ -106,7 +106,7 @@ export default function RegisterWebbing() {
           onFinish={form.handleSubmit(onSubmit, onError)}
           goBack={router.back}
           isLoading={mutation.isPending}
-          finishLabel="Cadastrar"
+          finishLabel={t('app.(modals).register-webbing.finishLabel')}
         />
       </KeyboardAwareScrollView>
     </SafeAreaView>
@@ -116,6 +116,7 @@ export default function RegisterWebbing() {
 const PrefillForm: React.FC<{
   form: UseFormReturn<WebbingSchemaWithModel>;
 }> = ({ form }) => {
+  const { t } = useTranslation();
   const [leftLoop, rightLoop, length] = useWatch({
     control: form.control,
     name: ['leftLoop', 'rightLoop', 'length'],
@@ -130,10 +131,11 @@ const PrefillForm: React.FC<{
       <RegisterWebbingIllustration className="w-full h-auto" />
 
       <View>
-        <H3 className="text-center">Registrar fita</H3>
+        <H3 className="text-center">
+          {t('app.(modals).register-webbing.title')}
+        </H3>
         <Muted className="text-center">
-          Registrar sua fita permite acompanhar o histórico de uso e receber
-          lembretes de manutenção.
+          {t('app.(modals).register-webbing.description')}
         </Muted>
       </View>
 
@@ -154,13 +156,14 @@ const PrefillForm: React.FC<{
 const SelectWebbing: React.FC<{ control: Control<WebbingSchemaWithModel> }> = ({
   control,
 }) => {
+  const { t } = useTranslation();
   const id = useId();
   const [triggerWidth, setTriggerWidth] = useState<number>(0);
 
   return (
     <View className="gap-2">
       <Label htmlFor={id} nativeID={id}>
-        Modelo da fita
+        {t('app.(modals).register-webbing.modelLabel')}
       </Label>
       <Controller
         control={control}
@@ -175,7 +178,11 @@ const SelectWebbing: React.FC<{ control: Control<WebbingSchemaWithModel> }> = ({
                 setTriggerWidth(width);
               }}
             >
-              <SelectValue placeholder="Ex.: Brasileirinha" />
+              <SelectValue
+                placeholder={t(
+                  'app.(modals).register-webbing.modelPlaceholder',
+                )}
+              />
             </SelectTrigger>
             <SelectContent style={{ width: triggerWidth }}>
               <ScrollView

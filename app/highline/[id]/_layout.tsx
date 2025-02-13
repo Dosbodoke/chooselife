@@ -12,8 +12,9 @@ export default function HighlineLayout() {
       <Stack.Screen
         name="register"
         options={{
+          headerShown: true,
+          title: '',
           presentation: 'modal',
-          title: 'Registrar rolê',
         }}
       />
       <Stack.Screen
@@ -21,7 +22,6 @@ export default function HighlineLayout() {
         options={{
           headerShown: false,
           presentation: 'modal',
-          title: 'Montar highline',
         }}
       />
     </Stack>

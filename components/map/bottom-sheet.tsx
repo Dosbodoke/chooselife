@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { atom } from 'jotai';
 import { useAtomValue, useSetAtom } from 'jotai/react';
 import React, { useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 
 import { type Highline } from '~/hooks/use-highline';
@@ -26,10 +27,10 @@ const ListingsBottomSheet: React.FC<{
   hasFocusedMarker: boolean;
   isLoading: boolean;
 }> = ({ highlines, hasFocusedMarker, isLoading }) => {
-  // Get the header height from the atom.
+  const { t } = useTranslation();
   const headerHeight = useAtomValue(bottomSheetHandlerHeightAtom);
 
-  // If the header height is not yet measured, you can default to a percentage (or any fallback value)
+  // If the handler height is not yet measured, use 15% as an approximation of it's height
   const snapPoints = useMemo(() => {
     return [headerHeight > 0 ? headerHeight : '15%', '100%'];
   }, [headerHeight]);
@@ -56,7 +57,7 @@ const ListingsBottomSheet: React.FC<{
       }}
       handleComponent={() => (
         <CustomBottomSheetHandle
-          highlineLenght={highlines.length}
+          highlineLength={highlines.length}
           isLoading={isLoading}
         />
       )}
@@ -73,18 +74,22 @@ const ListingsBottomSheet: React.FC<{
       }}
     >
       <BottomSheetView className="flex-1 bg-background">
-        <BottomSheetFlashList<Highline>
-          data={highlines}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          estimatedItemSize={390}
-        />
+        {highlines.length > 0 && !hasFocusedMarker ? (
+          <BottomSheetFlashList<Highline>
+            data={highlines}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            estimatedItemSize={390}
+          />
+        ) : null}
         <View className="absolute bottom-6 w-full items-center">
           <TouchableOpacity
             onPress={onShowMap}
             className="bg-primary p-3 h-12 rounded-3xl flex gap-2 flex-row my-auto items-center"
           >
-            <Text className="text-primary-foreground">Mapa</Text>
+            <Text className="text-primary-foreground">
+              {t('components.map.bottom-sheet.map')}
+            </Text>
             <LucideIcon
               name="Map"
               className="h-6 w-6 text-primary-foreground"
@@ -97,9 +102,11 @@ const ListingsBottomSheet: React.FC<{
 };
 
 const CustomBottomSheetHandle: React.FC<{
-  highlineLenght: number;
+  highlineLength: number;
   isLoading: boolean;
-}> = ({ highlineLenght, isLoading }) => {
+}> = ({ highlineLength, isLoading }) => {
+  const { t } = useTranslation();
+
   const setBottomSheetHandlerHeight = useSetAtom(bottomSheetHandlerHeightAtom);
 
   return (
@@ -107,9 +114,10 @@ const CustomBottomSheetHandle: React.FC<{
       onLayout={(e) => {
         setBottomSheetHandlerHeight(e.nativeEvent.layout.height);
       }}
-      className="p-4 bg-white"
+      className="p-4 bg-white items-center gap-2"
     >
-      <View className="flex-row justify-between items-center">
+      <View className="w-10 h-1 bg-muted-foreground rounded-md"></View>
+      <View className="flex-row justify-between items-center w-full">
         <Text
           className={cn(
             'text-center font-bold text-2xl',
@@ -117,8 +125,8 @@ const CustomBottomSheetHandle: React.FC<{
           )}
         >
           {isLoading
-            ? 'procurando highlines...'
-            : `${highlineLenght} highlines`}
+            ? t('components.map.bottom-sheet.loadingHighlines')
+            : `${highlineLength} highlines`}
         </Text>
         <AddHighlineButton />
       </View>
@@ -127,6 +135,7 @@ const CustomBottomSheetHandle: React.FC<{
 };
 
 const AddHighlineButton: React.FC = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const atomValue = useAtomValue(cameraStateAtom);
 
@@ -138,7 +147,7 @@ const AddHighlineButton: React.FC = () => {
         );
       }}
     >
-      <Text>Adicionar</Text>
+      <Text>{t('components.map.bottom-sheet.add')}</Text>
     </Button>
   );
 };

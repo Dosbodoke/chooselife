@@ -1,7 +1,5 @@
-// The drag & drop list was implemented using the following article as reference
-// https://medium.com/@varunkukade999/part-1-react-native-drag-drop-list-60-fps-from-scratch-using-reanimated-3-rngh-63c934189bfe
-
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -106,10 +104,10 @@ const WebListSection: React.FC<{
     getInitialPositions(webbings),
   );
 
-  //used to know if drag is happening or not
+  // used to know if drag is happening or not
   const isDragging = useSharedValue<0 | 1>(0);
 
-  //this will hold id for item which user started dragging
+  // this will hold id for item which user started dragging
   const draggedItemId = useSharedValue<null | string>(null);
 
   return (
@@ -121,7 +119,6 @@ const WebListSection: React.FC<{
           type === 'main' ? 'bg-red-500' : 'bg-blue-500',
         )}
       />
-
       <View className="py-2 gap-4 w-full">
         <View
           style={{ position: 'relative', height: webbings.length * ROW_HEIGHT }}
@@ -140,9 +137,7 @@ const WebListSection: React.FC<{
             />
           ))}
         </View>
-
         {errorMessage && <Alert message={errorMessage} />}
-
         <AddSectionButton type={type} handleNewSection={handleNewSection} />
       </View>
     </View>
@@ -170,10 +165,10 @@ const WebRow: React.FC<{
 }) => {
   const POSITION = index + 1;
 
-  //used for swapping with currentIndex
+  // used for swapping with currentIndex
   const newIndex = useSharedValue<null | number>(null);
 
-  //used for swapping with newIndex
+  // used for swapping with newIndex
   const currentIndex = useSharedValue<null | number>(null);
 
   const currentWebPositionsDerived = useDerivedValue(() => {
@@ -214,13 +209,11 @@ const WebRow: React.FC<{
 
   const panGesture = Gesture.Pan()
     .onStart(() => {
-      //start dragging
+      // start dragging
       isDragging.value = withSpring(1);
-
-      //keep track of dragged item
+      // keep track of dragged item
       draggedItemId.value = webbing.id;
-
-      //store dragged item id for future swap
+      // store dragged item id for future swap
       currentIndex.value =
         currentWebPositionsDerived.value[webbing.id].updatedIndex;
     })
@@ -236,21 +229,18 @@ const WebRow: React.FC<{
       if (currentIndex.value === null) return;
 
       top.value = newTop;
-
-      //calculate the new index where drag is headed to
+      // calculate the new index where drag is headed to
       let newIndexVal = Math.floor((newTop + ROW_HEIGHT / 2) / ROW_HEIGHT);
       newIndexVal = Math.max(0, Math.min(newIndexVal, totalItems - 1));
       newIndex.value = newIndexVal;
-
-      //swap the items present at newIndex and currentIndex
+      // swap the items present at newIndex and currentIndex
       if (newIndex.value !== currentIndex.value) {
-        //find id of the item that currently resides at newIndex
+        // find id of the item that currently resides at newIndex
         const newIndexItemKey = getKeyOfValue(
           newIndex.value,
           currentWebPositionsDerived.value,
         );
-
-        //find id of the item that currently resides at currentIndex
+        // find id of the item that currently resides at currentIndex
         const currentDragIndexItemKey = getKeyOfValue(
           currentIndex.value,
           currentWebPositionsDerived.value,
@@ -260,7 +250,7 @@ const WebRow: React.FC<{
           newIndexItemKey !== undefined &&
           currentDragIndexItemKey !== undefined
         ) {
-          // we update updatedTop and updatedIndex as next time we want to do calculations from new top value and new index
+          // update updatedTop and updatedIndex so that next time calculations start from the new values
           currentWebPositions.value = {
             ...currentWebPositionsDerived.value,
             [newIndexItemKey]: {
@@ -273,8 +263,7 @@ const WebRow: React.FC<{
               updatedIndex: newIndex.value,
             },
           };
-
-          //update new index as current index
+          // update new index as current index
           currentIndex.value = newIndex.value;
         }
       }
@@ -288,15 +277,14 @@ const WebRow: React.FC<{
         stiffness: 400,
         damping: 25,
       });
-
-      //find original id of the item that currently resides at currentIndex
+      // find original id of the item that currently resides at currentIndex
       const currentDragIndexItemKey = getKeyOfValue(
         currentIndex.value,
         currentWebPositionsDerived.value,
       );
 
       if (currentDragIndexItemKey !== undefined) {
-        //update the values for item whose drag we just stopped
+        // update the values for the dragged item
         currentWebPositions.value = {
           ...currentWebPositionsDerived.value,
           [currentDragIndexItemKey]: {
@@ -311,7 +299,7 @@ const WebRow: React.FC<{
         runOnJS(swap)(index, newIndex.value);
       }
 
-      //stop dragging
+      // stop dragging
       isDragging.value = withDelay(200, withSpring(0));
     });
 
@@ -417,27 +405,30 @@ const WebRow: React.FC<{
 
 const WebRowAvatar: React.FC<{ webbingID: number }> = ({ webbingID }) => {
   const { data } = useWebbing(webbingID);
-
-  if (!data) return;
-
+  if (!data) return null;
   return <SupabaseAvatar size={8} profileID={data.user_id} />;
 };
 
 const AddSectionButton: React.FC<{
   type: WebType;
   handleNewSection: (type: WebType) => void;
-}> = ({ type, handleNewSection }) => (
-  <AnimatedTouchableOpacity
-    layout={_layoutAnimation}
-    onPress={() => handleNewSection(type)}
-    className="flex-row gap-1 items-center ml-2"
-  >
-    <LucideIcon name="CirclePlus" className="size-6 text-primary" />
-    <Text className="text-base text-primary">
-      Adicionar {type === 'main' ? 'principal' : 'backup'}
-    </Text>
-  </AnimatedTouchableOpacity>
-);
+}> = ({ type, handleNewSection }) => {
+  const { t } = useTranslation();
+  return (
+    <AnimatedTouchableOpacity
+      layout={_layoutAnimation}
+      onPress={() => handleNewSection(type)}
+      className="flex-row gap-1 items-center ml-2"
+    >
+      <LucideIcon name="CirclePlus" className="size-6 text-primary" />
+      <Text className="text-base text-primary">
+        {type === 'main'
+          ? t('components.sortable-webbing-list.addMainSection')
+          : t('components.sortable-webbing-list.addBackupSection')}
+      </Text>
+    </AnimatedTouchableOpacity>
+  );
+};
 
 export type TWebPositions = {
   [key: string]: {
@@ -446,7 +437,6 @@ export type TWebPositions = {
   };
 };
 
-//create Web positions object
 export const getInitialPositions = (
   webbings: WebbingWithId[],
 ): TWebPositions => {
