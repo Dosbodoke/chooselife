@@ -23,6 +23,7 @@ import HighlineIllustration from '~/lib/icons/highline-illustration';
 import { supabase } from '~/lib/supabase';
 import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
+import { date18YearsAgo } from '~/utils';
 
 import { LanguageSwitcher } from '~/components/language-switcher';
 import { OnboardNavigator, OnboardPaginator } from '~/components/onboard';
@@ -74,7 +75,7 @@ export default function SetProfile() {
       name: profile?.name || '',
       profilePicture: profile?.profile_picture || undefined,
       description: profile?.description || '',
-      birthday: profile?.birthday || '',
+      birthday: profile?.birthday || date18YearsAgo(),
     },
   });
 
@@ -107,6 +108,7 @@ export default function SetProfile() {
       router.replace('/(tabs)');
     },
     onError: (error) => {
+      console.log({ error });
       if ((error as PostgrestError).code === '23505') {
         form.setError('username', {
           message: t('app.setProfile.errors.usernameTaken'),
@@ -132,15 +134,20 @@ export default function SetProfile() {
         .eq('username', `@${username.trim()}`)
         .single();
 
-      // Check if the username is available
-      if (error && error.code !== 'PGRST116') {
-        console.log('ERROR VALIDATING');
-        console.error('Error checking username:', error);
-        form.setError('username', {
-          message: t('app.setProfile.errors.usernameCheckError'),
-        });
-        return false;
-      } else if (data) {
+      if (error) {
+        // No row for username, it's free
+        if (error.code === 'PGRST116') {
+          form.setError('username', {
+            message: t('app.setProfile.errors.usernameCheckError'),
+          });
+          return true;
+        } else {
+          console.error('Error checking username:', error);
+          return false;
+        }
+      }
+
+      if (data) {
         form.clearErrors('username');
         form.setError('username', {
           message: t('app.setProfile.errors.usernameTaken'),
@@ -253,7 +260,7 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
                 returnKeyType="done"
                 className={cn(
                   error?.message ? 'border-red-500' : 'border-muted-foreground',
-                  'text-foreground placeholder:text-muted-foreground border-b-hairline',
+                  'text-foreground border-b-hairline min-w-32',
                 )}
               />
             </View>
@@ -347,7 +354,7 @@ const ProfileInfoForm = ({
         <Controller
           control={form.control}
           name="birthday"
-          render={({ field: { value } }) => (
+          render={({ field: { value }, fieldState: { error } }) => (
             <View className="gap-2">
               <TouchableOpacity onPress={() => setShowDatePicker(true)}>
                 <Input
@@ -358,6 +365,7 @@ const ProfileInfoForm = ({
                       ? new Date(value).toLocaleDateString('pt-BR')
                       : t('app.setProfile.ProfileInfoForm.selectDate')
                   }
+                  className={error?.message ? 'border-red-500' : 'text-primary'}
                   placeholder={t('app.setProfile.ProfileInfoForm.selectDate')}
                 />
               </TouchableOpacity>

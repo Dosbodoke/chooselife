@@ -18,3 +18,9 @@ export function transformSecondsToTimeString(totalSeconds: number): string {
 function padZero(num: number): string {
   return num.toString().padStart(2, '0');
 }
+
+export function date18YearsAgo() {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() - 18)
+  return date.toISOString().split('T')[0];
+}
