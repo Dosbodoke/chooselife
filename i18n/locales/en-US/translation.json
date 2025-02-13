@@ -1,117 +1,117 @@
 {
-	"app": {
-		"(modals)": {
-			"login": {
-				"logoSubtitle": "The only app made for Highliners",
-				"oauth": {
-					"lastUsed": "Last used",
-					"continueApple": "Continue with Apple",
-					"continueGoogle": "Continue with Google"
-				},
-				"separator": "or",
-				"email": {
-					"tabLogin": "Login with Email",
-					"tabSignup": "Create Account",
-					"emailPlaceholder": "Your email",
-					"passwordPlaceholder": "Your password",
-					"confirmPasswordPlaceholder": "Confirm password",
-					"loginButton": "Login",
-					"signupButton": "Create",
-					"invalidEmail": "Invalid email",
-					"passwordsMismatch": "Passwords do not match.",
-					"signupFailed": "Failed to create account, please contact support"
-				}
-			},
-			"register-webbing": {
-				"title": "Register Webbing",
-				"description": "Registering your webbing lets you track its usage history and receive maintenance reminders.",
-				"finishLabel": "Register",
-				"modelLabel": "Webbing Model",
-				"modelPlaceholder": "E.g., Brasileirinha"
-			}
-		},
-		"(tabs)": {
-			"_layout": {
-				"indexTitle": "Explore",
-				"settingsTitle": "Settings"
-			},
-			"settings": {
-					"viewProfile": "View profile",
-					"logOut": "Log Out",
-          "logIn": "Log In",
-          "changeLanguage": "Change language"
-			}
-		},
-		"highline": {
-			"index": {
-				"BottomActions": {
-					"seeOnMap": "See on Map",
-					"addToMap": "Add to Map",
-					"register": "Register session"
-				}
-			},
-			"register": {
-				"success": {
-					"title": "NICE CHOOSEN!",
-					"subtitle": "🆑 🆑 🆑 🆑 🆑",
-					"message": "Your session has been recorded and will be used to calculate your statistics.",
-					"button": "View Highline"
-				},
-				"fields": {
-					"instagram": {
-						"errors": {
-							"must_start_with": "The username must start with @",
-							"min_length": "Must be at least 3 characters"
-						}
-					},
-					"cadenas": {
-						"label": "Sent",
-						"description": "Started at the beginning of the line and finished without falling."
-					},
-					"full_lines": {
-						"label": "Full lines",
-						"description": "Completed the round trip without falling during the turnaround."
-					},
-					"distance": {
-						"label": "Distance Walked",
-						"description": "How many meters you walked.",
-						"errors": {
-							"required": "Please enter the number of meters walked.",
-							"invalid_type": "Please enter a valid number.",
-							"positive": "Distance cannot be negative."
-						}
-					},
-					"time": {
-						"label": "Speedline",
-						"optional": "*optional",
-						"description": "Your best time for the Speedline ranking.",
-						"placeholder": "Example: 4:20",
-						"errors": {
-							"invalid_format": "Invalid, use the mm:ss format."
-						}
-					},
-					"witness": {
-						"label": "Witnesses",
-						"description": "Enter the username of two people, separated by a comma.",
-						"placeholder": "@festivalchooselife, @juangsandrade",
-						"errors": {
-							"invalid_format": "Invalid, please provide the Instagram handles of two people, separated by a comma."
-						}
-					},
-					"comment": {
-						"label": "Comment",
-						"optional": "*optional",
-						"placeholder": "Nice Coosen 🤘🆑 Tell us how your session went, what you thought of the line and the connection..."
-					}
-				},
-				"buttons": {
-					"submit": {
-						"default": "Register session",
-						"loading": "Registering..."
-					}
-				}
-			},
-			"rig": {
+  "app": {
+    "(modals)": {
+      "login": {
+        "logoSubtitle": "The only app made for Highliners",
+        "oauth": {
+          "lastUsed": "Last used",
+          "continueApple": "Continue with Apple",
+          "continueGoogle": "Continue with Google"
+        },
+        "separator": "or",
+        "email": {
+          "tabLogin": "Login with Email",
+          "tabSignup": "Create Account",
+          "emailPlaceholder": "Your email",
+          "passwordPlaceholder": "Your password",
+          "confirmPasswordPlaceholder": "Confirm password",
+          "loginButton": "Login",
+          "signupButton": "Create",
+          "invalidEmail": "Invalid email",
+          "passwordsMismatch": "Passwords do not match.",
+          "signupFailed": "Failed to create account, please contact support"
+        }
+      },
+      "register-webbing": {
+        "title": "Register Webbing",
+        "description": "Registering your webbing lets you track its usage history and receive maintenance reminders.",
+        "finishLabel": "Register",
+        "modelLabel": "Webbing Model",
+        "modelPlaceholder": "E.g., Brasileirinha"
+      }
+    },
+    "(tabs)": {
+      "_layout": {
+        "indexTitle": "Explore",
+        "settingsTitle": "Settings"
+      },
+      "settings": {
+        "viewProfile": "View profile",
+        "logOut": "Log Out",
+        "logIn": "Log In",
+        "changeLanguage": "Change language"
+      }
+    },
+    "highline": {
+      "index": {
+        "BottomActions": {
+          "seeOnMap": "See on Map",
+          "addToMap": "Add to Map",
+          "register": "Register session"
+        }
+      },
+      "register": {
+        "success": {
+          "title": "NICE CHOOSEN!",
+          "subtitle": "🆑 🆑 🆑 🆑 🆑",
+          "message": "Your session has been recorded and will be used to calculate your statistics.",
+          "button": "View Highline"
+        },
+        "fields": {
+          "instagram": {
+            "errors": {
+              "must_start_with": "The username must start with @",
+              "min_length": "Must be at least 3 characters"
+            }
+          },
+          "cadenas": {
+            "label": "Sent",
+            "description": "Started at the beginning of the line and finished without falling."
+          },
+          "full_lines": {
+            "label": "Full lines",
+            "description": "Completed the round trip without falling during the turnaround."
+          },
+          "distance": {
+            "label": "Distance Walked",
+            "description": "How many meters you walked.",
+            "errors": {
+              "required": "Please enter the number of meters walked.",
+              "invalid_type": "Please enter a valid number.",
+              "positive": "Distance cannot be negative."
+            }
+          },
+          "time": {
+            "label": "Speedline",
+            "optional": "*optional",
+            "description": "Your best time for the Speedline ranking.",
+            "placeholder": "Example: 4:20",
+            "errors": {
+              "invalid_format": "Invalid, use the mm:ss format."
+            }
+          },
+          "witness": {
+            "label": "Witnesses",
+            "description": "Enter the username of two people, separated by a comma.",
+            "placeholder": "@festivalchooselife, @juangsandrade",
+            "errors": {
+              "invalid_format": "Invalid, please provide the Instagram handles of two people, separated by a comma."
+            }
+          },
+          "comment": {
+            "label": "Comment",
+            "optional": "*optional",
+            "placeholder": "Nice Coosen 🤘🆑 Tell us how your session went, what you thought of the line and the connection..."
+          }
+        },
+        "buttons": {
+          "submit": {
+            "default": "Register session",
+            "loading": "Registering..."
+          }
+        }
+      },
+      "rig": {
         "success": {
           "title": "NICE CHOOSEN!",
           "subtitle": "🆑 🆑 🆑 🆑 🆑",
@@ -142,60 +142,60 @@
           "clear": "clear"
         }
       }
-		},
-		"profile": {
-			"[username]": {
-				"errors": {
-					"noUsernameError": "No username provided",
-					"profileNotExist": "Profile doesn't exists"
-				},
-				"Stats": {
-					"walked": "Walked",
-					"sent": "Sent",
-					"fullLine": "Full Lines"
-				},
-				"UserNotFound": {
-					"title": "User {{username}} is not registered on the APP"
-				},
-				"LastWalks": {
-					"title": "Last walks",
-					"distanceWalked": "Distance walked",
-					"bestTime": "Best time",
-					"empty": "You haven't registered any walk yet"
-				}
-			}
-		},
-		"+not-found": {
-			"title": "This screen doesn't exist.",
-			"subtitle": "Go to map screen"
-		},
-		"setProfile": {
-			"title": "Set Up Your Profile",
-			"UsernameForm": {
-			  "title": "Choose Your Username",
-			  "subtitle": "This is how you will be identified.",
-			  "inputPlaceholder": "Your username"
-			},
-			"ProfileInfoForm": {
-			  "title": "Personal Information",
-			  "subtitle": "Tell us more about yourself.",
-			  "inputPlaceholderName": "Your name",
-			  "birthdayLabel": "Date of Birth:",
-			  "selectDate": "Select date",
-			  "descriptionPlaceholder": "Tell us something about yourself"
-			},
-			"errors": {
-			  "usernameValidation": "Username must be at least 3 characters.",
-			  "nameRequired": "Please enter your name.",
-			  "usernameTaken": "Username already taken, try another.",
-			  "saveProfile": "Error saving profile. Please try again.",
-			  "usernameCheckError": "Error checking username availability. Please try again."
-			}
-		}
-	},
-	"components": {
-		"highline": {
-			"history": {
+    },
+    "profile": {
+      "[username]": {
+        "errors": {
+          "noUsernameError": "No username provided",
+          "profileNotExist": "Profile doesn't exists"
+        },
+        "Stats": {
+          "walked": "Walked",
+          "sent": "Sent",
+          "fullLine": "Full Lines"
+        },
+        "UserNotFound": {
+          "title": "User {{username}} is not registered on the APP"
+        },
+        "LastWalks": {
+          "title": "Last walks",
+          "distanceWalked": "Distance walked",
+          "bestTime": "Best time",
+          "empty": "You haven't registered any walk yet"
+        }
+      }
+    },
+    "+not-found": {
+      "title": "This screen doesn't exist.",
+      "subtitle": "Go to map screen"
+    },
+    "setProfile": {
+      "title": "Set Up Your Profile",
+      "UsernameForm": {
+        "title": "Choose Your Username",
+        "subtitle": "This is how you will be identified.",
+        "inputPlaceholder": "Your username"
+      },
+      "ProfileInfoForm": {
+        "title": "Personal Information",
+        "subtitle": "Tell us more about yourself.",
+        "inputPlaceholderName": "Your name",
+        "birthdayLabel": "Date of Birth:",
+        "selectDate": "Select date",
+        "descriptionPlaceholder": "Tell us something about yourself"
+      },
+      "errors": {
+        "usernameValidation": "Username must be at least 3 characters.",
+        "nameRequired": "Please enter your name.",
+        "usernameTaken": "Username already taken, try another.",
+        "saveProfile": "Error saving profile. Please try again.",
+        "usernameCheckError": "Error checking username availability. Please try again."
+      }
+    }
+  },
+  "components": {
+    "highline": {
+      "history": {
         "title": "Rig History",
         "description": "Recording your setup not only preserves the higline history but also shows you care about safety.",
         "empty": "No setup records",
@@ -211,16 +211,16 @@
           "plannedFor": "Planned for"
         }
       },
-			"info": {
+      "info": {
         "height": "Height",
         "length": "Length"
       },
-			"not-found": {
-				"title": "Highline doesn't exist",
-				"goBack": "Go Back",
-				"goHome": "Go to the Map"
-			},
-			"rig-confirmation": {
+      "not-found": {
+        "title": "Highline doesn't exist",
+        "goBack": "Go Back",
+        "goHome": "Go to the Map"
+      },
+      "rig-confirmation": {
         "unrig": {
           "title": "Confirm Unrig",
           "description": "The period the Highline was rigged will be added to the total usage time of the webbings used in the setup",
@@ -241,14 +241,14 @@
         }
       }
     },
-		"map": {
-			"bottom-sheet": {
-				"map": "Map",
-				"loadingHighlines": "Searching highlines...",
-				"add": "Add"
-			},
-			"explore-header": {
-				"searchPlaceholder": "Highline name",
+    "map": {
+      "bottom-sheet": {
+        "map": "Map",
+        "loadingHighlines": "Searching highlines...",
+        "add": "Add"
+      },
+      "explore-header": {
+        "searchPlaceholder": "Highline name",
         "categories": {
           "favorites": "Favorites",
           "bigLine": "Big Line",
@@ -256,15 +256,15 @@
           "unrigged": "Unrigged",
           "planned": "Planned"
         }
-			},
-			"map-card": {
-				"seeDatails": "See details"
-			},
-			"picker-buttons": {
-				"setA": "Set anchor A",
-				"setB": "Set anchor B",
-				"confirm": "Confirm"
-			},
+      },
+      "map-card": {
+        "seeDatails": "See details"
+      },
+      "picker-buttons": {
+        "setA": "Set anchor A",
+        "setB": "Set anchor B",
+        "confirm": "Confirm"
+      },
       "register-modal": {
         "name": {
           "min": "Must be at least 3 characters",
@@ -300,61 +300,61 @@
           "button": "View Highline"
         }
       }
-		},
-		"onboard": {
+    },
+    "onboard": {
       "goBack": "Go back",
       "continue": "Continue",
-			"finish": "Finish"
+      "finish": "Finish"
     },
-		"ranking": {
-			"categories": {
-				"error": "OOPS! Something went wrong. Try to refresh the page."
-			},
-			"category-dropdown": {
+    "ranking": {
+      "categories": {
+        "error": "OOPS! Something went wrong. Try to refresh the page."
+      },
+      "category-dropdown": {
         "sent": "Sent",
         "distance": "Distance",
         "menuLabel": "Change category"
       },
-			"see-more": "See more"
-		},
-		"settings": {
-			"my-webbing": {
-				"title": "My Webbings",
-				"add": "add",
-				"description": "View and track the history of your webbings.",
-				"empty": "You haven't registered any webbing yet"
-			}
-		  },
-		"sortable-webbing-list": {
-			"addMainSection": "Add main section",
-			"addBackupSection": "Add backup section"
-		},
-		"supabase-avatar": {
-			"buttonLabel": "Change picture"
-		},
-		"webbing-input": {
-			"loop": "Loop",
-			"webbingLength": "Webbing length"
-		},
-		"webbing-setup": {
-			"validate": {
-				"totalLength": "{{type}} line total length must be greater than the highline.",
-				"main": "Main",
-				"backup": "Backup",
-				"atLeastOneLoop": "Section #{{section}} must have at least one loop to connect with the others.",
-				"bothLoops": "Section #{{section}} must have both loop to connect with the others.",
-				"connectionLength": "Backup #{{backupSection}} must be 2-10 meters longer than the main section #{{mainSection}}"
-			}
-		}
-	},
-	"context": {
-		"auth": {
-			"invalidCredentials": "Invalid credentials",
-			"loginError": "There was an error logging in. Please try again.",
-			"sessionCreationFailed": "Couldn't create session"
-		},
-		"rig-form": {
-			"unknownWebbing": "Unknown Webbing"
-		}
-	}
+      "see-more": "See more"
+    },
+    "settings": {
+      "my-webbing": {
+        "title": "My Webbings",
+        "add": "add",
+        "description": "View and track the history of your webbings.",
+        "empty": "You haven't registered any webbing yet"
+      }
+    },
+    "sortable-webbing-list": {
+      "addMainSection": "Add main section",
+      "addBackupSection": "Add backup section"
+    },
+    "supabase-avatar": {
+      "buttonLabel": "Change picture"
+    },
+    "webbing-input": {
+      "loop": "Loop",
+      "webbingLength": "Webbing length"
+    },
+    "webbing-setup": {
+      "validate": {
+        "totalLength": "{{type}} line total length must be greater than the highline.",
+        "main": "Main",
+        "backup": "Backup",
+        "atLeastOneLoop": "Section #{{section}} must have at least one loop to connect with the others.",
+        "bothLoops": "Section #{{section}} must have both loop to connect with the others.",
+        "connectionLength": "Backup #{{backupSection}} must be 2-10 meters longer than the main section #{{mainSection}}"
+      }
+    }
+  },
+  "context": {
+    "auth": {
+      "invalidCredentials": "Invalid credentials",
+      "loginError": "There was an error logging in. Please try again.",
+      "sessionCreationFailed": "Couldn't create session"
+    },
+    "rig-form": {
+      "unknownWebbing": "Unknown Webbing"
+    }
+  }
 }

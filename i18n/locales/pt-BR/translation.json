@@ -28,28 +28,28 @@
         "finishLabel": "Cadastrar",
         "modelLabel": "Modelo da fita",
         "modelPlaceholder": "Ex.: Brasileirinha"
-			}
+      }
     },
     "(tabs)": {
       "_layout": {
-				"indexTitle": "Explorar",
-				"settingsTitle": "Configurações"
-			},
-			"settings": {
-					"viewProfile": "Visualizar perfil",
-					"logOut": "Sair da conta",
-          "logIn": "Entrar na conta",
-          "changeLanguage": "Trocar idioma"
-			}
-		},
+        "indexTitle": "Explorar",
+        "settingsTitle": "Configurações"
+      },
+      "settings": {
+        "viewProfile": "Visualizar perfil",
+        "logOut": "Sair da conta",
+        "logIn": "Entrar na conta",
+        "changeLanguage": "Trocar idioma"
+      }
+    },
     "highline": {
-			"index": {
-				"BottomActions": {
-					"seeOnMap": "Ver no Mapa",
-					"addToMap": "Adicionar ao Mapa",
-					"register": "Registrar rolê"
-				}
-			},
+      "index": {
+        "BottomActions": {
+          "seeOnMap": "Ver no Mapa",
+          "addToMap": "Adicionar ao Mapa",
+          "register": "Registrar rolê"
+        }
+      },
       "register": {
         "success": {
           "title": "BOA CHOOSEN",
@@ -142,29 +142,29 @@
           "clear": "limpar"
         }
       }
-		},
+    },
     "profile": {
-			"[username]": {
-				"errors": {
-					"noUsernameError": "Está faltando o Username",
-					"profileNotExist": "Perfil não existe"
-				},
-				"Stats": {
-					"walked": "Caminhado",
-					"sent": "Cadenas",
-					"fullLine": "Full Lines"
-				},
-				"UserNotFound": {
-					"title": "Usuário {{username}} não está registrado no APP"
-				},
-				"LastWalks": {
-					"title": "Ultimos rolês",
-					"distanceWalked": "Distância caminhada",
-					"bestTime": "Melhor tempo",
-					"empty": "Você ainda não registrou nenhum rolê"
-				}
-			}
-		},
+      "[username]": {
+        "errors": {
+          "noUsernameError": "Está faltando o Username",
+          "profileNotExist": "Perfil não existe"
+        },
+        "Stats": {
+          "walked": "Caminhado",
+          "sent": "Cadenas",
+          "fullLine": "Full Lines"
+        },
+        "UserNotFound": {
+          "title": "Usuário {{username}} não está registrado no APP"
+        },
+        "LastWalks": {
+          "title": "Ultimos rolês",
+          "distanceWalked": "Distância caminhada",
+          "bestTime": "Melhor tempo",
+          "empty": "Você ainda não registrou nenhum rolê"
+        }
+      }
+    },
     "+not-found": {
       "title": "Essa tela não existe.",
       "subtitle": "Voltar para o mapa"
@@ -242,13 +242,13 @@
       }
     },
     "map": {
-			"bottom-sheet": {
-				"map": "Mapa",
-				"loadingHighlines": "Procurando highlines...",
-				"add": "Adicionar"
-			},
+      "bottom-sheet": {
+        "map": "Mapa",
+        "loadingHighlines": "Procurando highlines...",
+        "add": "Adicionar"
+      },
       "explore-header": {
-				"searchPlaceholder": "Nome do Highline",
+        "searchPlaceholder": "Nome do Highline",
         "categories": {
           "favorites": "Favoritos",
           "bigLine": "Big Line",
@@ -256,15 +256,15 @@
           "unrigged": "Desmontada",
           "planned": "Planejada"
         }
-			},
+      },
       "map-card": {
-				"seeDatails": "Ver detalhes"
-			},
+        "seeDatails": "Ver detalhes"
+      },
       "picker-buttons": {
-				"setA": "Definir ancoragem A",
-				"setB": "Definir ancoragem B",
-				"confirm": "Confirmar"
-			},
+        "setA": "Definir ancoragem A",
+        "setB": "Definir ancoragem B",
+        "confirm": "Confirmar"
+      },
       "register-modal": {
         "name": {
           "min": "Deve conter ao menos 3 caracteres",
@@ -304,20 +304,19 @@
     "onboard": {
       "goBack": "Voltar",
       "continue": "Continuar",
-			"finish": "Finalizar"
+      "finish": "Finalizar"
     },
     "ranking": {
-			"categories": {
-				"error": "OOPS! Aconteceu algum error. Tente recarregar a página."
-			},
+      "categories": {
+        "error": "OOPS! Aconteceu algum error. Tente recarregar a página."
+      },
       "category-dropdown": {
         "sent": "Cadenas",
         "distance": "Distância",
         "menuLabel": "Trocar modalidade"
       },
-			"see-more": "Ver mais"
-
-		},
+      "see-more": "Ver mais"
+    },
     "settings": {
       "my-webbing": {
         "title": "Minhas fitas",
@@ -331,31 +330,31 @@
       "addBackupSection": "Adicionar backup"
     },
     "supabase-avatar": {
-			"buttonLabel": "Trocar foto"
-		},
+      "buttonLabel": "Trocar foto"
+    },
     "webbing-input": {
-			"loop": "Olhal",
-			"webbingLength": "Comprimento da fita"
-		},
+      "loop": "Olhal",
+      "webbingLength": "Comprimento da fita"
+    },
     "webbing-setup": {
-			"validate": {
-				"totalLength": "Comprimento total da fita {{type}} deve ser maior que o highline.",
-				"main": "principal",
-				"backup": "backup",
-				"atLeastOneLoop": "Seção #{{section}} deve ter pelo menos um olhal para fazer conexão.",
-				"bothLoops": "Seção #{{section}} deve ter os dois olhais para fazer conexão.",
-				"connectionLength": "Backup #{{backupSection}} deve ser 2-10 metros mais longa que a seção principal #{{mainSection}}"
-			}
-		}
+      "validate": {
+        "totalLength": "Comprimento total da fita {{type}} deve ser maior que o highline.",
+        "main": "principal",
+        "backup": "backup",
+        "atLeastOneLoop": "Seção #{{section}} deve ter pelo menos um olhal para fazer conexão.",
+        "bothLoops": "Seção #{{section}} deve ter os dois olhais para fazer conexão.",
+        "connectionLength": "Backup #{{backupSection}} deve ser 2-10 metros mais longa que a seção principal #{{mainSection}}"
+      }
+    }
   },
   "context": {
-		"auth": {
+    "auth": {
       "invalidCredentials": "Credenciais inválidas",
       "loginError": "Erro no login. Por favor tente novamente.",
       "sessionCreationFailed": "Não foi possível criar a sessão"
-		},
-		"rig-form": {
-			"unknownWebbing": "Fita não registrada"
-		}
-	}
+    },
+    "rig-form": {
+      "unknownWebbing": "Fita não registrada"
+    }
+  }
 }

@@ -10,7 +10,8 @@
     "ios": "expo run:ios",
     "web": "expo start -c --web",
     "lint": "eslint .",
-    "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\""
+    "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
+    "format:translations": "eslint --fix --format node_modules/eslint-plugin-i18n-json/formatter.js ./i18n/locales"
   },
   "dependencies": {
     "@gorhom/bottom-sheet": "^5.0.6",
@@ -105,6 +106,7 @@
     "@typescript-eslint/parser": "^8.15.0",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-i18n-json": "^4.0.1",
     "prettier": "^3.3.3",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.15.0"
