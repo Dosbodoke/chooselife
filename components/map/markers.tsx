@@ -63,42 +63,49 @@ export const Markers: React.FC<{
   const handleClusterPress = useCallback(
     (cluster_id: number): void => {
       if (!supercluster) return;
-      const expansionZoom = Math.min(
-        supercluster.getClusterExpansionZoom(cluster_id) || 20,
-        17,
+      // Get the expansion zoom level, then clamp it to a maximum of 17.
+      const expansionZoom =
+        supercluster.getClusterExpansionZoom(cluster_id) || 20;
+      const clampedZoom = Math.min(expansionZoom, 17);
+      const cluster = clusters.find(
+        (c) => c.properties.cluster && c.properties.cluster_id === cluster_id,
       );
-      const shouldHighlightCards = expansionZoom <= cameraState.zoom;
-      const leaves = supercluster.getLeaves(cluster_id);
+      if (!cluster) return;
+      const [lng, lat] = cluster.geometry.coordinates;
 
-      // Cache highlines query data once per callback call.
-      const highlinesData =
-        queryClient.getQueryData<Highline[]>(['highlines']) || [];
-      const highlinesFromLeaves: Highline[] = [];
-      const lats: number[] = [];
-      const lngs: number[] = [];
-
-      leaves.forEach((l) => {
-        if (shouldHighlightCards) {
+      // Optionally update markers if needed
+      const shouldHighlightCards = clampedZoom <= cameraState.zoom;
+      if (shouldHighlightCards) {
+        const leaves = supercluster.getLeaves(cluster_id);
+        const highlinesData =
+          queryClient.getQueryData<Highline[]>(['highlines']) || [];
+        const highlinesFromLeaves: Highline[] = [];
+        leaves.forEach((l) => {
           const highline = highlinesData.find(
             (high) => high.id === l.properties.highID,
           );
           if (highline) highlinesFromLeaves.push(highline);
+        });
+        if (highlinesFromLeaves.length > 0) {
+          updateMarkers(highlinesFromLeaves, highlinesFromLeaves[0]);
         }
-        const [lng, lat] = l.geometry.coordinates;
-        lats.push(lat, l.properties.anchorB.latitude);
-        lngs.push(lng, l.properties.anchorB.longitude);
-      });
-
-      if (shouldHighlightCards && highlinesFromLeaves.length > 0) {
-        updateMarkers(highlinesFromLeaves, highlinesFromLeaves[0]);
       }
 
-      // Compute bounds.
-      const ne: [number, number] = [Math.max(...lngs), Math.max(...lats)];
-      const sw: [number, number] = [Math.min(...lngs), Math.min(...lats)];
-      cameraRef.current?.fitBounds(ne, sw, [50, 50, 200, 250], 1000);
+      cameraRef.current?.setCamera({
+        centerCoordinate: [lng, lat],
+        zoomLevel: clampedZoom,
+        animationDuration: 1000,
+        animationMode: 'flyTo',
+      });
     },
-    [queryClient, supercluster, cameraState.zoom, cameraRef, updateMarkers],
+    [
+      queryClient,
+      supercluster,
+      cameraState.zoom,
+      cameraRef,
+      updateMarkers,
+      clusters,
+    ],
   );
 
   // Adjust camera when a marker is highlighted.
