@@ -38,8 +38,8 @@ export default function SettingsPage() {
           >
             <TouchableOpacity className="flex flex-row gap-4">
               <SupabaseAvatar profileID={profile.id} size={16} />
-              <View>
-                <H2>{profile.name}</H2>
+              <View className="flex-1">
+                <H2 className="flex-shrink">{profile.name}</H2>
                 <Muted>{t('app.(tabs).settings.viewProfile')}</Muted>
               </View>
             </TouchableOpacity>
