@@ -11,7 +11,8 @@
     "web": "expo start -c --web",
     "lint": "eslint .",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
-    "format:translations": "eslint --fix --format node_modules/eslint-plugin-i18n-json/formatter.js ./i18n/locales"
+    "format:translations": "eslint --fix --format node_modules/eslint-plugin-i18n-json/formatter.js ./i18n/locales",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@gorhom/bottom-sheet": "^5.0.6",
@@ -34,7 +35,7 @@
     "@rn-primitives/tabs": "^1.1.0",
     "@rn-primitives/tooltip": "~1.0.3",
     "@rn-primitives/types": "^1.1.0",
-    "@rnmapbox/maps": "^10.1.33",
+    "@rnmapbox/maps": "10.1.33",
     "@shopify/flash-list": "1.7.1",
     "@shopify/react-native-skia": "^1.6.0",
     "@supabase/supabase-js": "^2.48.0",
@@ -43,7 +44,7 @@
     "base64-arraybuffer": "^1.0.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
-    "expo": "^52.0.4",
+    "expo": "^52.0.33",
     "expo-asset": "~11.0.1",
     "expo-auth-session": "~6.0.0",
     "expo-crypto": "~14.0.1",
@@ -68,19 +69,21 @@
     "lodash": "^4.17.21",
     "lucide-react-native": "^0.378.0",
     "nativewind": "^4.1.21",
+    "patch-package": "^8.0.0",
+    "postinstall-postinstall": "^2.1.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-hook-form": "^7.52.1",
     "react-i18next": "^15.4.0",
-    "react-native": "0.76.1",
+    "react-native": "~0.77.0",
     "react-native-date-picker": "^5.0.10",
-    "react-native-gesture-handler": "~2.20.2",
+    "react-native-gesture-handler": "~2.22.0",
     "react-native-get-random-values": "~1.11.0",
     "react-native-keyboard-controller": "^1.16.2",
     "react-native-pager-view": "6.4.1",
-    "react-native-reanimated": "~3.16.1",
-    "react-native-safe-area-context": "4.12.0",
-    "react-native-screens": "^4.0.0",
+    "react-native-reanimated": "~3.16.7",
+    "react-native-safe-area-context": "~5.1.0",
+    "react-native-screens": "^4.6.0",
     "react-native-svg": "15.8.0",
     "react-native-tab-view": "^3.5.2",
     "react-native-url-polyfill": "^2.0.0",
@@ -110,6 +113,18 @@
     "prettier": "^3.3.3",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.15.0"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "react-native@~0.76.6",
+        "react-native-reanimated@~3.16.1",
+        "react-native-gesture-handler@~2.20.0",
+        "react-native-screens@~4.4.0",
+        "react-native-safe-area-context@~4.12.0",
+        "react-native-webview@~13.12.5"
+      ]
+    }
   },
   "private": true
 }
