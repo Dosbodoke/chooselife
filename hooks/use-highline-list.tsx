@@ -19,10 +19,6 @@ export const useHighlineList = ({ searchTerm }: { searchTerm?: string }) => {
 
   const [selectedCategory, setSelectedCategory] =
     useState<HighlineCategory | null>(null);
-  const [highlightedMarker, setHighlightedMarker] = useState<Highline | null>(
-    null,
-  );
-  const [clusterMarkers, setClusterMarkers] = useState<Highline[]>([]);
 
   const {
     data: highlines,
@@ -91,10 +87,6 @@ export const useHighlineList = ({ searchTerm }: { searchTerm?: string }) => {
     highlines: filteredHighlines,
     isLoading,
     error,
-    highlightedMarker,
-    clusterMarkers,
-    setHighlightedMarker,
-    setClusterMarkers,
     setSelectedCategory,
   };
 };
