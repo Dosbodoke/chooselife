@@ -80,6 +80,7 @@ const ListingsBottomSheet: React.FC<{
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
             estimatedItemSize={390}
+            removeClippedSubviews={false}
           />
         ) : null}
         <View className="absolute bottom-6 w-full items-center">

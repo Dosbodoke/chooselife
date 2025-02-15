@@ -1,6 +1,8 @@
 import { FlashList } from '@shopify/flash-list';
+import { QueryData } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -14,7 +16,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EnduranceIcon, SpeedlineIcon } from '~/lib/icons';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
-import { cn } from '~/lib/utils';
 import { transformSecondsToTimeString } from '~/utils';
 import { Tables } from '~/utils/database.types';
 
@@ -78,6 +79,7 @@ export default function Profile() {
       <KeyboardAwareScrollView
         contentContainerClassName="min-h-screen px-2 py-4 gap-4"
         keyboardShouldPersistTaps="handled"
+        removeClippedSubviews={false}
       >
         <View className="flex-row items-center">
           <TouchableOpacity
@@ -226,23 +228,110 @@ const UserNotFound: React.FC<{ username: string }> = ({ username }) => {
 
 const LastWalks: React.FC<{ username: string }> = ({ username }) => {
   const { t } = useTranslation();
+
+  const entryWithHighlineQuery = supabase
+    .from('entry')
+    .select(`*, highline (*)`);
+  type EntryWithHighline = QueryData<typeof entryWithHighlineQuery>;
+
   const { data, isPending } = useQuery({
     queryKey: ['profile', username, 'walks'],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('entry')
-        .select(
-          `
-            *,
-            highline (*)
-          `,
-        )
-        .eq('instagram', `${username}`)
+      const { data } = await entryWithHighlineQuery
+        .eq('instagram', username)
         .order('created_at', { ascending: false })
         .limit(5);
       return data;
     },
   });
+
+  // Memoized render function for each walk item.
+  const renderWalkItem = React.useCallback(
+    ({ item }: { item: EntryWithHighline[number] }) => (
+      <View className="py-4">
+        <Link href={`/highline/${item.highline_id}`} asChild>
+          <Pressable>
+            <Text className="truncate text-base font-semibold leading-none text-blue-500 dark:text-blue-400">
+              {item.highline?.name}
+            </Text>
+          </Pressable>
+        </Link>
+        <Text className="text-muted-foreground">
+          {new Date(item.created_at).toLocaleDateString('pt-BR', {
+            dateStyle: 'medium',
+          })}
+        </Text>
+        <View className="flex-row gap-4 py-1">
+          <View className="flex-row gap-2">
+            <EnduranceIcon className="text-primary" />
+            <View>
+              <Text className="text-muted-foreground text-sm">
+                {t('app.profile.[username].LastWalks.distanceWalked')}
+              </Text>
+              <Text className="text-primary text-base">
+                {item.distance_walked}m
+              </Text>
+            </View>
+          </View>
+          {item.crossing_time && (
+            <View className="flex-row gap-2">
+              <SpeedlineIcon className="text-primary" />
+              <View>
+                <Text className="text-muted-foreground text-sm">
+                  {t('app.profile.[username].LastWalks.bestTime')}
+                </Text>
+                <Text className="text-primary text-base">
+                  {transformSecondsToTimeString(item.crossing_time)}
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
+        {item.comment && <Text className="text-primary">{item.comment}</Text>}
+      </View>
+    ),
+    [t],
+  );
+
+  // Memoized separator to render between items.
+  const renderSeparator = React.useCallback(() => {
+    return <View className="border-b border-muted" />;
+  }, []);
+
+  // Memoized empty state component.
+  const renderEmptyComponent = React.useCallback(() => {
+    if (isPending) {
+      return (
+        <View>
+          {Array.from({ length: 5 }).map((_, index) => (
+            <View key={`walk-loading-${index}`} className="gap-1 py-4">
+              <Skeleton className="w-2/5 h-6" />
+              <Skeleton className="w-3/6 h-4" />
+              <View className="flex-row gap-4 py-1">
+                <Skeleton className="w-20 h-14" />
+                <Skeleton className="w-20 h-14" />
+              </View>
+              <Skeleton className="w-full h-4" />
+              <Skeleton className="w-3/6 h-4" />
+            </View>
+          ))}
+        </View>
+      );
+    }
+
+    return (
+      <View className="items-center py-4">
+        <LucideIcon
+          name="Frown"
+          className="size-40 text-muted-foreground"
+          strokeWidth={0.5}
+        />
+        <Text className="text-center text-muted-foreground">
+          {t('app.profile.[username].LastWalks.empty')}
+        </Text>
+      </View>
+    );
+  }, [isPending, t]);
 
   return (
     <Card>
@@ -252,101 +341,12 @@ const LastWalks: React.FC<{ username: string }> = ({ username }) => {
       <CardContent>
         <FlashList
           data={data}
-          renderItem={({ item, index }) => {
-            const isFirstItem = index === 0;
-            const isLastItem = data ? index === data.length - 1 : false;
-
-            return (
-              <View
-                className={cn(
-                  isFirstItem ? 'pb-4' : 'py-4',
-                  isLastItem ? '' : 'border-b border-muted',
-                )}
-              >
-                <Link href={`/highline/${item.highline_id}`} asChild>
-                  <Pressable>
-                    <Text className="truncate text-base font-semibold leading-none text-blue-500 dark:text-blue-400">
-                      {item.highline?.name}
-                    </Text>
-                  </Pressable>
-                </Link>
-                <Text className="text-muted-foreground">
-                  {new Date(item.created_at).toLocaleDateString('pt-BR', {
-                    dateStyle: 'medium',
-                  })}
-                </Text>
-                <View className="flex-row gap-4 py-1">
-                  <View className="flex-row gap-2">
-                    <EnduranceIcon className="text-primary" />
-                    <View>
-                      <Text className="text-muted-foreground text-sm">
-                        {t('app.profile.[username].LastWalks.distanceWalked')}
-                      </Text>
-                      <Text className="text-primary text-base">
-                        {item.distance_walked}m
-                      </Text>
-                    </View>
-                  </View>
-                  {item.crossing_time ? (
-                    <View className="flex-row gap-2">
-                      <SpeedlineIcon className="text-primary" />
-                      <View>
-                        <Text className="text-muted-foreground text-sm">
-                          {t('app.profile.[username].LastWalks.bestTime')}
-                        </Text>
-                        <Text className="text-primary text-base">
-                          {transformSecondsToTimeString(item.crossing_time)}
-                        </Text>
-                      </View>
-                    </View>
-                  ) : null}
-                </View>
-                {item.comment ? (
-                  <Text className="text-primary">{item.comment}</Text>
-                ) : null}
-              </View>
-            );
-          }}
+          renderItem={renderWalkItem}
+          keyExtractor={(item) => item.id.toString()}
           estimatedItemSize={100}
-          ListEmptyComponent={() =>
-            isPending ? (
-              Array.from({ length: 5 }).map((_, index) => {
-                const isFirstItem = index === 0;
-                const isLastItem = index === 4;
-
-                return (
-                  <View
-                    key={`walk-loading-${index}`}
-                    className={cn(
-                      'gap-1',
-                      isFirstItem ? 'pb-4' : 'py-4',
-                      isLastItem ? '' : 'border-b border-muted',
-                    )}
-                  >
-                    <Skeleton className="w-2/5 h-6" />
-                    <Skeleton className="w-3/6 h-4" />
-                    <View className="flex-row gap-4 py-1">
-                      <Skeleton className="w-20 h-14" />
-                      <Skeleton className="w-20 h-14" />
-                    </View>
-                    <Skeleton className="w-full h-4" />
-                    <Skeleton className="w-3/6 h-4" />
-                  </View>
-                );
-              })
-            ) : (
-              <View className="items-center">
-                <LucideIcon
-                  name="Frown"
-                  className="size-40 text-muted-foreground"
-                  strokeWidth={0.5}
-                />
-                <Text className="text-center text-muted-foreground">
-                  {t('app.profile.[username].LastWalks.empty')}
-                </Text>
-              </View>
-            )
-          }
+          ItemSeparatorComponent={renderSeparator}
+          ListEmptyComponent={renderEmptyComponent}
+          removeClippedSubviews={false}
         />
       </CardContent>
     </Card>
