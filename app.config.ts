@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'ChooseLife',
   slug: 'chooselife',
-  version: '1.1.1',
+  version: '1.1.2',
   newArchEnabled: true,
   orientation: 'portrait',
   scheme: 'com.bodok.chooselife',

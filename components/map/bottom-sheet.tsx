@@ -1,7 +1,4 @@
-import BottomSheet, {
-  BottomSheetFlashList,
-  BottomSheetView,
-} from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetFlashList } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { atom } from 'jotai';
@@ -73,31 +70,26 @@ const ListingsBottomSheet: React.FC<{
         },
       }}
     >
-      <BottomSheetView className="flex-1 bg-background">
-        {highlines.length > 0 && !hasFocusedMarker ? (
-          <BottomSheetFlashList<Highline>
-            data={highlines}
-            keyExtractor={(item) => item.id}
-            renderItem={renderItem}
-            estimatedItemSize={390}
-            removeClippedSubviews={false}
-          />
-        ) : null}
-        <View className="absolute bottom-6 w-full items-center">
-          <TouchableOpacity
-            onPress={onShowMap}
-            className="bg-primary p-3 h-12 rounded-3xl flex gap-2 flex-row my-auto items-center"
-          >
-            <Text className="text-primary-foreground">
-              {t('components.map.bottom-sheet.map')}
-            </Text>
-            <LucideIcon
-              name="Map"
-              className="h-6 w-6 text-primary-foreground"
-            />
-          </TouchableOpacity>
-        </View>
-      </BottomSheetView>
+      {highlines.length > 0 && !hasFocusedMarker ? (
+        <BottomSheetFlashList<Highline>
+          data={highlines}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          estimatedItemSize={390}
+          removeClippedSubviews={false}
+        />
+      ) : null}
+      <View className="absolute bottom-6 w-full items-center">
+        <TouchableOpacity
+          onPress={onShowMap}
+          className="bg-primary p-3 h-12 rounded-3xl flex gap-2 flex-row my-auto items-center"
+        >
+          <Text className="text-primary-foreground">
+            {t('components.map.bottom-sheet.map')}
+          </Text>
+          <LucideIcon name="Map" className="h-6 w-6 text-primary-foreground" />
+        </TouchableOpacity>
+      </View>
     </BottomSheet>
   );
 };
