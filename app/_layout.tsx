@@ -1,10 +1,8 @@
 import '~/global.css';
 
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import NetInfo from '@react-native-community/netinfo';
 import { DefaultTheme, Theme, ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
-import { onlineManager, QueryClientProvider } from '@tanstack/react-query';
 import translationEn from '~/i18n/locales/en-US/translation.json';
 import translationPt from '~/i18n/locales/pt-BR/translation.json';
 import * as Localization from 'expo-localization';
@@ -20,11 +18,13 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { AuthProvider } from '~/context/auth';
 import { I18nProvider } from '~/context/i18n';
+import { ReactQueryProvider } from '~/context/react-query';
 import useLinking from '~/hooks/useLinking';
 import { setAndroidNavigationBar } from '~/lib/android-navigation-bar';
 import { NAV_THEME } from '~/lib/constants';
-import queryClient from '~/lib/react-query';
 import { useColorScheme } from '~/lib/useColorScheme';
+
+import { OfflineBanner } from '~/components/offline-banner';
 
 export const resources = {
   pt: { translation: translationPt },
@@ -77,14 +77,6 @@ export default function RootLayout() {
     getSystemLanguageAndSet();
   }, []);
 
-  // Listen for connectivity changes.
-  React.useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      onlineManager.setOnline(!!state.isConnected);
-    });
-    return unsubscribe;
-  }, []);
-
   React.useEffect(() => {
     if (languageLoaded) {
       // Enforce light mode
@@ -99,7 +91,7 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <ReactQueryProvider>
       <I18nProvider>
         <AuthProvider>
           <ThemeProvider value={LIGHT_THEME}>
@@ -134,12 +126,7 @@ export default function RootLayout() {
                         headerShown: false,
                       }}
                     />
-                    <Stack.Screen
-                      name="profile/[username]"
-                      options={{
-                        headerShown: false,
-                      }}
-                    />
+                    <Stack.Screen name="profile/[username]" />
                     <Stack.Screen
                       name="setProfile"
                       options={{
@@ -148,9 +135,7 @@ export default function RootLayout() {
                     />
                     <Stack.Screen
                       name="register-highline"
-                      options={{
-                        headerShown: false,
-                      }}
+                      options={{ header: () => <OfflineBanner /> }}
                     />
                   </Stack>
                 </BottomSheetModalProvider>
@@ -160,6 +145,6 @@ export default function RootLayout() {
           </ThemeProvider>
         </AuthProvider>
       </I18nProvider>
-    </QueryClientProvider>
+    </ReactQueryProvider>
   );
 }
