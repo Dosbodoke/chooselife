@@ -77,7 +77,7 @@ export default function HighlinePage() {
 
   const handleBottomActionsLayout = useCallback((event: LayoutChangeEvent) => {
     setBottomActionsHeight(event.nativeEvent.layout.height);
-  }, []); // useCallback for optimization
+  }, []);
 
   if (isPending) {
     return <HighlineSkeleton />;

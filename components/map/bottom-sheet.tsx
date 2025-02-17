@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { atom } from 'jotai';
 import { useAtomValue, useSetAtom } from 'jotai/react';
-import React, { useMemo, useRef } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 
@@ -26,12 +26,12 @@ const ListingsBottomSheet: React.FC<{
 }> = ({ highlines, hasFocusedMarker, isLoading }) => {
   const { t } = useTranslation();
   const headerHeight = useAtomValue(bottomSheetHandlerHeightAtom);
+  const bottomSheetRef = React.useRef<BottomSheet>(null);
 
   // If the handler height is not yet measured, use 15% as an approximation of it's height
-  const snapPoints = useMemo(() => {
-    return [headerHeight > 0 ? headerHeight : '15%', '100%'];
+  const snapPoints = React.useMemo(() => {
+    return [headerHeight || '15%', '100%'];
   }, [headerHeight]);
-  const bottomSheetRef = useRef<BottomSheet>(null);
 
   const onShowMap = () => {
     bottomSheetRef.current?.collapse();
@@ -42,10 +42,18 @@ const ListingsBottomSheet: React.FC<{
     [],
   );
 
+  // Update index when hasFocusedMarker changes
+  React.useEffect(() => {
+    if (hasFocusedMarker) {
+      bottomSheetRef.current?.collapse();
+      return;
+    }
+    bottomSheetRef.current?.expand();
+  }, [hasFocusedMarker]);
+
   return (
     <BottomSheet
       ref={bottomSheetRef}
-      index={hasFocusedMarker ? 0 : 1}
       snapPoints={snapPoints}
       enablePanDownToClose={false}
       enableDynamicSizing={false}
