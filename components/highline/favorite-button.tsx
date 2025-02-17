@@ -1,6 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Animated, {
   Extrapolation,
@@ -10,10 +8,8 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 
-import { useAuth } from '~/context/auth';
-import type { Highline } from '~/hooks/use-highline';
+import { useToggleFavoriteMutation } from '~/hooks/use-highline';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
-import { supabase } from '~/lib/supabase';
 
 export function FavoriteHighline({
   isFavorite,
@@ -22,65 +18,16 @@ export function FavoriteHighline({
   isFavorite: boolean;
   id: string;
 }) {
-  const { session } = useAuth();
-
   const [favorite, setFavorite] = useState(isFavorite);
-  const queryClient = useQueryClient();
-  const router = useRouter();
 
   const liked = useSharedValue(isFavorite ? 1 : 0);
 
-  const { mutate } = useMutation({
-    mutationFn: async () => {
-      if (!session?.user) return;
-      if (favorite) {
-        // Delete from favorites
-        const { error } = await supabase
-          .from('favorite_highline')
-          .delete()
-          .match({ highline_id: id, profile_id: session.user.id });
-        if (error) throw new Error(error.message);
-      } else {
-        // Insert into favorites
-        const { error } = await supabase
-          .from('favorite_highline')
-          .insert({ highline_id: id, profile_id: session.user.id });
-        if (error) throw new Error(error.message);
-      }
-    },
-    onMutate: async () => {
-      if (!session?.user) {
-        router.push(`/(modals)/login?redirect_to=highline/${id}`);
-        throw new Error('User not logged in');
-      }
-      // Start animation
-      liked.value = withSpring(liked.value ? 0 : 1);
-      // Perform optimistic update
-      setFavorite((prev) => !prev);
+  useEffect(() => {
+    setFavorite(isFavorite);
+    liked.value = isFavorite ? 1 : 0;
+  }, [isFavorite]);
 
-      // Snapshot the previous value
-      const previousValue = queryClient.getQueryData<Highline>([
-        'highline',
-        id,
-      ]);
-
-      // Optimistically update the cache with new value
-      queryClient.setQueryData(['highline', id], (old: Highline) => ({
-        ...old,
-        isFavorite: !favorite,
-      }));
-
-      // Return a context object with the snapshotted value
-      return previousValue;
-    },
-    onError: (error, variables, context) => {
-      // Revert the optimistic update on error
-      setFavorite((prev) => !prev);
-
-      // Rollback the cache value to the previous value
-      queryClient.setQueryData(['highline', id], context);
-    },
-  });
+  const { mutateAsync } = useToggleFavoriteMutation();
 
   const outlineStyle = useAnimatedStyle(() => {
     return {
@@ -105,10 +52,25 @@ export function FavoriteHighline({
   return (
     <Pressable
       className="flex p-2 rounded-full bg-white"
-      onPress={() => mutate()}
+      onPress={async () => {
+        // Optimistically toggle local state.
+        setFavorite((prev) => !prev);
+        liked.value = withSpring(liked.value ? 0 : 1);
+
+        await mutateAsync(
+          { id, isFavorite: favorite },
+          {
+            onError: (_error, variables) => {
+              // Revert local state if mutation fails.
+              setFavorite(variables.isFavorite);
+              liked.value = withSpring(variables.isFavorite ? 1 : 0);
+            },
+          },
+        );
+      }}
     >
       <Animated.View
-        className="items-center justify-center "
+        className="items-center justify-center"
         style={[StyleSheet.absoluteFillObject, outlineStyle]}
       >
         <LucideIcon name="Heart" className="size-6 text-black" />

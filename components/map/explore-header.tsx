@@ -14,13 +14,14 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { type HighlineCategory } from '~/hooks/use-highline-list';
+import { type HighlineCategory } from '~/hooks/use-highline';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
 
 import { Text } from '~/components/ui/text';
+
+import { SafeAreaOfflineView } from '../offline-banner';
 
 const ExploreHeader: React.FC<{
   onSearchChange: (text: string) => void;
@@ -115,7 +116,8 @@ const ExploreHeader: React.FC<{
   };
 
   return (
-    <SafeAreaView>
+    <>
+      <SafeAreaOfflineView />
       <View className="bg-background pt-2 pb-4 shadow gap-6 px-6">
         <View className="flex-row items-center justify-between gap-3">
           <TouchableOpacity
@@ -190,7 +192,7 @@ const ExploreHeader: React.FC<{
           </ScrollView>
         </View>
       </View>
-    </SafeAreaView>
+    </>
   );
 };
 

@@ -99,7 +99,6 @@ const CustomBottomSheetHandle: React.FC<{
   isLoading: boolean;
 }> = ({ highlineLength, isLoading }) => {
   const { t } = useTranslation();
-
   const setBottomSheetHandlerHeight = useSetAtom(bottomSheetHandlerHeightAtom);
 
   return (

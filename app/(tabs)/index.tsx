@@ -5,7 +5,7 @@ import { useAtom, useSetAtom } from 'jotai';
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
-import { useHighlineList } from '~/hooks/use-highline-list';
+import { useHighline } from '~/hooks/use-highline';
 import { calculateZoomLevel } from '~/utils';
 
 import ListingsBottomSheet from '~/components/map/bottom-sheet';
@@ -85,7 +85,7 @@ export default function Screen() {
     highlightedMarkerAtom,
   );
   const [clusterMarkers, setClusterMarkers] = useAtom(clusterMarkersAtom);
-  const { highlines, setSelectedCategory, isLoading } = useHighlineList({
+  const { highlines, setSelectedCategory, isLoading } = useHighline({
     searchTerm,
   });
 
