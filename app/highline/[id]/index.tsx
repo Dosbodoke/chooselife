@@ -1,6 +1,6 @@
 import * as Linking from 'expo-linking';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ScrollView,
@@ -35,7 +35,7 @@ export default function HighlinePage() {
   }>();
   const [tab, setTab] = useState<HighlineTabs>('details');
 
-  const bottomActionsHeightRef = useRef(0);
+  const [bottomActionsHeight, setBottomActionsHeight] = useState(0);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { highline, isPending } = useHighline({ id });
@@ -69,6 +69,16 @@ export default function HighlinePage() {
     [highline?.id],
   );
 
+  // Padding to add to the ScrollView so the bottom actions doesn't overlap it
+  const paddingBottom = useMemo(
+    () => bottomActionsHeight + insets.bottom + 18,
+    [bottomActionsHeight, insets.bottom],
+  );
+
+  const handleBottomActionsLayout = useCallback((event: LayoutChangeEvent) => {
+    setBottomActionsHeight(event.nativeEvent.layout.height);
+  }, []); // useCallback for optimization
+
   if (isPending) {
     return <HighlineSkeleton />;
   }
@@ -81,7 +91,7 @@ export default function HighlinePage() {
     <>
       <ScrollView
         contentContainerStyle={{
-          paddingBottom: bottomActionsHeightRef.current + 26,
+          paddingBottom,
         }}
       >
         <View
@@ -150,9 +160,7 @@ export default function HighlinePage() {
       {tab === 'details' ? (
         <BottomActions
           hasLocation={!!highline.anchor_a_lat}
-          onLayout={(event) => {
-            bottomActionsHeightRef.current = event.nativeEvent.layout.height;
-          }}
+          onLayout={handleBottomActionsLayout}
         />
       ) : null}
 
