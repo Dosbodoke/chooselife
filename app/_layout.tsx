@@ -126,7 +126,12 @@ export default function RootLayout() {
                         headerShown: false,
                       }}
                     />
-                    <Stack.Screen name="profile/[username]" />
+                    <Stack.Screen
+                      name="profile/[username]"
+                      options={{
+                        headerShown: false,
+                      }}
+                    />
                     <Stack.Screen
                       name="setProfile"
                       options={{
