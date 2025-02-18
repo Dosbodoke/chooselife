@@ -1,3 +1,6 @@
+# Firebase Cloud Messaging credentials, see https://docs.expo.dev/push-notifications/fcm-credentials/#create-a-new-google-service-account-key
+/fcm-credentials/*
+
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # dependencies
