@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
 import { transformTimeStringToSeconds } from '~/utils';
+import { requestReview } from '~/utils/request-review';
 
 import SuccessAnimation from '~/components/animations/success-animation';
 import { Button } from '~/components/ui/button';
@@ -105,8 +106,9 @@ const RegisterHighline = () => {
 
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['entry'] });
+      await requestReview();
     },
   });
 

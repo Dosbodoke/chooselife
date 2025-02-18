@@ -22,6 +22,7 @@ import { z } from 'zod';
 import { useAuth } from '~/context/auth';
 import RegisterWebbingIllustration from '~/lib/icons/register-webbing';
 import { supabase } from '~/lib/supabase';
+import { requestReview } from '~/utils/request-review';
 
 import { OnboardNavigator } from '~/components/onboard';
 import { Label } from '~/components/ui/label';
@@ -76,6 +77,7 @@ export default function RegisterWebbing() {
       if (error) throw error;
     },
     onSuccess: () => {
+      requestReview();
       queryClient.invalidateQueries({ queryKey: ['webbing', profile?.id] });
       router.back();
     },

@@ -30,6 +30,7 @@ import { z } from 'zod';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
+import { requestReview } from '~/utils/request-review';
 
 import SuccessAnimation from '~/components/animations/success-animation';
 import { Button } from '~/components/ui/button';
@@ -160,11 +161,12 @@ export const RegisterHighlineModal: React.FC<{
 
       return highline.id;
     },
+    onSuccess: async (data) => {
+      setNewHighlineUUID(data);
+      await requestReview();
+    },
     onError: (e) => {
       console.log(e.message);
-    },
-    onSuccess: (data) => {
-      setNewHighlineUUID(data);
     },
   });
 

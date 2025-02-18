@@ -15,6 +15,7 @@ import { useRigSetup } from '~/hooks/use-rig-setup';
 import { type WebbingWithModel } from '~/hooks/use-webbings';
 import { supabase } from '~/lib/supabase';
 import type { Tables, TablesInsert } from '~/utils/database.types';
+import { requestReview } from '~/utils/request-review';
 
 import { webbingSchema } from '~/components/webbing-input';
 
@@ -260,8 +261,9 @@ export const RigFormProvider: React.FC<{
 
       return { setupID, webbings: webbingData };
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['rigSetup', highlineID] });
+      await requestReview();
     },
     onError: (error) => {
       console.error('Error saving rig setup:', error);
