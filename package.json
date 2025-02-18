@@ -1,7 +1,7 @@
 {
   "name": "chooselife",
   "main": "expo-router/entry",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "scripts": {
     "dev": "expo start",
     "dev:web": "expo start -c --web",
