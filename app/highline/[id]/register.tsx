@@ -144,6 +144,7 @@ const RegisterHighline = () => {
               pathname: '/highline/[id]',
               params: { id: id },
             }}
+            replace
             asChild
           >
             <Button>
