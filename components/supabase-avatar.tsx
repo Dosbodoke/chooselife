@@ -6,6 +6,7 @@ import { Alert } from 'react-native';
 import { useProfile } from '~/hooks/use-profile';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
+import { cn } from '~/lib/utils';
 
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 import { Button } from '~/components/ui/button';
@@ -58,8 +59,9 @@ export const SupabaseAvatar: React.FC<{
 };
 
 export const AvatarUploader: React.FC<{
-  onUpload?: (filePath: string) => void;
-}> = ({ onUpload }) => {
+  className?: string;
+  onUpload: (filePath: string) => void;
+}> = ({ className, onUpload }) => {
   const { t } = useTranslation();
   const [uploading, setUploading] = React.useState(false);
 
@@ -117,7 +119,7 @@ export const AvatarUploader: React.FC<{
 
   return (
     <Button
-      className="flex-row items-center justify-center gap-2"
+      className={cn('flex-row items-center justify-center gap-2', className)}
       variant="outline"
       onPress={uploadAvatar}
       disabled={uploading}

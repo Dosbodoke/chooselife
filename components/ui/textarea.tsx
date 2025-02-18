@@ -26,7 +26,7 @@ const Textarea = React.forwardRef<
     ref,
   ) => {
     return (
-      <View className="gap-2">
+      <View className="gap-2 w-full">
         {label && <Label htmlFor={id}>{label}</Label>}
         <TextInput
           ref={ref}

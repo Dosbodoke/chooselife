@@ -2,11 +2,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { PostgrestError } from '@supabase/supabase-js';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import i18next from 'i18next';
+import React, { useState } from 'react';
 import { Controller, useForm, UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Keyboard, TextInput, TouchableOpacity, View } from 'react-native';
-import DatePicker from 'react-native-date-picker';
+import { TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
   FadeIn,
@@ -25,22 +25,23 @@ import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
 import { date18YearsAgo } from '~/utils';
 
+import {
+  ProfileInfoForm,
+  profileInfoSchema,
+  type ProfileInfoSchema,
+} from '~/components/edit-profile-info';
 import { LanguageSwitcher } from '~/components/language-switcher';
 import { OnboardNavigator, OnboardPaginator } from '~/components/onboard';
-import { AvatarUploader, SupabaseAvatar } from '~/components/supabase-avatar';
-import { Input } from '~/components/ui/input';
 import { Text } from '~/components/ui/text';
-import { Textarea } from '~/components/ui/textarea';
 import { H2, H3, Muted } from '~/components/ui/typography';
 
-// Define TypeScript type based on Zod schema
-type ProfileFormData = {
-  username: string;
-  name: string;
-  profilePicture?: string;
-  description?: string;
-  birthday?: string;
-};
+const profileSchema = profileInfoSchema.extend({
+  username: z
+    .string()
+    .trim()
+    .min(3, i18next.t('app.setProfile.errors.usernameValidation')),
+});
+type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function SetProfile() {
   const { t } = useTranslation();
@@ -50,22 +51,6 @@ export default function SetProfile() {
   const { session, profile } = useAuth();
   const [isValidating, setIsValidating] = useState(false);
   const [index, setIndex] = useState(0);
-
-  // Create Zod schema using translation strings for error messages.
-  const profileSchema = useMemo(
-    () =>
-      z.object({
-        username: z
-          .string()
-          .trim()
-          .min(3, t('app.setProfile.errors.usernameValidation')),
-        name: z.string().min(1, t('app.setProfile.errors.nameRequired')),
-        profilePicture: z.string().optional(),
-        description: z.string().optional(),
-        birthday: z.string().optional(),
-      }),
-    [t],
-  );
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -164,7 +149,12 @@ export default function SetProfile() {
   const steps = [
     <LanguageSwitcher key="LanguageSwitcher" />,
     <UsernameForm key="username" form={form} />,
-    <ProfileInfoForm key="profileInfo" form={form} />,
+    <View key="profileInfo" className="p-4">
+      <ProfileInfoForm
+        // @ts-expect-error Info form doesn't have username
+        form={form as UseFormReturn<ProfileInfoSchema>}
+      />
+    </View>,
     // <PrefferedTheme key="theme" />,
   ];
 
@@ -278,136 +268,6 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
           </View>
         )}
       />
-    </View>
-  );
-};
-
-const ProfileInfoForm = ({
-  form,
-}: {
-  form: UseFormReturn<ProfileFormData>;
-}) => {
-  const { t } = useTranslation();
-  const colorScheme = useColorScheme();
-  const [showDatePicker, setShowDatePicker] = useState(false);
-
-  const date18YearsAgo = new Date();
-  date18YearsAgo.setFullYear(date18YearsAgo.getFullYear() - 18);
-
-  const handleDateChange = (date: Date) => {
-    setShowDatePicker(false);
-    if (date) {
-      form.setValue('birthday', date.toISOString().split('T')[0]); // YYYY-MM-DD format
-    }
-  };
-
-  return (
-    <View className="gap-4">
-      <View>
-        <H3 className="text-center">
-          {t('app.setProfile.ProfileInfoForm.title')}
-        </H3>
-        <Muted className="text-center">
-          {t('app.setProfile.ProfileInfoForm.subtitle')}
-        </Muted>
-      </View>
-
-      <View className="gap-4">
-        <Controller
-          control={form.control}
-          name="profilePicture"
-          render={({ field: { value, onChange } }) => (
-            <View className="flex-row gap-4 items-end">
-              <SupabaseAvatar size={16} URL={value} />
-              <AvatarUploader onUpload={onChange} />
-            </View>
-          )}
-        />
-
-        <Controller
-          control={form.control}
-          name="name"
-          render={({ field: { onChange, value }, fieldState: { error } }) => (
-            <View>
-              <TextInput
-                value={value}
-                onChangeText={onChange}
-                placeholder={t(
-                  'app.setProfile.ProfileInfoForm.inputPlaceholderName',
-                )}
-                autoCapitalize="none"
-                returnKeyType="done"
-                className={cn(
-                  error?.message ? 'border-red-500' : 'border-muted-foreground',
-                  'text-foreground placeholder:text-muted-foreground border-b-hairline',
-                )}
-              />
-              {error && (
-                <Animated.View entering={FadeIn} exiting={FadeOut}>
-                  <Text className="text-red-500">{error.message}</Text>
-                </Animated.View>
-              )}
-            </View>
-          )}
-        />
-
-        <Controller
-          control={form.control}
-          name="birthday"
-          render={({ field: { value }, fieldState: { error } }) => (
-            <View className="gap-2">
-              <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-                <Input
-                  label={t('app.setProfile.ProfileInfoForm.birthdayLabel')}
-                  editable={false}
-                  value={
-                    value
-                      ? new Date(value).toLocaleDateString('pt-BR')
-                      : t('app.setProfile.ProfileInfoForm.selectDate')
-                  }
-                  className={error?.message ? 'border-red-500' : 'text-primary'}
-                  placeholder={t('app.setProfile.ProfileInfoForm.selectDate')}
-                />
-              </TouchableOpacity>
-              <DatePicker
-                modal
-                open={showDatePicker}
-                mode="date"
-                locale="pt-BR"
-                date={value ? new Date(value) : date18YearsAgo}
-                maximumDate={new Date()}
-                onConfirm={(date) => {
-                  setShowDatePicker(false);
-                  handleDateChange(date);
-                }}
-                onCancel={() => {
-                  setShowDatePicker(false);
-                }}
-                timeZoneOffsetInMinutes={0} // https://github.com/henninghall/react-native-date-picker/issues/841
-                theme={colorScheme.colorScheme}
-              />
-            </View>
-          )}
-        />
-
-        <Controller
-          control={form.control}
-          name="description"
-          render={({ field: { onChange }, fieldState: { error } }) => (
-            <Textarea
-              keyboardType="default"
-              returnKeyType="done"
-              placeholder={t(
-                'app.setProfile.ProfileInfoForm.descriptionPlaceholder',
-              )}
-              submitBehavior="blurAndSubmit"
-              className={error && 'border-destructive'}
-              onSubmitEditing={() => Keyboard.dismiss()}
-              onChangeText={onChange}
-            />
-          )}
-        />
-      </View>
     </View>
   );
 };

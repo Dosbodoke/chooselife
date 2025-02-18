@@ -11,7 +11,6 @@ import {
   View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EnduranceIcon, SpeedlineIcon } from '~/lib/icons';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
@@ -19,6 +18,7 @@ import { supabase } from '~/lib/supabase';
 import { transformSecondsToTimeString } from '~/utils';
 import { Tables } from '~/utils/database.types';
 
+import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
@@ -75,23 +75,21 @@ export default function Profile() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaOfflineView>
       <KeyboardAwareScrollView
         contentContainerClassName="min-h-screen px-2 py-4 gap-4"
         keyboardShouldPersistTaps="handled"
         removeClippedSubviews={false}
       >
-        <View className="flex-row items-center">
-          <TouchableOpacity
-            className="p-2 rounded-full items-center justify-center"
-            onPress={() =>
-              router.canGoBack() ? router.back() : router.replace('/(tabs)')
-            }
-          >
-            <LucideIcon name="ChevronLeft" className="text-primary size-6" />
-          </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() =>
+            router.canGoBack() ? router.back() : router.replace('/(tabs)')
+          }
+          className="p-2 flex-row items-center rounded-full "
+        >
+          <LucideIcon name="ChevronLeft" className="text-primary size-6" />
           <Text className="text-primary font-semibold text-xl">{username}</Text>
-        </View>
+        </TouchableOpacity>
         <UserHeader profile={profile} />
         <Stats
           total_cadenas={stats?.total_cadenas || 0}
@@ -100,7 +98,7 @@ export default function Profile() {
         />
         <LastWalks username={username} />
       </KeyboardAwareScrollView>
-    </SafeAreaView>
+    </SafeAreaOfflineView>
   );
 }
 
@@ -207,7 +205,7 @@ const UserNotFound: React.FC<{ username: string }> = ({ username }) => {
   const canGoBack = router.canGoBack();
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaOfflineView className="flex-1">
       <View className="flex items-center justify-center h-full gap-4">
         <H2 className="text-center">
           {t('app.profile.[username].UserNotFound.title', { username })}
@@ -222,7 +220,7 @@ const UserNotFound: React.FC<{ username: string }> = ({ username }) => {
           <Text>{canGoBack ? 'Voltar' : 'Ir para página inicial'}</Text>
         </Button>
       </View>
-    </SafeAreaView>
+    </SafeAreaOfflineView>
   );
 };
 

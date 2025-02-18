@@ -4,16 +4,27 @@ import {
   BottomSheetModal,
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import React from 'react';
+import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { supabase } from '~/lib/supabase';
+import { date18YearsAgo } from '~/utils';
+import { Tables } from '~/utils/database.types';
 
+import {
+  ProfileInfoForm,
+  profileInfoSchema,
+  type ProfileInfoSchema,
+} from '~/components/edit-profile-info';
 import { LanguageSwitcher } from '~/components/language-switcher';
+import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { MyWebbings } from '~/components/settings/my-webbing';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
@@ -27,7 +38,7 @@ export default function SettingsPage() {
 
   if (profile && profile.username) {
     return (
-      <SafeAreaView className="justify-between h-full w-full p-4 pt-8">
+      <SafeAreaOfflineView className="justify-between h-full w-full p-4 ">
         <View className="gap-6">
           <Link
             href={{
@@ -49,19 +60,23 @@ export default function SettingsPage() {
         </View>
 
         <View className="gap-4">
-          <ChangeLanguage />
+          <View>
+            <EditProfileButton />
+            <ChangeLanguage />
+          </View>
+
           <Button variant="link" onPress={logout}>
             <Text className="text-foreground underline">
               {t('app.(tabs).settings.logOut')}
             </Text>
           </Button>
         </View>
-      </SafeAreaView>
+      </SafeAreaOfflineView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaOfflineView className="flex-1">
       <View className="p-4 gap-4 flex justify-end h-full">
         <ChangeLanguage />
         <Link href={`/login?redirect_to=settings`} asChild>
@@ -70,7 +85,7 @@ export default function SettingsPage() {
           </Button>
         </Link>
       </View>
-    </SafeAreaView>
+    </SafeAreaOfflineView>
   );
 }
 
@@ -134,6 +149,123 @@ const ChangeLanguage: React.FC = () => {
       >
         <BottomSheetView className="p-4 items-center gap-4">
           <LanguageSwitcher />
+        </BottomSheetView>
+      </BottomSheetModal>
+    </>
+  );
+};
+
+const EditProfileButton: React.FC = () => {
+  const { profile } = useAuth();
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
+
+  const mutation = useMutation({
+    mutationFn: async (data: ProfileInfoSchema) => {
+      if (!profile) throw Error('No profile to update');
+      const { data: profileData, error: upsertError } = await supabase
+        .from('profiles')
+        .update({
+          name: data.name,
+          profile_picture: data.profilePicture,
+          description: data.description,
+          birthday: data.birthday,
+        })
+        .eq('id', profile.id)
+        .select()
+        .single();
+
+      if (upsertError) {
+        throw upsertError;
+      }
+      return profileData;
+    },
+    onSuccess: (profileData: Tables<'profiles'>) => {
+      queryClient.setQueryData<Tables<'profiles'>>(
+        ['profile', profileData.id],
+        profileData,
+      );
+      bottomSheetModalRef.current?.dismiss();
+    },
+    onError: (error) => {
+      console.log({ error });
+      form.setError('root', {
+        message: t('app.setProfile.errors.saveProfile'),
+      });
+    },
+  });
+
+  const form = useForm<ProfileInfoSchema>({
+    resolver: zodResolver(profileInfoSchema),
+    mode: 'onChange',
+    defaultValues: {
+      name: profile?.name ?? '',
+      profilePicture: profile?.profile_picture || undefined,
+      description: profile?.description ?? '',
+      birthday: profile?.birthday ?? date18YearsAgo(),
+    },
+  });
+
+  const openModal = () => {
+    bottomSheetModalRef.current?.present({
+      velocity: 200,
+      stiffness: 200,
+      damping: 80,
+    });
+  };
+
+  const renderBackdrop = React.useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+      />
+    ),
+    [],
+  );
+
+  return (
+    <>
+      <TouchableOpacity className="gap-4" onPress={openModal}>
+        <Separator></Separator>
+        <View className="flex-row justify-between">
+          <View className="flex-row gap-2">
+            <LucideIcon
+              name="Pencil"
+              className="size-6 text-muted-foreground"
+            />
+            <Text>{t('app.(tabs).settings.editProfile.triggerLabel')}</Text>
+          </View>
+          <LucideIcon name="ChevronRight" className="size-6 text-foreground" />
+        </View>
+        <View></View>
+      </TouchableOpacity>
+      <BottomSheetModal
+        ref={bottomSheetModalRef}
+        backdropComponent={renderBackdrop}
+        enablePanDownToClose={true}
+        style={{
+          elevation: 4,
+          shadowColor: '#000',
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          shadowOffset: {
+            width: 1,
+            height: 1,
+          },
+        }}
+      >
+        <BottomSheetView className="p-4 items-center gap-4">
+          <ProfileInfoForm form={form} />
+          <Button
+            className="w-full"
+            onPress={form.handleSubmit((data) => mutation.mutate(data))}
+            disabled={!form.formState.isDirty || mutation.isPending}
+          >
+            <Text>{t('app.(tabs).settings.editProfile.submitLabel')}</Text>
+          </Button>
         </BottomSheetView>
       </BottomSheetModal>
     </>
