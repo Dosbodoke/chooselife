@@ -31,7 +31,11 @@ export const SafeAreaOfflineView: React.FC<{
     );
   }
 
-  return <View style={{ paddingTop: top }}>{children}</View>;
+  return (
+    <View style={{ paddingTop: top }} className={className}>
+      {children}
+    </View>
+  );
 };
 
 export const OfflineBanner: React.FC = () => {

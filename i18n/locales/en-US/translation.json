@@ -39,6 +39,10 @@
         "viewProfile": "View profile",
         "logOut": "Log Out",
         "logIn": "Log In",
+        "editProfile": {
+          "triggerLabel": "Personal information",
+          "submitLabel": "Save"
+        },
         "changeLanguage": "Change language"
       }
     },
@@ -330,7 +334,7 @@
       "addBackupSection": "Add backup section"
     },
     "supabase-avatar": {
-      "buttonLabel": "Change picture"
+      "buttonLabel": "Edit"
     },
     "webbing-input": {
       "loop": "Loop",

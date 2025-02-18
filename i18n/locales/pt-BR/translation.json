@@ -39,6 +39,10 @@
         "viewProfile": "Visualizar perfil",
         "logOut": "Sair da conta",
         "logIn": "Entrar na conta",
+        "editProfile": {
+          "triggerLabel": "Informações pessoais",
+          "submitLabel": "Salvar"
+        },
         "changeLanguage": "Trocar idioma"
       }
     },
@@ -330,7 +334,7 @@
       "addBackupSection": "Adicionar backup"
     },
     "supabase-avatar": {
-      "buttonLabel": "Trocar foto"
+      "buttonLabel": "Editar"
     },
     "webbing-input": {
       "loop": "Olhal",
