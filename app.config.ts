@@ -37,6 +37,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     favicon: './assets/icons/favicon.png',
   },
   plugins: [
+    "expo-sqlite",
     'expo-router',
     'expo-localization',
     [
