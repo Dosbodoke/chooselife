@@ -1,10 +1,14 @@
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import React from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Platform } from 'react-native';
-
-import { supabase } from '~/lib/supabase';
 
 import { useAuth } from './auth';
 
@@ -36,14 +40,9 @@ async function sendPushNotification(expoPushToken: string) {
   });
 }
 
-function handleRegistrationError(errorMessage: string) {
-  alert(errorMessage);
-  throw new Error(errorMessage);
-}
-
 async function registerForPushNotificationsAsync() {
   if (Platform.OS === 'android') {
-    Notifications.setNotificationChannelAsync('default', {
+    await Notifications.setNotificationChannelAsync('default', {
       name: 'default',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
@@ -51,39 +50,39 @@ async function registerForPushNotificationsAsync() {
     });
   }
 
-  if (Device.isDevice) {
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== 'granted') {
-      handleRegistrationError(
-        'Permission not granted to get push token for push notification!',
-      );
-      return;
-    }
-    const projectId =
-      Constants?.expoConfig?.extra?.eas?.projectId ??
-      Constants?.easConfig?.projectId;
-    if (!projectId) {
-      handleRegistrationError('Project ID not found');
-    }
-    try {
-      const pushTokenString = (
-        await Notifications.getExpoPushTokenAsync({
-          projectId,
-        })
-      ).data;
-      console.log(pushTokenString);
-      return pushTokenString;
-    } catch (e: unknown) {
-      handleRegistrationError(`${e}`);
-    }
-  } else {
-    handleRegistrationError('Must use physical device for push notifications');
+  if (!Device.isDevice) {
+    console.log('Must use physical device for push notifications');
+    return null;
+  }
+
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+
+  if (existingStatus !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+
+  if (finalStatus !== 'granted') {
+    console.log('Permission not granted for push notifications');
+    return null;
+  }
+
+  const projectId =
+    Constants?.expoConfig?.extra?.eas?.projectId ??
+    Constants?.easConfig?.projectId;
+
+  if (!projectId) {
+    console.log('Project ID not found');
+    return null;
+  }
+
+  try {
+    const token = await Notifications.getExpoPushTokenAsync({ projectId });
+    return token.data;
+  } catch (e) {
+    console.log('Error getting push token:', e);
+    return null;
   }
 }
 
@@ -93,9 +92,9 @@ interface NotificationContextType {
   sendPushNotification: (expoPushToken: string) => void;
 }
 
-const NotificationContext = React.createContext<
-  NotificationContextType | undefined
->(undefined);
+const NotificationContext = createContext<NotificationContextType | undefined>(
+  undefined,
+);
 
 export function NotificationProvider({
   children,
@@ -103,18 +102,44 @@ export function NotificationProvider({
   children: React.ReactNode;
 }) {
   const { profile } = useAuth();
-  const [expoPushToken, setExpoPushToken] = React.useState('');
-  const [notification, setNotification] = React.useState<
+  const [expoPushToken, setExpoPushToken] = useState<string>('');
+  const [notification, setNotification] = useState<
     Notifications.Notification | undefined
   >(undefined);
-  const notificationListener = React.useRef<Notifications.EventSubscription>();
-  const responseListener = React.useRef<Notifications.EventSubscription>();
+  const notificationListener = useRef<Notifications.Subscription>();
+  const responseListener = useRef<Notifications.Subscription>();
+  const [isRegistered, setIsRegistered] = useState(false);
 
-  React.useEffect(() => {
-    registerForPushNotificationsAsync()
-      .then((token) => setExpoPushToken(token ?? ''))
-      .catch((error) => setExpoPushToken(`${error}`));
+  // Handle push notification registration
+  useEffect(() => {
+    let isMounted = true;
 
+    const registerForNotifications = async () => {
+      try {
+        const token = await registerForPushNotificationsAsync();
+        if (isMounted && token) {
+          setExpoPushToken(token);
+        }
+      } catch (error) {
+        console.error('Failed to register for push notifications:', error);
+      } finally {
+        if (isMounted) {
+          setIsRegistered(true);
+        }
+      }
+    };
+
+    if (!isRegistered) {
+      registerForNotifications();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isRegistered]);
+
+  // Set up notification listeners
+  useEffect(() => {
     notificationListener.current =
       Notifications.addNotificationReceivedListener((notification) => {
         setNotification(notification);
@@ -122,7 +147,7 @@ export function NotificationProvider({
 
     responseListener.current =
       Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log(response);
+        console.log('Notification response:', response);
       });
 
     return () => {
@@ -138,41 +163,42 @@ export function NotificationProvider({
     };
   }, []);
 
-  React.useEffect(
-    function setTokenToProfile() {
-      if (!profile) return;
-      // TODO: Create column and update it here
-      //   if (profile.expo_push_token !== expoPushToken) {
-      //     supabase
-      //       .from('profiles')
-      //       .update({
-      //         expo_push_token: expoPushToken,
-      //       })
-      //       .eq('id', profile?.id);
-      //   }
-    },
-    [profile, expoPushToken],
-  );
+  // Update user profile with push token when both are available
+  useEffect(() => {
+    console.log({ expoPushToken });
+    if (!profile || !expoPushToken) return;
+
+    console.log('Profile and push token available:', { expoPushToken });
+
+    // TODO: Create column and update it here
+    // if (profile.expo_push_token !== expoPushToken) {
+    //   supabase
+    //     .from('profiles')
+    //     .update({
+    //       expo_push_token: expoPushToken,
+    //     })
+    //     .eq('id', profile?.id);
+    // }
+  }, [profile, expoPushToken]);
+
+  const contextValue = {
+    expoPushToken,
+    notification,
+    sendPushNotification,
+  };
 
   return (
-    <NotificationContext.Provider
-      value={{
-        expoPushToken,
-        notification,
-        sendPushNotification,
-      }}
-    >
+    <NotificationContext.Provider value={contextValue}>
       {children}
     </NotificationContext.Provider>
   );
 }
 
-// Custom hook to use the i18n context
 export function useNotification() {
-  const context = React.useContext(NotificationContext);
+  const context = useContext(NotificationContext);
   if (context === undefined) {
     throw new Error(
-      'useNotification must be used within an NotificationProvider',
+      'useNotification must be used within a NotificationProvider',
     );
   }
   return context;
