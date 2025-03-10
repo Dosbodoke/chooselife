@@ -1,4 +1,5 @@
 import * as Haptics from 'expo-haptics';
+import { atom, useSetAtom } from 'jotai';
 import { icons } from 'lucide-react-native';
 import React, { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -23,11 +24,16 @@ import { Text } from '~/components/ui/text';
 
 import { SafeAreaOfflineView } from '../offline-banner';
 
+// Keep track of the handle height so the Highlited marker card can be positioned correctly and the minimum snap point fits only the handler
+export const exploreHeaderHeightAtom = atom<number>(0);
+
 const ExploreHeader: React.FC<{
   onSearchChange: (text: string) => void;
   onCategoryChange: (category: HighlineCategory | null) => void;
 }> = ({ onSearchChange, onCategoryChange }) => {
   const { t } = useTranslation();
+
+  const setExploreHeaderHeight = useSetAtom(exploreHeaderHeightAtom);
 
   const categories: Array<{
     category: HighlineCategory;
@@ -116,9 +122,11 @@ const ExploreHeader: React.FC<{
   };
 
   return (
-    <>
-      <SafeAreaOfflineView />
-      <View className="bg-background pt-2 pb-4 shadow gap-6 px-6">
+    <SafeAreaOfflineView>
+      <View
+        className="bg-background pt-2 pb-4 shadow gap-6 px-6"
+        onLayout={(e) => setExploreHeaderHeight(e.nativeEvent.layout.height)}
+      >
         <View className="flex-row items-center justify-between gap-3">
           <TouchableOpacity
             className="flex-1 flex-row bg-background gap-3 p-4 items-center border-hairline border-muted rounded-3xl shadow-md"
@@ -192,7 +200,7 @@ const ExploreHeader: React.FC<{
           </ScrollView>
         </View>
       </View>
-    </>
+    </SafeAreaOfflineView>
   );
 };
 

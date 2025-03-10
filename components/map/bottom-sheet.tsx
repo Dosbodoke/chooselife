@@ -6,6 +6,7 @@ import { useAtomValue, useSetAtom } from 'jotai/react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type Highline } from '~/hooks/use-highline';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
@@ -25,6 +26,7 @@ const ListingsBottomSheet: React.FC<{
   isLoading: boolean;
 }> = ({ highlines, hasFocusedMarker, isLoading }) => {
   const { t } = useTranslation();
+  const { top } = useSafeAreaInsets();
   const headerHeight = useAtomValue(bottomSheetHandlerHeightAtom);
   const bottomSheetRef = React.useRef<BottomSheet>(null);
 
@@ -76,6 +78,9 @@ const ListingsBottomSheet: React.FC<{
           width: 1,
           height: 1,
         },
+      }}
+      containerStyle={{
+        marginTop: top,
       }}
     >
       {highlines.length > 0 && !hasFocusedMarker ? (

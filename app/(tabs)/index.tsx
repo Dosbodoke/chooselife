@@ -1,11 +1,11 @@
 import Mapbox from '@rnmapbox/maps';
 import * as Location from 'expo-location';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useAtom, useSetAtom } from 'jotai';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
-import { useHighline } from '~/hooks/use-highline';
+import { HighlineCategory, useHighline } from '~/hooks/use-highline';
 import { calculateZoomLevel } from '~/utils';
 
 import ListingsBottomSheet from '~/components/map/bottom-sheet';
@@ -71,6 +71,7 @@ async function getMyLocation(): Promise<
     return;
   }
 }
+
 export default function Screen() {
   const mapRef = useRef<Mapbox.MapView>(null);
   const cameraRef = useRef<Mapbox.Camera>(null);
@@ -143,17 +144,20 @@ export default function Screen() {
     }
   }, [focusedMarker, highlines]);
 
+  const handleSearchChange = React.useCallback(
+    (text: string) => setSearchTerm(text),
+    [],
+  );
+  const handleCategoryChange = React.useCallback(
+    (category: HighlineCategory | null) => setSelectedCategory(category),
+    [],
+  );
+
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen
-        options={{
-          header: () => (
-            <ExploreHeader
-              onSearchChange={setSearchTerm}
-              onCategoryChange={(category) => setSelectedCategory(category)}
-            />
-          ),
-        }}
+      <ExploreHeader
+        onSearchChange={handleSearchChange}
+        onCategoryChange={handleCategoryChange}
       />
 
       <Mapbox.MapView
