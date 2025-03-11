@@ -90,8 +90,12 @@ export default function RootLayout() {
                       }}
                     />
                     <Stack.Screen
-                      name="register-highline"
+                      name="location-picker"
                       options={{ header: () => <OfflineBanner /> }}
+                    />
+                    <Stack.Screen
+                      name="register-highline"
+                      options={{ headerShown: false }}
                     />
                   </Stack>
                 </BottomSheetModalProvider>
