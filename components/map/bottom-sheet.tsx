@@ -148,7 +148,7 @@ const AddHighlineButton: React.FC = () => {
     <Button
       onPress={() => {
         router.push(
-          `/register-highline?lat=${atomValue.center[1]}&lng=${atomValue.center[0]}&zoom=${atomValue.zoom}`,
+          `/location-picker?lat=${atomValue.center[1]}&lng=${atomValue.center[0]}&zoom=${atomValue.zoom}`,
         );
       }}
     >
