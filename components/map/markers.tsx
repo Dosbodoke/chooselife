@@ -17,8 +17,22 @@ interface PointProperties {
   cluster: boolean;
   category: string;
   highID: string;
-  anchorB: { latitude: number; longitude: number };
+  anchorType: 'A' | 'B';
 }
+
+// Helper function to validate coordinates
+const isValidCoordinate = (lng?: number, lat?: number): boolean => {
+  return (
+    typeof lng === 'number' &&
+    typeof lat === 'number' &&
+    !isNaN(lng) &&
+    !isNaN(lat) &&
+    lng >= -180 &&
+    lng <= 180 &&
+    lat >= -90 &&
+    lat <= 90
+  );
+};
 
 export const Markers: React.FC<{
   cameraRef: React.RefObject<MapboxGL.Camera>;
@@ -29,34 +43,36 @@ export const Markers: React.FC<{
   const queryClient = useQueryClient();
   const cameraState = useAtomValue(cameraStateAtom);
 
-  // Build GeoJSON points from your highlines.
   const points = useMemo<
     PointFeature<GeoJsonProperties & PointProperties>[]
   >(() => {
     if (!highlines) return [];
-    return highlines.map((h) => ({
-      type: 'Feature',
-      properties: {
-        cluster: false,
-        category: 'highline',
-        highID: h.id,
-        anchorB: {
-          latitude: h.anchor_b_lat,
-          longitude: h.anchor_b_long,
+    return highlines
+      .filter((h) => isValidCoordinate(h.anchor_a_long, h.anchor_a_lat))
+      .map((h) => ({
+        type: 'Feature',
+        properties: {
+          cluster: false,
+          category: 'highline',
+          highID: h.id,
+          anchorType: 'A',
+          anchorB: {
+            latitude: h.anchor_b_lat,
+            longitude: h.anchor_b_long,
+          },
         },
-      },
-      geometry: {
-        type: 'Point',
-        coordinates: [h.anchor_a_long, h.anchor_a_lat], // [lng, lat]
-      },
-    }));
+        geometry: {
+          type: 'Point',
+          coordinates: [h.anchor_a_long, h.anchor_a_lat], // [lng, lat]
+        },
+      }));
   }, [highlines]);
 
   const { clusters, supercluster } = useSuperCluster({
     points,
     bounds: cameraState.bounds,
     zoom: cameraState.zoom,
-    options: { radius: 50, maxZoom: 25 },
+    options: { radius: 20, maxZoom: 25 },
   });
 
   // Zoom into a cluster by computing bounds from its leaves.
@@ -111,6 +127,19 @@ export const Markers: React.FC<{
   // Adjust camera when a marker is highlighted.
   useEffect(() => {
     if (!highlightedMarker) return;
+    if (
+      !isValidCoordinate(
+        highlightedMarker.anchor_a_long,
+        highlightedMarker.anchor_a_lat,
+      ) ||
+      !isValidCoordinate(
+        highlightedMarker.anchor_b_long,
+        highlightedMarker.anchor_b_lat,
+      )
+    ) {
+      return;
+    }
+
     const ne: [number, number] = [
       Math.max(
         highlightedMarker.anchor_a_long,
@@ -125,7 +154,7 @@ export const Markers: React.FC<{
       ),
       Math.min(highlightedMarker.anchor_a_lat, highlightedMarker.anchor_b_lat),
     ];
-    cameraRef.current?.fitBounds(ne, sw, [50, 50, 200, 250], 1000);
+    cameraRef.current?.fitBounds(ne, sw, [50, 50, 50, 50], 1000);
   }, [highlightedMarker, cameraRef]);
 
   const handleMarkerSelect = useCallback(
@@ -140,29 +169,59 @@ export const Markers: React.FC<{
     [queryClient, updateMarkers],
   );
 
-  const polylineFeature = useMemo<Feature | null>(() => {
-    if (!highlightedMarker) return null;
-    return {
-      type: 'Feature',
-      geometry: {
-        type: 'LineString',
-        coordinates: [
-          [highlightedMarker.anchor_a_long, highlightedMarker.anchor_a_lat],
-          [highlightedMarker.anchor_b_long, highlightedMarker.anchor_b_lat],
-        ],
-      },
-      properties: {},
-    };
-  }, [highlightedMarker]);
+  // Generate polylines for all highlines
+  const polylineFeatures = useMemo<Feature[]>(() => {
+    if (!highlines) return [];
+
+    return highlines
+      .filter(
+        (h) =>
+          isValidCoordinate(h.anchor_a_long, h.anchor_a_lat) &&
+          isValidCoordinate(h.anchor_b_long, h.anchor_b_lat),
+      )
+      .map((h) => ({
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [h.anchor_a_long, h.anchor_a_lat],
+            [h.anchor_b_long, h.anchor_b_lat],
+          ],
+        },
+        properties: {
+          highID: h.id,
+          isRigged: h.status === 'rigged',
+        },
+      }));
+  }, [highlines, highlightedMarker]);
 
   return (
     <>
+      {/* Render all polylines */}
+      {polylineFeatures.map((feature, index) => (
+        <MapboxGL.ShapeSource
+          key={`polyline-${feature.properties?.highID || index}`}
+          id={`polyline-${feature.properties?.highID || index}`}
+          shape={feature}
+        >
+          <MapboxGL.LineLayer
+            id={`linelayer-${feature.properties?.highID || index}`}
+            style={{
+              // Blue is is highlited, green is rigged, red is not rigged.
+              lineColor:
+                feature.properties?.highID === highlightedMarker?.id
+                  ? '#3b82f6'
+                  : feature.properties?.isRigged
+                    ? '#22c55e'
+                    : '#ef4444',
+              lineWidth: 3,
+            }}
+          />
+        </MapboxGL.ShapeSource>
+      ))}
+
       {clusters?.map((point) => {
-        const [longitude, latitude] = point.geometry.coordinates;
-        if (typeof longitude !== 'number' || typeof latitude !== 'number')
-          return null;
-        // For Mapbox, the coordinate is an array: [lng, lat]
-        const coordinate: [number, number] = [longitude, latitude];
+        const coordinate = point.geometry.coordinates;
         const { properties } = point;
 
         if (properties?.cluster) {
@@ -174,7 +233,7 @@ export const Markers: React.FC<{
             <ClusteredMarker
               key={`cluster-${properties.cluster_id}`}
               size={size}
-              coordinate={coordinate}
+              coordinate={coordinate as [number, number]}
               pointCount={properties.point_count}
               onPress={() => handleClusterPress(properties.cluster_id)}
             />
@@ -183,53 +242,36 @@ export const Markers: React.FC<{
 
         return (
           <MapboxGL.PointAnnotation
-            key={`marker-high-${properties.highID}-A-${
-              properties.highID === highlightedMarker?.id
-                ? 'active'
-                : 'inactive'
-            }`}
+            key={`marker-high-${properties.highID}-A`}
             id={`marker-high-${properties.highID}-A`}
             coordinate={coordinate}
             onSelected={() => handleMarkerSelect(properties.highID)}
+            anchor={{ y: 1, x: 0.5 }}
           >
             <View className="size-12">
-              <MarkerCL active={properties.highID === highlightedMarker?.id} />
+              <MarkerCL active={properties?.highID === highlightedMarker?.id} />
             </View>
           </MapboxGL.PointAnnotation>
         );
       })}
 
-      {highlightedMarker && (
-        <>
-          <MapboxGL.PointAnnotation
-            key={`marker-high-${highlightedMarker.id}-B`}
-            id={`marker-high-${highlightedMarker.id}-B`}
-            coordinate={[
-              highlightedMarker.anchor_b_long,
-              highlightedMarker.anchor_b_lat,
-            ]}
-          >
-            <View className="size-12">
-              <MarkerCL active />
-            </View>
-          </MapboxGL.PointAnnotation>
-
-          {polylineFeature && (
-            <MapboxGL.ShapeSource
-              id={`polyline-${highlightedMarker.id}`}
-              shape={polylineFeature}
-            >
-              <MapboxGL.LineLayer
-                id={`linelayer-${highlightedMarker.id}`}
-                style={{
-                  lineColor: '#000',
-                  lineWidth: 3,
-                }}
-              />
-            </MapboxGL.ShapeSource>
-          )}
-        </>
-      )}
+      {/* Render anchorB of highlited marker */}
+      {highlightedMarker ? (
+        <MapboxGL.PointAnnotation
+          key={`marker-high-${highlightedMarker.id}-B`}
+          id={`marker-high-${highlightedMarker.id}-B`}
+          coordinate={[
+            highlightedMarker.anchor_b_long,
+            highlightedMarker.anchor_b_lat,
+          ]}
+          onSelected={() => handleMarkerSelect(highlightedMarker.id)}
+          anchor={{ y: 1, x: 0.5 }}
+        >
+          <View className="size-12">
+            <MarkerCL active={true} />
+          </View>
+        </MapboxGL.PointAnnotation>
+      ) : null}
     </>
   );
 };
