@@ -23,13 +23,23 @@ Notifications.setNotificationHandler({
   }),
 });
 
-async function sendPushNotification(expoPushToken: string) {
+export async function sendPushNotification({
+  expoPushToken,
+  title,
+  body,
+  data,
+}: {
+  expoPushToken: string;
+  title: string;
+  body: string;
+  data: Record<string, string>;
+}) {
   const message = {
     to: expoPushToken,
     sound: 'default',
-    title: 'Original Title',
-    body: 'And here is the body!',
-    data: { someData: 'goes here' },
+    title: title,
+    body: body,
+    data: data,
   };
 
   await fetch('https://exp.host/--/api/v2/push/send', {
