@@ -1,5 +1,7 @@
+# Include some credentials
 # Firebase Cloud Messaging credentials, see https://docs.expo.dev/push-notifications/fcm-credentials/#create-a-new-google-service-account-key
-/fcm-credentials/*
+# Google service credentials
+/credentials/*
 
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
