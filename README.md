@@ -80,7 +80,15 @@ Also, you should create a new token with all public scopes and **DOWNLOADS:READ*
 
 ### Push Notifications
 
-... under development
+First you should follow the [Expo push notification setup guide](https://docs.expo.dev/push-notifications/push-notifications-setup/) (Specially the steps 3 and 4)
+
+Since this project use Supabase as de backend, I have integrated it as also, see the [integration guide](https://supabase.com/docs/guides/functions/examples/push-notifications?queryGroups=platform&platform=expo) for more details
+
+
+There are two ways of sending notification
+
+- From a **edge function** to send push notification from the backend
+- From a ` sendPushNotification` helper function on the mobile app.
 
 ## Running locally
 
