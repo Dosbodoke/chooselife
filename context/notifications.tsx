@@ -23,17 +23,19 @@ Notifications.setNotificationHandler({
   }),
 });
 
+type PushNotificationPayload = {
+  expoPushToken: string;
+  title: string;
+  body: string;
+  data: Record<string, string>;
+};
+
 export async function sendPushNotification({
   expoPushToken,
   title,
   body,
   data,
-}: {
-  expoPushToken: string;
-  title: string;
-  body: string;
-  data: Record<string, string>;
-}) {
+}: PushNotificationPayload) {
   const message = {
     to: expoPushToken,
     sound: 'default',
@@ -106,7 +108,7 @@ async function registerForPushNotificationsAsync() {
 interface NotificationContextType {
   expoPushToken: string;
   notification: Notifications.Notification | undefined;
-  sendPushNotification: (expoPushToken: string) => void;
+  sendPushNotification: (payload: PushNotificationPayload) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
