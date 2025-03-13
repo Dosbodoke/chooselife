@@ -1,5 +1,5 @@
 // Command used to generate the types
-// npx supabase gen types typescript --local --schema storage,public,functions > utils/supabase/database.types.ts
+// npx supabase gen types typescript --local --schema storage,public,functions > utils/database.types.ts
 
 export type Functions = Database['public']['Functions'];
 // Supabase does not generate types for non defaul SQL data types, this type represent a postgis POINT
@@ -15,31 +15,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       entry: {
@@ -178,7 +153,9 @@ export type Database = {
       profiles: {
         Row: {
           birthday: string | null
+          deletion_requested: string | null
           description: string | null
+          expo_push_token: string | null
           id: string
           name: string | null
           profile_picture: string | null
@@ -186,7 +163,9 @@ export type Database = {
         }
         Insert: {
           birthday?: string | null
+          deletion_requested?: string | null
           description?: string | null
+          expo_push_token?: string | null
           id: string
           name?: string | null
           profile_picture?: string | null
@@ -194,7 +173,9 @@ export type Database = {
         }
         Update: {
           birthday?: string | null
+          deletion_requested?: string | null
           description?: string | null
+          expo_push_token?: string | null
           id?: string
           name?: string | null
           profile_picture?: string | null
@@ -214,7 +195,7 @@ export type Database = {
         Insert: {
           highline_id: string
           id?: never
-          is_rigged?: boolean
+          is_rigged: boolean
           rig_date: string
           riggers: string[]
           unrigged_at?: string | null
@@ -901,3 +882,4 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+

@@ -11,6 +11,8 @@ import React, {
 } from 'react';
 import { Platform } from 'react-native';
 
+import { supabase } from '~/lib/supabase';
+
 import { useAuth } from './auth';
 
 Notifications.setNotificationHandler({
@@ -81,7 +83,6 @@ async function registerForPushNotificationsAsync() {
           projectId,
         })
       ).data;
-      console.log(token);
     } catch (e) {
       token = `${e}`;
     }
@@ -152,22 +153,24 @@ export function NotificationProvider({
     };
   }, []);
 
-  // Update user profile with push token when both are available
+  // Store token to the user profile
   useEffect(() => {
-    console.log({ expoPushToken });
-    if (!profile || !expoPushToken) return;
+    async function storeToken() {
+      if (
+        profile &&
+        expoPushToken &&
+        profile.expo_push_token === expoPushToken
+      ) {
+        await supabase
+          .from('profiles')
+          .update({
+            expo_push_token: expoPushToken,
+          })
+          .eq('id', profile.id);
+      }
+    }
 
-    console.log('Profile and push token available:', { expoPushToken });
-
-    // TODO: Create column and update it here
-    // if (profile.expo_push_token !== expoPushToken) {
-    //   supabase
-    //     .from('profiles')
-    //     .update({
-    //       expo_push_token: expoPushToken,
-    //     })
-    //     .eq('id', profile?.id);
-    // }
+    storeToken();
   }, [profile, expoPushToken]);
 
   const contextValue = {
