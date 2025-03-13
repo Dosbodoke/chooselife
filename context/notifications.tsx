@@ -112,9 +112,6 @@ export function NotificationProvider({
   const { profile } = useAuth();
 
   const [expoPushToken, setExpoPushToken] = useState('');
-  const [channels, setChannels] = useState<Notifications.NotificationChannel[]>(
-    [],
-  );
   const [notification, setNotification] = useState<
     Notifications.Notification | undefined
   >(undefined);
@@ -126,11 +123,6 @@ export function NotificationProvider({
       (token) => token && setExpoPushToken(token),
     );
 
-    if (Platform.OS === 'android') {
-      Notifications.getNotificationChannelsAsync().then((value) =>
-        setChannels(value ?? []),
-      );
-    }
     notificationListener.current =
       Notifications.addNotificationReceivedListener((notification) => {
         setNotification(notification);
