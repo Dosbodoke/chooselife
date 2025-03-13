@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "ChooseLife",
   slug: "chooselife",
-  version: "1.3.1",
+  version: "1.3.2",
   newArchEnabled: true,
   orientation: "portrait",
   scheme: "com.bodok.chooselife",
@@ -88,5 +88,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     eas: {
       projectId: "6767d806-09e4-4095-ba1f-10805e3d0c5f",
     },
+  },
+  updates: {
+    url: "https://u.expo.dev/6767d806-09e4-4095-ba1f-10805e3d0c5f",
+  },
+  runtimeVersion: {
+    policy: "appVersion",
   },
 });
