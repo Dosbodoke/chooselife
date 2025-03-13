@@ -66,9 +66,9 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         to: token,
         sound: "default",
-        title: payload.record.title,
-        body: payload.record.body,
-        data: payload.record.data,
+        ...(payload.record.title ? { title: payload.record.title } : {}),
+        ...(payload.record.body ? { body: payload.record.body } : {}),
+        ...(payload.record.data ? { data: payload.record.data } : {}),
       }),
     });
 
