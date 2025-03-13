@@ -88,6 +88,8 @@ Since this project use Supabase as de backend, I have integrated it as also, see
 There are two ways of sending notification
 
 - From a **edge function** to send push notification from the backend
+  - Make sure to deploy the function with `supabase functions deploy push-notification`
+  - Set up the database webhook as [described here](https://supabase.com/docs/guides/functions/examples/push-notifications?queryGroups=platform&platform=expo#create-the-database-webhook)
 - From a ` sendPushNotification` helper function on the mobile app.
 
 ## Running locally
