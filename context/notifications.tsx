@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import { router } from 'expo-router';
 import React, {
   createContext,
   useContext,
@@ -41,49 +42,54 @@ async function sendPushNotification(expoPushToken: string) {
 }
 
 async function registerForPushNotificationsAsync() {
+  let token;
+
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
+      name: 'A channel is needed for the permissions prompt to appear',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
     });
   }
 
-  if (!Device.isDevice) {
-    console.log('Must use physical device for push notifications');
-    return null;
+  if (Device.isDevice) {
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      console.log('Failed to get push token for push notification!');
+      return;
+    }
+
+    // Learn more about projectId:
+    // https://docs.expo.dev/push-notifications/push-notifications-setup/#configure-projectid
+    // EAS projectId is used here.
+    try {
+      const projectId =
+        Constants?.expoConfig?.extra?.eas?.projectId ??
+        Constants?.easConfig?.projectId;
+      if (!projectId) {
+        throw new Error('Project ID not found');
+      }
+      token = (
+        await Notifications.getExpoPushTokenAsync({
+          projectId,
+        })
+      ).data;
+      console.log(token);
+    } catch (e) {
+      token = `${e}`;
+    }
+  } else {
+    alert('Must use physical device for Push Notifications');
   }
 
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
-
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-
-  if (finalStatus !== 'granted') {
-    console.log('Permission not granted for push notifications');
-    return null;
-  }
-
-  const projectId =
-    Constants?.expoConfig?.extra?.eas?.projectId ??
-    Constants?.easConfig?.projectId;
-
-  if (!projectId) {
-    console.log('Project ID not found');
-    return null;
-  }
-
-  try {
-    const token = await Notifications.getExpoPushTokenAsync({ projectId });
-    return token.data;
-  } catch (e) {
-    console.log('Error getting push token:', e);
-    return null;
-  }
+  return token;
 }
 
 interface NotificationContextType {
@@ -101,45 +107,29 @@ export function NotificationProvider({
 }: {
   children: React.ReactNode;
 }) {
+  useNotificationObserver();
   const { profile } = useAuth();
-  const [expoPushToken, setExpoPushToken] = useState<string>('');
+
+  const [expoPushToken, setExpoPushToken] = useState('');
+  const [channels, setChannels] = useState<Notifications.NotificationChannel[]>(
+    [],
+  );
   const [notification, setNotification] = useState<
     Notifications.Notification | undefined
   >(undefined);
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
-  const [isRegistered, setIsRegistered] = useState(false);
+  const notificationListener = useRef<Notifications.EventSubscription>();
+  const responseListener = useRef<Notifications.EventSubscription>();
 
-  // Handle push notification registration
   useEffect(() => {
-    let isMounted = true;
+    registerForPushNotificationsAsync().then(
+      (token) => token && setExpoPushToken(token),
+    );
 
-    const registerForNotifications = async () => {
-      try {
-        const token = await registerForPushNotificationsAsync();
-        if (isMounted && token) {
-          setExpoPushToken(token);
-        }
-      } catch (error) {
-        console.error('Failed to register for push notifications:', error);
-      } finally {
-        if (isMounted) {
-          setIsRegistered(true);
-        }
-      }
-    };
-
-    if (!isRegistered) {
-      registerForNotifications();
+    if (Platform.OS === 'android') {
+      Notifications.getNotificationChannelsAsync().then((value) =>
+        setChannels(value ?? []),
+      );
     }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isRegistered]);
-
-  // Set up notification listeners
-  useEffect(() => {
     notificationListener.current =
       Notifications.addNotificationReceivedListener((notification) => {
         setNotification(notification);
@@ -147,7 +137,7 @@ export function NotificationProvider({
 
     responseListener.current =
       Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log('Notification response:', response);
+        console.log(response);
       });
 
     return () => {
@@ -156,7 +146,6 @@ export function NotificationProvider({
           notificationListener.current,
         );
       }
-
       if (responseListener.current) {
         Notifications.removeNotificationSubscription(responseListener.current);
       }
@@ -192,6 +181,37 @@ export function NotificationProvider({
       {children}
     </NotificationContext.Provider>
   );
+}
+
+function useNotificationObserver() {
+  useEffect(() => {
+    let isMounted = true;
+
+    function redirect(notification: Notifications.Notification) {
+      const url = notification.request.content.data?.url;
+      if (url) {
+        router.push(url);
+      }
+    }
+
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (!isMounted || !response?.notification) {
+        return;
+      }
+      redirect(response?.notification);
+    });
+
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        redirect(response.notification);
+      },
+    );
+
+    return () => {
+      isMounted = false;
+      subscription.remove();
+    };
+  }, []);
 }
 
 export function useNotification() {

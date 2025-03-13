@@ -1,7 +1,7 @@
 {
   "name": "chooselife",
   "main": "expo-router/entry",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "scripts": {
     "dev": "expo start",
     "dev:web": "expo start -c --web",
@@ -59,7 +59,7 @@
     "expo-localization": "~16.0.1",
     "expo-location": "~18.0.7",
     "expo-navigation-bar": "~4.0.2",
-    "expo-notifications": "~0.29.13",
+    "expo-notifications": "~0.29.14",
     "expo-router": "~4.0.2",
     "expo-secure-store": "~14.0.0",
     "expo-splash-screen": "~0.29.7",

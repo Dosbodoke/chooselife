@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'ChooseLife',
   slug: 'chooselife',
-  version: '1.3.0',
+  version: '1.3.1',
   newArchEnabled: true,
   orientation: 'portrait',
   scheme: 'com.bodok.chooselife',
@@ -30,6 +30,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'android.permission.ACCESS_FINE_LOCATION',
     ],
     package: 'com.bodok.chooselife',
+    googleServicesFile: "./google-services.json"
   },
   web: {
     bundler: 'metro',
