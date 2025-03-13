@@ -1,111 +1,146 @@
 # CHOOSELIFE
 
-Mobile app for Highliners
+A mobile app designed for highliners to track their activities, connect with others, and share their experiences.
 
-## Stack utilizada
+## Table of Contents
 
-**Front-end:** Expo, NativeWind
+- [Tech Stack](#tech-stack)
+- [Environment Setup](#environment-setup)
+  - [Supabase Configuration](#supabase-configuration)
+    - [Project Setup](#project-setup)
+    - [Database Setup](#database-setup)
+    - [OAuth Configuration](#oauth-configuration)
+    - [Connecting to Expo](#connecting-to-expo)
+  - [Mapbox Configuration](#mapbox-configuration)
+  - [Push Notifications](#push-notifications)
+- [Running Locally](#running-locally)
+- [Contributing](#contributing)
+- [Authors](#authors)
+- [License](#license)
 
-**Back-end:** Supabase
+## Tech Stack
 
-## Environment setup
+**Front-end:**
+* [Expo](https://expo.dev/) - React Native framework for cross-platform development.
+* [NativeWind](https://www.nativewind.dev/) - Tailwind CSS for React Native.
 
-In order to run this project, you need to configure several services.
+**Back-end:**
+* [Supabase](https://supabase.com/) - Open-source Firebase alternative (database, authentication, etc.).
 
-### Supabase
+## Environment Setup
 
-Supabase is used as the backend of the project, including **database** and **authentication**.
+Before setting up the project, ensure you have the following installed:
 
-#### Create a project
+- Node.js (version 18.18.0 or higher)  
+- Expo CLI (`npm install -g expo-cli`)  
+- Supabase CLI (`npm install -g supabase`)  
+- An Expo account  
+- A Supabase account  
+- A Mapbox account  
 
-Since supabase can be self-hosted, you can run it locally with `npx supabase init` or [create a new cloud supabase project](https://supabase.com/dashboard/new/new-project)
+To run this project, you need to configure the following services.
 
-But the tutorial will aim a cloud setup.
+### Supabase Configuration
 
-#### Configure database
+Supabase serves as the project's backend, handling database and authentication.
 
-All the migrations necessary to setup the database lives under `supabase/migrations`
+1.  **Create a Supabase Project:**
+    * You can either run Supabase locally with `npx supabase init` or create a cloud project at [supabase.com/dashboard/new/new-project](https://supabase.com/dashboard/new/new-project).
+    * This guide focuses on cloud setup.
 
-In order to setup the remote database you need to
+#### Database Setup
 
-- Link to the project you just created
+1.  **Link to Your Project:**
+    * Use the following command, replacing `<project-id>` with your project's ID (found in the dashboard URL):
+  
+      ```bash
+      npx supabase link --project-ref <project-id>
+      ```
 
-```
-npx supabase link --project-ref <project-id>
-```
+2.  **Push Migrations:**
+    * Apply database migrations from `supabase/migrations` to your remote database:
+  
+      ```bash
+      npx supabase db push
+      ```
 
-You can get `<project-id>` from your project's dashboard URL: `https://supabase.com/dashboard/project/<project-id>`
+#### OAuth Configuration
 
-- Push the local migrations to the remote database
+1.  **Configure URL Redirects:**
+    * In the Supabase dashboard (Auth > URL Configuration), add a Site URL matching your app's scheme (defined in `app.config.ts`).
+    * Example: `com.bodok.chooselife://*`
+2.  **Enable Social Auth:**
+    * Enable Google and Apple social login in the Supabase dashboard.
+    * Follow these guides:
+        * [Setup Apple oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-apple?queryGroups=platform&platform=react-native)
+        * [Setup Google oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-google?queryGroups=platform&platform=react-native)
+    * [Use Auth locally](https://supabase.com/docs/guides/local-development/overview#use-auth-locally)
 
-```
-npx supabase db push
-```
+#### Connecting to Expo
 
-#### Configure oAuth
+1.  **Get API Keys:**
+    * Find your Project URL and anon keys in the Supabase dashboard (API Settings).
+2.  **Create `.env` File:**
+    * Create a `.env` file at the project root and add your Supabase credentials:
 
-On the Supabase dashboard, go to auth > URL Configuration and add a Site URL so the auth methods can redirect back to the project, it should match the specified `scheme` in your `app.config.ts`
+        ```
+        EXPO_PUBLIC_SUPABASE_URL=YOUR_SUPABASE_URL
+        EXPO_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+        ```
 
-On my case, it was `com.bodok.chooselife://*`
+### Mapbox Configuration
 
-You also need to **enable Google and Apple social auth**
+1.  **Get Mapbox Keys:**
+    * Obtain your public Mapbox key from your Mapbox account.
+2.  **Add to `.env`:**
+    * Add the public key to your `.env` file:
 
-Follow these guides:
+        ```
+        EXPO_PUBLIC_MAPBOX_PUBLIC_KEY=YOUR_MAPBOX_PUBLIC_KEY
+        ```
+3.  **Add Download Token**
+    * Create a new token with all public scopes and **DOWNLOADS:READ** Secret Scope, put it under `MAPBOX_DOWNLOAD_TOKEN` in your `.env`.
 
-[Setup Apple oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-apple?queryGroups=platform&platform=react-native)
-
-[Setup Google oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-google?queryGroups=platform&platform=react-native)
-
-Aditionally, you can [Use Auth locally](https://supabase.com/docs/guides/local-development/overview#use-auth-locally)
-
-#### Connect it with the EXPO Project
-
-Go to the API Settings page in the Dashboard.
-Find your Project URL and anon keys on this page.
-
-Create a `.env` file at the root of the project and fill up the following credentials
-
-```
-EXPO_PUBLIC_SUPABASE_URL=
-EXPO_PUBLIC_SUPABASE_ANON_KEY=
-```
-
-### Mapbox KEY's
-
-Get the public key from your MAPBOX account
-
-Put it under `EXPO_PUBLIC_MAPBOX_PUBLIC_KEY` on your `.env`
-
-Also, you should create a new token with all public scopes and **DOWNLOADS:READ** Secret Scope, put it under `MAPBOX_DOWNLOAD_TOKEN` in your `.env`. Not setting it will cause the build to fail.
+        ```
+        MAPBOX_DOWNLOAD_TOKEN=YOUR_MAPBOX_DOWNLOAD_TOKEN
+        ```
 
 ### Push Notifications
 
-First you should follow the [Expo push notification setup guide](https://docs.expo.dev/push-notifications/push-notifications-setup/) (Specially the steps 3 and 4)
+1.  **Expo Push Notification Setup:**
+    * Follow the [Expo push notification setup guide](https://docs.expo.dev/push-notifications/push-notifications-setup/) (especially steps 3 and 4).
+2.  **Supabase Integration:**
+    * Integrate Supabase for backend push notifications. Refer to the [integration guide](https://supabase.com/docs/guides/functions/examples/push-notifications?queryGroups=platform&platform=expo).
+3.  **Sending Notifications:**
+    * Notifications can be sent via:
+        * Supabase Edge Function: Deploy with `supabase functions deploy push-notification` and set up a database webhook as described in the Supabase guide.
+        * `sendPushNotification` helper function within the mobile app.
 
-Since this project use Supabase as de backend, I have integrated it as also, see the [integration guide](https://supabase.com/docs/guides/functions/examples/push-notifications?queryGroups=platform&platform=expo) for more details
+## Running Locally
 
+1.  **Install Expo EAS:**
+    * Install Expo EAS: [expo.dev/eas](https://expo.dev/eas).
+2.  **Create Development Build:**
+    * Build a development version:
+        ```bash
+        npx eas build -e development
+        ```
+3.  **Start Development Server:**
+    * Start the Expo development server:
+        ```bash
+        npx expo start -c
+        ```
 
-There are two ways of sending notification
+## Contributing
 
-- From a **edge function** to send push notification from the backend
-  - Make sure to deploy the function with `supabase functions deploy push-notification`
-  - Set up the database webhook as [described here](https://supabase.com/docs/guides/functions/examples/push-notifications?queryGroups=platform&platform=expo#create-the-database-webhook)
-- From a ` sendPushNotification` helper function on the mobile app.
+[Explain how others can contribute to your project. For example:]
 
-## Running locally
+1.  Fork the repository.
+2.  Create a new branch for your feature or bug fix.
+3.  Commit your changes.
+4.  Push to your branch.
+5.  Open a pull request.
 
-First you will need to [install Expo EAS ](https://expo.dev/eas) and create a development build with
+## Authors
 
-```bash
-  npx eas build -e development
-```
-
-Then start the development server with
-
-```bash
-  npx expo start -c
-```
-
-## Autores
-
-- [@Dosbodoke](https://www.github.com/Dosbodoke)
+* [@Dosbodoke](https://www.github.com/Dosbodoke)
