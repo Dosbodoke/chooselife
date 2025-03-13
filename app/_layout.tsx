@@ -92,6 +92,10 @@ export default function RootLayout() {
                         }}
                       />
                       <Stack.Screen
+                        name="location-picker"
+                        options={{ headerShown: false }}
+                      />
+                      <Stack.Screen
                         name="register-highline"
                         options={{ header: () => <OfflineBanner /> }}
                       />
