@@ -133,8 +133,6 @@ Supabase serves as the project's backend, handling database and authentication.
 
 ## Contributing
 
-[Explain how others can contribute to your project. For example:]
-
 1.  Fork the repository.
 2.  Create a new branch for your feature or bug fix.
 3.  Commit your changes.
