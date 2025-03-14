@@ -2,7 +2,7 @@ import Mapbox from '@rnmapbox/maps';
 import * as Location from 'expo-location';
 import { useLocalSearchParams } from 'expo-router';
 import { useAtom, useSetAtom } from 'jotai';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { HighlineCategory, useHighline } from '~/hooks/use-highline';
@@ -89,6 +89,12 @@ export default function Screen() {
   const { highlines, setSelectedCategory, isLoading } = useHighline({
     searchTerm,
   });
+  const highlinesWithLocation = useMemo(() => {
+    return highlines.filter(
+      (h) =>
+        h.anchor_a_lat && h.anchor_a_long && h.anchor_b_lat && h.anchor_b_long,
+    );
+  }, [highlines]);
 
   async function goToMyLocation() {
     const region = await getMyLocation();
@@ -197,7 +203,7 @@ export default function Screen() {
 
         <Markers
           cameraRef={cameraRef}
-          highlines={highlines}
+          highlines={highlinesWithLocation}
           highlightedMarker={highlightedMarker}
           updateMarkers={(highlines, focused) => {
             setClusterMarkers(highlines);
