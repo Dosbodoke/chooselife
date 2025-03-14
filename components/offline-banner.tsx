@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 
-import { Text } from './ui/text';
+import { Text } from '~/components/ui/text';
 
 export const SafeAreaOfflineView: React.FC<{
   children: React.ReactNode;

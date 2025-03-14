@@ -38,38 +38,40 @@ export default function SettingsPage() {
 
   if (profile && profile.username) {
     return (
-      <SafeAreaOfflineView className="justify-between h-full w-full p-4 ">
-        <View className="gap-6">
-          <Link
-            href={{
-              pathname: '/profile/[username]',
-              params: { username: profile.username },
-            }}
-            asChild
-          >
-            <TouchableOpacity className="flex flex-row gap-4">
-              <SupabaseAvatar profileID={profile.id} size={16} />
-              <View className="flex-1">
-                <H2 className="flex-shrink">{profile.name}</H2>
-                <Muted>{t('app.(tabs).settings.viewProfile')}</Muted>
-              </View>
-            </TouchableOpacity>
-          </Link>
+      <SafeAreaOfflineView className="h-full w-full">
+        <View className="justify-between flex-1 p-4 pt-9">
+          <View className="gap-6">
+            <Link
+              href={{
+                pathname: '/profile/[username]',
+                params: { username: profile.username },
+              }}
+              asChild
+            >
+              <TouchableOpacity className="flex flex-row gap-4">
+                <SupabaseAvatar profileID={profile.id} size={16} />
+                <View className="flex-1">
+                  <H2 className="flex-shrink">{profile.name}</H2>
+                  <Muted>{t('app.(tabs).settings.viewProfile')}</Muted>
+                </View>
+              </TouchableOpacity>
+            </Link>
 
-          <MyWebbings />
-        </View>
-
-        <View className="gap-4">
-          <View>
-            <EditProfileButton />
-            <ChangeLanguage />
+            <MyWebbings />
           </View>
 
-          <Button variant="link" onPress={logout}>
-            <Text className="text-foreground underline">
-              {t('app.(tabs).settings.logOut')}
-            </Text>
-          </Button>
+          <View className="gap-4">
+            <View>
+              <EditProfileButton />
+              <ChangeLanguage />
+            </View>
+
+            <Button variant="link" onPress={logout}>
+              <Text className="text-foreground underline">
+                {t('app.(tabs).settings.logOut')}
+              </Text>
+            </Button>
+          </View>
         </View>
       </SafeAreaOfflineView>
     );
