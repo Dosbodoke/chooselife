@@ -29,8 +29,8 @@ import {
 } from '~/context/rig-form';
 import { useProfile } from '~/hooks/use-profile';
 import {
+  useUserWebbings,
   useWebbing,
-  useWebbings,
   type WebbingWithModel,
 } from '~/hooks/use-webbings';
 import HighlineRigIllustration from '~/lib/icons/highline-rig';
@@ -477,7 +477,7 @@ const SelectMyWebbing: React.FC<{
   const { t } = useTranslation();
   const id = useId();
   const [triggerWidth, setTriggerWidth] = useState<number>(0);
-  const { data, isPending } = useWebbings();
+  const { data, isPending } = useUserWebbings();
 
   // Access the current rigging form values
   const { main, backup, focusedWebbing } = useRiggingForm();

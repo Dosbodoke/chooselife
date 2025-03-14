@@ -2,7 +2,7 @@ import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 
-import { useWebbings } from '~/hooks/use-webbings';
+import { useUserWebbings } from '~/hooks/use-webbings';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { Tables } from '~/utils/database.types';
 
@@ -23,7 +23,7 @@ type WebbingWithModel = Tables<'webbing'> & {
 
 const MyWebbings: React.FC = () => {
   const { t } = useTranslation();
-  const { data: webbings, isPending } = useWebbings();
+  const { data: webbings, isPending } = useUserWebbings();
 
   return (
     <Card>

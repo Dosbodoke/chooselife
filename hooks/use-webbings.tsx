@@ -1,6 +1,7 @@
 import { QueryData } from '@supabase/supabase-js';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
 
 // Include rig setup info in the query so that we can compute if the webbing is used.
@@ -35,16 +36,21 @@ export const queryKeys = {
   ],
 };
 
-// Hook to fetch all webbings along with their usage info.
-export const useWebbings = () => {
+// Hook to fetch all user webbings along with their usage info.
+export const useUserWebbings = () => {
+  const { profile } = useAuth();
   return useQuery<WebbingWithUsage[]>({
     queryKey: queryKeys.webbings(),
     queryFn: async () => {
-      const response = await supabaseQuery;
+      // If user is logged out return an empty array meaning there is no webbing
+      if (!profile || !profile.id) {
+        return [];
+      }
+      const response = await supabaseQuery.eq('user_id', profile.id);
       if (response.error) {
         throw new Error(response.error.message);
       }
-      const data = response.data as WebbingWithModel;
+      const data = response.data;
       // For each webbing, check its rig_setup_webbing array.
       // If any of those entries reference a rig_setup with unrigged_at === null,
       // we mark this webbing as in use.
