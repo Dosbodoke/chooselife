@@ -2,10 +2,20 @@ import Mapbox from '@rnmapbox/maps';
 import * as Location from 'expo-location';
 import { useLocalSearchParams } from 'expo-router';
 import { useAtom, useSetAtom } from 'jotai';
-import React, { useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { View } from 'react-native';
 
-import { HighlineCategory, useHighline } from '~/hooks/use-highline';
+import {
+  useHighline,
+  type Highline,
+  type HighlineCategory,
+} from '~/hooks/use-highline';
 import { calculateZoomLevel } from '~/utils';
 
 import ListingsBottomSheet from '~/components/map/bottom-sheet';
@@ -73,26 +83,41 @@ async function getMyLocation(): Promise<
 }
 
 export default function Screen() {
+  // Refs
   const mapRef = useRef<Mapbox.MapView>(null);
   const cameraRef = useRef<Mapbox.Camera>(null);
 
+  // state
   const [isOnMyLocation, setIsOnMyLocation] = useState(false);
   const [mapType, setMapType] = useState<'satellite' | 'standard'>('satellite');
-  const setCamera = useSetAtom(cameraStateAtom);
   const [searchTerm, setSearchTerm] = useState('');
-  const { focusedMarker } = useLocalSearchParams<{ focusedMarker?: string }>();
 
+  // atoms
+  const setCamera = useSetAtom(cameraStateAtom);
   const [highlightedMarker, setHighlightedMarker] = useAtom(
     highlightedMarkerAtom,
   );
   const [clusterMarkers, setClusterMarkers] = useAtom(clusterMarkersAtom);
+
+  // URL params
+  const { focusedMarker } = useLocalSearchParams<{ focusedMarker?: string }>();
+
+  // Hooks
   const { highlines, setSelectedCategory, isLoading } = useHighline({
     searchTerm,
   });
 
-  async function goToMyLocation() {
+  const highlinesWithLocation = useMemo(() => {
+    return highlines.filter(
+      (h) =>
+        h.anchor_a_lat && h.anchor_a_long && h.anchor_b_lat && h.anchor_b_long,
+    );
+  }, [highlines]);
+
+  const goToMyLocation = useCallback(async () => {
     const region = await getMyLocation();
     if (!region) return;
+
     const newZoom = calculateZoomLevel(region.latitudeDelta);
     cameraRef.current?.setCamera({
       centerCoordinate: [region.longitude, region.latitude],
@@ -101,7 +126,52 @@ export default function Screen() {
       animationMode: 'flyTo',
     });
     setIsOnMyLocation(true);
-  }
+  }, []);
+
+  const handleSearchChange = useCallback(
+    (text: string) => setSearchTerm(text),
+    [],
+  );
+  const handleCategoryChange = useCallback(
+    (category: HighlineCategory | null) => setSelectedCategory(category),
+    [],
+  );
+
+  const handleMapIdle = useCallback(
+    (state: Mapbox.MapState) => {
+      setIsOnMyLocation(false);
+
+      const { sw, ne } = state.properties.bounds;
+      setCamera({
+        center: state.properties.center,
+        zoom: state.properties.zoom,
+        bounds: [sw[0], sw[1], ne[0], ne[1]],
+      });
+    },
+    [setCamera],
+  );
+
+  const handleMapPress = useCallback(() => {
+    if (highlightedMarker) {
+      setHighlightedMarker(null);
+      setClusterMarkers([]);
+    }
+  }, [highlightedMarker, setHighlightedMarker, setClusterMarkers]);
+
+  const handleMarkerUpdate = useCallback(
+    (highlines: Highline[], focused: Highline) => {
+      setClusterMarkers(highlines);
+      setHighlightedMarker(focused);
+    },
+    [setClusterMarkers, setHighlightedMarker],
+  );
+
+  const handleChangeFocusedMarker = useCallback(
+    (high: Highline) => {
+      setHighlightedMarker(high);
+    },
+    [setHighlightedMarker],
+  );
 
   useEffect(() => {
     if (!focusedMarker || !highlines) {
@@ -139,19 +209,10 @@ export default function Screen() {
       cameraRef.current?.fitBounds(
         [maxLng, maxLat], // northeast [lng, lat]
         [minLng, minLat], // southwest [lng, lat]
-        [0, 50, 200, 250, 1000],
+        [0, 50, 200, 250, 1000], // padding
       );
     }
   }, [focusedMarker, highlines]);
-
-  const handleSearchChange = React.useCallback(
-    (text: string) => setSearchTerm(text),
-    [],
-  );
-  const handleCategoryChange = React.useCallback(
-    (category: HighlineCategory | null) => setSelectedCategory(category),
-    [],
-  );
 
   return (
     <View style={{ flex: 1 }}>
@@ -165,44 +226,26 @@ export default function Screen() {
         style={{ flex: 1 }}
         styleURL={getMapStyle(mapType)}
         scaleBarEnabled={false}
-        onMapIdle={(state) => {
-          setIsOnMyLocation(false);
-
-          const { sw, ne } = state.properties.bounds;
-          setCamera({
-            center: state.properties.center,
-            zoom: state.properties.zoom,
-            bounds: [sw[0], sw[1], ne[0], ne[1]],
-          });
-        }}
+        onMapIdle={handleMapIdle}
         onDidFinishRenderingMap={() => {
           if (!focusedMarker) {
             goToMyLocation();
           }
         }}
-        onPress={() => {
-          if (highlightedMarker) {
-            setHighlightedMarker(null);
-            setClusterMarkers([]);
-          }
-        }}
+        onPress={handleMapPress}
       >
         <Mapbox.Camera
           ref={cameraRef}
           zoomLevel={DEFAULT_ZOOM}
           centerCoordinate={[DEFAULT_LONGITUDE, DEFAULT_LATITUDE]}
         />
-
         <Mapbox.UserLocation showsUserHeadingIndicator />
 
         <Markers
           cameraRef={cameraRef}
-          highlines={highlines}
+          highlines={highlinesWithLocation}
           highlightedMarker={highlightedMarker}
-          updateMarkers={(highlines, focused) => {
-            setClusterMarkers(highlines);
-            setHighlightedMarker(focused);
-          }}
+          updateMarkers={handleMarkerUpdate}
         />
       </Mapbox.MapView>
 
@@ -213,13 +256,13 @@ export default function Screen() {
         setMapType={setMapType}
       />
 
-      {clusterMarkers.length > 0 && (
+      {clusterMarkers.length > 0 ? (
         <MapCardList
           highlines={clusterMarkers}
           focusedMarker={highlightedMarker}
-          changeFocusedMarker={(high) => setHighlightedMarker(high)}
+          changeFocusedMarker={handleChangeFocusedMarker}
         />
-      )}
+      ) : null}
 
       <ListingsBottomSheet
         highlines={highlines}
