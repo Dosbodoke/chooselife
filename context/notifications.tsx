@@ -163,7 +163,7 @@ export function NotificationProvider({
       if (
         profile &&
         expoPushToken &&
-        profile.expo_push_token === expoPushToken
+        profile.expo_push_token !== expoPushToken
       ) {
         await supabase
           .from('profiles')
