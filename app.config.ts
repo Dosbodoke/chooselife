@@ -42,6 +42,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-router",
     "expo-localization",
     [
+      "expo-notifications",
+      {
+        "icon": "./assets/icons/android-notification-icon.png",
+        "color": "#000000",
+      },
+    ],
+    [
       "expo-splash-screen",
       {
         image: "./assets/icons/splash-icon-dark.png",
