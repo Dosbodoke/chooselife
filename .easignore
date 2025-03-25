@@ -1,13 +1,9 @@
-<<<<<<< HEAD
-**/node_modules/
-=======
-# Don't commit credentials
-# Firebase Cloud Messaging credentials, see https://docs.expo.dev/push-notifications/fcm-credentials/#create-a-new-google-service-account-key
-# Google service credentials
-/credentials/*
+# Include credentials to eas build
+# Learn more: https://docs.expo.dev/build-reference/easignore/#adding-files-to-your-project-upload-with-easignore
+!/credentials/*
 
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
+# SAME AS .gitignore
 # dependencies
 node_modules/
 
@@ -49,4 +45,3 @@ yarn-error.*
 
 expo-env.d.ts
 # @end expo-cli
->>>>>>> 27a8a4b (Added .easignore and make it include credentials)
