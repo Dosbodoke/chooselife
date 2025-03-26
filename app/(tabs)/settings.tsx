@@ -34,7 +34,7 @@ import { H2, Muted } from '~/components/ui/typography';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
-  const { profile, logout } = useAuth();
+  const { profile, logout, isLoginPending } = useAuth();
 
   if (profile && profile.username) {
     return (
@@ -82,7 +82,10 @@ export default function SettingsPage() {
       <View className="p-4 gap-4 flex justify-end h-full">
         <ChangeLanguage />
         <Link href={`/login?redirect_to=settings`} asChild>
-          <Button className="w-fit bg-primary text-center py-4 text-primary-foreground">
+          <Button
+            disabled={isLoginPending}
+            className="w-fit bg-primary text-center py-4 text-primary-foreground"
+          >
             <Text>{t('app.(tabs).settings.logIn')}</Text>
           </Button>
         </Link>

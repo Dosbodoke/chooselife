@@ -1,5 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import AsyncStorage from 'expo-sqlite/kv-store';
+import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
@@ -18,7 +17,7 @@ import Animated, {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
-import { useAuth } from '~/context/auth';
+import { useAuth, type LoginMethod, type OAuthMethod } from '~/context/auth';
 import { AppleIcon } from '~/lib/icons/Apple';
 import ChooselifeIcon from '~/lib/icons/chooselife-icon';
 import { GoogleIcon } from '~/lib/icons/Google';
@@ -31,8 +30,6 @@ import { Separator } from '~/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { Text } from '~/components/ui/text';
 
-type LastUsedLoginMethod = 'apple' | 'google' | 'email';
-
 const _layoutTransition = LinearTransition.springify()
   .damping(80)
   .stiffness(200);
@@ -40,30 +37,6 @@ const AnimatedButton = Animated.createAnimatedComponent(Button);
 const AnimatedText = Animated.createAnimatedComponent(Text);
 
 const Page = () => {
-  const [lastLoginMethod, setLastLoginMethod] =
-    useState<LastUsedLoginMethod | null>(null);
-
-  const saveLoginMethod = async (method: LastUsedLoginMethod) => {
-    try {
-      await AsyncStorage.setItem('lastLoginMethod', method);
-    } catch (error) {
-      console.error('Failed to save the login method:', error);
-    }
-  };
-
-  const loadLastLoginMethod = async () => {
-    try {
-      const method = await AsyncStorage.getItem('lastLoginMethod');
-      setLastLoginMethod(method as LastUsedLoginMethod);
-    } catch (error) {
-      console.error('Failed to load the login method:', error);
-    }
-  };
-
-  useEffect(() => {
-    loadLastLoginMethod();
-  }, []);
-
   return (
     <SafeAreaView className="flex-1">
       <KeyboardAwareScrollView
@@ -72,15 +45,9 @@ const Page = () => {
       >
         <LogoSection />
         <View>
-          <OAuthButtons
-            lastLoginMethod={lastLoginMethod}
-            saveLoginMethod={saveLoginMethod}
-          />
+          <OAuthButtons />
           <MethodSeparator />
-          <EmailSection
-            lastLoginMethod={lastLoginMethod}
-            saveLoginMethod={saveLoginMethod}
-          />
+          <EmailSection />
         </View>
       </KeyboardAwareScrollView>
     </SafeAreaView>
@@ -99,34 +66,14 @@ const LogoSection = () => {
   );
 };
 
-const OAuthButtons = ({
-  lastLoginMethod,
-  saveLoginMethod,
-}: {
-  lastLoginMethod: LastUsedLoginMethod | null;
-  saveLoginMethod: (method: LastUsedLoginMethod) => Promise<void>;
-}) => {
+const OAuthButtons: React.FC = () => {
   const { t } = useTranslation();
   const { redirect_to } = useLocalSearchParams<{ redirect_to?: string }>();
-  const { performOAuth } = useAuth();
-  const router = useRouter();
+  const { performOAuth, lastLoginMethod, isLoginPending } = useAuth();
   const { colorScheme } = useColorScheme();
 
-  const handleLogin = async (method: 'apple' | 'google') => {
-    const { success } = await performOAuth(method);
-    if (success) {
-      await saveLoginMethod(method);
-      if (redirect_to) {
-        // @ts-expect-error redirect_to search parameter
-        router.replace(redirect_to);
-        return;
-      }
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/(tabs)');
-      }
-    }
+  const handleLogin = async (method: OAuthMethod) => {
+    await performOAuth({ method, redirectTo: redirect_to });
   };
 
   return (
@@ -143,6 +90,7 @@ const OAuthButtons = ({
       <Button
         onPress={() => handleLogin('apple')}
         variant="outline"
+        disabled={isLoginPending}
         className="flex-row gap-3 items-center"
       >
         <View className="h-6 w-6">
@@ -156,6 +104,7 @@ const OAuthButtons = ({
       <Button
         onPress={() => handleLogin('google')}
         variant="outline"
+        disabled={isLoginPending}
         className="relative flex-row gap-3 items-center"
       >
         <View className="h-6 w-6">
@@ -171,15 +120,10 @@ const OAuthButtons = ({
 };
 
 type AuthTabs = 'login' | 'signup';
-
-const EmailSection: React.FC<{
-  lastLoginMethod: LastUsedLoginMethod | null;
-  saveLoginMethod: (method: LastUsedLoginMethod) => Promise<void>;
-}> = ({ lastLoginMethod, saveLoginMethod }) => {
+const EmailSection: React.FC = () => {
   const { t } = useTranslation();
   const { redirect_to } = useLocalSearchParams<{ redirect_to?: string }>();
-  const router = useRouter();
-  const { signUp, login } = useAuth();
+  const { signUp, login, lastLoginMethod, isLoginPending } = useAuth();
   const [tab, setTab] = useState<AuthTabs>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -208,16 +152,12 @@ const EmailSection: React.FC<{
         setError(t('app.(modals).login.email.invalidEmail'));
         return;
       }
-      const response = await login(email, password);
-      if (response.success) {
-        await saveLoginMethod('email');
-        if (redirect_to) {
-          // @ts-expect-error redirect_to search param
-          router.replace(redirect_to);
-          return;
-        }
-        router.back();
-      } else {
+      const response = await login({
+        email,
+        password,
+        redirectTo: redirect_to,
+      });
+      if (!response.success) {
         setError(response.errorMessage || '');
       }
     } finally {
@@ -226,23 +166,13 @@ const EmailSection: React.FC<{
   };
 
   const handleSignup = async () => {
-    if (z.string().email().safeParse(email).success === false) {
-      setError(t('app.(modals).login.email.invalidEmail'));
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError(t('app.(modals).login.email.passwordsMismatch'));
-      return;
-    }
-    const response = await signUp(email, password);
-    if (response.success) {
-      if (redirect_to) {
-        // @ts-expect-error redirect_to search parameter
-        router.replace(redirect_to);
-        return;
-      }
-      router.back();
-    } else {
+    const response = await signUp({
+      email,
+      password,
+      confirmPassword,
+      redirectTo: redirect_to,
+    });
+    if (!response.success) {
       setError(
         response.errorMessage || t('app.(modals).login.email.signupFailed'),
       );
@@ -315,7 +245,6 @@ const EmailSection: React.FC<{
       </Tabs>
 
       <AnimatedAuthButton
-        isLoading={loading}
         onPress={tab === 'login' ? handleLogin : handleSignup}
         label={
           tab === 'login'
@@ -323,6 +252,8 @@ const EmailSection: React.FC<{
             : t('app.(modals).login.email.signupButton')
         }
         lastLoginMethod={lastLoginMethod}
+        isLoading={loading}
+        disabled={isLoginPending}
       />
 
       {error && (
@@ -355,15 +286,16 @@ const AnimatedAuthButton: React.FC<{
   isLoading: boolean;
   onPress: () => void;
   label: string;
-  lastLoginMethod?: LastUsedLoginMethod | null;
-}> = ({ isLoading, onPress, label, lastLoginMethod }) => {
+  lastLoginMethod?: LoginMethod | null;
+  disabled?: boolean;
+}> = ({ isLoading, onPress, label, lastLoginMethod, disabled }) => {
   const { t } = useTranslation();
   return (
     <AnimatedButton
       className="flex-1"
       variant="default"
       onPress={onPress}
-      disabled={isLoading}
+      disabled={disabled || isLoading}
       layout={_layoutTransition}
     >
       {isLoading ? (
