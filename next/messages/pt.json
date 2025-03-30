@@ -1,0 +1,309 @@
+{
+  "home": {
+    "searchPlaceholder": "Nome do Highline",
+    "newHighline": {
+      "trigger": "Novo Highline",
+      "title": "Registrar highline",
+      "success": {
+        "header": "BOA CHOOSEN",
+        "message": "O Highline foi criado, agora é so registrar o seu rolê!"
+      },
+      "successLink": "Ver Highline",
+      "description": "Adicione o seu Highline no aplicativo e tenha acesso ao histórico de rolês.",
+      "name": {
+        "label": "Nome da via",
+        "placeholder": "exemplo: Bongada de Jah"
+      },
+      "height": {
+        "label": "Altura",
+        "placeholder": "Altura do Highline em metros"
+      },
+      "length": {
+        "label": "Comprimento",
+        "placeholder": "Comprimento do Highline em metros"
+      },
+      "backupWebbing": {
+        "label": "Fita backup",
+        "placeholder": "Exemplo: Sky 2 (Bera) + Sky 3d (Bera)"
+      },
+      "highlineDescription": {
+        "label": "Decrição",
+        "placeholder": "Fale um pouco sobre este Highline. Aqui é o lugar perfeito para dar informações de acesso, segurança, dica para montagem ou rolê, etc..."
+      },
+      "image": {
+        "label": "Clique para escolher a foto do Highline"
+      },
+      "submit": "Registrar"
+    },
+    "seeDetails": "Ver detalhes"
+  },
+  "map": {
+    "locationPicker": {
+      "setA": "Definir ancoragem A",
+      "setB": "Definir ancoragem B",
+      "confirm": "Confirmar"
+    },
+    "toggle": {
+      "map": "Mapa",
+      "list": "Lista"
+    },
+    "type": {
+      "header": "Tipode de mapa",
+      "description": "Selecione o mapa a ser visualizado",
+      "map": "Mapa",
+      "satellite": "Satélite"
+    },
+    "refetch": {
+      "pending": "Pesquisando...",
+      "enabled": "Pesquisar nesta área"
+    }
+  },
+  "highline": {
+    "registry": {
+      "trigger": "Registrar rolê",
+      "title": "Registrar rolê",
+      "success": {
+        "header": "BOA CHOOSEN",
+        "message": "Seu rolê está registrado e será usado para calcular as suas estatísticas.",
+        "close": "fechar"
+      },
+      "description": "Registre como foi o seu rolê e tenha acesso as suas estatísticas.",
+      "instagram": {
+        "description": "Nome de úsuario no APP Chooselife ou o @ do instagram",
+        "placeholder": "@user"
+      },
+      "cadenas": {
+        "label": "Cadenas",
+        "description": "dropou no começo e foi até o final da fita sem cair."
+      },
+      "fullLines": {
+        "description": "Você cadenou a ida e a volta, sem descer na virada."
+      },
+      "distance": {
+        "label": "Distância caminhada",
+        "description": "Quantos metros você andou no total",
+        "placeholder": "Exemplo: 110"
+      },
+      "speedline": {
+        "description": "Seu melhor tempo para o ranking do Speedline nesta via",
+        "placeholder": "Exemplo: 2:59"
+      },
+      "witness": {
+        "label": "Testemunhas",
+        "description": "Selecione dois úsuario para ser testemunha, se a pessoa não tiver no APP use o @ do instagram dela",
+        "placeholder": "Exemplo: @festivalchooselife, @juangsandrade",
+        "searchPlaceholder": "Username ou @ do instagram",
+        "clear": "Limpar",
+        "close": "Fechar",
+        "verifiedHeading": "Verificados"
+      },
+      "comment": {
+        "label": "Comentário",
+        "placeholder": "Boa choosen 🤘🆑 Conta pra gente como foi ese rolê, o que achou da fita, da conexão..."
+      },
+      "submit": "Registrar"
+    },
+    "header": {
+      "expandDescription": "Ver mais...",
+      "shrinkDescription": "Ver menos...",
+      "seeOnMap": "Ver no mapa",
+      "addToMap": "Adicionar ao mapa"
+    },
+    "tabs": {
+      "informations": {
+        "label": "Informações",
+        "height": "Altura",
+        "length": "Comprimento",
+        "meters": "metros"
+      },
+      "comments": "Comentários",
+      "ranking": {
+        "changeModality": "Trocar modalidade",
+        "cadenas": "Cadenas",
+        "distance": "Distância"
+      },
+      "seeMore": "carregar mais"
+    },
+    "notFound": {
+      "title": "Highline não existe",
+      "buttonLabel": "Voltar para a página inicial"
+    }
+  },
+  "profile": {
+    "header": {
+      "notVerified": "Este usuário não é verificado",
+      "age": "Idade"
+    },
+    "notFound": {
+      "title": "Usuário não existe",
+      "description": "Não conseguimos achar nenhum usuário com o nome",
+      "buttonLabel": "Voltar para a página inicial"
+    },
+    "stats": {
+      "walked": "caminhados",
+      "sent": "cadenas",
+      "fullLines": "full lines"
+    },
+    "lastWalks": {
+      "title": "Ultimos rolês",
+      "description": "Seu histórico de rolês",
+      "popover": {
+        "height": "Altura",
+        "length": "Comprimento",
+        "buttonLabel": "Ver mais"
+      },
+      "empty": "Este usuário ainda não registrou nenhum rolê"
+    }
+  },
+  "login": {
+    "trigger": "Entrar",
+    "initial": {
+      "title": "Criar ou entrar na sua conta ✨",
+      "description": "Ganhe acesso a todas as funcionalidades do APP Chooselife",
+      "google": "Continuar com Google"
+    },
+    "email": {
+      "buttonLabel": "Continuar com email",
+      "title": "Continuar com um link de email 💌",
+      "description": "Um link será enviado para seu e-mail e ele poderá ser usado para fazer login sem digitar nenhuma senha",
+      "placeholder": "Insira seu email",
+      "back": "Voltar",
+      "submit": "Enviar",
+      "invalid": "Email invalido"
+    },
+    "inbox": {
+      "title": "Cheque seu email! 🍄",
+      "preDescription": "Abra o link enviado para",
+      "postDescription": "neste navegador"
+    }
+  },
+  "profileMenu": {
+    "myProfile": "Ver meu perfil",
+    "signOut": "Sair"
+  },
+  "footer": {
+    "desc": "Site criado por "
+  },
+  "LocaleSwitcher": {
+    "label": "Trocar idioma"
+  },
+  "goBack": "Voltar",
+  "usernameDialog": {
+    "title": "Bem vindo ao APP CHOOSELIFE 👋",
+    "description": "Só falta algumas informações detalhes para terminar de criar sua conta.",
+    "alert": "Se você já usou o APP, você deve usar o mesmo @usuário do seu intagram para não perder as suas estatísticas",
+    "fields": {
+      "username": {
+        "label": "Nome de usuário",
+        "placeholder": "Seu @usuário único",
+        "errors": {
+          "alreadyExits": "Este nome de usuário já existe",
+          "startWith@": "Nome de usuário deve começar com @",
+          "minLength": "Nome de usuário deve ter pelo menos 2 caracteres"
+        }
+      },
+      "displayName": {
+        "label": "Nome do perfil",
+        "placeholder": "Seu nome completo",
+        "errors": {
+          "minLength": "Nome deve ter pelo menos 3 caracteres"
+        }
+      }
+    },
+    "submit": "Continuar"
+  },
+  "profileMetadata": {
+    "title": "Perfil de {username}",
+    "description": "Veja o histórico deste atleta"
+  },
+  "updateProfile": {
+    "trigger": "Editar perfil",
+    "title": "Meu perfil",
+    "fields": {
+      "name": {
+        "label": "Nome",
+        "placeholder": "Seu nome completo"
+      },
+      "description": {
+        "label": "Bio",
+        "placeholder": "Fale um pouco sobre você"
+      },
+      "birthday": {
+        "label": "Aniversário",
+        "placeholder": "Selecione uma data"
+      },
+      "submit": "Salvar"
+    }
+  },
+  "themeToggler": {
+    "screenReader": "Trocar tema",
+    "light": "claro",
+    "dark": "escuro",
+    "system": "sistema"
+  },
+  "calendar": {
+    "tooltip": "{walks, plural, =1 {# rolê em} other {# rolês em}}"
+  },
+  "promptPwa": {
+    "title": "APP Chooselife",
+    "description": "Instale para ter uma melhor experiência",
+    "steps": {
+      "first": "Toque no botão \"Compartilhar\" na barra de ferramentas do navegador Safari.",
+      "second": "Role para baixo e toque em \"Adicionar à Tela de Início\".",
+      "third": "Toque no botão \"Adicionar\" no canto superior direito.",
+      "fourth": "O APP agora aparecerá na sua tela inicial."
+    },
+    "actionButton": "install"
+  },
+  "festival": {
+    "cardSubTitle": "Acompanhe o ranking do festival em tempo real",
+    "pageSubTitle": "O maior festival de Highline do Brasil"
+  },
+  "privacyPolicy": {
+    "title": "Política de Privacidade",
+    "intro": "A sua privacidade é importante para nós. É política do ChooseLife respeitar a sua privacidade em relação a qualquer informação sua que possamos coletar no site ChooseLife, e outros sites que possuímos e operamos.",
+    "collectionUse": {
+      "title": "Coleta e Uso de Informações",
+      "p1": "Solicitamos informações pessoais apenas quando realmente precisamos delas para lhe fornecer um serviço. Fazemo-lo por meios justos e legais, com o seu conhecimento e consentimento. Também informamos por que estamos coletando e como será usado.",
+      "p2": "Apenas retemos as informações coletadas pelo tempo necessário para fornecer o serviço solicitado. Quando armazenamos dados, protegemos dentro de meios comercialmente aceitáveis para evitar perdas e roubos, bem como acesso, divulgação, cópia, uso ou modificação não autorizados.",
+      "p3": "Não compartilhamos informações de identificação pessoal publicamente ou com terceiros, exceto quando exigido por lei."
+    },
+    "cookies": {
+      "title": "Uso de Cookies",
+      "p1": "Utilizamos cookies para melhorar a sua experiência em nosso site. Especificamente, usamos cookies para fins de autenticação com o Supabase, nosso provedor de backend. Estes cookies são essenciais para o funcionamento do site e para manter você conectado durante a sua sessão.",
+      "p2": "Os cookies de autenticação armazenam informações de sessão de forma segura, permitindo que você navegue pelo site sem precisar fazer login repetidamente. Eles não coletam nenhuma informação pessoal além do necessário para esta função.",
+      "p3": "Você pode optar por desativar os cookies através das configurações do seu navegador. No entanto, isso pode afetar a funcionalidade do site, especialmente no que diz respeito à autenticação e à permanência do login."
+    },
+    "externalLinks": {
+      "title": "Links Externos",
+      "content": "O nosso site pode ter links para sites externos que não são operados por nós. Esteja ciente de que não temos controle sobre o conteúdo e práticas desses sites e não podemos aceitar responsabilidade por suas respectivas políticas de privacidade."
+    },
+    "rightOfRefusal": {
+      "title": "Seu Direito de Recusa",
+      "p1": "Você é livre para recusar a nossa solicitação de informações pessoais, entendendo que talvez não possamos fornecer alguns dos serviços desejados.",
+      "p2": "O uso continuado de nosso site será considerado como aceitação de nossas práticas em torno de privacidade e informações pessoais. Se você tiver alguma dúvida sobre como lidamos com dados do usuário e informações pessoais, entre em contato conosco."
+    },
+    "userCommitment": {
+      "title": "Compromisso do Usuário",
+      "intro": "O usuário se compromete a fazer uso adequado dos conteúdos e da informação que o ChooseLife oferece no site e com caráter enunciativo, mas não limitativo:",
+      "a": "A) Não se envolver em atividades que sejam ilegais ou contrárias à boa fé a à ordem pública;",
+      "b": "B) Não difundir propaganda ou conteúdo de natureza racista, xenofóbica, de azar, qualquer tipo de pornografia ilegal, de apologia ao terrorismo ou contra os direitos humanos;",
+      "c": "C) Não causar danos aos sistemas físicos (hardwares) e lógicos (softwares) do ChooseLife, de seus fornecedores ou terceiros, para introduzir ou disseminar vírus informáticos ou quaisquer outros sistemas de hardware ou software que sejam capazes de causar danos anteriormente mencionados."
+    },
+    "moreInfo": {
+      "title": "Mais informações",
+      "content": "Esperamos que esteja esclarecido e, como mencionado anteriormente, se houver algo que você não tem certeza se precisa ou não, geralmente é mais seguro deixar os cookies ativados, caso interaja com um dos recursos que você usa em nosso site."
+    },
+    "effectiveDate": "Esta política é efetiva a partir de 6 de fevereiro de 2025."
+  },
+  "deleteAccount": {
+    "title": "Excluir Conta",
+    "description": "Tem certeza de que deseja excluir sua conta? Esta ação não pode ser desfeita.",
+    "info": "A exclusão da sua conta removerá todas as suas informações pessoais do nosso sistema. Este processo pode levar até 30 dias para ser concluído.",
+    "cancelButton": "Cancelar",
+    "deleteButton": "Excluir Minha Conta",
+    "processingButton": "Processando...",
+    "successMessage": "Sua solicitação de exclusão de conta foi recebida. Você será redirecionado em breve.",
+    "errorMessage": "Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente."
+  }
+}

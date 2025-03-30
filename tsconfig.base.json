@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "lib": ["esnext", "dom"], // Libs needed by both or base packages
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "declaration": true, // Good for shared packages
+    "sourceMap": true, // Good for debugging
+    "resolveJsonModule": true,
+    "isolatedModules": true // Often needed by build tools
+  },
+  "exclude": ["node_modules", "dist", "**/dist", "**/.*/"]
+}

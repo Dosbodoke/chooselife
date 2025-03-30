@@ -1,0 +1,364 @@
+{
+  "app": {
+    "(modals)": {
+      "login": {
+        "logoSubtitle": "O único aplicativo feito para Highliners",
+        "oauth": {
+          "lastUsed": "Utilizado por último",
+          "continueApple": "Continuar com Apple",
+          "continueGoogle": "Continuar com Google"
+        },
+        "separator": "ou",
+        "email": {
+          "tabLogin": "Entrar com email",
+          "tabSignup": "Criar conta",
+          "emailPlaceholder": "Seu email",
+          "passwordPlaceholder": "Sua senha",
+          "confirmPasswordPlaceholder": "Confirmar senha",
+          "loginButton": "Entrar",
+          "signupButton": "Criar",
+          "invalidEmail": "Email inválido",
+          "passwordsMismatch": "Senhas não são iguais.",
+          "signupFailed": "Falha ao criar conta, contate o suporte"
+        }
+      },
+      "register-webbing": {
+        "title": "Registrar fita",
+        "description": "Registrar sua fita permite acompanhar o histórico de uso e receber lembretes de manutenção.",
+        "finishLabel": "Cadastrar",
+        "modelLabel": "Modelo da fita",
+        "modelPlaceholder": "Ex.: Brasileirinha"
+      }
+    },
+    "(tabs)": {
+      "_layout": {
+        "indexTitle": "Explorar",
+        "settingsTitle": "Configurações"
+      },
+      "settings": {
+        "viewProfile": "Visualizar perfil",
+        "logOut": "Sair da conta",
+        "logIn": "Entrar na conta",
+        "editProfile": {
+          "triggerLabel": "Informações pessoais",
+          "submitLabel": "Salvar"
+        },
+        "changeLanguage": "Trocar idioma"
+      }
+    },
+    "highline": {
+      "index": {
+        "BottomActions": {
+          "seeOnMap": "Ver no Mapa",
+          "addToMap": "Adicionar ao Mapa",
+          "register": "Registrar rolê"
+        }
+      },
+      "register": {
+        "success": {
+          "title": "BOA CHOOSEN",
+          "subtitle": "🆑 🆑 🆑 🆑 🆑",
+          "message": "Seu rolê está registrado e será usado para calcular as suas estatísticas.",
+          "button": "Ver o Highline"
+        },
+        "fields": {
+          "instagram": {
+            "errors": {
+              "must_start_with": "O usuário deve começar com @",
+              "min_length": "Deve conter ao menos 3 caracteres"
+            }
+          },
+          "cadenas": {
+            "label": "Cadenas",
+            "description": "Dropou no começo da fita e foi até o final sem cair"
+          },
+          "full_lines": {
+            "label": "Full lines",
+            "description": "Você cadenou a ida e a volta, sem descer na virada"
+          },
+          "distance": {
+            "label": "Distância caminhada",
+            "description": "Quantos metros você andou",
+            "errors": {
+              "required": "Insira quantos metros você andou",
+              "invalid_type": "Insira um número",
+              "positive": "Distância não pode ser negativa"
+            }
+          },
+          "time": {
+            "label": "Speedline",
+            "optional": "*opcional",
+            "description": "Seu melhor tempo para o ranking do Speedline",
+            "placeholder": "Exemplo.: 4:20",
+            "errors": {
+              "invalid_format": "Inválido, use o formato mm:ss"
+            }
+          },
+          "witness": {
+            "label": "Testemunhas",
+            "description": "Insira o nome de usuário de duas pessoas, separado por vírgula.",
+            "placeholder": "@festivalchooselife, @juangsandrade",
+            "errors": {
+              "invalid_format": "Inválido, coloque o instagram de duas pessoas, separado por vírgula."
+            }
+          },
+          "comment": {
+            "label": "Comentário",
+            "optional": "*opcional",
+            "placeholder": "Boa choosen 🤘🆑 Conta pra gente como foi ese rolê, o que achou da fita, da conexão..."
+          }
+        },
+        "buttons": {
+          "submit": {
+            "default": "Registrar rolê",
+            "loading": "Registrando..."
+          }
+        }
+      },
+      "rig": {
+        "success": {
+          "title": "BOA CHOOSEN",
+          "subtitle": "🆑 🆑 🆑 🆑 🆑",
+          "message": "A montagem está planejada para {{date}}, você pode voltar e fazer modificações quando precisar.",
+          "button": "Ver o Highline"
+        },
+        "dateForm": {
+          "title": "Primeiro, escolha uma data",
+          "description": "O dia que a missão irá acontecer"
+        },
+        "equipments": {
+          "title": "Setup da fita",
+          "main": "Principal",
+          "backup": "Backup",
+          "loop": "Olhal",
+          "connection": "Conexão"
+        },
+        "navigator": {
+          "finishLabel": "Planejar montagem"
+        },
+        "webbingOwner": {
+          "label": "Fita de:"
+        },
+        "selectMyWebbing": {
+          "label": "Minhas fitas",
+          "placeholder": "Ex.: Brasileirinha",
+          "inUse": "(em uso)",
+          "clear": "limpar"
+        }
+      }
+    },
+    "profile": {
+      "[username]": {
+        "errors": {
+          "noUsernameError": "Está faltando o Username",
+          "profileNotExist": "Perfil não existe"
+        },
+        "Stats": {
+          "walked": "Caminhado",
+          "sent": "Cadenas",
+          "fullLine": "Full Lines"
+        },
+        "UserNotFound": {
+          "title": "Usuário {{username}} não está registrado no APP"
+        },
+        "LastWalks": {
+          "title": "Ultimos rolês",
+          "distanceWalked": "Distância caminhada",
+          "bestTime": "Melhor tempo",
+          "empty": "Você ainda não registrou nenhum rolê"
+        }
+      }
+    },
+    "+not-found": {
+      "title": "Essa tela não existe.",
+      "subtitle": "Voltar para o mapa"
+    },
+    "setProfile": {
+      "title": "Configure Seu Perfil",
+      "UsernameForm": {
+        "title": "Escolha Seu Nome de Usuário",
+        "subtitle": "É assim que você será identificado.",
+        "inputPlaceholder": "Seu nome de usuário"
+      },
+      "ProfileInfoForm": {
+        "title": "Informações Pessoais",
+        "subtitle": "Conte-nos mais sobre você.",
+        "inputPlaceholderName": "Seu nome",
+        "birthdayLabel": "Data de Nascimento:",
+        "selectDate": "Selecione a data",
+        "descriptionPlaceholder": "Nos conte algo sobre você"
+      },
+      "errors": {
+        "usernameValidation": "O nome de usuário deve ter pelo menos 3 caracteres.",
+        "nameRequired": "Preencha o seu nome.",
+        "usernameTaken": "Nome de usuário já escolhido, tente outro.",
+        "saveProfile": "Erro ao salvar o perfil. Tente novamente.",
+        "usernameCheckError": "Erro ao verificar disponibilidade. Tente novamente."
+      }
+    }
+  },
+  "components": {
+    "highline": {
+      "history": {
+        "title": "Histórico de montagem",
+        "description": "Registrar a montagem é mais do que manter o histórico da via, é se preocupar com a segurança.",
+        "empty": "Nenhum registro de montagem",
+        "action": {
+          "unrig": "desmontar",
+          "edit": "editar",
+          "rig": "montar"
+        },
+        "timeline": {
+          "riggedFrom": "Montada desde",
+          "from": "De",
+          "to": "até",
+          "plannedFor": "Planejado para"
+        }
+      },
+      "info": {
+        "height": "Altura",
+        "length": "Comprimento"
+      },
+      "not-found": {
+        "title": "Highline não existe",
+        "goBack": "Voltar",
+        "goHome": "Ir para o mapa"
+      },
+      "rig-confirmation": {
+        "unrig": {
+          "title": "Confirmar desmontagem",
+          "description": "O tempo que o Highline ficou montado será adicionado ao tempo de uso das fitas que foram usadas no setup",
+          "button": "Desmontar highline",
+          "cancel": "Cancelar"
+        },
+        "confirm": {
+          "title": "Esse highline foi montado?",
+          "description": "A data planejada para montagem era {{date}}",
+          "buttonConfirm": "Confirmar montagem",
+          "buttonChange": "Trocar data",
+          "buttonBack": "Voltar"
+        },
+        "notFound": {
+          "title": "Setup não encontrado",
+          "description": "Algo de inesperado aconteceu e o setup não foi encontrado, por favor, tente novamente mais tarde",
+          "buttonCancel": "Cancelar"
+        }
+      }
+    },
+    "map": {
+      "bottom-sheet": {
+        "map": "Mapa",
+        "loadingHighlines": "Procurando highlines...",
+        "add": "Adicionar"
+      },
+      "explore-header": {
+        "searchPlaceholder": "Nome do Highline",
+        "categories": {
+          "favorites": "Favoritos",
+          "bigLine": "Big Line",
+          "rigged": "Montada",
+          "unrigged": "Desmontada",
+          "planned": "Planejada"
+        }
+      },
+      "map-card": {
+        "seeDatails": "Ver detalhes"
+      },
+      "picker-buttons": {
+        "setA": "Definir ancoragem A",
+        "setB": "Definir ancoragem B",
+        "confirm": "Confirmar"
+      },
+      "register-modal": {
+        "name": {
+          "min": "Deve conter ao menos 3 caracteres",
+          "label": "Nome da via"
+        },
+        "height": {
+          "required": "Insira a altura do Highline",
+          "invalid": "Insira um número",
+          "positive": "Altura não pode ser negativa",
+          "label": "Altura (em metros)"
+        },
+        "length": {
+          "required": "Insira o comprimento do Highline",
+          "invalid": "Insira um número",
+          "positive": "Comprimento não pode ser negativo",
+          "label": "Comprimento (em metros)"
+        },
+        "description": {
+          "label": "Descrição",
+          "placeholder": "Fale um pouco sobre este Highline. Aqui é o lugar perfeito para dar informações de acesso, segurança, dica para montagem ou rolê, etc..."
+        },
+        "image": {
+          "maxSize": "Tamanho máximo do arquivo é 6MB",
+          "accepted": "Formatos aceitos são: .jpg, .jpeg, .png e .webp",
+          "label": "Foto do highline",
+          "instructions": "Clique aqui para escolher a foto que será usada como capa para este Highline"
+        },
+        "submit": "Registrar Highline",
+        "success": {
+          "title": "BOA CHOOSEN",
+          "subtitle": "🆑 🆑 🆑 🆑 🆑",
+          "message": "O Highline foi criado, agora é só registrar o seu rolê!",
+          "button": "Ver o Highline"
+        }
+      }
+    },
+    "onboard": {
+      "goBack": "Voltar",
+      "continue": "Continuar",
+      "finish": "Finalizar"
+    },
+    "ranking": {
+      "categories": {
+        "error": "OOPS! Aconteceu algum error. Tente recarregar a página."
+      },
+      "category-dropdown": {
+        "sent": "Cadenas",
+        "distance": "Distância",
+        "menuLabel": "Trocar modalidade"
+      },
+      "see-more": "Ver mais"
+    },
+    "settings": {
+      "my-webbing": {
+        "title": "Minhas fitas",
+        "add": "adicionar",
+        "description": "Visualize e acompanhe o histórico de suas fitas.",
+        "empty": "Você ainda não cadastrou nenhuma fita"
+      }
+    },
+    "sortable-webbing-list": {
+      "addMainSection": "Adicionar principal",
+      "addBackupSection": "Adicionar backup"
+    },
+    "supabase-avatar": {
+      "buttonLabel": "Editar"
+    },
+    "webbing-input": {
+      "loop": "Olhal",
+      "webbingLength": "Comprimento da fita"
+    },
+    "webbing-setup": {
+      "validate": {
+        "totalLength": "Comprimento total da fita {{type}} deve ser maior que o highline.",
+        "main": "principal",
+        "backup": "backup",
+        "atLeastOneLoop": "Seção #{{section}} deve ter pelo menos um olhal para fazer conexão.",
+        "bothLoops": "Seção #{{section}} deve ter os dois olhais para fazer conexão.",
+        "connectionLength": "Backup #{{backupSection}} deve ser 2-10 metros mais longa que a seção principal #{{mainSection}}"
+      }
+    }
+  },
+  "context": {
+    "auth": {
+      "invalidCredentials": "Credenciais inválidas",
+      "loginError": "Erro no login. Por favor tente novamente.",
+      "sessionCreationFailed": "Não foi possível criar a sessão"
+    },
+    "rig-form": {
+      "unknownWebbing": "Fita não registrada"
+    }
+  }
+}
