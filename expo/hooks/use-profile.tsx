@@ -1,8 +1,8 @@
 // src/queries/useProfile.ts
 import { useQuery } from '@tanstack/react-query';
-import type { Tables } from 'database-types';
 
 import { supabase } from '~/lib/supabase';
+import type { Tables } from '~/utils/database.types';
 
 export type Profile = Tables<'profiles'>;
 

@@ -15,7 +15,6 @@
     "format:translations": "eslint --fix --format node_modules/eslint-plugin-i18n-json/formatter.js ./i18n/locales"
   },
   "dependencies": {
-    "database-types": "file:../packages/database-types",
     "@gorhom/bottom-sheet": "^5.1.2",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-progress": "^1.0.3",
@@ -98,6 +97,7 @@
     "tailwind-merge": "^2.2.1",
     "tailwindcss": "^3.4.6",
     "tailwindcss-animate": "^1.0.7",
+    "type-fest": "^4.38.0",
     "use-supercluster": "^1.2.0",
     "uuid": "^11.0.5",
     "zod": "^3.23.8",

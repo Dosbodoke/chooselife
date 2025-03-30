@@ -1,7 +1,7 @@
 import L, { type LatLng } from "leaflet";
 import { ReadonlyURLSearchParams } from "next/navigation";
 
-import type { Point } from "database-types";
+import type { Point } from "@/utils/supabase/database.types";
 
 export function transformTimeStringToSeconds(timeString: string): number {
   const [minutes, seconds] = timeString.split(":").map(Number);

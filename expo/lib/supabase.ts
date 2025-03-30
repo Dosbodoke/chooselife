@@ -7,7 +7,7 @@ import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "expo-sqlite/kv-store";
 import { AppState } from "react-native";
 
-import { Database } from "database-types";
+import { Database } from "~/utils/database.types";
 
 // As Expo's SecureStore does not support values larger than 2048
 // bytes, an AES-256 key is generated and stored in SecureStore, while

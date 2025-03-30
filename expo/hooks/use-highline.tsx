@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Functions } from 'database-types';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 
 import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
+import type { Functions } from '~/utils/database.types';
 
 export type Highline = Functions['get_highline']['Returns'][number];
 

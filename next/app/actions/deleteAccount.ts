@@ -4,7 +4,7 @@ import { type CookieOptions, createServerClient } from "@supabase/ssr";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 
-import { Database } from "database-types";
+import type { Database } from "@/utils/supabase/database.types";
 
 export async function deleteAccount() {
   const cookieStore = await cookies();

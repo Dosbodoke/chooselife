@@ -1,9 +1,9 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Functions } from 'database-types';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { supabase } from '~/lib/supabase';
+import { Functions } from '~/utils/database.types';
 
 import { Text } from '../ui/text';
 import { Leaderboard } from './leaderboard';

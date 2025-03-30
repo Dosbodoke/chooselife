@@ -39,7 +39,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
 import useSupabaseBrowser from "@/utils/supabase/client";
-import type { Database } from "database-types";
+import type { Database } from "@/utils/supabase/database.types";
 
 const formSchema = z.object({
   name: z.string().min(3, "Deve conter ao menos 3 caracteres"),

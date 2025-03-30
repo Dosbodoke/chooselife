@@ -3,7 +3,7 @@
 import { type CookieOptions, createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-import type { Database, Functions } from "database-types";
+import type { Database, Functions } from "@/utils/supabase/database.types";
 
 type Props = {
   id?: string[];

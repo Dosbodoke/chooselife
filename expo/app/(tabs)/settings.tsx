@@ -6,7 +6,6 @@ import {
 } from '@gorhom/bottom-sheet';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Tables } from 'database-types';
 import { Link } from 'expo-router';
 import React from 'react';
 import { useForm } from 'react-hook-form';
@@ -17,6 +16,7 @@ import { useAuth } from '~/context/auth';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { date18YearsAgo } from '~/utils';
+import { Tables } from '~/utils/database.types';
 
 import {
   ProfileInfoForm,

@@ -3,10 +3,10 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Database } from "database-types";
+import type { Tables } from "@/utils/supabase/database.types";
 
 interface Props {
-  profile: Database["public"]["Tables"]["profiles"]["Row"] | null;
+  profile: Tables<"profiles"> | null;
   username: string;
 }
 

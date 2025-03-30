@@ -4,7 +4,6 @@ import {
   useQueryClient,
   type UseMutationResult,
 } from '@tanstack/react-query';
-import type { Tables, TablesInsert } from 'database-types';
 import React from 'react';
 import { useFieldArray, useForm, type UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +14,7 @@ import { useHighline, type Highline } from '~/hooks/use-highline';
 import { useRigSetup } from '~/hooks/use-rig-setup';
 import { type WebbingWithModel } from '~/hooks/use-webbings';
 import { supabase } from '~/lib/supabase';
+import type { Tables, TablesInsert } from '~/utils/database.types';
 import { requestReview } from '~/utils/request-review';
 
 import { webbingSchema } from '~/components/webbing-input';

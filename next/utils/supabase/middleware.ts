@@ -1,7 +1,7 @@
 import { type CookieOptions, createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-import type { Database } from "database-types";
+import type { Database } from "@/utils/supabase/database.types";
 
 export const createClient = (request: NextRequest) => {
   // Create an unmodified response

@@ -1,26 +1,8 @@
 {
   "name": "chooselife",
   "private": true,
-  "packageManager": "yarn@1.22.22",
-  "workspaces": [
-    "expo/",
-    "next/",
-    "packages/*"
-  ],
   "scripts": {
-    "dev:next": "yarn workspace next dev",
-    "build:next": "yarn workspace next build",
-    "start:next": "yarn workspace next start",
-    "lint:next": "yarn workspace next lint",
-    "dev:expo": "yarn workspace expo dev",
-    "dev:expo:web": "yarn workspace expo dev:web",
-    "build:expo": "yarn workspace expo build",
-    "lint:expo": "yarn workspace expo lint",
-    "lint": "eslint . --ext .ts,.tsx",
-    "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|tsx|json)\"",
-    "typecheck": "turbo typecheck",
-    "supabase:types": "supabase gen types typescript --linked > packages/database-types/src/index.ts",
-    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules expo/*/dist next/*/dist  packages/*/dist .turbo"
+    "gen:types": "./supabase-gen-types.sh"
   },
   "devDependencies": {
     "supabase": "^1.153.4"

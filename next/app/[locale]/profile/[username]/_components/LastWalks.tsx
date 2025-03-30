@@ -18,7 +18,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { transformSecondsToTimeString } from "@/utils/helperFunctions";
-import type { Database } from "database-types";
+import type { Database } from "@/utils/supabase/database.types";
 import { useSupabaseServer } from "@/utils/supabase/server";
 
 import FormattedDate from "./FormattedDate";

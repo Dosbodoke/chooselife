@@ -1,10 +1,10 @@
-import { Tables } from 'database-types';
 import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 
 import { useUserWebbings } from '~/hooks/use-webbings';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { Tables } from '~/utils/database.types';
 
 import {
   Card,
