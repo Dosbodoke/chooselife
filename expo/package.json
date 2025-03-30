@@ -15,7 +15,7 @@
     "format:translations": "eslint --fix --format node_modules/eslint-plugin-i18n-json/formatter.js ./i18n/locales"
   },
   "dependencies": {
-    "database-types": "workspace:*",
+    "database-types": "file:../packages/database-types",
     "@gorhom/bottom-sheet": "^5.1.2",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-progress": "^1.0.3",
