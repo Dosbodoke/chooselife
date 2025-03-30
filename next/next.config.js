@@ -28,22 +28,12 @@ const nextConfig = {
     ],
   },
 };
-
-const withSerwist = require("@serwist/next");
 const withNextIntl = require("next-intl/plugin");
 
 const config = new Config(nextConfig)
   .applyPlugin((phase, args, config) => {
     return withNextIntl("./i18n.ts")(config);
   }, "next-intl/plugin")
-  .applyPlugin((phase, args, config) => {
-    return withSerwist.default({
-      swSrc: "app/sw.ts",
-      swDest: "public/sw.js",
-      cacheOnFrontEndNav: true,
-      disable: process.env.NODE_ENV === "development",
-    })(config);
-  }, "@serwist/next")
   .build();
 
 module.exports = config;

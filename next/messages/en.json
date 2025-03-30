@@ -244,17 +244,6 @@
   "calendar": {
     "tooltip": "{walks, plural, =1 {# walk in} other {# walks in}}"
   },
-  "promptPwa": {
-    "title": "Chooselife APP",
-    "description": "Install to have a better experience",
-    "steps": {
-      "first": "Tap the \"Share\" button in the Safari browser toolbar.",
-      "second": "Scroll down and tap the \"Add to Home Screen\" option.",
-      "third": "Tap the \"Add\" button in the top right corner.",
-      "fourth": "The APP will now appear on your home screen."
-    },
-    "actionButton": "install"
-  },
   "festival": {
     "cardSubTitle": "Follow the festival ranking in real time",
     "pageSubTitle": "The biggest Highline festival in Brazil"

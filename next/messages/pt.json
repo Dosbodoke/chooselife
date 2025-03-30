@@ -244,17 +244,6 @@
   "calendar": {
     "tooltip": "{walks, plural, =1 {# rolê em} other {# rolês em}}"
   },
-  "promptPwa": {
-    "title": "APP Chooselife",
-    "description": "Instale para ter uma melhor experiência",
-    "steps": {
-      "first": "Toque no botão \"Compartilhar\" na barra de ferramentas do navegador Safari.",
-      "second": "Role para baixo e toque em \"Adicionar à Tela de Início\".",
-      "third": "Toque no botão \"Adicionar\" no canto superior direito.",
-      "fourth": "O APP agora aparecerá na sua tela inicial."
-    },
-    "actionButton": "install"
-  },
   "festival": {
     "cardSubTitle": "Acompanhe o ranking do festival em tempo real",
     "pageSubTitle": "O maior festival de Highline do Brasil"

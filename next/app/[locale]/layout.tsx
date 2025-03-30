@@ -12,7 +12,6 @@ import { use } from "react";
 import NavBar from "@/components/layout/navbar";
 import { locales } from "@/navigation";
 
-import { PromptPwa } from "./_components/PromptPwa";
 import UsernameDialog from "./_components/UsernameDialog";
 import Providers from "./Providers";
 
@@ -83,11 +82,10 @@ export default function RootLayout(props: {
   return (
     // suppressHydrationWarning because of `next-themes`
     // refer to https://github.com/pacocoursey/next-themes#with-app
-    (<html lang={locale} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body className={`min-h-screen md:px-0 ${GeistSans.variable} font-sans`}>
         <Providers locale={locale} messages={messages}>
           <div className="relative flex h-full min-h-screen flex-col">
-            <PromptPwa />
             <NavBar />
             <main className="flex-1">
               <UsernameDialog />
@@ -98,6 +96,6 @@ export default function RootLayout(props: {
         </Providers>
         <Analytics />
       </body>
-    </html>)
+    </html>
   );
 }
