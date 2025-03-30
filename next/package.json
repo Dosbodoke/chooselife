@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "database-types": "workspace:*",
+    "database-types": "file:../packages/database-types",
     "@hookform/resolvers": "^3.3.4",
     "@radix-ui/react-checkbox": "^1.1.2",
     "@radix-ui/react-dialog": "^1.1.2",
