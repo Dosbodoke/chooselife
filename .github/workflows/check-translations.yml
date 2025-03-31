@@ -2,6 +2,8 @@ name: Check Translations Format
 
 on:
   pull_request:
+    paths:
+    - 'expo/**'
 
 jobs:
   check-translations:
@@ -18,9 +20,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'yarn'
+          cache-dependency-path: expo/yarn.lock
 
       - name: Install dependencies
+        working-directory: ./expo
         run: yarn install --frozen-lockfile
 
       - name: Run format:translations check
+        working-directory: ./expo
         run: yarn format:translations
