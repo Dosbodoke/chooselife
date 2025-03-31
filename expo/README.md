@@ -1,4 +1,4 @@
-# CHOOSELIFE
+# CHOOSELIFE MOBILE
 
 A mobile app designed for highliners to track their activities, connect with others, and share their experiences.
 
@@ -130,15 +130,3 @@ Supabase serves as the project's backend, handling database and authentication.
         ```bash
         npx expo start -c
         ```
-
-## Contributing
-
-1.  Fork the repository.
-2.  Create a new branch for your feature or bug fix.
-3.  Commit your changes.
-4.  Push to your branch.
-5.  Open a pull request.
-
-## Authors
-
-* [@Dosbodoke](https://www.github.com/Dosbodoke)
