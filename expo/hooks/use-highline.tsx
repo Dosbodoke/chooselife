@@ -40,9 +40,10 @@ export type UseHighlineSingleResult = {
 };
 
 export const highlineKeyFactory = {
-  detail: (id: string) => ['highline', id, 'detail'] as const,
+  detail: (id: string, userId?: string) =>
+    ['highline', id, 'detail', userId] as const,
   favorite: (id: string) => ['highline', id, 'favorite'] as const,
-  list: () => ['highlines'] as const,
+  list: (userId?: string) => ['highlines', userId] as const,
 };
 
 const CACHE_TIME_FAVORITES = Infinity;
@@ -60,7 +61,7 @@ export function useHighline(
 export function useHighline(
   params: UseHighlineSingleParams | UseHighlineListParams,
 ): UseHighlineSingleResult | UseHighlineListResult {
-  const { session, loading: sessionLoading } = useAuth();
+  const { session, sessionLoading } = useAuth();
   const queryClient = useQueryClient();
 
   // If an `id` is provided, run a single highline query:
@@ -68,7 +69,7 @@ export function useHighline(
     const { id } = params;
 
     // Create separate queries for favorite and non-favorite items
-    const detailKey = highlineKeyFactory.detail(id);
+    const detailKey = highlineKeyFactory.detail(id, session?.user?.id);
     const favoriteKey = highlineKeyFactory.favorite(id);
 
     const {
@@ -125,7 +126,7 @@ export function useHighline(
     isLoading,
     error,
   } = useQuery<Highline[]>({
-    queryKey: highlineKeyFactory.list(),
+    queryKey: highlineKeyFactory.list(session?.user?.id),
     queryFn: async () => {
       const { data } = await supabase.rpc('get_highline', {
         ...(session?.user?.id ? { userid: session.user.id } : {}),

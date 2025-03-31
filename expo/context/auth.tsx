@@ -57,6 +57,7 @@ interface AuthContextValue {
   profile: Profile | null;
   session: Session | null;
   isLoginPending: boolean;
+  sessionLoading: boolean;
   lastLoginMethod: LoginMethod | null;
 }
 
@@ -69,6 +70,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
   const { t } = useTranslation();
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
   const [lastLoginMethod, setLastLoginMethod] = useState<LoginMethod | null>(
     null,
   );
@@ -257,6 +259,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
 
   useEffect(function setupSession() {
     supabase.auth.getSession().then(({ data: { session } }) => {
+      setSessionLoading(false);
       setSession(session);
     });
 
@@ -334,6 +337,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
     () => ({
       profile: profile || null,
       session,
+      sessionLoading,
       isLoginPending: pendingRedirect !== null,
       lastLoginMethod,
       login,
@@ -344,6 +348,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
     [
       profile,
       session,
+      sessionLoading,
       pendingRedirect,
       lastLoginMethod,
       login,
