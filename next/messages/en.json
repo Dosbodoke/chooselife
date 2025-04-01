@@ -1,0 +1,298 @@
+{
+  "home": {
+    "searchPlaceholder": "Highline name",
+    "newHighline": {
+      "trigger": "New Highline",
+      "title": "Registry Highline",
+      "success": {
+        "header": "NICE CHOOSEN",
+        "message": "Highline Created! Now you can start registering your walks."
+      },
+      "successLink": "See Highline",
+      "description": "Add your Highline to the APP ang get acces to history and stats.",
+      "name": {
+        "label": "Highline name",
+        "placeholder": "E.g.: God's finger"
+      },
+      "height": {
+        "label": "Height",
+        "placeholder": "Highline height in meters"
+      },
+      "length": {
+        "label": "Length",
+        "placeholder": "Highline length in meters"
+      },
+      "backupWebbing": {
+        "label": "Backup webbing",
+        "placeholder": "E.g.: Lift 2be"
+      },
+      "highlineDescription": {
+        "label": "Description",
+        "placeholder": "Say more about this Highline. Here is the perfect place for security info, access, warning, rigging tips, etc..."
+      },
+      "image": {
+        "label": "Click to select the Highline cover photo"
+      },
+      "submit": "Create"
+    },
+    "seeDetails": "See details"
+  },
+  "map": {
+    "locationPicker": {
+      "setA": "Set anchor A",
+      "setB": "Set anchor B",
+      "confirm": "Confirm"
+    },
+    "toggle": {
+      "map": "Map",
+      "list": "List"
+    },
+    "type": {
+      "header": "Map type",
+      "description": "Select the map to visualize",
+      "map": "Map",
+      "satellite": "Satellite"
+    },
+    "refetch": {
+      "pending": "Searching...",
+      "enabled": "Search in this area"
+    }
+  },
+  "highline": {
+    "registry": {
+      "trigger": "Registry",
+      "title": "Registry",
+      "success": {
+        "header": "NICE CHOOSEN",
+        "message": "Your walk is registered and will be used to calculate your stats.",
+        "close": "close"
+      },
+      "description": "Registry your walk and get access to your statistics.",
+      "instagram": {
+        "description": "Username on the Chooselife APP or instragram @",
+        "placeholder": "@user"
+      },
+      "cadenas": {
+        "label": "Sent",
+        "description": "You mounted the line and crossed it whitout falling"
+      },
+      "fullLines": {
+        "description": "You walked both ways on a Highline and didn't fall"
+      },
+      "distance": {
+        "label": "Distance walked",
+        "description": "How many meters did you walked in total",
+        "placeholder": "E.g.: 110"
+      },
+      "speedline": {
+        "description": "Your best time for the Speedline ranking on this line",
+        "placeholder": "E.g.: 4:20"
+      },
+      "witness": {
+        "label": "Witness",
+        "description": "Select two users to be your witnesses, if the person is not on the App, use her Instagram @",
+        "placeholder": "E.g.: @festivalchooselife, @juangsandrade",
+        "searchPlaceholder": "Username or instagram @",
+        "clear": "Clear",
+        "close": "Close",
+        "verifiedHeading": "Verified"
+      },
+      "comment": {
+        "label": "Comments",
+        "placeholder": "Nice choosen 🤘🆑 Tell us how was this walk, what did you think of the line, the connection ..."
+      },
+      "submit": "Registry"
+    },
+    "header": {
+      "expandDescription": "See more...",
+      "shrinkDescription": "See less...",
+      "seeOnMap": "See on map",
+      "addToMap": "Add to map"
+    },
+    "tabs": {
+      "informations": {
+        "label": "Informations",
+        "height": "Height",
+        "length": "Length",
+        "meters": "meters"
+      },
+      "comments": "Comments",
+      "ranking": {
+        "changeModality": "Change modality",
+        "cadenas": "Sent",
+        "distance": "Distance"
+      },
+      "seeMore": "see more"
+    },
+    "notFound": {
+      "title": "Highline don't exists",
+      "buttonLabel": "Go back to home page"
+    }
+  },
+  "profile": {
+    "header": {
+      "notVerified": "This user is not verified",
+      "age": "Age"
+    },
+    "notFound": {
+      "title": "User don't exists",
+      "description": "We couldn't find a user with the name",
+      "buttonLabel": "Go back to home page"
+    },
+    "stats": {
+      "walked": "walked",
+      "sent": "sent",
+      "fullLines": "full lines"
+    },
+    "lastWalks": {
+      "title": "Last Walks",
+      "description": "Your highline history",
+      "popover": {
+        "height": "Height",
+        "length": "Length",
+        "buttonLabel": "See more"
+      },
+      "empty": "This user hasn't registered any walk."
+    }
+  },
+  "login": {
+    "trigger": "Login",
+    "initial": {
+      "title": "Create or login to your account ✨",
+      "description": "Get full acccess to all functionalities of the Chooselife APP",
+      "google": "Continue with Google"
+    },
+    "email": {
+      "buttonLabel": "Continue with email",
+      "title": "Continue with an email link 💌",
+      "description": "A link will be sent to your email and you can use it to log in without entering any password",
+      "placeholder": "Input your email",
+      "back": "Back",
+      "submit": "Submit",
+      "invalid": "Invalid email"
+    },
+    "inbox": {
+      "title": "Check your inbox! 🍄",
+      "preDescription": "Open the link sent to",
+      "postDescription": "in this browser"
+    }
+  },
+  "profileMenu": {
+    "myProfile": "See my profile",
+    "signOut": "Sign Out"
+  },
+  "footer": {
+    "desc": "Website create by "
+  },
+  "LocaleSwitcher": {
+    "label": "Change language"
+  },
+  "goBack": "Go Back",
+  "usernameDialog": {
+    "title": "Welcome to the CHOOSELIFE APP 👋",
+    "description": "Just afew more additional information to finish setting up your account.",
+    "alert": "If you have already used the APP, you must use the same @user as your Instagram so you don't lose your statistics",
+    "fields": {
+      "username": {
+        "label": "Username",
+        "placeholder": "Your unique @username",
+        "errors": {
+          "alreadyExits": "This username already exists",
+          "startWith@": "Username must start with a @",
+          "minLength": "Username should have at least 2 characters"
+        }
+      },
+      "displayName": {
+        "label": "Display name",
+        "placeholder": "Your full name",
+        "errors": {
+          "minLength": "Name should have at least 3 characters"
+        }
+      }
+    },
+    "submit": "Continue"
+  },
+  "profileMetadata": {
+    "title": "{username} profile",
+    "description": "See this athlete's history"
+  },
+  "updateProfile": {
+    "trigger": "Edit profile",
+    "title": "My profile",
+    "fields": {
+      "name": {
+        "label": "Name",
+        "placeholder": "Full name"
+      },
+      "description": {
+        "label": "Bio",
+        "placeholder": "Tell us a bit about yourself"
+      },
+      "birthday": {
+        "label": "Birthday",
+        "placeholder": "Select a date"
+      },
+      "submit": "Save"
+    }
+  },
+  "themeToggler": {
+    "screenReader": "Toggle theme",
+    "light": "light",
+    "dark": "dark",
+    "system": "system"
+  },
+  "calendar": {
+    "tooltip": "{walks, plural, =1 {# walk in} other {# walks in}}"
+  },
+  "festival": {
+    "cardSubTitle": "Follow the festival ranking in real time",
+    "pageSubTitle": "The biggest Highline festival in Brazil"
+  },
+  "privacyPolicy": {
+    "title": "Privacy Policy",
+    "intro": "Your privacy is important to us. It is ChooseLife's policy to respect your privacy regarding any information we may collect from you across our website, ChooseLife, and other sites we own and operate.",
+    "collectionUse": {
+      "title": "Information Collection and Use",
+      "p1": "We only ask for personal information when we truly need it to provide a service to you. We collect it by fair and lawful means, with your knowledge and consent. We also let you know why we're collecting it and how it will be used.",
+      "p2": "We only retain collected information for as long as necessary to provide you with your requested service. What data we store, we'll protect within commercially acceptable means to prevent loss and theft, as well as unauthorized access, disclosure, copying, use or modification.",
+      "p3": "We don't share any personally identifying information publicly or with third-parties, except when required to by law."
+    },
+    "cookies": {
+      "title": "Use of Cookies",
+      "p1": "We use cookies to improve your experience on our site. Specifically, we use cookies for authentication purposes with Supabase, our backend provider. These cookies are essential for the website's functionality and to keep you logged in during your session.",
+      "p2": "Authentication cookies securely store session information, allowing you to browse the site without having to log in repeatedly. They do not collect any personal information beyond what is necessary for this function.",
+      "p3": "You can choose to disable cookies through your browser settings. However, this may affect the functionality of the site, especially regarding authentication and staying logged in."
+    },
+    "externalLinks": {
+      "title": "External Links",
+      "content": "Our website may link to external sites that are not operated by us. Please be aware that we have no control over the content and practices of these sites, and cannot accept responsibility or liability for their respective privacy policies."
+    },
+    "rightOfRefusal": {
+      "title": "Your Right of Refusal",
+      "p1": "You are free to refuse our request for your personal information, with the understanding that we may be unable to provide you with some of your desired services.",
+      "p2": "Your continued use of our website will be regarded as acceptance of our practices around privacy and personal information. If you have any questions about how we handle user data and personal information, feel free to contact us."
+    },
+    "userCommitment": {
+      "title": "User Commitment",
+      "intro": "The user commits to properly use the contents and information that ChooseLife offers on the website and with enunciative, but not limiting, character:",
+      "a": "A) Not to engage in activities that are illegal or contrary to good faith and public order;",
+      "b": "B) Not to spread propaganda or content of a racist, xenophobic nature, or any type of illegal pornography, terrorist advocacy, or against human rights;",
+      "c": "C) Not to cause damage to the physical (hardware) and logical (software) systems of ChooseLife, its suppliers or third parties, to introduce or spread computer viruses or any other hardware or software systems that are capable of causing the aforementioned damages."
+    },
+    "moreInfo": {
+      "title": "More Information",
+      "content": "Hopefully, this has clarified things for you and as was previously mentioned if there is something that you aren't sure whether you need or not it's usually safer to leave cookies enabled in case it does interact with one of the features you use on our site."
+    },
+    "effectiveDate": "This policy is effective as of February 6, 2025."
+  },
+  "deleteAccount": {
+    "title": "Delete Account",
+    "description": "Are you sure you want to delete your account? This action cannot be undone.",
+    "info": "Deleting your account will remove all your personal information from our system. This process may take up to 30 days to complete.",
+    "cancelButton": "Cancel",
+    "deleteButton": "Delete My Account",
+    "processingButton": "Processing...",
+    "successMessage": "Your account deletion request has been received. You will be redirected shortly.",
+    "errorMessage": "An error occurred while processing your request. Please try again."
+  }
+}
