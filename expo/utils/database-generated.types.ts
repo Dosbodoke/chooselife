@@ -144,27 +144,27 @@ export type Database = {
       }
       notifications: {
         Row: {
-          body: string | null
+          body: Json | null
           created_at: string
           data: Json | null
           id: number
-          title: string | null
+          title: Json | null
           user_id: string | null
         }
         Insert: {
-          body?: string | null
+          body?: Json | null
           created_at?: string
           data?: Json | null
           id?: number
-          title?: string | null
+          title?: Json | null
           user_id?: string | null
         }
         Update: {
-          body?: string | null
+          body?: Json | null
           created_at?: string
           data?: Json | null
           id?: number
-          title?: string | null
+          title?: Json | null
           user_id?: string | null
         }
         Relationships: [
@@ -184,6 +184,7 @@ export type Database = {
           description: string | null
           expo_push_token: string | null
           id: string
+          language: Database["public"]["Enums"]["language"] | null
           name: string | null
           profile_picture: string | null
           username: string | null
@@ -194,6 +195,7 @@ export type Database = {
           description?: string | null
           expo_push_token?: string | null
           id: string
+          language?: Database["public"]["Enums"]["language"] | null
           name?: string | null
           profile_picture?: string | null
           username?: string | null
@@ -204,6 +206,7 @@ export type Database = {
           description?: string | null
           expo_push_token?: string | null
           id?: string
+          language?: Database["public"]["Enums"]["language"] | null
           name?: string | null
           profile_picture?: string | null
           username?: string | null
@@ -222,7 +225,7 @@ export type Database = {
         Insert: {
           highline_id: string
           id?: never
-          is_rigged: boolean
+          is_rigged?: boolean
           rig_date: string
           riggers: string[]
           unrigged_at?: string | null
@@ -486,8 +489,15 @@ export type Database = {
           total_full_lines: number
         }[]
       }
+      validate_locale_keys: {
+        Args: {
+          json_data: Json
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      language: "pt" | "en"
       material_enum: "nylon" | "dyneema" | "polyester"
       weave_enum: "flat" | "tubular"
       webbing_type: "main" | "backup"

@@ -7,6 +7,11 @@ import i18next from 'i18next';
 import React from 'react';
 import { initReactI18next } from 'react-i18next';
 
+import { supabase } from '~/lib/supabase';
+import type { Locales } from '~/utils/database.types';
+
+import { useAuth } from './auth';
+
 export const resources = {
   pt: { translation: translationPt },
   en: { translation: translationEn },
@@ -14,12 +19,13 @@ export const resources = {
 
 interface I18nContextType {
   locale: string | null;
-  setLocale: (locale: string) => Promise<void>;
+  setLocale: (locale: Locales) => Promise<void>;
 }
 
 const I18nContext = React.createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
+  const { profile } = useAuth();
   const [languageLoaded, setLanguageLoaded] = React.useState(false);
   const [language, setLanguage] = React.useState<string | null>(null);
 
@@ -53,10 +59,16 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     }
   }, [language, languageLoaded]);
 
-  const updateLocale = async (locale: string) => {
+  const updateLocale = async (locale: Locales) => {
+    await i18next.changeLanguage(locale);
     await AsyncStorage.setItem('chooselife_locale', locale);
-    i18next.changeLanguage(locale);
     setLanguage(locale);
+
+    const userID = profile?.id;
+
+    if (userID) {
+      supabase.from('profiles').update({ language: locale }).eq('id', userID);
+    }
   };
 
   if (!languageLoaded) {
@@ -66,7 +78,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   return (
     <I18nContext.Provider
       value={{
-        setLocale: async (locale: string) => await updateLocale(locale),
+        setLocale: async (locale) => await updateLocale(locale),
         locale: language,
       }}
     >
