@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 **/node_modules/
 =======
 # Don't commit credentials
@@ -50,3 +51,6 @@ yarn-error.*
 expo-env.d.ts
 # @end expo-cli
 >>>>>>> 27a8a4b (Added .easignore and make it include credentials)
+=======
+**/node_modules/
+>>>>>>> 96e8b9d (70 monorepo (#83))
