@@ -1,5 +1,10 @@
 BEGIN;
 
+CREATE TYPE language AS ENUM ('en', 'pt');
+
+ALTER TABLE public.profiles
+ADD COLUMN language language;
+
 -- Create or replace the function to validate locale keys
 CREATE OR REPLACE FUNCTION validate_locale_keys(json_data jsonb)
 RETURNS boolean AS $$
