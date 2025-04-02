@@ -11,7 +11,7 @@ export type Functions = Database["public"]["Functions"];
 // Notice that it should be called as POINT(longitude latitude)
 export type Point = `POINT(${number} ${number})`;
 
-type NotificationSchema = Record<Locales, string>;
+type NotificationSchema = Partial<Record<Locales, string>>;
 
 export type Database = MergeDeep<
   DatabaseGenerated,
