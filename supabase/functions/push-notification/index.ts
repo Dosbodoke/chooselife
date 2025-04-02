@@ -11,7 +11,7 @@ type Locales = "pt" | "en";
 // Structure for user profile data fetched from Supabase
 interface UserProfile {
   expo_push_token: string;
-  locale: Locales | null;
+  language: Locales | null;
 }
 
 // Type for the localized title/body objects
@@ -43,21 +43,22 @@ const FALLBACK_LOCALE: Locales = "pt"; // Fallback locale if user's locale is mi
 
 function getLocalizedText(
   localizedObject: LocalizedText,
-  preferredLocale: Locales | null | undefined,
+  preferredLanguage: Locales | null | undefined,
 ): string | null {
   if (!localizedObject || typeof localizedObject !== "object") {
     return null; // Input is null or not an object
   }
 
   // 1. Try the preferred locale (if provided)
-  if (preferredLocale && localizedObject[preferredLocale]) {
-    return localizedObject[preferredLocale];
+  if (preferredLanguage && localizedObject[preferredLanguage]) {
+    return localizedObject[preferredLanguage];
   }
 
   // 2. Try the base part of the preferred locale (e.g., 'pt' from 'pt-BR')
-  const baseLocale = preferredLocale?.split("-")[0] as Locales;
+  const baseLocale = preferredLanguage?.split("-")[0] as Locales;
   if (
-    baseLocale && baseLocale !== preferredLocale && localizedObject[baseLocale]
+    baseLocale && baseLocale !== preferredLanguage &&
+    localizedObject[baseLocale]
   ) {
     return localizedObject[baseLocale];
   }
@@ -95,7 +96,7 @@ Deno.serve(async (req) => {
       );
       const { data, error } = await supabase
         .from("profiles")
-        .select("expo_push_token, locale")
+        .select("expo_push_token, language")
         .eq("id", notificationRecord.user_id)
         .maybeSingle();
 
@@ -106,13 +107,13 @@ Deno.serve(async (req) => {
 
       if (data?.expo_push_token) {
         console.log(
-          `Found profile for ${notificationRecord.user_id}. Locale: ${data.locale}, Token: ${
+          `Found profile for ${notificationRecord.user_id}. Language: ${data.language}, Token: ${
             data.expo_push_token.substring(0, 10)
           }...`,
         );
         targetProfiles.push({
           expo_push_token: data.expo_push_token,
-          locale: data.locale,
+          language: data.language,
         });
       } else {
         console.warn(
@@ -124,7 +125,7 @@ Deno.serve(async (req) => {
       console.log("Fetching all profiles with push tokens.");
       const { data, error } = await supabase
         .from("profiles")
-        .select("expo_push_token, locale")
+        .select("expo_push_token, language")
         .not("expo_push_token", "is", null);
 
       if (error) {
@@ -154,18 +155,21 @@ Deno.serve(async (req) => {
     // --- Send Push Notifications via Expo ---
     const pushPromises = targetProfiles.map(async (profile) => {
       const token = profile.expo_push_token;
-      const userLocale = profile.locale;
+      const userLanguage = profile.language;
 
       const titleToSend = getLocalizedText(
         notificationRecord.title,
-        userLocale,
+        userLanguage,
       );
-      const bodyToSend = getLocalizedText(notificationRecord.body, userLocale);
+      const bodyToSend = getLocalizedText(
+        notificationRecord.body,
+        userLanguage,
+      );
 
       // Only send title/body if we actually resolved some text
       if (!titleToSend && !bodyToSend) {
         console.warn(
-          `No suitable title or body found for locale '${userLocale}' (or fallback) for token ${
+          `No suitable title or body found for language '${userLanguage}' (or fallback) for token ${
             token.substring(0, 10)
           }... Skipping.`,
         );
@@ -173,7 +177,7 @@ Deno.serve(async (req) => {
           token: token.substring(0, 10) + "...",
           success: false,
           skipped: true,
-          reason: "No content found for locale",
+          reason: "No content found for language",
         };
       }
 
@@ -188,7 +192,7 @@ Deno.serve(async (req) => {
       console.log(
         `Sending push to token ${
           token.substring(0, 10)
-        }... (Locale: ${userLocale}). Title: ${titleToSend}, Body: ${bodyToSend}`,
+        }... (Language: ${userLanguage}). Title: ${titleToSend}, Body: ${bodyToSend}`,
       );
 
       try {

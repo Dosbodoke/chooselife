@@ -44,8 +44,8 @@ export default function RootLayout() {
 
   return (
     <ReactQueryProvider>
-      <AuthProvider>
-        <I18nProvider>
+      <I18nProvider>
+        <AuthProvider>
           <NotificationProvider>
             <ThemeProvider value={LIGHT_THEME}>
               <GestureHandlerRootView>
@@ -106,8 +106,8 @@ export default function RootLayout() {
               </GestureHandlerRootView>
             </ThemeProvider>
           </NotificationProvider>
-        </I18nProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </I18nProvider>
     </ReactQueryProvider>
   );
 }
