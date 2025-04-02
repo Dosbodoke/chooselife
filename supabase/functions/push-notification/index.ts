@@ -226,11 +226,18 @@ Deno.serve(async (req) => {
           }...:`,
           fetchError,
         );
+        let errorMessage =
+          "An unknown error occurred while sending the push notification.";
+        if (fetchError instanceof Error) {
+          errorMessage = fetchError.message;
+        } else if (typeof fetchError === "string") {
+          errorMessage = fetchError;
+        }
         return {
           token: token.substring(0, 10) + "...",
           success: false,
           skipped: false,
-          error: fetchError.message,
+          error: errorMessage,
         };
       }
     });
@@ -259,8 +266,14 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error("Unhandled error in Edge Function:", error);
+    let errorMessage = "An unexpected server error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === "string") {
+      errorMessage = error;
+    }
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: errorMessage }),
       { headers: { "Content-Type": "application/json" }, status: 500 },
     );
   }
