@@ -11,6 +11,7 @@ import { use } from "react";
 // import Footer from "@/components/Footer";
 import NavBar from "@/components/layout/navbar";
 import { locales } from "@/navigation";
+import type { Locales } from "@/utils/supabase/database.types";
 
 import UsernameDialog from "./_components/UsernameDialog";
 import Providers from "./Providers";
@@ -66,7 +67,7 @@ export function generateStaticParams() {
 
 export default function RootLayout(props: {
   children: React.ReactNode;
-  params: Promise<{ locale: "en" | "pt" }>;
+  params: Promise<{ locale: Locales }>;
 }) {
   const params = use(props.params);
 

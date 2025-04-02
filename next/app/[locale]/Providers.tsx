@@ -10,9 +10,10 @@ import { type ReactNode, Suspense } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
 import { getQueryClient } from "@/lib/query";
+import type { Locales } from "@/utils/supabase/database.types";
 
 interface Props {
-  locale: "en" | "pt";
+  locale: Locales;
   messages: AbstractIntlMessages | undefined;
   children: ReactNode;
 }

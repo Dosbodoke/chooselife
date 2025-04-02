@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePathname, useRouter } from "@/navigation";
-import type { Locales } from "@/navigation";
+import type { Locales } from "@/utils/supabase/database.types";
 
 export default function LocaleSwitcher() {
   const t = useTranslations("LocaleSwitcher");
