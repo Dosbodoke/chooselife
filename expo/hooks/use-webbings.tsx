@@ -28,10 +28,10 @@ export type WebbingWithUsage = WebbingWithModel[number] & {
 };
 
 // Query keys factory with explicit types.
-export const queryKeys = {
+export const useWebbingsKeyFactory = {
   webbings: (): readonly ['webbings'] => ['webbings'],
   webbing: (id: number): readonly ['webbings', number] => [
-    ...queryKeys.webbings(),
+    ...useWebbingsKeyFactory.webbings(),
     id,
   ],
 };
@@ -40,7 +40,7 @@ export const queryKeys = {
 export const useUserWebbings = () => {
   const { profile } = useAuth();
   return useQuery<WebbingWithUsage[]>({
-    queryKey: queryKeys.webbings(),
+    queryKey: useWebbingsKeyFactory.webbings(),
     queryFn: async () => {
       // If user is logged out return an empty array meaning there is no webbing
       if (!profile || !profile.id) {
@@ -76,11 +76,11 @@ export const useWebbing = (id: number) => {
   const queryClient = useQueryClient();
 
   return useQuery<WebbingWithUsage | null>({
-    queryKey: queryKeys.webbing(id),
+    queryKey: useWebbingsKeyFactory.webbing(id),
     queryFn: async () => {
       // Try to find the webbing in the cached array of webbings.
       const cachedWebbings = queryClient.getQueryData<WebbingWithUsage[]>(
-        queryKeys.webbings(),
+        useWebbingsKeyFactory.webbings(),
       );
       if (cachedWebbings) {
         const found = cachedWebbings.find((w) => w.id === id);
@@ -102,7 +102,7 @@ export const useWebbing = (id: number) => {
     // Use the cached webbing as initial data if available.
     initialData: () => {
       const cachedWebbings = queryClient.getQueryData<WebbingWithUsage[]>(
-        queryKeys.webbings(),
+        useWebbingsKeyFactory.webbings(),
       );
       if (cachedWebbings) {
         return cachedWebbings.find((w) => w.id === id);

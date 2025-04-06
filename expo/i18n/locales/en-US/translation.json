@@ -209,7 +209,7 @@
           "rig": "rig"
         },
         "timeline": {
-          "riggedFrom": "Rigged from",
+          "riggedSince": "Rigged since",
           "from": "From",
           "to": "to",
           "plannedFor": "Planned for"
@@ -228,14 +228,14 @@
         "unrig": {
           "title": "Confirm Unrig",
           "description": "The period the Highline was rigged will be added to the total usage time of the webbings used in the setup",
-          "button": "Unrig highline",
+          "button": "Unrig Highline",
           "cancel": "Cancel"
         },
         "confirm": {
           "title": "Was this highline rigged?",
           "description": "The planned rig date was {{date}}",
-          "buttonConfirm": "Confirm rigging",
-          "buttonChange": "Change date",
+          "buttonConfirm": "Confirm Rigging",
+          "buttonChange": "Change Date",
           "buttonBack": "Back"
         },
         "notFound": {

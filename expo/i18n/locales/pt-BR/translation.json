@@ -209,7 +209,7 @@
           "rig": "montar"
         },
         "timeline": {
-          "riggedFrom": "Montada desde",
+          "riggedSince": "Montada desde",
           "from": "De",
           "to": "até",
           "plannedFor": "Planejado para"
@@ -226,7 +226,7 @@
       },
       "rig-confirmation": {
         "unrig": {
-          "title": "Confirmar desmontagem",
+          "title": "Confirmar Desmontagem",
           "description": "O tempo que o Highline ficou montado será adicionado ao tempo de uso das fitas que foram usadas no setup",
           "button": "Desmontar highline",
           "cancel": "Cancelar"
@@ -234,8 +234,8 @@
         "confirm": {
           "title": "Esse highline foi montado?",
           "description": "A data planejada para montagem era {{date}}",
-          "buttonConfirm": "Confirmar montagem",
-          "buttonChange": "Trocar data",
+          "buttonConfirm": "Confirmar Montagem",
+          "buttonChange": "Trocar Data",
           "buttonBack": "Voltar"
         },
         "notFound": {

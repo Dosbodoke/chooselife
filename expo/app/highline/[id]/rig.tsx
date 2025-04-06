@@ -23,7 +23,7 @@ import {
   type WebbingSchemaWithPreffiled,
 } from '~/context/rig-form';
 import { useHighline } from '~/hooks/use-highline';
-import { useRigSetup } from '~/hooks/use-rig-setup';
+import { rigSetupKeyFactory, useRigSetup } from '~/hooks/use-rig-setup';
 import { HighlineRigIllustration } from '~/lib/icons/highline-rig';
 import { supabase } from '~/lib/supabase';
 import { useColorScheme } from '~/lib/useColorScheme';
@@ -64,7 +64,10 @@ export const HighlineSetup: React.FC = () => {
   const { t } = useTranslation();
   const { profile } = useAuth();
   const { form, getWebbingName } = useRiggingForm();
-  const { isPending: setupIsPending, latestSetup } = useRigSetup({
+  const {
+    latestSetup,
+    query: { isPending: setupIsPending },
+  } = useRigSetup({
     highlineID,
   });
 
@@ -135,8 +138,8 @@ export const HighlineSetup: React.FC = () => {
     mutationFn: async (data: RigSchema) => {
       let setupID: number;
 
-      // Check if a saved rig setup already exists
-      if (latestSetup) {
+      // Check if highline has a planned rig setup
+      if (latestSetup && !latestSetup.is_rigged && !latestSetup.unrigged_at) {
         setupID = latestSetup.id;
 
         // Delete existing webbing rows associated with this rig setup.
@@ -227,7 +230,9 @@ export const HighlineSetup: React.FC = () => {
       return { setupID, webbings: webbingData };
     },
     onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['rigSetup', highlineID] });
+      queryClient.invalidateQueries({
+        queryKey: rigSetupKeyFactory.all({ highlineID }),
+      });
       await requestReview();
     },
     onError: (error) => {
