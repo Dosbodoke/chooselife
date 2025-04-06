@@ -22,10 +22,14 @@ export default function HomeScreen() {
 
         <View className="flex-1 px-4 py-6">
           <View className="flex-row justify-around mb-8">
-            <QuickAction
-              icon={<LucideIcon name="PencilRuler" className="text-primary" />}
-              label="Simulador de Setup"
-            />
+            <Link asChild href="/setup-simulator">
+              <QuickAction
+                icon={
+                  <LucideIcon name="PencilRuler" className="text-primary" />
+                }
+                label="Simulador de Setup"
+              />
+            </Link>
             <QuickAction
               icon={<LucideIcon name="Users" className="text-primary" />}
               label="Comunidade"
@@ -46,14 +50,18 @@ export default function HomeScreen() {
   );
 }
 
-const QuickAction: React.FC<{
-  onPress?: () => void;
-  label: string;
-  icon: React.ReactNode;
-  isComingSoon?: boolean;
-}> = ({ onPress, label, icon, isComingSoon = false }) => {
+const QuickAction = React.forwardRef<
+  React.ElementRef<typeof TouchableOpacity>,
+  {
+    onPress?: () => void;
+    label: string;
+    icon: React.ReactNode;
+    isComingSoon?: boolean;
+  }
+>(({ onPress, label, icon, isComingSoon = false }, ref) => {
   return (
     <TouchableOpacity
+      ref={ref}
       className="max-w-24 flex-col items-center gap-1"
       onPress={onPress}
       disabled={isComingSoon}
@@ -76,7 +84,7 @@ const QuickAction: React.FC<{
       <Text className="text-xs text-center font-medium">{label}</Text>
     </TouchableOpacity>
   );
-};
+});
 
 const BannerCard: React.FC<{
   onPress?: () => void;
