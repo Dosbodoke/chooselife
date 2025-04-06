@@ -83,7 +83,6 @@ export function useHighline(
           searchid: [id],
           userid: session?.user.id,
         });
-        console.log({ data });
         const result = data && data.length > 0 ? data[0] : null;
 
         if (result?.is_favorite) {
