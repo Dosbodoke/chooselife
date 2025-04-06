@@ -9,6 +9,24 @@ export default function TabLayout() {
   return (
     <Tabs>
       <Tabs.Screen
+        name="home"
+        options={{
+          title: 'Home',
+          // title: t('app.(tabs)._layout.indexTitle'),
+          tabBarHideOnKeyboard: true,
+          tabBarIcon: ({ focused }) => (
+            <LucideIcon
+              name="Home"
+              className={cn(
+                'size-6',
+                focused ? 'text-blue-500' : 'text-muted-foreground',
+              )}
+            />
+          ),
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
         name="index"
         options={{
           title: t('app.(tabs)._layout.indexTitle'),
