@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
+import { useWebbingsKeyFactory } from '~/hooks/use-webbings';
 import RegisterWebbingIllustration from '~/lib/icons/register-webbing';
 import { supabase } from '~/lib/supabase';
 import { requestReview } from '~/utils/request-review';
@@ -78,7 +79,9 @@ export default function RegisterWebbing() {
     },
     onSuccess: () => {
       requestReview();
-      queryClient.invalidateQueries({ queryKey: ['webbing', profile?.id] });
+      queryClient.invalidateQueries({
+        queryKey: useWebbingsKeyFactory.webbings(),
+      });
       router.back();
     },
   });
