@@ -40,6 +40,8 @@ export default function HighlinePage() {
   const router = useRouter();
   const { highline, isPending } = useHighline({ id });
 
+  console.log({ highline, isPending });
+
   const shareListing = async () => {
     if (!highline) return;
     try {

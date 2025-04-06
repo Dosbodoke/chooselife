@@ -29,9 +29,9 @@ import { cn } from '~/lib/utils';
 
 import { Alert } from '~/components/ui/alert';
 import { Text } from '~/components/ui/text';
-import type { WebbingValidationErrors } from '~/components/webbing-setup';
+import type { WebbingValidationErrors } from '~/components/webbing-setup/setup-canvas';
 
-import { SupabaseAvatar } from './supabase-avatar';
+import { SupabaseAvatar } from '../supabase-avatar';
 
 export const ROW_HEIGHT = 48;
 
