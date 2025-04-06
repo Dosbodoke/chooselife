@@ -83,6 +83,7 @@ export function useHighline(
           searchid: [id],
           userid: session?.user.id,
         });
+        console.log({ data });
         const result = data && data.length > 0 ? data[0] : null;
 
         if (result?.is_favorite) {
@@ -97,12 +98,15 @@ export function useHighline(
 
         return (
           queryClient
-            .getQueryData<Highline[]>(['highlines'])
+            .getQueryData<Highline[]>(highlineKeyFactory.list(session?.user.id))
             ?.find((hl) => hl.id === id) ?? null
         );
       },
-      initialDataUpdatedAt: () =>
-        queryClient.getQueryState(['highlines'])?.dataUpdatedAt,
+      initialDataUpdatedAt: () => {
+        return queryClient.getQueryState(
+          highlineKeyFactory.list(session?.user.id),
+        )?.dataUpdatedAt;
+      },
       enabled: !!id && !sessionLoading,
       staleTime: 5 * 60 * 1000,
       gcTime: CACHE_TIME_DEFAULT,
