@@ -14,10 +14,13 @@ export function useEvents() {
   const query = useQuery({
     queryKey: ['events'],
     queryFn: async () => {
+      const now = new Date().toISOString();
+
       return (
         await supabase
           .from('events')
           .select('*')
+          .or(`start_date.gte.${now},end_date.gte.${now}`)
           .order('start_date', { ascending: true })
       ).data;
     },
