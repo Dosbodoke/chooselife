@@ -346,10 +346,6 @@
         "empty": "You haven't registered any webbing yet"
       }
     },
-    "sortable-webbing-list": {
-      "addMainSection": "Add main section",
-      "addBackupSection": "Add backup section"
-    },
     "supabase-avatar": {
       "buttonLabel": "Edit"
     },
@@ -372,6 +368,10 @@
         "backup": "Backup",
         "loop": "Loop",
         "connection": "Connection"
+      },
+      "sortable-webbing-list": {
+        "addMainSection": "Add main section",
+        "addBackupSection": "Add backup section"
       },
       "selectMyWebbing": {
         "label": "My webbings",

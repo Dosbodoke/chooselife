@@ -422,8 +422,10 @@ const AddSectionButton: React.FC<{
       <LucideIcon name="CirclePlus" className="size-6 text-primary" />
       <Text className="text-base text-primary">
         {type === 'main'
-          ? t('components.sortable-webbing-list.addMainSection')
-          : t('components.sortable-webbing-list.addBackupSection')}
+          ? t('components.webbing-setup.sortable-webbing-list.addMainSection')
+          : t(
+              'components.webbing-setup.sortable-webbing-list.addBackupSection',
+            )}
       </Text>
     </AnimatedTouchableOpacity>
   );

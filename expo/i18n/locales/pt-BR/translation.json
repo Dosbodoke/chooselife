@@ -346,10 +346,6 @@
         "empty": "Você ainda não cadastrou nenhuma fita"
       }
     },
-    "sortable-webbing-list": {
-      "addMainSection": "Adicionar principal",
-      "addBackupSection": "Adicionar backup"
-    },
     "supabase-avatar": {
       "buttonLabel": "Editar"
     },
@@ -372,6 +368,10 @@
         "backup": "Backup",
         "loop": "Olhal",
         "connection": "Conexão"
+      },
+      "sortable-webbing-list": {
+        "addMainSection": "Adicionar principal",
+        "addBackupSection": "Adicionar backup"
       },
       "selectMyWebbing": {
         "label": "Minhas fitas",
