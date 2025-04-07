@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
@@ -10,6 +11,7 @@ import { WebbingSetup } from '~/components/webbing-setup';
 const DEFAULT_HIGHLINE_LENGTH = 100;
 
 export default function SetupSimulatorScreen() {
+  const { t } = useTranslation();
   const [highlineLength, setHighlineLength] = useState<number>(
     DEFAULT_HIGHLINE_LENGTH,
   );
@@ -24,7 +26,7 @@ export default function SetupSimulatorScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Simulador de Setup',
+          title: t('app.setup-simulator.title'),
         }}
       />
       <RigFormProvider highlineLength={highlineLength}>
@@ -47,6 +49,8 @@ interface HighlineLengthInputProps {
 export const HighlineLengthInput: React.FC<HighlineLengthInputProps> = ({
   onLengthChange,
 }) => {
+  const { t } = useTranslation();
+
   const [inputValue, setInputValue] = useState<string>(
     DEFAULT_HIGHLINE_LENGTH.toString(),
   );
@@ -75,7 +79,7 @@ export const HighlineLengthInput: React.FC<HighlineLengthInputProps> = ({
   return (
     <View>
       <Text className="mb-2 text-sm font-medium text-gray-600">
-        Highline Length (meters)
+        {t('app.setup-simulator.lengthInput.label')}
       </Text>
       <TextInput
         className="rounded-md border border-gray-300 px-3 py-2 text-base"
@@ -83,7 +87,7 @@ export const HighlineLengthInput: React.FC<HighlineLengthInputProps> = ({
         onChangeText={handleTextChange}
         onEndEditing={handleEndEditing}
         keyboardType="numeric"
-        placeholder="Enter highline length"
+        placeholder={t('app.setup-simulator.lengthInput.placeholder')}
         placeholderTextColor="#9ca3af"
       />
     </View>

@@ -218,6 +218,13 @@
         "saveProfile": "Erro ao salvar o perfil. Tente novamente.",
         "usernameCheckError": "Erro ao verificar disponibilidade. Tente novamente."
       }
+    },
+    "setup-simulator": {
+      "title": "Simulador de setup",
+      "lengthInput": {
+        "label": "Comprimento do Highline (em metros)",
+        "placeholder": "comprimento do Highline"
+      }
     }
   },
   "components": {

@@ -218,6 +218,13 @@
         "saveProfile": "Error saving profile. Please try again.",
         "usernameCheckError": "Error checking username availability. Please try again."
       }
+    },
+    "setup-simulator": {
+      "title": "Setup simulator",
+      "lengthInput": {
+        "label": "Highline Length (meters)",
+        "placeholder": "Enter highline length"
+      }
     }
   },
   "components": {
