@@ -18,7 +18,6 @@ export default function EventsPage() {
   const { locale } = useI18n();
   const { eventsByMonth, query } = useEvents();
 
-  console.log({ eventsByMonth });
   // Get the keys (month strings like "April 2025") from eventsByMonth
   // Handle the case where eventsByMonth might be initially empty or undefined
   const monthKeys = Object.keys(eventsByMonth || {});
