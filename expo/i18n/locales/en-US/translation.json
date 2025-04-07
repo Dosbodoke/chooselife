@@ -37,7 +37,8 @@
     "(tabs)": {
       "_layout": {
         "indexTitle": "Explore",
-        "settingsTitle": "Settings"
+        "settingsTitle": "Settings",
+        "homeTitle": "Home"
       },
       "home": {
         "banner": {

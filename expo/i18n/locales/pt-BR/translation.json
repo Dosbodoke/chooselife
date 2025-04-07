@@ -37,7 +37,8 @@
     "(tabs)": {
       "_layout": {
         "indexTitle": "Explorar",
-        "settingsTitle": "Configurações"
+        "settingsTitle": "Configurações",
+        "homeTitle": "Início"
       },
       "home": {
         "banner": {
