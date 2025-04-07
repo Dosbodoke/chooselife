@@ -346,6 +346,9 @@
         "empty": "You haven't registered any webbing yet"
       }
     },
+    "event-card": {
+      "register": "Register"
+    },
     "supabase-avatar": {
       "buttonLabel": "Edit"
     },

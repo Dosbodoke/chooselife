@@ -1,5 +1,6 @@
 import { Link } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
 import Animated, {
   FadeInUp,
@@ -25,6 +26,7 @@ export const _enteringAnimation = FadeInUp.springify().damping(DAMPING);
 const AnimatedCard = Animated.createAnimatedComponent(Card);
 
 export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
+  const { t } = useTranslation();
   const { locale } = useI18n();
   const [expanded, setExpanded] = useState(false);
 
@@ -120,7 +122,7 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
                   // @ts-expect-error: External Link - Expo Router handles this
                   <Link asChild href={event.registration_url}>
                     <Button className="mt-3">
-                      <Text>Registrar</Text>
+                      <Text>{t('components.event-card.register')}</Text>
                     </Button>
                   </Link>
                 )}

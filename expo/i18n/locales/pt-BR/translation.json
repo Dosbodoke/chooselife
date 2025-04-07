@@ -346,6 +346,9 @@
         "empty": "Você ainda não cadastrou nenhuma fita"
       }
     },
+    "event-card": {
+      "register": "Registrar"
+    },
     "supabase-avatar": {
       "buttonLabel": "Editar"
     },
