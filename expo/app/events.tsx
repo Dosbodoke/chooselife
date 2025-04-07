@@ -1,89 +1,58 @@
+import { Stack } from 'expo-router';
 import React from 'react';
-import { SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { SafeAreaView, ScrollView, View } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 
-import { Card, CardContent } from '~/components/ui/card';
+import { useI18n } from '~/context/i18n';
+import { useEvents } from '~/hooks/use-events';
 
-const allEvents = [
-  {
-    id: '1',
-    month: 'APR',
-    day: '15',
-    name: 'Highline Festival',
-    location: 'Moab, Utah',
-  },
-  {
-    id: '2',
-    month: 'MAY',
-    day: '22',
-    name: 'Beginner Workshop',
-    location: 'Boulder, Colorado',
-  },
-  {
-    id: '3',
-    month: 'JUN',
-    day: '10',
-    name: 'Urban Highline Meetup',
-    location: 'New York City, NY',
-  },
-  {
-    id: '4',
-    month: 'JUL',
-    day: '05',
-    name: 'Mountain Slackfest',
-    location: 'Chamonix, France',
-  },
-  {
-    id: '5',
-    month: 'AUG',
-    day: '19',
-    name: 'Waterline Fun Day',
-    location: 'Austin, Texas',
-  },
-  {
-    id: '6',
-    month: 'SEP',
-    day: '02',
-    name: 'Advanced Rigging Clinic',
-    location: 'Squamish, BC, Canada',
-  },
-  {
-    id: '7',
-    month: 'OCT',
-    day: '28',
-    name: 'Desert Highline Expedition',
-    location: 'Sedona, Arizona',
-  },
-];
+import { EventCard } from '~/components/event-card';
+import { Text } from '~/components/ui/text';
+
+const DAMPING = 80;
+export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
 
 export default function EventsPage() {
+  const { t } = useTranslation();
+  const { locale } = useI18n();
+  const { eventsByMonth, query } = useEvents();
+
+  console.log({ eventsByMonth });
+  // Get the keys (month strings like "April 2025") from eventsByMonth
+  // Handle the case where eventsByMonth might be initially empty or undefined
+  const monthKeys = Object.keys(eventsByMonth || {});
+
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <ScrollView>
-        <View className="p-4 gap-4">
-          {allEvents.map((event) => (
-            <Card key={event.id} className="bg-white">
-              <CardContent className="p-3">
-                <View className="flex-row gap-4 items-center">
-                  <View className="flex-col items-center justify-center bg-primary/10 rounded p-2 min-w-[56px]">
-                    <Text className="text-sm font-bold text-primary">
-                      {event.month}
-                    </Text>
-                    <Text className="text-xl font-bold text-primary">
-                      {event.day}
-                    </Text>
-                  </View>
-                  <View className="flex-1">
-                    <Text className="font-medium text-base">{event.name}</Text>
-                    <Text className="text-sm text-muted-foreground">
-                      {event.location}
-                    </Text>
+    <>
+      <Stack.Screen options={{ title: t('app.events.title') }} />
+      <SafeAreaView className="flex-1 pt-6">
+        <ScrollView>
+          <View className="p-4">
+            {monthKeys.length === 0 && !query.isLoading ? (
+              <Text className="text-center text-gray-500">
+                {t('app.events.noEvents')}
+              </Text>
+            ) : (
+              monthKeys.map((monthKey) => (
+                <View key={monthKey} className="mb-6">
+                  <Animated.Text
+                    layout={_layoutAnimation}
+                    className="text-xl font-semibold mb-3 text-slate-800 px-1"
+                  >
+                    {`${new Date(monthKey).toLocaleString(locale, { month: 'long' })} ${new Date(monthKey).getFullYear()}`}
+                  </Animated.Text>
+                  <View className="gap-4">
+                    {eventsByMonth[monthKey].map((e) => (
+                      <EventCard key={e.id} event={e} />
+                    ))}
                   </View>
                 </View>
-              </CardContent>
-            </Card>
-          ))}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+              ))
+            )}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </>
   );
 }

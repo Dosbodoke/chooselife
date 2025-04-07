@@ -1,4 +1,8 @@
 {
+  "common": {
+    "soon": "Em breve",
+    "seeAll": "Ver todos"
+  },
   "app": {
     "(modals)": {
       "login": {
@@ -34,6 +38,21 @@
       "_layout": {
         "indexTitle": "Explorar",
         "settingsTitle": "Configurações"
+      },
+      "home": {
+        "banner": {
+          "title": "APP Chooselife",
+          "description": "Feito para Highliners"
+        },
+        "quickActions": {
+          "setupSimulator": "Simulador de Setup",
+          "community": "Comunidade",
+          "learn": "Aprenda"
+        },
+        "sections": {
+          "UpcomingEvents": "🗓️ Próximos Eventos",
+          "Ranking": "🏆 Ranking da Semana"
+        }
       },
       "settings": {
         "viewProfile": "Visualizar perfil",
@@ -172,6 +191,10 @@
     "+not-found": {
       "title": "Essa tela não existe.",
       "subtitle": "Voltar para o mapa"
+    },
+    "events": {
+      "title": "Eventos",
+      "noEvents": "Não foram encontrados eventos que correspondam aos seus critérios."
     },
     "setProfile": {
       "title": "Configure Seu Perfil",

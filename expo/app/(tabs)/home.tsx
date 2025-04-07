@@ -1,43 +1,48 @@
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 
+import { useEvents } from '~/hooks/use-events';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 
+import { EventCard } from '~/components/event-card';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { Card, CardContent } from '~/components/ui/card';
 import { Text } from '~/components/ui/text';
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
+
   return (
     <SafeAreaOfflineView>
       <ScrollView>
         <BannerCard
-          title="APP Chooselife"
-          description="Feito para Highliners"
+          title={t('app.(tabs).home.banner.title')}
+          description={t('app.(tabs).home.banner.description')}
         />
 
-        <View className="flex-1 px-4 py-6">
-          <View className="flex-row justify-around mb-8">
+        <View className="flex-1 px-4">
+          <View className="flex-row justify-around my-6">
             <Link asChild href="/setup-simulator">
               <QuickAction
                 icon={
                   <LucideIcon name="PencilRuler" className="text-primary" />
                 }
-                label="Simulador de Setup"
+                label={t('app.(tabs).home.quickActions.setupSimulator')}
               />
             </Link>
             <QuickAction
               icon={<LucideIcon name="Users" className="text-primary" />}
-              label="Comunidade"
+              label={t('app.(tabs).home.quickActions.community')}
               isComingSoon
             />
             <QuickAction
               icon={<LucideIcon name="Book" className="text-primary" />}
-              label="Aprenda"
+              label={t('app.(tabs).home.quickActions.learn')}
               isComingSoon
             />
           </View>
@@ -59,6 +64,7 @@ const QuickAction = React.forwardRef<
     isComingSoon?: boolean;
   }
 >(({ onPress, label, icon, isComingSoon = false }, ref) => {
+  const { t } = useTranslation();
   return (
     <TouchableOpacity
       ref={ref}
@@ -67,9 +73,9 @@ const QuickAction = React.forwardRef<
       disabled={isComingSoon}
     >
       {isComingSoon && (
-        <View className="absolute -top-1 -right-1 px-1 rounded-md bg-gray-800 z-10">
-          <Text style={{ fontSize: 8, color: 'white', fontWeight: 'bold' }}>
-            Em breve
+        <View className="absolute -top-1 -right-1 rounded-md bg-gray-800 z-10 p-1 px-2">
+          <Text className="font-bold text-white text-[8px]">
+            {t('common.soon')}
           </Text>
         </View>
       )}
@@ -91,7 +97,7 @@ const BannerCard: React.FC<{
   title: string;
   description: string;
 }> = ({ onPress, title, description }) => (
-  <TouchableOpacity onPress={onPress} className="w-full p-4 pb-0">
+  <TouchableOpacity onPress={onPress} className="w-full p-4">
     <Card>
       <CardContent className="p-0 overflow-hidden rounded-lg bg-slate-200 relative h-40 w-full">
         <Image
@@ -144,49 +150,41 @@ const BannerCard: React.FC<{
 // };
 
 const Ranking: React.FC = () => {
+  const { t } = useTranslation();
+
   return (
     <View className="mb-8">
-      <Text className="text-lg font-bold mb-3">🏆 Ranking da Semana</Text>
+      <Text className="text-lg font-bold mb-3">
+        {t('app.(tabs).home.sections.Ranking')}
+      </Text>
       <Card className="overflow-hidden">
         <CardContent className="p-4 py-20 bg-primary-foreground items-center">
-          <Text className="font-bold">Em breve</Text>
+          <Text className="font-bold">{t('common.soon')}</Text>
         </CardContent>
       </Card>
     </View>
   );
 };
 
-const UpcomingEvents: React.FC = () => (
-  <View className="mb-8">
-    <View className="flex-row items-center justify-between mb-3">
-      <Text className="text-lg font-bold">🗓️ Próximos Eventos</Text>
-      <Link href="/events">
-        <Text className="text-sm text-blue-600">Ver todos</Text>
-      </Link>
+const UpcomingEvents: React.FC = () => {
+  const { t } = useTranslation();
+  const {
+    query: { data: events },
+  } = useEvents();
+
+  return (
+    <View className="mb-8">
+      <View className="flex-row items-center justify-between mb-3">
+        <Text className="text-lg font-bold">
+          {t('app.(tabs).home.sections.UpcomingEvents')}
+        </Text>
+        <Link href="/events">
+          <Text className="text-sm text-blue-600">{t('common.seeAll')}</Text>
+        </Link>
+      </View>
+      <View className="gap-3">
+        {events?.slice(0, 2).map((e) => <EventCard key={e.id} event={e} />)}
+      </View>
     </View>
-    <View className="gap-3">
-      <Card>
-        <CardContent className="p-3">
-          <View className="flex-row gap-3">
-            <View className="flex-col items-center justify-center bg-primary/10 rounded p-2 min-w-[56px]">
-              <Text className="text-sm font-bold text-primary">ABR</Text>
-              <Text className="text-xl font-bold text-primary">18</Text>
-            </View>
-            <View className="flex justify-between">
-              <Text className="font-medium">Festival Chooselife</Text>
-              <View className="items-center flex-row gap-1">
-                <LucideIcon
-                  name="MapPin"
-                  className="size-4 text-muted-foreground"
-                />
-                <Text className="text-sm text-muted-foreground">
-                  Chapada dos Veadeiros, GO
-                </Text>
-              </View>
-            </View>
-          </View>
-        </CardContent>
-      </Card>
-    </View>
-  </View>
-);
+  );
+};
