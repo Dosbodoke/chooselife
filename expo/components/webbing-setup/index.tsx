@@ -46,33 +46,33 @@ export const WebbingSetup: React.FC = () => {
   return (
     <AnimatedCard layout={_layoutAnimation} className="w-full">
       <CardHeader className="gap-3">
-        <CardTitle>{t('app.highline.rig.equipments.title')}</CardTitle>
+        <CardTitle>{t('components.webbing-setup.equipments.title')}</CardTitle>
         <View className="flex-row justify-between">
           <View className="flex-row gap-1 items-baseline">
             <View className="w-6 h-2 bg-red-500" />
             <Text className="text-muted-foreground">
-              {t('app.highline.rig.equipments.main')}
+              {t('components.webbing-setup.equipments.main')}
             </Text>
           </View>
 
           <View className="flex-row gap-1 items-baseline">
             <View className="w-6 h-2 bg-blue-500" />
             <Text className="text-muted-foreground">
-              {t('app.highline.rig.equipments.backup')}
+              {t('components.webbing-setup.equipments.backup')}
             </Text>
           </View>
 
           <View className="flex-row gap-1 items-baseline">
             <View className="w-4 h-2 bg-black" />
             <Text className="text-muted-foreground">
-              {t('app.highline.rig.equipments.loop')}
+              {t('components.webbing-setup.equipments.loop')}
             </Text>
           </View>
 
           <View className="flex-row gap-1 items-baseline">
             <View className="w-4 h-2 bg-green-500" />
             <Text className="text-muted-foreground">
-              {t('app.highline.rig.equipments.connection')}
+              {t('components.webbing-setup.equipments.connection')}
             </Text>
           </View>
         </View>

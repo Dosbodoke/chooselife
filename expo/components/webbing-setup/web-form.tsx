@@ -199,7 +199,7 @@ const WebbingOwner: React.FC<{ webbingID: number }> = ({ webbingID }) => {
   return (
     <View className="flex-row max-w-56 overflow-hidden">
       <Text className="text-muted-foreground">
-        {t('app.highline.rig.webbingOwner.label')}
+        {t('components.webbing-setup.webbingOwner.label')}
       </Text>
       <Link
         href={{
@@ -259,7 +259,7 @@ const SelectMyWebbing: React.FC<{
   return (
     <View className="gap-2 w-full">
       <Label htmlFor={id} nativeID={id}>
-        {t('app.highline.rig.selectMyWebbing.label')}
+        {t('components.webbing-setup.selectMyWebbing.label')}
       </Label>
 
       {isPending ? (
@@ -290,7 +290,9 @@ const SelectMyWebbing: React.FC<{
               className={cn(
                 webbing.webbingId ? 'text-primary' : 'text-muted-foreground',
               )}
-              placeholder={t('app.highline.rig.selectMyWebbing.placeholder')}
+              placeholder={t(
+                'components.webbing-setup.selectMyWebbing.placeholder',
+              )}
             />
           </SelectTrigger>
           <SelectContent style={{ width: triggerWidth }}>
@@ -301,7 +303,9 @@ const SelectMyWebbing: React.FC<{
               {data?.map((item) => {
                 const itemId = item.id.toString();
                 const isUsed = usedWebbingIds.has(itemId) || item.isUsed;
-                const inUseLabel = t('app.highline.rig.selectMyWebbing.inUse');
+                const inUseLabel = t(
+                  'components.webbing-setup.selectMyWebbing.inUse',
+                );
                 const label =
                   getWebbingName(item) + (isUsed ? ` ${inUseLabel}` : '');
                 return (
@@ -315,7 +319,9 @@ const SelectMyWebbing: React.FC<{
               })}
               <Separator />
               <Button variant="ghost" onPress={() => onSelectWebbing(null)}>
-                <Text>{t('app.highline.rig.selectMyWebbing.clear')}</Text>
+                <Text>
+                  {t('components.webbing-setup.selectMyWebbing.clear')}
+                </Text>
               </Button>
             </ScrollView>
           </SelectContent>

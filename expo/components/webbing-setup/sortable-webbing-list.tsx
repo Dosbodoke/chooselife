@@ -27,11 +27,10 @@ import { useWebbing } from '~/hooks/use-webbings';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
 
+import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Alert } from '~/components/ui/alert';
 import { Text } from '~/components/ui/text';
 import type { WebbingValidationErrors } from '~/components/webbing-setup/setup-canvas';
-
-import { SupabaseAvatar } from '../supabase-avatar';
 
 export const ROW_HEIGHT = 48;
 

@@ -145,24 +145,11 @@
           "title": "Primeiro, escolha uma data",
           "description": "O dia que a missão irá acontecer"
         },
-        "equipments": {
-          "title": "Setup da fita",
-          "main": "Principal",
-          "backup": "Backup",
-          "loop": "Olhal",
-          "connection": "Conexão"
-        },
         "navigator": {
           "finishLabel": "Planejar montagem"
         },
         "webbingOwner": {
           "label": "Fita de:"
-        },
-        "selectMyWebbing": {
-          "label": "Minhas fitas",
-          "placeholder": "Ex.: Brasileirinha",
-          "inUse": "(em uso)",
-          "clear": "limpar"
         }
       }
     },
@@ -378,6 +365,19 @@
         "atLeastOneLoop": "Seção #{{section}} deve ter pelo menos um olhal para fazer conexão.",
         "bothLoops": "Seção #{{section}} deve ter os dois olhais para fazer conexão.",
         "connectionLength": "Backup #{{backupSection}} deve ser 2-10 metros mais longa que a seção principal #{{mainSection}}"
+      },
+      "equipments": {
+        "title": "Setup da fita",
+        "main": "Principal",
+        "backup": "Backup",
+        "loop": "Olhal",
+        "connection": "Conexão"
+      },
+      "selectMyWebbing": {
+        "label": "Minhas fitas",
+        "placeholder": "Ex.: Brasileirinha",
+        "inUse": "(em uso)",
+        "clear": "limpar"
       }
     }
   },

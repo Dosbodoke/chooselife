@@ -145,24 +145,11 @@
           "title": "First, choose a date",
           "description": "The day the mission will take place"
         },
-        "equipments": {
-          "title": "Rig Setup",
-          "main": "Main",
-          "backup": "Backup",
-          "loop": "Loop",
-          "connection": "Connection"
-        },
         "navigator": {
           "finishLabel": "Plan Rigging"
         },
         "webbingOwner": {
           "label": "Webbing from:"
-        },
-        "selectMyWebbing": {
-          "label": "My webbings",
-          "placeholder": "e.g. Brasileirinha",
-          "inUse": "(in use)",
-          "clear": "clear"
         }
       }
     },
@@ -378,6 +365,19 @@
         "atLeastOneLoop": "Section #{{section}} must have at least one loop to connect with the others.",
         "bothLoops": "Section #{{section}} must have both loop to connect with the others.",
         "connectionLength": "Backup #{{backupSection}} must be 2-10 meters longer than the main section #{{mainSection}}"
+      },
+      "equipments": {
+        "title": "Rig Setup",
+        "main": "Main",
+        "backup": "Backup",
+        "loop": "Loop",
+        "connection": "Connection"
+      },
+      "selectMyWebbing": {
+        "label": "My webbings",
+        "placeholder": "e.g. Brasileirinha",
+        "inUse": "(in use)",
+        "clear": "clear"
       }
     }
   },
