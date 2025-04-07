@@ -180,7 +180,7 @@ const UpcomingEvents: React.FC = () => {
     <Animated.View layout={_layoutAnimation} className="mb-8">
       <View className="flex-row items-center justify-between mb-3">
         <Text className="text-lg font-bold">
-          {t('app.(tabs).home.sections.UpcomingEvents')}
+          {t('app.(tabs).home.sections.UpcomingEvents.title')}
         </Text>
         <Link href="/events" asChild>
           <TouchableOpacity>
@@ -194,8 +194,21 @@ const UpcomingEvents: React.FC = () => {
             <EventCardSkeleton />
             <EventCardSkeleton />
           </>
-        ) : null}
-        {events?.slice(0, 2).map((e) => <EventCard key={e.id} event={e} />)}
+        ) : events && events.length > 0 ? (
+          events.slice(0, 2).map((e) => <EventCard key={e.id} event={e} />)
+        ) : (
+          <View className="rounded-lg border border-gray-200 p-6 items-center justify-center">
+            <View className="w-16 h-16 bg-gray-100 rounded-full items-center justify-center mb-4">
+              <LucideIcon name="Calendar" className="text-primary" />
+            </View>
+            <Text className="text-base font-medium text-gray-900 mb-1">
+              {t('app.(tabs).home.sections.UpcomingEvents.noEventsTitle')}
+            </Text>
+            <Text className="text-sm text-gray-500 text-center mb-4">
+              {t('app.(tabs).home.sections.UpcomingEvents.noEventsDescription')}
+            </Text>
+          </View>
+        )}
       </View>
     </Animated.View>
   );

@@ -51,7 +51,11 @@
           "learn": "Learn"
         },
         "sections": {
-          "UpcomingEvents": "🗓️ Next Events",
+          "UpcomingEvents": {
+            "title": "🗓️ Next Events",
+            "noEventsTitle": "No upcoming events",
+            "noEventsDescription": "There are no upcoming events at the moment."
+          },
           "Ranking": "🏆 Weekly Ranking"
         }
       },
