@@ -3,6 +3,7 @@ import { Link } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 
 import { useEvents } from '~/hooks/use-events';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
@@ -13,6 +14,9 @@ import { EventCard } from '~/components/event-card';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { Card, CardContent } from '~/components/ui/card';
 import { Text } from '~/components/ui/text';
+
+const DAMPING = 80;
+export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
 
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -153,7 +157,7 @@ const Ranking: React.FC = () => {
   const { t } = useTranslation();
 
   return (
-    <View className="mb-8">
+    <Animated.View layout={_layoutAnimation} className="mb-8">
       <Text className="text-lg font-bold mb-3">
         {t('app.(tabs).home.sections.Ranking')}
       </Text>
@@ -162,7 +166,7 @@ const Ranking: React.FC = () => {
           <Text className="font-bold">{t('common.soon')}</Text>
         </CardContent>
       </Card>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -173,7 +177,7 @@ const UpcomingEvents: React.FC = () => {
   } = useEvents();
 
   return (
-    <View className="mb-8">
+    <Animated.View layout={_layoutAnimation} className="mb-8">
       <View className="flex-row items-center justify-between mb-3">
         <Text className="text-lg font-bold">
           {t('app.(tabs).home.sections.UpcomingEvents')}
@@ -185,6 +189,6 @@ const UpcomingEvents: React.FC = () => {
       <View className="gap-3">
         {events?.slice(0, 2).map((e) => <EventCard key={e.id} event={e} />)}
       </View>
-    </View>
+    </Animated.View>
   );
 };
