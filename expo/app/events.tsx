@@ -7,7 +7,7 @@ import Animated, { LinearTransition } from 'react-native-reanimated';
 import { useI18n } from '~/context/i18n';
 import { useEvents } from '~/hooks/use-events';
 
-import { EventCard } from '~/components/event-card';
+import { EventCard, EventCardSkeleton } from '~/components/event-card';
 import { Text } from '~/components/ui/text';
 
 const DAMPING = 80;
@@ -18,9 +18,7 @@ export default function EventsPage() {
   const { locale } = useI18n();
   const { eventsByMonth, query } = useEvents();
 
-  // Get the keys (month strings like "April 2025") from eventsByMonth
-  // Handle the case where eventsByMonth might be initially empty or undefined
-  const monthKeys = Object.keys(eventsByMonth || {});
+  const monthKeys = !query.isLoading ? Object.keys(eventsByMonth || {}) : [];
 
   return (
     <>
@@ -28,21 +26,32 @@ export default function EventsPage() {
       <SafeAreaView className="flex-1 pt-6">
         <ScrollView>
           <View className="p-4">
-            {monthKeys.length === 0 && !query.isLoading ? (
-              <Text className="text-center text-gray-500">
+            {/* --- Loading State --- */}
+            {query.isPending ? (
+              <View className="gap-4">
+                <EventCardSkeleton />
+                <EventCardSkeleton />
+                <EventCardSkeleton />
+              </View>
+            ) : /* --- No Events State --- */
+            monthKeys.length === 0 ? (
+              <Text className="text-center text-muted-foreground">
                 {t('app.events.noEvents')}
               </Text>
             ) : (
+              /* --- Loaded State --- */
               monthKeys.map((monthKey) => (
                 <View key={monthKey} className="mb-6">
                   <Animated.Text
                     layout={_layoutAnimation}
-                    className="text-xl font-semibold mb-3 text-slate-800 px-1"
+                    className="text-xl font-semibold mb-3 text-foreground px-1"
                   >
-                    {`${new Date(monthKey).toLocaleString(locale, { month: 'long' })} ${new Date(monthKey).getFullYear()}`}
+                    {monthKey
+                      ? `${new Date(monthKey).toLocaleString(locale, { month: 'long' })} ${new Date(monthKey).getFullYear()}`
+                      : ''}
                   </Animated.Text>
                   <View className="gap-4">
-                    {eventsByMonth[monthKey].map((e) => (
+                    {(eventsByMonth?.[monthKey] ?? []).map((e) => (
                       <EventCard key={e.id} event={e} />
                     ))}
                   </View>

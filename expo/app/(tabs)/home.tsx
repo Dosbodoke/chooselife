@@ -10,7 +10,7 @@ import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 
-import { EventCard } from '~/components/event-card';
+import { EventCard, EventCardSkeleton } from '~/components/event-card';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { Card, CardContent } from '~/components/ui/card';
 import { Text } from '~/components/ui/text';
@@ -173,7 +173,7 @@ const Ranking: React.FC = () => {
 const UpcomingEvents: React.FC = () => {
   const { t } = useTranslation();
   const {
-    query: { data: events },
+    query: { data: events, isPending },
   } = useEvents();
 
   return (
@@ -182,11 +182,19 @@ const UpcomingEvents: React.FC = () => {
         <Text className="text-lg font-bold">
           {t('app.(tabs).home.sections.UpcomingEvents')}
         </Text>
-        <Link href="/events">
-          <Text className="text-sm text-blue-600">{t('common.seeAll')}</Text>
+        <Link href="/events" asChild>
+          <TouchableOpacity>
+            <Text className="text-sm text-blue-600">{t('common.seeAll')}</Text>
+          </TouchableOpacity>
         </Link>
       </View>
       <View className="gap-3">
+        {isPending ? (
+          <>
+            <EventCardSkeleton />
+            <EventCardSkeleton />
+          </>
+        ) : null}
         {events?.slice(0, 2).map((e) => <EventCard key={e.id} event={e} />)}
       </View>
     </Animated.View>

@@ -13,10 +13,10 @@ import { useI18n } from '~/context/i18n';
 import type { Event } from '~/hooks/use-events';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 
+import { Button } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
+import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
-
-import { Button } from './ui/button';
 
 const DAMPING = 80;
 export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
@@ -165,3 +165,38 @@ const formatEventDate = (
   const endFormatted = endDate.toLocaleDateString(locale, options);
   return `${startFormatted} - ${endFormatted}`;
 };
+
+export const EventCardSkeleton: React.FC = () => (
+  <Card className="shadow w-full">
+    <CardContent className="p-3 overflow-hidden">
+      <View className="flex-row gap-3">
+        {/* Date Placeholder */}
+        <View className="flex-col items-center justify-center bg-muted/30 rounded p-2 min-w-[56px]">
+          {/* Month Placeholder */}
+          <Skeleton className="h-4 w-8 mb-1" />
+          {/* Day Placeholder */}
+          <Skeleton className="h-6 w-6" />
+        </View>
+
+        {/* Main Content Placeholder */}
+        <View className="flex-1 justify-between">
+          {/* Top Row Placeholder (Title + Chevron) */}
+          <View className="flex-row justify-between items-start mb-1">
+            {/* Title Placeholder */}
+            <Skeleton className="h-5 flex-1 mr-2" />
+            {/* Chevron Placeholder */}
+            <Skeleton className="h-5 w-5" />
+          </View>
+
+          {/* Bottom Row Placeholder (Pin + Location) */}
+          <View className="items-center flex-row gap-1">
+            {/* Pin Placeholder */}
+            <Skeleton className="h-4 w-4" />
+            {/* Location Placeholder */}
+            <Skeleton className="h-4 w-3/4" />
+          </View>
+        </View>
+      </View>
+    </CardContent>
+  </Card>
+);
