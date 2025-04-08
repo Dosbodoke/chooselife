@@ -1,4 +1,8 @@
 {
+  "common": {
+    "soon": "Em breve",
+    "seeAll": "Ver todos"
+  },
   "app": {
     "(modals)": {
       "login": {
@@ -33,7 +37,27 @@
     "(tabs)": {
       "_layout": {
         "indexTitle": "Explorar",
-        "settingsTitle": "Configurações"
+        "settingsTitle": "Configurações",
+        "homeTitle": "Início"
+      },
+      "home": {
+        "banner": {
+          "title": "APP Chooselife",
+          "description": "Feito para Highliners"
+        },
+        "quickActions": {
+          "setupSimulator": "Simulador de Setup",
+          "community": "Comunidade",
+          "learn": "Aprenda"
+        },
+        "sections": {
+          "UpcomingEvents": {
+            "title": "🗓️ Próximos Eventos",
+            "noEventsTitle": "Nenhum evento",
+            "noEventsDescription": "No momento não tem nenhum evento planejado."
+          },
+          "Ranking": "🏆 Ranking da Semana"
+        }
       },
       "settings": {
         "viewProfile": "Visualizar perfil",
@@ -126,24 +150,11 @@
           "title": "Primeiro, escolha uma data",
           "description": "O dia que a missão irá acontecer"
         },
-        "equipments": {
-          "title": "Setup da fita",
-          "main": "Principal",
-          "backup": "Backup",
-          "loop": "Olhal",
-          "connection": "Conexão"
-        },
         "navigator": {
           "finishLabel": "Planejar montagem"
         },
         "webbingOwner": {
           "label": "Fita de:"
-        },
-        "selectMyWebbing": {
-          "label": "Minhas fitas",
-          "placeholder": "Ex.: Brasileirinha",
-          "inUse": "(em uso)",
-          "clear": "limpar"
         }
       }
     },
@@ -173,6 +184,10 @@
       "title": "Essa tela não existe.",
       "subtitle": "Voltar para o mapa"
     },
+    "events": {
+      "title": "Eventos",
+      "noEvents": "Não foram encontrados eventos que correspondam aos seus critérios."
+    },
     "setProfile": {
       "title": "Configure Seu Perfil",
       "UsernameForm": {
@@ -195,6 +210,13 @@
         "saveProfile": "Erro ao salvar o perfil. Tente novamente.",
         "usernameCheckError": "Erro ao verificar disponibilidade. Tente novamente."
       }
+    },
+    "setup-simulator": {
+      "title": "Simulador de setup",
+      "lengthInput": {
+        "label": "Comprimento do Highline (em metros)",
+        "placeholder": "comprimento do Highline"
+      }
     }
   },
   "components": {
@@ -209,7 +231,7 @@
           "rig": "montar"
         },
         "timeline": {
-          "riggedFrom": "Montada desde",
+          "riggedSince": "Montada desde",
           "from": "De",
           "to": "até",
           "plannedFor": "Planejado para"
@@ -226,7 +248,7 @@
       },
       "rig-confirmation": {
         "unrig": {
-          "title": "Confirmar desmontagem",
+          "title": "Confirmar Desmontagem",
           "description": "O tempo que o Highline ficou montado será adicionado ao tempo de uso das fitas que foram usadas no setup",
           "button": "Desmontar highline",
           "cancel": "Cancelar"
@@ -234,8 +256,8 @@
         "confirm": {
           "title": "Esse highline foi montado?",
           "description": "A data planejada para montagem era {{date}}",
-          "buttonConfirm": "Confirmar montagem",
-          "buttonChange": "Trocar data",
+          "buttonConfirm": "Confirmar Montagem",
+          "buttonChange": "Trocar Data",
           "buttonBack": "Voltar"
         },
         "notFound": {
@@ -329,9 +351,8 @@
         "empty": "Você ainda não cadastrou nenhuma fita"
       }
     },
-    "sortable-webbing-list": {
-      "addMainSection": "Adicionar principal",
-      "addBackupSection": "Adicionar backup"
+    "event-card": {
+      "register": "Registrar"
     },
     "supabase-avatar": {
       "buttonLabel": "Editar"
@@ -348,6 +369,23 @@
         "atLeastOneLoop": "Seção #{{section}} deve ter pelo menos um olhal para fazer conexão.",
         "bothLoops": "Seção #{{section}} deve ter os dois olhais para fazer conexão.",
         "connectionLength": "Backup #{{backupSection}} deve ser 2-10 metros mais longa que a seção principal #{{mainSection}}"
+      },
+      "equipments": {
+        "title": "Setup da fita",
+        "main": "Principal",
+        "backup": "Backup",
+        "loop": "Olhal",
+        "connection": "Conexão"
+      },
+      "sortable-webbing-list": {
+        "addMainSection": "Adicionar principal",
+        "addBackupSection": "Adicionar backup"
+      },
+      "selectMyWebbing": {
+        "label": "Minhas fitas",
+        "placeholder": "Ex.: Brasileirinha",
+        "inUse": "(em uso)",
+        "clear": "limpar"
       }
     }
   },

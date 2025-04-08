@@ -15,9 +15,11 @@ export const resources = {
 } as const;
 
 interface I18nContextType {
-  locale: Locales | null;
+  locale: Locales;
   setLocale: (locale: Locales) => Promise<void>;
 }
+
+const FALLBACK_LNG: Locales = 'pt';
 
 const I18nContext = React.createContext<I18nContextType | undefined>(undefined);
 
@@ -31,7 +33,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
         'chooselife_locale',
       )) as Locales;
       const phoneLocale = (Localization.getLocales()?.[0]?.languageCode ??
-        'pt') as Locales;
+        FALLBACK_LNG) as Locales;
       setLanguage(storedLocale ? storedLocale : phoneLocale);
     };
 
@@ -43,7 +45,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     i18next.use(initReactI18next).init({
       lng: language,
       resources,
-      fallbackLng: 'pt',
+      fallbackLng: FALLBACK_LNG,
       interpolation: {
         escapeValue: false,
       },
@@ -72,7 +74,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     <I18nContext.Provider
       value={{
         setLocale: async (locale) => await updateLocale(locale),
-        locale: language,
+        locale: language || FALLBACK_LNG,
       }}
     >
       {children}

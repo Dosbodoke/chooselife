@@ -1,4 +1,8 @@
 {
+  "common": {
+    "soon": "Soon",
+    "seeAll": "See all"
+  },
   "app": {
     "(modals)": {
       "login": {
@@ -33,7 +37,27 @@
     "(tabs)": {
       "_layout": {
         "indexTitle": "Explore",
-        "settingsTitle": "Settings"
+        "settingsTitle": "Settings",
+        "homeTitle": "Home"
+      },
+      "home": {
+        "banner": {
+          "title": "APP Chooselife",
+          "description": "Made for Highliners"
+        },
+        "quickActions": {
+          "setupSimulator": "Setup Simulator",
+          "community": "Community",
+          "learn": "Learn"
+        },
+        "sections": {
+          "UpcomingEvents": {
+            "title": "🗓️ Next Events",
+            "noEventsTitle": "No upcoming events",
+            "noEventsDescription": "There are no upcoming events at the moment."
+          },
+          "Ranking": "🏆 Weekly Ranking"
+        }
       },
       "settings": {
         "viewProfile": "View profile",
@@ -126,24 +150,11 @@
           "title": "First, choose a date",
           "description": "The day the mission will take place"
         },
-        "equipments": {
-          "title": "Rig Setup",
-          "main": "Main",
-          "backup": "Backup",
-          "loop": "Loop",
-          "connection": "Connection"
-        },
         "navigator": {
           "finishLabel": "Plan Rigging"
         },
         "webbingOwner": {
           "label": "Webbing from:"
-        },
-        "selectMyWebbing": {
-          "label": "My webbings",
-          "placeholder": "e.g. Brasileirinha",
-          "inUse": "(in use)",
-          "clear": "clear"
         }
       }
     },
@@ -173,6 +184,10 @@
       "title": "This screen doesn't exist.",
       "subtitle": "Go to map screen"
     },
+    "events": {
+      "title": "Events",
+      "noEvents": "No events matching your criteria were found."
+    },
     "setProfile": {
       "title": "Set Up Your Profile",
       "UsernameForm": {
@@ -195,6 +210,13 @@
         "saveProfile": "Error saving profile. Please try again.",
         "usernameCheckError": "Error checking username availability. Please try again."
       }
+    },
+    "setup-simulator": {
+      "title": "Setup simulator",
+      "lengthInput": {
+        "label": "Highline Length (meters)",
+        "placeholder": "Enter highline length"
+      }
     }
   },
   "components": {
@@ -209,7 +231,7 @@
           "rig": "rig"
         },
         "timeline": {
-          "riggedFrom": "Rigged from",
+          "riggedSince": "Rigged since",
           "from": "From",
           "to": "to",
           "plannedFor": "Planned for"
@@ -228,14 +250,14 @@
         "unrig": {
           "title": "Confirm Unrig",
           "description": "The period the Highline was rigged will be added to the total usage time of the webbings used in the setup",
-          "button": "Unrig highline",
+          "button": "Unrig Highline",
           "cancel": "Cancel"
         },
         "confirm": {
           "title": "Was this highline rigged?",
           "description": "The planned rig date was {{date}}",
-          "buttonConfirm": "Confirm rigging",
-          "buttonChange": "Change date",
+          "buttonConfirm": "Confirm Rigging",
+          "buttonChange": "Change Date",
           "buttonBack": "Back"
         },
         "notFound": {
@@ -329,9 +351,8 @@
         "empty": "You haven't registered any webbing yet"
       }
     },
-    "sortable-webbing-list": {
-      "addMainSection": "Add main section",
-      "addBackupSection": "Add backup section"
+    "event-card": {
+      "register": "Register"
     },
     "supabase-avatar": {
       "buttonLabel": "Edit"
@@ -348,6 +369,23 @@
         "atLeastOneLoop": "Section #{{section}} must have at least one loop to connect with the others.",
         "bothLoops": "Section #{{section}} must have both loop to connect with the others.",
         "connectionLength": "Backup #{{backupSection}} must be 2-10 meters longer than the main section #{{mainSection}}"
+      },
+      "equipments": {
+        "title": "Rig Setup",
+        "main": "Main",
+        "backup": "Backup",
+        "loop": "Loop",
+        "connection": "Connection"
+      },
+      "sortable-webbing-list": {
+        "addMainSection": "Add main section",
+        "addBackupSection": "Add backup section"
+      },
+      "selectMyWebbing": {
+        "label": "My webbings",
+        "placeholder": "e.g. Brasileirinha",
+        "inUse": "(in use)",
+        "clear": "clear"
       }
     }
   },

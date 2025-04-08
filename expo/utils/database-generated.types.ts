@@ -59,6 +59,48 @@ export type Database = {
           },
         ]
       }
+      events: {
+        Row: {
+          city: string
+          country: string
+          description: string | null
+          end_date: string | null
+          id: number
+          lines: number | null
+          registration_url: string | null
+          start_date: string
+          state: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          city: string
+          country: string
+          description?: string | null
+          end_date?: string | null
+          id?: never
+          lines?: number | null
+          registration_url?: string | null
+          start_date: string
+          state?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          city?: string
+          country?: string
+          description?: string | null
+          end_date?: string | null
+          id?: never
+          lines?: number | null
+          registration_url?: string | null
+          start_date?: string
+          state?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       favorite_highline: {
         Row: {
           created_at: string
