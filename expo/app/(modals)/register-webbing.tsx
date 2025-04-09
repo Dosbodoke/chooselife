@@ -15,7 +15,6 @@ import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
@@ -97,7 +96,7 @@ export default function RegisterWebbing() {
   return (
     <SafeAreaView className="flex-1">
       <KeyboardAwareScrollView
-        contentContainerClassName="flex-grow px-6 pt-8 gap-4"
+        contentContainerClassName="px-6 pt-3 pb-8 gap-4"
         keyboardShouldPersistTaps="handled"
       >
         <PrefillForm form={form} />
@@ -128,12 +127,10 @@ const PrefillForm: React.FC<{
   });
 
   return (
-    <Animated.View
-      className="flex-1 gap-6"
-      entering={FadeInRight}
-      exiting={FadeOutLeft}
-    >
-      <RegisterWebbingIllustration className="w-full h-auto" />
+    <View className="gap-6">
+      <View className="h-52">
+        <RegisterWebbingIllustration className="w-full h-full" />
+      </View>
 
       <View>
         <H3 className="text-center">
@@ -154,7 +151,7 @@ const PrefillForm: React.FC<{
         error={form.formState.errors.length?.message ?? null}
       />
       <SelectWebbing control={form.control} />
-    </Animated.View>
+    </View>
   );
 };
 
