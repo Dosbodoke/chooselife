@@ -152,9 +152,6 @@
         },
         "navigator": {
           "finishLabel": "Planejar montagem"
-        },
-        "webbingOwner": {
-          "label": "Fita de:"
         }
       }
     },
@@ -385,7 +382,15 @@
         "label": "Minhas fitas",
         "placeholder": "Ex.: Brasileirinha",
         "inUse": "(em uso)",
-        "clear": "limpar"
+        "clear": "Remover seleção",
+        "emptyState": {
+          "title": "Nenhuma fita disponível",
+          "description": "Fitas que estão sendo utilizada atualmente não vão aparecer aqui."
+        },
+        "registerButton": "Registrar Nova Fita"
+      },
+      "webbingOwner": {
+        "label": "Fita de:"
       }
     }
   },
@@ -396,7 +401,7 @@
       "sessionCreationFailed": "Não foi possível criar a sessão"
     },
     "rig-form": {
-      "unknownWebbing": "Fita não registrada"
+      "unknownWebbing": "Fita sem rótulo"
     }
   }
 }

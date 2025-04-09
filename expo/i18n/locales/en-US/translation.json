@@ -152,9 +152,6 @@
         },
         "navigator": {
           "finishLabel": "Plan Rigging"
-        },
-        "webbingOwner": {
-          "label": "Webbing from:"
         }
       }
     },
@@ -385,7 +382,15 @@
         "label": "My webbings",
         "placeholder": "e.g. Brasileirinha",
         "inUse": "(in use)",
-        "clear": "clear"
+        "clear": "Unselect webbing",
+        "emptyState": {
+          "title": "No webbing available",
+          "description": "Webbings that are currently in use will not appear here."
+        },
+        "registerButton": "Register New Webbing"
+      },
+      "webbingOwner": {
+        "label": "Webbing from:"
       }
     }
   },

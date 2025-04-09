@@ -1,7 +1,13 @@
-import { Link } from 'expo-router';
-import { useCallback, useId, useState } from 'react';
+import {
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  type BottomSheetBackdropProps,
+} from '@gorhom/bottom-sheet';
+import { Link, useRouter } from 'expo-router';
+import { useCallback, useId, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
 import Animated, {
   FadeInDown,
   FadeOut,
@@ -18,21 +24,13 @@ import {
   useUserWebbings,
   useWebbing,
   WebbingWithModel,
+  WebbingWithUsage,
 } from '~/hooks/use-webbings';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
 
 import { Button } from '~/components/ui/button';
 import { Label } from '~/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectTriggerSkeleton,
-  SelectValue,
-  type Option,
-} from '~/components/ui/select';
 import { Separator } from '~/components/ui/separator';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
@@ -199,7 +197,7 @@ const WebbingOwner: React.FC<{ webbingID: number }> = ({ webbingID }) => {
   return (
     <View className="flex-row max-w-56 overflow-hidden">
       <Text className="text-muted-foreground">
-        {t('components.webbing-setup.webbingOwner.label')}
+        {t('components.webbing-setup.webbingOwner.label')}{' '}
       </Text>
       <Link
         href={{
@@ -221,40 +219,223 @@ const SelectMyWebbing: React.FC<{
 }> = ({ webbing, onSelectWebbing }) => {
   const { t } = useTranslation();
   const id = useId();
-  const [triggerWidth, setTriggerWidth] = useState(0);
-  const { data, isPending } = useUserWebbings();
+  const { data, isLoading } = useUserWebbings();
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  const router = useRouter();
 
   // Access the current rigging form values
   const { main, backup, focusedWebbing, getWebbingName } = useRiggingForm();
 
-  // Build a set of IDs of webbings that are in use on the current form
-  const usedWebbingIds = new Set<string>();
-  main.fields.forEach((item, index) => {
-    const isSelected =
-      focusedWebbing?.type === 'main' && focusedWebbing.index === index;
-    if (!isSelected && item.webbingId) {
-      usedWebbingIds.add(item.webbingId);
-    }
-  });
-  backup.fields.forEach((item, index) => {
-    const isSelected =
-      focusedWebbing?.type === 'main' && focusedWebbing.index === index;
-    if (!isSelected && item.webbingId) {
-      usedWebbingIds.add(item.webbingId);
-    }
-  });
+  // Memoize the calculation of used webbing IDs
+  const usedWebbingIds = useMemo(() => {
+    const ids = new Set<string>();
 
-  const getDefaultValue = (): Option | undefined => {
-    if (!webbing.webbingId) return undefined;
-    const selectedWebbingData = data?.find(
-      (web) => web.id.toString() === webbing.webbingId,
-    );
-    if (!selectedWebbingData) return undefined;
-    return {
-      value: selectedWebbingData.id.toString(),
-      label: getWebbingName(selectedWebbingData),
-    };
-  };
+    main.fields.forEach((item, index) => {
+      const isSelected =
+        focusedWebbing?.type === 'main' && focusedWebbing.index === index;
+      if (!isSelected && item.webbingId) {
+        ids.add(item.webbingId);
+      }
+    });
+
+    backup.fields.forEach((item, index) => {
+      const isSelected =
+        focusedWebbing?.type === 'backup' && focusedWebbing.index === index;
+      if (!isSelected && item.webbingId) {
+        ids.add(item.webbingId);
+      }
+    });
+
+    return ids;
+  }, [main.fields, backup.fields, focusedWebbing]);
+
+  // Memoize the selected webbing information
+  const selectedWebbingName = useMemo(
+    () =>
+      webbing.webbingId
+        ? data?.find((web) => web.id.toString() === webbing.webbingId)
+        : null,
+    [webbing.webbingId, data],
+  );
+
+  const handleSelect = useCallback(
+    (selectedWebbing: WebbingWithModel[number] | null) => {
+      onSelectWebbing(selectedWebbing);
+      bottomSheetModalRef.current?.close();
+    },
+    [onSelectWebbing],
+  );
+
+  const handleOpenPress = useCallback(() => {
+    bottomSheetModalRef.current?.present();
+  }, []);
+
+  const handleRegisterNewWebbing = useCallback(() => {
+    bottomSheetModalRef.current?.close();
+    router.push('/(modals)/register-webbing');
+  }, [router]);
+
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        pressBehavior="close"
+      />
+    ),
+    [],
+  );
+
+  // Memoize the selector button to prevent re-renders
+  const SelectorButton = useMemo(
+    () => (
+      <TouchableOpacity
+        id={id}
+        onPress={handleOpenPress}
+        className="flex-row justify-between items-center px-4 py-3 rounded-md border border-input bg-background"
+      >
+        <Text
+          className={
+            selectedWebbingName ? 'text-primary' : 'text-muted-foreground'
+          }
+        >
+          {selectedWebbingName
+            ? getWebbingName(selectedWebbingName)
+            : t('components.webbing-setup.selectMyWebbing.placeholder')}
+        </Text>
+        <LucideIcon name="ChevronDown" className="text-foreground" />
+      </TouchableOpacity>
+    ),
+    [id, handleOpenPress, selectedWebbingName, getWebbingName, t],
+  );
+
+  // Extract the webbing item rendering logic with useCallback
+  const renderWebbingItem = useCallback(
+    (item: WebbingWithUsage) => {
+      const itemId = item.id.toString();
+      const isUsed = usedWebbingIds.has(itemId) || item.isUsed;
+      const inUseLabel = t('components.webbing-setup.selectMyWebbing.inUse');
+      const label = getWebbingName(item) + (isUsed ? ` ${inUseLabel}` : '');
+
+      return (
+        <TouchableOpacity
+          key={item.id}
+          onPress={() => !isUsed && handleSelect(item)}
+          disabled={isUsed}
+          className={cn(
+            'flex-row justify-between items-center py-3 px-4 mb-1 rounded-md',
+            isUsed ? 'opacity-50' : 'active:bg-muted',
+            itemId === webbing.webbingId && 'bg-primary/20',
+          )}
+        >
+          <Text
+            className={cn('text-foreground', isUsed && 'text-muted-foreground')}
+          >
+            {label}
+          </Text>
+
+          <View className="flex flex-row gap-2 items-center">
+            <LucideIcon
+              name="MoveHorizontal"
+              className={cn(
+                'text-foreground',
+                isUsed && 'text-muted-foreground',
+              )}
+            />
+            <Text
+              className={cn(
+                'text-foreground',
+                isUsed && 'text-muted-foreground',
+              )}
+            >
+              {item.length}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [usedWebbingIds, getWebbingName, t, webbing.webbingId, handleSelect],
+  );
+
+  // Memoize the register button that will always be shown
+  const RegisterButton = useMemo(
+    () => (
+      <Button
+        onPress={handleRegisterNewWebbing}
+        variant="link"
+        className="w-full mt-2"
+      >
+        <Text className="text-blue-500">
+          {t('components.webbing-setup.selectMyWebbing.registerButton')}
+        </Text>
+      </Button>
+    ),
+    [handleRegisterNewWebbing, t],
+  );
+
+  // Memoize the empty state component
+  const EmptyState = useMemo(
+    () => (
+      <View className="items-center justify-center py-10 gap-4">
+        <LucideIcon
+          name="PackagePlus"
+          size={48}
+          className="text-muted-foreground"
+        />
+        <Text className="text-center text-lg font-medium">
+          {t('components.webbing-setup.selectMyWebbing.emptyState.title')}
+        </Text>
+        <Text className="text-center text-muted-foreground mb-4">
+          {t('components.webbing-setup.selectMyWebbing.emptyState.description')}
+        </Text>
+        {RegisterButton}
+      </View>
+    ),
+    [t, RegisterButton],
+  );
+
+  // Memoize the webbing list component
+  const WebbingList = useMemo(
+    () => (
+      <>
+        {data?.map(renderWebbingItem)}
+        {RegisterButton}
+
+        <Separator className="my-3" />
+        <Button
+          variant="ghost"
+          onPress={() => handleSelect(null)}
+          className="mt-2"
+        >
+          <Text>{t('components.webbing-setup.selectMyWebbing.clear')}</Text>
+        </Button>
+      </>
+    ),
+    [data, renderWebbingItem, t, handleSelect, RegisterButton],
+  );
+
+  const BottomSheetContent = useMemo(
+    () => (
+      <View className="flex-1 p-4">
+        <Text className="text-lg font-semibold text-center mb-4">
+          {t('components.webbing-setup.selectMyWebbing.label')}
+        </Text>
+
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingBottom: 24,
+          }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {data && data.length > 0 ? WebbingList : EmptyState}
+        </ScrollView>
+      </View>
+    ),
+    [t, data, WebbingList, EmptyState],
+  );
 
   return (
     <View className="gap-2 w-full">
@@ -262,70 +443,23 @@ const SelectMyWebbing: React.FC<{
         {t('components.webbing-setup.selectMyWebbing.label')}
       </Label>
 
-      {isPending ? (
-        <SelectTriggerSkeleton />
+      {isLoading ? (
+        <Skeleton className="w-full h-12 rounded-md" />
       ) : (
-        <Select
-          defaultValue={getDefaultValue()}
-          onValueChange={(opt) => {
-            if (opt) {
-              const selectedWeb = data?.find(
-                (web) => web.id.toString() === opt.value,
-              );
-              if (selectedWeb) onSelectWebbing(selectedWeb);
-            } else {
-              onSelectWebbing(null);
-            }
-          }}
-        >
-          <SelectTrigger
-            id={id}
-            aria-labelledby={id}
-            onLayout={(e) => {
-              const { width } = e.nativeEvent.layout;
-              setTriggerWidth(width);
-            }}
+        <>
+          {SelectorButton}
+
+          <BottomSheetModal
+            ref={bottomSheetModalRef}
+            snapPoints={['60%']}
+            enablePanDownToClose
+            backdropComponent={renderBackdrop}
+            handleIndicatorStyle={{ backgroundColor: '#999' }}
+            enableDynamicSizing={false}
           >
-            <SelectValue
-              className={cn(
-                webbing.webbingId ? 'text-primary' : 'text-muted-foreground',
-              )}
-              placeholder={t(
-                'components.webbing-setup.selectMyWebbing.placeholder',
-              )}
-            />
-          </SelectTrigger>
-          <SelectContent style={{ width: triggerWidth }}>
-            <ScrollView
-              contentContainerStyle={{ flexGrow: 1 }}
-              keyboardShouldPersistTaps="handled"
-            >
-              {data?.map((item) => {
-                const itemId = item.id.toString();
-                const isUsed = usedWebbingIds.has(itemId) || item.isUsed;
-                const inUseLabel = t(
-                  'components.webbing-setup.selectMyWebbing.inUse',
-                );
-                const label =
-                  getWebbingName(item) + (isUsed ? ` ${inUseLabel}` : '');
-                return (
-                  <SelectItem
-                    key={item.id}
-                    value={itemId}
-                    label={label}
-                    disabled={isUsed}
-                  />
-                );
-              })}
-              <Separator />
-              <Button variant="ghost" onPress={() => onSelectWebbing(null)}>
-                <Text>
-                  {t('components.webbing-setup.selectMyWebbing.clear')}
-                </Text>
-              </Button>
-            </ScrollView>
-          </SelectContent>
-        </Select>
+            {BottomSheetContent}
+          </BottomSheetModal>
+        </>
       )}
     </View>
   );
