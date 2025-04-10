@@ -1,7 +1,9 @@
 {
   "common": {
     "soon": "Em breve",
-    "seeAll": "Ver todos"
+    "seeAll": "Ver todos",
+    "loop": "Olhal",
+    "loops": "Olhais"
   },
   "app": {
     "(modals)": {
@@ -30,8 +32,24 @@
         "title": "Registrar fita",
         "description": "Registrar sua fita permite acompanhar o histórico de uso e receber lembretes de manutenção.",
         "finishLabel": "Cadastrar",
-        "modelLabel": "Modelo da fita",
-        "modelPlaceholder": "Ex.: Brasileirinha"
+        "selectModel": {
+          "label": "Modelo da fita",
+          "placeholder": "Ex.: Brasileirinha",
+          "clear": "Remover seleção",
+          "emptyState": {
+            "title": "Nenhum modelo disponível",
+            "description": "Não há modelos que correspondam aos seus critérios"
+          }
+        },
+        "tagName": {
+          "min": "Must be at least 3 characters",
+          "label": "Nome da Fita",
+          "placeholder": "Nome para identificação desta fita"
+        },
+        "note": {
+          "label": "Nota",
+          "placeholder": "Adicione qualquer informação adicional para esta fita"
+        }
       }
     },
     "(tabs)": {
@@ -152,9 +170,6 @@
         },
         "navigator": {
           "finishLabel": "Planejar montagem"
-        },
-        "webbingOwner": {
-          "label": "Fita de:"
         }
       }
     },
@@ -385,7 +400,15 @@
         "label": "Minhas fitas",
         "placeholder": "Ex.: Brasileirinha",
         "inUse": "(em uso)",
-        "clear": "limpar"
+        "clear": "Remover seleção",
+        "emptyState": {
+          "title": "Nenhuma fita disponível",
+          "description": "Fitas que estão sendo utilizada atualmente não vão aparecer aqui."
+        },
+        "registerButton": "Registrar Nova Fita"
+      },
+      "webbingOwner": {
+        "label": "Fita de:"
       }
     }
   },
@@ -396,7 +419,7 @@
       "sessionCreationFailed": "Não foi possível criar a sessão"
     },
     "rig-form": {
-      "unknownWebbing": "Fita não registrada"
+      "unknownWebbing": "Fita sem nome"
     }
   }
 }

@@ -100,8 +100,8 @@ export default function RootLayout() {
                         options={{ header: () => <OfflineBanner /> }}
                       />
                     </Stack>
+                    <PortalHost />
                   </BottomSheetModalProvider>
-                  <PortalHost />
                 </KeyboardProvider>
               </GestureHandlerRootView>
             </ThemeProvider>

@@ -1,7 +1,9 @@
 {
   "common": {
     "soon": "Soon",
-    "seeAll": "See all"
+    "seeAll": "See all",
+    "loop": "Loop",
+    "loops": "Loops"
   },
   "app": {
     "(modals)": {
@@ -30,8 +32,24 @@
         "title": "Register Webbing",
         "description": "Registering your webbing lets you track its usage history and receive maintenance reminders.",
         "finishLabel": "Register",
-        "modelLabel": "Webbing Model",
-        "modelPlaceholder": "E.g., Brasileirinha"
+        "selectModel": {
+          "label": "Webbing Model",
+          "placeholder": "E.g., Brasileirinha",
+          "clear": "Unselect model",
+          "emptyState": {
+            "title": "No model available",
+            "description": "There are no models that match your criteria"
+          }
+        },
+        "tagName": {
+          "min": "Must be at least 3 characters",
+          "label": "Webbing Name",
+          "placeholder": "A name so you can identify this webbing"
+        },
+        "note": {
+          "label": "Note",
+          "placeholder": "Add any additional information for this webbing"
+        }
       }
     },
     "(tabs)": {
@@ -152,9 +170,6 @@
         },
         "navigator": {
           "finishLabel": "Plan Rigging"
-        },
-        "webbingOwner": {
-          "label": "Webbing from:"
         }
       }
     },
@@ -385,7 +400,15 @@
         "label": "My webbings",
         "placeholder": "e.g. Brasileirinha",
         "inUse": "(in use)",
-        "clear": "clear"
+        "clear": "Unselect webbing",
+        "emptyState": {
+          "title": "No webbing available",
+          "description": "Webbings that are currently in use will not appear here."
+        },
+        "registerButton": "Register New Webbing"
+      },
+      "webbingOwner": {
+        "label": "Webbing from:"
       }
     }
   },

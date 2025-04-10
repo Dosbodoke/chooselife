@@ -24,6 +24,7 @@ import {
 } from '~/context/rig-form';
 import { useHighline } from '~/hooks/use-highline';
 import { rigSetupKeyFactory, useRigSetup } from '~/hooks/use-rig-setup';
+import { getWebbingName } from '~/hooks/use-webbings';
 import { HighlineRigIllustration } from '~/lib/icons/highline-rig';
 import { supabase } from '~/lib/supabase';
 import { useColorScheme } from '~/lib/useColorScheme';
@@ -63,7 +64,7 @@ export const HighlineSetup: React.FC = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { profile } = useAuth();
-  const { form, getWebbingName } = useRiggingForm();
+  const { form } = useRiggingForm();
   const {
     latestSetup,
     query: { isPending: setupIsPending },
