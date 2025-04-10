@@ -1,11 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import React from 'react';
 import { useFieldArray, useForm, type UseFormReturn } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
-import { type WebbingWithModel } from '~/hooks/use-webbings';
+import { getWebbingName } from '~/hooks/use-webbings';
 
 import { webbingSchema } from '~/components/webbing-input';
 
@@ -48,9 +47,6 @@ type RiggingFormContextType = {
   backup: SectionContext;
   focusedWebbing: FocusedWebbing;
   highlineLength: number;
-  getWebbingName: (
-    webbing: Omit<WebbingWithModel[number], 'rig_setup_webbing'> | null,
-  ) => string;
   handleNewSection: (type: WebType) => void;
   setFocusedWebbing: React.Dispatch<React.SetStateAction<FocusedWebbing>>;
 };
@@ -63,20 +59,8 @@ export const RigFormProvider: React.FC<{
   highlineLength: number;
   children: React.ReactNode;
 }> = ({ highlineLength, children }) => {
-  const { t } = useTranslation();
   const [focusedWebbing, setFocusedWebbing] =
     React.useState<FocusedWebbing | null>(null);
-
-  const getWebbingName = React.useCallback(
-    (webbing: Omit<WebbingWithModel[number], 'rig_setup_webbing'> | null) => {
-      return (
-        webbing?.model?.name ||
-        webbing?.tag_name ||
-        t('context.rig-form.unknownWebbing')
-      );
-    },
-    [],
-  );
 
   const form = useForm<RigSchema>({
     resolver: zodResolver(rigSchema),
@@ -138,7 +122,6 @@ export const RigFormProvider: React.FC<{
         backup: { ...backup, fields: backup.fields },
         focusedWebbing,
         highlineLength,
-        getWebbingName,
         handleNewSection,
         setFocusedWebbing,
       }}

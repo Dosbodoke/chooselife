@@ -1,7 +1,9 @@
 {
   "common": {
     "soon": "Em breve",
-    "seeAll": "Ver todos"
+    "seeAll": "Ver todos",
+    "loop": "Olhal",
+    "loops": "Olhais"
   },
   "app": {
     "(modals)": {
@@ -417,7 +419,7 @@
       "sessionCreationFailed": "Não foi possível criar a sessão"
     },
     "rig-form": {
-      "unknownWebbing": "Fita sem rótulo"
+      "unknownWebbing": "Fita sem nome"
     }
   }
 }

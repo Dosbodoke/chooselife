@@ -10,7 +10,7 @@ import { Link } from 'expo-router';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { TouchableOpacity, View } from 'react-native';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
@@ -39,7 +39,7 @@ export default function SettingsPage() {
   if (profile && profile.username) {
     return (
       <SafeAreaOfflineView className="h-full w-full">
-        <View className="justify-between flex-1 p-4 pt-9">
+        <ScrollView contentContainerClassName="min-h-screen justify-between h-full flex-1 p-4 pt-9">
           <View className="gap-6">
             <Link
               href={{
@@ -72,7 +72,7 @@ export default function SettingsPage() {
               </Text>
             </Button>
           </View>
-        </View>
+        </ScrollView>
       </SafeAreaOfflineView>
     );
   }

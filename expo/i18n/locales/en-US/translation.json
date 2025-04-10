@@ -1,7 +1,9 @@
 {
   "common": {
     "soon": "Soon",
-    "seeAll": "See all"
+    "seeAll": "See all",
+    "loop": "Loop",
+    "loops": "Loops"
   },
   "app": {
     "(modals)": {

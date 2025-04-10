@@ -1,5 +1,6 @@
 import { QueryData } from '@supabase/supabase-js';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import i18next from 'i18next';
 
 import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
@@ -122,4 +123,14 @@ export const useWebbing = (id: number) => {
     },
     enabled: typeof id === 'number' && !isNaN(id),
   });
+};
+
+export const getWebbingName = (
+  webbing: Omit<WebbingWithModel[number], 'rig_setup_webbing'> | null,
+) => {
+  return (
+    webbing?.tag_name ||
+    webbing?.model?.name ||
+    i18next.t('context.rig-form.unknownWebbing')
+  );
 };
