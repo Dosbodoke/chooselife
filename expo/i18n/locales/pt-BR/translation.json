@@ -30,8 +30,24 @@
         "title": "Registrar fita",
         "description": "Registrar sua fita permite acompanhar o histórico de uso e receber lembretes de manutenção.",
         "finishLabel": "Cadastrar",
-        "modelLabel": "Modelo da fita",
-        "modelPlaceholder": "Ex.: Brasileirinha"
+        "selectModel": {
+          "label": "Modelo da fita",
+          "placeholder": "Ex.: Brasileirinha",
+          "clear": "Remover seleção",
+          "emptyState": {
+            "title": "Nenhum modelo disponível",
+            "description": "Não há modelos que correspondam aos seus critérios"
+          }
+        },
+        "tagName": {
+          "min": "Must be at least 3 characters",
+          "label": "Nome da Fita",
+          "placeholder": "Nome para identificação desta fita"
+        },
+        "note": {
+          "label": "Nota",
+          "placeholder": "Adicione qualquer informação adicional para esta fita"
+        }
       }
     },
     "(tabs)": {
