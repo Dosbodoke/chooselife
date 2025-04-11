@@ -21,6 +21,7 @@ import {
 } from '~/context/rig-form';
 import { useProfile } from '~/hooks/use-profile';
 import {
+  getWebbingName,
   useUserWebbings,
   useWebbing,
   WebbingWithModel,
@@ -42,14 +43,8 @@ export const _exitingAnimation = FadeOut.springify().damping(DAMPING);
 export const _enteringAnimation = FadeInDown.springify().damping(DAMPING);
 
 export const WebForm: React.FC = () => {
-  const {
-    form,
-    main,
-    backup,
-    focusedWebbing,
-    setFocusedWebbing,
-    getWebbingName,
-  } = useRiggingForm();
+  const { form, main, backup, focusedWebbing, setFocusedWebbing } =
+    useRiggingForm();
 
   if (!focusedWebbing) return null;
 
@@ -224,7 +219,7 @@ const SelectMyWebbing: React.FC<{
   const router = useRouter();
 
   // Access the current rigging form values
-  const { main, backup, focusedWebbing, getWebbingName } = useRiggingForm();
+  const { main, backup, focusedWebbing } = useRiggingForm();
 
   // Memoize the calculation of used webbing IDs
   const usedWebbingIds = useMemo(() => {
