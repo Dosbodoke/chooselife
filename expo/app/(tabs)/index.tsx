@@ -11,6 +11,7 @@ import React, {
 } from 'react';
 import { View } from 'react-native';
 
+import { ChooselifeTrails, useChooselifeMap } from '~/hooks/use-chooselife-map';
 import {
   useHighline,
   type Highline,
@@ -83,6 +84,7 @@ async function getMyLocation(): Promise<
 }
 
 export default function Screen() {
+  useChooselifeMap();
   // Refs
   const mapRef = useRef<Mapbox.MapView>(null);
   const cameraRef = useRef<Mapbox.Camera>(null);
@@ -257,9 +259,12 @@ export default function Screen() {
         <Mapbox.Camera
           ref={cameraRef}
           zoomLevel={DEFAULT_ZOOM}
+          maxZoomLevel={20}
           centerCoordinate={[DEFAULT_LONGITUDE, DEFAULT_LATITUDE]}
         />
         <Mapbox.UserLocation showsUserHeadingIndicator />
+
+        <ChooselifeTrails />
 
         <Markers
           cameraRef={cameraRef}
@@ -286,7 +291,7 @@ export default function Screen() {
 
       <ListingsBottomSheet
         highlines={highlines}
-        hasFocusedMarker={!!focusedMarker}
+        hasFocusedMarker={!!highlightedMarker}
         isLoading={isLoading}
       />
     </View>
