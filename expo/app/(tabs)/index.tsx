@@ -227,7 +227,7 @@ export default function Screen() {
         styleURL={getMapStyle(mapType)}
         scaleBarEnabled={false}
         onMapIdle={handleMapIdle}
-        onDidFinishRenderingMap={() => {
+        onDidFinishLoadingMap={() => {
           if (!focusedMarker) {
             goToMyLocation();
           }

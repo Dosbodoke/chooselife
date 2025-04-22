@@ -7,7 +7,8 @@ import { View } from 'react-native';
 import { PointFeature } from 'supercluster';
 import useSuperCluster from 'use-supercluster';
 
-import type { Highline } from '~/hooks/use-highline';
+import { useAuth } from '~/context/auth';
+import { highlineKeyFactory, type Highline } from '~/hooks/use-highline';
 import { MarkerCL } from '~/lib/icons/MarkerCL';
 
 import { Text } from '../ui/text';
@@ -26,6 +27,7 @@ export const Markers: React.FC<{
   highlightedMarker: Highline | null;
   updateMarkers: (highlines: Highline[], focused: Highline) => void;
 }> = ({ cameraRef, highlines, highlightedMarker, updateMarkers }) => {
+  const { profile } = useAuth();
   const queryClient = useQueryClient();
   const cameraState = useAtomValue(cameraStateAtom);
 
@@ -131,7 +133,9 @@ export const Markers: React.FC<{
   const handleMarkerSelect = useCallback(
     (highID: string) => {
       const highline = (
-        queryClient.getQueryData<Highline[]>(['highlines']) || []
+        queryClient.getQueryData<Highline[]>(
+          highlineKeyFactory.list(profile?.id),
+        ) || []
       ).find((high) => high.id === highID);
       if (highline) {
         updateMarkers([highline], highline);
