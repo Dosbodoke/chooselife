@@ -361,8 +361,16 @@ export const ScrollableCanvas = ({
           showsHorizontalScrollIndicator
           scrollEventThrottle={16}
           onScroll={scrollHandler}
+          contentContainerStyle={{ minWidth: width }}
         >
-          <Canvas style={{ width, height }}>{children}</Canvas>
+          <Canvas
+            style={{
+              width: width || 1, // Ensure non-zero width
+              height: height || 1, // Ensure non-zero height
+            }}
+          >
+            {children}
+          </Canvas>
         </Animated.ScrollView>
       </Animated.View>
     </GestureDetector>
