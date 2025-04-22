@@ -11,6 +11,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   userInterfaceStyle: "light",
   assetBundlePatterns: ["**/*"],
   ios: {
+    infoPlist: {
+      "ITSAppUsesNonExemptEncryption": false,
+    },
+    bundleIdentifier: "com.bodok.chooselife",
     supportsTablet: true,
     icon: {
       light: "./assets/icons/ios-light.png",
@@ -44,8 +48,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       "expo-notifications",
       {
-        "icon": "./assets/icons/android-notification-icon.png",
-        "color": "#000000",
+        icon: "./assets/icons/android-notification-icon.png",
+        color: "#000000",
       },
     ],
     [
@@ -64,7 +68,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       "@rnmapbox/maps",
       {
-        "RNMapboxMapsDownloadToken": process.env.MAPBOX_DOWNLOAD_TOKEN,
+        RNMapboxMapsDownloadToken: process.env.MAPBOX_DOWNLOAD_TOKEN,
       },
     ],
     [
