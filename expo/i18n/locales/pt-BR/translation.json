@@ -211,7 +211,6 @@
         "inputPlaceholder": "Seu nome de usuário"
       },
       "ProfileInfoForm": {
-        "title": "Informações Pessoais",
         "subtitle": "Conte-nos mais sobre você.",
         "inputPlaceholderName": "Seu nome",
         "birthdayLabel": "Data de Nascimento:",

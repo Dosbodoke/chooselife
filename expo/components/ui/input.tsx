@@ -31,7 +31,7 @@ const Input = React.forwardRef<React.ElementRef<typeof TextInput>, InputProps>(
     ref,
   ) => {
     return (
-      <View className="gap-2">
+      <View className="gap-2 w-full">
         {label && <Label htmlFor={id}>{label}</Label>}
         <View className="relative flex-row items-center">
           <TextInput
