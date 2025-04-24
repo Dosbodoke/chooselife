@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
   Easing,
@@ -87,20 +87,22 @@ const OAuthButtons: React.FC = () => {
         </View>
       ) : null}
 
-      <Button
-        onPress={() => handleLogin('apple')}
-        variant="outline"
-        disabled={isLoginPending}
-        className="flex-row gap-3 items-center"
-      >
-        <View className="h-6 w-6">
-          <AppleIcon fill={colorScheme === 'dark' ? '#FFFFFF' : '#000000'} />
-        </View>
-        <Text className="text-primary">
-          {t('app.(modals).login.oauth.continueApple')}
-        </Text>
-        {lastLoginMethod === 'apple' ? <GreenDot pulse /> : null}
-      </Button>
+      {Platform.OS === 'ios' ? (
+        <Button
+          onPress={() => handleLogin('apple')}
+          variant="outline"
+          disabled={isLoginPending}
+          className="flex-row gap-3 items-center"
+        >
+          <View className="h-6 w-6">
+            <AppleIcon fill={colorScheme === 'dark' ? '#FFFFFF' : '#000000'} />
+          </View>
+          <Text className="text-primary">
+            {t('app.(modals).login.oauth.continueApple')}
+          </Text>
+          {lastLoginMethod === 'apple' ? <GreenDot pulse /> : null}
+        </Button>
+      ) : null}
       <Button
         onPress={() => handleLogin('google')}
         variant="outline"

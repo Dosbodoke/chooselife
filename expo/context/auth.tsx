@@ -1,4 +1,5 @@
 import type { Session } from '@supabase/supabase-js';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { AuthError, makeRedirectUri } from 'expo-auth-session';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as Linking from 'expo-linking';
@@ -208,6 +209,101 @@ export function AuthProvider(props: React.PropsWithChildren) {
     [t, saveLoginMethod],
   );
 
+  const handleAppleLogin = async (redirectTo: string | undefined) => {
+    try {
+      setPendingRedirect(redirectTo || 'back');
+
+      // Request Apple authentication
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      // Sign in via Supabase Auth.
+      if (credential.identityToken) {
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: 'apple',
+          token: credential.identityToken,
+        });
+
+        if (error) throw error;
+
+        await saveLoginMethod('apple');
+        return { success: true };
+      } else {
+        throw new Error('No identityToken.');
+      }
+    } catch (error) {
+      setPendingRedirect(null);
+
+      // Type guard to check if error is an object with a code property
+      if (error && typeof error === 'object' && 'code' in error) {
+        // User canceled the login flow
+        if (error.code === 'ERR_APPLE_AUTHENTICATION_CANCELED') {
+          return { success: false };
+        }
+      }
+
+      if (error instanceof AuthError) {
+        return { success: false, errorMessage: error.message };
+      }
+
+      return {
+        success: false,
+        errorMessage: t('context.auth.appleLoginFailed'),
+      };
+    }
+  };
+
+  const handleGoogleLogin = async ({
+    redirectTo,
+  }: {
+    redirectTo: string | undefined;
+  }) => {
+    try {
+      setPendingRedirect(redirectTo || 'back');
+      const baseRedirectTo = makeRedirectUri({
+        path: 'login',
+        queryParams: { redirect_to: redirectTo },
+      });
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: baseRedirectTo,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) throw error;
+
+      const res = await WebBrowser.openAuthSessionAsync(
+        data?.url ?? '',
+        baseRedirectTo,
+      );
+
+      if (res.type === 'success') {
+        const { url } = res;
+        await createSessionFromUrl(url);
+        await saveLoginMethod('google');
+
+        return {
+          success: true,
+        };
+      }
+
+      throw new Error(t('context.auth.sessionCreationFailed'));
+    } catch (error) {
+      setPendingRedirect(null);
+      if (error instanceof AuthError) {
+        return { success: false, errorMessage: error.message };
+      }
+      return { success: false };
+    }
+  };
+
   const performOAuth = useCallback(
     async ({
       method,
@@ -216,46 +312,13 @@ export function AuthProvider(props: React.PropsWithChildren) {
       method: OAuthMethod;
       redirectTo: string | undefined;
     }): AuthMethodResponse => {
-      try {
-        setPendingRedirect(redirectTo || 'back');
-        const baseRedirectTo = makeRedirectUri({
-          path: 'login',
-          queryParams: { redirect_to: redirectTo },
-        });
-
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: method,
-          options: {
-            redirectTo: baseRedirectTo,
-            skipBrowserRedirect: true,
-          },
-        });
-
-        if (error) throw error;
-
-        const res = await WebBrowser.openAuthSessionAsync(
-          data?.url ?? '',
-          baseRedirectTo,
-        );
-
-        if (res.type === 'success') {
-          const { url } = res;
-          await createSessionFromUrl(url);
-          await saveLoginMethod(method);
-
-          return {
-            success: true,
-          };
-        }
-
-        throw new Error(t('context.auth.sessionCreationFailed'));
-      } catch (error) {
-        setPendingRedirect(null);
-        if (error instanceof AuthError) {
-          return { success: false, errorMessage: error.message };
-        }
-        return { success: false };
+      if (method === 'apple') {
+        return handleAppleLogin(redirectTo);
+      } else if (method === 'google') {
+        return handleGoogleLogin({ redirectTo });
       }
+
+      return { success: false };
     },
     [t, saveLoginMethod],
   );

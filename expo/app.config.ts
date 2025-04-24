@@ -11,6 +11,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   userInterfaceStyle: "light",
   assetBundlePatterns: ["**/*"],
   ios: {
+    usesAppleSignIn: true,
     infoPlist: {
       "ITSAppUsesNonExemptEncryption": false,
     },
@@ -42,6 +43,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     favicon: "./assets/icons/favicon.png",
   },
   plugins: [
+    "expo-apple-authentication",
     "expo-sqlite",
     "expo-router",
     "expo-localization",
