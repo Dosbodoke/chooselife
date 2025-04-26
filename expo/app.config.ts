@@ -14,6 +14,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     usesAppleSignIn: true,
     infoPlist: {
       "ITSAppUsesNonExemptEncryption": false,
+      "UIUserInterfaceStyle": "Light",
     },
     config: {
       usesNonExemptEncryption: false,
@@ -64,10 +65,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         imageWidth: 200,
         resizeMode: "contain",
         backgroundColor: "#FFFFFF",
-        dark: {
-          image: "./assets/icons/splash-icon-light.png",
-          backgroundColor: "#000000",
-        },
+        // dark: {
+        //   image: "./assets/icons/splash-icon-light.png",
+        //   backgroundColor: "#000000",
+        // },
       },
     ],
     [
