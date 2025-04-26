@@ -19,9 +19,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     config: {
       usesNonExemptEncryption: false,
     },
-    config: {
-      usesNonExemptEncryption: false,
-    },
     bundleIdentifier: "com.bodok.chooselife",
     supportsTablet: false,
     icon: {
