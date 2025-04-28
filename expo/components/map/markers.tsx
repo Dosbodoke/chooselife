@@ -80,7 +80,9 @@ export const Markers: React.FC<{
       if (shouldHighlightCards) {
         const leaves = supercluster.getLeaves(cluster_id);
         const highlinesData =
-          queryClient.getQueryData<Highline[]>(['highlines']) || [];
+          queryClient.getQueryData<Highline[]>(
+            highlineKeyFactory.list(profile?.id),
+          ) || [];
         const highlinesFromLeaves: Highline[] = [];
         leaves.forEach((l) => {
           const highline = highlinesData.find(
@@ -96,7 +98,7 @@ export const Markers: React.FC<{
       cameraRef.current?.setCamera({
         centerCoordinate: [lng, lat],
         zoomLevel: clampedZoom,
-        animationDuration: 1000,
+        animationDuration: 300,
         animationMode: 'flyTo',
       });
     },
