@@ -2,7 +2,7 @@ import MapboxGL from '@rnmapbox/maps';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Feature, GeoJsonProperties } from 'geojson';
 import { useAtomValue } from 'jotai';
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View } from 'react-native';
 import { PointFeature } from 'supercluster';
 import useSuperCluster from 'use-supercluster';
@@ -93,6 +93,8 @@ export const Markers: React.FC<{
         if (highlinesFromLeaves.length > 0) {
           updateMarkers(highlinesFromLeaves, highlinesFromLeaves[0]);
         }
+
+        return;
       }
 
       cameraRef.current?.setCamera({
@@ -112,26 +114,6 @@ export const Markers: React.FC<{
       profile?.id,
     ],
   );
-
-  // Adjust camera when a marker is highlighted.
-  useEffect(() => {
-    if (!highlightedMarker) return;
-    const ne: [number, number] = [
-      Math.max(
-        highlightedMarker.anchor_a_long,
-        highlightedMarker.anchor_b_long,
-      ),
-      Math.max(highlightedMarker.anchor_a_lat, highlightedMarker.anchor_b_lat),
-    ];
-    const sw: [number, number] = [
-      Math.min(
-        highlightedMarker.anchor_a_long,
-        highlightedMarker.anchor_b_long,
-      ),
-      Math.min(highlightedMarker.anchor_a_lat, highlightedMarker.anchor_b_lat),
-    ];
-    cameraRef.current?.fitBounds(ne, sw, [50, 50, 200, 250], 1000);
-  }, [highlightedMarker, cameraRef]);
 
   const handleMarkerSelect = useCallback(
     (highID: string) => {

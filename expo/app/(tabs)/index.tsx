@@ -214,6 +214,26 @@ export default function Screen() {
     }
   }, [focusedMarker, highlines]);
 
+  // Adjust camera when a marker is highlighted.
+  useEffect(() => {
+    if (!highlightedMarker) return;
+    const ne: [number, number] = [
+      Math.max(
+        highlightedMarker.anchor_a_long,
+        highlightedMarker.anchor_b_long,
+      ),
+      Math.max(highlightedMarker.anchor_a_lat, highlightedMarker.anchor_b_lat),
+    ];
+    const sw: [number, number] = [
+      Math.min(
+        highlightedMarker.anchor_a_long,
+        highlightedMarker.anchor_b_long,
+      ),
+      Math.min(highlightedMarker.anchor_a_lat, highlightedMarker.anchor_b_lat),
+    ];
+    cameraRef.current?.fitBounds(ne, sw, [50, 50, 200, 250], 1000);
+  }, [highlightedMarker, cameraRef]);
+
   return (
     <View style={{ flex: 1 }}>
       <ExploreHeader
