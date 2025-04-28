@@ -109,6 +109,7 @@ export const Markers: React.FC<{
       cameraRef,
       updateMarkers,
       clusters,
+      profile?.id,
     ],
   );
 
@@ -143,7 +144,7 @@ export const Markers: React.FC<{
         updateMarkers([highline], highline);
       }
     },
-    [queryClient, updateMarkers],
+    [queryClient, updateMarkers, profile?.id],
   );
 
   const polylineFeature = useMemo<Feature | null>(() => {
@@ -222,11 +223,13 @@ export const Markers: React.FC<{
 
           {polylineFeature && (
             <MapboxGL.ShapeSource
-              id={`polyline-${highlightedMarker.id}`}
+              key={`polyline-source-${highlightedMarker.id}`}
+              id={`highlightedMarker-polyline-source`}
               shape={polylineFeature}
             >
               <MapboxGL.LineLayer
-                id={`linelayer-${highlightedMarker.id}`}
+                key={`linelayer-${highlightedMarker.id}`}
+                id={`highlightedMarker-linelayer`}
                 style={{
                   lineColor: '#000',
                   lineWidth: 3,
