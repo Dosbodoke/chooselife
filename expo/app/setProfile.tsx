@@ -74,7 +74,7 @@ export default function SetProfile() {
           name: data.name,
           profile_picture: data.profilePicture,
           description: data.description,
-          birthday: data.birthday,
+          birthday: data.birthday || null,
         })
         .select()
         .single();
