@@ -80,6 +80,14 @@
       "settings": {
         "viewProfile": "View profile",
         "logOut": "Log Out",
+        "delete": {
+          "label": "Delete Account",
+          "alertLabel": "Delete your account",
+          "alertDescription": "This will permanently remove all your data. This action cannot be undone.",
+          "alertCancel": "Cancel",
+          "alertConfirm": "Delete Account",
+          "alertError": "Could not delete account. Please try again."
+        },
         "logIn": "Log In",
         "editProfile": {
           "triggerLabel": "Personal information",

@@ -81,7 +81,10 @@ export function AuthProvider(props: React.PropsWithChildren) {
   const [pendingRedirect, setPendingRedirect] = useState<
     'back' | string | null
   >(null);
-  const { data: profile } = useProfile(session?.user.id);
+  const {
+    query: { data: profile },
+    invalidateProfile,
+  } = useProfile(session?.user.id || null);
 
   const saveLoginMethod = useCallback(async (method: LoginMethod) => {
     try {
@@ -144,6 +147,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      invalidateProfile();
       return { success: true };
     } catch (error) {
       if (error instanceof AuthError) {

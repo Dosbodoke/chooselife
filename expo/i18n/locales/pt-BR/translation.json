@@ -80,6 +80,14 @@
       "settings": {
         "viewProfile": "Visualizar perfil",
         "logOut": "Sair da conta",
+        "delete": {
+          "label": "Deletar Conta",
+          "alertLabel": "Deletar sua Conta",
+          "alertDescription": "Isto irá remover permanentemente todos os seus dados. Esta ação não pode ser desfeita.",
+          "alertCancel": "Cancelar",
+          "alertConfirm": "Deletar Conta",
+          "alertError": "Não foi possível deletar a conta. Por favor, tente novamente."
+        },
         "logIn": "Entrar na conta",
         "editProfile": {
           "triggerLabel": "Informações pessoais",
