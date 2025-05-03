@@ -40,17 +40,38 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
-    // Delete avatar from storage if exists
-    if (profiles.length > 1 && profiles[0].profile_picture) {
-      const user_avatar = profiles[0].profile_picture;
-      const { data: avatar_deletion, error: avatar_error } = await supabaseAdmin
-        .storage
-        .from("avatars")
-        .remove([user_avatar.name]);
-      if (avatar_error) throw avatar_error;
-      console.log(
-        "Avatar deleted: " + JSON.stringify(avatar_deletion, null, 2),
-      );
+
+    // Delete avatar from storage if exists and is not an external URL
+    if (profiles.length > 0 && profiles[0].profile_picture) {
+      const profilePicture = profiles[0].profile_picture;
+
+      // Check if profile_picture is a URL string or an object with a URL name
+      const isExternalUrl = typeof profilePicture === "string"
+        ? /^https?:\/\//.test(profilePicture)
+        : (typeof profilePicture.name === "string" &&
+          /^https?:\/\//.test(profilePicture.name));
+
+      // Only proceed with deletion if it's a storage object (not an external URL)
+      if (!isExternalUrl) {
+        // Get the file name to delete - handle both string and object formats
+        const fileName = typeof profilePicture === "string"
+          ? profilePicture
+          : (profilePicture.name || null);
+
+        // Only delete if we have a valid file name
+        if (fileName) {
+          const { data: avatar_deletion, error: avatar_error } =
+            await supabaseAdmin
+              .storage
+              .from("avatars")
+              .remove([fileName]);
+
+          if (avatar_error) throw avatar_error;
+          console.log(
+            "Avatar deleted: " + JSON.stringify(avatar_deletion, null, 2),
+          );
+        }
+      }
     }
 
     // Delete the USER using the auth API
