@@ -20,7 +20,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       usesNonExemptEncryption: false,
     },
     bundleIdentifier: "com.bodok.chooselife",
-    supportsTablet: true,
+    supportsTablet: false,
     icon: {
       light: "./assets/icons/ios-light.png",
       dark: "./assets/icons/ios-dark.png",
