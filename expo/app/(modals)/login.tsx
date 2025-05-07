@@ -168,16 +168,22 @@ const EmailSection: React.FC = () => {
   };
 
   const handleSignup = async () => {
-    const response = await signUp({
-      email,
-      password,
-      confirmPassword,
-      redirectTo: redirect_to,
-    });
-    if (!response.success) {
-      setError(
-        response.errorMessage || t('app.(modals).login.email.signupFailed'),
-      );
+    try {
+      setLoading(true);
+      setError('');
+      const response = await signUp({
+        email,
+        password,
+        confirmPassword,
+        redirectTo: redirect_to,
+      });
+      if (!response.success) {
+        setError(
+          response.errorMessage || t('app.(modals).login.email.signupFailed'),
+        );
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -246,6 +252,16 @@ const EmailSection: React.FC = () => {
         </View>
       </Tabs>
 
+      {error && (
+        <Animated.View
+          layout={_layoutTransition}
+          entering={FadeInDown.springify().damping(80).stiffness(200)}
+          exiting={FadeOutUp.springify().damping(80).stiffness(200)}
+        >
+          <Text className="text-red-500 text-center">{error}</Text>
+        </Animated.View>
+      )}
+
       <AnimatedAuthButton
         onPress={tab === 'login' ? handleLogin : handleSignup}
         label={
@@ -257,16 +273,6 @@ const EmailSection: React.FC = () => {
         isLoading={loading}
         disabled={isLoginPending}
       />
-
-      {error && (
-        <Animated.View
-          layout={_layoutTransition}
-          entering={FadeInDown.springify().damping(80).stiffness(200)}
-          exiting={FadeOutUp.springify().damping(80).stiffness(200)}
-        >
-          <Text className="text-red-500 text-center">{error}</Text>
-        </Animated.View>
-      )}
     </View>
   );
 };

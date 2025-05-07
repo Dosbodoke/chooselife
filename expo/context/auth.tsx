@@ -1,6 +1,6 @@
-import type { Session } from '@supabase/supabase-js';
+import { AuthError, type Session } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { AuthError, makeRedirectUri } from 'expo-auth-session';
+import { makeRedirectUri } from 'expo-auth-session';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
@@ -177,6 +177,13 @@ export function AuthProvider(props: React.PropsWithChildren) {
         };
       }
 
+      if (!password) {
+        return {
+          success: false,
+          errorMessage: t('app.(modals).login.email.passwordRequired'),
+        };
+      }
+
       // Validate if password match
       if (password !== confirmPassword) {
         return {
@@ -202,6 +209,12 @@ export function AuthProvider(props: React.PropsWithChildren) {
       } catch (error) {
         setPendingRedirect(null);
         if (error instanceof AuthError) {
+          if (error.code === 'user_already_exists') {
+            return {
+              success: false,
+              errorMessage: t('app.(modals).login.email.emailExists'),
+            };
+          }
           return { success: false, errorMessage: error.message };
         }
         return {

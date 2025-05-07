@@ -24,7 +24,9 @@
           "loginButton": "Login",
           "signupButton": "Create",
           "invalidEmail": "Invalid email",
+          "passwordRequired": "Password is required",
           "passwordsMismatch": "Passwords do not match.",
+          "emailExists": "This email is already registered",
           "signupFailed": "Failed to create account, please contact support"
         }
       },

@@ -24,7 +24,9 @@
           "loginButton": "Entrar",
           "signupButton": "Criar",
           "invalidEmail": "Email inválido",
+          "passwordRequired": "Senha é obrigatória.",
           "passwordsMismatch": "Senhas não são iguais.",
+          "emailExists": "Este email já está registrado.",
           "signupFailed": "Falha ao criar conta, contate o suporte"
         }
       },
