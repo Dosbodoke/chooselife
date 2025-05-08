@@ -80,8 +80,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       "expo-location",
       {
-        locationAlwaysAndWhenInUsePermission:
-          "$(PRODUCT_NAME) uses your location to show your position on the map. Your location is not stored or shared.",
+        locationWhenInUsePermission:
+          "$(PRODUCT_NAME) uses your location to show nearby highlines and display your position on the map while exploring locations. Your location is not stored or shared.",
       },
     ],
     [
