@@ -4,7 +4,7 @@ import i18next from 'i18next';
 import React, { useMemo, useState } from 'react';
 import { Controller, type SubmitHandler } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
@@ -14,6 +14,7 @@ import Animated, {
   FadeOutLeft,
   LinearTransition,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
 import {
@@ -56,6 +57,7 @@ export default function Screen() {
 }
 
 export const HighlineSetup: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const { id: highlineID } = useLocalSearchParams<{ id: string }>();
   const { highline } = useHighline({ id: highlineID });
   if (!highline) return null;
@@ -281,8 +283,12 @@ export const HighlineSetup: React.FC = () => {
 
   return (
     <KeyboardAwareScrollView
-      contentContainerClassName="flex-grow px-6 pt-8 gap-4"
+      contentContainerClassName="flex-grow px-6 gap-4"
       keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{
+        paddingTop: insets.top,
+        paddingBottom: Platform.OS === 'ios' ? 24 + insets.bottom : 0,
+      }}
     >
       <Animated.View
         className="gap-4 items-center"

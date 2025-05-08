@@ -23,7 +23,6 @@ import HighlineIllustration from '~/lib/icons/highline-illustration';
 import { supabase } from '~/lib/supabase';
 import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
-import { date18YearsAgo } from '~/utils';
 
 import {
   ProfileInfoForm,
@@ -60,7 +59,7 @@ export default function SetProfile() {
       name: profile?.name || '',
       profilePicture: profile?.profile_picture || undefined,
       description: profile?.description || '',
-      birthday: profile?.birthday || date18YearsAgo(),
+      birthday: profile?.birthday || '',
     },
   });
 
@@ -75,7 +74,7 @@ export default function SetProfile() {
           name: data.name,
           profile_picture: data.profilePicture,
           description: data.description,
-          birthday: data.birthday,
+          birthday: data.birthday || null,
         })
         .select()
         .single();
@@ -149,7 +148,7 @@ export default function SetProfile() {
   const steps = [
     <LanguageSwitcher key="LanguageSwitcher" />,
     <UsernameForm key="username" form={form} />,
-    <View key="profileInfo" className="p-4">
+    <View key="profileInfo">
       <ProfileInfoForm
         // @ts-expect-error Info form doesn't have username
         form={form as UseFormReturn<ProfileInfoSchema>}
@@ -186,7 +185,7 @@ export default function SetProfile() {
   return (
     <SafeAreaView className="flex-1 min-h-screen bg-background">
       <KeyboardAwareScrollView
-        contentContainerClassName="flex-1 px-6 py-8 gap-4"
+        contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 16 }}
         keyboardShouldPersistTaps="handled"
       >
         <H2 className="text-center border-0">{t('app.setProfile.title')}</H2>
@@ -203,7 +202,7 @@ export default function SetProfile() {
           {steps[index]}
         </Animated.View>
 
-        <View className="mt-auto gap-2">
+        <View className="mt-auto gap-4">
           <OnboardPaginator total={steps.length} selectedIndex={index} />
 
           <OnboardNavigator

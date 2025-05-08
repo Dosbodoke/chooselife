@@ -1,14 +1,20 @@
 // src/queries/useProfile.ts
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '~/lib/supabase';
 import type { Tables } from '~/utils/database.types';
 
 export type Profile = Tables<'profiles'>;
 
-export const useProfile = (id?: string | null) => {
-  return useQuery({
-    queryKey: ['profile', id],
+const profileQueryKeyFactory = {
+  id: (id: string) => ['profile', id],
+};
+
+export const useProfile = (id: string | null) => {
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: profileQueryKeyFactory.id(id as string),
     queryFn: async () => {
       if (!id) return;
       const { data, error } = await supabase
@@ -27,4 +33,13 @@ export const useProfile = (id?: string | null) => {
     // Mark the data as always fresh so it will never refetch automatically.
     staleTime: Infinity,
   });
+
+  const invalidateProfile = () => {
+    if (!id) return;
+    queryClient.invalidateQueries({
+      queryKey: profileQueryKeyFactory.id(id),
+    });
+  };
+
+  return { invalidateProfile, query };
 };

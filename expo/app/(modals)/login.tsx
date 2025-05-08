@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
   Easing,
@@ -15,7 +15,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { z } from 'zod';
 
 import { useAuth, type LoginMethod, type OAuthMethod } from '~/context/auth';
 import { AppleIcon } from '~/lib/icons/Apple';
@@ -87,20 +86,22 @@ const OAuthButtons: React.FC = () => {
         </View>
       ) : null}
 
-      <Button
-        onPress={() => handleLogin('apple')}
-        variant="outline"
-        disabled={isLoginPending}
-        className="flex-row gap-3 items-center"
-      >
-        <View className="h-6 w-6">
-          <AppleIcon fill={colorScheme === 'dark' ? '#FFFFFF' : '#000000'} />
-        </View>
-        <Text className="text-primary">
-          {t('app.(modals).login.oauth.continueApple')}
-        </Text>
-        {lastLoginMethod === 'apple' ? <GreenDot pulse /> : null}
-      </Button>
+      {Platform.OS === 'ios' ? (
+        <Button
+          onPress={() => handleLogin('apple')}
+          variant="outline"
+          disabled={isLoginPending}
+          className="flex-row gap-3 items-center"
+        >
+          <View className="h-6 w-6">
+            <AppleIcon fill={colorScheme === 'dark' ? '#FFFFFF' : '#000000'} />
+          </View>
+          <Text className="text-primary">
+            {t('app.(modals).login.oauth.continueApple')}
+          </Text>
+          {lastLoginMethod === 'apple' ? <GreenDot pulse /> : null}
+        </Button>
+      ) : null}
       <Button
         onPress={() => handleLogin('google')}
         variant="outline"
@@ -125,7 +126,6 @@ const EmailSection: React.FC = () => {
   const { redirect_to } = useLocalSearchParams<{ redirect_to?: string }>();
   const { signUp, login, lastLoginMethod, isLoginPending } = useAuth();
   const [tab, setTab] = useState<AuthTabs>('login');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -135,37 +135,29 @@ const EmailSection: React.FC = () => {
     () => [
       {
         id: 'login',
-        tabLabel: t('app.(modals).login.email.tabLogin'),
+        tabLabel: t('app.(modals).login.EmailSection.tabLogin'),
       },
       {
         id: 'signup',
-        tabLabel: t('app.(modals).login.email.tabSignup'),
+        tabLabel: t('app.(modals).login.EmailSection.tabSignup'),
       },
     ],
     [t],
   );
 
   const handleLogin = async () => {
-    try {
-      setLoading(true);
-      if (z.string().email().safeParse(email).success === false) {
-        setError(t('app.(modals).login.email.invalidEmail'));
-        return;
-      }
-      const response = await login({
-        email,
-        password,
-        redirectTo: redirect_to,
-      });
-      if (!response.success) {
-        setError(response.errorMessage || '');
-      }
-    } finally {
-      setLoading(false);
+    const response = await login({
+      email,
+      password,
+      redirectTo: redirect_to,
+    });
+    if (!response.success) {
+      setError(response.errorMessage || '');
     }
   };
 
   const handleSignup = async () => {
+    setError('');
     const response = await signUp({
       email,
       password,
@@ -174,7 +166,8 @@ const EmailSection: React.FC = () => {
     });
     if (!response.success) {
       setError(
-        response.errorMessage || t('app.(modals).login.email.signupFailed'),
+        response.errorMessage ||
+          t('app.(modals).login.EmailSection.signupFailed'),
       );
     }
   };
@@ -201,16 +194,21 @@ const EmailSection: React.FC = () => {
           {tab === 'login' ? (
             <>
               <Input
-                placeholder={t('app.(modals).login.email.emailPlaceholder')}
+                placeholder={t(
+                  'app.(modals).login.EmailSection.emailPlaceholder',
+                )}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
+                autoCapitalize="none"
                 aria-labelledby="inputLabel"
                 aria-errormessage="inputError"
               />
               <PasswordInput
                 id="password"
-                placeholder={t('app.(modals).login.email.passwordPlaceholder')}
+                placeholder={t(
+                  'app.(modals).login.EmailSection.passwordPlaceholder',
+                )}
                 value={password}
                 onChangeText={setPassword}
               />
@@ -218,23 +216,28 @@ const EmailSection: React.FC = () => {
           ) : (
             <>
               <Input
-                placeholder={t('app.(modals).login.email.emailPlaceholder')}
+                placeholder={t(
+                  'app.(modals).login.EmailSection.emailPlaceholder',
+                )}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
+                autoCapitalize="none"
                 aria-labelledby="inputLabel"
                 aria-errormessage="inputError"
               />
               <PasswordInput
                 id="password"
-                placeholder={t('app.(modals).login.email.passwordPlaceholder')}
+                placeholder={t(
+                  'app.(modals).login.EmailSection.passwordPlaceholder',
+                )}
                 value={password}
                 onChangeText={setPassword}
               />
               <PasswordInput
                 id="confirm-password"
                 placeholder={t(
-                  'app.(modals).login.email.confirmPasswordPlaceholder',
+                  'app.(modals).login.EmailSection.confirmPasswordPlaceholder',
                 )}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -243,18 +246,6 @@ const EmailSection: React.FC = () => {
           )}
         </View>
       </Tabs>
-
-      <AnimatedAuthButton
-        onPress={tab === 'login' ? handleLogin : handleSignup}
-        label={
-          tab === 'login'
-            ? t('app.(modals).login.email.loginButton')
-            : t('app.(modals).login.email.signupButton')
-        }
-        lastLoginMethod={lastLoginMethod}
-        isLoading={loading}
-        disabled={isLoginPending}
-      />
 
       {error && (
         <Animated.View
@@ -265,6 +256,18 @@ const EmailSection: React.FC = () => {
           <Text className="text-red-500 text-center">{error}</Text>
         </Animated.View>
       )}
+
+      <AnimatedAuthButton
+        onPress={tab === 'login' ? handleLogin : handleSignup}
+        label={
+          tab === 'login'
+            ? t('app.(modals).login.EmailSection.loginButton')
+            : t('app.(modals).login.EmailSection.signupButton')
+        }
+        lastLoginMethod={lastLoginMethod}
+        isLoading={isLoginPending}
+        disabled={isLoginPending}
+      />
     </View>
   );
 };
@@ -317,7 +320,7 @@ const AnimatedAuthButton: React.FC<{
           {label}
         </AnimatedText>
       )}
-      {label === t('app.(modals).login.email.loginButton') &&
+      {label === t('app.(modals).login.EmailSection.loginButton') &&
       lastLoginMethod === 'email' ? (
         <GreenDot pulse />
       ) : null}

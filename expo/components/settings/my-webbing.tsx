@@ -83,9 +83,7 @@ const WebbingList: React.FC<{
   return (
     <View className="gap-6">
       {webbings.map((webbing) => (
-        <>
-          <WebbingItem key={webbing.id} webbing={webbing} />
-        </>
+        <WebbingItem key={webbing.id} webbing={webbing} />
       ))}
     </View>
   );

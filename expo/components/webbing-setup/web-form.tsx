@@ -181,7 +181,9 @@ const WebbingOwner: React.FC<{ webbingID: number }> = ({ webbingID }) => {
 
   if (!data) return null;
 
-  const { data: owner, isPending } = useProfile(data.user_id);
+  const {
+    query: { data: owner, isPending },
+  } = useProfile(data.user_id || null);
 
   if (isPending) {
     return <Skeleton className="w-10 h-4" />;

@@ -15,7 +15,7 @@
           "continueGoogle": "Continue with Google"
         },
         "separator": "or",
-        "email": {
+        "EmailSection": {
           "tabLogin": "Login with Email",
           "tabSignup": "Create Account",
           "emailPlaceholder": "Your email",
@@ -24,7 +24,10 @@
           "loginButton": "Login",
           "signupButton": "Create",
           "invalidEmail": "Invalid email",
+          "passwordTooShort": "Password must be at least 6 characters",
+          "passwordRequired": "Password is required",
           "passwordsMismatch": "Passwords do not match.",
+          "emailExists": "This email is already registered",
           "signupFailed": "Failed to create account, please contact support"
         }
       },
@@ -80,6 +83,14 @@
       "settings": {
         "viewProfile": "View profile",
         "logOut": "Log Out",
+        "delete": {
+          "label": "Delete Account",
+          "alertLabel": "Delete your account",
+          "alertDescription": "This will permanently remove all your data. This action cannot be undone.",
+          "alertCancel": "Cancel",
+          "alertConfirm": "Delete Account",
+          "alertError": "Could not delete account. Please try again."
+        },
         "logIn": "Log In",
         "editProfile": {
           "triggerLabel": "Personal information",
@@ -211,7 +222,6 @@
         "inputPlaceholder": "Your username"
       },
       "ProfileInfoForm": {
-        "title": "Personal Information",
         "subtitle": "Tell us more about yourself.",
         "inputPlaceholderName": "Your name",
         "birthdayLabel": "Date of Birth:",

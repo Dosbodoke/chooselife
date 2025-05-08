@@ -6,16 +6,15 @@ import {
 } from '@gorhom/bottom-sheet';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
-import { date18YearsAgo } from '~/utils';
 import { Tables } from '~/utils/database.types';
 
 import {
@@ -66,11 +65,14 @@ export default function SettingsPage() {
               <ChangeLanguage />
             </View>
 
-            <Button variant="link" onPress={logout}>
-              <Text className="text-foreground underline">
-                {t('app.(tabs).settings.logOut')}
-              </Text>
-            </Button>
+            <View className="gap-2">
+              <Button variant="link" onPress={logout}>
+                <Text className="text-foreground underline">
+                  {t('app.(tabs).settings.logOut')}
+                </Text>
+              </Button>
+              <DeleteAccount />
+            </View>
           </View>
         </ScrollView>
       </SafeAreaOfflineView>
@@ -208,7 +210,7 @@ const EditProfileButton: React.FC = () => {
       name: profile?.name ?? '',
       profilePicture: profile?.profile_picture || undefined,
       description: profile?.description ?? '',
-      birthday: profile?.birthday ?? date18YearsAgo(),
+      birthday: profile?.birthday ?? '',
     },
   });
 
@@ -274,5 +276,46 @@ const EditProfileButton: React.FC = () => {
         </BottomSheetView>
       </BottomSheetModal>
     </>
+  );
+};
+
+const DeleteAccount: React.FC = () => {
+  const router = useRouter();
+  const { t } = useTranslation();
+  const { logout, profile } = useAuth();
+
+  const handleDeleteAccount = () => {
+    if (!profile?.id) return;
+
+    Alert.alert(
+      t('app.(tabs).settings.delete.alertLabel'),
+      t('app.(tabs).settings.delete.alertDescription'),
+      [
+        { text: t('app.(tabs).settings.delete.alertCancel'), style: 'cancel' },
+        {
+          text: t('app.(tabs).settings.delete.alertConfirm'),
+          style: 'destructive',
+          onPress: async () => {
+            const { error } =
+              await supabase.functions.invoke('user-self-deletion');
+
+            if (error) {
+              Alert.alert('Error', t('app.(tabs).settings.delete.alertError'));
+              return;
+            }
+
+            await logout();
+            router.replace('/(tabs)/home');
+          },
+        },
+      ],
+    );
+  };
+  return (
+    <Button variant="link" onPress={handleDeleteAccount}>
+      <Text className="text-red-500">
+        {t('app.(tabs).settings.delete.label')}
+      </Text>
+    </Button>
   );
 };

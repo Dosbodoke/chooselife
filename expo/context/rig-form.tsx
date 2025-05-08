@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import React from 'react';
 import { useFieldArray, useForm, type UseFormReturn } from 'react-hook-form';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
 import { getWebbingName } from '~/hooks/use-webbings';
@@ -126,7 +125,7 @@ export const RigFormProvider: React.FC<{
         setFocusedWebbing,
       }}
     >
-      <SafeAreaView className="flex-1">{children}</SafeAreaView>
+      {children}
     </RiggingFormContext.Provider>
   );
 };
