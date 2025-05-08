@@ -15,7 +15,7 @@
           "continueGoogle": "Continuar com Google"
         },
         "separator": "ou",
-        "email": {
+        "EmailSection": {
           "tabLogin": "Entrar com email",
           "tabSignup": "Criar conta",
           "emailPlaceholder": "Seu email",
@@ -24,6 +24,7 @@
           "loginButton": "Entrar",
           "signupButton": "Criar",
           "invalidEmail": "Email inválido",
+          "passwordTooShort": "Senha deve ter no mínimo 6 caracteres",
           "passwordRequired": "Senha é obrigatória.",
           "passwordsMismatch": "Senhas não são iguais.",
           "emailExists": "Este email já está registrado.",

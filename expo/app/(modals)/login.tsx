@@ -15,7 +15,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { z } from 'zod';
 
 import { useAuth, type LoginMethod, type OAuthMethod } from '~/context/auth';
 import { AppleIcon } from '~/lib/icons/Apple';
@@ -136,21 +135,17 @@ const EmailSection: React.FC = () => {
     () => [
       {
         id: 'login',
-        tabLabel: t('app.(modals).login.email.tabLogin'),
+        tabLabel: t('app.(modals).login.EmailSection.tabLogin'),
       },
       {
         id: 'signup',
-        tabLabel: t('app.(modals).login.email.tabSignup'),
+        tabLabel: t('app.(modals).login.EmailSection.tabSignup'),
       },
     ],
     [t],
   );
 
   const handleLogin = async () => {
-    if (z.string().email().safeParse(email).success === false) {
-      setError(t('app.(modals).login.email.invalidEmail'));
-      return;
-    }
     const response = await login({
       email,
       password,
@@ -171,7 +166,8 @@ const EmailSection: React.FC = () => {
     });
     if (!response.success) {
       setError(
-        response.errorMessage || t('app.(modals).login.email.signupFailed'),
+        response.errorMessage ||
+          t('app.(modals).login.EmailSection.signupFailed'),
       );
     }
   };
@@ -198,16 +194,21 @@ const EmailSection: React.FC = () => {
           {tab === 'login' ? (
             <>
               <Input
-                placeholder={t('app.(modals).login.email.emailPlaceholder')}
+                placeholder={t(
+                  'app.(modals).login.EmailSection.emailPlaceholder',
+                )}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
+                autoCapitalize="none"
                 aria-labelledby="inputLabel"
                 aria-errormessage="inputError"
               />
               <PasswordInput
                 id="password"
-                placeholder={t('app.(modals).login.email.passwordPlaceholder')}
+                placeholder={t(
+                  'app.(modals).login.EmailSection.passwordPlaceholder',
+                )}
                 value={password}
                 onChangeText={setPassword}
               />
@@ -215,23 +216,28 @@ const EmailSection: React.FC = () => {
           ) : (
             <>
               <Input
-                placeholder={t('app.(modals).login.email.emailPlaceholder')}
+                placeholder={t(
+                  'app.(modals).login.EmailSection.emailPlaceholder',
+                )}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
+                autoCapitalize="none"
                 aria-labelledby="inputLabel"
                 aria-errormessage="inputError"
               />
               <PasswordInput
                 id="password"
-                placeholder={t('app.(modals).login.email.passwordPlaceholder')}
+                placeholder={t(
+                  'app.(modals).login.EmailSection.passwordPlaceholder',
+                )}
                 value={password}
                 onChangeText={setPassword}
               />
               <PasswordInput
                 id="confirm-password"
                 placeholder={t(
-                  'app.(modals).login.email.confirmPasswordPlaceholder',
+                  'app.(modals).login.EmailSection.confirmPasswordPlaceholder',
                 )}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -255,8 +261,8 @@ const EmailSection: React.FC = () => {
         onPress={tab === 'login' ? handleLogin : handleSignup}
         label={
           tab === 'login'
-            ? t('app.(modals).login.email.loginButton')
-            : t('app.(modals).login.email.signupButton')
+            ? t('app.(modals).login.EmailSection.loginButton')
+            : t('app.(modals).login.EmailSection.signupButton')
         }
         lastLoginMethod={lastLoginMethod}
         isLoading={isLoginPending}
@@ -314,7 +320,7 @@ const AnimatedAuthButton: React.FC<{
           {label}
         </AnimatedText>
       )}
-      {label === t('app.(modals).login.email.loginButton') &&
+      {label === t('app.(modals).login.EmailSection.loginButton') &&
       lastLoginMethod === 'email' ? (
         <GreenDot pulse />
       ) : null}

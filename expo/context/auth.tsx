@@ -109,7 +109,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
       if (z.string().email().safeParse(email).success === false) {
         return {
           success: false,
-          errorMessage: t('app.(modals).login.email.invalidEmail'),
+          errorMessage: t('app.(modals).login.EmailSection.invalidEmail'),
         };
       }
 
@@ -173,14 +173,21 @@ export function AuthProvider(props: React.PropsWithChildren) {
       if (z.string().email().safeParse(email).success === false) {
         return {
           success: false,
-          errorMessage: t('app.(modals).login.email.invalidEmail'),
+          errorMessage: t('app.(modals).login.EmailSection.invalidEmail'),
         };
       }
 
       if (!password) {
         return {
           success: false,
-          errorMessage: t('app.(modals).login.email.passwordRequired'),
+          errorMessage: t('app.(modals).login.EmailSection.passwordRequired'),
+        };
+      }
+
+      if (password.length < 6) {
+        return {
+          success: false,
+          errorMessage: t('app.(modals).login.EmailSection.passwordTooShort'),
         };
       }
 
@@ -188,7 +195,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
       if (password !== confirmPassword) {
         return {
           success: false,
-          errorMessage: t('app.(modals).login.email.passwordsMismatch'),
+          errorMessage: t('app.(modals).login.EmailSection.passwordsMismatch'),
         };
       }
 
@@ -212,14 +219,14 @@ export function AuthProvider(props: React.PropsWithChildren) {
           if (error.code === 'user_already_exists') {
             return {
               success: false,
-              errorMessage: t('app.(modals).login.email.emailExists'),
+              errorMessage: t('app.(modals).login.EmailSection.emailExists'),
             };
           }
           return { success: false, errorMessage: error.message };
         }
         return {
           success: false,
-          errorMessage: t('app.(modals).login.email.signupFailed'),
+          errorMessage: t('app.(modals).login.EmailSection.signupFailed'),
         };
       }
     },
