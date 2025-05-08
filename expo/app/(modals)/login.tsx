@@ -127,7 +127,6 @@ const EmailSection: React.FC = () => {
   const { redirect_to } = useLocalSearchParams<{ redirect_to?: string }>();
   const { signUp, login, lastLoginMethod, isLoginPending } = useAuth();
   const [tab, setTab] = useState<AuthTabs>('login');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -148,42 +147,32 @@ const EmailSection: React.FC = () => {
   );
 
   const handleLogin = async () => {
-    try {
-      setLoading(true);
-      if (z.string().email().safeParse(email).success === false) {
-        setError(t('app.(modals).login.email.invalidEmail'));
-        return;
-      }
-      const response = await login({
-        email,
-        password,
-        redirectTo: redirect_to,
-      });
-      if (!response.success) {
-        setError(response.errorMessage || '');
-      }
-    } finally {
-      setLoading(false);
+    if (z.string().email().safeParse(email).success === false) {
+      setError(t('app.(modals).login.email.invalidEmail'));
+      return;
+    }
+    const response = await login({
+      email,
+      password,
+      redirectTo: redirect_to,
+    });
+    if (!response.success) {
+      setError(response.errorMessage || '');
     }
   };
 
   const handleSignup = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const response = await signUp({
-        email,
-        password,
-        confirmPassword,
-        redirectTo: redirect_to,
-      });
-      if (!response.success) {
-        setError(
-          response.errorMessage || t('app.(modals).login.email.signupFailed'),
-        );
-      }
-    } finally {
-      setLoading(false);
+    setError('');
+    const response = await signUp({
+      email,
+      password,
+      confirmPassword,
+      redirectTo: redirect_to,
+    });
+    if (!response.success) {
+      setError(
+        response.errorMessage || t('app.(modals).login.email.signupFailed'),
+      );
     }
   };
 
@@ -270,7 +259,7 @@ const EmailSection: React.FC = () => {
             : t('app.(modals).login.email.signupButton')
         }
         lastLoginMethod={lastLoginMethod}
-        isLoading={loading}
+        isLoading={isLoginPending}
         disabled={isLoginPending}
       />
     </View>
