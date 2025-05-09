@@ -359,6 +359,27 @@ export type Database = {
         }
         Relationships: []
       }
+      trails: {
+        Row: {
+          color: string
+          coordinates: number[]
+          id: number
+          name: string
+        }
+        Insert: {
+          color: string
+          coordinates: number[]
+          id?: never
+          name: string
+        }
+        Update: {
+          color?: string
+          coordinates?: number[]
+          id?: never
+          name?: string
+        }
+        Relationships: []
+      }
       webbing: {
         Row: {
           description: string | null

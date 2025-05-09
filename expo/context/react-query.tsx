@@ -10,7 +10,7 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
       refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
+      refetchOnReconnect: true, // Refetch when user comes back online
     },
   },
 });
@@ -33,7 +33,7 @@ export const ReactQueryProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <PersistQueryClientProvider
-      persistOptions={{ persister }}
+      persistOptions={{ persister, maxAge: Infinity }}
       client={queryClient}
       onSuccess={() =>
         queryClient
