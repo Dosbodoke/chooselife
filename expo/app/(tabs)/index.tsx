@@ -2,6 +2,7 @@ import Mapbox from '@rnmapbox/maps';
 import * as Location from 'expo-location';
 import { useLocalSearchParams } from 'expo-router';
 import { useAtom, useSetAtom } from 'jotai';
+import throttle from 'lodash.throttle';
 import React, {
   useCallback,
   useEffect,
@@ -11,12 +12,12 @@ import React, {
 } from 'react';
 import { View } from 'react-native';
 
-import { ChooselifeTrails, useChooselifeMap } from '~/hooks/use-chooselife-map';
 import {
   useHighline,
   type Highline,
   type HighlineCategory,
 } from '~/hooks/use-highline';
+import { useOfflineRegion } from '~/hooks/use-offline-region';
 import { calculateZoomLevel } from '~/utils';
 
 import ListingsBottomSheet from '~/components/map/bottom-sheet';
@@ -24,6 +25,7 @@ import MapControls from '~/components/map/controls';
 import ExploreHeader from '~/components/map/explore-header';
 import { MapCardList } from '~/components/map/map-card';
 import { Markers } from '~/components/map/markers';
+import { ChooselifeTrails } from '~/components/map/trail-shape';
 import {
   cameraStateAtom,
   clusterMarkersAtom,
@@ -84,7 +86,7 @@ async function getMyLocation(): Promise<
 }
 
 export default function Screen() {
-  useChooselifeMap();
+  useOfflineRegion();
   // Refs
   const mapRef = useRef<Mapbox.MapView>(null);
   const cameraRef = useRef<Mapbox.Camera>(null);
@@ -139,18 +141,33 @@ export default function Screen() {
     [],
   );
 
-  const handleMapIdle = useCallback(
-    (state: Mapbox.MapState) => {
-      setIsOnMyLocation(false);
+  // Throttled camera change handler (updates at most once every 300ms)
+  const throttledCameraUpdate = useCallback(
+    throttle(
+      (state: Mapbox.MapState) => {
+        if (isOnMyLocation) {
+          setIsOnMyLocation(false);
+        }
 
-      const { sw, ne } = state.properties.bounds;
-      setCamera({
-        center: state.properties.center,
-        zoom: state.properties.zoom,
-        bounds: [sw[0], sw[1], ne[0], ne[1]],
-      });
+        // Update camera state
+        const { sw, ne } = state.properties.bounds;
+        setCamera({
+          center: state.properties.center,
+          zoom: state.properties.zoom,
+          bounds: [sw[0], sw[1], ne[0], ne[1]],
+        });
+      },
+      300,
+      { leading: true, trailing: true },
+    ),
+    [setCamera, isOnMyLocation, setIsOnMyLocation],
+  );
+
+  const handleCameraChanged = useCallback(
+    (state: Mapbox.MapState) => {
+      throttledCameraUpdate(state);
     },
-    [setCamera],
+    [throttledCameraUpdate],
   );
 
   const handleMapPress = useCallback(() => {
@@ -236,6 +253,13 @@ export default function Screen() {
     cameraRef.current?.fitBounds(ne, sw, [50, 50, 200, 250], 1000);
   }, [highlightedMarker, cameraRef]);
 
+  // Clean up the throttle function on unmount
+  useEffect(() => {
+    return () => {
+      throttledCameraUpdate.cancel();
+    };
+  }, [throttledCameraUpdate]);
+
   return (
     <View style={{ flex: 1 }}>
       <ExploreHeader
@@ -248,7 +272,7 @@ export default function Screen() {
         style={{ flex: 1 }}
         styleURL={getMapStyle(mapType)}
         scaleBarEnabled={false}
-        onMapIdle={handleMapIdle}
+        onCameraChanged={handleCameraChanged}
         onDidFinishLoadingMap={() => {
           if (!focusedMarker) {
             goToMyLocation();
