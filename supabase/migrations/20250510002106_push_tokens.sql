@@ -26,6 +26,6 @@ TO authenticated
 USING ((select auth.uid()) = profile_id)
 WITH CHECK ((select auth.uid()) = profile_id);
 
--- Migrate current existing tokens
-INSERT INTO public.push_tokens (token, profile_id)
-SELECT expo_push_token, id FROM public.profiles WHERE expo_push_token IS NOT NULL;
+-- Migrate current existing tokens and user languages
+INSERT INTO public.push_tokens (token, profile_id, language)
+SELECT expo_push_token, id, language FROM public.profiles WHERE expo_push_token IS NOT NULL;
