@@ -29,6 +29,3 @@ WITH CHECK ((select auth.uid()) = profile_id);
 -- Migrate current existing tokens
 INSERT INTO public.push_tokens (token, profile_id)
 SELECT expo_push_token, id FROM public.profiles WHERE expo_push_token IS NOT NULL;
-
--- Dropping this columng will be delayed until all the mobile clients are updated.
--- ALTER TABLE public.profiles DROP COLUMN expo_push_token;
