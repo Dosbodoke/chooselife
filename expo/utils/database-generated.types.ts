@@ -255,6 +255,38 @@ export type Database = {
         }
         Relationships: []
       }
+      push_tokens: {
+        Row: {
+          created_at: string | null
+          id: number
+          language: Database["public"]["Enums"]["language"] | null
+          profile_id: string | null
+          token: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: never
+          language?: Database["public"]["Enums"]["language"] | null
+          profile_id?: string | null
+          token: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: never
+          language?: Database["public"]["Enums"]["language"] | null
+          profile_id?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rig_setup: {
         Row: {
           highline_id: string

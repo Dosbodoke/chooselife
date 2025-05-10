@@ -19,8 +19,6 @@ import { z } from 'zod';
 import { useProfile, type Profile } from '~/hooks/use-profile';
 import { supabase } from '~/lib/supabase';
 
-import { useI18n } from './i18n';
-
 type AuthMethodResponse = Promise<
   { success: true } | { success: false; errorMessage?: string }
 >;
@@ -71,7 +69,6 @@ const AuthContext = React.createContext<AuthContextValue | undefined>(
 
 export function AuthProvider(props: React.PropsWithChildren) {
   const { t } = useTranslation();
-  const { locale } = useI18n();
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
@@ -345,33 +342,6 @@ export function AuthProvider(props: React.PropsWithChildren) {
       return { success: false };
     },
     [t, saveLoginMethod],
-  );
-
-  // Effect to sync locale preference to DB when profile and locale are ready
-  useEffect(
-    function syncLocalePreference() {
-      if (profile?.id && locale) {
-        if (profile.language !== locale) {
-          supabase
-            .from('profiles')
-            .update({ language: locale })
-            .eq('id', profile.id)
-            .then(({ error }) => {
-              if (error) {
-                console.error(
-                  'Failed to update profile language in DB:',
-                  error,
-                );
-              } else {
-                console.log('Profile language updated successfully in DB.');
-                // Optionally, you might want to refresh the profile data here
-                // if your useProfile hook doesn't automatically reflect this update
-              }
-            });
-        }
-      }
-    },
-    [profile?.id, profile?.language, locale],
   );
 
   useEffect(function setupSession() {
