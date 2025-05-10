@@ -89,17 +89,12 @@ Deno.serve(async (req) => {
 
   try {
     if (notificationRecord.user_id) {
-      // --- Send to a specific user ---
-      console.log(
-        `Fetching tokens for user ID: ${notificationRecord.user_id}`,
-      );
-
-      // Query push_tokens table with a join to profiles to get language preference
-      const { data: rawData, error } = await supabase
+      // Send to a specific user
+      const { data, error } = await supabase
         .from("push_tokens")
         .select(`
           token,
-          language,
+          language
         `)
         .eq("profile_id", notificationRecord.user_id);
 
@@ -108,38 +103,24 @@ Deno.serve(async (req) => {
         throw error;
       }
 
-      if (rawData && rawData.length > 0) {
+      if (data && data.length > 0) {
         console.log(
-          `Found ${rawData.length} tokens for user ${notificationRecord.user_id}`,
+          `Found ${data.length} tokens for user ${notificationRecord.user_id}`,
         );
-        console.log("Raw data from database:", JSON.stringify(rawData));
 
-        // Transform the data to match our expected structure
-        targetTokens = rawData.map((item: any) => {
-          console.log("Raw item structure:", JSON.stringify(item));
-
-          const result = {
-            token: item.token,
-            language: item.language,
-          };
-          console.log("Transformed token info:", JSON.stringify(result));
-          return result;
-        });
+        targetTokens = data;
       } else {
         console.warn(
           `No push tokens found for user ID: ${notificationRecord.user_id}`,
         );
       }
     } else {
-      // --- Send to all users with a push token ---
-      console.log("Fetching all push tokens with associated profiles");
-
-      // Query all tokens with an optional join to profiles (some tokens may not have a profile)
-      const { data: rawData, error } = await supabase
+      // Send to all
+      const { data, error } = await supabase
         .from("push_tokens")
         .select(`
           token, 
-          language,
+          language
         `);
 
       if (error) {
@@ -147,20 +128,8 @@ Deno.serve(async (req) => {
         throw error;
       }
 
-      if (rawData) {
-        console.log("Raw data from database:", JSON.stringify(rawData));
-
-        // Transform the data to match our expected structure
-        targetTokens = rawData.map((item: any) => {
-          console.log("Raw item structure:", JSON.stringify(item));
-
-          const result = {
-            token: item.token,
-            language: item.language,
-          };
-          console.log("Transformed token info:", JSON.stringify(result));
-          return result;
-        });
+      if (data && data.length > 0) {
+        targetTokens = data;
         console.log(`Found ${targetTokens.length} push tokens.`);
       } else {
         console.log("No push tokens found.");
@@ -183,10 +152,6 @@ Deno.serve(async (req) => {
       const token = tokenInfo.token;
       const userLanguage = tokenInfo.language;
 
-      console.log(
-        `Processing notification for token with language preference: ${userLanguage}`,
-      );
-
       const titleToSend = getLocalizedText(
         notificationRecord.title,
         userLanguage,
@@ -198,11 +163,6 @@ Deno.serve(async (req) => {
 
       // Only send title/body if we actually resolved some text
       if (!titleToSend && !bodyToSend) {
-        console.warn(
-          `No suitable title or body found for language '${userLanguage}' (or fallback) for token ${
-            token.substring(0, 10)
-          }... Skipping.`,
-        );
         return {
           token: token.substring(0, 10) + "...",
           success: false,
