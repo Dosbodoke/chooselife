@@ -58,7 +58,7 @@ export function Highline({ highline, classname }: Props) {
       ) : null}
       <CardFooter className="mt-auto">
         <Button variant="outline" className="w-full" asChild>
-          <Link href={`/${highline.id}`}>
+          <Link href={`/highline/${highline.id}`}>
             {t("seeDetails")}
             <ArrowRightIcon className="ml-2 h-4 w-4" />
           </Link>
