@@ -59,6 +59,10 @@ export const metadata: Metadata = {
     },
     description: APP_DESCRIPTION,
   },
+  other: {
+    "apple-itunes-app":
+      "app-id=6745024708, app-argument=https://chooselife.club/",
+  },
 };
 
 export function generateStaticParams() {
