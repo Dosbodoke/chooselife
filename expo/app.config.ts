@@ -4,14 +4,23 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "ChooseLife",
   slug: "chooselife",
-  version: "1.3.2",
+  version: "1.3.3",
   newArchEnabled: true,
   orientation: "portrait",
   scheme: "com.bodok.chooselife",
   userInterfaceStyle: "light",
   assetBundlePatterns: ["**/*"],
   ios: {
-    supportsTablet: true,
+    usesAppleSignIn: true,
+    infoPlist: {
+      "ITSAppUsesNonExemptEncryption": false,
+      "UIUserInterfaceStyle": "Light",
+    },
+    config: {
+      usesNonExemptEncryption: false,
+    },
+    bundleIdentifier: "com.bodok.chooselife",
+    supportsTablet: false,
     icon: {
       light: "./assets/icons/ios-light.png",
       dark: "./assets/icons/ios-dark.png",
@@ -38,14 +47,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     favicon: "./assets/icons/favicon.png",
   },
   plugins: [
+    "expo-apple-authentication",
     "expo-sqlite",
     "expo-router",
     "expo-localization",
     [
       "expo-notifications",
       {
-        "icon": "./assets/icons/android-notification-icon.png",
-        "color": "#000000",
+        icon: "./assets/icons/android-notification-icon.png",
+        color: "#000000",
       },
     ],
     [
@@ -55,23 +65,23 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         imageWidth: 200,
         resizeMode: "contain",
         backgroundColor: "#FFFFFF",
-        dark: {
-          image: "./assets/icons/splash-icon-light.png",
-          backgroundColor: "#000000",
-        },
+        // dark: {
+        //   image: "./assets/icons/splash-icon-light.png",
+        //   backgroundColor: "#000000",
+        // },
       },
     ],
     [
       "@rnmapbox/maps",
       {
-        "RNMapboxMapsDownloadToken": process.env.MAPBOX_DOWNLOAD_TOKEN,
+        RNMapboxMapsDownloadToken: process.env.MAPBOX_DOWNLOAD_TOKEN,
       },
     ],
     [
       "expo-location",
       {
-        locationAlwaysAndWhenInUsePermission:
-          "Allow $(PRODUCT_NAME) to use your location.",
+        locationWhenInUsePermission:
+          "$(PRODUCT_NAME) uses your location to show nearby highlines and display your position on the map while exploring locations. Your location is not stored or shared.",
       },
     ],
     [

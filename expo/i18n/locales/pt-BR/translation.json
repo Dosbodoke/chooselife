@@ -1,4 +1,10 @@
 {
+  "common": {
+    "soon": "Em breve",
+    "seeAll": "Ver todos",
+    "loop": "Olhal",
+    "loops": "Olhais"
+  },
   "app": {
     "(modals)": {
       "login": {
@@ -9,7 +15,7 @@
           "continueGoogle": "Continuar com Google"
         },
         "separator": "ou",
-        "email": {
+        "EmailSection": {
           "tabLogin": "Entrar com email",
           "tabSignup": "Criar conta",
           "emailPlaceholder": "Seu email",
@@ -18,7 +24,10 @@
           "loginButton": "Entrar",
           "signupButton": "Criar",
           "invalidEmail": "Email inválido",
+          "passwordTooShort": "Senha deve ter no mínimo 6 caracteres",
+          "passwordRequired": "Senha é obrigatória.",
           "passwordsMismatch": "Senhas não são iguais.",
+          "emailExists": "Este email já está registrado.",
           "signupFailed": "Falha ao criar conta, contate o suporte"
         }
       },
@@ -26,18 +35,62 @@
         "title": "Registrar fita",
         "description": "Registrar sua fita permite acompanhar o histórico de uso e receber lembretes de manutenção.",
         "finishLabel": "Cadastrar",
-        "modelLabel": "Modelo da fita",
-        "modelPlaceholder": "Ex.: Brasileirinha"
+        "selectModel": {
+          "label": "Modelo da fita",
+          "placeholder": "Ex.: Brasileirinha",
+          "clear": "Remover seleção",
+          "emptyState": {
+            "title": "Nenhum modelo disponível",
+            "description": "Não há modelos que correspondam aos seus critérios"
+          }
+        },
+        "tagName": {
+          "min": "Must be at least 3 characters",
+          "label": "Nome da Fita",
+          "placeholder": "Nome para identificação desta fita"
+        },
+        "note": {
+          "label": "Nota",
+          "placeholder": "Adicione qualquer informação adicional para esta fita"
+        }
       }
     },
     "(tabs)": {
       "_layout": {
         "indexTitle": "Explorar",
-        "settingsTitle": "Configurações"
+        "settingsTitle": "Configurações",
+        "homeTitle": "Início"
+      },
+      "home": {
+        "banner": {
+          "title": "APP Chooselife",
+          "description": "Feito para Highliners"
+        },
+        "quickActions": {
+          "setupSimulator": "Simulador de Setup",
+          "community": "Comunidade",
+          "learn": "Aprenda"
+        },
+        "sections": {
+          "UpcomingEvents": {
+            "title": "🗓️ Próximos Eventos",
+            "noEventsTitle": "Nenhum evento",
+            "noEventsDescription": "No momento não tem nenhum evento planejado."
+          },
+          "Ranking": "🏆 Ranking da Semana"
+        }
       },
       "settings": {
         "viewProfile": "Visualizar perfil",
         "logOut": "Sair da conta",
+        "delete": {
+          "label": "Deletar Conta",
+          "alertLabel": "Deletar sua Conta",
+          "alertDescription": "Isto irá remover permanentemente todos os seus dados. Esta ação não pode ser desfeita.",
+          "alertCancel": "Cancelar",
+          "alertConfirm": "Deletar Conta",
+          "alertError": "Não foi possível deletar a conta. Por favor, tente novamente."
+        },
         "logIn": "Entrar na conta",
         "editProfile": {
           "triggerLabel": "Informações pessoais",
@@ -126,24 +179,8 @@
           "title": "Primeiro, escolha uma data",
           "description": "O dia que a missão irá acontecer"
         },
-        "equipments": {
-          "title": "Setup da fita",
-          "main": "Principal",
-          "backup": "Backup",
-          "loop": "Olhal",
-          "connection": "Conexão"
-        },
         "navigator": {
           "finishLabel": "Planejar montagem"
-        },
-        "webbingOwner": {
-          "label": "Fita de:"
-        },
-        "selectMyWebbing": {
-          "label": "Minhas fitas",
-          "placeholder": "Ex.: Brasileirinha",
-          "inUse": "(em uso)",
-          "clear": "limpar"
         }
       }
     },
@@ -173,6 +210,10 @@
       "title": "Essa tela não existe.",
       "subtitle": "Voltar para o mapa"
     },
+    "events": {
+      "title": "Eventos",
+      "noEvents": "Não foram encontrados eventos que correspondam aos seus critérios."
+    },
     "setProfile": {
       "title": "Configure Seu Perfil",
       "UsernameForm": {
@@ -181,7 +222,6 @@
         "inputPlaceholder": "Seu nome de usuário"
       },
       "ProfileInfoForm": {
-        "title": "Informações Pessoais",
         "subtitle": "Conte-nos mais sobre você.",
         "inputPlaceholderName": "Seu nome",
         "birthdayLabel": "Data de Nascimento:",
@@ -194,6 +234,13 @@
         "usernameTaken": "Nome de usuário já escolhido, tente outro.",
         "saveProfile": "Erro ao salvar o perfil. Tente novamente.",
         "usernameCheckError": "Erro ao verificar disponibilidade. Tente novamente."
+      }
+    },
+    "setup-simulator": {
+      "title": "Simulador de setup",
+      "lengthInput": {
+        "label": "Comprimento do Highline (em metros)",
+        "placeholder": "comprimento do Highline"
       }
     }
   },
@@ -209,7 +256,7 @@
           "rig": "montar"
         },
         "timeline": {
-          "riggedFrom": "Montada desde",
+          "riggedSince": "Montada desde",
           "from": "De",
           "to": "até",
           "plannedFor": "Planejado para"
@@ -226,7 +273,7 @@
       },
       "rig-confirmation": {
         "unrig": {
-          "title": "Confirmar desmontagem",
+          "title": "Confirmar Desmontagem",
           "description": "O tempo que o Highline ficou montado será adicionado ao tempo de uso das fitas que foram usadas no setup",
           "button": "Desmontar highline",
           "cancel": "Cancelar"
@@ -234,8 +281,8 @@
         "confirm": {
           "title": "Esse highline foi montado?",
           "description": "A data planejada para montagem era {{date}}",
-          "buttonConfirm": "Confirmar montagem",
-          "buttonChange": "Trocar data",
+          "buttonConfirm": "Confirmar Montagem",
+          "buttonChange": "Trocar Data",
           "buttonBack": "Voltar"
         },
         "notFound": {
@@ -329,9 +376,8 @@
         "empty": "Você ainda não cadastrou nenhuma fita"
       }
     },
-    "sortable-webbing-list": {
-      "addMainSection": "Adicionar principal",
-      "addBackupSection": "Adicionar backup"
+    "event-card": {
+      "register": "Registrar"
     },
     "supabase-avatar": {
       "buttonLabel": "Editar"
@@ -348,6 +394,31 @@
         "atLeastOneLoop": "Seção #{{section}} deve ter pelo menos um olhal para fazer conexão.",
         "bothLoops": "Seção #{{section}} deve ter os dois olhais para fazer conexão.",
         "connectionLength": "Backup #{{backupSection}} deve ser 2-10 metros mais longa que a seção principal #{{mainSection}}"
+      },
+      "equipments": {
+        "title": "Setup da fita",
+        "main": "Principal",
+        "backup": "Backup",
+        "loop": "Olhal",
+        "connection": "Conexão"
+      },
+      "sortable-webbing-list": {
+        "addMainSection": "Adicionar principal",
+        "addBackupSection": "Adicionar backup"
+      },
+      "selectMyWebbing": {
+        "label": "Minhas fitas",
+        "placeholder": "Ex.: Brasileirinha",
+        "inUse": "(em uso)",
+        "clear": "Remover seleção",
+        "emptyState": {
+          "title": "Nenhuma fita disponível",
+          "description": "Fitas que estão sendo utilizada atualmente não vão aparecer aqui."
+        },
+        "registerButton": "Registrar Nova Fita"
+      },
+      "webbingOwner": {
+        "label": "Fita de:"
       }
     }
   },
@@ -358,7 +429,7 @@
       "sessionCreationFailed": "Não foi possível criar a sessão"
     },
     "rig-form": {
-      "unknownWebbing": "Fita não registrada"
+      "unknownWebbing": "Fita sem nome"
     }
   }
 }

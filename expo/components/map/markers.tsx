@@ -2,12 +2,13 @@ import MapboxGL from '@rnmapbox/maps';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Feature, GeoJsonProperties } from 'geojson';
 import { useAtomValue } from 'jotai';
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View } from 'react-native';
 import { PointFeature } from 'supercluster';
 import useSuperCluster from 'use-supercluster';
 
-import type { Highline } from '~/hooks/use-highline';
+import { useAuth } from '~/context/auth';
+import { highlineKeyFactory, type Highline } from '~/hooks/use-highline';
 import { MarkerCL } from '~/lib/icons/MarkerCL';
 
 import { Text } from '../ui/text';
@@ -26,6 +27,7 @@ export const Markers: React.FC<{
   highlightedMarker: Highline | null;
   updateMarkers: (highlines: Highline[], focused: Highline) => void;
 }> = ({ cameraRef, highlines, highlightedMarker, updateMarkers }) => {
+  const { profile } = useAuth();
   const queryClient = useQueryClient();
   const cameraState = useAtomValue(cameraStateAtom);
 
@@ -78,7 +80,9 @@ export const Markers: React.FC<{
       if (shouldHighlightCards) {
         const leaves = supercluster.getLeaves(cluster_id);
         const highlinesData =
-          queryClient.getQueryData<Highline[]>(['highlines']) || [];
+          queryClient.getQueryData<Highline[]>(
+            highlineKeyFactory.list(profile?.id),
+          ) || [];
         const highlinesFromLeaves: Highline[] = [];
         leaves.forEach((l) => {
           const highline = highlinesData.find(
@@ -89,12 +93,14 @@ export const Markers: React.FC<{
         if (highlinesFromLeaves.length > 0) {
           updateMarkers(highlinesFromLeaves, highlinesFromLeaves[0]);
         }
+
+        return;
       }
 
       cameraRef.current?.setCamera({
         centerCoordinate: [lng, lat],
         zoomLevel: clampedZoom,
-        animationDuration: 1000,
+        animationDuration: 300,
         animationMode: 'flyTo',
       });
     },
@@ -105,39 +111,22 @@ export const Markers: React.FC<{
       cameraRef,
       updateMarkers,
       clusters,
+      profile?.id,
     ],
   );
-
-  // Adjust camera when a marker is highlighted.
-  useEffect(() => {
-    if (!highlightedMarker) return;
-    const ne: [number, number] = [
-      Math.max(
-        highlightedMarker.anchor_a_long,
-        highlightedMarker.anchor_b_long,
-      ),
-      Math.max(highlightedMarker.anchor_a_lat, highlightedMarker.anchor_b_lat),
-    ];
-    const sw: [number, number] = [
-      Math.min(
-        highlightedMarker.anchor_a_long,
-        highlightedMarker.anchor_b_long,
-      ),
-      Math.min(highlightedMarker.anchor_a_lat, highlightedMarker.anchor_b_lat),
-    ];
-    cameraRef.current?.fitBounds(ne, sw, [50, 50, 200, 250], 1000);
-  }, [highlightedMarker, cameraRef]);
 
   const handleMarkerSelect = useCallback(
     (highID: string) => {
       const highline = (
-        queryClient.getQueryData<Highline[]>(['highlines']) || []
+        queryClient.getQueryData<Highline[]>(
+          highlineKeyFactory.list(profile?.id),
+        ) || []
       ).find((high) => high.id === highID);
       if (highline) {
         updateMarkers([highline], highline);
       }
     },
-    [queryClient, updateMarkers],
+    [queryClient, updateMarkers, profile?.id],
   );
 
   const polylineFeature = useMemo<Feature | null>(() => {
@@ -216,11 +205,13 @@ export const Markers: React.FC<{
 
           {polylineFeature && (
             <MapboxGL.ShapeSource
-              id={`polyline-${highlightedMarker.id}`}
+              key={`polyline-source-${highlightedMarker.id}`}
+              id={`highlightedMarker-polyline-source`}
               shape={polylineFeature}
             >
               <MapboxGL.LineLayer
-                id={`linelayer-${highlightedMarker.id}`}
+                key={`linelayer-${highlightedMarker.id}`}
+                id={`highlightedMarker-linelayer`}
                 style={{
                   lineColor: '#000',
                   lineWidth: 3,

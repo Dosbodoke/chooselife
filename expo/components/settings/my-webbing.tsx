@@ -2,7 +2,7 @@ import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 
-import { useUserWebbings } from '~/hooks/use-webbings';
+import { getWebbingName, useUserWebbings } from '~/hooks/use-webbings';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { Tables } from '~/utils/database.types';
 
@@ -81,7 +81,7 @@ const WebbingList: React.FC<{
   webbings: WebbingWithModel[];
 }> = ({ webbings }) => {
   return (
-    <View className="gap-2">
+    <View className="gap-6">
       {webbings.map((webbing) => (
         <WebbingItem key={webbing.id} webbing={webbing} />
       ))}
@@ -92,25 +92,51 @@ const WebbingList: React.FC<{
 const WebbingItem: React.FC<{
   webbing: WebbingWithModel;
 }> = ({ webbing }) => {
+  const { t } = useTranslation();
+  // Get loop status info
+  let loopQuantity = 0;
+  if (webbing.left_loop) loopQuantity += 1;
+  if (webbing.right_loop) loopQuantity += 1;
+
   return (
-    <View className="flex-row justify-between items-center gap-4">
+    <View className="flex-row gap-4">
+      <Text className="text-muted-foreground">{`#${webbing.id}`}</Text>
       <View className="flex-1">
-        <Text className="font-bold">
-          {webbing.model?.name ?? webbing.tag_name}
-        </Text>
-        <View className="flex-row gap-2 items-center">
-          <LucideIcon
-            name="MoveHorizontal"
-            className="size-4 text-primary opacity-70"
-          />
-          <Text className="text-muted-foreground">{webbing.length}m</Text>
+        <Text className="font-bold">{getWebbingName(webbing)}</Text>
+
+        <View className="mt-2 flex-row flex-wrap gap-x-4 gap-y-2">
+          <View className="flex-row items-center">
+            <LucideIcon
+              name="MoveHorizontal"
+              className="size-4 text-primary mr-1"
+            />
+            <Text className="text-sm">{webbing.length}m</Text>
+          </View>
+
+          {webbing.model ? (
+            <>
+              <View className="flex-row items-center">
+                <LucideIcon
+                  name="Factory"
+                  className="size-4 text-primary mr-1"
+                />
+                <Text className="text-sm">{webbing.model.material}</Text>
+              </View>
+
+              <View className="flex-row items-center">
+                <LucideIcon
+                  name="Layers"
+                  className="size-4 text-primary mr-1"
+                />
+                <Text className="text-sm">{webbing.model.weave}</Text>
+              </View>
+            </>
+          ) : null}
+          <View className="flex-row items-center">
+            <LucideIcon name="Link" className="size-4 text-primary mr-1" />
+            <Text className="text-sm">{`${loopQuantity} ${loopQuantity === 2 ? t('common.loops') : t('common.loop')}`}</Text>
+          </View>
         </View>
-      </View>
-      <View className="flex-row gap-2">
-        <LucideIcon
-          name="ChevronRight"
-          className="size-6 text-muted-foreground"
-        />
       </View>
     </View>
   );

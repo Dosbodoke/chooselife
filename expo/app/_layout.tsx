@@ -52,7 +52,11 @@ export default function RootLayout() {
                 <KeyboardProvider>
                   <StatusBar style="dark" />
                   <BottomSheetModalProvider>
-                    <Stack>
+                    <Stack
+                      screenOptions={{
+                        headerBackButtonDisplayMode: 'minimal',
+                      }}
+                    >
                       <Stack.Screen
                         name="(tabs)"
                         options={{
@@ -100,8 +104,8 @@ export default function RootLayout() {
                         options={{ header: () => <OfflineBanner /> }}
                       />
                     </Stack>
+                    <PortalHost />
                   </BottomSheetModalProvider>
-                  <PortalHost />
                 </KeyboardProvider>
               </GestureHandlerRootView>
             </ThemeProvider>

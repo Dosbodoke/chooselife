@@ -5,7 +5,11 @@ import { TouchableOpacity, View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
 import { Highline } from '~/hooks/use-highline';
-import { Setup, useRigSetup, type RigStatuses } from '~/hooks/use-rig-setup';
+import {
+  useRigSetup,
+  type RigStatuses,
+  type Setup,
+} from '~/hooks/use-rig-setup';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
 
@@ -26,7 +30,10 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
   const { t } = useTranslation();
   const { session } = useAuth();
   const router = useRouter();
-  const { data, latestSetup, isPending } = useRigSetup({
+  const {
+    query: { data, isPending },
+    latestSetup,
+  } = useRigSetup({
     highlineID: highline.id,
   });
 
@@ -158,7 +165,7 @@ const TimelineItem: React.FC<{
     content = (
       <>
         <Text className="text-primary font-semibold text-lg">
-          {t('components.highline.history.timeline.riggedFrom')}
+          {t('components.highline.history.timeline.riggedSince')}
         </Text>
         <CalendarBadge date={rigDate.toLocaleDateString('pt-BR')} />
       </>

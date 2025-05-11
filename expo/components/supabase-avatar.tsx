@@ -24,7 +24,9 @@ export const SupabaseAvatar: React.FC<{
   URL?: string;
 }> = ({ size = 8, profileID, URL }) => {
   const [imageURL, setImageURL] = useState<string | undefined>(URL);
-  const { data, isPending } = useProfile(profileID);
+  const {
+    query: { data, isPending },
+  } = useProfile(profileID || null);
 
   React.useEffect(() => {
     if (!URL && data?.profile_picture) {

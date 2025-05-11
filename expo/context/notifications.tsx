@@ -14,6 +14,7 @@ import { Platform } from 'react-native';
 import { supabase } from '~/lib/supabase';
 
 import { useAuth } from './auth';
+import { useI18n } from './i18n';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -122,6 +123,7 @@ export function NotificationProvider({
 }) {
   useNotificationObserver();
   const { profile } = useAuth();
+  const { locale } = useI18n();
 
   const [expoPushToken, setExpoPushToken] = useState('');
   const [notification, setNotification] = useState<
@@ -157,25 +159,41 @@ export function NotificationProvider({
     };
   }, []);
 
-  // Store token to the user profile
   useEffect(() => {
-    async function storeToken() {
-      if (
-        profile &&
-        expoPushToken &&
-        profile.expo_push_token !== expoPushToken
-      ) {
-        await supabase
-          .from('profiles')
-          .update({
-            expo_push_token: expoPushToken,
-          })
-          .eq('id', profile.id);
+    async function manageToken() {
+      if (!expoPushToken) return;
+      try {
+        const { data } = await supabase
+          .from('push_tokens')
+          .select('*')
+          .eq('token', expoPushToken)
+          .single();
+
+        if (data) {
+          await supabase
+            .from('push_tokens')
+            .update({
+              token: expoPushToken,
+              profile_id: data.profile_id || profile?.id || null,
+              language: locale,
+              created_at: new Date().toISOString(),
+            })
+            .eq('id', data.id);
+          return;
+        }
+
+        await supabase.from('push_tokens').insert({
+          token: expoPushToken,
+          profile_id: profile?.id || null,
+          language: locale,
+        });
+      } catch (error) {
+        console.error('Error managing push token:', error);
       }
     }
 
-    storeToken();
-  }, [profile, expoPushToken]);
+    manageToken();
+  }, [expoPushToken, profile, locale]);
 
   const contextValue = {
     expoPushToken,

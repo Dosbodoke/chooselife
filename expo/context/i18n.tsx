@@ -7,26 +7,33 @@ import i18next from 'i18next';
 import React from 'react';
 import { initReactI18next } from 'react-i18next';
 
+import type { Locales } from '~/utils/database.types';
+
 export const resources = {
   pt: { translation: translationPt },
   en: { translation: translationEn },
 } as const;
 
 interface I18nContextType {
-  locale: string | null;
-  setLocale: (locale: string) => Promise<void>;
+  locale: Locales;
+  setLocale: (locale: Locales) => Promise<void>;
 }
+
+const FALLBACK_LNG: Locales = 'pt';
 
 const I18nContext = React.createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [languageLoaded, setLanguageLoaded] = React.useState(false);
-  const [language, setLanguage] = React.useState<string | null>(null);
+  const [language, setLanguage] = React.useState<Locales | null>(null);
 
   React.useEffect(() => {
     const getSystemLanguageAndSet = async () => {
-      const storedLocale = await AsyncStorage.getItem('chooselife_locale');
-      const phoneLocale = Localization.getLocales()?.[0]?.languageCode ?? 'pt';
+      const storedLocale = (await AsyncStorage.getItem(
+        'chooselife_locale',
+      )) as Locales;
+      const phoneLocale = (Localization.getLocales()?.[0]?.languageCode ??
+        FALLBACK_LNG) as Locales;
       setLanguage(storedLocale ? storedLocale : phoneLocale);
     };
 
@@ -38,7 +45,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     i18next.use(initReactI18next).init({
       lng: language,
       resources,
-      fallbackLng: 'pt',
+      fallbackLng: FALLBACK_LNG,
       interpolation: {
         escapeValue: false,
       },
@@ -53,9 +60,9 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     }
   }, [language, languageLoaded]);
 
-  const updateLocale = async (locale: string) => {
+  const updateLocale = async (locale: Locales) => {
+    await i18next.changeLanguage(locale);
     await AsyncStorage.setItem('chooselife_locale', locale);
-    i18next.changeLanguage(locale);
     setLanguage(locale);
   };
 
@@ -66,8 +73,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   return (
     <I18nContext.Provider
       value={{
-        setLocale: async (locale: string) => await updateLocale(locale),
-        locale: language,
+        setLocale: async (locale) => await updateLocale(locale),
+        locale: language || FALLBACK_LNG,
       }}
     >
       {children}

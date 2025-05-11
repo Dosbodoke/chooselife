@@ -59,6 +59,48 @@ export type Database = {
           },
         ]
       }
+      events: {
+        Row: {
+          city: string
+          country: string
+          description: string | null
+          end_date: string | null
+          id: number
+          lines: number | null
+          registration_url: string | null
+          start_date: string
+          state: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          city: string
+          country: string
+          description?: string | null
+          end_date?: string | null
+          id?: never
+          lines?: number | null
+          registration_url?: string | null
+          start_date: string
+          state?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          city?: string
+          country?: string
+          description?: string | null
+          end_date?: string | null
+          id?: never
+          lines?: number | null
+          registration_url?: string | null
+          start_date?: string
+          state?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       favorite_highline: {
         Row: {
           created_at: string
@@ -144,27 +186,27 @@ export type Database = {
       }
       notifications: {
         Row: {
-          body: string | null
+          body: Json | null
           created_at: string
           data: Json | null
           id: number
-          title: string | null
+          title: Json | null
           user_id: string | null
         }
         Insert: {
-          body?: string | null
+          body?: Json | null
           created_at?: string
           data?: Json | null
           id?: number
-          title?: string | null
+          title?: Json | null
           user_id?: string | null
         }
         Update: {
-          body?: string | null
+          body?: Json | null
           created_at?: string
           data?: Json | null
           id?: number
-          title?: string | null
+          title?: Json | null
           user_id?: string | null
         }
         Relationships: [
@@ -184,6 +226,7 @@ export type Database = {
           description: string | null
           expo_push_token: string | null
           id: string
+          language: Database["public"]["Enums"]["language"] | null
           name: string | null
           profile_picture: string | null
           username: string | null
@@ -194,6 +237,7 @@ export type Database = {
           description?: string | null
           expo_push_token?: string | null
           id: string
+          language?: Database["public"]["Enums"]["language"] | null
           name?: string | null
           profile_picture?: string | null
           username?: string | null
@@ -204,11 +248,44 @@ export type Database = {
           description?: string | null
           expo_push_token?: string | null
           id?: string
+          language?: Database["public"]["Enums"]["language"] | null
           name?: string | null
           profile_picture?: string | null
           username?: string | null
         }
         Relationships: []
+      }
+      push_tokens: {
+        Row: {
+          created_at: string | null
+          id: number
+          language: Database["public"]["Enums"]["language"] | null
+          profile_id: string | null
+          token: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: never
+          language?: Database["public"]["Enums"]["language"] | null
+          profile_id?: string | null
+          token: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: never
+          language?: Database["public"]["Enums"]["language"] | null
+          profile_id?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rig_setup: {
         Row: {
@@ -222,7 +299,7 @@ export type Database = {
         Insert: {
           highline_id: string
           id?: never
-          is_rigged: boolean
+          is_rigged?: boolean
           rig_date: string
           riggers: string[]
           unrigged_at?: string | null
@@ -314,6 +391,27 @@ export type Database = {
         }
         Relationships: []
       }
+      trails: {
+        Row: {
+          color: string
+          coordinates: number[]
+          id: number
+          name: string
+        }
+        Insert: {
+          color: string
+          coordinates: number[]
+          id?: never
+          name: string
+        }
+        Update: {
+          color?: string
+          coordinates?: number[]
+          id?: never
+          name?: string
+        }
+        Relationships: []
+      }
       webbing: {
         Row: {
           description: string | null
@@ -358,18 +456,21 @@ export type Database = {
       webbing_model: {
         Row: {
           id: number
+          image_url: string | null
           material: Database["public"]["Enums"]["material_enum"]
           name: string
           weave: Database["public"]["Enums"]["weave_enum"]
         }
         Insert: {
           id?: never
+          image_url?: string | null
           material: Database["public"]["Enums"]["material_enum"]
           name: string
           weave: Database["public"]["Enums"]["weave_enum"]
         }
         Update: {
           id?: never
+          image_url?: string | null
           material?: Database["public"]["Enums"]["material_enum"]
           name?: string
           weave?: Database["public"]["Enums"]["weave_enum"]
@@ -382,11 +483,7 @@ export type Database = {
     }
     Functions: {
       get_crossing_time: {
-        Args: {
-          highline_id: string
-          page_number: number
-          page_size: number
-        }
+        Args: { highline_id: string; page_number: number; page_size: number }
         Returns: {
           instagram: string
           crossing_time: number
@@ -477,17 +574,20 @@ export type Database = {
         }[]
       }
       profile_stats: {
-        Args: {
-          username: string
-        }
+        Args: { username: string }
         Returns: {
           total_distance_walked: number
           total_cadenas: number
           total_full_lines: number
         }[]
       }
+      validate_locale_keys: {
+        Args: { json_data: Json }
+        Returns: boolean
+      }
     }
     Enums: {
+      language: "pt" | "en"
       material_enum: "nylon" | "dyneema" | "polyester"
       weave_enum: "flat" | "tubular"
       webbing_type: "main" | "backup"
@@ -715,30 +815,19 @@ export type Database = {
     }
     Functions: {
       can_insert_object: {
-        Args: {
-          bucketid: string
-          name: string
-          owner: string
-          metadata: Json
-        }
+        Args: { bucketid: string; name: string; owner: string; metadata: Json }
         Returns: undefined
       }
       extension: {
-        Args: {
-          name: string
-        }
+        Args: { name: string }
         Returns: string
       }
       filename: {
-        Args: {
-          name: string
-        }
+        Args: { name: string }
         Returns: string
       }
       foldername: {
-        Args: {
-          name: string
-        }
+        Args: { name: string }
         Returns: string[]
       }
       get_size_by_bucket: {
@@ -813,27 +902,29 @@ export type Database = {
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">]
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-        PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -841,20 +932,22 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -862,20 +955,22 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -883,21 +978,23 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof PublicSchema["Enums"]
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema["CompositeTypes"]
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database
@@ -906,6 +1003,20 @@ export type CompositeTypes<
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      language: ["pt", "en"],
+      material_enum: ["nylon", "dyneema", "polyester"],
+      weave_enum: ["flat", "tubular"],
+      webbing_type: ["main", "backup"],
+    },
+  },
+  storage: {
+    Enums: {},
+  },
+} as const

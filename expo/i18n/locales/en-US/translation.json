@@ -1,4 +1,10 @@
 {
+  "common": {
+    "soon": "Soon",
+    "seeAll": "See all",
+    "loop": "Loop",
+    "loops": "Loops"
+  },
   "app": {
     "(modals)": {
       "login": {
@@ -9,7 +15,7 @@
           "continueGoogle": "Continue with Google"
         },
         "separator": "or",
-        "email": {
+        "EmailSection": {
           "tabLogin": "Login with Email",
           "tabSignup": "Create Account",
           "emailPlaceholder": "Your email",
@@ -18,7 +24,10 @@
           "loginButton": "Login",
           "signupButton": "Create",
           "invalidEmail": "Invalid email",
+          "passwordTooShort": "Password must be at least 6 characters",
+          "passwordRequired": "Password is required",
           "passwordsMismatch": "Passwords do not match.",
+          "emailExists": "This email is already registered",
           "signupFailed": "Failed to create account, please contact support"
         }
       },
@@ -26,18 +35,62 @@
         "title": "Register Webbing",
         "description": "Registering your webbing lets you track its usage history and receive maintenance reminders.",
         "finishLabel": "Register",
-        "modelLabel": "Webbing Model",
-        "modelPlaceholder": "E.g., Brasileirinha"
+        "selectModel": {
+          "label": "Webbing Model",
+          "placeholder": "E.g., Brasileirinha",
+          "clear": "Unselect model",
+          "emptyState": {
+            "title": "No model available",
+            "description": "There are no models that match your criteria"
+          }
+        },
+        "tagName": {
+          "min": "Must be at least 3 characters",
+          "label": "Webbing Name",
+          "placeholder": "A name so you can identify this webbing"
+        },
+        "note": {
+          "label": "Note",
+          "placeholder": "Add any additional information for this webbing"
+        }
       }
     },
     "(tabs)": {
       "_layout": {
         "indexTitle": "Explore",
-        "settingsTitle": "Settings"
+        "settingsTitle": "Settings",
+        "homeTitle": "Home"
+      },
+      "home": {
+        "banner": {
+          "title": "APP Chooselife",
+          "description": "Made for Highliners"
+        },
+        "quickActions": {
+          "setupSimulator": "Setup Simulator",
+          "community": "Community",
+          "learn": "Learn"
+        },
+        "sections": {
+          "UpcomingEvents": {
+            "title": "🗓️ Next Events",
+            "noEventsTitle": "No upcoming events",
+            "noEventsDescription": "There are no upcoming events at the moment."
+          },
+          "Ranking": "🏆 Weekly Ranking"
+        }
       },
       "settings": {
         "viewProfile": "View profile",
         "logOut": "Log Out",
+        "delete": {
+          "label": "Delete Account",
+          "alertLabel": "Delete your account",
+          "alertDescription": "This will permanently remove all your data. This action cannot be undone.",
+          "alertCancel": "Cancel",
+          "alertConfirm": "Delete Account",
+          "alertError": "Could not delete account. Please try again."
+        },
         "logIn": "Log In",
         "editProfile": {
           "triggerLabel": "Personal information",
@@ -126,24 +179,8 @@
           "title": "First, choose a date",
           "description": "The day the mission will take place"
         },
-        "equipments": {
-          "title": "Rig Setup",
-          "main": "Main",
-          "backup": "Backup",
-          "loop": "Loop",
-          "connection": "Connection"
-        },
         "navigator": {
           "finishLabel": "Plan Rigging"
-        },
-        "webbingOwner": {
-          "label": "Webbing from:"
-        },
-        "selectMyWebbing": {
-          "label": "My webbings",
-          "placeholder": "e.g. Brasileirinha",
-          "inUse": "(in use)",
-          "clear": "clear"
         }
       }
     },
@@ -173,6 +210,10 @@
       "title": "This screen doesn't exist.",
       "subtitle": "Go to map screen"
     },
+    "events": {
+      "title": "Events",
+      "noEvents": "No events matching your criteria were found."
+    },
     "setProfile": {
       "title": "Set Up Your Profile",
       "UsernameForm": {
@@ -181,7 +222,6 @@
         "inputPlaceholder": "Your username"
       },
       "ProfileInfoForm": {
-        "title": "Personal Information",
         "subtitle": "Tell us more about yourself.",
         "inputPlaceholderName": "Your name",
         "birthdayLabel": "Date of Birth:",
@@ -194,6 +234,13 @@
         "usernameTaken": "Username already taken, try another.",
         "saveProfile": "Error saving profile. Please try again.",
         "usernameCheckError": "Error checking username availability. Please try again."
+      }
+    },
+    "setup-simulator": {
+      "title": "Setup simulator",
+      "lengthInput": {
+        "label": "Highline Length (meters)",
+        "placeholder": "Enter highline length"
       }
     }
   },
@@ -209,7 +256,7 @@
           "rig": "rig"
         },
         "timeline": {
-          "riggedFrom": "Rigged from",
+          "riggedSince": "Rigged since",
           "from": "From",
           "to": "to",
           "plannedFor": "Planned for"
@@ -228,14 +275,14 @@
         "unrig": {
           "title": "Confirm Unrig",
           "description": "The period the Highline was rigged will be added to the total usage time of the webbings used in the setup",
-          "button": "Unrig highline",
+          "button": "Unrig Highline",
           "cancel": "Cancel"
         },
         "confirm": {
           "title": "Was this highline rigged?",
           "description": "The planned rig date was {{date}}",
-          "buttonConfirm": "Confirm rigging",
-          "buttonChange": "Change date",
+          "buttonConfirm": "Confirm Rigging",
+          "buttonChange": "Change Date",
           "buttonBack": "Back"
         },
         "notFound": {
@@ -329,9 +376,8 @@
         "empty": "You haven't registered any webbing yet"
       }
     },
-    "sortable-webbing-list": {
-      "addMainSection": "Add main section",
-      "addBackupSection": "Add backup section"
+    "event-card": {
+      "register": "Register"
     },
     "supabase-avatar": {
       "buttonLabel": "Edit"
@@ -348,6 +394,31 @@
         "atLeastOneLoop": "Section #{{section}} must have at least one loop to connect with the others.",
         "bothLoops": "Section #{{section}} must have both loop to connect with the others.",
         "connectionLength": "Backup #{{backupSection}} must be 2-10 meters longer than the main section #{{mainSection}}"
+      },
+      "equipments": {
+        "title": "Rig Setup",
+        "main": "Main",
+        "backup": "Backup",
+        "loop": "Loop",
+        "connection": "Connection"
+      },
+      "sortable-webbing-list": {
+        "addMainSection": "Add main section",
+        "addBackupSection": "Add backup section"
+      },
+      "selectMyWebbing": {
+        "label": "My webbings",
+        "placeholder": "e.g. Brasileirinha",
+        "inUse": "(in use)",
+        "clear": "Unselect webbing",
+        "emptyState": {
+          "title": "No webbing available",
+          "description": "Webbings that are currently in use will not appear here."
+        },
+        "registerButton": "Register New Webbing"
+      },
+      "webbingOwner": {
+        "label": "Webbing from:"
       }
     }
   },

@@ -27,11 +27,10 @@ import { useWebbing } from '~/hooks/use-webbings';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
 
+import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Alert } from '~/components/ui/alert';
 import { Text } from '~/components/ui/text';
-import type { WebbingValidationErrors } from '~/components/webbing-setup';
-
-import { SupabaseAvatar } from './supabase-avatar';
+import type { WebbingValidationErrors } from '~/components/webbing-setup/setup-canvas';
 
 export const ROW_HEIGHT = 48;
 
@@ -423,8 +422,10 @@ const AddSectionButton: React.FC<{
       <LucideIcon name="CirclePlus" className="size-6 text-primary" />
       <Text className="text-base text-primary">
         {type === 'main'
-          ? t('components.sortable-webbing-list.addMainSection')
-          : t('components.sortable-webbing-list.addBackupSection')}
+          ? t('components.webbing-setup.sortable-webbing-list.addMainSection')
+          : t(
+              'components.webbing-setup.sortable-webbing-list.addBackupSection',
+            )}
       </Text>
     </AnimatedTouchableOpacity>
   );

@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import {
-  queryKeys as rigQueryKeys,
+  rigSetupKeyFactory,
   Setup,
   useRigSetupById,
 } from '~/hooks/use-rig-setup';
@@ -23,7 +23,10 @@ import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 
 export const RigModal: React.FC = () => {
-  const { setupID } = useLocalSearchParams<{ setupID?: string }>();
+  const { id: highlineID, setupID } = useLocalSearchParams<{
+    id: string;
+    setupID?: string;
+  }>();
   const router = useRouter();
   const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
 
@@ -79,19 +82,25 @@ export const RigModal: React.FC = () => {
       }}
     >
       <BottomSheetView className="p-4 items-center gap-4">
-        <SheetBody setupID={setupID} closeModal={closeModal} />
+        <SheetBody
+          highlineID={highlineID}
+          setupID={setupID}
+          closeModal={closeModal}
+        />
       </BottomSheetView>
     </BottomSheetModal>
   );
 };
 
-interface SheetBodyProps {
+const SheetBody: React.FC<{
+  highlineID: string;
   setupID?: string;
   closeModal: () => void;
-}
-
-const SheetBody: React.FC<SheetBodyProps> = ({ setupID, closeModal }) => {
-  const setup = useRigSetupById(setupID);
+}> = ({ highlineID, setupID, closeModal }) => {
+  if (!setupID) {
+    return null;
+  }
+  const setup = useRigSetupById({ highlineID, rigSetupID: setupID });
 
   if (setup.isPending) {
     return <ModalSkeleton />;
@@ -138,7 +147,7 @@ const UnrigSetup: React.FC<UnrigSetupProps> = ({ setup, closeModal }) => {
     onSuccess: (response) => {
       // Update cached setups
       queryClient.setQueryData<Setup>(
-        rigQueryKeys.all(response.highline_id),
+        rigSetupKeyFactory.all({ highlineID: response.highline_id }),
         (oldData) => {
           return oldData?.map((item) =>
             item.id === response.id ? { ...item, ...response } : item,
@@ -146,7 +155,10 @@ const UnrigSetup: React.FC<UnrigSetupProps> = ({ setup, closeModal }) => {
         },
       );
       queryClient.setQueryData<Setup[number]>(
-        rigQueryKeys.single(response.highline_id),
+        rigSetupKeyFactory.single({
+          highlineID: response.highline_id,
+          rigSetupID: response.id.toString(),
+        }),
         (oldData) => {
           if (!oldData) return;
           return { ...oldData, ...response };
@@ -222,7 +234,7 @@ const ConfirmDate: React.FC<ConfirmDateProps> = ({ setup, closeModal }) => {
     },
     onSuccess: (response) => {
       queryClient.setQueryData<Setup>(
-        rigQueryKeys.all(response.highline_id),
+        rigSetupKeyFactory.all({ highlineID: response.highline_id }),
         (oldData) => {
           return oldData?.map((item) =>
             item.id === response.id ? { ...item, ...response } : item,
@@ -230,7 +242,10 @@ const ConfirmDate: React.FC<ConfirmDateProps> = ({ setup, closeModal }) => {
         },
       );
       queryClient.setQueryData<Setup[number]>(
-        rigQueryKeys.single(response.highline_id),
+        rigSetupKeyFactory.single({
+          highlineID: response.highline_id,
+          rigSetupID: response.id.toString(),
+        }),
         (oldData) => {
           if (!oldData) return;
           return { ...oldData, ...response };

@@ -2,12 +2,13 @@ import i18next from 'i18next';
 import React from 'react';
 import { Controller, UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Keyboard, TextInput, TouchableOpacity, View } from 'react-native';
+import { Keyboard, TextInput, View } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { z } from 'zod';
 
 import { cn } from '~/lib/utils';
+import { date18YearsAgo } from '~/utils';
 
 import { Input } from '~/components/ui/input';
 import { Text } from '~/components/ui/text';
@@ -19,7 +20,7 @@ export const profileInfoSchema = z.object({
   name: z.string().min(1, i18next.t('app.setProfile.errors.nameRequired')),
   profilePicture: z.string().optional(),
   description: z.string().optional(),
-  birthday: z.string(),
+  birthday: z.string().optional(),
 });
 export type ProfileInfoSchema = z.infer<typeof profileInfoSchema>;
 
@@ -62,11 +63,10 @@ export const ProfileInfoForm: React.FC<{
               placeholder={t(
                 'app.setProfile.ProfileInfoForm.inputPlaceholderName',
               )}
-              autoCapitalize="none"
               returnKeyType="done"
               className={cn(
                 error?.message ? 'border-red-500' : 'border-muted-foreground',
-                'text-foreground border-b-hairline min-w-48',
+                'text-lg text-foreground border-b-hairline pb-1 min-w-48',
               )}
             />
             {error && (
@@ -82,29 +82,25 @@ export const ProfileInfoForm: React.FC<{
         control={form.control}
         name="birthday"
         render={({ field: { value }, fieldState: { error } }) => (
-          <View className="gap-2 w-full">
-            <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-              <Input
-                label={t('app.setProfile.ProfileInfoForm.birthdayLabel')}
-                editable={false}
-                value={
-                  value
-                    ? new Date(value).toLocaleDateString('pt-BR')
-                    : t('app.setProfile.ProfileInfoForm.selectDate')
-                }
-                className={cn(
-                  'text-foreground w-full',
-                  error?.message ? 'border-red-500' : 'border-border',
-                )}
-                placeholder={t('app.setProfile.ProfileInfoForm.selectDate')}
-              />
-            </TouchableOpacity>
+          <>
+            <Input
+              onPress={() => setShowDatePicker(true)}
+              label={t('app.setProfile.ProfileInfoForm.birthdayLabel')}
+              editable={false}
+              value={value ? new Date(value).toLocaleDateString('pt-BR') : ''}
+              className={cn(
+                'border border-input bg-background text-foreground w-full',
+                error?.message ? 'border-red-500' : 'border-border',
+              )}
+              placeholderClassName="text-muted-foreground"
+              placeholder={t('app.setProfile.ProfileInfoForm.selectDate')}
+            />
             <DatePicker
               modal
               open={showDatePicker}
               mode="date"
               locale="pt-BR"
-              date={new Date(value)}
+              date={value ? new Date(value) : new Date(date18YearsAgo())}
               maximumDate={new Date()}
               onConfirm={(date) => {
                 setShowDatePicker(false);
@@ -115,7 +111,7 @@ export const ProfileInfoForm: React.FC<{
               }}
               timeZoneOffsetInMinutes={0} // https://github.com/henninghall/react-native-date-picker/issues/841
             />
-          </View>
+          </>
         )}
       />
 

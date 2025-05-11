@@ -1,14 +1,14 @@
 import { cssInterop } from 'nativewind';
 import Svg, { Path, SvgProps } from 'react-native-svg';
 
-interface HighlineIllustrationProps extends SvgProps {
+interface HighlineRigIllustrationProps extends SvgProps {
   mode?: 'light' | 'dark';
 }
 
-const HighlineIllustration = ({
+export const HighlineRigIllustration = ({
   mode = 'light',
   ...props
-}: HighlineIllustrationProps) => {
+}: HighlineRigIllustrationProps) => {
   const fillLight = '#FEFEFE';
   const fillDark = '#000';
 
@@ -58,7 +58,7 @@ const HighlineIllustration = ({
   );
 };
 
-cssInterop(HighlineIllustration, {
+cssInterop(HighlineRigIllustration, {
   className: {
     target: 'style',
     nativeStyleToProp: {
@@ -69,5 +69,3 @@ cssInterop(HighlineIllustration, {
     },
   },
 });
-
-export default HighlineIllustration;
