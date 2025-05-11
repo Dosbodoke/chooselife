@@ -315,7 +315,7 @@ export default function Screen() {
 
       <ListingsBottomSheet
         highlines={highlines}
-        hasFocusedMarker={!!highlightedMarker}
+        hasFocusedMarker={!!focusedMarker}
         isLoading={isLoading}
       />
     </View>
