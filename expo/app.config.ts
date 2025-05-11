@@ -4,14 +4,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "ChooseLife",
   slug: "chooselife",
-  version: "1.3.3",
+  version: "1.3.4",
   newArchEnabled: true,
   orientation: "portrait",
   scheme: "com.bodok.chooselife",
   userInterfaceStyle: "light",
   assetBundlePatterns: ["**/*"],
   ios: {
+    bundleIdentifier: "com.bodok.chooselife",
     usesAppleSignIn: true,
+    supportsTablet: false,
+    associatedDomains: ["applinks:chooselife.club"],
     infoPlist: {
       "ITSAppUsesNonExemptEncryption": false,
       "UIUserInterfaceStyle": "Light",
@@ -19,8 +22,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     config: {
       usesNonExemptEncryption: false,
     },
-    bundleIdentifier: "com.bodok.chooselife",
-    supportsTablet: false,
     icon: {
       light: "./assets/icons/ios-light.png",
       dark: "./assets/icons/ios-dark.png",
@@ -28,6 +29,37 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
+    package: "com.bodok.chooselife",
+    googleServicesFile: "./credentials/google-services.json",
+    intentFilters: [
+      {
+        action: "VIEW",
+        autoVerify: true,
+        data: [
+          {
+            scheme: "https",
+            host: "chooselife.club",
+            pathPrefix: "/",
+          },
+          {
+            scheme: "https",
+            host: "chooselife.club",
+            pathPrefix: "/highline",
+          },
+          {
+            scheme: "https",
+            host: "chooselife.club",
+            pathPrefix: "/profile",
+          },
+          {
+            scheme: "https",
+            host: "chooselife.club",
+            pathPrefix: "/register-highline",
+          },
+        ],
+        category: ["BROWSABLE", "DEFAULT"],
+      },
+    ],
     softwareKeyboardLayoutMode: "pan",
     adaptiveIcon: {
       foregroundImage: "./assets/icons/adaptive-icon.png",
@@ -38,8 +70,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "android.permission.ACCESS_COARSE_LOCATION",
       "android.permission.ACCESS_FINE_LOCATION",
     ],
-    package: "com.bodok.chooselife",
-    googleServicesFile: "./credentials/google-services.json",
   },
   web: {
     bundler: "metro",
