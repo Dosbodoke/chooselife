@@ -1,4 +1,19 @@
 {
   "version": 2,
-  "ignoreCommand": "if ! git cat-file -e \"$VERCEL_GIT_PREVIOUS_SHA^{commit}\" 2>/dev/null; then echo \"✅ - Proceeding with build (previous SHA invalid or first deployment).\"; exit 1; fi; git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" \"$VERCEL_GIT_COMMIT_SHA\" -- ./next"
+  "ignoreCommand": "if ! git cat-file -e \"$VERCEL_GIT_PREVIOUS_SHA^{commit}\" 2>/dev/null; then echo \"✅ - Proceeding with build (previous SHA invalid or first deployment).\"; exit 1; fi; git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" \"$VERCEL_GIT_COMMIT_SHA\" -- ./next",
+  "builds": [
+    {
+      "src": "next/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/.well-known/apple-app-site-association",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "continue": true
+    }
+  ]
 }
