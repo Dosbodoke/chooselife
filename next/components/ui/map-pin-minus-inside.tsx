@@ -8,10 +8,10 @@ const svgVariants: Variants = {
     y: 0,
   },
   animate: {
-    y: [0, -5, -3],
+    y: [0, -3],
     transition: {
       duration: 0.5,
-      times: [0, 0.6, 1],
+      times: [0, 1],
       type: "spring",
       stiffness: 200,
       damping: 10,
