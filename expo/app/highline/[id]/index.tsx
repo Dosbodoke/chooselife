@@ -57,6 +57,7 @@ export default function HighlinePage() {
       console.log('Erro ao compartilhar a highline:', err);
     }
   };
+
   const tabs = useMemo(
     () => [
       {
