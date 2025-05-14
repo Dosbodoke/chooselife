@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "ignoreCommand": "[[ -z \"$VERCEL_GIT_PREVIOUS_SHA\" ]] && exit 1 || git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" \"$VERCEL_GIT_COMMIT_SHA\" -- ./next && exit 0 || exit 1",
   "builds": [
     {
       "src": "next/package.json",
