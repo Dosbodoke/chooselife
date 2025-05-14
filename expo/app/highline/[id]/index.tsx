@@ -1,4 +1,3 @@
-import * as Linking from 'expo-linking';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -43,16 +42,16 @@ export default function HighlinePage() {
   const shareListing = async () => {
     if (!highline) return;
     try {
-      const url = Linking.createURL(`highline/${highline.id}`);
+      const url = `${process.env.EXPO_PUBLIC_WEB_URL}/highline/${highline.id}`;
       await Share.share({
         title: 'Veja no Chooselife',
-        message: `🚀 Confira esse Highline incrível no APP Chooselife: "${highline.name}"!\n\nBaixe o app para explorar mais locais, rankings e atividades exclusivas no mundo das highlines.\n\n🔗 Acesse agora: ${url}`,
+        message: `Via "${highline.name}" no APP Choose Life!\n\n🔗 Acesse agora: ${url}`,
+        url: url,
       });
     } catch (err) {
       console.log('Erro ao compartilhar a highline:', err);
     }
   };
-
   const tabs = useMemo(
     () => [
       {
