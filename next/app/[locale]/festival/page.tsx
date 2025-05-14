@@ -27,7 +27,7 @@ export default async function Festival({ params }: Props) {
         className="absolute -z-10 h-full max-h-screen w-full object-cover opacity-70"
         alt="Illustration of a someone walking a Highline"
       />
-      <div className="absolute inset-0 -z-10 max-h-screen bg-gradient-to-t from-background from-10%" />
+      <div className="absolute inset-0 -z-10 max-h-screen bg-gradient-to-t from-slate-900 from-10%" />
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center justify-center space-y-6">
           <div className="space-y-2 text-center">
