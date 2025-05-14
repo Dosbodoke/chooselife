@@ -32,6 +32,12 @@ export default async function middleware(req: NextRequest) {
   const { dbServerClient } = composeDbReqResClient(req, res);
   await dbServerClient.auth.getSession(); // automatically refreshes the session if expired
 
+  const pathname = req.nextUrl.pathname;
+  if (pathname === "/.well-known/apple-app-site-association") {
+    res.headers.set("Content-Type", "application/json");
+    return res;
+  }
+
   return res;
 }
 
