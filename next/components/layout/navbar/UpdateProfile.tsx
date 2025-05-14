@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { useRouter } from "@/navigation";
+import { useRouter } from "@/i18n/navigation";
 import useSupabaseBrowser from "@/utils/supabase/client";
 import type { Database } from "@/utils/supabase/database.types";
 
@@ -171,7 +171,7 @@ export default function UpdateProfile({
                             variant={"outline"}
                             className={cn(
                               "font-normal",
-                              !field.value && "text-muted-foreground",
+                              !field.value && "text-muted-foreground"
                             )}
                           >
                             {field.value ? (

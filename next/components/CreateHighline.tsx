@@ -24,7 +24,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Link } from "@/navigation";
+import { Link } from "@/i18n/navigation";
 import {
   decodeLocation,
   getDistance,

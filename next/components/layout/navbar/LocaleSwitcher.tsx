@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,21 +10,11 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { usePathname, useRouter } from "@/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import type { Locales } from "@/utils/supabase/database.types";
 
 export default function LocaleSwitcher() {
-  const t = useTranslations("LocaleSwitcher");
-  const locale = useLocale() as unknown as Locales;
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
 

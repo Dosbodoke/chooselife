@@ -1,4 +1,4 @@
-const { Config } = require("next-recompose-plugins");
+import createNextIntlPlugin from "next-intl/plugin";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -28,12 +28,7 @@ const nextConfig = {
     ],
   },
 };
-const withNextIntl = require("next-intl/plugin");
 
-const config = new Config(nextConfig)
-  .applyPlugin((phase, args, config) => {
-    return withNextIntl("./i18n.ts")(config);
-  }, "next-intl/plugin")
-  .build();
+const withNextIntl = createNextIntlPlugin();
 
-module.exports = config;
+export default withNextIntl(nextConfig);

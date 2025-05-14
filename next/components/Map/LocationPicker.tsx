@@ -14,7 +14,7 @@ import { CheckIcon } from "@/components/ui/check";
 import { MapPinMinusInsideIcon } from "@/components/ui/map-pin-minus-inside";
 import { MapPinPlusInsideIcon } from "@/components/ui/map-pin-plus-inside";
 import { XIcon } from "@/components/ui/x";
-import { useRouter } from "@/navigation";
+import { useRouter } from "@/i18n/navigation";
 import {
   encodeLocation,
   getDistance,

@@ -3,7 +3,7 @@ import { useTranslations } from "next-intl";
 import React from "react";
 
 import { BorderBeam } from "@/components/ui/border-beam";
-import { Link } from "@/navigation";
+import { Link } from "@/i18n/navigation";
 
 export const HeroPromoCard = () => {
   const t = useTranslations("festival");
