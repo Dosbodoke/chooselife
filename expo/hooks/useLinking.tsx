@@ -13,9 +13,14 @@ function useLinking() {
 
   useEffect(() => {
     if (url && isNavigationReady) {
-      const { path } = Linking.parse(url);
-      // @ts-expect-error - path can't be strongly typed
-      if (path) router.push(path);
+      const { hostname, path, queryParams } = Linking.parse(url);
+      if (path)
+        router.replace({
+          // @ts-expect-error - path can't be strongly typed
+          pathname: `${hostname}${path ? '/' + path : ''}`,
+          // @ts-expect-error - params can't be strongly typed
+          params: queryParams,
+        });
     }
   }, [url, isNavigationReady]);
 }
