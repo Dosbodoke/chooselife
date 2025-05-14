@@ -4,17 +4,16 @@ import { Analytics } from "@vercel/analytics/react";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
-import { useMessages } from "next-intl";
-import { unstable_setRequestLocale } from "next-intl/server";
-import { use } from "react";
+import { hasLocale } from "next-intl";
+import { setRequestLocale, getMessages } from "next-intl/server";
 
 // import Footer from "@/components/Footer";
 import NavBar from "@/components/layout/navbar";
-import { locales } from "@/navigation";
 import type { Locales } from "@/utils/supabase/database.types";
 
 import UsernameDialog from "./_components/UsernameDialog";
 import Providers from "./Providers";
+import { routing } from "@/i18n/routing";
 
 const APP_NAME = "Chooselife";
 const APP_DEFAULT_TITLE = "Chooselife";
@@ -74,23 +73,24 @@ export const viewport: Viewport = {
 };
 
 export function generateStaticParams() {
-  return locales.map((locale) => ({ locale }));
+  return routing.locales.map((locale) => ({ locale }));
 }
 
-export default function RootLayout(props: {
+export default async function RootLayout({
+  children,
+  params,
+}: {
   children: React.ReactNode;
   params: Promise<{ locale: Locales }>;
 }) {
-  const params = use(props.params);
+  const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) {
+    notFound();
+  }
 
-  const { locale } = params;
-
-  const { children } = props;
-
-  unstable_setRequestLocale(locale);
-  // Validate that the incoming `locale` parameter is valid
-  if (!locales.includes(locale)) notFound();
-  const messages = useMessages();
+  // Enable static rendering
+  setRequestLocale(locale);
+  const messages = await getMessages();
 
   return (
     // suppressHydrationWarning because of `next-themes`

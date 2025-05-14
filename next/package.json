@@ -2,6 +2,7 @@
   "name": "chooselife-web",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -39,8 +40,7 @@
     "lucide-react": "^0.340.0",
     "motion": "^12.0.3",
     "next": "^15.2.4",
-    "next-intl": "^3.5.0",
-    "next-recompose-plugins": "^2.0.2",
+    "next-intl": "^4.1.0",
     "next-themes": "^0.2.1",
     "nuqs": "^2.2.3",
     "postcss": "8.4.23",

@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 
 import { ArrowLongLeftIcon } from "@/assets";
-import { Link, usePathname } from "@/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 
 function GoBack() {
   const pathname = usePathname();

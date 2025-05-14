@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link, useRouter } from "@/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import useSupabaseBrowser from "@/utils/supabase/client";
 
 export default function ProfileMenu({ user }: { user: User }) {

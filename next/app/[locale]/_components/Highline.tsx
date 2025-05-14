@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { Link } from "@/navigation";
+import { Link } from "@/i18n/navigation";
 
 interface Props {
   highline: Highline;

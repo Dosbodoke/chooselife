@@ -184,9 +184,6 @@
   "footer": {
     "desc": "Website create by "
   },
-  "LocaleSwitcher": {
-    "label": "Change language"
-  },
   "goBack": "Go Back",
   "usernameDialog": {
     "title": "Welcome to the CHOOSELIFE APP 👋",

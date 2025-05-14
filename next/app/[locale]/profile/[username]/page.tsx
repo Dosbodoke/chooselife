@@ -9,19 +9,23 @@ import LastWalks, { LastWalksSkeleton } from "./_components/LastWalks";
 import Stats from "./_components/Stats";
 import UserHeader from "./_components/UserHeader";
 import UserNotFound from "./_components/UserNotFound";
+import type { Locales } from "@/i18n/routing";
 
 export const dynamic = "force-dynamic";
 
 type Props = {
-  params: Promise<{ locale: string; username: string }>;
+  params: Promise<{ locale: Locales; username: string }>;
   searchParams: Promise<{ [key: string]: string | undefined }>;
 };
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
-  const params = await props.params;
-  const t = await getTranslations("profileMetadata");
+  const { locale, username } = await props.params;
+  const t = await getTranslations({
+    locale,
+    namespace: "profileMetadata",
+  });
   return {
-    title: t("title", { username: `@${params.username}` }),
+    title: t("title", { username: `@${username}` }),
     description: t("description"),
   };
 }

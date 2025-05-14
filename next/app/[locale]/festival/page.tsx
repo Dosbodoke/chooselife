@@ -1,25 +1,23 @@
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
-import { unstable_setRequestLocale } from "next-intl/server";
-import { Suspense, use } from "react";
+import { setRequestLocale, getTranslations } from "next-intl/server";
+import { Suspense } from "react";
+import type { Locales } from "@/i18n/routing";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { FestivalTabs } from "./_components/festival-tabs";
 
 type Props = {
-  params: Promise<{ locale: string; username: string }>;
+  params: Promise<{ locale: Locales; username: string }>;
   searchParams: Promise<{ [key: string]: string | undefined }>;
 };
 
-export default function Festival(props: Props) {
-  const params = use(props.params);
+export default async function Festival({ params }: Props) {
+  const { locale } = await params;
 
-  const { locale } = params;
-
-  unstable_setRequestLocale(locale);
-  const t = useTranslations("festival");
+  setRequestLocale(locale);
+  const t = await getTranslations("festival");
 
   return (
     <section className="w-full py-12 md:py-24 lg:py-32">
