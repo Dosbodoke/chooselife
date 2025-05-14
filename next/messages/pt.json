@@ -294,5 +294,10 @@
     "processingButton": "Processando...",
     "successMessage": "Sua solicitação de exclusão de conta foi recebida. Você será redirecionado em breve.",
     "errorMessage": "Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente."
+  },
+  "download": {
+    "title": "Baixe o APP",
+    "ios": "Baixar para IOS",
+    "android": "Baixar para Android"
   }
 }

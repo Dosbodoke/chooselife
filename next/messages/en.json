@@ -294,5 +294,10 @@
     "processingButton": "Processing...",
     "successMessage": "Your account deletion request has been received. You will be redirected shortly.",
     "errorMessage": "An error occurred while processing your request. Please try again."
+  },
+  "download": {
+    "title": "Download our APP",
+    "ios": "Download for IOS",
+    "android": "Download for Android"
   }
 }
