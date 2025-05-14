@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     description: APP_DESCRIPTION,
   },
   other: {
-    "apple-itunes-app": `app-id=${process.env.APPLE_APP_ID}, app-argument=${BASE_URL}`,
+    "apple-itunes-app": `app-id=${process.env.NEXT_PUBLIC_APPLE_APP_ID}, app-argument=${BASE_URL}`,
   },
 };
 
