@@ -9,7 +9,7 @@ import { HighlineHeader } from "./HighlineHeader";
 function HighlineCard({ highline }: { highline: Highline }) {
   return (
     <Card className="mx-auto flex w-full max-w-4xl flex-col overflow-hidden">
-      <div className="relative h-48 w-full">
+      <div className="relative h-96 w-full">
         <HighlineImage coverImageId={highline.cover_image} />
         <FavoriteHighline id={highline.id} isFavorite={highline.is_favorite} />
       </div>
