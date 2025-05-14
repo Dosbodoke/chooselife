@@ -60,8 +60,7 @@ export const metadata: Metadata = {
     description: APP_DESCRIPTION,
   },
   other: {
-    "apple-itunes-app":
-      "app-id=6745024708, app-argument=https://chooselife.club/",
+    "apple-itunes-app": `app-id=${process.env.APPLE_APP_ID}, app-argument=${BASE_URL}`,
   },
 };
 
