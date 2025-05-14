@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Chooselife",
     short_name: "Chooselife",
-    description: "Next.js App",
+    description: "O aplicativo feito para o Highliner",
     start_url: "/",
     display: "standalone",
     orientation: "portrait",
