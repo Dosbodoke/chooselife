@@ -15,8 +15,8 @@ export default function DownloadApp(props: Props) {
   const t = useTranslations("download");
 
   // You'll need to replace these with your actual app store URLs
-  const IOS_APP_STORE_URL = `https://apps.apple.com/us/app/id${process.env.APPLE_APP_ID}`;
-  const ANDROID_PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${process.env.APP_SCHEME}&hl=${locale}`;
+  const IOS_APP_STORE_URL = `https://apps.apple.com/us/app/id${process.env.NEXT_PUBLIC_APPLE_APP_ID}`;
+  const ANDROID_PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${process.env.NEXT_PUBLIC_APP_SCHEME}&hl=${locale}`;
   const APP_SCHEME = `${process.env.APP_SCHEME}://`; // Your deep link scheme
 
   function isIOS() {
