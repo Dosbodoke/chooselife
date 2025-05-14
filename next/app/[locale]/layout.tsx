@@ -2,7 +2,7 @@ import "./globals.css";
 
 import { Analytics } from "@vercel/analytics/react";
 import { GeistSans } from "geist/font/sans";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { useMessages } from "next-intl";
 import { unstable_setRequestLocale } from "next-intl/server";
@@ -63,6 +63,13 @@ export const metadata: Metadata = {
     "apple-itunes-app":
       "app-id=6745024708, app-argument=https://chooselife.club/",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export function generateStaticParams() {
