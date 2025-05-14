@@ -14,11 +14,15 @@ import { AuthProvider } from '~/context/auth';
 import { I18nProvider } from '~/context/i18n';
 import { NotificationProvider } from '~/context/notifications';
 import { ReactQueryProvider } from '~/context/react-query';
-import useLinking from '~/hooks/useLinking';
 import { setAndroidNavigationBar } from '~/lib/android-navigation-bar';
 import { NAV_THEME } from '~/lib/constants';
 
 import { OfflineBanner } from '~/components/offline-banner';
+
+// https://docs.expo.dev/router/advanced/router-settings/
+export const unstable_settings = {
+  initialRouteName: 'index',
+};
 
 // Only one theme is needed now.
 const LIGHT_THEME: Theme = {
@@ -36,8 +40,6 @@ export {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  useLinking();
-
   React.useEffect(() => {
     setAndroidNavigationBar('light');
   }, []);
