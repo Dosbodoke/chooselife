@@ -71,6 +71,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   minimumScale: 1,
   userScalable: false,
+  interactiveWidget: "resizes-content",
 };
 
 export function generateStaticParams() {
