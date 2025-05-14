@@ -44,17 +44,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           {
             scheme: "https",
             host: "chooselife.club",
-            pathPrefix: "/highline",
+            pathPrefix: "/highline/.*",
           },
           {
             scheme: "https",
             host: "chooselife.club",
-            pathPrefix: "/profile",
-          },
-          {
-            scheme: "https",
-            host: "chooselife.club",
-            pathPrefix: "/register-highline",
+            pathPrefix: "/profile/.*",
           },
         ],
         category: ["BROWSABLE", "DEFAULT"],

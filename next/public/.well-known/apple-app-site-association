@@ -1,31 +1,13 @@
 {
   "applinks": {
-    "apps": [],
     "details": [
       {
         "appID": "6FF7DMX58R.com.bodok.chooselife",
         "paths": [
-          "/",
           "/highline/*",
-          "/profile/*",
-          "/register-highline",
-          "/setProfile",
-          "/setup-simulator",
-          "/events",
-          "/location-picker",
-          "/(tabs)/*"
+          "/profile/*"
         ]
       }
-    ]
-  },
-  "activitycontinuation": {
-    "apps": [
-      "6FF7DMX58R.com.bodok.chooselife"
-    ]
-  },
-  "webcredentials": {
-    "apps": [
-      "6FF7DMX58R.com.bodok.chooselife"
     ]
   }
 }
