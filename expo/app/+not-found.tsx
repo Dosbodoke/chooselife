@@ -2,6 +2,7 @@ import { Link, Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
+import { Button } from '~/components/ui/button';
 import { Text } from '~/components/ui/text';
 
 export default function NotFoundScreen() {
@@ -9,10 +10,14 @@ export default function NotFoundScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Oops!' }} />
-      <View>
-        <Text>{t('app.+not-found.title')}</Text>
-        <Link href="/">
-          <Text>{t('app.+not-found.subtitle')}</Text>
+      <View className="flex-1 items-center justify-center gap-4">
+        <Text className="text-2xl font-medium">
+          {t('app.+not-found.title')}
+        </Text>
+        <Link asChild href="/">
+          <Button>
+            <Text>{t('app.+not-found.subtitle')}</Text>
+          </Button>
         </Link>
       </View>
     </>
