@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
+import { useI18n } from '~/context/i18n';
 import { useHighline } from '~/hooks/use-highline';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { MarkerCL } from '~/lib/icons/MarkerCL';
@@ -29,6 +30,7 @@ import { Text } from '~/components/ui/text';
 type HighlineTabs = 'details' | 'ranking';
 
 export default function HighlinePage() {
+  const { locale } = useI18n();
   const { id } = useLocalSearchParams<{
     id: string;
   }>();
@@ -44,14 +46,19 @@ export default function HighlinePage() {
     try {
       const url = `${process.env.EXPO_PUBLIC_WEB_URL}/highline/${highline.id}`;
       await Share.share({
-        title: 'Veja no Chooselife',
-        message: `Via "${highline.name}" no APP Choose Life!\n\n🔗 Acesse agora: ${url}`,
+        title: locale === 'en' ? 'See on Chooselife' : 'Veja no Chooselife',
+
+        message:
+          locale === 'en'
+            ? `Highline ${highline.name} on the Choose Life APP!\n\n🔗 Access now: ${url}`
+            : `Via "${highline.name}" no APP Choose Life!\n\n🔗 Acesse agora: ${url}`,
         url: url,
       });
     } catch (err) {
       console.log('Erro ao compartilhar a highline:', err);
     }
   };
+
   const tabs = useMemo(
     () => [
       {
