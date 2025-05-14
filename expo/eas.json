@@ -1,6 +1,10 @@
 {
   "cli": {
+<<<<<<< HEAD
     "version": "16.6.1",
+=======
+    "version": "16.6.0",
+>>>>>>> fa8a30a (Update expo-cli to the latest)
     "appVersionSource": "remote"
   },
   "build": {
