@@ -94,7 +94,10 @@ export const Selected = ({
                       className="group-hover:border-accent-foreground group-hover:bg-accent group-data-[active=true]:border-accent-foreground group-data-[active=true]:bg-accent"
                       asChild
                     >
-                      <Link className="mt-auto" href={`/${selected.id}`}>
+                      <Link
+                        className="mt-auto"
+                        href={`/highline/${selected.id}`}
+                      >
                         Ver detalhes
                         <ArrowRightIcon className="ml-2 h-4 w-4" />
                       </Link>

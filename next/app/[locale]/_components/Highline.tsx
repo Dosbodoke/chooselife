@@ -4,6 +4,8 @@ import { useTranslations } from "next-intl";
 
 import type { Highline } from "@/app/actions/getHighline";
 import { Button } from "@/components/ui/button";
+import { FavoriteHighline } from "@/components/FavoriteHighline";
+import HighlineImage from "@/components/HighlineImage";
 import {
   Card,
   CardContent,
@@ -13,9 +15,6 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
-
-import HighlineImage from "../../../components/HighlineImage";
-import { FavoriteHighline } from "./FavoriteHighline";
 
 interface Props {
   highline: Highline;
@@ -58,7 +57,7 @@ export function Highline({ highline, classname }: Props) {
       ) : null}
       <CardFooter className="mt-auto">
         <Button variant="outline" className="w-full" asChild>
-          <Link href={`/${highline.id}`}>
+          <Link href={`/highline/${highline.id}`}>
             {t("seeDetails")}
             <ArrowRightIcon className="ml-2 h-4 w-4" />
           </Link>

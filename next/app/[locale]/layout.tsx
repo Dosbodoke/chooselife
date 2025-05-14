@@ -2,7 +2,7 @@ import "./globals.css";
 
 import { Analytics } from "@vercel/analytics/react";
 import { GeistSans } from "geist/font/sans";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { useMessages } from "next-intl";
 import { unstable_setRequestLocale } from "next-intl/server";
@@ -59,6 +59,18 @@ export const metadata: Metadata = {
     },
     description: APP_DESCRIPTION,
   },
+  other: {
+    "apple-itunes-app": `app-id=${process.env.APPLE_APP_ID}, app-argument=${BASE_URL}`,
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  minimumScale: 1,
+  userScalable: false,
+  interactiveWidget: "resizes-content",
 };
 
 export function generateStaticParams() {

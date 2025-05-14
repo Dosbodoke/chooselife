@@ -125,7 +125,7 @@ function LastWalksContent({ entries }: ContentProps) {
                     </p>
                   </div>
                   <Button className="w-full" variant={"outline"} asChild>
-                    <Link href={`/${entry.highline?.id}`}>
+                    <Link href={`/highline/${entry.highline?.id}`}>
                       {t("popover.buttonLabel")}{" "}
                       <ChevronRightIcon
                         className="ml-1.5 h-3 w-3"

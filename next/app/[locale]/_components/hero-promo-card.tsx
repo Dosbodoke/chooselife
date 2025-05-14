@@ -27,7 +27,7 @@ export const HeroPromoCard = () => {
       <BorderBeam className="z-50" duration={10} />
       <div className="relative w-full bg-gradient-to-t from-neutral-700 from-20% to-transparent p-2 pt-4 text-white sm:p-4 sm:pt-8">
         <p className="text-2xl font-bold sm:text-4xl">
-          Festival Chooselife 2024
+          Festival Chooselife 2025
         </p>
         <p className="text-sm sm:text-base">{t("cardSubTitle")}</p>
       </div>

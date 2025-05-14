@@ -1,8 +1,8 @@
 import { Highline } from "@/app/actions/getHighline";
 import HighlineImage from "@/components/HighlineImage";
 import { Card, CardContent } from "@/components/ui/card";
+import { FavoriteHighline } from "@/components/FavoriteHighline";
 
-import { FavoriteHighline } from "../../_components/FavoriteHighline";
 import { HighlineTabs } from "./highline-tabs";
 import { HighlineHeader } from "./HighlineHeader";
 

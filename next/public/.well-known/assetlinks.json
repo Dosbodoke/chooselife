@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.bodok.chooselife",
+      "sha256_cert_fingerprints": [
+        "38:CE:88:74:B0:89:40:E2:B0:F1:D7:C3:46:85:24:75:56:34:12:B7:B6:00:7E:DD:05:E3:A4:97:4D:30:6A:17"
+      ]
+    }
+  }
+]

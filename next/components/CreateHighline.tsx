@@ -275,7 +275,9 @@ const CreateHighline = ({
           <SuccessAnimation />
           <DrawerFooter>
             <Button asChild>
-              <Link href={`/${newHighlineUUID}`}>{t("successLink")}</Link>
+              <Link href={`/highline/${newHighlineUUID}`}>
+                {t("successLink")}
+              </Link>
             </Button>
           </DrawerFooter>
         </DrawerContent>

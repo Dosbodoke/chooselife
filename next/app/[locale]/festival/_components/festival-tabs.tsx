@@ -29,8 +29,8 @@ export const FestivalTabs = async () => {
         <Ranking
           highlines_ids={highline_ids || []}
           visibleCategories={["cadenas", "distance", "fullLine"]}
-          startDate={new Date("2024-05-30")}
-          endDate={new Date("2024-06-07")}
+          startDate={new Date("2025-06-19")}
+          endDate={new Date("2025-06-22")}
         />
       </TabsContent>
       <TabsContent className="mt-4" value="highlines">
