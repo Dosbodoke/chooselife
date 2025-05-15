@@ -1,30 +1,17 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
-import { supabase } from '~/lib/supabase';
+import {
+  useLeaderboardQuery,
+  type LeaderboardFunctions,
+  type UseLeaderboardQueryProps,
+} from '~/hooks/use-leaderboard';
 import { Functions } from '~/utils/database.types';
 
 import { Text } from '../ui/text';
 import { Leaderboard } from './leaderboard';
 import { LoadingLeaderboard, LoadingRows } from './loading-skeleton';
 import SeeMore from './see-more';
-
-type LeaderboardFunctions = Extract<
-  keyof Functions,
-  | 'get_crossing_time'
-  | 'get_highline'
-  | 'get_total_cadenas'
-  | 'get_total_full_lines'
-  | 'get_total_walked'
->;
-
-interface UseLeaderboardQueryProps<TFunc extends LeaderboardFunctions> {
-  rpcFunction: TFunc;
-  queryKey: Array<string | string[]>;
-  highlineIds: string | string[];
-  params: Omit<Functions[TFunc]['Args'], 'page_number' | 'page_size'>;
-}
 
 type EntryTransformReturn = {
   name: string;
@@ -42,42 +29,9 @@ interface LeaderboardContainerProps<TFunc extends LeaderboardFunctions>
   ) => EntryTransformReturn | null;
 }
 
-const PAGE_SIZE = 5;
-
-export function useLeaderboardQuery<TFunc extends LeaderboardFunctions>({
-  rpcFunction,
-  queryKey,
-  highlineIds,
-  params,
-}: UseLeaderboardQueryProps<TFunc>) {
-  async function fetchEntries({ pageParam = 1 }) {
-    const { data, error } = await supabase.rpc(rpcFunction, {
-      ...params,
-      page_number: pageParam,
-      page_size: PAGE_SIZE,
-    });
-    if (error) {
-      throw new Error(error.message);
-    }
-    return data;
-  }
-
-  return useInfiniteQuery({
-    queryKey,
-    queryFn: ({ pageParam }) => fetchEntries({ pageParam }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage, pages) => {
-      const nextPage = pages.length + 1;
-      return lastPage?.length === PAGE_SIZE ? nextPage : undefined;
-    },
-    enabled: !!highlineIds.length,
-  });
-}
-
 const LeaderboardContainer = <TFunc extends LeaderboardFunctions>({
   rpcFunction,
-  queryKey,
-  highlineIds,
+  type,
   params,
   entryTransform,
 }: LeaderboardContainerProps<TFunc>) => {
@@ -89,7 +43,7 @@ const LeaderboardContainer = <TFunc extends LeaderboardFunctions>({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useLeaderboardQuery({ rpcFunction, queryKey, highlineIds, params });
+  } = useLeaderboardQuery({ rpcFunction, type, params });
 
   if (isLoading) {
     return <LoadingLeaderboard />;
@@ -127,8 +81,7 @@ const Cadenas: React.FC<{
   return (
     <LeaderboardContainer
       rpcFunction="get_total_cadenas"
-      queryKey={['entry', highlines_ids, 'cadenas']}
-      highlineIds={highlines_ids}
+      type="cadenas"
       params={{
         highline_ids: highlines_ids,
         start_date: startDate?.toISOString(),
@@ -152,8 +105,7 @@ const Distance: React.FC<{
   return (
     <LeaderboardContainer
       rpcFunction="get_total_walked"
-      queryKey={['entry', highlines_ids, 'distance']}
-      highlineIds={highlines_ids}
+      type="distance"
       params={{
         highline_ids: highlines_ids,
         start_date: startDate?.toISOString(),
@@ -177,8 +129,7 @@ const FullLine: React.FC<{
   return (
     <LeaderboardContainer
       rpcFunction="get_total_full_lines"
-      queryKey={['entry', highlines_ids, 'fullLine']}
-      highlineIds={highlines_ids}
+      type="fullLine"
       params={{
         highline_ids: highlines_ids,
         start_date: startDate?.toISOString(),
@@ -200,8 +151,7 @@ const Speedline: React.FC<{
   return (
     <LeaderboardContainer
       rpcFunction="get_crossing_time"
-      queryKey={['entry', highline_id, 'speedline']}
-      highlineIds={highline_id}
+      type="speedline"
       params={{
         highline_id,
       }}

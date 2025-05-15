@@ -10,6 +10,11 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
+import {
+  leaderboardKeys,
+  type TLeaderboardType,
+} from '~/hooks/use-leaderboard';
+import { useOnlineManager } from '~/hooks/useOnlineManager';
 import { supabase } from '~/lib/supabase';
 import { transformTimeStringToSeconds } from '~/utils';
 import { requestReview } from '~/utils/request-review';
@@ -60,6 +65,7 @@ const formSchema = z.object({
 type FormSchema = z.infer<typeof formSchema>;
 
 const RegisterHighline = () => {
+  const isOnline = useOnlineManager();
   const { t } = useTranslation();
   const router = useRouter();
   const { profile } = useAuth();
@@ -86,6 +92,7 @@ const RegisterHighline = () => {
     mutationFn: async (formData: FormSchema) => {
       if (!id) throw new Error('No highline ID provided');
       if (!profile?.username) throw new Error("User doesn't have a profile");
+
       const response = await supabase.from('entry').insert({
         highline_id: id,
         instagram: profile.username,
@@ -106,10 +113,113 @@ const RegisterHighline = () => {
 
       return response.data;
     },
+    onMutate: async (variables) => {
+      // Cancel any outgoing refetches for affected leaderboards
+      await Promise.all([
+        // Cancel queries for all relevant leaderboard types
+        queryClient.cancelQueries({
+          queryKey: leaderboardKeys.list({
+            type: 'cadenas',
+            highlinesID: [id],
+          }),
+        }),
+        queryClient.cancelQueries({
+          queryKey: leaderboardKeys.list({
+            type: 'distance',
+            highlinesID: [id],
+          }),
+        }),
+        queryClient.cancelQueries({
+          queryKey: leaderboardKeys.list({
+            type: 'fullLine',
+            highlinesID: [id],
+          }),
+        }),
+        queryClient.cancelQueries({
+          queryKey: leaderboardKeys.list({
+            type: 'speedline',
+            highlinesID: [id],
+          }),
+        }),
+      ]);
+
+      // Snapshot the previous values for each leaderboard type
+      const previousData = {
+        cadenas: queryClient.getQueryData(
+          leaderboardKeys.list({ type: 'cadenas', highlinesID: [id] }),
+        ),
+        distance: queryClient.getQueryData(
+          leaderboardKeys.list({ type: 'distance', highlinesID: [id] }),
+        ),
+        fullLine: queryClient.getQueryData(
+          leaderboardKeys.list({ type: 'fullLine', highlinesID: [id] }),
+        ),
+        speedline: queryClient.getQueryData(
+          leaderboardKeys.list({ type: 'speedline', highlinesID: [id] }),
+        ),
+      };
+
+      // Create an optimistic entry
+      const optimisticEntry = {
+        ...variables,
+        id: `temp-${Date.now()}`, // Temporary ID to identify this entry
+      };
+
+      // Return a context object with the previous data and the optimistic entry
+      return { previousData, optimisticEntry };
+    },
+    onError: (err, variables, context) => {
+      // If the mutation fails, roll back to the previous values
+      if (context?.previousData) {
+        const { previousData } = context;
+
+        // Restore previous data for each leaderboard type
+        Object.entries(previousData).forEach(([type, data]) => {
+          if (data) {
+            queryClient.setQueryData(
+              leaderboardKeys.list({
+                type: type as TLeaderboardType,
+                highlinesID: [id],
+              }),
+              data,
+            );
+          }
+        });
+      }
+      // Log the error or show a toast notification
+      console.error('Error submitting entry:', err);
+    },
     onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['entry'] });
+      queryClient.invalidateQueries({
+        queryKey: leaderboardKeys.list({
+          type: 'cadenas',
+          highlinesID: [id],
+        }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: leaderboardKeys.list({
+          type: 'distance',
+          highlinesID: [id],
+        }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: leaderboardKeys.list({
+          type: 'fullLine',
+          highlinesID: [id],
+        }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: leaderboardKeys.list({
+          type: 'speedline',
+          highlinesID: [id],
+        }),
+      });
+
       await requestReview();
     },
+    networkMode: 'offlineFirst', // This ensures the mutation is triggered regardless of network status
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   function onValid(data: FormSchema) {
@@ -126,34 +236,9 @@ const RegisterHighline = () => {
       keyboardShouldPersistTaps="handled"
     >
       {formMutation.isSuccess ? (
-        <View className="items-center gap-8">
-          <View>
-            <H1 className="text-center">
-              {t('app.highline.register.success.title')}
-            </H1>
-            <Text className="text-3xl text-center">
-              {t('app.highline.register.success.subtitle')}
-            </Text>
-          </View>
-          <View className="h-52 items-center justify-center">
-            <SuccessAnimation />
-          </View>
-          <Text className="text-center w-3/4">
-            {t('app.highline.register.success.message')}
-          </Text>
-          <Link
-            href={{
-              pathname: '/highline/[id]',
-              params: { id: id },
-            }}
-            replace
-            asChild
-          >
-            <Button>
-              <Text>{t('app.highline.register.success.button')}</Text>
-            </Button>
-          </Link>
-        </View>
+        <SuccessCard highlineID={id} offline={false} />
+      ) : formMutation.isPending && !isOnline ? (
+        <SuccessCard highlineID={id} offline />
       ) : (
         <>
           <Controller
@@ -208,6 +293,7 @@ const RegisterHighline = () => {
                 <Input
                   aria-labelledby="entry-distance"
                   keyboardType="number-pad"
+                  returnKeyType="done"
                   className={fieldState.error && 'border-destructive'}
                   onChangeText={(text) => field.onChange(+text || 0)}
                   value={field.value?.toString()}
@@ -335,6 +421,44 @@ const RegisterHighline = () => {
         </>
       )}
     </KeyboardAwareScrollView>
+  );
+};
+
+const SuccessCard: React.FC<{ highlineID: string; offline: boolean }> = ({
+  highlineID,
+  offline,
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <View className="items-center gap-8">
+      <View>
+        <H1 className="text-center">
+          {t('app.highline.register.success.title')}
+        </H1>
+        <Text className="text-3xl text-center">🆑 🆑 🆑 🆑 🆑</Text>
+      </View>
+      <View className="h-52 items-center justify-center">
+        <SuccessAnimation />
+      </View>
+      <Text className="text-center w-3/4">
+        {t(
+          `app.highline.register.success.${offline ? 'offlineMessage' : 'message'}`,
+        )}
+      </Text>
+      <Link
+        href={{
+          pathname: '/highline/[id]',
+          params: { id: highlineID },
+        }}
+        replace
+        asChild
+      >
+        <Button>
+          <Text>{t('app.highline.register.success.button')}</Text>
+        </Button>
+      </Link>
+    </View>
   );
 };
 

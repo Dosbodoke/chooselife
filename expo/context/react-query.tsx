@@ -33,7 +33,14 @@ export const ReactQueryProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <PersistQueryClientProvider
-      persistOptions={{ persister, maxAge: Infinity }}
+      persistOptions={{
+        persister,
+        maxAge: Infinity,
+        dehydrateOptions: {
+          shouldDehydrateMutation: (mutation) =>
+            mutation.state.status === 'pending',
+        },
+      }}
       client={queryClient}
       onSuccess={() =>
         queryClient
