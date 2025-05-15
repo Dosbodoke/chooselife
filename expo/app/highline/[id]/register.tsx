@@ -65,7 +65,7 @@ const formSchema = z.object({
 
 type FormSchema = z.infer<typeof formSchema>;
 
-const RegisterWalk = () => {
+export default function RegisterWalk() {
   const { isConnected } = useNetInfo();
   const { t } = useTranslation();
   const router = useRouter();
@@ -433,7 +433,7 @@ const RegisterWalk = () => {
       )}
     </KeyboardAwareScrollView>
   );
-};
+}
 
 const SuccessCard: React.FC<{ offline: boolean }> = ({ offline }) => {
   const router = useRouter();
@@ -465,5 +465,3 @@ const SuccessCard: React.FC<{ offline: boolean }> = ({ offline }) => {
     </View>
   );
 };
-
-export default RegisterWalk;
