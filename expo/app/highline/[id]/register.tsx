@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import i18next from 'i18next';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Controller, FieldErrors, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Keyboard, View } from 'react-native';
@@ -10,6 +10,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
+import { useHighline } from '~/hooks/use-highline';
 import {
   leaderboardKeys,
   type TLeaderboardType,
@@ -64,12 +65,13 @@ const formSchema = z.object({
 
 type FormSchema = z.infer<typeof formSchema>;
 
-const RegisterHighline = () => {
+const RegisterWalk = () => {
   const isOnline = useOnlineManager();
   const { t } = useTranslation();
   const router = useRouter();
   const { profile } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { highline } = useHighline({ id });
   const queryClient = useQueryClient();
 
   if (!profile) {
@@ -230,15 +232,25 @@ const RegisterHighline = () => {
     console.log({ errors });
   }
 
+  const watchCadenas = form.watch('cadenas');
+  const watchFullLines = form.watch('full_lines');
+
+  useEffect(() => {
+    if (!highline || form.getValues('distance')) return;
+    const totalLeaps = watchCadenas + watchFullLines * 2;
+    const totalDistance = highline.length * totalLeaps;
+    if (totalDistance) form.setValue('distance', totalDistance);
+  }, [watchCadenas, watchFullLines, highline?.length, form]);
+
   return (
     <KeyboardAwareScrollView
       contentContainerClassName="gap-4 p-4 pb-8"
       keyboardShouldPersistTaps="handled"
     >
       {formMutation.isSuccess ? (
-        <SuccessCard highlineID={id} offline={false} />
+        <SuccessCard offline={false} />
       ) : formMutation.isPending && !isOnline ? (
-        <SuccessCard highlineID={id} offline />
+        <SuccessCard offline />
       ) : (
         <>
           <Controller
@@ -424,10 +436,8 @@ const RegisterHighline = () => {
   );
 };
 
-const SuccessCard: React.FC<{ highlineID: string; offline: boolean }> = ({
-  highlineID,
-  offline,
-}) => {
+const SuccessCard: React.FC<{ offline: boolean }> = ({ offline }) => {
+  const router = useRouter();
   const { t } = useTranslation();
 
   return (
@@ -446,20 +456,15 @@ const SuccessCard: React.FC<{ highlineID: string; offline: boolean }> = ({
           `app.highline.register.success.${offline ? 'offlineMessage' : 'message'}`,
         )}
       </Text>
-      <Link
-        href={{
-          pathname: '/highline/[id]',
-          params: { id: highlineID },
+      <Button
+        onPress={() => {
+          router.back();
         }}
-        replace
-        asChild
       >
-        <Button>
-          <Text>{t('app.highline.register.success.button')}</Text>
-        </Button>
-      </Link>
+        <Text>{t('app.highline.register.success.button')}</Text>
+      </Button>
     </View>
   );
 };
 
-export default RegisterHighline;
+export default RegisterWalk;
