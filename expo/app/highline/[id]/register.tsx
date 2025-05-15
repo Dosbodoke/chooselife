@@ -232,11 +232,10 @@ const RegisterWalk = () => {
     console.log({ errors });
   }
 
-  const watchCadenas = form.watch('cadenas');
-  const watchFullLines = form.watch('full_lines');
-
+  // When user change "cadena" or "full line" automatically increase the distance walked
+  const [watchCadenas, watchFullLines] = form.watch(['cadenas', 'full_lines']);
   useEffect(() => {
-    if (!highline || form.getValues('distance')) return;
+    if (!highline) return;
     const totalLeaps = watchCadenas + watchFullLines * 2;
     const totalDistance = highline.length * totalLeaps;
     if (totalDistance) form.setValue('distance', totalDistance);
