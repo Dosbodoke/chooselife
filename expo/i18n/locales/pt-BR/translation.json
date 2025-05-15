@@ -420,7 +420,8 @@
       "webbingOwner": {
         "label": "Fita de:"
       }
-    }
+    },
+    "offlineBannerMessage": "Você está offline"
   },
   "context": {
     "auth": {
