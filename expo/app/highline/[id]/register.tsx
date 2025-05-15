@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useNetInfo } from '@react-native-community/netinfo';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import i18next from 'i18next';
@@ -15,7 +16,6 @@ import {
   leaderboardKeys,
   type TLeaderboardType,
 } from '~/hooks/use-leaderboard';
-import { useOnlineManager } from '~/hooks/useOnlineManager';
 import { supabase } from '~/lib/supabase';
 import { transformTimeStringToSeconds } from '~/utils';
 import { requestReview } from '~/utils/request-review';
@@ -66,7 +66,7 @@ const formSchema = z.object({
 type FormSchema = z.infer<typeof formSchema>;
 
 const RegisterWalk = () => {
-  const isOnline = useOnlineManager();
+  const { isConnected } = useNetInfo();
   const { t } = useTranslation();
   const router = useRouter();
   const { profile } = useAuth();
@@ -248,7 +248,7 @@ const RegisterWalk = () => {
     >
       {formMutation.isSuccess ? (
         <SuccessCard offline={false} />
-      ) : formMutation.isPending && !isOnline ? (
+      ) : formMutation.isPending && !isConnected ? (
         <SuccessCard offline />
       ) : (
         <>
