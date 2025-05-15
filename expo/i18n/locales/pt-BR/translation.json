@@ -110,8 +110,8 @@
       "register": {
         "success": {
           "title": "BOA CHOOSEN",
-          "subtitle": "🆑 🆑 🆑 🆑 🆑",
           "message": "Seu rolê está registrado e será usado para calcular as suas estatísticas.",
+          "offlineMessage": "Como você está offline, a próxima vez que tiver conexão com internet seu rolê será salvo.",
           "button": "Ver o Highline"
         },
         "fields": {
