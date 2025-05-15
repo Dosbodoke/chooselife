@@ -420,7 +420,8 @@
       "webbingOwner": {
         "label": "Webbing from:"
       }
-    }
+    },
+    "offlineBannerMessage": "You're offline"
   },
   "context": {
     "auth": {

@@ -1,4 +1,5 @@
 import { useNetInfo } from '@react-native-community/netinfo';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +12,7 @@ export const SafeAreaOfflineView: React.FC<{
   children: React.ReactNode;
   className?: string;
 }> = ({ children, className }) => {
+  const { t } = useTranslation();
   const { top } = useSafeAreaInsets();
   const { isConnected } = useNetInfo();
 
@@ -24,7 +26,9 @@ export const SafeAreaOfflineView: React.FC<{
       >
         <View className="w-full py-2 bg-red-100 flex-row items-center justify-center gap-2">
           <LucideIcon name="WifiOff" className="size-5 text-red-500" />
-          <Text className="text-red-500 flex-shrink">Você está offline</Text>
+          <Text className="text-red-500 flex-shrink">
+            {t('components.offlineBannerMessage')}
+          </Text>
         </View>
         {children}
       </Animated.View>
@@ -39,6 +43,7 @@ export const SafeAreaOfflineView: React.FC<{
 };
 
 export const OfflineBanner: React.FC = () => {
+  const { t } = useTranslation();
   const { top } = useSafeAreaInsets();
   const { isConnected } = useNetInfo();
 
@@ -52,7 +57,9 @@ export const OfflineBanner: React.FC = () => {
       style={{ paddingTop: top }}
     >
       <LucideIcon name="WifiOff" className="size-5 text-red-500" />
-      <Text className="text-red-500 flex-shrink">Você está offline</Text>
+      <Text className="text-red-500 flex-shrink">
+        {t('components.offlineBannerMessage')}
+      </Text>
     </Animated.View>
   );
 };
