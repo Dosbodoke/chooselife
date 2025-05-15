@@ -41,19 +41,18 @@ export const SafeAreaOfflineView: React.FC<{
 export const OfflineBanner: React.FC = () => {
   const { top } = useSafeAreaInsets();
   const { isConnected } = useNetInfo();
-  if (isConnected === false) {
-    return (
-      <Animated.View
-        entering={FadeInUp}
-        exiting={FadeOutUp}
-        className="w-full py-2 bg-red-100 flex-row items-center justify-center gap-2"
-        style={{ paddingTop: top }}
-      >
-        <LucideIcon name="WifiOff" className="size-5 text-red-500" />
-        <Text className="text-red-500 flex-shrink">Você está offline</Text>
-      </Animated.View>
-    );
-  }
 
-  return null;
+  if (isConnected) return null;
+
+  return (
+    <Animated.View
+      entering={FadeInUp}
+      exiting={FadeOutUp}
+      className="w-full py-2 bg-red-100 flex-row items-center justify-center gap-2"
+      style={{ paddingTop: top }}
+    >
+      <LucideIcon name="WifiOff" className="size-5 text-red-500" />
+      <Text className="text-red-500 flex-shrink">Você está offline</Text>
+    </Animated.View>
+  );
 };

@@ -1,3 +1,4 @@
+import { useNetInfo } from '@react-native-community/netinfo';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +23,7 @@ import Info from '~/components/highline/info';
 import { HighlineNotFound } from '~/components/highline/not-found';
 import { RigModal } from '~/components/highline/rig-confirmations';
 import { HighlineSkeleton } from '~/components/highline/skeleton';
+import { OfflineBanner } from '~/components/offline-banner';
 import { Ranking } from '~/components/ranking';
 import { Button } from '~/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
@@ -30,6 +32,7 @@ import { Text } from '~/components/ui/text';
 type HighlineTabs = 'details' | 'ranking';
 
 export default function HighlinePage() {
+  const { isConnected } = useNetInfo();
   const { locale } = useI18n();
   const { id } = useLocalSearchParams<{
     id: string;
@@ -100,10 +103,12 @@ export default function HighlinePage() {
           paddingBottom,
         }}
       >
+        <OfflineBanner />
         <View
           className="absolute px-4 flex-row justify-between w-full top-0 z-50"
           style={{
-            paddingTop: insets.top,
+            // If offline, the <OfflineBanner />  will render, so these buttons need additional padding
+            paddingTop: isConnected ? insets.top : insets.top * 2,
           }}
         >
           <TouchableOpacity
