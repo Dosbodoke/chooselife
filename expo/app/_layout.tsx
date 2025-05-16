@@ -14,6 +14,7 @@ import { AuthProvider } from '~/context/auth';
 import { I18nProvider } from '~/context/i18n';
 import { NotificationProvider } from '~/context/notifications';
 import { ReactQueryProvider } from '~/context/react-query';
+import { useDeepLinkHandler } from '~/hooks/use-deep-link-handler';
 import { setAndroidNavigationBar } from '~/lib/android-navigation-bar';
 import { NAV_THEME } from '~/lib/constants';
 
@@ -40,6 +41,8 @@ export {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  useDeepLinkHandler();
+
   React.useEffect(() => {
     setAndroidNavigationBar('light');
   }, []);
