@@ -53,7 +53,6 @@ export default function HighlinePage() {
           locale === 'en'
             ? `Highline ${highline.name} on the Choose Life APP!\n\n🔗 Access now: ${url}`
             : `Via "${highline.name}" no APP Choose Life!\n\n🔗 Acesse agora: ${url}`,
-        url: url,
       });
     } catch (err) {
       console.log('Erro ao compartilhar a highline:', err);
