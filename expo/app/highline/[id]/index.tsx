@@ -34,9 +34,7 @@ type HighlineTabs = 'details' | 'ranking';
 export default function HighlinePage() {
   const { isConnected } = useNetInfo();
   const { locale } = useI18n();
-  const { id } = useLocalSearchParams<{
-    id: string;
-  }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const [tab, setTab] = useState<HighlineTabs>('details');
 
   const [bottomActionsHeight, setBottomActionsHeight] = useState(0);
