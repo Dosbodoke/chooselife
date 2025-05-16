@@ -21,6 +21,7 @@ const HighlineNotFound: React.FC = () => {
             if (canGoBack) {
               router.back();
             }
+            router.replace('/');
           }}
         >
           <Text>
