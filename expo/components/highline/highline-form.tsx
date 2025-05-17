@@ -197,7 +197,7 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
         const { data: updatedHighline, error } = await supabase
           .from('highline')
           .update({
-            name: formData.name,
+            name: formData.name.trim(),
             height: formData.height,
             length: formData.length,
             description: formData.description,
@@ -219,7 +219,7 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
         .from('highline')
         .insert([
           {
-            name: formData.name,
+            name: formData.name.trim(),
             height: formData.height,
             length: formData.length,
             description: formData.description,
