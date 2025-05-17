@@ -105,7 +105,7 @@ export default function HighlinePage() {
           className="absolute px-4 flex-row justify-between w-full top-0 z-50"
           style={{
             // If offline, the <OfflineBanner />  will render, so these buttons need additional padding
-            paddingTop: isConnected ? insets.top : insets.top * 2,
+            paddingTop: isConnected ? insets.top + 8 : insets.top * 2,
           }}
         >
           <TouchableOpacity
