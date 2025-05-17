@@ -120,7 +120,13 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
           ).toFixed(),
         ),
       description: highline?.description || '',
-      image: null,
+      image: highline?.cover_image
+        ? {
+            uri: supabase.storage
+              .from('images')
+              .getPublicUrl(highline.cover_image).data.publicUrl,
+          }
+        : null,
     },
   });
 
@@ -364,7 +370,6 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
               <View className="w-full">
                 <HighlineImageUploader
                   value={field.value}
-                  initialImage={highline?.cover_image}
                   onChange={field.onChange}
                   hasError={!!fieldState.error}
                 />
@@ -445,12 +450,10 @@ const SuccessMessage: React.FC<{ id: string; isUpdate: boolean }> = ({
 const HighlineImageUploader = memo(
   ({
     value,
-    initialImage,
     onChange,
     hasError,
   }: {
     value: ImagePicker.ImagePickerAsset | null;
-    initialImage?: string;
     onChange: (image: ImagePicker.ImagePickerAsset | null) => void;
     hasError?: boolean;
   }) => {
@@ -518,18 +521,10 @@ const HighlineImageUploader = memo(
           height: (Dimensions.get('window').width * 9) / 16, // Fixed height based on 16:9 aspect ratio
         }}
       >
-        {value || initialImage ? (
+        {value ? (
           <>
             <Image
-              source={
-                initialImage
-                  ? {
-                      uri: supabase.storage
-                        .from('images')
-                        .getPublicUrl(initialImage).data.publicUrl,
-                    }
-                  : { uri: (value as ImagePicker.ImagePickerAsset).uri }
-              }
+              source={{ uri: (value as ImagePicker.ImagePickerAsset).uri }}
               contentFit="cover"
               alt="Image of the Highline"
               style={{ width: '100%', height: '100%' }}
