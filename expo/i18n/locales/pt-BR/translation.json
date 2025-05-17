@@ -343,11 +343,13 @@
           "label": "Foto do highline",
           "instructions": "Clique aqui para escolher a foto que será usada como capa para este Highline"
         },
-        "submit": "Registrar Highline",
+        "create": "Registrar Highline",
+        "update": "Atualizar Highline",
         "success": {
           "title": "BOA CHOOSEN",
           "subtitle": "🆑 🆑 🆑 🆑 🆑",
-          "message": "O Highline foi criado, agora é só registrar o seu rolê!",
+          "messageCreated": "O Highline foi criado, agora é só registrar o seu rolê!",
+          "messageUpdated": "O Highline foi atualizado, agora é só registrar o seu rolê!",
           "button": "Ver o Highline"
         }
       }
