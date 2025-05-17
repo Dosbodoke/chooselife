@@ -10,6 +10,13 @@ export default function HighlineLayout() {
         }}
       />
       <Stack.Screen
+        name="edit"
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
         name="register"
         options={{
           headerShown: true,

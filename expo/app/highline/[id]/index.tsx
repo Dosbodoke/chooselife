@@ -117,6 +117,11 @@ export default function HighlinePage() {
             <LucideIcon name="ChevronLeft" className="text-primary size-6" />
           </TouchableOpacity>
           <View className="flex-row items-center justify-center gap-3">
+            <Link href={`/highline/${id}/edit`} asChild>
+              <TouchableOpacity className="p-2 rounded-full bg-white items-center justify-center">
+                <LucideIcon name="Pencil" className="text-primary size-6" />
+              </TouchableOpacity>
+            </Link>
             <TouchableOpacity
               className="p-2 rounded-full bg-white items-center justify-center"
               onPress={shareListing}
