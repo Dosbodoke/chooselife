@@ -14,6 +14,7 @@ export default function HighlineLayout() {
         options={{
           presentation: 'modal',
           headerShown: false,
+          title: '',
         }}
       />
       <Stack.Screen
