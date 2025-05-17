@@ -343,11 +343,13 @@
           "label": "Highline Photo",
           "instructions": "Tap here to choose the photo to use as the cover for this Highline"
         },
-        "submit": "Register Highline",
+        "create": "Register Highline",
+        "update": "Update Highline",
         "success": {
           "title": "NICE CHOOSEN!",
           "subtitle": "🆑 🆑 🆑 🆑 🆑",
-          "message": "The Highline was created, now just register your session!",
+          "messageCreated": "The Highline was created, now you can register your session!",
+          "messageUpdated": "The Highline was updated, now you can register your session!",
           "button": "View Highline"
         }
       }

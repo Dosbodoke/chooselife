@@ -105,7 +105,7 @@ export default function HighlinePage() {
           className="absolute px-4 flex-row justify-between w-full top-0 z-50"
           style={{
             // If offline, the <OfflineBanner />  will render, so these buttons need additional padding
-            paddingTop: isConnected ? insets.top : insets.top * 2,
+            paddingTop: isConnected ? insets.top + 8 : insets.top * 2,
           }}
         >
           <TouchableOpacity
@@ -117,6 +117,11 @@ export default function HighlinePage() {
             <LucideIcon name="ChevronLeft" className="text-primary size-6" />
           </TouchableOpacity>
           <View className="flex-row items-center justify-center gap-3">
+            <Link href={`/highline/${id}/edit`} asChild>
+              <TouchableOpacity className="p-2 rounded-full bg-white items-center justify-center">
+                <LucideIcon name="Pencil" className="text-primary size-6" />
+              </TouchableOpacity>
+            </Link>
             <TouchableOpacity
               className="p-2 rounded-full bg-white items-center justify-center"
               onPress={shareListing}
