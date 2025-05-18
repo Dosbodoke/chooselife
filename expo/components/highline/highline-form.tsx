@@ -72,17 +72,20 @@ const formSchema = z.object({
   image: z
     .custom<ImagePicker.ImagePickerAsset>()
     .nullable()
-    .refine(
-      (file) =>
-        !file || (file.fileSize ? file.fileSize <= MAX_FILE_SIZE : true),
-      i18next.t('components.map.register-modal.image.maxSize'), // "Tamanho máximo do arquivo é 6MB"
-    )
-    .refine(
-      (file) =>
-        !file ||
-        (file.mimeType ? ACCEPTED_IMAGE_TYPES.includes(file.mimeType) : false),
-      i18next.t('components.map.register-modal.image.accepted'), // "Formatos aceitos são: .jpg, .jpeg, .png e .webp"
-    ),
+    .refine((file) => {
+      if (!file) return true;
+      if (!file.base64) return true; // If not base64 it's an image that is already uploaded
+
+      return file.fileSize ? file.fileSize <= MAX_FILE_SIZE : true;
+    }, i18next.t('components.map.register-modal.image.maxSize'))
+    .refine((file) => {
+      if (!file) return true;
+      if (!file.base64) return true; // If not base64 it's an image that is already uploaded
+
+      return file.mimeType
+        ? ACCEPTED_IMAGE_TYPES.includes(file.mimeType)
+        : false;
+    }, i18next.t('components.map.register-modal.image.accepted')),
 });
 
 type FormSchema = z.infer<typeof formSchema>;
