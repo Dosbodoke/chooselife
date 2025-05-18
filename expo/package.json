@@ -100,8 +100,7 @@
     "type-fest": "^4.38.0",
     "use-supercluster": "^1.2.0",
     "uuid": "^11.0.5",
-    "zod": "^3.23.8",
-    "zustand": "^4.4.7"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
