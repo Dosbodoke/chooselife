@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
+import { useAuth } from '~/context/auth';
 import { Highline, highlineKeyFactory } from '~/hooks/use-highline';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
@@ -89,6 +90,7 @@ type FormSchema = z.infer<typeof formSchema>;
 export const HighlineForm: React.FC<{ highline?: Highline }> = ({
   highline,
 }) => {
+  const { profile } = useAuth();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -245,11 +247,17 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
     },
     onSuccess: async ({ newHighlineID }) => {
       setNewHighlineUUID(newHighlineID);
-      queryClient.invalidateQueries({ queryKey: highlineKeyFactory.list() });
-      // TODO: Update cache instead of invalidating, since I have the updated data on `newHighline`
+
       queryClient.invalidateQueries({
-        queryKey: highlineKeyFactory.detail(newHighlineID),
+        queryKey: highlineKeyFactory.list(profile?.id),
       });
+      queryClient.invalidateQueries({
+        queryKey: highlineKeyFactory.detail(newHighlineID, profile?.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: highlineKeyFactory.favorite(newHighlineID),
+      });
+
       await requestReview();
     },
     onError: (_, _newHighlineID, context) => {
