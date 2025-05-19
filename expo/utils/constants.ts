@@ -9,3 +9,12 @@ export const DEFAULT_LONGITUDE = INITIAL_REGION.longitude;
 
 export const DEFAULT_ZOOM = 12;
 export const MIN_CLUSTER_SIZE = 30;
+
+// For Supabase Storage
+export const MAX_FILE_SIZE = 6 * 1024 * 1024; // 6MB
+export const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+];
