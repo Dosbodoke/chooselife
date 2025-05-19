@@ -22,6 +22,7 @@ import { Highline, highlineKeyFactory } from '~/hooks/use-highline';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
+import { ACCEPTED_IMAGE_TYPES, MAX_FILE_SIZE } from '~/utils/constants';
 import { requestReview } from '~/utils/request-review';
 
 import SuccessAnimation from '~/components/animations/success-animation';
@@ -34,14 +35,6 @@ import { Input } from '~/components/ui/input';
 import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
 import { H1 } from '~/components/ui/typography';
-
-const MAX_FILE_SIZE = 6 * 1024 * 1024; // 6MB
-const ACCEPTED_IMAGE_TYPES = [
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-];
 
 const formSchema = z.object({
   name: z
