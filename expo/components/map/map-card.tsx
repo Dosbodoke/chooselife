@@ -1,5 +1,5 @@
+import { useMapStore } from '~/store/map-store';
 import { Link } from 'expo-router';
-import { useAtomValue } from 'jotai';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, TouchableOpacity, View } from 'react-native';
@@ -14,7 +14,6 @@ import { Text } from '~/components/ui/text';
 import { H4, Small } from '~/components/ui/typography';
 
 import { HighlineImage } from '../highline/highline-image';
-import { bottomSheetHandlerHeightAtom } from './bottom-sheet';
 
 interface MapCardProps {
   highline: Highline;
@@ -86,7 +85,9 @@ export const MapCardList = ({
   focusedMarker: Highline | null;
   changeFocusedMarker: (high: Highline) => void;
 }) => {
-  const bottomSheetHandlerHeight = useAtomValue(bottomSheetHandlerHeightAtom);
+  const bottomSheetHandlerHeight = useMapStore(
+    (state) => state.bottomSheetHandlerHeight,
+  );
   return (
     <Animated.View
       entering={FadeIn.duration(300).easing(Easing.inOut(Easing.ease))}

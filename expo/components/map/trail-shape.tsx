@@ -1,12 +1,11 @@
 import Mapbox from '@rnmapbox/maps';
 import { useQuery } from '@tanstack/react-query';
+import { useMapStore } from '~/store/map-store';
 import type { LineString, Position } from 'geojson';
-import { useAtomValue } from 'jotai';
 import { View } from 'react-native';
 
 import { supabase } from '~/lib/supabase';
 
-import { cameraStateAtom } from '~/components/map/utils';
 import { Text } from '~/components/ui/text';
 
 export type TTrailShape = GeoJSON.Feature<
@@ -20,7 +19,7 @@ export type TTrailShape = GeoJSON.Feature<
 export const TrailShape: React.FC<{
   shape: TTrailShape;
 }> = ({ shape }) => {
-  const camera = useAtomValue(cameraStateAtom);
+  const camera = useMapStore((state) => state.camera);
 
   const trailMiddleCoordinates =
     shape.geometry.coordinates[

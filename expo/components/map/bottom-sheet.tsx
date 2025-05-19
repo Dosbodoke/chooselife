@@ -1,8 +1,7 @@
 import BottomSheet, { BottomSheetFlashList } from '@gorhom/bottom-sheet';
+import { useMapStore } from '~/store/map-store';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { atom } from 'jotai';
-import { useAtomValue, useSetAtom } from 'jotai/react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
@@ -15,10 +14,6 @@ import { cn } from '~/lib/utils';
 import { HighlineCard } from '../highline/highline-card';
 import { Button } from '../ui/button';
 import { Text } from '../ui/text';
-import { cameraStateAtom } from './utils';
-
-// Keep track of the handle height so the Highlited marker card can be positioned correctly and the minimum snap point fits only the handler
-export const bottomSheetHandlerHeightAtom = atom<number>(0);
 
 const ListingsBottomSheet: React.FC<{
   highlines: Highline[];
@@ -27,13 +22,15 @@ const ListingsBottomSheet: React.FC<{
 }> = ({ highlines, hasFocusedMarker, isLoading }) => {
   const { t } = useTranslation();
   const { top } = useSafeAreaInsets();
-  const headerHeight = useAtomValue(bottomSheetHandlerHeightAtom);
+  const bottomSheetHandlerHeight = useMapStore(
+    (state) => state.bottomSheetHandlerHeight,
+  );
   const bottomSheetRef = React.useRef<BottomSheet>(null);
 
   // If the handler height is not yet measured, use 15% as an approximation of it's height
   const snapPoints = React.useMemo(() => {
-    return [headerHeight || '15%', '100%'];
-  }, [headerHeight]);
+    return [bottomSheetHandlerHeight || '15%', '100%'];
+  }, [bottomSheetHandlerHeight]);
 
   const onShowMap = () => {
     bottomSheetRef.current?.collapse();
@@ -112,7 +109,9 @@ const CustomBottomSheetHandle: React.FC<{
   isLoading: boolean;
 }> = ({ highlineLength, isLoading }) => {
   const { t } = useTranslation();
-  const setBottomSheetHandlerHeight = useSetAtom(bottomSheetHandlerHeightAtom);
+  const setBottomSheetHandlerHeight = useMapStore(
+    (state) => state.setBottomSheeHandlerHeight,
+  );
 
   return (
     <View
@@ -142,13 +141,13 @@ const CustomBottomSheetHandle: React.FC<{
 const AddHighlineButton: React.FC = () => {
   const { t } = useTranslation();
   const router = useRouter();
-  const atomValue = useAtomValue(cameraStateAtom);
+  const camera = useMapStore((state) => state.camera);
 
   return (
     <Button
       onPress={() => {
         router.push(
-          `/location-picker?lat=${atomValue.center[1]}&lng=${atomValue.center[0]}&zoom=${atomValue.zoom}`,
+          `/location-picker?lat=${camera.center[1]}&lng=${camera.center[0]}&zoom=${camera.zoom}`,
         );
       }}
     >

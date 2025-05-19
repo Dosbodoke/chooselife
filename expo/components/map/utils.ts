@@ -1,22 +1,9 @@
 import Mapbox from "@rnmapbox/maps";
 import { BBox, Position } from "geojson";
-import { atom } from "jotai";
-import { Highline } from "~/hooks/use-highline";
+import { INITIAL_REGION } from "~/utils/constants";
 import { Point } from "~/utils/database.types";
 
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_PUBLIC_KEY!);
-
-const INITIAL_REGION = {
-  latitude: -15.7782081,
-  longitude: -47.93371,
-  latitudeDelta: 80,
-  longitudeDelta: 80,
-};
-
-export const DEFAULT_LATITUDE = INITIAL_REGION.latitude;
-export const DEFAULT_LONGITUDE = INITIAL_REGION.longitude;
-export const DEFAULT_ZOOM = 12;
-export const MIN_CLUSTER_SIZE = 30;
 
 export const regionToBoundingBox = (region: typeof INITIAL_REGION): BBox => {
   let lngD: number;
@@ -30,20 +17,6 @@ export const regionToBoundingBox = (region: typeof INITIAL_REGION): BBox => {
     region.latitude + region.latitudeDelta, // northLat - max lat
   ];
 };
-
-export const cameraStateAtom = atom<
-  { zoom: number; center: Position; bounds: BBox }
->({
-  zoom: DEFAULT_ZOOM,
-  center: [
-    DEFAULT_LONGITUDE,
-    DEFAULT_LATITUDE,
-  ],
-  bounds: regionToBoundingBox(INITIAL_REGION),
-});
-
-export const highlightedMarkerAtom = atom<Highline | null>(null);
-export const clusterMarkersAtom = atom<Highline[]>([]);
 
 export const haversineDistance = (
   lat1: number,
