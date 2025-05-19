@@ -16,8 +16,8 @@ import { I18nProvider } from '~/context/i18n';
 import { NotificationProvider } from '~/context/notifications';
 import { ReactQueryProvider } from '~/context/react-query';
 import { useDeepLinkHandler } from '~/hooks/use-deep-link-handler';
-import { setAndroidNavigationBar } from '~/lib/android-navigation-bar';
-import { NAV_THEME } from '~/lib/constants';
+import { setAndroidNavigationBar } from '~/utils/android-navigation-bar';
+import { NAV_THEME } from '~/utils/constants';
 
 import { OfflineBanner } from '~/components/offline-banner';
 
