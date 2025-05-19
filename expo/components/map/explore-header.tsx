@@ -1,5 +1,5 @@
+import { useMapStore } from '~/store/map-store';
 import * as Haptics from 'expo-haptics';
-import { atom, useSetAtom } from 'jotai';
 import { icons } from 'lucide-react-native';
 import React, { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -24,16 +24,15 @@ import { Text } from '~/components/ui/text';
 
 import { SafeAreaOfflineView } from '../offline-banner';
 
-// Keep track of the handle height so the Highlited marker card can be positioned correctly and the minimum snap point fits only the handler
-export const exploreHeaderHeightAtom = atom<number>(0);
-
 const ExploreHeader: React.FC<{
   onSearchChange: (text: string) => void;
   onCategoryChange: (category: HighlineCategory | null) => void;
 }> = ({ onSearchChange, onCategoryChange }) => {
   const { t } = useTranslation();
 
-  const setExploreHeaderHeight = useSetAtom(exploreHeaderHeightAtom);
+  const setExploreHeaderHeight = useMapStore(
+    (state) => state.setExploreHeaderHeight,
+  );
 
   const categories: Array<{
     category: HighlineCategory;

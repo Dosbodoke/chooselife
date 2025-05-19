@@ -72,7 +72,6 @@
     "expo-updates": "~0.27.3",
     "geojson": "^0.5.0",
     "i18next": "^24.2.2",
-    "jotai": "^2.11.3",
     "lodash.throttle": "^4.1.1",
     "lucide-react-native": "^0.378.0",
     "nativewind": "^4.1.21",
@@ -100,7 +99,8 @@
     "type-fest": "^4.38.0",
     "use-supercluster": "^1.2.0",
     "uuid": "^11.0.5",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "zustand": "^5.0.4"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

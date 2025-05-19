@@ -1,21 +1,20 @@
 import Mapbox from '@rnmapbox/maps';
+import { useCameraStateStore } from '~/store/map-store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { Position } from 'geojson';
-import { useAtomValue, useSetAtom } from 'jotai';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 
 import { LucideIcon } from '~/lib/icons/lucide-icon';
-
-import { PickerControls } from '~/components/map/picker-button';
 import {
-  cameraStateAtom,
   DEFAULT_LATITUDE,
   DEFAULT_LONGITUDE,
   DEFAULT_ZOOM,
-  haversineDistance,
-} from '~/components/map/utils';
+} from '~/utils/constants';
+
+import { PickerControls } from '~/components/map/picker-button';
+import { haversineDistance } from '~/components/map/utils';
 import { Text } from '~/components/ui/text';
 
 const LocationPickerScreen: React.FC = () => {
@@ -25,7 +24,7 @@ const LocationPickerScreen: React.FC = () => {
   // State to store the two picked locations
   const [anchorA, setAnchorA] = useState<Position | null>(null);
   const [anchorB, setAnchorB] = useState<Position | null>(null);
-  const setCamera = useSetAtom(cameraStateAtom);
+  const setCamera = useCameraStateStore((state) => state.setCamera);
 
   const handlePickLocation = useCallback(async () => {
     const center = await mapRef.current?.getCenter();
@@ -83,12 +82,7 @@ const LocationPickerScreen: React.FC = () => {
         onCameraChanged={(state) => {
           // Only update if the user has already placed the first anchor.
           if (anchorA) {
-            const { sw, ne } = state.properties.bounds;
-            setCamera({
-              center: state.properties.center,
-              zoom: state.properties.zoom,
-              bounds: [sw[0], sw[1], ne[0], ne[1]],
-            });
+            setCamera(state);
           }
         }}
       >
@@ -178,7 +172,7 @@ const DistanceLabel: React.FC<{
   anchorA: Position | null;
   anchorB: Position | null;
 }> = ({ anchorA, anchorB }) => {
-  const camera = useAtomValue(cameraStateAtom);
+  const camera = useCameraStateStore((state) => state);
 
   const distance = useMemo(() => {
     if (!anchorA) return;
@@ -207,7 +201,7 @@ const LineSourceLayer: React.FC<{
   anchorA: Position;
   anchorB: Position | null;
 }> = React.memo(({ anchorA, anchorB }) => {
-  const camera = useAtomValue(cameraStateAtom);
+  const camera = useCameraStateStore((state) => state);
 
   let lineCoordinates: number[][] | null = null;
   if (anchorA && anchorB) {
