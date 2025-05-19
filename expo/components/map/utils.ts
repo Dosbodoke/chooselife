@@ -1,9 +1,6 @@
-import Mapbox from "@rnmapbox/maps";
 import { BBox, Position } from "geojson";
 import { INITIAL_REGION } from "~/utils/constants";
 import { Point } from "~/utils/database.types";
-
-Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_PUBLIC_KEY!);
 
 export const regionToBoundingBox = (region: typeof INITIAL_REGION): BBox => {
   let lngD: number;
