@@ -1,11 +1,11 @@
 import AsyncStorage from 'expo-sqlite/kv-store';
 import { Pressable, View } from 'react-native';
 
-import { setAndroidNavigationBar } from '~/lib/android-navigation-bar';
 import { MoonStar } from '~/lib/icons/MoonStar';
 import { Sun } from '~/lib/icons/Sun';
 import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
+import { setAndroidNavigationBar } from '~/utils/android-navigation-bar';
 
 import { H4 } from '~/components/ui/typography';
 
