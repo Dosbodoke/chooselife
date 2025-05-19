@@ -1,7 +1,7 @@
 import Mapbox from '@rnmapbox/maps';
+import { useMapStore } from '~/store/map-store';
 import * as Location from 'expo-location';
 import { useLocalSearchParams } from 'expo-router';
-import { useAtom, useSetAtom } from 'jotai';
 import throttle from 'lodash.throttle';
 import React, {
   useCallback,
@@ -11,6 +11,7 @@ import React, {
   useState,
 } from 'react';
 import { View } from 'react-native';
+import { useShallow } from 'zustand/react/shallow';
 
 import {
   useHighline,
@@ -19,6 +20,11 @@ import {
 } from '~/hooks/use-highline';
 import { useOfflineRegion } from '~/hooks/use-offline-region';
 import { calculateZoomLevel } from '~/utils';
+import {
+  DEFAULT_LATITUDE,
+  DEFAULT_LONGITUDE,
+  DEFAULT_ZOOM,
+} from '~/utils/constants';
 
 import ListingsBottomSheet from '~/components/map/bottom-sheet';
 import MapControls from '~/components/map/controls';
@@ -26,14 +32,6 @@ import ExploreHeader from '~/components/map/explore-header';
 import { MapCardList } from '~/components/map/map-card';
 import { Markers } from '~/components/map/markers';
 import { ChooselifeTrails } from '~/components/map/trail-shape';
-import {
-  cameraStateAtom,
-  clusterMarkersAtom,
-  DEFAULT_LATITUDE,
-  DEFAULT_LONGITUDE,
-  DEFAULT_ZOOM,
-  highlightedMarkerAtom,
-} from '~/components/map/utils';
 
 const getMapStyle = (mapType: string) => {
   return mapType === 'satellite'
@@ -95,13 +93,16 @@ export default function Screen() {
   const [isOnMyLocation, setIsOnMyLocation] = useState(false);
   const [mapType, setMapType] = useState<'satellite' | 'standard'>('satellite');
   const [searchTerm, setSearchTerm] = useState('');
-
-  // atoms
-  const setCamera = useSetAtom(cameraStateAtom);
-  const [highlightedMarker, setHighlightedMarker] = useAtom(
-    highlightedMarkerAtom,
+  const setCamera = useMapStore((state) => state.setCamera);
+  const [highlightedMarker, setHighlightedMarker] = useMapStore(
+    useShallow((state) => [
+      state.highlightedMarker,
+      state.setHighlightedMarker,
+    ]),
   );
-  const [clusterMarkers, setClusterMarkers] = useAtom(clusterMarkersAtom);
+  const [clusteredMarkers, setClusteredMarkers] = useMapStore(
+    useShallow((state) => [state.clusteredMarkers, state.setClusteredMarkers]),
+  );
 
   // URL params
   const { focusedMarker } = useLocalSearchParams<{ focusedMarker?: string }>();
@@ -148,14 +149,7 @@ export default function Screen() {
         if (isOnMyLocation) {
           setIsOnMyLocation(false);
         }
-
-        // Update camera state
-        const { sw, ne } = state.properties.bounds;
-        setCamera({
-          center: state.properties.center,
-          zoom: state.properties.zoom,
-          bounds: [sw[0], sw[1], ne[0], ne[1]],
-        });
+        setCamera(state);
       },
       300,
       { leading: true, trailing: true },
@@ -173,16 +167,16 @@ export default function Screen() {
   const handleMapPress = useCallback(() => {
     if (highlightedMarker) {
       setHighlightedMarker(null);
-      setClusterMarkers([]);
+      setClusteredMarkers([]);
     }
-  }, [highlightedMarker, setHighlightedMarker, setClusterMarkers]);
+  }, [highlightedMarker, setHighlightedMarker, setClusteredMarkers]);
 
   const handleMarkerUpdate = useCallback(
     (highlines: Highline[], focused: Highline) => {
-      setClusterMarkers(highlines);
+      setClusteredMarkers(highlines);
       setHighlightedMarker(focused);
     },
-    [setClusterMarkers, setHighlightedMarker],
+    [setClusteredMarkers, setHighlightedMarker],
   );
 
   const handleChangeFocusedMarker = useCallback(
@@ -195,7 +189,7 @@ export default function Screen() {
   useEffect(() => {
     if (!focusedMarker || !highlines) {
       setHighlightedMarker(null);
-      setClusterMarkers([]);
+      setClusteredMarkers([]);
       return;
     }
 
@@ -205,7 +199,7 @@ export default function Screen() {
 
     if (highlineToFocus) {
       setHighlightedMarker(highlineToFocus);
-      setClusterMarkers([highlineToFocus]);
+      setClusteredMarkers([highlineToFocus]);
 
       // Calculate the southwest and northeast bounds from the two anchors.
       const minLat = Math.min(
@@ -273,6 +267,7 @@ export default function Screen() {
         styleURL={getMapStyle(mapType)}
         scaleBarEnabled={false}
         onCameraChanged={handleCameraChanged}
+        onMapIdle={handleCameraChanged}
         onDidFinishLoadingMap={() => {
           if (!focusedMarker) {
             goToMyLocation();
@@ -293,7 +288,6 @@ export default function Screen() {
         <Markers
           cameraRef={cameraRef}
           highlines={highlinesWithLocation}
-          highlightedMarker={highlightedMarker}
           updateMarkers={handleMarkerUpdate}
         />
       </Mapbox.MapView>
@@ -305,9 +299,9 @@ export default function Screen() {
         setMapType={setMapType}
       />
 
-      {clusterMarkers.length > 0 ? (
+      {clusteredMarkers.length > 0 ? (
         <MapCardList
-          highlines={clusterMarkers}
+          highlines={clusteredMarkers}
           focusedMarker={highlightedMarker}
           changeFocusedMarker={handleChangeFocusedMarker}
         />

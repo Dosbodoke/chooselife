@@ -1,7 +1,7 @@
 import MapboxGL from '@rnmapbox/maps';
 import { useQueryClient } from '@tanstack/react-query';
+import { useMapStore } from '~/store/map-store';
 import type { Feature, GeoJsonProperties } from 'geojson';
-import { useAtomValue } from 'jotai';
 import React, { useCallback, useMemo } from 'react';
 import { View } from 'react-native';
 import { PointFeature } from 'supercluster';
@@ -10,9 +10,9 @@ import useSuperCluster from 'use-supercluster';
 import { useAuth } from '~/context/auth';
 import { highlineKeyFactory, type Highline } from '~/hooks/use-highline';
 import { MarkerCL } from '~/lib/icons/MarkerCL';
+import { MIN_CLUSTER_SIZE } from '~/utils/constants';
 
-import { Text } from '../ui/text';
-import { cameraStateAtom, MIN_CLUSTER_SIZE } from './utils';
+import { Text } from '~/components/ui/text';
 
 interface PointProperties {
   cluster: boolean;
@@ -24,12 +24,12 @@ interface PointProperties {
 export const Markers: React.FC<{
   cameraRef: React.RefObject<MapboxGL.Camera>;
   highlines: Highline[] | null;
-  highlightedMarker: Highline | null;
   updateMarkers: (highlines: Highline[], focused: Highline) => void;
-}> = ({ cameraRef, highlines, highlightedMarker, updateMarkers }) => {
+}> = ({ cameraRef, highlines, updateMarkers }) => {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
-  const cameraState = useAtomValue(cameraStateAtom);
+  const highlightedMarker = useMapStore((state) => state.highlightedMarker);
+  const camera = useMapStore((state) => state.camera);
 
   // Build GeoJSON points from your highlines.
   const points = useMemo<
@@ -56,8 +56,8 @@ export const Markers: React.FC<{
 
   const { clusters, supercluster } = useSuperCluster({
     points,
-    bounds: cameraState.bounds,
-    zoom: cameraState.zoom,
+    bounds: camera.bounds,
+    zoom: camera.zoom,
     options: { radius: 50, maxZoom: 25 },
   });
 
@@ -76,7 +76,7 @@ export const Markers: React.FC<{
       const [lng, lat] = cluster.geometry.coordinates;
 
       // Optionally update markers if needed
-      const shouldHighlightCards = clampedZoom <= cameraState.zoom;
+      const shouldHighlightCards = clampedZoom <= camera.zoom;
       if (shouldHighlightCards) {
         const leaves = supercluster.getLeaves(cluster_id);
         const highlinesData =
@@ -107,7 +107,7 @@ export const Markers: React.FC<{
     [
       queryClient,
       supercluster,
-      cameraState.zoom,
+      camera.zoom,
       cameraRef,
       updateMarkers,
       clusters,
