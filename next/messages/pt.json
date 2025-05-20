@@ -59,7 +59,7 @@
     }
   },
   "highline": {
-    "registry": {
+    "register": {
       "trigger": "Registrar rolê",
       "title": "Registrar rolê",
       "success": {
@@ -70,7 +70,7 @@
       "description": "Registre como foi o seu rolê e tenha acesso as suas estatísticas.",
       "instagram": {
         "description": "Nome de úsuario no APP Chooselife ou o @ do instagram",
-        "placeholder": "@user"
+        "placeholder": "@chooselife"
       },
       "cadenas": {
         "label": "Cadenas",
