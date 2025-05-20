@@ -3,7 +3,7 @@
     "searchPlaceholder": "Highline name",
     "newHighline": {
       "trigger": "New Highline",
-      "title": "Registry Highline",
+      "title": "Register Highline",
       "success": {
         "header": "NICE CHOOSEN",
         "message": "Highline Created! Now you can start registering your walks."
@@ -59,18 +59,18 @@
     }
   },
   "highline": {
-    "registry": {
-      "trigger": "Registry",
-      "title": "Registry",
+    "register": {
+      "trigger": "Register",
+      "title": "Register",
       "success": {
         "header": "NICE CHOOSEN",
         "message": "Your walk is registered and will be used to calculate your stats.",
         "close": "close"
       },
-      "description": "Registry your walk and get access to your statistics.",
+      "description": "Register your walk and get access to your statistics.",
       "instagram": {
         "description": "Username on the Chooselife APP or instragram @",
-        "placeholder": "@user"
+        "placeholder": "@chooselife"
       },
       "cadenas": {
         "label": "Sent",
@@ -101,7 +101,7 @@
         "label": "Comments",
         "placeholder": "Nice choosen 🤘🆑 Tell us how was this walk, what did you think of the line, the connection ..."
       },
-      "submit": "Registry"
+      "submit": "Register"
     },
     "header": {
       "expandDescription": "See more...",

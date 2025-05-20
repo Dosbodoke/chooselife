@@ -75,7 +75,7 @@ const MultiSelectFormField = React.forwardRef<
     ref
   ) => {
     const supabase = useSupabaseBrowser();
-    const t = useTranslations("highline.registry.witness");
+    const t = useTranslations("highline.register.witness");
     const [search, setSearch] = React.useState("");
     const normalizedSearch = React.useMemo(
       () => (!search || search.startsWith("@") ? search : `@${search}`),
