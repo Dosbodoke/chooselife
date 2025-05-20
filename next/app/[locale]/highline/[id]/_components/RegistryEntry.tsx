@@ -75,7 +75,7 @@ interface Props {
 export const RegistryEntry = ({ highlineId, highlineDistance }: Props) => {
   const supabase = useSupabaseBrowser();
 
-  const t = useTranslations("highline.registry");
+  const t = useTranslations("highline.register");
   const queryClient = useQueryClient();
 
   const entryForm = useForm<FormSchema>({
