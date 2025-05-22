@@ -34,8 +34,16 @@ const formSchema = z.object({
   username: z
     .string()
     .trim()
-    .startsWith('@', 'O usuário deve começar com @')
-    .min(3, 'Deve conter ao menos 3 caracteres'),
+    .startsWith(
+      '@',
+      i18next.t(
+        'app.highline.register.fields.instagram.errors.must_start_with',
+      ),
+    )
+    .min(
+      3,
+      i18next.t('app.highline.register.fields.instagram.errors.min_length'),
+    ),
   cadenas: z.number().nonnegative(),
   full_lines: z.number().nonnegative(),
   distance: z.coerce
