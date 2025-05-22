@@ -3,7 +3,8 @@
     "soon": "Em breve",
     "seeAll": "Ver todos",
     "loop": "Olhal",
-    "loops": "Olhais"
+    "loops": "Olhais",
+    "optional": "*opcional"
   },
   "app": {
     "(modals)": {
@@ -116,6 +117,8 @@
         },
         "fields": {
           "instagram": {
+            "label": "Highliner",
+            "description": "Username on the Chooselife APP or instagram @",
             "errors": {
               "must_start_with": "O usuário deve começar com @",
               "min_length": "Deve conter ao menos 3 caracteres"
@@ -140,7 +143,6 @@
           },
           "time": {
             "label": "Speedline",
-            "optional": "*opcional",
             "description": "Seu melhor tempo para o ranking do Speedline",
             "placeholder": "Exemplo.: 4:20",
             "errors": {
@@ -157,7 +159,6 @@
           },
           "comment": {
             "label": "Comentário",
-            "optional": "*opcional",
             "placeholder": "Boa choosen 🤘🆑 Conta pra gente como foi ese rolê, o que achou da fita, da conexão..."
           }
         },
