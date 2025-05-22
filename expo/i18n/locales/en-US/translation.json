@@ -154,7 +154,7 @@
             "description": "Enter the username of two people, separated by a comma.",
             "placeholder": "@festivalchooselife, @juangsandrade",
             "errors": {
-              "invalid_format": "Invalid, please provide the Instagram username of two people, separated by a comma."
+              "invalid_format": "Enter the @ of the chooselife APP or the instagram of two people, separated by a comma."
             }
           },
           "comment": {
