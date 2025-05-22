@@ -118,7 +118,7 @@
         "fields": {
           "instagram": {
             "label": "Highliner",
-            "description": "Username on the Chooselife APP or instagram @",
+            "description": "@ no APP chooselife ou do instagram",
             "errors": {
               "must_start_with": "O usuário deve começar com @",
               "min_length": "Deve conter ao menos 3 caracteres"
@@ -154,7 +154,7 @@
             "description": "Insira o nome de usuário de duas pessoas, separado por vírgula.",
             "placeholder": "@festivalchooselife, @juangsandrade",
             "errors": {
-              "invalid_format": "Inválido, coloque o instagram de duas pessoas, separado por vírgula."
+              "invalid_format": "Insira o @ do APP chooselife ou o instagram de duas pessoas, separado por vírgula."
             }
           },
           "comment": {
