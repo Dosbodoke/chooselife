@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAuth } from '~/context/auth';
 import { useI18n } from '~/context/i18n';
 import { useHighline } from '~/hooks/use-highline';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
@@ -191,7 +190,6 @@ const BottomActions = ({
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { profile } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
@@ -241,12 +239,7 @@ const BottomActions = ({
       <Button
         className="flex-1"
         onPress={() => {
-          const route = `/highline/${id}/register` as const;
-          if (!profile) {
-            router.push(`/(modals)/login?redirect_to=${route}`);
-            return;
-          }
-          router.push(route);
+          router.push(`/highline/${id}/register`);
         }}
       >
         <Text className="text-primary-foreground">

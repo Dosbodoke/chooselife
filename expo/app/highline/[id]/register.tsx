@@ -8,6 +8,7 @@ import { Controller, FieldErrors, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Keyboard, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
@@ -30,6 +31,11 @@ import { Textarea } from '~/components/ui/textarea';
 import { H1, Muted, Small } from '~/components/ui/typography';
 
 const formSchema = z.object({
+  username: z
+    .string()
+    .trim()
+    .startsWith('@', 'O usuário deve começar com @')
+    .min(3, 'Deve conter ao menos 3 caracteres'),
   cadenas: z.number().nonnegative(),
   full_lines: z.number().nonnegative(),
   distance: z.coerce
@@ -66,21 +72,18 @@ const formSchema = z.object({
 type FormSchema = z.infer<typeof formSchema>;
 
 export default function RegisterWalk() {
+  const insets = useSafeAreaInsets();
   const { isConnected } = useNetInfo();
   const { t } = useTranslation();
-  const router = useRouter();
   const { profile } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { highline } = useHighline({ id });
   const queryClient = useQueryClient();
 
-  if (!profile) {
-    router.push('/(modals)/login');
-  }
-
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      username: profile?.username || '',
       cadenas: 0,
       full_lines: 0,
       distance: 0,
@@ -93,11 +96,10 @@ export default function RegisterWalk() {
   const formMutation = useMutation({
     mutationFn: async (formData: FormSchema) => {
       if (!id) throw new Error('No highline ID provided');
-      if (!profile?.username) throw new Error("User doesn't have a profile");
 
       const response = await supabase.from('entry').insert({
         highline_id: id,
-        instagram: profile.username,
+        instagram: formData.username.trim(),
         cadenas: formData.cadenas,
         full_lines: formData.full_lines,
         distance_walked: formData.distance,
@@ -243,8 +245,13 @@ export default function RegisterWalk() {
 
   return (
     <KeyboardAwareScrollView
-      contentContainerClassName="gap-4 p-4 pb-8"
+      contentContainerClassName="gap-4 p-4"
+      contentContainerStyle={{
+        flexGrow: 1,
+        paddingBottom: 32 + insets.bottom + insets.top, // pb-8 === 32px
+      }}
       keyboardShouldPersistTaps="handled"
+      removeClippedSubviews={false}
     >
       {formMutation.isSuccess ? (
         <SuccessCard offline={false} />
@@ -252,6 +259,35 @@ export default function RegisterWalk() {
         <SuccessCard offline />
       ) : (
         <>
+          <Controller
+            control={form.control}
+            name="username"
+            render={({ field, fieldState }) => (
+              <View className="gap-2">
+                <View>
+                  <Label nativeID="username">
+                    {t('app.highline.register.fields.instagram.label')}
+                  </Label>
+                  <Muted>
+                    {t('app.highline.register.fields.instagram.description')}
+                  </Muted>
+                </View>
+                <Input
+                  placeholder="@choosen"
+                  aria-labelledby="username"
+                  className={fieldState.error && 'border-destructive'}
+                  onChangeText={field.onChange}
+                  value={field.value}
+                />
+                {fieldState.error ? (
+                  <Small className="text-destructive">
+                    {fieldState.error.message}
+                  </Small>
+                ) : null}
+              </View>
+            )}
+          />
+
           <Controller
             control={form.control}
             name="cadenas"
@@ -326,9 +362,7 @@ export default function RegisterWalk() {
                 <View>
                   <Label nativeID="entry-time">
                     {t('app.highline.register.fields.time.label')}{' '}
-                    <Muted>
-                      {t('app.highline.register.fields.time.optional')}
-                    </Muted>
+                    <Muted>{t('common.optional')}</Muted>
                   </Label>
                   <Muted>
                     {t('app.highline.register.fields.time.description')}
@@ -390,10 +424,8 @@ export default function RegisterWalk() {
             render={({ field, fieldState }) => (
               <View className="gap-2">
                 <Label nativeID="entry-comment">
-                  {t('app.highline.register.fields.comment.label')}
-                  <Muted>
-                    {t('app.highline.register.fields.comment.optional')}
-                  </Muted>
+                  {t('app.highline.register.fields.comment.label')}{' '}
+                  <Muted>{t('common.optional')}</Muted>
                 </Label>
                 <Textarea
                   keyboardType="default"
