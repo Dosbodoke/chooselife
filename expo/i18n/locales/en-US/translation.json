@@ -3,7 +3,8 @@
     "soon": "Soon",
     "seeAll": "See all",
     "loop": "Loop",
-    "loops": "Loops"
+    "loops": "Loops",
+    "optional": "*optional"
   },
   "app": {
     "(modals)": {
@@ -116,6 +117,8 @@
         },
         "fields": {
           "instagram": {
+            "label": "Highliner",
+            "description": "Username on the Chooselife APP or instagram @",
             "errors": {
               "must_start_with": "The username must start with @",
               "min_length": "Must be at least 3 characters"
@@ -140,7 +143,6 @@
           },
           "time": {
             "label": "Speedline",
-            "optional": "*optional",
             "description": "Your best time for the Speedline ranking.",
             "placeholder": "Example: 4:20",
             "errors": {
@@ -157,7 +159,6 @@
           },
           "comment": {
             "label": "Comment",
-            "optional": "*optional",
             "placeholder": "Nice Coosen 🤘🆑 Tell us how your session went, what you thought of the line and the connection..."
           }
         },

@@ -20,9 +20,9 @@ export default function HighlineLayout() {
       <Stack.Screen
         name="register"
         options={{
-          headerShown: true,
-          title: '',
           presentation: 'modal',
+          headerShown: false,
+          title: '',
         }}
       />
       <Stack.Screen
