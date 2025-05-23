@@ -3,7 +3,7 @@ export const calculateZoomLevel = (latitudeDelta: number): number => {
 };
 
 export function transformTimeStringToSeconds(timeString: string): number {
-  const [minutes, seconds] = timeString.split(':').map(Number);
+  const [minutes, seconds] = timeString.split(":").map(Number);
   const totalSeconds = minutes * 60 + seconds;
   return totalSeconds;
 }
@@ -16,11 +16,11 @@ export function transformSecondsToTimeString(totalSeconds: number): string {
 }
 
 function padZero(num: number): string {
-  return num.toString().padStart(2, '0');
+  return num.toString().padStart(2, "0");
 }
 
 export function date18YearsAgo() {
   const date = new Date();
-  date.setFullYear(date.getFullYear() - 18)
-  return date.toISOString().split('T')[0];
+  date.setFullYear(date.getFullYear() - 18);
+  return date.toISOString().split("T")[0];
 }
