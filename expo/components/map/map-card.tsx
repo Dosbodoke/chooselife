@@ -7,12 +7,14 @@ import { ScrollView } from 'react-native-gesture-handler';
 import Animated, { Easing, FadeIn, FadeOut } from 'react-native-reanimated';
 
 import type { Highline } from '~/hooks/use-highline';
+import { RigStatuses } from '~/hooks/use-rig-setup';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
 
 import { Text } from '~/components/ui/text';
 import { H4, Small } from '~/components/ui/typography';
 
+import { FavoriteHighline } from '../highline/favorite-button';
 import { HighlineImage } from '../highline/highline-image';
 
 interface MapCardProps {
@@ -42,6 +44,18 @@ const MapCard: React.FC<MapCardProps> = ({ highline, isFocused, onPress }) => {
             dotSize="small"
           />
         </View>
+
+        <StatusChip status={highline.status as RigStatuses} />
+
+        <View className="absolute top-2 right-2">
+          <FavoriteHighline
+            id={highline.id}
+            isFavorite={highline.is_favorite}
+            className="bg-black/60"
+            hearthClassName="text-white"
+          />
+        </View>
+
         <View
           className={cn(
             'absolute rounded-md inset-x-3 flex gap-2 bg-background bottom-3 p-2',
@@ -82,6 +96,25 @@ const MapCard: React.FC<MapCardProps> = ({ highline, isFocused, onPress }) => {
         </View>
       </View>
     </Pressable>
+  );
+};
+
+const StatusChip: React.FC<{ status: RigStatuses }> = ({ status }) => {
+  const { t } = useTranslation();
+
+  const dotStyle: Record<RigStatuses, string> = {
+    planned: 'bg-amber-300',
+    rigged: 'bg-green-500',
+    unrigged: 'bg-red-500',
+  };
+
+  return (
+    <View className="absolute top-2 left-2 bg-black/60 py-2 px-4 rounded-full flex flex-row gap-2 items-center">
+      <View className={cn('size-2 rounded-full', dotStyle[status])} />
+      <Text className="text-white text-sm font-semibold tracking-wide">
+        {t(`components.map.explore-header.categories.${status}`)}
+      </Text>
+    </View>
   );
 };
 
