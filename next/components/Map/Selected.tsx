@@ -47,8 +47,7 @@ export const Selected = ({
   return (
     <div
       className={cn(
-        "absolute bottom-0 z-[1000] w-full rounded-t-3xl",
-        data.length > 0 || pending ? "px-2 py-4" : null
+        "absolute bottom-0 z-[1000] w-full rounded-t-3xl px-2 py-4"
       )}
     >
       <div className="flex gap-2 overflow-auto whitespace-nowrap">
@@ -60,8 +59,7 @@ export const Selected = ({
             if (!selected) return null;
             return (
               <Card
-                data-active={focusedMarker === selected.id}
-                className="group inline-block h-32 min-w-[20rem] cursor-pointer overflow-hidden border-2 border-muted bg-card hover:bg-accent hover:text-accent-foreground data-[active=true]:border-primary data-[active=true]:bg-accent"
+                className="inline-block aspect-video min-w-[20rem] cursor-pointer overflow-hidden bg-card hover:bg-accent hover:text-accent-foreground data-[active=true]:bg-accent"
                 onClick={() => {
                   if (focusedMarker !== selected.id) {
                     setFocusedMarker(selected.id);
@@ -69,22 +67,27 @@ export const Selected = ({
                 }}
                 key={selected.id}
               >
-                <CardContent className="flex h-full gap-2 p-0">
-                  <div className="relative h-full w-20 rounded-l-md">
+                <CardContent
+                  className="group relative h-full w-full overflow-hidden rounded-xl p-0"
+                  data-active={focusedMarker === selected.id}
+                >
+                  <div className="absolute inset-0 overflow-hidden">
                     <HighlineImage coverImageId={selected.cover_image} />
                   </div>
-                  <div className="flex flex-1 flex-col py-2 pr-2">
-                    <h4 className="text-sm font-semibold">{selected.name}</h4>
+                  <div className="absolute bottom-2 left-2 right-2 flex flex-col gap-2 rounded-md bg-white p-2 group-data-[active=true]:border-2 group-data-[active=true]:border-blue-500">
+                    <h4 className="text-sm font-semibold text-black">
+                      {selected.name}
+                    </h4>
                     <div className="flex gap-2">
                       <div className="flex items-center pt-2">
-                        <UnfoldVerticalIcon className="mr-2 h-4 w-4 opacity-70" />{" "}
-                        <span className="text-xs text-muted-foreground">
+                        <UnfoldVerticalIcon className="mr-2 h-4 w-4 text-gray-700" />{" "}
+                        <span className="text-sm text-gray-500">
                           {selected.height}m
                         </span>
                       </div>
                       <div className="flex items-center pt-2">
-                        <UnfoldHorizontalIcon className="mr-2 h-4 w-4 opacity-70" />{" "}
-                        <span className="text-xs text-muted-foreground">
+                        <UnfoldHorizontalIcon className="mr-2 h-4 w-4 text-gray-700" />{" "}
+                        <span className="text-sm text-gray-500">
                           {selected.length}m
                         </span>
                       </div>
@@ -95,7 +98,7 @@ export const Selected = ({
                       asChild
                     >
                       <Link
-                        className="mt-auto"
+                        className="pointer-events-auto mt-auto"
                         href={`/highline/${selected.id}`}
                       >
                         Ver detalhes
@@ -119,11 +122,11 @@ const SelectedSkeleton = ({ quantity }: { quantity: number }) => {
       {Array.from(Array(quantity)).map((_, idx) => (
         <Card
           key={`high-skeleton-${idx}`}
-          className="group inline-block h-32 min-w-[20rem] border-2 border-muted bg-accent"
+          className="group inline-block aspect-video min-w-[20rem] overflow-hidden border-2 border-muted bg-accent"
         >
-          <CardContent className="flex h-full gap-2 p-0">
-            <div className="relative h-full w-20 animate-pulse rounded-l-md bg-muted-foreground opacity-70" />
-            <div className="flex flex-1 animate-pulse flex-col py-2 pr-2">
+          <CardContent className="relative flex h-full gap-2 p-0">
+            <div className="absolute h-full w-full animate-pulse rounded-l-md bg-muted-foreground opacity-70" />
+            <div className="absolute bottom-2 left-2 right-2 flex flex-col gap-2 rounded-md bg-white p-2">
               <h4 className="h-6 w-4/5 rounded-md bg-muted-foreground opacity-70" />
               <div className="flex gap-2">
                 <div className="flex items-center pt-2">

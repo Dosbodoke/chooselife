@@ -52,10 +52,6 @@
       "description": "Selecione o mapa a ser visualizado",
       "map": "Mapa",
       "satellite": "Satélite"
-    },
-    "refetch": {
-      "pending": "Pesquisando...",
-      "enabled": "Pesquisar nesta área"
     }
   },
   "highline": {
