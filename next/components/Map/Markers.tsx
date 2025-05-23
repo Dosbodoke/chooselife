@@ -3,8 +3,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { BBox, GeoJsonProperties } from "geojson";
 import L from "leaflet";
-import { SearchIcon } from "lucide-react";
-import { useTranslations } from "next-intl";
 import { useQueryState } from "nuqs";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ReactDOMServer from "react-dom/server";
@@ -13,7 +11,6 @@ import type { PointFeature } from "supercluster";
 import useSupercluster from "use-supercluster";
 
 import { getHighline } from "@/app/actions/getHighline";
-import useSupabaseBrowser from "@/utils/supabase/client";
 
 interface PointProperties {
   cluster: boolean;
@@ -37,30 +34,17 @@ export const Markers = ({
   focusedMarker: string | null;
   setHighlineIds: React.Dispatch<React.SetStateAction<string[]>>;
 }) => {
-  const t = useTranslations("map.refetch");
   const queryClient = useQueryClient();
-  const supabase = useSupabaseBrowser();
   const [, setFocusedMarker] = useQueryState("focusedMarker");
   const map = useMap();
-  const [canRefetch, setCanRefetch] = useState(false);
-  const [bounds, setBounds] = useState<BBox>();
+  const [bounds, setBounds] = useState<BBox>(
+    locationToBoundingBox(map.getBounds())
+  );
 
-  const {
-    data: highlines,
-    isFetching,
-    refetch,
-  } = useQuery({
-    queryKey: ["bounds"],
+  const { data: highlines, refetch } = useQuery({
+    queryKey: ["highlines"],
     queryFn: async () => {
-      if (!bounds) return [];
-      const { data, error } = await supabase.rpc("highlines_in_view", {
-        min_long: bounds[0],
-        min_lat: bounds[1],
-        max_long: bounds[2],
-        max_lat: bounds[3],
-      });
-      if (error) throw new Error(error.message);
-      setCanRefetch(false);
+      const { data } = await getHighline({ searchValue: undefined });
       return data;
     },
   });
@@ -92,10 +76,13 @@ export const Markers = ({
   });
 
   useMapEvents({
+    load() {
+      const bounds = locationToBoundingBox(map.getBounds());
+      setBounds(bounds);
+    },
     moveend() {
       const bounds = locationToBoundingBox(map.getBounds());
       setBounds(bounds);
-      setCanRefetch(true);
     },
     click() {
       if (focusedMarker) {
@@ -239,21 +226,6 @@ export const Markers = ({
           />
         </>
       ) : null}
-
-      <button
-        className="absolute left-1/2 top-12 z-[1000] flex -translate-x-1/2 items-center gap-2 rounded-3xl bg-white px-3 py-2 text-sm text-black shadow-lg aria-hidden:hidden"
-        aria-hidden={!canRefetch}
-        onClick={() => {
-          refetch();
-        }}
-      >
-        <p className="font-medium">
-          {isFetching ? t("pending") : t("enabled")}
-        </p>
-        <div className="h-5 w-5">
-          <SearchIcon className="h-full w-full text-blue-500" />
-        </div>
-      </button>
     </>
   );
 };
