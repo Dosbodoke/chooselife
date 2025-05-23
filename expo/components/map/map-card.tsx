@@ -27,28 +27,37 @@ const MapCard: React.FC<MapCardProps> = ({ highline, isFocused, onPress }) => {
     <Pressable
       onPress={() => onPress(highline)}
       className={cn(
-        'inline-block rounded-lg border border-border bg-background shadow shadow-foreground/10',
-        'h-32 min-w-[24rem]',
-        isFocused ? 'border border-blue-500 dark:border-blue-600' : 'border-0',
+        'inline-block rounded-lg bg-background shadow shadow-foreground/10',
+        'aspect-video min-w-[24rem] overflow-hidden',
+        isFocused
+          ? 'border border-blue-500 dark:border-blue-600'
+          : 'border border-border',
       )}
     >
       <View className="flex flex-row h-full gap-2 p-0">
-        <View className="relative h-full w-20 rounded-l-md bg-muted-foreground">
+        <View className="absolute inset-0 bg-muted-foreground">
           <HighlineImage
             coverImageId={highline.cover_image}
-            className="w-full h-full rounded-l-md"
+            className="w-full h-full"
             dotSize="small"
           />
         </View>
-        <View className="flex flex-1 py-2 pr-2">
-          <H4 className="text-sm font-semibold">{highline.name}</H4>
+        <View
+          className={cn(
+            'absolute rounded-md inset-x-3 flex gap-2 bg-background bottom-3 p-2',
+            isFocused
+              ? 'border-2 border-blue-500 dark:border-blue-600'
+              : 'border-0',
+          )}
+        >
+          <H4 className="text-base font-semibold">{highline.name}</H4>
           <View className="flex gap-2 flex-row">
             <View className="flex items-center pt-2 flex-row">
               <LucideIcon
                 name="UnfoldVertical"
                 className="size-4 mr-2 text-primary opacity-70"
               />
-              <Small className="text-xs text-muted-foreground">
+              <Small className="text-sm text-muted-foreground">
                 {highline.height}m
               </Small>
             </View>
@@ -57,7 +66,7 @@ const MapCard: React.FC<MapCardProps> = ({ highline, isFocused, onPress }) => {
                 name="UnfoldHorizontal"
                 className="size-4 mr-2 text-primary opacity-70"
               />
-              <Small className="text-xs text-muted-foreground">
+              <Small className="text-sm text-muted-foreground">
                 {highline.length}m
               </Small>
             </View>
