@@ -13,7 +13,9 @@ export function useDeepLinkHandler() {
 
         // Reconstruct the full path
         const pathSegments = [];
-        if (parsed.hostname) pathSegments.push(parsed.hostname);
+        // Todo: Review if this is really necessary
+        if (parsed.hostname && parsed.hostname !== 'chooselife.club')
+          pathSegments.push(parsed.hostname);
         if (parsed.path) pathSegments.push(parsed.path);
         const fullPath = `/${pathSegments.join('/')}`;
 
