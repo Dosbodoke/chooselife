@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
@@ -14,19 +14,35 @@ import { EventCard, EventCardSkeleton } from '~/components/event-card';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { Card, CardContent } from '~/components/ui/card';
 import { Text } from '~/components/ui/text';
+import AppleWidget from '~/components/widget';
 
 const DAMPING = 80;
 export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
 
 export default function HomeScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
 
   return (
     <SafeAreaOfflineView>
       <ScrollView>
+        <AppleWidget
+          items={[
+            {
+              id: 'chooselife',
+              title: t('app.(tabs).home.banner.title'),
+              subtitle: t('app.(tabs).home.banner.description'),
+              background: supabase.storage
+                .from('promo')
+                .getPublicUrl('highline-walk.webp').data.publicUrl,
+            },
+          ]}
+        />
+
         <BannerCard
           title={t('app.(tabs).home.banner.title')}
           description={t('app.(tabs).home.banner.description')}
+          onPress={() => router.push('/(festival)')}
         />
 
         <View className="flex-1 px-4">
