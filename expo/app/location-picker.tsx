@@ -1,5 +1,5 @@
 import Mapbox from '@rnmapbox/maps';
-import { useCameraStateStore } from '~/store/map-store';
+import { useMapStore } from '~/store/map-store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { Position } from 'geojson';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
@@ -24,7 +24,7 @@ const LocationPickerScreen: React.FC = () => {
   // State to store the two picked locations
   const [anchorA, setAnchorA] = useState<Position | null>(null);
   const [anchorB, setAnchorB] = useState<Position | null>(null);
-  const setCamera = useCameraStateStore((state) => state.setCamera);
+  const setCamera = useMapStore((state) => state.setCamera);
 
   const handlePickLocation = useCallback(async () => {
     const center = await mapRef.current?.getCenter();
@@ -172,7 +172,7 @@ const DistanceLabel: React.FC<{
   anchorA: Position | null;
   anchorB: Position | null;
 }> = ({ anchorA, anchorB }) => {
-  const camera = useCameraStateStore((state) => state);
+  const camera = useMapStore((state) => state.camera);
 
   const distance = useMemo(() => {
     if (!anchorA) return;
@@ -201,7 +201,7 @@ const LineSourceLayer: React.FC<{
   anchorA: Position;
   anchorB: Position | null;
 }> = React.memo(({ anchorA, anchorB }) => {
-  const camera = useCameraStateStore((state) => state);
+  const camera = useMapStore((state) => state.camera);
 
   let lineCoordinates: number[][] | null = null;
   if (anchorA && anchorB) {
