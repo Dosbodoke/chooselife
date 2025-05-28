@@ -35,15 +35,16 @@ export default function HomeScreen() {
               background: supabase.storage
                 .from('promo')
                 .getPublicUrl('highline-walk.webp').data.publicUrl,
+              onPress: () => router.push('/(festival)'),
             },
           ]}
         />
 
-        <BannerCard
+        {/* <BannerCard
           title={t('app.(tabs).home.banner.title')}
           description={t('app.(tabs).home.banner.description')}
           onPress={() => router.push('/(festival)')}
-        />
+        /> */}
 
         <View className="flex-1 px-4">
           <View className="flex-row justify-around my-6">
@@ -130,6 +131,7 @@ const BannerCard: React.FC<{
             flex: 1,
           }}
           contentFit="cover"
+          cachePolicy="disk"
         />
         <View className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent justify-end p-4">
           <Text className="text-white font-bold text-xl">{title}</Text>
