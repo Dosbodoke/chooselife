@@ -23,6 +23,7 @@ interface AppleWidgetItem {
   subtitle?: string;
   background: string;
   content?: React.ReactNode;
+  onPress?: () => void;
 }
 
 interface AppleWidgetProps {
@@ -167,7 +168,10 @@ export default function AppleWidget({ items }: AppleWidgetProps) {
           },
         ]}
       >
-        <View className="flex-1 w-full rounded-[20px] overflow-hidden shadow-2xl border-[0.5px] border-white/10">
+        <TouchableOpacity
+          onPress={item.onPress}
+          className="flex-1 w-full rounded-[20px] overflow-hidden shadow-2xl border-[0.5px] border-white/10"
+        >
           <Animated.View
             className="absolute inset-0"
             style={backgroundAnimatedStyle}
@@ -195,7 +199,7 @@ export default function AppleWidget({ items }: AppleWidgetProps) {
               </>
             )}
           </View>
-        </View>
+        </TouchableOpacity>
       </Animated.View>
     );
   };

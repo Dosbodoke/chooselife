@@ -11,7 +11,11 @@ const highline_ids = [
 export default function RankingPage() {
   return (
     <View className="p-4">
-      <Ranking highlines_ids={highline_ids} />
+      <Ranking
+        highlines_ids={highline_ids}
+        startDate={new Date('2025-06-19')}
+        endDate={new Date('2025-06-22')}
+      />
     </View>
   );
 }
