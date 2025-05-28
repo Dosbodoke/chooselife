@@ -1,4 +1,3 @@
-import { BlurView } from 'expo-blur';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
@@ -9,7 +8,6 @@ import {
 } from 'react-native';
 import Animated, {
   interpolate,
-  runOnJS,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
@@ -252,26 +250,6 @@ export default function AppleWidget({ items }: AppleWidgetProps) {
     <View className="h-[240px] bg-transparent">
       <View className="flex-1 bg-transparent">
         <View className="flex-1 bg-transparent relative">
-          <BlurView
-            intensity={20}
-            className="absolute top-0 left-0 bottom-0 w-8 z-10 pointer-events-none"
-            tint="light"
-            style={{
-              borderTopLeftRadius: 20,
-              borderBottomLeftRadius: 20,
-            }}
-          />
-
-          <BlurView
-            intensity={20}
-            className="absolute top-0 right-0 bottom-0 w-8 z-10 pointer-events-none"
-            tint="light"
-            style={{
-              borderTopRightRadius: 20,
-              borderBottomRightRadius: 20,
-            }}
-          />
-
           <Animated.ScrollView
             ref={scrollViewRef}
             horizontal={true}
