@@ -7,6 +7,66 @@
     "optional": "*optional"
   },
   "app": {
+    "(festival)": {
+      "index": {
+        "events": {
+          "loading": "Loading events...",
+          "tabs": {
+            "all": "All",
+            "thursday": "Thursday",
+            "friday": "Friday",
+            "saturday": "Saturday",
+            "sunday": "Sunday"
+          },
+          "dates": {
+            "thursday": "Thursday, June 19th",
+            "friday": "Friday, June 20th",
+            "saturday": "Saturday, June 21st",
+            "sunday": "Sunday, June 22nd"
+          },
+          "types": {
+            "workshops": "Workshops",
+            "competitions": "Competitions",
+            "workshop": "Workshop",
+            "competition": "Competition",
+            "event": "Event"
+          },
+          "dayFilter": {
+            "title": "Event Days"
+          },
+          "typeFilter": {
+            "title": "Activity Type"
+          },
+          "card": {
+            "time": "Time",
+            "instructor": "Instructor",
+            "location": "Location"
+          },
+          "notification": {
+            "title": "Event starting soon! ⭐",
+            "body": "{{title}} will start at {{time}}{{location}}"
+          },
+          "alert": {
+            "title": "Added to Favorites! ⭐",
+            "message": "You will receive a notification 1 hour before \"{{title}}\" starts.",
+            "button": "Got it!"
+          }
+        },
+        "tutorial": {
+          "title": "We know you're a true Chooser",
+          "subtitle": "Use the APP to help you remember events.",
+          "favorite": {
+            "title": "Mark as favorite",
+            "description": "Tap the star next to any event to add it to your favorites."
+          },
+          "notification": {
+            "title": "Receive notifications",
+            "description": "You'll be notified 1 hour before the event starts, so you don't miss anything!"
+          },
+          "button": "Got it!"
+        }
+      }
+    },
     "(modals)": {
       "login": {
         "logoSubtitle": "The only app made for Highliners",

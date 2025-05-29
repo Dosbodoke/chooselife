@@ -7,6 +7,66 @@
     "optional": "*opcional"
   },
   "app": {
+    "(festival)": {
+      "index": {
+        "events": {
+          "loading": "Carregando eventos...",
+          "tabs": {
+            "all": "Todos",
+            "thursday": "Quinta",
+            "friday": "Sexta",
+            "saturday": "Sábado",
+            "sunday": "Domingo"
+          },
+          "dates": {
+            "thursday": "Quinta-feira, 19 de Junho",
+            "friday": "Sexta-feira, 20 de Junho",
+            "saturday": "Sábado, 21 de Junho",
+            "sunday": "Domingo, 22 de Junho"
+          },
+          "types": {
+            "workshops": "Oficinas",
+            "competitions": "Competições",
+            "workshop": "Oficina",
+            "competition": "Competição",
+            "event": "Evento"
+          },
+          "dayFilter": {
+            "title": "Dias do Evento"
+          },
+          "typeFilter": {
+            "title": "Tipo de Atividade"
+          },
+          "card": {
+            "time": "Horário",
+            "instructor": "Instrutor",
+            "location": "Local"
+          },
+          "notification": {
+            "title": "Evento em breve! ⭐",
+            "body": "{{title}} começará às {{time}}{{location}}"
+          },
+          "alert": {
+            "title": "Adicionado aos Favoritos! ⭐",
+            "message": "Você receberá uma notificação 1 hora antes de \"{{title}}\" começar.",
+            "button": "Choose Life"
+          }
+        },
+        "tutorial": {
+          "title": "A gente sabe que você é Choosado",
+          "subtitle": "Use o APP para te ajudar a lembrar dos eventos.",
+          "favorite": {
+            "title": "Marque como favorito",
+            "description": "Toque na estrela ao lado de qualquer evento para adicioná-lo aos seus favoritos."
+          },
+          "notification": {
+            "title": "Receba notificações",
+            "description": "Você será notificado 1 hora antes do evento começar, para não perder nada!"
+          },
+          "button": "Entendi!"
+        }
+      }
+    },
     "(modals)": {
       "login": {
         "logoSubtitle": "O único aplicativo feito para Highliners",
