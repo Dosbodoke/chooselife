@@ -1,20 +1,16 @@
 import { View } from 'react-native';
 
-import { Ranking } from '~/components/ranking';
-import { Text } from '~/components/ui/text';
+import { endDate, highlinesID, startDate } from '~/utils/festival-data';
 
-const highline_ids = [
-  '162394aa-0653-4b6f-b78a-612bb2697a03',
-  '636b62f3-872f-4e18-9df2-3e9645606d62',
-];
+import { Ranking } from '~/components/ranking';
 
 export default function RankingPage() {
   return (
     <View className="p-4">
       <Ranking
-        highlines_ids={highline_ids}
-        startDate={new Date('2025-06-19')}
-        endDate={new Date('2025-06-22')}
+        highlines_ids={highlinesID}
+        startDate={startDate}
+        endDate={endDate}
       />
     </View>
   );
