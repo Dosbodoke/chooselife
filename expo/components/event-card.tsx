@@ -122,7 +122,7 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
                   // @ts-expect-error: External Link - Expo Router handles this
                   <Link asChild href={event.registration_url}>
                     <Button className="mt-3">
-                      <Text>{t('components.event-card.register')}</Text>
+                      <Text>{t('components.event-card.book')}</Text>
                     </Button>
                   </Link>
                 )}
