@@ -1,3 +1,10 @@
+export const startDate = new Date("2025-06-19");
+export const endDate = new Date("2025-06-22");
+export const highlinesID = [
+  "162394aa-0653-4b6f-b78a-612bb2697a03",
+  "636b62f3-872f-4e18-9df2-3e9645606d62",
+];
+
 export type TScheduleData = {
   id: number;
   title: string;
