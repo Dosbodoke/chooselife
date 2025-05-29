@@ -380,7 +380,7 @@
       }
     },
     "event-card": {
-      "register": "Register"
+      "book": "book"
     },
     "supabase-avatar": {
       "buttonLabel": "Edit"
