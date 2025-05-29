@@ -664,8 +664,8 @@ export default function SchedulePage() {
 
   return (
     <>
-      <SafeAreaView className="flex-1 pt-6">
-        <ScrollView>
+      <SafeAreaView className="flex-1">
+        <ScrollView contentContainerClassName="pt-6 bg-gray-50">
           <FilterTabs
             tabs={DAY_TABS}
             activeId={activeDay}
