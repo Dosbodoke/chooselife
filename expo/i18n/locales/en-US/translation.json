@@ -8,6 +8,9 @@
   },
   "app": {
     "(festival)": {
+      "tabs": {
+        "schedule": "Schedule"
+      },
       "index": {
         "events": {
           "loading": "Loading events...",
