@@ -23,7 +23,11 @@ interface MapCardProps {
   onPress: (high: Highline) => void;
 }
 
-const MapCard: React.FC<MapCardProps> = ({ highline, isFocused, onPress }) => {
+export const HighlineMapCard: React.FC<MapCardProps> = ({
+  highline,
+  isFocused,
+  onPress,
+}) => {
   const { t } = useTranslation();
   return (
     <Pressable
@@ -147,7 +151,7 @@ export const MapCardList = ({
         contentContainerClassName="px-2 gap-4"
       >
         {highlines.map((high) => (
-          <MapCard
+          <HighlineMapCard
             key={`highline-card-${high.id}`}
             highline={high}
             isFocused={high.id === focusedMarker?.id}

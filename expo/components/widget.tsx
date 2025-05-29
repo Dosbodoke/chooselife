@@ -187,16 +187,30 @@ export function Widget({ items }: WidgetProps) {
 
           <View className="flex-1 p-6 justify-end z-10">
             {item.content || (
-              <>
-                <Text className="text-2xl font-bold text-white mb-1.5 drop-shadow-lg">
+              <View className="bg-black/20 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+                <Text
+                  className="text-3xl font-black text-white mb-2 leading-tight tracking-tight"
+                  style={{
+                    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+                    textShadowOffset: { width: 0, height: 2 },
+                    textShadowRadius: 8,
+                  }}
+                >
                   {item.title}
                 </Text>
                 {item.subtitle && (
-                  <Text className="text-base text-white/90 font-medium drop-shadow-md">
+                  <Text
+                    className="text-lg font-semibold text-white/85 leading-snug"
+                    style={{
+                      textShadowColor: 'rgba(0, 0, 0, 0.6)',
+                      textShadowOffset: { width: 0, height: 1 },
+                      textShadowRadius: 4,
+                    }}
+                  >
                     {item.subtitle}
                   </Text>
                 )}
-              </>
+              </View>
             )}
           </View>
         </Pressable>

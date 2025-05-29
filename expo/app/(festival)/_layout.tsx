@@ -4,9 +4,8 @@ import {
   MaterialTopTabNavigationOptions,
 } from '@react-navigation/material-top-tabs';
 import { ParamListBase, TabNavigationState } from '@react-navigation/native';
-import { Stack, useRouter, withLayoutContext } from 'expo-router';
+import { Stack, withLayoutContext } from 'expo-router';
 import React from 'react';
-import { StyleSheet } from 'react-native';
 
 const { Navigator } = createMaterialTopTabNavigator();
 
@@ -18,8 +17,6 @@ export const MaterialTopTabs = withLayoutContext<
 >(Navigator);
 
 export default function FestivalScreen() {
-  const router = useRouter();
-
   return (
     <>
       <Stack.Screen
@@ -63,7 +60,7 @@ export default function FestivalScreen() {
           }}
         />
         <MaterialTopTabs.Screen
-          name="schedule"
+          name="highlines"
           options={{
             tabBarLabel: 'Vias',
           }}
@@ -72,24 +69,3 @@ export default function FestivalScreen() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  backButton: {
-    padding: 8,
-    marginLeft: -8,
-    borderRadius: 20,
-  },
-});
