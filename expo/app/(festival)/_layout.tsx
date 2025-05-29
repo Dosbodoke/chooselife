@@ -6,6 +6,7 @@ import {
 import { ParamListBase, TabNavigationState } from '@react-navigation/native';
 import { Stack, withLayoutContext } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 const { Navigator } = createMaterialTopTabNavigator();
 
@@ -17,6 +18,8 @@ export const MaterialTopTabs = withLayoutContext<
 >(Navigator);
 
 export default function FestivalScreen() {
+  const { t } = useTranslation();
+
   return (
     <>
       <Stack.Screen
@@ -50,7 +53,7 @@ export default function FestivalScreen() {
         <MaterialTopTabs.Screen
           name="index"
           options={{
-            tabBarLabel: 'Programação',
+            tabBarLabel: t('app.(festival).tabs.schedule'),
           }}
         />
         <MaterialTopTabs.Screen
@@ -62,7 +65,7 @@ export default function FestivalScreen() {
         <MaterialTopTabs.Screen
           name="highlines"
           options={{
-            tabBarLabel: 'Vias',
+            tabBarLabel: 'Highlines',
           }}
         />
       </MaterialTopTabs>
