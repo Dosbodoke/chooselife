@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -106,35 +105,6 @@ const QuickAction = React.forwardRef<
     </TouchableOpacity>
   );
 });
-
-const BannerCard: React.FC<{
-  onPress?: () => void;
-  title: string;
-  description: string;
-}> = ({ onPress, title, description }) => (
-  <TouchableOpacity onPress={onPress} className="w-full p-4">
-    <Card>
-      <CardContent className="p-0 overflow-hidden rounded-lg bg-slate-200 relative h-40 w-full">
-        <Image
-          source={
-            supabase.storage.from('promo').getPublicUrl('highline-walk.webp')
-              .data.publicUrl
-          }
-          alt="Highline Banner"
-          style={{
-            flex: 1,
-          }}
-          contentFit="cover"
-          cachePolicy="disk"
-        />
-        <View className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent justify-end p-4">
-          <Text className="text-white font-bold text-xl">{title}</Text>
-          <Text className="text-white/90 text-sm">{description}</Text>
-        </View>
-      </CardContent>
-    </Card>
-  </TouchableOpacity>
-);
 
 // const FeaturedSpot: React.FC = () => {
 //   return (
