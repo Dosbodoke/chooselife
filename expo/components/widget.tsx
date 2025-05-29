@@ -1,11 +1,6 @@
+import { Image } from 'expo-image';
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  Dimensions,
-  ImageBackground,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Dimensions, Pressable, Text, View } from 'react-native';
 import Animated, {
   interpolate,
   useAnimatedScrollHandler,
@@ -168,21 +163,26 @@ export default function AppleWidget({ items }: AppleWidgetProps) {
           },
         ]}
       >
-        <TouchableOpacity
+        <Pressable
           onPress={item.onPress}
           className="flex-1 w-full rounded-[20px] overflow-hidden shadow-2xl border-[0.5px] border-white/10"
+          style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
         >
           <Animated.View
             className="absolute inset-0"
             style={backgroundAnimatedStyle}
           >
-            <ImageBackground
+            <Image
               source={{ uri: item.background }}
-              className="flex-1 w-full h-full"
-              imageStyle={{ borderRadius: 20 }}
-            >
-              <View className="absolute inset-0 rounded-[20px]" />
-            </ImageBackground>
+              style={{
+                flex: 1,
+                width: '100%',
+                height: '100%',
+                borderRadius: 20,
+              }}
+              contentFit="cover"
+              cachePolicy="disk"
+            />
           </Animated.View>
 
           <View className="flex-1 p-6 justify-end z-10">
@@ -199,7 +199,7 @@ export default function AppleWidget({ items }: AppleWidgetProps) {
               </>
             )}
           </View>
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
     );
   };
@@ -235,7 +235,7 @@ export default function AppleWidget({ items }: AppleWidgetProps) {
         });
 
         return (
-          <TouchableOpacity
+          <Pressable
             key={index}
             onPress={() => scrollToIndex(index)}
             className="p-1.5"
@@ -244,7 +244,7 @@ export default function AppleWidget({ items }: AppleWidgetProps) {
               className="w-2 h-2 rounded-full"
               style={animatedDotStyle}
             />
-          </TouchableOpacity>
+          </Pressable>
         );
       })}
     </View>
