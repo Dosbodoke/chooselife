@@ -85,7 +85,7 @@ const TYPE_TABS: TypeTab[] = [
   {
     id: 'workshop',
     labelKey: 'app.(festival).index.events.types.workshops',
-    icon: '🎯',
+    icon: '🛠️',
   },
   {
     id: 'competition',
@@ -286,7 +286,7 @@ const useGroupedEvents = (filteredData: TScheduleData[]) => {
 // Components
 const EventTypeIcon: React.FC<{ type?: string }> = ({ type }) => {
   const iconMap: Record<string, string> = {
-    workshop: '🎯',
+    workshop: '🛠️',
     competition: '🏆',
   };
   return <Text className="text-base">{iconMap[type || ''] || '📅'}</Text>;
