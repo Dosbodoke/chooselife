@@ -40,13 +40,7 @@ export default function HomeScreen() {
           ]}
         />
 
-        {/* <BannerCard
-          title={t('app.(tabs).home.banner.title')}
-          description={t('app.(tabs).home.banner.description')}
-          onPress={() => router.push('/(festival)')}
-        /> */}
-
-        <View className="flex-1 px-4">
+        <View className="flex-1 px-4 mt-4">
           <View className="flex-row justify-around my-6">
             <Link asChild href="/setup-simulator">
               <QuickAction
