@@ -1,344 +1,34 @@
-import React, { useState } from 'react';
+import BottomSheet, {
+  BottomSheetBackdrop,
+  BottomSheetBackdropProps,
+  BottomSheetView,
+} from '@gorhom/bottom-sheet';
+import * as Notifications from 'expo-notifications';
+import AsyncStorage from 'expo-sqlite/kv-store';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { LinearTransition } from 'react-native-reanimated';
 
 import { useI18n } from '~/context/i18n';
 import { cn } from '~/lib/utils';
+import { scheduleData, TScheduleData } from '~/utils/festival-data';
 
 import { Card, CardContent } from '~/components/ui/card';
 import { Text } from '~/components/ui/text';
 
-type TScheduleData = {
-  id: number;
-  title: string;
-  instructor?: string;
-  startAt: string;
-  type?: 'workshop' | 'competition';
-  location?: string;
-  day?: string;
-};
-
-const scheduleData: TScheduleData[] = [
-  // Quinta-feira: 2025-06-19
-  {
-    id: 1,
-    title: 'Yoga e Respiração',
-    instructor: 'Micaela Franzel',
-    startAt: '08:00 - 09:00',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-19',
-  },
-  {
-    id: 2,
-    title: 'Altinha',
-    startAt: '09:30 - 10:30',
-    location: '🛠️🎤 Espaço Oficinas / Palco',
-    day: '2025-06-19',
-  },
-  {
-    id: 3,
-    title: 'LACAM - oficina de produtos canábicos',
-    instructor: 'Alisson Gabriel',
-    startAt: '11:00 - 12:30',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-19',
-  },
-  {
-    id: 4,
-    title: 'Espaço Cuidado - Acupuntura, Auriculoterapia, Ventosaterapia',
-    instructor: 'Nathalia Tavares',
-    startAt: '13:00 - 16:00',
-    type: 'workshop',
-    location: '🌿 Espaço Cuidado (Oficinas)',
-    day: '2025-06-19',
-  },
-  {
-    id: 5,
-    title: 'Roda de Conversa - Ouvidoria Delas',
-    startAt: '16:30 - 17:30',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-19',
-  },
-  {
-    id: 6,
-    title: 'Oficina de capoeira + Roda de Capoeira',
-    instructor: 'Angoleiros do Sertão',
-    startAt: '18:00 - 20:00',
-    type: 'workshop',
-    location: '🛠️🎤 Espaço Oficinas / Palco',
-    day: '2025-06-19',
-  },
-  {
-    id: 7,
-    title: 'Montagem Banda de Reggae',
-    startAt: '20:00 - 21:00',
-    location: '🎤 Palco',
-    day: '2025-06-19',
-  },
-  {
-    id: 8,
-    title: 'Show de Reggae',
-    startAt: '21:00 - 23:00',
-    location: '🎤 Palco',
-    day: '2025-06-19',
-  },
-  {
-    id: 9,
-    title: 'DJ',
-    startAt: '23:00',
-    location: '🎤 Palco',
-    day: '2025-06-19',
-  },
-
-  // Sexta-feira: 2025-06-20
-  {
-    id: 10,
-    title: 'Yoga',
-    instructor: 'Alice Amaral',
-    startAt: '08:00 - 09:00',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-20',
-  },
-  {
-    id: 11,
-    title: 'Pratique Movimento',
-    startAt: '09:30 - 10:30',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-20',
-  },
-  {
-    id: 12,
-    title: 'Corpos em Diálogo - Pontos de (des)equilibrio em duo',
-    instructor: 'Camila Ferreira',
-    startAt: '11:00 - 12:00',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-20',
-  },
-  {
-    id: 13,
-    title: 'Oficina de Tecer Mandalas em linhas',
-    instructor: 'Felipe Braga',
-    startAt: '14:00 - 15:00',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-20',
-  },
-  {
-    id: 14,
-    title: 'Massagem e Yoga',
-    instructor: 'Laís Cacciari',
-    startAt: '15:30 - 17:30',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-20',
-  },
-  {
-    id: 15,
-    title: 'Forró nas Alturas',
-    instructor: 'João Manoel da Silva Parreira',
-    startAt: '18:00 - 19:30',
-    location: '🎤 Palco',
-    day: '2025-06-20',
-  },
-  {
-    id: 16,
-    title: 'Oficina de Forró',
-    instructor: 'André Kenzo e Beatriz Furtado',
-    startAt: '20:00 - 21:00',
-    type: 'workshop',
-    location: '🛠️🎤 Espaço Oficinas / Palco',
-    day: '2025-06-20',
-  },
-  {
-    id: 17,
-    title: 'Forró',
-    startAt: '21:00',
-    location: '🎤 Palco',
-    day: '2025-06-20',
-  },
-
-  // Sábado: 2025-06-21
-  {
-    id: 18,
-    title: 'Yoga',
-    instructor: 'Bianca Machado + Lotus',
-    startAt: '08:00 - 09:00',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-21',
-  },
-  {
-    id: 19,
-    title: 'Elaboración de sahumerios artesanais - Aula de YOGA',
-    instructor: 'Verónica Daniela',
-    startAt: '09:30 - 10:30',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-21',
-  },
-  {
-    id: 20,
-    title: 'Crossfit Selva',
-    instructor: 'Wendy lee e Ruggeri',
-    startAt: '11:00 - 12:00',
-    type: 'workshop',
-    location: '🛠️🎤 Espaço Oficinas / Palco',
-    day: '2025-06-21',
-  },
-  {
-    id: 21,
-    title: 'Yoga',
-    instructor: 'Mariana Sarmento',
-    startAt: '12:30 - 13:30',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-21',
-  },
-  {
-    id: 22,
-    title: 'Yoga - Kemetic',
-    instructor: 'Ismael Afonso',
-    startAt: '15:00 - 16:00',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-21',
-  },
-  {
-    id: 23,
-    title: 'Oficina de Perna de Pau',
-    instructor: 'Giulia Largares',
-    startAt: '16:30 - 17:30',
-    type: 'workshop',
-    location: '🛠️🎤 Espaço Oficinas / Palco',
-    day: '2025-06-21',
-  },
-  {
-    id: 24,
-    title: 'Oficina de Bambolê',
-    instructor: 'Voarte',
-    startAt: '18:00 - 19:00',
-    type: 'workshop',
-    location: '🛠️🎤 Espaço Oficinas / Palco',
-    day: '2025-06-21',
-  },
-  {
-    id: 25,
-    title: 'Alongamento Dinâmico',
-    instructor: 'Ana Luisa Amaral',
-    startAt: '19:30 - 20:30',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-21',
-  },
-  {
-    id: 26,
-    title: 'Cerimônia de premiação das modalidades e Rifa',
-    startAt: '21:00 - 23:00',
-    location: '🎤 Palco',
-    day: '2025-06-21',
-  },
-  {
-    id: 27,
-    title: 'Batalha de Rima',
-    startAt: '23:00 - 00:00',
-    type: 'competition',
-    location: '🎤 Palco',
-    day: '2025-06-21',
-  },
-  {
-    id: 28,
-    title: 'BAILE DO CHOOSE + performance coletivo YABAS (fogo)',
-    instructor: 'Ana Luisa Amaral (performance YABAS)',
-    startAt: '00:00',
-    location: '🎤 Palco',
-    day: '2025-06-21',
-  },
-
-  // Domingo: 2025-06-22
-  {
-    id: 29,
-    title: 'Yoga - Ashtanga Vinyasa e Parada de Mão',
-    instructor: 'Luciana Casares Yoga 2',
-    startAt: '08:00 - 09:00',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-22',
-  },
-  {
-    id: 30,
-    title: 'Soundhealing',
-    instructor: 'Lotus Branca e Sara',
-    startAt: '09:30 - 10:30',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-22',
-  },
-  {
-    id: 31,
-    title: 'Oficina de Jiu Jitsu e noções de defesa pessoal',
-    instructor: 'Gabriel Schardong',
-    startAt: '11:00 - 12:30',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-22',
-  },
-  {
-    id: 32,
-    title: 'Acrobacia em dupla/grupo',
-    instructor: 'Matheus Kamla',
-    startAt: '14:00 - 15:00',
-    type: 'workshop',
-    location: '🛠️🎤 Espaço Oficinas / Palco',
-    day: '2025-06-22',
-  },
-  {
-    id: 33,
-    title: 'Yoga + Sound healing',
-    instructor: 'Bianca + Lotus branca e Sara',
-    startAt: '15:30 - 16:30',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-22',
-  },
-  {
-    id: 34,
-    title: 'Oficina de Massagem e Automassagem',
-    instructor: 'Ariadne',
-    startAt: '17:00 - 18:30',
-    type: 'workshop',
-    location: '🛠️ Espaço Oficinas',
-    day: '2025-06-22',
-  },
-  {
-    id: 35,
-    title: 'Cinema de Bolso',
-    instructor: 'Maria Flávia Borgonovi Pachá',
-    startAt: '19:00 - 21:00',
-    location: '🛠️🎤 Espaço Oficinas / Palco',
-    day: '2025-06-22',
-  },
-  {
-    id: 36,
-    title: 'Sessão de Cinema',
-    startAt: '21:00 - 00:00',
-    location: '🛠️🎤 Espaço Oficinas / Palco',
-    day: '2025-06-22',
-  },
-];
-
 const dayTabs = [
-  { id: 'all', label: 'Todos', icon: '📅' },
-  { id: '2025-06-19', label: 'Quinta', icon: '📅' },
-  { id: '2025-06-20', label: 'Sexta', icon: '📅' },
-  { id: '2025-06-21', label: 'Sábado', icon: '📅' },
-  { id: '2025-06-22', label: 'Domingo', icon: '📅' },
+  { id: 'all', label: 'Todos' },
+  { id: '2025-06-19', label: 'Quinta' },
+  { id: '2025-06-20', label: 'Sexta' },
+  { id: '2025-06-21', label: 'Sábado' },
+  { id: '2025-06-22', label: 'Domingo' },
 ] as const;
 
 const typeTabs = [
@@ -348,6 +38,10 @@ const typeTabs = [
 
 const DAMPING = 80;
 export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
+
+// AsyncStorage keys
+const FAVORITES_STORAGE_KEY = '@event_favorites';
+const TUTORIAL_SHOWN_KEY = '@tutorial_shown';
 
 // Helper function to format date display
 const formatDateDisplay = (dateString: string) => {
@@ -375,14 +69,115 @@ const getCurrentDay = () => {
   return availableDays.includes(currentDateString) ? currentDateString : 'all';
 };
 
+// Helper function to parse event time and create notification date
+const getNotificationDate = (eventDay: string, startTime: string) => {
+  const [year, month, day] = eventDay.split('-').map(Number);
+  const timeMatch = startTime.match(/(\d{1,2}):(\d{2})/);
+
+  if (!timeMatch) return null;
+
+  const [, hours, minutes] = timeMatch;
+  const eventDate = new Date(
+    year,
+    month - 1,
+    day,
+    parseInt(hours),
+    parseInt(minutes),
+  );
+
+  // Subtract 1 hour for notification
+  const notificationDate = new Date(eventDate.getTime() - 60 * 60 * 1000);
+
+  // Don't schedule notifications for past events
+  if (notificationDate < new Date()) return null;
+
+  return notificationDate;
+};
+
 export default function EventsPage() {
   const [activeDay, setActiveDay] = useState<string>(getCurrentDay());
   const [activeType, setActiveType] = useState<
     (typeof typeTabs)[number]['id'] | null
   >(null);
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [isLoading, setIsLoading] = useState(true);
 
   const { t } = useTranslation();
   const { locale } = useI18n();
+
+  // Load favorites from AsyncStorage on component mount
+  useEffect(() => {
+    loadFavorites();
+  }, []);
+
+  const loadFavorites = async () => {
+    try {
+      const storedFavorites = await AsyncStorage.getItem(FAVORITES_STORAGE_KEY);
+      if (storedFavorites) {
+        const favoritesArray = JSON.parse(storedFavorites);
+        setFavorites(new Set(favoritesArray));
+      }
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveFavorites = async (newFavorites: Set<number>) => {
+    try {
+      const favoritesArray = Array.from(newFavorites);
+      await AsyncStorage.setItem(
+        FAVORITES_STORAGE_KEY,
+        JSON.stringify(favoritesArray),
+      );
+    } catch (error) {
+      console.error('Error saving favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async (eventId: number, eventData: TScheduleData) => {
+    const newFavorites = new Set(favorites);
+
+    if (favorites.has(eventId)) {
+      // Remove from favorites and cancel notification
+      newFavorites.delete(eventId);
+      await Notifications.cancelScheduledNotificationAsync(eventId.toString());
+    } else {
+      // Add to favorites and schedule notification
+      newFavorites.add(eventId);
+
+      if (eventData.day) {
+        const notificationDate = getNotificationDate(
+          eventData.day,
+          eventData.startAt,
+        );
+
+        if (notificationDate) {
+          await Notifications.scheduleNotificationAsync({
+            identifier: eventId.toString(),
+            content: {
+              title: 'Evento em breve! ⭐',
+              body: `${eventData.title} começará às ${eventData.startAt}${eventData.location ? ` em ${eventData.location}` : ''}`,
+            },
+            trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.DATE,
+              date: notificationDate,
+            },
+          });
+
+          Alert.alert(
+            'Adicionado aos Favoritos! ⭐',
+            `Você receberá uma notificação 1 hora antes de "${eventData.title}" começar.`,
+            [{ text: 'Choose Life' }],
+          );
+        }
+      }
+    }
+
+    setFavorites(newFavorites);
+    await saveFavorites(newFavorites);
+  };
 
   const filteredData = scheduleData.filter((item) => {
     const dayMatch = activeDay === 'all' || item.day === activeDay;
@@ -406,10 +201,18 @@ export default function EventsPage() {
   // Sort the days
   const sortedDays = Object.keys(groupedByDay).sort();
 
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center">
+        <Text className="text-lg text-gray-600">Carregando eventos...</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <>
-      <SafeAreaView className="flex-1 pt-8">
-        <ScrollView contentContainerClassName="pt-8">
+      <SafeAreaView className="flex-1 pt-6">
+        <ScrollView>
           {/* Day Filter Tabs */}
           <View className="px-4 mb-4">
             <Text className="text-lg font-semibold mb-3 text-gray-900">
@@ -428,7 +231,7 @@ export default function EventsPage() {
                         : 'bg-white border-gray-300',
                     )}
                   >
-                    <Text className="text-sm mr-1">{tab.icon}</Text>
+                    <Text className="text-sm mr-1">📅</Text>
                     <Text
                       className={cn(
                         'text-sm font-medium',
@@ -496,7 +299,12 @@ export default function EventsPage() {
                   </View>
                   <View className="gap-4 mb-6">
                     {groupedByDay[day].map((data) => (
-                      <ScheduleCard key={data.id} data={data} />
+                      <ScheduleCard
+                        key={data.id}
+                        data={data}
+                        isFavorite={favorites.has(data.id)}
+                        onToggleFavorite={() => toggleFavorite(data.id, data)}
+                      />
                     ))}
                   </View>
                 </View>
@@ -505,18 +313,30 @@ export default function EventsPage() {
               // Show only selected day
               <View className="gap-4">
                 {filteredData.map((data) => (
-                  <ScheduleCard key={data.id} data={data} />
+                  <ScheduleCard
+                    key={data.id}
+                    data={data}
+                    isFavorite={favorites.has(data.id)}
+                    onToggleFavorite={() => toggleFavorite(data.id, data)}
+                  />
                 ))}
               </View>
             )}
           </View>
         </ScrollView>
       </SafeAreaView>
+
+      {/* Tutorial Bottom Sheet */}
+      <BottomSheetTutorial />
     </>
   );
 }
 
-export const ScheduleCard: React.FC<{ data: TScheduleData }> = ({ data }) => {
+export const ScheduleCard: React.FC<{
+  data: TScheduleData;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
+}> = ({ data, isFavorite, onToggleFavorite }) => {
   const getTypeColor = (type?: string) => {
     switch (type) {
       case 'workshop':
@@ -542,13 +362,13 @@ export const ScheduleCard: React.FC<{ data: TScheduleData }> = ({ data }) => {
   return (
     <Card className="bg-white shadow-sm border border-gray-200">
       <CardContent className="p-3">
-        {/* Header with time and type */}
+        {/* Header with time, type, and favorite button */}
         <View className="flex-row justify-between items-start mb-2">
-          <View className="flex-row items-center">
+          <View className="flex-row items-center flex-1">
             <View className="w-10 h-10 bg-blue-50 rounded-lg items-center justify-center mr-3">
               <Text className="text-base">{getTypeIcon(data.type)}</Text>
             </View>
-            <View>
+            <View className="flex-1">
               <Text className="text-base font-bold text-blue-600">
                 {data.startAt}
               </Text>
@@ -556,18 +376,34 @@ export const ScheduleCard: React.FC<{ data: TScheduleData }> = ({ data }) => {
             </View>
           </View>
 
-          {data.type && (
-            <View
+          <View className="flex-row items-center gap-2">
+            {/* Type Badge */}
+            {data.type && (
+              <View
+                className={cn(
+                  'px-2 py-1 rounded-full border',
+                  getTypeColor(data.type),
+                )}
+              >
+                <Text className="text-xs font-medium capitalize">
+                  {data.type}
+                </Text>
+              </View>
+            )}
+
+            {/* Favorite Button */}
+            <TouchableOpacity
+              onPress={onToggleFavorite}
               className={cn(
-                'px-2 py-1 rounded-full border',
-                getTypeColor(data.type),
+                'w-10 h-10 rounded-full items-center justify-center',
+                isFavorite
+                  ? 'bg-amber-100 border-2 border-amber-300'
+                  : 'bg-gray-100 border-2 border-gray-200',
               )}
             >
-              <Text className="text-xs font-medium capitalize">
-                {data.type}
-              </Text>
-            </View>
-          )}
+              <Text className="text-lg">{isFavorite ? '⭐' : '☆'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Title */}
@@ -597,5 +433,116 @@ export const ScheduleCard: React.FC<{ data: TScheduleData }> = ({ data }) => {
         </View>
       </CardContent>
     </Card>
+  );
+};
+
+const BottomSheetTutorial: React.FC = () => {
+  const bottomSheetRef = useRef<BottomSheet>(null);
+
+  useEffect(() => {
+    const checkAndShowTutorial = async () => {
+      try {
+        const tutorialShown = await AsyncStorage.getItem(TUTORIAL_SHOWN_KEY);
+        if (!tutorialShown) {
+          // Show tutorial after a small delay
+          setTimeout(() => {
+            bottomSheetRef.current?.expand();
+          }, 1000);
+        }
+      } catch (error) {
+        console.error('Error checking tutorial status:', error);
+      }
+    };
+
+    checkAndShowTutorial();
+  }, []);
+
+  const markTutorialAsShown = async () => {
+    try {
+      await AsyncStorage.setItem(TUTORIAL_SHOWN_KEY, 'true');
+    } catch (error) {
+      console.error('Error marking tutorial as shown:', error);
+    }
+  };
+
+  const handleCloseTutorial = useCallback(() => {
+    bottomSheetRef.current?.close();
+    markTutorialAsShown();
+  }, []);
+
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        pressBehavior="close"
+      />
+    ),
+    [],
+  );
+
+  return (
+    <BottomSheet
+      ref={bottomSheetRef}
+      index={-1}
+      enablePanDownToClose={true}
+      backdropComponent={renderBackdrop}
+      backgroundStyle={{ backgroundColor: '#f8fafc' }}
+      handleIndicatorStyle={{ backgroundColor: '#64748b' }}
+    >
+      <BottomSheetView className="flex-1 px-6 py-4 pb-8 gap-6">
+        <View className="items-center">
+          <View className="w-16 h-16 bg-amber-100 rounded-full items-center justify-center mb-4">
+            <Text className="text-3xl">⭐</Text>
+          </View>
+          <Text className="text-xl font-bold text-gray-900 text-center mb-2">
+            A gente sabe que você é Choosado
+          </Text>
+          <Text className="text-sm text-gray-600 text-center">
+            Use o APP para te ajudar a lembrar dos eventos.
+          </Text>
+        </View>
+
+        <View className="gap-4 mb-6">
+          <View className="flex-row items-start gap-3">
+            <View className="w-8 h-8 bg-blue-100 rounded-full items-center justify-center mt-1">
+              <Text className="text-base">⭐</Text>
+            </View>
+            <View className="flex-1">
+              <Text className="font-semibold text-gray-900 mb-1">
+                Marque como favorito
+              </Text>
+              <Text className="text-sm text-gray-600">
+                Toque na estrela ao lado de qualquer evento para adicioná-lo aos
+                seus favoritos.
+              </Text>
+            </View>
+          </View>
+
+          <View className="flex-row items-start gap-3">
+            <View className="w-8 h-8 bg-green-100 rounded-full items-center justify-center mt-1">
+              <Text className="text-base">🔔</Text>
+            </View>
+            <View className="flex-1">
+              <Text className="font-semibold text-gray-900 mb-1">
+                Receba notificações
+              </Text>
+              <Text className="text-sm text-gray-600">
+                Você será notificado 1 hora antes do evento começar, para não
+                perder nada!
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          onPress={handleCloseTutorial}
+          className="bg-blue-600 rounded-lg py-3 px-6 items-center"
+        >
+          <Text className="text-white font-semibold">Entendi!</Text>
+        </TouchableOpacity>
+      </BottomSheetView>
+    </BottomSheet>
   );
 };
