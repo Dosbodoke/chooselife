@@ -14,7 +14,7 @@ import { EventCard, EventCardSkeleton } from '~/components/event-card';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { Card, CardContent } from '~/components/ui/card';
 import { Text } from '~/components/ui/text';
-import AppleWidget from '~/components/widget';
+import { Widget } from '~/components/widget';
 
 const DAMPING = 80;
 export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
@@ -26,7 +26,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaOfflineView>
       <ScrollView>
-        <AppleWidget
+        <Widget
           items={[
             {
               id: 'chooselife',
