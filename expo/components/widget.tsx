@@ -12,7 +12,7 @@ const { width: screenWidth } = Dimensions.get('window');
 const CARD_WIDTH = screenWidth - 16; // Adjust for padding and dots
 const CARD_SPACING = 16; // Add spacing between cards
 
-interface AppleWidgetItem {
+interface WidgetItem {
   id: string;
   title: string;
   subtitle?: string;
@@ -21,11 +21,11 @@ interface AppleWidgetItem {
   onPress?: () => void;
 }
 
-interface AppleWidgetProps {
-  items: AppleWidgetItem[];
+interface WidgetProps {
+  items: WidgetItem[];
 }
 
-export default function AppleWidget({ items }: AppleWidgetProps) {
+export function Widget({ items }: WidgetProps) {
   const scrollViewRef = useRef<Animated.ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollX = useSharedValue(0);
@@ -107,7 +107,7 @@ export default function AppleWidget({ items }: AppleWidgetProps) {
     }
   };
 
-  const renderItem = (item: AppleWidgetItem, index: number) => {
+  const renderItem = (item: WidgetItem, index: number) => {
     const animatedStyle = useAnimatedStyle(() => {
       const inputRange = [
         (index - 1) * (CARD_WIDTH + CARD_SPACING),
