@@ -14,7 +14,7 @@ export default function HighlinesPage() {
 
   return (
     <SafeAreaView className="flex-1 pt-6">
-      <ScrollView>
+      <ScrollView className="bg-gray-50">
         <View className="px-4 pt-6 gap-4">
           {festivalHighlines.map((high) => (
             <HighlineMapCard
