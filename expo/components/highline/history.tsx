@@ -37,14 +37,6 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
     highlineID: highline.id,
   });
 
-  const handleNavigation = (route: string, requiresAuth = true) => {
-    if (requiresAuth && !session?.user) {
-      router.push(`/(modals)/login?redirect_to=${route}`);
-      return;
-    }
-    router.push(route);
-  };
-
   const actionButton = useMemo(() => {
     const baseRoute = `/highline/${highline.id}/rig` as const;
 
@@ -80,7 +72,11 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
               router.setParams({ setupID: latestSetup.id });
               return;
             }
-            handleNavigation(baseRoute);
+            if (!session?.user) {
+              router.push(`/(modals)/login?redirect_to=${baseRoute}`);
+              return;
+            }
+            router.push(baseRoute);
           }}
         />
       );
@@ -90,7 +86,13 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
       <ActionButton
         text={t('components.highline.history.action.rig')}
         color="text-blue-500"
-        onPress={() => handleNavigation(baseRoute)}
+        onPress={() => {
+          if (!session?.user) {
+            router.push(`/(modals)/login?redirect_to=${baseRoute}`);
+            return;
+          }
+          router.push(baseRoute);
+        }}
       />
     );
   }, [latestSetup, session, router, highline.id, t]);
