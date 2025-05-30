@@ -126,13 +126,11 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
       </CardContent>
 
       {/* Card Footer with Action Button */}
-      <View className="px-6 py-4 border-t border-border">
-        {isPending ? (
-          <Skeleton className="w-full h-10 rounded-md" />
-        ) : (
-          actionButton
-        )}
-      </View>
+      {isPending ? (
+        <Skeleton className="w-full h-10 rounded-md px-6 py-4 border-t border-border" />
+      ) : (
+        actionButton
+      )}
     </Card>
   );
 };
@@ -143,7 +141,7 @@ const ActionButton: React.FC<{
   onPress: () => void;
 }> = ({ text, color, onPress }) => (
   <TouchableOpacity
-    className="w-full rounded-lg active:bg-muted"
+    className="px-6 py-4 border-t border-border w-full rounded-lg active:bg-muted"
     onPress={onPress}
     activeOpacity={0.7}
   >
