@@ -233,18 +233,47 @@
         }
       },
       "rig": {
+        "typeSelection": {
+          "title": "How would you like to proceed?",
+          "description": "Choose whether to rig the highline now or plan it for later",
+          "immediate": {
+            "title": "Rig Now",
+            "description": "Set up the highline immediately"
+          },
+          "plan": {
+            "title": "Plan for Later",
+            "description": "Schedule the rig for a future date"
+          }
+        },
         "success": {
-          "title": "BOA CHOOSEN",
-          "subtitle": "🆑 🆑 🆑 🆑 🆑",
-          "message": "A montagem está planejada para {{date}}, você pode voltar e fazer modificações quando precisar.",
-          "button": "Ver o Highline"
+          "rigged": {
+            "title": "Highline Montado!",
+            "subtitle": "🆑 🆑 🆑 🆑 🆑",
+            "message": "O Highline foi agora irá aparecer como montado."
+          },
+          "planned": {
+            "title": "Montagem Planejada!",
+            "subtitle": "📅",
+            "message": "A montagem está planejada para {{date}}, você pode voltar e fazer modificações quando precisar."
+          }
         },
         "dateForm": {
-          "title": "Primeiro, escolha uma data",
-          "description": "O dia que a missão irá acontecer"
+          "immediate": {
+            "title": "Confirm Current Setup",
+            "description": "You're rigging the highline right now"
+          },
+          "plan": {
+            "title": "Quando você planeja montar?",
+            "description": "Escolha o dia que a missão irá acontecer"
+          }
         },
         "navigator": {
-          "finishLabel": "Planejar montagem"
+          "rigNow": "Montar",
+          "planRig": "Planejar montagem"
+        },
+        "optional": {
+          "title": "Setup da Fita (Opcional)",
+          "description": "You can rig now without detailed webbing info and add it later."
         }
       }
     },
