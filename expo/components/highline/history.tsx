@@ -37,11 +37,22 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
     highlineID: highline.id,
   });
 
+  const handleNavigation = (route: string, requiresAuth = true) => {
+    if (requiresAuth && !session?.user) {
+      router.push(`/(modals)/login?redirect_to=${route}`);
+      return;
+    }
+    router.push(route);
+  };
+
   const actionButton = useMemo(() => {
+    const baseRoute = `/highline/${highline.id}/rig` as const;
+
     if (latestSetup?.is_rigged) {
       return (
-        <TouchableOpacity
-          className="p-1"
+        <ActionButton
+          text={t('components.highline.history.action.unrig')}
+          color="text-red-500"
           onPress={() => {
             if (!session?.user) {
               router.push(`/(modals)/login`);
@@ -49,22 +60,19 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
             }
             router.setParams({ setupID: latestSetup.id });
           }}
-        >
-          <Text className="text-base font-semibold text-red-500">
-            {t('components.highline.history.action.unrig')}
-          </Text>
-        </TouchableOpacity>
+        />
       );
     }
 
     if (latestSetup?.rig_date && !latestSetup.unrigged_at) {
+      const isRigDatePast = new Date(latestSetup.rig_date) < new Date();
+
       return (
-        <TouchableOpacity
-          className="p-1"
+        <ActionButton
+          text={t('components.highline.history.action.edit')}
+          color="text-amber-500"
           onPress={() => {
-            // If rig date is in the past, show modal so the user can confirm if the highline was rigged
-            const now = new Date();
-            if (new Date(latestSetup.rig_date) < now) {
+            if (isRigDatePast) {
               if (!session?.user) {
                 router.push(`/(modals)/login`);
                 return;
@@ -72,77 +80,106 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
               router.setParams({ setupID: latestSetup.id });
               return;
             }
-            const route = `/highline/${highline.id}/rig` as const;
-            if (!session?.user) {
-              router.push(`/(modals)/login?redirect_to=${route}`);
-              return;
-            }
-            // Otherwise, go to the rig page so the user can edit it.
-            router.push(route);
+            handleNavigation(baseRoute);
           }}
-        >
-          <Text className="text-base font-semibold text-amber-500">
-            {t('components.highline.history.action.edit')}
-          </Text>
-        </TouchableOpacity>
+        />
       );
     }
 
     return (
-      <TouchableOpacity
-        className="p-1"
-        onPress={() => {
-          const route = `/highline/${highline.id}/rig` as const;
-          if (!session?.user) {
-            router.push(`/(modals)/login?redirect_to=${route}`);
-            return;
-          }
-          router.push(route);
-        }}
-      >
-        <Text className="text-base font-semibold text-blue-500">
-          {t('components.highline.history.action.rig')}
-        </Text>
-      </TouchableOpacity>
+      <ActionButton
+        text={t('components.highline.history.action.rig')}
+        color="text-blue-500"
+        onPress={() => handleNavigation(baseRoute)}
+      />
     );
   }, [latestSetup, session, router, highline.id, t]);
 
   return (
     <Card>
-      <CardHeader>
-        <View className="flex-row justify-between items-center">
-          <CardTitle>{t('components.highline.history.title')}</CardTitle>
-          {isPending ? <Skeleton className="w-16 h-4" /> : actionButton}
-        </View>
-        <CardDescription>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-xl font-bold mb-1">
+          {t('components.highline.history.title')}
+        </CardTitle>
+        <CardDescription className="text-sm">
           {t('components.highline.history.description')}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+
+      <CardContent className="pt-0 pb-0">
         {isPending ? (
-          <>
-            {Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} className="h-4 w-full mb-3" />
-            ))}
-          </>
+          <LoadingSkeleton />
         ) : data && data.length > 0 ? (
-          data.map((setup, index) => (
-            <TimelineItem
-              key={setup.id}
-              setup={setup}
-              isLast={index === data.length - 1}
-              isFirst={index === 0}
-            />
-          ))
+          <View className="space-y-2">
+            {data.map((setup, index) => (
+              <TimelineItem
+                key={setup.id}
+                setup={setup}
+                isLast={index === data.length - 1}
+                isFirst={index === 0}
+              />
+            ))}
+          </View>
         ) : (
-          <Text className="text-muted-foreground">
-            {t('components.highline.history.empty')}
-          </Text>
+          <EmptyState text={t('components.highline.history.empty')} />
         )}
       </CardContent>
+
+      {/* Card Footer with Action Button */}
+      <View className="px-6 py-4 border-t border-border">
+        {isPending ? (
+          <Skeleton className="w-full h-10 rounded-md" />
+        ) : (
+          actionButton
+        )}
+      </View>
     </Card>
   );
 };
+
+const ActionButton: React.FC<{
+  text: string;
+  color: string;
+  onPress: () => void;
+}> = ({ text, color, onPress }) => (
+  <TouchableOpacity
+    className="w-full rounded-lg active:bg-muted"
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <Text className={cn('text-base font-semibold text-center', color)}>
+      {text}
+    </Text>
+  </TouchableOpacity>
+);
+
+const LoadingSkeleton: React.FC = () => (
+  <View className="gap-4 my-4">
+    {Array.from({ length: 3 }).map((_, index) => (
+      <View key={index} className="flex-row gap-3">
+        <View className="items-center">
+          <Skeleton className="size-3 rounded-full" />
+        </View>
+        <View className="flex-1 gap-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
+          <View className="flex-row gap-1">
+            <Skeleton className="size-9 rounded-full" />
+            <Skeleton className="size-9 rounded-full" />
+            <Skeleton className="size-9 rounded-full" />
+          </View>
+        </View>
+      </View>
+    ))}
+  </View>
+);
+
+const EmptyState: React.FC<{ text: string }> = ({ text }) => (
+  <View className="py-8 items-center">
+    <LucideIcon name="Frown" className="text-muted-foreground size-12 mb-3" />
+    <Text className="text-muted-foreground text-center text-base">{text}</Text>
+  </View>
+);
 
 const TimelineItem: React.FC<{
   setup: Setup[number];
@@ -151,120 +188,153 @@ const TimelineItem: React.FC<{
 }> = ({ setup, isLast, isFirst }) => {
   const { t } = useTranslation();
   const rigDate = new Date(setup.rig_date);
-  let status: RigStatuses = 'unrigged';
-  let content: React.ReactNode = null;
 
-  const dotStyle: Record<RigStatuses, string> = {
-    planned: 'bg-amber-300',
-    rigged: 'bg-green-500',
-    unrigged: 'bg-muted border border-muted-foreground',
+  const getTimelineData = () => {
+    if (setup.is_rigged) {
+      return {
+        status: 'rigged' as RigStatuses,
+        content: (
+          <TimelineContent
+            label={t('components.highline.history.timeline.riggedSince')}
+            date={rigDate.toLocaleDateString('pt-BR')}
+          />
+        ),
+      };
+    }
+
+    if (setup.unrigged_at) {
+      return {
+        status: 'unrigged' as RigStatuses,
+        content: (
+          <TimelineContent
+            label={t('components.highline.history.timeline.from')}
+            date={rigDate.toLocaleDateString('pt-BR')}
+            endLabel={t('components.highline.history.timeline.to')}
+            endDate={new Date(setup.unrigged_at).toLocaleDateString('pt-BR')}
+          />
+        ),
+      };
+    }
+
+    return {
+      status: 'planned' as RigStatuses,
+      content: (
+        <TimelineContent
+          label={t('components.highline.history.timeline.plannedFor')}
+          date={rigDate.toLocaleDateString('pt-BR')}
+        />
+      ),
+    };
   };
 
-  if (setup.is_rigged) {
-    status = 'rigged';
-    content = (
-      <>
-        <Text className="text-primary font-semibold text-lg">
-          {t('components.highline.history.timeline.riggedSince')}
-        </Text>
-        <CalendarBadge date={rigDate.toLocaleDateString('pt-BR')} />
-      </>
-    );
-  } else if (setup.unrigged_at) {
-    status = 'unrigged';
-    content = (
-      <>
-        <Text className="text-primary font-semibold text-lg">
-          {t('components.highline.history.timeline.from')}
-        </Text>
-        <CalendarBadge date={rigDate.toLocaleDateString('pt-BR')} />
-        <Text className="text-primary font-semibold text-lg">
-          {t('components.highline.history.timeline.to')}
-        </Text>
-        <CalendarBadge
-          date={new Date(setup.unrigged_at).toLocaleDateString('pt-BR')}
-        />
-      </>
-    );
-  } else {
-    status = 'planned';
-    content = (
-      <>
-        <Text className="text-primary font-semibold text-lg">
-          {t('components.highline.history.timeline.plannedFor')}
-        </Text>
-        <CalendarBadge date={rigDate.toLocaleDateString('pt-BR')} />
-      </>
-    );
-  }
+  const { status, content } = getTimelineData();
+
+  const dotStyles: Record<RigStatuses, string> = {
+    planned: 'bg-amber-400 border-amber-200',
+    rigged: 'bg-green-500 border-green-200',
+    unrigged: 'bg-muted border-muted-foreground',
+  };
 
   return (
-    <View className="flex-row gap-2">
-      <View className="items-center">
+    <View className="flex-row gap-3 pb-6">
+      {/* Timeline connector */}
+      <View className="items-center w-6">
         <View
-          className={cn('h-2 w-1', isFirst ? 'bg-transparent' : 'bg-gray-200')}
+          className={cn('h-3 w-0.5', isFirst ? 'bg-transparent' : 'bg-border')}
         />
-        <View className={cn('size-3 rounded-full', dotStyle[status])} />
-        {!isLast && <View className="flex-1 w-1 bg-gray-200" />}
+        <View
+          className={cn('size-3 rounded-full border-2', dotStyles[status])}
+        />
+        {!isLast && <View className="flex-1 w-0.5 bg-border mt-1" />}
       </View>
 
-      <View className="pb-6 gap-4">
-        <View className="flex-row flex-wrap gap-2 items-center">{content}</View>
+      {/* Content */}
+      <View className="flex-1 pt-0.5">
+        <View className="mb-3">{content}</View>
         <Riggers riggers={setup.riggers} />
       </View>
     </View>
   );
 };
 
+const TimelineContent: React.FC<{
+  label: string;
+  date: string;
+  endLabel?: string;
+  endDate?: string;
+}> = ({ label, date, endLabel, endDate }) => (
+  <View className="space-y-2">
+    <View className="flex-row flex-wrap gap-2 items-center">
+      <Text className="text-foreground font-semibold text-base">{label}</Text>
+      <CalendarBadge date={date} />
+    </View>
+    {endLabel && endDate && (
+      <View className="flex-row flex-wrap gap-2 items-center">
+        <Text className="text-foreground font-semibold text-base">
+          {endLabel}
+        </Text>
+        <CalendarBadge date={endDate} />
+      </View>
+    )}
+  </View>
+);
+
 export const Riggers: React.FC<{ riggers: string[] }> = ({ riggers }) => {
-  // We'll display the first 5 riggers as individual avatars.
   const displayIds = riggers.slice(0, 5);
-  // If there are more than 5, compute how many remain.
   const extraCount = riggers.length > 5 ? riggers.length - 5 : 0;
 
-  return (
-    <View className="flex-row">
-      {displayIds.map((id, index) => {
-        const marginStyle = { marginLeft: index === 0 ? 0 : -6 };
+  if (riggers.length === 0) {
+    return (
+      <View className="flex-row items-center gap-2">
+        <LucideIcon name="Users" className="text-muted-foreground size-4" />
+        <Text className="text-muted-foreground text-sm">
+          No riggers assigned
+        </Text>
+      </View>
+    );
+  }
 
-        return (
+  return (
+    <View className="flex-row items-center">
+      <View className="flex-row mr-2">
+        {displayIds.map((id, index) => (
           <View
             key={id}
-            style={marginStyle}
-            className="border border-background rounded-full"
+            style={{ marginLeft: index === 0 ? 0 : -8 }}
+            className="border-2 border-background rounded-full shadow-sm"
           >
             <View className="relative overflow-hidden size-9">
               <SupabaseAvatar profileID={id} />
             </View>
           </View>
-        );
-      })}
+        ))}
 
-      {/* If there are extra riggers, render an extra circle with the count */}
-      {extraCount > 0 && (
-        <View
-          className="flex items-center justify-center rounded-full bg-muted size-9 border border-background"
-          style={{ marginLeft: -6 }}
-        >
-          <Text className="text-xs font-bold">+{extraCount}</Text>
-        </View>
-      )}
+        {extraCount > 0 && (
+          <View
+            className="flex items-center justify-center rounded-full bg-muted size-9 border-2 border-background shadow-sm"
+            style={{ marginLeft: -8 }}
+          >
+            <Text className="text-xs font-bold text-muted-foreground">
+              +{extraCount}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      <Text className="text-muted-foreground text-sm">
+        {riggers.length} rigger{riggers.length !== 1 ? 's' : ''}
+      </Text>
     </View>
   );
 };
 
 const CalendarBadge: React.FC<{ date: string }> = ({ date }) => (
-  <View
-    style={{
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.25,
-      shadowRadius: 0.1,
-      elevation: 5,
-    }}
-    className="flex-row gap-1 items-center bg-muted border-border rounded-sm px-2"
-  >
-    <LucideIcon name="CalendarRange" className="text-muted-foreground size-4" />
-    <Text className="text-muted-foreground font-semibold">{date}</Text>
+  <View className="flex-row gap-1.5 items-center bg-muted/50 border border-border rounded-lg px-2.5 py-1.5 shadow-sm">
+    <LucideIcon
+      name="CalendarRange"
+      className="text-muted-foreground"
+      size={14}
+    />
+    <Text className="text-muted-foreground font-medium text-sm">{date}</Text>
   </View>
 );
