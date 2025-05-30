@@ -3,6 +3,18 @@ export const endDate = new Date("2025-06-22");
 export const highlinesID = [
   "162394aa-0653-4b6f-b78a-612bb2697a03",
   "636b62f3-872f-4e18-9df2-3e9645606d62",
+  "71f1c6cb-d143-4045-9e56-124c16f816f1",
+  "2c770cf7-de3f-4a37-b6ad-038d6c652143",
+  "a5b66ee3-eb74-4e89-93db-1bc2e99f0862",
+  "814a8fd1-b94d-4da9-9685-34cd224a6e80",
+  "180dc7ea-414b-4346-afb8-2171567877fc",
+  "01b16bef-5557-494a-a41a-98fe7cbcbbb8",
+  "778481da-b694-495e-93bd-9eaa7bef7693",
+  "00e4b92f-157c-4257-8e14-eb706e686bea",
+  "fccad60b-f8b1-43ae-a013-2427c06ca188",
+  "c05dde8f-bed8-4ae0-8a7b-cea9377af714",
+  "172d2d4b-7cbf-454c-992d-633b7b8e047d",
+  "fb915269-975f-4788-a337-6c9b48997eb4",
 ];
 
 export type TScheduleData = {
