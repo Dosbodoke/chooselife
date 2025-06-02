@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.14.0";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2.49.8";
 import { corsHeaders } from "../_shared/cors.ts";
 
 console.log(`Function "user-self-deletion" up and running!`);
@@ -29,11 +30,10 @@ Deno.serve(async (req: Request) => {
       data: { user },
     } = await supabaseClient.auth.getUser();
     // And we can run queries in the context of our authenticated user
-    const { data: profiles, error: userError } = await supabaseClient.from(
+    const { data: profiles, error: profileError } = await supabaseClient.from(
       "profiles",
-    ).select("id, profile_picture");
-    if (userError) throw userError;
-    const user_id = profiles[0].id;
+    ).select("id, profile_picture").eq("id", user?.id);
+    if (!user || profileError) throw profileError;
 
     // Create the admin client to delete files & user with the Admin API.
     const supabaseAdmin = createClient(
@@ -76,9 +76,9 @@ Deno.serve(async (req: Request) => {
 
     // Delete the USER using the auth API
     const { data: deletion_data, error: deletion_error } = await supabaseAdmin
-      .auth.admin.deleteUser(user_id);
+      .auth.admin.deleteUser(user.id);
     if (deletion_error) throw deletion_error;
-    console.log("User & files deleted user_id: " + user_id);
+    console.log("User & files deleted user_id: " + user.id);
 
     return new Response(
       JSON.stringify(deletion_data, null, 2),
