@@ -1,8 +1,10 @@
-import { createClient } from "jsr:@supabase/supabase-js@2";
-
-type Json = string | number | boolean | null | {
-  [key: string]: Json | undefined;
-} | Json[];
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2.49.8";
+import {
+  Expo,
+  ExpoPushMessage,
+  ExpoPushTicket,
+} from "npm:expo-server-sdk@3.15.0";
 
 type Locales = "pt" | "en";
 
@@ -21,7 +23,7 @@ interface NotificationRecord {
   user_id: string | null; // Target user ID, or null for broadcast
   title: LocalizedText; // e.g., { "en": "Hello", "pt": "Olá" } || null
   body: LocalizedText; // e.g., { "en": "Body", "pt": "Corpo" } || null
-  data: Json; // Optional data payload
+  data: Record<string, string>; // Optional data payload
 }
 
 interface WebhookPayload {
@@ -36,6 +38,12 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
+
+// Create a new Expo SDK client
+const expo = new Expo({
+  accessToken: Deno.env.get("EXPO_ACCESS_TOKEN"),
+  useFcmV1: true,
+});
 
 // Fallback locale if user's locale is missing
 const FALLBACK_LOCALE: Locales = "pt";
@@ -56,13 +64,14 @@ function getLocalizedText(
   // 2. Try the base part of the preferred locale (e.g., 'pt' from 'pt-BR')
   const baseLocale = preferredLanguage?.split("-")[0] as Locales;
   if (
-    baseLocale && baseLocale !== preferredLanguage &&
+    baseLocale &&
+    baseLocale !== preferredLanguage &&
     localizedObject[baseLocale]
   ) {
     return localizedObject[baseLocale];
   }
 
-  // 3. Try the default locale ('en')
+  // 3. Try the default locale ('pt')
   if (localizedObject[FALLBACK_LOCALE]) {
     return localizedObject[FALLBACK_LOCALE];
   }
@@ -77,25 +86,100 @@ function getLocalizedText(
   return null;
 }
 
+async function sendPushNotifications(
+  targetTokens: PushTokenInfo[],
+  notificationRecord: NotificationRecord,
+) {
+  const messages: ExpoPushMessage[] = [];
+
+  for (const tokenInfo of targetTokens) {
+    // Check if the token is a valid Expo push token
+    const token = tokenInfo.token;
+    if (!Expo.isExpoPushToken(token)) {
+      continue;
+    }
+
+    const userLanguage = tokenInfo.language;
+    const titleToSend = getLocalizedText(
+      notificationRecord.title,
+      userLanguage,
+    );
+    const bodyToSend = getLocalizedText(notificationRecord.body, userLanguage);
+
+    // Only send title/body if we actually resolved some text
+    if (!titleToSend && !bodyToSend) {
+      continue;
+    }
+
+    messages.push({
+      to: token,
+      sound: "default" as const,
+      ...(titleToSend ? { title: titleToSend } : {}),
+      ...(bodyToSend ? { body: bodyToSend } : {}),
+      ...(notificationRecord.data ? { data: notificationRecord.data } : {}),
+    });
+  }
+
+  if (messages.length === 0) {
+    console.log("No valid messages to send.");
+    return;
+  }
+
+  // Chunk the messages for batch sending
+  const chunks = expo.chunkPushNotifications(messages);
+  const tickets: ExpoPushTicket[] = [];
+
+  console.log(
+    `Sending ${messages.length} notifications in ${chunks.length} chunks`,
+  );
+
+  // Send chunks to Expo push notification service
+  for (const chunk of chunks) {
+    try {
+      const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+      tickets.push(...ticketChunk);
+    } catch (error) {
+      console.error(`Error sending chunk:`, error);
+    }
+  }
+
+  // Process tickets and create results
+  let successfulSends = 0;
+  let failedSends = 0;
+  for (const ticket of tickets) {
+    if (ticket.status === "ok") {
+      successfulSends += 1;
+    } else {
+      failedSends += 1;
+    }
+  }
+
+  return { successfulSends, failedSends };
+}
+
 Deno.serve(async (req) => {
-  const payload: WebhookPayload = await req.json();
-  const notificationRecord = payload.record;
-
-  console.log(`Received webhook for notification ID: ${notificationRecord.id}`);
-  console.log(`Title Object:`, notificationRecord.title);
-  console.log(`Body Object:`, notificationRecord.body);
-
-  let targetTokens: PushTokenInfo[] = [];
-
   try {
+    const payload: WebhookPayload = await req.json();
+    const notificationRecord = payload.record;
+
+    console.log(
+      `Received webhook for notification ID: ${notificationRecord.id}`,
+    );
+    console.log(`Title Object:`, notificationRecord.title);
+    console.log(`Body Object:`, notificationRecord.body);
+
+    let targetTokens: PushTokenInfo[] = [];
+
     if (notificationRecord.user_id) {
       // Send to a specific user
       const { data, error } = await supabase
         .from("push_tokens")
-        .select(`
+        .select(
+          `
           token,
           language
-        `)
+        `,
+        )
         .eq("profile_id", notificationRecord.user_id);
 
       if (error) {
@@ -107,7 +191,6 @@ Deno.serve(async (req) => {
         console.log(
           `Found ${data.length} tokens for user ${notificationRecord.user_id}`,
         );
-
         targetTokens = data;
       } else {
         console.warn(
@@ -115,10 +198,8 @@ Deno.serve(async (req) => {
         );
       }
     } else {
-      // Send to all
-      const { data, error } = await supabase
-        .from("push_tokens")
-        .select(`
+      // Send to all users
+      const { data, error } = await supabase.from("push_tokens").select(`
           token, 
           language
         `);
@@ -147,106 +228,21 @@ Deno.serve(async (req) => {
       );
     }
 
-    // --- Send Push Notifications via Expo ---
-    const pushPromises = targetTokens.map(async (tokenInfo) => {
-      const token = tokenInfo.token;
-      const userLanguage = tokenInfo.language;
-
-      const titleToSend = getLocalizedText(
-        notificationRecord.title,
-        userLanguage,
-      );
-      const bodyToSend = getLocalizedText(
-        notificationRecord.body,
-        userLanguage,
-      );
-
-      // Only send title/body if we actually resolved some text
-      if (!titleToSend && !bodyToSend) {
-        return {
-          token: token.substring(0, 10) + "...",
-          success: false,
-          skipped: true,
-          reason: "No content found for language",
-        };
-      }
-
-      const message = {
-        to: token,
-        sound: "default",
-        ...(titleToSend ? { title: titleToSend } : {}),
-        ...(bodyToSend ? { body: bodyToSend } : {}),
-        ...(notificationRecord.data ? { data: notificationRecord.data } : {}),
-      };
-
-      console.log(`Sending message to Expo:`, JSON.stringify(message));
-
-      try {
-        const res = await fetch("https://exp.host/--/api/v2/push/send", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Accept-Encoding": "gzip, deflate",
-            // "Authorization": `Bearer ${Deno.env.get("EXPO_ACCESS_TOKEN")}`,
-          },
-          body: JSON.stringify(message),
-        });
-
-        const result = await res.json();
-        console.log(
-          `Expo response for token ${token.substring(0, 10)}...:`,
-          result,
-        );
-        const wasSent = result?.data?.status === "ok";
-        return {
-          token: token.substring(0, 10) + "...",
-          success: wasSent,
-          skipped: false,
-          response: result,
-        };
-      } catch (fetchError) {
-        console.error(
-          `Error sending push notification to token ${
-            token.substring(0, 10)
-          }...:`,
-          fetchError,
-        );
-        let errorMessage =
-          "An unknown error occurred while sending the push notification.";
-        if (fetchError instanceof Error) {
-          errorMessage = fetchError.message;
-        } else if (typeof fetchError === "string") {
-          errorMessage = fetchError;
-        }
-        return {
-          token: token.substring(0, 10) + "...",
-          success: false,
-          skipped: false,
-          error: errorMessage,
-        };
-      }
-    });
-
-    const results = await Promise.all(pushPromises);
-    const successfulSends = results.filter((r) =>
-      r.success && !r.skipped
-    ).length;
-    const skippedSends = results.filter((r) => r.skipped).length;
+    // Send push notifications using Expo SDK
+    const result = await sendPushNotifications(
+      targetTokens,
+      notificationRecord,
+    );
 
     console.log(
-      `Finished sending. Successful: ${successfulSends}, Skipped (no content): ${skippedSends}, Failed: ${
-        results.length - successfulSends - skippedSends
-      } / Total Targets: ${results.length}`,
+      `Finished sending. Successful: ${result?.successfulSends}, Failed: ${result?.failedSends}`,
     );
 
     return new Response(
       JSON.stringify({
         success: true,
-        sent_count: successfulSends,
-        skipped_count: skippedSends,
-        total_targets: results.length,
-        results: results,
+        successfulSends: result?.successfulSends,
+        failedSends: result?.failedSends,
       }),
       { headers: { "Content-Type": "application/json" }, status: 200 },
     );
