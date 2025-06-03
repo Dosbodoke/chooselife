@@ -174,8 +174,7 @@ export default function NotificationsForm({
                           onValueChange={(_, usersID) => {
                             field.onChange(usersID[0] || "");
                           }}
-                          placeholder={"username"}
-                          // placeholder={t("witness.placeholder")}
+                          placeholder="username"
                           variant="secondary"
                           maxSelection={1}
                         />
