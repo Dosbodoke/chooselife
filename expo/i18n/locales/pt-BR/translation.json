@@ -214,11 +214,8 @@
           },
           "witness": {
             "label": "Testemunhas",
-            "description": "Insira o nome de usuário de duas pessoas, separado por vírgula.",
-            "placeholder": "@festivalchooselife, @juangsandrade",
-            "errors": {
-              "invalid_format": "Insira o @ do APP chooselife ou o instagram de duas pessoas, separado por vírgula."
-            }
+            "description": "Se a testemunha não tiver no APP, use o @ do instagram dela.",
+            "placeholder": "@festivalchooselife, @juangsandrade"
           },
           "comment": {
             "label": "Comentário",
@@ -447,6 +444,12 @@
     },
     "supabase-avatar": {
       "buttonLabel": "Editar"
+    },
+    "user-picker": {
+      "header": "Selecionar Usuários",
+      "selectedUsers": "Usuários selecionados",
+      "clearAll": "Limpar tudo",
+      "verifiedUsers": "Usuário verificado"
     },
     "webbing-input": {
       "loop": "Olhal",

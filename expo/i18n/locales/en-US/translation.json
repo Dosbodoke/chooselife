@@ -214,11 +214,8 @@
           },
           "witness": {
             "label": "Witnesses",
-            "description": "Enter the username of two people, separated by a comma.",
-            "placeholder": "@festivalchooselife, @juangsandrade",
-            "errors": {
-              "invalid_format": "Enter the @ of the chooselife APP or the instagram of two people, separated by a comma."
-            }
+            "description": "If the witness is not on the APP use their instagram @.",
+            "placeholder": "@festivalchooselife, @juangsandrade"
           },
           "comment": {
             "label": "Comment",
@@ -447,6 +444,12 @@
     },
     "supabase-avatar": {
       "buttonLabel": "Edit"
+    },
+    "user-picker": {
+      "header": "Select Users",
+      "selectedUsers": "Selected Users",
+      "clearAll": "Clear All",
+      "verifiedUsers": "Verified Users"
     },
     "webbing-input": {
       "loop": "Loop",

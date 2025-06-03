@@ -1,3 +1,5 @@
+import { LinearTransition } from "react-native-reanimated";
+
 export const NAV_THEME = {
   light: {
     background: "hsl(0 0% 100%)", // background
@@ -16,6 +18,11 @@ export const NAV_THEME = {
     text: "hsl(0 0% 98%)", // foreground
   },
 };
+
+// Animations
+export const DAMPING = 80;
+export const STIFFNESS = 200;
+export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
 
 // For MapView
 export const INITIAL_REGION = {
