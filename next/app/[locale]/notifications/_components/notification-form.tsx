@@ -32,6 +32,8 @@ import {
   sendNotification,
 } from "@/app/actions/notifications";
 
+import { UserPicker } from "@/components/user-picker";
+
 type TNotification = Database["public"]["Tables"]["notifications"]["Row"];
 
 type AlertState = {
@@ -164,13 +166,18 @@ export default function NotificationsForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        User ID (for specific user targeting)
+                        Usuário (Mandar para alguém específico)
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Enter user ID"
-                          className="font-mono text-sm"
-                          {...field}
+                        <UserPicker
+                          defaultValue={field.value ? [field.value] : []}
+                          onValueChange={(_, usersID) => {
+                            field.onChange(usersID[0] || "");
+                          }}
+                          placeholder={"username"}
+                          // placeholder={t("witness.placeholder")}
+                          variant="secondary"
+                          maxSelection={1}
                         />
                       </FormControl>
                       <FormMessage />

@@ -87,11 +87,7 @@
       "witness": {
         "label": "Witness",
         "description": "Select two users to be your witnesses, if the person is not on the App, use her Instagram @",
-        "placeholder": "E.g.: @festivalchooselife, @juangsandrade",
-        "searchPlaceholder": "Username or instagram @",
-        "clear": "Clear",
-        "close": "Close",
-        "verifiedHeading": "Verified"
+        "placeholder": "E.g.: @festivalchooselife, @juangsandrade"
       },
       "comment": {
         "label": "Comments",
@@ -292,5 +288,19 @@
     "title": "Download our APP",
     "ios": "Download for IOS",
     "android": "Download for Android"
+  },
+  "userPicker": {
+    "selectUsers": "Select users",
+    "searchPlaceholder": "Search users...",
+    "selectedUsers": "Selected Users",
+    "verifiedUsers": "Verified Users",
+    "instagramUsers": "Instagram",
+    "clearAll": "Clear All",
+    "loading": "Loading...",
+    "noUsersFound": "No users found",
+    "user": "user",
+    "users": "users", 
+    "minimumSelection": "Please select at least {count} {plural}.",
+    "moreSelected": "+{count} more"
   }
 }

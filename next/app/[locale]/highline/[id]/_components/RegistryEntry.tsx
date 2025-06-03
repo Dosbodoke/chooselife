@@ -35,7 +35,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { transformTimeStringToSeconds } from "@/utils/helperFunctions";
 import useSupabaseBrowser from "@/utils/supabase/client";
 
-import MultiSelectFormField from "./witness-select";
+import { UserPicker } from "@/components/user-picker";
 
 const formSchema = z.object({
   instagram: z
@@ -316,11 +316,13 @@ export const RegistryEntry = ({ highlineId, highlineDistance }: Props) => {
                         </div>
 
                         <FormControl>
-                          <MultiSelectFormField
+                          <UserPicker
                             defaultValue={field.value}
                             onValueChange={field.onChange}
                             placeholder={t("witness.placeholder")}
                             variant="secondary"
+                            minSelection={2}
+                            canPicknNonUser
                           />
                         </FormControl>
                         <FormMessage />
