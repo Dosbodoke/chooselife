@@ -129,15 +129,18 @@ export const UserPicker: React.FC<UserPickerProps> = ({
     verified: boolean;
     id?: string;
   }) => {
-    const idx = selectedOptions.findIndex(
+    const isSelected = selectedOptions.findIndex(
       (value) => value.username === option.username
     );
-    if (idx === -1) {
+    if (!isSelected && canSelectMore) {
       if (canSelectMore) {
         setSearch("");
         setSelectedOptions((prev) => [...prev, option]);
       }
-    } else {
+      return;
+    }
+
+    if (isSelected) {
       setSelectedOptions((prev) =>
         prev.filter((v) => v.username !== option.username)
       );
