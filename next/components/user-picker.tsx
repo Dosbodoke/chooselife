@@ -2,11 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { cva, type VariantProps } from "class-variance-authority";
-import { BadgeCheckIcon, CheckIcon, XIcon, Users } from "lucide-react";
+import { BadgeCheckIcon, CheckIcon, XIcon } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import * as React from "react";
-import debounce from "lodash.debounce";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
