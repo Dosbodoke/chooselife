@@ -93,7 +93,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
     [search]
   );
 
-  const { data, isPending } = useQuery({
+  const { data: profiles, isPending } = useQuery({
     queryKey: ["profiles", { username: debouncedSearch }],
     queryFn: async () => {
       const query = supabase.from("profiles").select("*").neq("name", null);
@@ -117,6 +117,18 @@ export const UserPicker: React.FC<UserPickerProps> = ({
       }));
     }
   );
+
+  const unselectedProfiles = React.useMemo(() => {
+    if (!profiles) return [];
+
+    const selectedUsernames = new Set(
+      selectedOptions.map((option) => option.username)
+    );
+
+    return profiles.filter(
+      (profile) => profile.username && !selectedUsernames.has(profile.username)
+    );
+  }, [profiles, selectedOptions]);
 
   const canSelectMore = React.useMemo(() => {
     if (!maxSelection) return true;
@@ -282,7 +294,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                 canSelectMore &&
                 search.length &&
                 // Check if the user is not selected and is not a valid profile
-                ![...(data || []), ...selectedOptions].find(
+                ![...(profiles || []), ...selectedOptions].find(
                   (v) => v.username === normalizedSearch
                 ) ? (
                   <UnverifiedUser
@@ -292,17 +304,16 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                 ) : null}
 
                 {/* Verified Users */}
-                {data && data.length > 0 && (
+                {unselectedProfiles && unselectedProfiles.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-sm font-medium text-muted-foreground">
                       {t("verifiedUsers")}
                     </h3>
                     <div className="space-y-1">
-                      {data.map((profile) => (
+                      {unselectedProfiles.map((profile) => (
                         <VerifiedUser
                           key={profile.id}
                           profile={profile}
-                          selectedOptions={selectedOptions}
                           canSelectMore={canSelectMore}
                           toggleOption={toggleOption}
                         />
@@ -333,20 +344,16 @@ UserPicker.displayName = "UserPicker";
 
 const VerifiedUser: React.FC<{
   profile: Tables<"profiles">;
-  selectedOptions: UserOption[];
   canSelectMore: boolean;
   toggleOption: (option: {
     username: string;
     verified: boolean;
     id?: string;
   }) => void;
-}> = ({ profile, selectedOptions, canSelectMore, toggleOption }) => {
+}> = ({ profile, canSelectMore, toggleOption }) => {
   if (!profile.username) return null;
   const username = profile.username;
-  const isSelected = selectedOptions.find(
-    (value) => value.username === username
-  );
-  const isDisabled = !canSelectMore && !isSelected;
+  const isDisabled = !canSelectMore;
 
   return (
     <div
@@ -356,7 +363,7 @@ const VerifiedUser: React.FC<{
         isDisabled && "cursor-not-allowed opacity-50"
       )}
       onClick={() => {
-        if (!isDisabled) {
+        if (!canSelectMore) {
           toggleOption({
             username,
             verified: true,
@@ -365,14 +372,6 @@ const VerifiedUser: React.FC<{
         }
       }}
     >
-      <div
-        className={cn(
-          "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-          isSelected ? "bg-primary text-primary-foreground" : "opacity-50"
-        )}
-      >
-        {isSelected && <CheckIcon className="h-3 w-3" />}
-      </div>
       {profile.profile_picture && (
         <Image
           alt={`${username} profile picture`}
@@ -427,19 +426,16 @@ const UnverifiedUser: React.FC<{
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-medium text-muted-foreground">Instagram</h3>
-      <div className="space-y-1">
-        <div
-          className="flex cursor-pointer items-center space-x-3 rounded-md p-2 hover:bg-muted"
-          onClick={() => {
-            toggleOption({
-              username: normalizedSearch,
-              verified: false,
-            });
-          }}
-        >
-          <div className="flex h-4 w-4 items-center justify-center rounded-sm border border-primary"></div>
-          <span>{normalizedSearch}</span>
-        </div>
+      <div
+        className="flex cursor-pointer items-center space-x-3 rounded-md p-2 hover:bg-muted"
+        onClick={() => {
+          toggleOption({
+            username: normalizedSearch,
+            verified: false,
+          });
+        }}
+      >
+        <span>{normalizedSearch}</span>
       </div>
     </div>
   );
