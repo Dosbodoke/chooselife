@@ -1,3 +1,4 @@
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -29,6 +30,7 @@ import NumberPicker from '~/components/ui/number-picker';
 import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
 import { H1, Muted, Small } from '~/components/ui/typography';
+import { UserPicker } from '~/components/user-picker';
 
 const formSchema = z.object({
   username: z
@@ -68,12 +70,7 @@ const formSchema = z.object({
         /^([0-9]|[0-5][0-9]):[0-5][0-9]$/.test(value),
       i18next.t('app.highline.register.fields.time.errors.invalid_format'),
     ),
-  witness: z
-    .string()
-    .refine(
-      (w) => /^(?=.*@[^,\s]+,.*@[^,\s]+).*$/.test(w),
-      i18next.t('app.highline.register.fields.witness.errors.invalid_format'),
-    ),
+  witness: z.string().min(2).array().length(2),
   comment: z.string(),
 });
 
@@ -96,7 +93,7 @@ export default function RegisterWalk() {
       full_lines: 0,
       distance: 0,
       time: '',
-      witness: '',
+      witness: [],
       comment: '',
     },
   });
@@ -115,7 +112,7 @@ export default function RegisterWalk() {
           ? transformTimeStringToSeconds(formData.time)
           : null,
         comment: formData.comment,
-        witness: formData.witness?.replace(' ', '').split(','),
+        witness: formData.witness,
         is_highliner: true, // TODO: Remove this field from database
       });
 
@@ -266,7 +263,7 @@ export default function RegisterWalk() {
       ) : formMutation.isPending && !isConnected ? (
         <SuccessCard offline />
       ) : (
-        <>
+        <BottomSheetModalProvider>
           <Controller
             control={form.control}
             name="username"
@@ -408,14 +405,14 @@ export default function RegisterWalk() {
                     {t('app.highline.register.fields.witness.description')}
                   </Muted>
                 </View>
-                <Input
+                <UserPicker
+                  defaultValue={field.value}
+                  onValueChange={field.onChange}
                   placeholder={t(
                     'app.highline.register.fields.witness.placeholder',
                   )}
-                  aria-labelledby="entry-witness"
-                  className={fieldState.error && 'border-destructive'}
-                  onChangeText={field.onChange}
-                  value={field.value}
+                  minSelection={2}
+                  canPickNonUser
                 />
                 {fieldState.error ? (
                   <Small className="text-destructive">
@@ -469,7 +466,7 @@ export default function RegisterWalk() {
                 : t('app.highline.register.buttons.submit.default')}
             </Text>
           </Button>
-        </>
+        </BottomSheetModalProvider>
       )}
     </KeyboardAwareScrollView>
   );
