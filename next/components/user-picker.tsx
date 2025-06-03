@@ -128,9 +128,11 @@ export const UserPicker: React.FC<UserPickerProps> = ({
     verified: boolean;
     id?: string;
   }) => {
-    const isSelected = selectedOptions.findIndex(
-      (value) => value.username === option.username
-    );
+    const isSelected =
+      selectedOptions.findIndex(
+        (value) => value.username === option.username
+      ) !== -1;
+
     if (!isSelected && canSelectMore) {
       if (canSelectMore) {
         setSearch("");
@@ -166,8 +168,6 @@ export const UserPicker: React.FC<UserPickerProps> = ({
     setSearch("");
   }, []);
 
-  const isMinimumMet = selectedOptions.length >= minSelection;
-
   return (
     <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
       <DrawerTrigger asChild>
@@ -192,13 +192,11 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                   </Badge>
                 ))}
               </div>
-              <div className="flex items-center gap-2">
-                <SelectionSummary
-                  selectedCount={selectedOptions.length}
-                  minSelection={minSelection}
-                  maxSelection={maxSelection}
-                />
-              </div>
+              <SelectionSummary
+                selectedCount={selectedOptions.length}
+                minSelection={minSelection}
+                maxSelection={maxSelection}
+              />
             </div>
           ) : (
             <div className="mx-auto flex w-full items-center justify-between">
@@ -221,22 +219,12 @@ export const UserPicker: React.FC<UserPickerProps> = ({
           <DrawerTitle className="sr-only">{t("selectUsers")}</DrawerTitle>
           <div className="flex flex-col gap-4 pt-4">
             {/* Search Input */}
-            <div className="space-y-2">
-              <Input
-                placeholder={t("searchPlaceholder")}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full"
-              />
-              {minSelection > 0 && !isMinimumMet && (
-                <p className="text-sm text-muted-foreground">
-                  {t("minimumSelection", {
-                    count: minSelection,
-                    plural: minSelection > 1 ? t("users") : t("user"),
-                  })}
-                </p>
-              )}
-            </div>
+            <Input
+              placeholder={t("searchPlaceholder")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full"
+            />
 
             {/* Selected Users Section */}
             {selectedOptions.length > 0 && (
