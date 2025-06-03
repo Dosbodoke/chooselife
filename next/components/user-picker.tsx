@@ -183,10 +183,10 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                     key={`badge-${value.username}`}
                     className={cn(userPickerVariants({ variant, className }))}
                   >
-                    {value.username}
                     {value.verified && (
                       <BadgeCheckIcon className="ml-1 h-3 w-3 text-blue-500" />
                     )}
+                    {value.username}
                   </Badge>
                 ))}
               </div>
@@ -266,6 +266,10 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                         "cursor-pointer"
                       )}
                     >
+                      {value.verified && (
+                        <BadgeCheckIcon className="ml-1 h-3 w-3 text-blue-500" />
+                      )}
+                      {value.username}
                       <XIcon
                         className="mr-1 h-3 w-3 cursor-pointer text-red-500"
                         onClick={(event) => {
@@ -273,10 +277,6 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                           removeOption(value);
                         }}
                       />
-                      {value.username}
-                      {value.verified && (
-                        <BadgeCheckIcon className="ml-1 h-3 w-3 text-blue-500" />
-                      )}
                     </Badge>
                   ))}
                 </div>
