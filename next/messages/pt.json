@@ -300,7 +300,6 @@
     "noUsersFound": "Nenhum usuário encontrado",
     "user": "usuário",
     "users": "usuários",
-    "minimumSelection": "Por favor selecione pelo menos {count} {plural}.",
     "moreSelected": "+{count} mais"
   }
 }
