@@ -61,7 +61,7 @@ const formSchema = z.object({
         /^([0-9]|[0-5][0-9]):[0-5][0-9]$/.test(value),
       "Inválido, use o formato mm:ss"
     ),
-  witness: z.string().min(2).array().length(2),
+  witness: z.string().array(),
   comment: z.string(),
 });
 
@@ -309,7 +309,7 @@ export const RegistryEntry = ({ highlineId, highlineDistance }: Props) => {
                     render={({ field }) => (
                       <FormItem>
                         <div>
-                          <FormLabel>{t("witness.label")}</FormLabel>
+                          <FormLabel optional>{t("witness.label")}</FormLabel>
                           <FormDescription>
                             {t("witness.description")}
                           </FormDescription>
@@ -321,7 +321,6 @@ export const RegistryEntry = ({ highlineId, highlineDistance }: Props) => {
                             onValueChange={field.onChange}
                             placeholder={t("witness.placeholder")}
                             variant="secondary"
-                            minSelection={2}
                             canPicknNonUser
                           />
                         </FormControl>
