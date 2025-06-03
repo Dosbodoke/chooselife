@@ -70,7 +70,7 @@ const formSchema = z.object({
         /^([0-9]|[0-5][0-9]):[0-5][0-9]$/.test(value),
       i18next.t('app.highline.register.fields.time.errors.invalid_format'),
     ),
-  witness: z.string().min(2).array().length(2),
+  witness: z.string().array(),
   comment: z.string(),
 });
 
@@ -399,7 +399,8 @@ export default function RegisterWalk() {
               <View className="gap-2">
                 <View>
                   <Label nativeID="entry-witness">
-                    {t('app.highline.register.fields.witness.label')}
+                    {t('app.highline.register.fields.witness.label')}{' '}
+                    <Muted>{t('common.optional')}</Muted>
                   </Label>
                   <Muted>
                     {t('app.highline.register.fields.witness.description')}
@@ -411,7 +412,6 @@ export default function RegisterWalk() {
                   placeholder={t(
                     'app.highline.register.fields.witness.placeholder',
                   )}
-                  minSelection={2}
                   canPickNonUser
                 />
                 {fieldState.error ? (
