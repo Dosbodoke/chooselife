@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import useSupabaseBrowser from "@/utils/supabase/client";
 import { useDebounceValue } from "@/hooks/use-debounce-value";
+import { Tables } from "@/utils/supabase/database-generated.types";
 
 interface UserOption {
   username: string;
@@ -84,11 +85,10 @@ export const UserPicker: React.FC<UserPickerProps> = ({
   onValueChangeRef.current = onValueChange; // Update ref on every render
   const supabase = useSupabaseBrowser();
   const t = useTranslations("userPicker");
-  const [search, setSearch] = React.useState("");
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
 
+  const [search, setSearch] = React.useState("");
   const debouncedSearch = useDebounceValue(search);
-
   const normalizedSearch = React.useMemo(
     () => (!search || search.startsWith("@") ? search : `@${search}`),
     [search]
@@ -241,8 +241,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-medium">
-                    {t("selectedUsers")}
-
+                    {t("selectedUsers")}{" "}
                     <SelectionSummary
                       selectedCount={selectedOptions.length}
                       minSelection={minSelection}
@@ -290,85 +289,17 @@ export const UserPicker: React.FC<UserPickerProps> = ({
               <div className="space-y-4">
                 {/* Instagram Users (Unverified) */}
                 {canPicknNonUser &&
-                  (search.length > 0 ||
-                    selectedOptions.find(
-                      (value) => value.verified === false
-                    )) && (
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-medium text-muted-foreground">
-                        Instagram
-                      </h3>
-                      <div className="space-y-1">
-                        {normalizedSearch &&
-                          !data?.find(
-                            (dt) => dt.username === normalizedSearch
-                          ) && (
-                            <div
-                              className={cn(
-                                "flex cursor-pointer items-center space-x-3 rounded-md p-2 hover:bg-muted",
-                                !canSelectMore &&
-                                  selectedOptions.findIndex(
-                                    (value) =>
-                                      value.username === normalizedSearch
-                                  ) === -1 &&
-                                  "cursor-not-allowed opacity-50"
-                              )}
-                              onClick={() => {
-                                if (
-                                  canSelectMore ||
-                                  selectedOptions.findIndex(
-                                    (value) =>
-                                      value.username === normalizedSearch
-                                  ) !== -1
-                                ) {
-                                  toggleOption({
-                                    username: normalizedSearch,
-                                    verified: false,
-                                  });
-                                }
-                              }}
-                            >
-                              <div
-                                className={cn(
-                                  "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                  selectedOptions.findIndex(
-                                    (value) =>
-                                      value.username === normalizedSearch
-                                  ) !== -1
-                                    ? "bg-primary text-primary-foreground"
-                                    : "opacity-50"
-                                )}
-                              >
-                                {selectedOptions.findIndex(
-                                  (value) => value.username === normalizedSearch
-                                ) !== -1 && <CheckIcon className="h-3 w-3" />}
-                              </div>
-                              <span>{normalizedSearch}</span>
-                            </div>
-                          )}
-
-                        {selectedOptions.map((value) => {
-                          if (
-                            value.verified === true ||
-                            value.username === normalizedSearch
-                          )
-                            return null;
-                          return (
-                            <div
-                              key={`unverified-${value.username}`}
-                              className="flex cursor-pointer items-center space-x-3 rounded-md p-2 hover:bg-muted"
-                              onClick={() => toggleOption(value)}
-                            >
-                              <div className="flex h-4 w-4 items-center justify-center rounded-sm border border-primary bg-primary text-primary-foreground">
-                                <CheckIcon className="h-3 w-3" />
-                              </div>
-                              <span>{value.username}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                canSelectMore &&
+                search.length &&
+                // Check if the user is not selected and is not a valid profile
+                ![...(data || []), ...selectedOptions].find(
+                  (v) => v.username === normalizedSearch
+                ) ? (
+                  <UnverifiedUser
+                    normalizedSearch={normalizedSearch}
+                    toggleOption={toggleOption}
+                  />
+                ) : null}
 
                 {/* Verified Users */}
                 {data && data.length > 0 && (
@@ -377,62 +308,15 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                       {t("verifiedUsers")}
                     </h3>
                     <div className="space-y-1">
-                      {data.map((dt) => {
-                        if (!dt.username) return null;
-                        const username = dt.username;
-                        const isSelected = selectedOptions.find(
-                          (value) => value.username === username
-                        );
-                        const isDisabled = !canSelectMore && !isSelected;
-
-                        return (
-                          <div
-                            key={`verified-${username}`}
-                            className={cn(
-                              "flex cursor-pointer items-center space-x-3 rounded-md p-2 hover:bg-muted",
-                              isDisabled && "cursor-not-allowed opacity-50"
-                            )}
-                            onClick={() => {
-                              if (!isDisabled) {
-                                toggleOption({
-                                  username,
-                                  verified: true,
-                                  id: dt.id,
-                                });
-                              }
-                            }}
-                          >
-                            <div
-                              className={cn(
-                                "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                isSelected
-                                  ? "bg-primary text-primary-foreground"
-                                  : "opacity-50"
-                              )}
-                            >
-                              {isSelected && <CheckIcon className="h-3 w-3" />}
-                            </div>
-                            {dt.profile_picture && (
-                              <Image
-                                alt={`${username} profile picture`}
-                                src={dt.profile_picture || "/placeholder.svg"}
-                                width={24}
-                                height={24}
-                                className="h-6 w-6 rounded-full"
-                              />
-                            )}
-                            <div className="flex flex-1 flex-col">
-                              <span className="line-clamp-1 text-ellipsis text-sm">
-                                {dt.name}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {username}
-                              </span>
-                            </div>
-                            <BadgeCheckIcon className="h-4 w-4 text-blue-500" />
-                          </div>
-                        );
-                      })}
+                      {data.map((profile) => (
+                        <VerifiedUser
+                          key={profile.id}
+                          profile={profile}
+                          selectedOptions={selectedOptions}
+                          canSelectMore={canSelectMore}
+                          toggleOption={toggleOption}
+                        />
+                      ))}
                     </div>
                   </div>
                 )}
@@ -440,6 +324,8 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                 {/* Loading State */}
                 {isPending && (
                   <div className="space-y-2">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
@@ -454,6 +340,68 @@ export const UserPicker: React.FC<UserPickerProps> = ({
   );
 };
 UserPicker.displayName = "UserPicker";
+
+const VerifiedUser: React.FC<{
+  profile: Tables<"profiles">;
+  selectedOptions: UserOption[];
+  canSelectMore: boolean;
+  toggleOption: (option: {
+    username: string;
+    verified: boolean;
+    id?: string;
+  }) => void;
+}> = ({ profile, selectedOptions, canSelectMore, toggleOption }) => {
+  if (!profile.username) return null;
+  const username = profile.username;
+  const isSelected = selectedOptions.find(
+    (value) => value.username === username
+  );
+  const isDisabled = !canSelectMore && !isSelected;
+
+  return (
+    <div
+      key={`verified-${username}`}
+      className={cn(
+        "flex cursor-pointer items-center space-x-3 rounded-md p-2 hover:bg-muted",
+        isDisabled && "cursor-not-allowed opacity-50"
+      )}
+      onClick={() => {
+        if (!isDisabled) {
+          toggleOption({
+            username,
+            verified: true,
+            id: profile.id,
+          });
+        }
+      }}
+    >
+      <div
+        className={cn(
+          "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+          isSelected ? "bg-primary text-primary-foreground" : "opacity-50"
+        )}
+      >
+        {isSelected && <CheckIcon className="h-3 w-3" />}
+      </div>
+      {profile.profile_picture && (
+        <Image
+          alt={`${username} profile picture`}
+          src={profile.profile_picture || "/placeholder.svg"}
+          width={24}
+          height={24}
+          className="h-6 w-6 rounded-full"
+        />
+      )}
+      <div className="flex flex-1 flex-col">
+        <span className="line-clamp-1 text-ellipsis text-sm">
+          {profile.name}
+        </span>
+        <span className="text-xs text-muted-foreground">{username}</span>
+      </div>
+      <BadgeCheckIcon className="h-4 w-4 text-blue-500" />
+    </div>
+  );
+};
 
 const SelectionSummary: React.FC<{
   selectedCount: number;
@@ -476,4 +424,33 @@ const SelectionSummary: React.FC<{
   return selectionText ? (
     <span className="text-xs text-muted-foreground">{selectionText}</span>
   ) : null;
+};
+
+const UnverifiedUser: React.FC<{
+  normalizedSearch: string;
+  toggleOption: (option: {
+    username: string;
+    verified: boolean;
+    id?: string;
+  }) => void;
+}> = ({ normalizedSearch, toggleOption }) => {
+  return (
+    <div className="space-y-2">
+      <h3 className="text-sm font-medium text-muted-foreground">Instagram</h3>
+      <div className="space-y-1">
+        <div
+          className="flex cursor-pointer items-center space-x-3 rounded-md p-2 hover:bg-muted"
+          onClick={() => {
+            toggleOption({
+              username: normalizedSearch,
+              verified: false,
+            });
+          }}
+        >
+          <div className="flex h-4 w-4 items-center justify-center rounded-sm border border-primary"></div>
+          <span>{normalizedSearch}</span>
+        </div>
+      </div>
+    </div>
+  );
 };
