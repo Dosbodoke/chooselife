@@ -87,11 +87,7 @@
       "witness": {
         "label": "Testemunhas",
         "description": "Selecione dois úsuario para ser testemunha, se a pessoa não tiver no APP use o @ do instagram dela",
-        "placeholder": "Exemplo: @festivalchooselife, @juangsandrade",
-        "searchPlaceholder": "Username ou @ do instagram",
-        "clear": "Limpar",
-        "close": "Fechar",
-        "verifiedHeading": "Verificados"
+        "placeholder": "Exemplo: @festivalchooselife, @juangsandrade"
       },
       "comment": {
         "label": "Comentário",
@@ -292,5 +288,19 @@
     "title": "Baixe o APP",
     "ios": "Baixar para IOS",
     "android": "Baixar para Android"
+  },
+  "userPicker": {
+    "selectUsers": "Selecionar usuários",
+    "searchPlaceholder": "Buscar usuários...",
+    "selectedUsers": "Usuários Selecionados",
+    "verifiedUsers": "Usuários Verificados", 
+    "instagramUsers": "Instagram",
+    "clearAll": "Limpar Tudo",
+    "loading": "Carregando...",
+    "noUsersFound": "Nenhum usuário encontrado",
+    "user": "usuário",
+    "users": "usuários",
+    "minimumSelection": "Por favor selecione pelo menos {count} {plural}.",
+    "moreSelected": "+{count} mais"
   }
 }
