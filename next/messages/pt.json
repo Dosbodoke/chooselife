@@ -85,9 +85,9 @@
         "placeholder": "Exemplo: 2:59"
       },
       "witness": {
-        "label": "Testemunhas",
-        "description": "Selecione dois úsuario para ser testemunha, se a pessoa não tiver no APP use o @ do instagram dela",
-        "placeholder": "Exemplo: @festivalchooselife, @juangsandrade"
+          "label": "Testemunhas",
+          "description": "Se a testemunha não tiver no APP, use o @ do instagram dela.",
+          "placeholder": "@festivalchooselife, @juangsandrade"
       },
       "comment": {
         "label": "Comentário",

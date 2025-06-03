@@ -85,9 +85,9 @@
         "placeholder": "E.g.: 4:20"
       },
       "witness": {
-        "label": "Witness",
-        "description": "Select two users to be your witnesses, if the person is not on the App, use her Instagram @",
-        "placeholder": "E.g.: @festivalchooselife, @juangsandrade"
+        "label": "Testemunhas",
+        "description": "Selecione dois úsuario para ser testemunha, se a pessoa não tiver no APP use o @ do instagram dela",
+        "placeholder": "Exemplo: @festivalchooselife, @juangsandrade"
       },
       "comment": {
         "label": "Comments",
