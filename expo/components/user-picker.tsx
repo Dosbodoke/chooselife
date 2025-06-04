@@ -24,12 +24,12 @@ import {
   View,
 } from 'react-native';
 import Animated, {
+  FadeInRight,
   FadeInUp,
+  FadeOutDown,
   FadeOutUp,
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -65,28 +65,24 @@ const Badge: React.FC<{
   onRemove?: () => void;
   variant?: 'default' | 'selected';
 }> = ({ children, onRemove, variant = 'default' }) => {
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(scale.value) }],
-  }));
-
-  const handlePress = () => {
-    scale.value = withTiming(0.95, { duration: 100 }, () => {
-      if (onRemove) {
-        runOnJS(onRemove)();
-      }
-      scale.value = withTiming(1, { duration: 100 }, () => {});
-    });
-  };
+  const handlePress = useCallback(() => {
+    if (onRemove) {
+      // Immediate action without waiting for animation
+      onRemove();
+    }
+  }, [onRemove]);
 
   return (
     <Animated.View
-      style={[animatedStyle]}
       className={`
         flex-row items-center justify-center px-3 p-2 gap-1 rounded-xl border bg-gray-100
         ${variant === 'selected' ? 'border-blue-300' : 'border-gray-300'}
       `}
+      entering={FadeInRight.delay(50)
+        .damping(DAMPING)
+        .stiffness(STIFFNESS)
+        .springify()}
+      exiting={FadeOutDown.damping(DAMPING).stiffness(STIFFNESS).springify()}
     >
       {children}
       {onRemove && (
@@ -141,24 +137,36 @@ const VerifiedUser: React.FC<{
   const username = profile.username;
   const isDisabled = !canSelectMore;
 
-  const opacity = useSharedValue(isDisabled ? 0.5 : 1);
+  const opacity = useSharedValue(1);
   const scale = useSharedValue(1);
+
+  // Use useEffect to update opacity when isDisabled changes
+  useEffect(() => {
+    opacity.value = withTiming(isDisabled ? 0.5 : 1, { duration: 150 });
+  }, [isDisabled, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePress = () => {
+  const handlePress = useCallback(() => {
     if (!isDisabled) {
+      // Faster animation and immediate action
+      scale.value = withTiming(0.95, { duration: 50 }, (finished) => {
+        if (finished) {
+          scale.value = withTiming(1, { duration: 50 });
+        }
+      });
+
+      // Execute action immediately
       toggleOption({
         username,
         verified: true,
         id: profile.id,
       });
-      scale.value = withTiming(0.98, { duration: 100 });
     }
-  };
+  }, [isDisabled, scale, toggleOption, username, profile.id]);
 
   return (
     <Animated.View style={animatedStyle} layout={_layoutAnimation}>
@@ -166,6 +174,7 @@ const VerifiedUser: React.FC<{
         onPress={handlePress}
         disabled={isDisabled}
         className="flex-row items-center p-3 rounded-lg border border-muted-foreground"
+        activeOpacity={0.7}
       >
         {profile.profile_picture && (
           <Image
@@ -203,15 +212,20 @@ const UnverifiedUser: React.FC<{
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePress = () => {
-    scale.value = withTiming(0.98, { duration: 100 }, () => {
-      scale.value = withTiming(1, { duration: 100 });
+  const handlePress = useCallback(() => {
+    // Faster animation and immediate action
+    scale.value = withTiming(0.95, { duration: 50 }, (finished) => {
+      if (finished) {
+        scale.value = withTiming(1, { duration: 50 });
+      }
     });
+
+    // Execute action immediately
     toggleOption({
       username: normalizedSearch,
       verified: false,
     });
-  };
+  }, [scale, toggleOption, normalizedSearch]);
 
   return (
     <Animated.View
@@ -225,6 +239,7 @@ const UnverifiedUser: React.FC<{
         <TouchableOpacity
           onPress={handlePress}
           className="flex-row items-center p-4 rounded-lg bg-white gap-3 border border-muted-foreground"
+          activeOpacity={0.7}
         >
           <Text className="text-sm text-gray-900">{normalizedSearch}</Text>
         </TouchableOpacity>
@@ -299,25 +314,25 @@ export const UserPicker: React.FC<UserPickerProps> = ({
     return selectedOptions.length < maxSelection;
   }, [selectedOptions.length, maxSelection]);
 
-  const toggleOption = (option: {
-    username: string;
-    verified: boolean;
-    id?: string;
-  }) => {
-    const idx = selectedOptions.findIndex(
-      (value) => value.username === option.username,
-    );
-    if (idx === -1) {
-      if (canSelectMore) {
-        setSearch('');
-        setSelectedOptions((prev) => [...prev, option]);
-      }
-    } else {
-      setSelectedOptions((prev) =>
-        prev.filter((v) => v.username !== option.username),
-      );
-    }
-  };
+  const toggleOption = useCallback(
+    (option: { username: string; verified: boolean; id?: string }) => {
+      setSelectedOptions((prev) => {
+        const idx = prev.findIndex(
+          (value) => value.username === option.username,
+        );
+        if (idx === -1) {
+          if (!maxSelection || prev.length < maxSelection) {
+            setSearch('');
+            return [...prev, option];
+          }
+          return prev;
+        } else {
+          return prev.filter((v) => v.username !== option.username);
+        }
+      });
+    },
+    [maxSelection],
+  );
 
   const removeOption = useCallback((option: UserOption) => {
     setSelectedOptions((prev) =>
