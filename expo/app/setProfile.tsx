@@ -148,12 +148,11 @@ export default function SetProfile() {
   const steps = [
     <LanguageSwitcher key="LanguageSwitcher" />,
     <UsernameForm key="username" form={form} />,
-    <View key="profileInfo">
-      <ProfileInfoForm
-        // @ts-expect-error Info form doesn't have username
-        form={form as UseFormReturn<ProfileInfoSchema>}
-      />
-    </View>,
+    <ProfileInfoForm
+      key="profileInfo"
+      // @ts-expect-error Info form doesn't have username
+      form={form as UseFormReturn<ProfileInfoSchema>}
+    />,
     // <PrefferedTheme key="theme" />,
   ];
 

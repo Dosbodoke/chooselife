@@ -30,8 +30,7 @@ export const useProfile = (id: string | null) => {
     },
     // Only run this query if a id exists.
     enabled: !!id,
-    // Mark the data as always fresh so it will never refetch automatically.
-    staleTime: Infinity,
+    staleTime: 24 * 60 * 60 * 1000, // 1 day
   });
 
   const invalidateProfile = () => {

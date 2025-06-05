@@ -18,11 +18,10 @@ const _GOOGLE_URL_REGEX =
   /^https?:\/\/(?:[a-zA-Z0-9-]+\.)*google(?:usercontent)?\.com/;
 
 export const SupabaseAvatar: React.FC<{
-  size?: number;
   profileID?: string;
   // URL can be passed directly, it will have priority over the profile ID
   URL?: string;
-}> = ({ size = 8, profileID, URL }) => {
+}> = ({ profileID, URL }) => {
   const [imageURL, setImageURL] = useState<string | undefined>(URL);
   const {
     query: { data, isPending },
@@ -47,11 +46,11 @@ export const SupabaseAvatar: React.FC<{
   }, [data?.profile_picture]);
 
   if (profileID && isPending) {
-    return <Skeleton className={`size-${size} rounded-full`} />;
+    return <Skeleton className="size-full rounded-full" />;
   }
 
   return (
-    <Avatar className={`w-${size} h-${size}`} alt="Foto do perfil">
+    <Avatar className="size-full" alt="Foto do perfil">
       <AvatarImage source={{ uri: URL || imageURL }} />
       <AvatarFallback>
         <Text>{getShortName(data?.name || '')}</Text>
