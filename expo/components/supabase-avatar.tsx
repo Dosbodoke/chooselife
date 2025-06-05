@@ -58,7 +58,12 @@ export const SupabaseAvatar: React.FC<{
   if (!URL && !profileURL && assets?.[0]) {
     return (
       <Image
-        style={{ width: '100%', height: '100%' }}
+        style={{
+          width: '100%',
+          height: '100%',
+          backgroundColor: '#f4f4f5',
+          borderRadius: 999,
+        }}
         source={assets[0]}
         alt="Chooselife"
         contentFit="cover"
