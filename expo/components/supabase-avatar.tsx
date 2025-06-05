@@ -1,3 +1,5 @@
+import { useAssets } from 'expo-asset';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -22,7 +24,11 @@ export const SupabaseAvatar: React.FC<{
   // URL can be passed directly, it will have priority over the profile ID
   URL?: string;
 }> = ({ profileID, URL }) => {
-  const [imageURL, setImageURL] = useState<string | undefined>(URL);
+  const [assets] = useAssets([
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('~/assets/images/default-profile-picture.jpg'),
+  ]);
+  const [profileURL, setProfileURL] = useState<string | null>(null);
   const {
     query: { data, isPending },
   } = useProfile(profileID || null);
@@ -31,7 +37,7 @@ export const SupabaseAvatar: React.FC<{
     if (!URL && data?.profile_picture) {
       // Image is coming from google, no need to get from storage
       if (_GOOGLE_URL_REGEX.test(data?.profile_picture)) {
-        setImageURL(data.profile_picture);
+        setProfileURL(data.profile_picture);
         return;
       }
 
@@ -40,7 +46,7 @@ export const SupabaseAvatar: React.FC<{
         .getPublicUrl(data.profile_picture);
 
       if (avatarData) {
-        setImageURL(avatarData.publicUrl);
+        setProfileURL(avatarData.publicUrl);
       }
     }
   }, [data?.profile_picture]);
@@ -49,9 +55,20 @@ export const SupabaseAvatar: React.FC<{
     return <Skeleton className="size-full rounded-full" />;
   }
 
+  if (!URL && !profileURL && assets?.[0]) {
+    return (
+      <Image
+        style={{ width: '100%', height: '100%' }}
+        source={assets[0]}
+        alt="Chooselife"
+        contentFit="cover"
+      />
+    );
+  }
+
   return (
     <Avatar className="size-full" alt="Foto do perfil">
-      <AvatarImage source={{ uri: URL || imageURL }} />
+      <AvatarImage source={{ uri: profileURL || URL }} />
       <AvatarFallback>
         <Text>{getShortName(data?.name || '')}</Text>
       </AvatarFallback>

@@ -63,7 +63,7 @@ const Podium = ({ username, value, position, profilePicture }: PodiumProps) => {
                   className={cn('size-6', podiumVariants({ text: variant }))}
                 />
                 <View className="overflow-hidden size-16">
-                  <SupabaseAvatar profileID={profilePicture} />
+                  <SupabaseAvatar URL={profilePicture} />
                 </View>
               </View>
               <View className="flex flex-col items-center gap-0.5">
@@ -103,7 +103,7 @@ const LeaderboardRow = ({
   <View className="flex-row py-3 items-center gap-2">
     <RankingPosition position={position} />
     <View className="overflow-hidden size-12">
-      <SupabaseAvatar profileID={profilePicture} />
+      <SupabaseAvatar URL={profilePicture} />
     </View>
     <Link
       href={{

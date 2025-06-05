@@ -114,8 +114,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         assets: [
           "./assets/images/chooselife_black.png",
-          "./assets/images/ui_dark.webp",
-          "./assets/images/ui_light.webp",
+          "./assets/images/default-profile-picture.jpg",
         ],
       },
     ],
