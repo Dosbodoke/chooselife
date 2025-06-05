@@ -447,7 +447,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
               <LucideIcon name="Search" size={20} className="text-primary" />
 
               <BottomSheetTextInput
-                placeholder="Search users..."
+                placeholder={t('components.user-picker.searchPlaceholder')}
                 defaultValue={search}
                 onChangeText={handleSearchChange}
                 className="flex-1 p-4"
