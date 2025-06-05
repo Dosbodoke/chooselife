@@ -447,6 +447,7 @@
     },
     "user-picker": {
       "header": "Selecionar Usuários",
+      "searchPlaceholder": "Procurar highliners...", 
       "selectedUsers": "Usuários selecionados",
       "clearAll": "Limpar tudo",
       "verifiedUsers": "Usuário verificado"
