@@ -46,9 +46,6 @@ export const highlineKeyFactory = {
   list: (userId?: string) => ['highlines', userId] as const,
 };
 
-const CACHE_TIME_FAVORITES = Infinity;
-const CACHE_TIME_DEFAULT = 1000 * 60 * 60; // 1 hour
-
 // Function overloads
 export function useHighline(
   params: UseHighlineSingleParams,
@@ -107,16 +104,16 @@ export function useHighline(
         )?.dataUpdatedAt;
       },
       enabled: !!id && !sessionLoading,
-      staleTime: 5 * 60 * 1000,
-      gcTime: CACHE_TIME_DEFAULT,
+      staleTime: 1000 * 60 * 60, // 1 hour
+      gcTime: Infinity,
     });
 
     useQuery({
       queryKey: favoriteKey,
       queryFn: () => highline,
       enabled: !!highline?.is_favorite,
-      gcTime: CACHE_TIME_FAVORITES,
-      staleTime: Infinity,
+      staleTime: 1000 * 60 * 60, // 1 hour
+      gcTime: Infinity,
     });
 
     return { highline, isPending, error };
@@ -148,8 +145,8 @@ export function useHighline(
       return results;
     },
     enabled: !sessionLoading,
-    staleTime: 5 * 60 * 1000,
-    gcTime: CACHE_TIME_DEFAULT,
+    staleTime: 1000 * 60 * 60, // 1 hour
+    gcTime: Infinity,
   });
 
   const [selectedCategory, setSelectedCategory] =
