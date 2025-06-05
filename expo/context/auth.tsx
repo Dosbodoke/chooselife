@@ -204,7 +204,6 @@ export function AuthProvider(props: React.PropsWithChildren) {
         });
 
         if (error) throw error;
-
         await saveLoginMethod('email');
 
         return {
