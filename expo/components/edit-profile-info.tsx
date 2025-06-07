@@ -2,19 +2,20 @@ import i18next from 'i18next';
 import React from 'react';
 import { Controller, UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Keyboard, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, TextInput, View } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { z } from 'zod';
 
+import { useI18n } from '~/context/i18n';
 import { cn } from '~/lib/utils';
 import { date18YearsAgo } from '~/utils';
 
-import { Input } from '~/components/ui/input';
 import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
 
 import { AvatarUploader, SupabaseAvatar } from './supabase-avatar';
+import { Muted } from './ui/typography';
 
 export const profileInfoSchema = z.object({
   name: z.string().min(1, i18next.t('app.setProfile.errors.nameRequired')),
@@ -23,6 +24,53 @@ export const profileInfoSchema = z.object({
   birthday: z.string().optional(),
 });
 export type ProfileInfoSchema = z.infer<typeof profileInfoSchema>;
+
+// Custom DateInput component for better UX
+const DateInput: React.FC<{
+  value?: string;
+  onPress: () => void;
+  placeholder: string;
+  label: string;
+  error?: string;
+  optional?: boolean;
+}> = ({ value, onPress, placeholder, label, error, optional }) => {
+  const { t } = useTranslation();
+  const { locale } = useI18n();
+  const displayValue = value ? new Date(value).toLocaleDateString(locale) : '';
+
+  return (
+    <View className="w-full gap-2">
+      <View className="flex-row items-center">
+        <Text className="text-sm font-medium text-foreground">{label}</Text>
+        {optional && <Muted>{t('common.optional')}</Muted>}
+      </View>
+
+      <Pressable
+        onPress={onPress}
+        className={cn(
+          'border rounded-md px-3 py-3 bg-background min-h-[44px] justify-center',
+          error ? 'border-red-500' : 'border-border',
+          'active:bg-muted/50', // Visual feedback on press
+        )}
+      >
+        <Text
+          className={cn(
+            'text-base',
+            displayValue ? 'text-foreground' : 'text-muted-foreground',
+          )}
+        >
+          {displayValue || placeholder}
+        </Text>
+      </Pressable>
+
+      {error && (
+        <Animated.View entering={FadeIn} exiting={FadeOut}>
+          <Text className="text-red-500 text-sm mt-1">{error}</Text>
+        </Animated.View>
+      )}
+    </View>
+  );
+};
 
 export const ProfileInfoForm: React.FC<{
   form: UseFormReturn<ProfileInfoSchema>;
@@ -85,17 +133,13 @@ export const ProfileInfoForm: React.FC<{
         name="birthday"
         render={({ field: { value }, fieldState: { error } }) => (
           <>
-            <Input
+            <DateInput
+              value={value}
               onPress={() => setShowDatePicker(true)}
               label={t('app.setProfile.ProfileInfoForm.birthdayLabel')}
-              editable={false}
-              value={value ? new Date(value).toLocaleDateString('pt-BR') : ''}
-              className={cn(
-                'border border-input bg-background text-foreground w-full',
-                error?.message ? 'border-red-500' : 'border-border',
-              )}
-              placeholderClassName="text-muted-foreground"
               placeholder={t('app.setProfile.ProfileInfoForm.selectDate')}
+              error={error?.message}
+              optional
             />
             <DatePicker
               modal
