@@ -405,7 +405,11 @@ const WebRow: React.FC<{
 const WebRowAvatar: React.FC<{ webbingID: number }> = ({ webbingID }) => {
   const { data } = useWebbing(webbingID);
   if (!data) return null;
-  return <SupabaseAvatar size={8} profileID={data.user_id} />;
+  return (
+    <View className="overflow-hidden size-8">
+      <SupabaseAvatar profileID={data.user_id} />
+    </View>
+  );
 };
 
 const AddSectionButton: React.FC<{

@@ -1,7 +1,6 @@
 import { FlashList } from '@shopify/flash-list';
 import { QueryData } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
-import { Tables } from '~/utils/database.types';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +16,7 @@ import { EnduranceIcon, SpeedlineIcon } from '~/lib/icons';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { transformSecondsToTimeString } from '~/utils';
+import { Tables } from '~/utils/database.types';
 
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
@@ -129,7 +129,9 @@ const UserHeader: React.FC<{
     <Card>
       <CardContent className="flex gap-4 overflow-hidden px-2 py-4">
         <View className="flex flex-row mt-4 gap-4">
-          <SupabaseAvatar size={16} profileID={profile.id} />
+          <View className="overflow-hidden size-16">
+            <SupabaseAvatar profileID={profile.id} />
+          </View>
           <View className="flex flex-1">
             <H3 numberOfLines={1}>{profile.name}</H3>
             {profile.birthday ? (

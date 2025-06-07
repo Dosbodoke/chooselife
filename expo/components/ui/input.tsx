@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   TextInput,
   TouchableOpacity,
@@ -11,9 +12,27 @@ import { cn } from '~/lib/utils';
 
 import { Label } from '~/components/ui/label';
 
+import { Muted } from './typography';
+
+const InputLabel: React.FC<{
+  htmlFor?: string;
+  label: string;
+  optional: boolean;
+}> = ({ htmlFor, label, optional }) => {
+  const { t } = useTranslation();
+
+  return (
+    <View className="flex-row gap-1">
+      <Label htmlFor={htmlFor}>{label}</Label>
+      {optional && <Muted>{t('common.optional')}</Muted>}
+    </View>
+  );
+};
+
 export interface InputProps extends TextInputProps {
   label?: string;
   rightIcon?: React.ReactNode;
+  optional?: boolean;
   onRightIconPress?: () => void;
 }
 
@@ -25,6 +44,7 @@ const Input = React.forwardRef<React.ElementRef<typeof TextInput>, InputProps>(
       className,
       placeholderClassName,
       rightIcon,
+      optional = false,
       onRightIconPress,
       ...props
     },
@@ -32,7 +52,7 @@ const Input = React.forwardRef<React.ElementRef<typeof TextInput>, InputProps>(
   ) => {
     return (
       <View className="gap-2 w-full">
-        {label && <Label htmlFor={id}>{label}</Label>}
+        {label && <InputLabel htmlFor={id} label={label} optional={optional} />}
         <View className="relative flex-row items-center">
           <TextInput
             ref={ref}

@@ -48,7 +48,9 @@ export default function SettingsPage() {
               asChild
             >
               <TouchableOpacity className="flex flex-row gap-4">
-                <SupabaseAvatar profileID={profile.id} size={16} />
+                <View className="overflow-hidden size-16">
+                  <SupabaseAvatar profileID={profile.id} />
+                </View>
                 <View className="flex-1">
                   <H2 className="flex-shrink">{profile.name}</H2>
                   <Muted>{t('app.(tabs).settings.viewProfile')}</Muted>

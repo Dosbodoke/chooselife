@@ -1,3 +1,5 @@
+import { useAssets } from 'expo-asset';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,12 +20,15 @@ const _GOOGLE_URL_REGEX =
   /^https?:\/\/(?:[a-zA-Z0-9-]+\.)*google(?:usercontent)?\.com/;
 
 export const SupabaseAvatar: React.FC<{
-  size?: number;
   profileID?: string;
   // URL can be passed directly, it will have priority over the profile ID
   URL?: string;
-}> = ({ size = 8, profileID, URL }) => {
-  const [imageURL, setImageURL] = useState<string | undefined>(URL);
+}> = ({ profileID, URL }) => {
+  const [assets] = useAssets([
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('~/assets/images/default-profile-picture.jpg'),
+  ]);
+  const [profileURL, setProfileURL] = useState<string | null>(null);
   const {
     query: { data, isPending },
   } = useProfile(profileID || null);
@@ -32,7 +37,7 @@ export const SupabaseAvatar: React.FC<{
     if (!URL && data?.profile_picture) {
       // Image is coming from google, no need to get from storage
       if (_GOOGLE_URL_REGEX.test(data?.profile_picture)) {
-        setImageURL(data.profile_picture);
+        setProfileURL(data.profile_picture);
         return;
       }
 
@@ -41,18 +46,34 @@ export const SupabaseAvatar: React.FC<{
         .getPublicUrl(data.profile_picture);
 
       if (avatarData) {
-        setImageURL(avatarData.publicUrl);
+        setProfileURL(avatarData.publicUrl);
       }
     }
   }, [data?.profile_picture]);
 
   if (profileID && isPending) {
-    return <Skeleton className={`size-${size} rounded-full`} />;
+    return <Skeleton className="size-full rounded-full" />;
+  }
+
+  if (!URL && !profileURL && assets?.[0]) {
+    return (
+      <Image
+        style={{
+          width: '100%',
+          height: '100%',
+          backgroundColor: '#f4f4f5',
+          borderRadius: 999,
+        }}
+        source={assets[0]}
+        alt="Chooselife"
+        contentFit="cover"
+      />
+    );
   }
 
   return (
-    <Avatar className={`w-${size} h-${size}`} alt="Foto do perfil">
-      <AvatarImage source={{ uri: URL || imageURL }} />
+    <Avatar className="size-full" alt="Foto do perfil">
+      <AvatarImage source={{ uri: profileURL || URL }} />
       <AvatarFallback>
         <Text>{getShortName(data?.name || '')}</Text>
       </AvatarFallback>
