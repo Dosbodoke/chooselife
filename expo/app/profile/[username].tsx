@@ -129,7 +129,7 @@ const UserHeader: React.FC<{
     <Card>
       <CardContent className="flex gap-4 overflow-hidden px-2 py-4">
         <View className="flex flex-row mt-4 gap-4">
-          <View className="overflow-hidden size-16">
+          <View className="relative overflow-hidden size-16">
             <SupabaseAvatar profileID={profile.id} />
           </View>
           <View className="flex flex-1">

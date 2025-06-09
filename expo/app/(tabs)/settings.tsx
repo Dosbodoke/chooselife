@@ -48,7 +48,7 @@ export default function SettingsPage() {
               asChild
             >
               <TouchableOpacity className="flex flex-row gap-4">
-                <View className="overflow-hidden size-16">
+                <View className="relative overflow-hidden size-16">
                   <SupabaseAvatar profileID={profile.id} />
                 </View>
                 <View className="flex-1">

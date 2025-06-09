@@ -233,7 +233,7 @@ export const Riggers: React.FC<{ riggers: string[] }> = ({ riggers }) => {
             style={marginStyle}
             className="border border-background rounded-full"
           >
-            <View className="overflow-hidden size-9">
+            <View className="relative overflow-hidden size-9">
               <SupabaseAvatar profileID={id} />
             </View>
           </View>
