@@ -406,7 +406,7 @@ const WebRowAvatar: React.FC<{ webbingID: number }> = ({ webbingID }) => {
   const { data } = useWebbing(webbingID);
   if (!data) return null;
   return (
-    <View className="overflow-hidden size-8">
+    <View className="relative overflow-hidden size-8">
       <SupabaseAvatar profileID={data.user_id} />
     </View>
   );
