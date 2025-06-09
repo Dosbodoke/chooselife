@@ -26,7 +26,7 @@ export const SupabaseAvatar: React.FC<{
 }> = ({ profileID, URL }) => {
   const [assets] = useAssets([
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require('~/assets/images/default-profile-picture.jpg'),
+    require('~/assets/images/default_profile_picture.jpg'),
   ]);
   const [profileURL, setProfileURL] = useState<string | null>(null);
   const {
