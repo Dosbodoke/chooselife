@@ -92,7 +92,7 @@ export const ProfileInfoForm: React.FC<{
         name="profilePicture"
         render={({ field: { value, onChange } }) => (
           <View className="relative w-full items-center mb-6">
-            <View className="overflow-hidden size-32">
+            <View className="relative overflow-hidden size-32">
               <SupabaseAvatar URL={value} />
             </View>
             <View className="absolute bottom-0 translate-y-1/2 left-0 right-0 items-center">
