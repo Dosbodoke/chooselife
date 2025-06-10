@@ -108,11 +108,11 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="pt-0 pb-0">
+      <CardContent>
         {isPending ? (
           <LoadingSkeleton />
         ) : data && data.length > 0 ? (
-          <View className="space-y-2">
+          <View>
             {data.map((setup, index) => (
               <TimelineItem
                 key={setup.id}
@@ -236,7 +236,7 @@ const TimelineItem: React.FC<{
   };
 
   return (
-    <View className="flex-row gap-3 pb-6">
+    <View className="flex-row gap-3">
       {/* Timeline connector */}
       <View className="items-center w-6">
         <View
@@ -249,7 +249,7 @@ const TimelineItem: React.FC<{
       </View>
 
       {/* Content */}
-      <View className="flex-1 pt-0.5">
+      <View className="flex-1 pb-6">
         <View className="mb-3">{content}</View>
         <Riggers riggers={setup.riggers} />
       </View>
@@ -263,18 +263,16 @@ const TimelineContent: React.FC<{
   endLabel?: string;
   endDate?: string;
 }> = ({ label, date, endLabel, endDate }) => (
-  <View className="space-y-2">
-    <View className="flex-row flex-wrap gap-2 items-center">
-      <Text className="text-foreground font-semibold text-base">{label}</Text>
-      <CalendarBadge date={date} />
-    </View>
+  <View className="flex-row flex-wrap gap-2 items-center">
+    <Text className="text-foreground font-semibold text-base">{label}</Text>
+    <CalendarBadge date={date} />
     {endLabel && endDate && (
-      <View className="flex-row flex-wrap gap-2 items-center">
+      <>
         <Text className="text-foreground font-semibold text-base">
           {endLabel}
         </Text>
         <CalendarBadge date={endDate} />
-      </View>
+      </>
     )}
   </View>
 );
@@ -329,7 +327,7 @@ export const Riggers: React.FC<{ riggers: string[] }> = ({ riggers }) => {
 };
 
 const CalendarBadge: React.FC<{ date: string }> = ({ date }) => (
-  <View className="flex-row gap-1.5 items-center bg-muted/50 border border-border rounded-lg px-2.5 py-1.5 shadow-sm">
+  <View className="flex-row gap-1.5 items-center bg-muted border border-border rounded-lg px-2.5 py-1.5 shadow-sm">
     <LucideIcon
       name="CalendarRange"
       className="text-muted-foreground"
