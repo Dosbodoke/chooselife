@@ -246,13 +246,14 @@
           "rigged": {
             "title": "Highline Montado!",
             "subtitle": "🆑 🆑 🆑 🆑 🆑",
-            "message": "O Highline foi agora irá aparecer como montado."
+            "message": "O Highline agora irá aparecer como montado."
           },
           "planned": {
             "title": "Montagem Planejada!",
             "subtitle": "📅",
             "message": "A montagem está planejada para {{date}}, você pode voltar e fazer modificações quando precisar."
-          }
+          },
+          "button": "Ver o Highline"
         },
         "dateForm": {
           "immediate": {

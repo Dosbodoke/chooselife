@@ -252,7 +252,8 @@
             "title": "Rig Planned!",
             "subtitle": "📅",
             "message": "Your rig has been planned for {date}. You can edit or confirm it later."
-          }
+          },
+          "button": "See the Highline"
         },
         "dateForm": {
           "immediate": {
