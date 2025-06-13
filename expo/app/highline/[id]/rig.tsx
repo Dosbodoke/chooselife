@@ -377,7 +377,6 @@ export const HighlineSetup: React.FC = () => {
   );
 };
 
-// New component for rig type selection
 const RigTypeSelection: React.FC<{
   rigType: RigType;
   onRigTypeChange: (type: RigType) => void;
