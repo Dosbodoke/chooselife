@@ -271,7 +271,7 @@
         },
         "optional": {
           "title": "Webbing Setup (Optional)",
-          "description": "You can rig now without detailed webbing info and add it later."
+          "description": "Adding the setup is important to keep track of how you use your equipment."
         }
       }
     },

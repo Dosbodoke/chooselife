@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import i18next from 'i18next';
+import { icons } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import { Controller, type SubmitHandler } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -434,7 +435,7 @@ const RigTypeOption: React.FC<{
   type: RigType;
   isSelected: boolean;
   onSelect: () => void;
-  icon: string;
+  icon: keyof typeof icons;
   title: string;
   description: string;
 }> = ({ isSelected, onSelect, icon, title, description }) => (
@@ -454,7 +455,7 @@ const RigTypeOption: React.FC<{
             )}
           >
             <LucideIcon
-              name={icon as any}
+              name={icon}
               className={cn(
                 'size-5',
                 isSelected ? 'text-primary' : 'text-muted-foreground',

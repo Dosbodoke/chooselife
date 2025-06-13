@@ -231,15 +231,15 @@
       },
       "rig": {
         "typeSelection": {
-          "title": "How would you like to proceed?",
-          "description": "Choose whether to rig the highline now or plan it for later",
+          "title": "Qual tipo de montagem?",
+          "description": "Escolha se deseja montar o highline agora ou planejar para mais tarde.",
           "immediate": {
-            "title": "Rig Now",
-            "description": "Set up the highline immediately"
+            "title": "Montar Agora",
+            "description": "Apenas marque o Highline como montado, sem necessidade de definir um setup."
           },
           "plan": {
-            "title": "Plan for Later",
-            "description": "Schedule the rig for a future date"
+            "title": "Planejar montagem",
+            "description": "Você poderá escolher uma data para a missão e planejar o setup que irá utilizar."
           }
         },
         "success": {
@@ -271,7 +271,7 @@
         },
         "optional": {
           "title": "Setup da Fita (Opcional)",
-          "description": "You can rig now without detailed webbing info and add it later."
+          "description": "Adicionar o setup é importante para ter um histórico de uso do seus equipamentos."
         }
       }
     },
