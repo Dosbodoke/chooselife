@@ -230,18 +230,48 @@
         }
       },
       "rig": {
+        "typeSelection": {
+          "title": "Qual tipo de montagem?",
+          "description": "Escolha se deseja montar o highline agora ou planejar para mais tarde.",
+          "immediate": {
+            "title": "Montar Agora",
+            "description": "Apenas marque o Highline como montado, sem necessidade de definir um setup."
+          },
+          "plan": {
+            "title": "Planejar montagem",
+            "description": "Você poderá escolher uma data para a missão e planejar o setup que irá utilizar."
+          }
+        },
         "success": {
-          "title": "BOA CHOOSEN",
-          "subtitle": "🆑 🆑 🆑 🆑 🆑",
-          "message": "A montagem está planejada para {{date}}, você pode voltar e fazer modificações quando precisar.",
+          "rigged": {
+            "title": "Highline Montado!",
+            "subtitle": "🆑 🆑 🆑 🆑 🆑",
+            "message": "O Highline agora irá aparecer como montado."
+          },
+          "planned": {
+            "title": "Montagem Planejada!",
+            "subtitle": "📅",
+            "message": "A montagem está planejada para {{date}}, você pode voltar e fazer modificações quando precisar."
+          },
           "button": "Ver o Highline"
         },
         "dateForm": {
-          "title": "Primeiro, escolha uma data",
-          "description": "O dia que a missão irá acontecer"
+          "immediate": {
+            "title": "Confirm Current Setup",
+            "description": "You're rigging the highline right now"
+          },
+          "plan": {
+            "title": "Quando você planeja montar?",
+            "description": "Escolha o dia que a missão irá acontecer"
+          }
         },
         "navigator": {
-          "finishLabel": "Planejar montagem"
+          "rigNow": "Montar",
+          "planRig": "Planejar montagem"
+        },
+        "optional": {
+          "title": "Setup da Fita (Opcional)",
+          "description": "Adicionar o setup é importante para ter um histórico de uso do seus equipamentos."
         }
       }
     },

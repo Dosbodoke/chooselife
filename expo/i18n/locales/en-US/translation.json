@@ -230,18 +230,48 @@
         }
       },
       "rig": {
+        "typeSelection": {
+          "title": "How would you like to proceed?",
+          "description": "Choose whether to rig the highline now or plan it for later",
+          "immediate": {
+            "title": "Rig Now",
+            "description": "Set up the highline immediately"
+          },
+          "plan": {
+            "title": "Plan for Later",
+            "description": "Schedule the rig for a future date"
+          }
+        },
         "success": {
-          "title": "NICE CHOOSEN!",
-          "subtitle": "🆑 🆑 🆑 🆑 🆑",
-          "message": "The setup is planned for {{date}}, and you can go back and make changes when needed.",
-          "button": "View Highline"
+          "rigged": {
+            "title": "Highline Rigged!",
+            "subtitle": "🎉",
+            "message": "The highline has been successfully rigged and is ready to use."
+          },
+          "planned": {
+            "title": "Rig Planned!",
+            "subtitle": "📅",
+            "message": "Your rig has been planned for {date}. You can edit or confirm it later."
+          },
+          "button": "See the Highline"
         },
         "dateForm": {
-          "title": "First, choose a date",
-          "description": "The day the mission will take place"
+          "immediate": {
+            "title": "Confirm Current Setup",
+            "description": "You're rigging the highline right now"
+          },
+          "plan": {
+            "title": "When do you plan to rig?",
+            "description": "Choose a date for your planned rig"
+          }
         },
         "navigator": {
-          "finishLabel": "Plan Rigging"
+          "rigNow": "Rig Now",
+          "planRig": "Plan Rig"
+        },
+        "optional": {
+          "title": "Webbing Setup (Optional)",
+          "description": "Adding the setup is important to keep track of how you use your equipment."
         }
       }
     },

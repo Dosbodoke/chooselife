@@ -47,7 +47,7 @@ export const WebbingSetup: React.FC = () => {
     <AnimatedCard layout={_layoutAnimation} className="w-full">
       <CardHeader className="gap-3">
         <CardTitle>{t('components.webbing-setup.equipments.title')}</CardTitle>
-        <View className="flex-row justify-between">
+        <View className="flex-row flex-wrap justify-between">
           <View className="flex-row gap-1 items-baseline">
             <View className="w-6 h-2 bg-red-500" />
             <Text className="text-muted-foreground">
