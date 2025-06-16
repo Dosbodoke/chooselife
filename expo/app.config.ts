@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "ChooseLife",
   slug: "chooselife",
-  version: "1.3.6",
+  version: "1.3.7",
   newArchEnabled: true,
   orientation: "portrait",
   scheme: "com.bodok.chooselife",
@@ -116,6 +116,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           "./assets/images/chooselife_black.png",
           "./assets/images/default_profile_picture.jpg",
         ],
+      },
+    ],
+    [
+      "@sentry/react-native/expo",
+      {
+        "url": "https://sentry.io/",
+        "project": "app-chooselife",
+        "organization": "bodok",
       },
     ],
   ],
