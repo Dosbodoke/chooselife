@@ -5,7 +5,7 @@ import {
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
@@ -22,11 +22,10 @@ import { Button } from '~/components/ui/button';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 
-export const RigModal: React.FC = () => {
-  const { id: highlineID, setupID } = useLocalSearchParams<{
-    id: string;
-    setupID?: string;
-  }>();
+export const RigModal: React.FC<{ highlineID: string; setupID?: string }> = ({
+  highlineID,
+  setupID,
+}) => {
   const router = useRouter();
   const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
 

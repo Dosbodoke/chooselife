@@ -33,13 +33,16 @@ type HighlineTabs = 'details' | 'ranking';
 export default function HighlinePage() {
   const { isConnected } = useNetInfo();
   const { locale } = useI18n();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id: highlineID, setupID } = useLocalSearchParams<{
+    id: string;
+    setupID?: string;
+  }>();
   const [tab, setTab] = useState<HighlineTabs>('details');
 
   const [bottomActionsHeight, setBottomActionsHeight] = useState(0);
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { highline, isPending } = useHighline({ id });
+  const { highline, isPending } = useHighline({ id: highlineID });
 
   const shareListing = async () => {
     if (!highline) return;
@@ -116,7 +119,7 @@ export default function HighlinePage() {
             <LucideIcon name="ChevronLeft" className="text-primary size-6" />
           </TouchableOpacity>
           <View className="flex-row items-center justify-center gap-3">
-            <Link href={`/highline/${id}/edit`} asChild>
+            <Link href={`/highline/${highlineID}/edit`} asChild>
               <TouchableOpacity className="p-2 rounded-full bg-white items-center justify-center">
                 <LucideIcon name="Pencil" className="text-primary size-6" />
               </TouchableOpacity>
@@ -176,7 +179,7 @@ export default function HighlinePage() {
         />
       ) : null}
 
-      <RigModal />
+      <RigModal highlineID={highlineID} setupID={setupID} />
     </>
   );
 }
