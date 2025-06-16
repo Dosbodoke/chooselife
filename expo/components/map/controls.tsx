@@ -11,7 +11,7 @@ const MapControls: React.FC<{
   mapType: MapType;
   isOnMyLocation: boolean;
   goToMyLocation: () => void;
-  setMapType: React.Dispatch<React.SetStateAction<MapType>>;
+  setMapType: (newMapType: MapType) => Promise<void>;
 }> = ({ mapType, isOnMyLocation, goToMyLocation, setMapType }) => {
   const exploreHeaderHeight = useMapStore((state) => state.exploreHeaderHeight);
   const insetTop = useSafeAreaInsets().top;
@@ -37,7 +37,7 @@ const MapControls: React.FC<{
       <TouchableOpacity
         className="p-1 items-center justify-center pt-2"
         onPress={() =>
-          setMapType((old) => (old === 'standard' ? 'satellite' : 'standard'))
+          setMapType(mapType === 'standard' ? 'satellite' : 'standard')
         }
       >
         <LucideIcon
