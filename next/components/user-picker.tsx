@@ -363,7 +363,7 @@ const VerifiedUser: React.FC<{
         isDisabled && "cursor-not-allowed opacity-50"
       )}
       onClick={() => {
-        if (!canSelectMore) {
+        if (canSelectMore) {
           toggleOption({
             username,
             verified: true,
