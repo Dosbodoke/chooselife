@@ -67,20 +67,20 @@ export const RigFormProvider: React.FC<{
     defaultValues: {
       webbing: {
         main: [
-          {
-            length: highlineLength.toString(),
-            leftLoop: true,
-            rightLoop: true,
-            tagName: getWebbingName(null),
-          },
+          // {
+          //   length: highlineLength.toString(),
+          //   leftLoop: true,
+          //   rightLoop: true,
+          //   tagName: getWebbingName(null),
+          // },
         ],
         backup: [
-          {
-            length: highlineLength.toString(),
-            leftLoop: true,
-            rightLoop: true,
-            tagName: getWebbingName(null),
-          },
+          // {
+          //   length: highlineLength.toString(),
+          //   leftLoop: true,
+          //   rightLoop: true,
+          //   tagName: getWebbingName(null),
+          // },
         ],
       },
       rigDate: new Date(),

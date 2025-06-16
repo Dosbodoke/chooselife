@@ -1,10 +1,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import i18next from 'i18next';
+import { icons } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import { Controller, type SubmitHandler } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Platform, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
@@ -27,14 +33,17 @@ import { useHighline } from '~/hooks/use-highline';
 import { rigSetupKeyFactory, useRigSetup } from '~/hooks/use-rig-setup';
 import { getWebbingName } from '~/hooks/use-webbings';
 import { HighlineRigIllustration } from '~/lib/icons/highline-rig';
+import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from '~/lib/utils';
 import { TablesInsert } from '~/utils/database.types';
 import { requestReview } from '~/utils/request-review';
 
 import SuccessAnimation from '~/components/animations/success-animation';
 import { OnboardNavigator, OnboardPaginator } from '~/components/onboard';
 import { Button } from '~/components/ui/button';
+import { Card, CardContent } from '~/components/ui/card';
 import { Text } from '~/components/ui/text';
 import { H1, H3, Muted } from '~/components/ui/typography';
 import { WebbingSetup } from '~/components/webbing-setup';
@@ -43,6 +52,9 @@ const DAMPING = 14;
 export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
 export const _exitingAnimation = FadeOut.springify().damping(DAMPING);
 export const _enteringAnimation = FadeInDown.springify().damping(DAMPING);
+
+// Extended form schema to include rig type
+type RigType = 'plan' | 'immediate';
 
 export default function Screen() {
   const { id: highlineID } = useLocalSearchParams<{ id: string }>();
@@ -74,14 +86,45 @@ export const HighlineSetup: React.FC = () => {
     highlineID,
   });
 
-  const [step, setStep] = useState(0);
-  const steps = useMemo(
-    () => [
-      <DateForm key="DateForm" isLoading={setupIsPending} />,
-      <WebbingSetup key="WebbingSetup" />,
-    ],
-    [],
-  );
+  const [step, setStep] = useState(() => {
+    const isAlreadyPlanned =
+      latestSetup &&
+      latestSetup.is_rigged === false &&
+      !latestSetup.unrigged_at;
+
+    if (isAlreadyPlanned) return 2;
+
+    return 0;
+  });
+  const [rigType, setRigType] = useState<RigType>('plan');
+
+  const steps = useMemo(() => {
+    const stepComponents = [
+      <RigTypeSelection
+        key="RigTypeSelection"
+        rigType={rigType}
+        onRigTypeChange={setRigType}
+        isLoading={setupIsPending}
+      />,
+    ];
+
+    // Only add DateForm step if planning (not immediate rigging)
+    if (rigType === 'plan') {
+      stepComponents.push(
+        <DateForm
+          key="DateForm"
+          rigType={rigType}
+          isLoading={setupIsPending}
+        />,
+      );
+    }
+
+    stepComponents.push(
+      <WebbingSetupWithOptionalIndicator key="WebbingSetup" />,
+    );
+
+    return stepComponents;
+  }, [rigType, setupIsPending]);
 
   const handleNextStep = async (newStep: number) => {
     // Move back
@@ -132,21 +175,27 @@ export const HighlineSetup: React.FC = () => {
           rigDate: new Date(latestSetup.rig_date),
           webbing: { main, backup },
         });
+
+        // Set rig type based on existing setup
+        const isToday =
+          new Date(latestSetup.rig_date).toDateString() ===
+          new Date().toDateString();
+        setRigType(isToday ? 'immediate' : 'plan');
       }
     },
     [latestSetup],
   );
 
   const mutation = useMutation({
-    mutationFn: async (data: RigSchema) => {
+    mutationFn: async (data: RigSchema & { rigType: RigType }) => {
       let setupID: number;
+      const isRiggingNow = data.rigType === 'immediate';
 
       // Check if highline has a planned rig setup
       if (latestSetup && !latestSetup.is_rigged && !latestSetup.unrigged_at) {
         setupID = latestSetup.id;
 
         // Delete existing webbing rows associated with this rig setup.
-        // This way we avoid having to individually update or delete each row.
         const { error: deleteError } = await supabase
           .from('rig_setup_webbing')
           .delete()
@@ -159,7 +208,8 @@ export const HighlineSetup: React.FC = () => {
         const { data: rigSetupData, error: rigSetupError } = await supabase
           .from('rig_setup')
           .update({
-            rig_date: data.rigDate.toISOString(), // converting Date to string
+            rig_date: data.rigDate.toISOString(),
+            is_rigged: isRiggingNow,
           })
           .eq('id', setupID)
           .select()
@@ -167,7 +217,7 @@ export const HighlineSetup: React.FC = () => {
 
         if (rigSetupError || !rigSetupData) {
           throw new Error(
-            rigSetupError?.message || 'Failed to insert rig setup',
+            rigSetupError?.message || 'Failed to update rig setup',
           );
         }
       } else {
@@ -175,8 +225,8 @@ export const HighlineSetup: React.FC = () => {
           .from('rig_setup')
           .insert({
             highline_id: highlineID,
-            is_rigged: false,
-            rig_date: data.rigDate.toISOString(), // converting Date to string
+            is_rigged: isRiggingNow,
+            rig_date: data.rigDate.toISOString(),
             riggers: profile?.id ? [profile.id] : [],
             unrigged_at: null,
           })
@@ -193,14 +243,13 @@ export const HighlineSetup: React.FC = () => {
       }
 
       // Prepare webbing rows for insertion into `rig_setup_webbing`
-      // We assume that the types for rig_setup_webbing rows have been imported
       const webbingRows: TablesInsert<'rig_setup_webbing'>[] = [];
 
       // Process the "main" webbing items
       data.webbing.main.forEach((item) => {
         webbingRows.push({
           left_loop: item.leftLoop,
-          length: Number(item.length), // convert the string to a number
+          length: Number(item.length),
           right_loop: item.rightLoop,
           setup_id: setupID,
           webbing_id: item.webbingId ? Number(item.webbingId) : null,
@@ -230,7 +279,7 @@ export const HighlineSetup: React.FC = () => {
         throw new Error(webbingError.message);
       }
 
-      return { setupID, webbings: webbingData };
+      return { setupID, webbings: webbingData, isRigged: isRiggingNow };
     },
     onSuccess: async () => {
       queryClient.invalidateQueries({
@@ -245,25 +294,34 @@ export const HighlineSetup: React.FC = () => {
 
   // Implement handleSave to call the mutation.
   const handleSave: SubmitHandler<RigSchema> = async (data) => {
-    await mutation.mutateAsync(data);
+    await mutation.mutateAsync({ ...data, rigType });
   };
 
   if (mutation.isSuccess) {
+    const isRigged = mutation.data?.isRigged;
     return (
       <View className="h-full items-center justify-center gap-8">
         <View>
-          <H1 className="text-center">{t('app.highline.rig.success.title')}</H1>
+          <H1 className="text-center">
+            {isRigged
+              ? t('app.highline.rig.success.rigged.title')
+              : t('app.highline.rig.success.planned.title')}
+          </H1>
           <Text className="text-3xl text-center">
-            {t('app.highline.rig.success.subtitle')}
+            {isRigged
+              ? t('app.highline.rig.success.rigged.subtitle')
+              : t('app.highline.rig.success.planned.subtitle')}
           </Text>
         </View>
         <View className="h-52 items-center justify-center">
           <SuccessAnimation />
         </View>
         <Text className="text-center w-3/4">
-          {t('app.highline.rig.success.message', {
-            date: form.getValues('rigDate').toLocaleDateString('pt-BR'),
-          })}
+          {isRigged
+            ? t('app.highline.rig.success.rigged.message')
+            : t('app.highline.rig.success.planned.message', {
+                date: form.getValues('rigDate').toLocaleDateString('pt-BR'),
+              })}
         </Text>
         <Link
           href={{
@@ -306,7 +364,11 @@ export const HighlineSetup: React.FC = () => {
           selectedIndex={step}
           onIndexChange={handleNextStep}
           onFinish={form.handleSubmit(handleSave)}
-          finishLabel={t('app.highline.rig.navigator.finishLabel')}
+          finishLabel={
+            rigType === 'immediate'
+              ? t('app.highline.rig.navigator.rigNow')
+              : t('app.highline.rig.navigator.planRig')
+          }
           goBack={router.back}
           isLoading={mutation.isPending || setupIsPending}
         />
@@ -315,7 +377,104 @@ export const HighlineSetup: React.FC = () => {
   );
 };
 
-const DateForm: React.FC<{ isLoading?: boolean }> = ({ isLoading }) => {
+const RigTypeSelection: React.FC<{
+  rigType: RigType;
+  onRigTypeChange: (type: RigType) => void;
+  isLoading?: boolean;
+}> = ({ rigType, onRigTypeChange, isLoading }) => {
+  const { t } = useTranslation();
+  const colorScheme = useColorScheme();
+
+  if (isLoading) {
+    return <ActivityIndicator size="large" />;
+  }
+
+  return (
+    <>
+      <HighlineRigIllustration
+        mode={colorScheme.colorScheme}
+        className="w-full h-auto"
+      />
+
+      <View>
+        <H3 className="text-center mb-2">
+          {t('app.highline.rig.typeSelection.title')}
+        </H3>
+        <Muted className="text-center">
+          {t('app.highline.rig.typeSelection.description')}
+        </Muted>
+      </View>
+
+      <View className="w-full gap-3">
+        <RigTypeOption
+          type="immediate"
+          isSelected={rigType === 'immediate'}
+          onSelect={() => onRigTypeChange('immediate')}
+          icon="Zap"
+          title={t('app.highline.rig.typeSelection.immediate.title')}
+          description={t(
+            'app.highline.rig.typeSelection.immediate.description',
+          )}
+        />
+
+        <RigTypeOption
+          type="plan"
+          isSelected={rigType === 'plan'}
+          onSelect={() => onRigTypeChange('plan')}
+          icon="Calendar"
+          title={t('app.highline.rig.typeSelection.plan.title')}
+          description={t('app.highline.rig.typeSelection.plan.description')}
+        />
+      </View>
+    </>
+  );
+};
+
+const RigTypeOption: React.FC<{
+  type: RigType;
+  isSelected: boolean;
+  onSelect: () => void;
+  icon: keyof typeof icons;
+  title: string;
+  description: string;
+}> = ({ isSelected, onSelect, icon, title, description }) => (
+  <TouchableOpacity onPress={onSelect} activeOpacity={0.7}>
+    <Card
+      className={cn(
+        'border-2 transition-colors',
+        isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card',
+      )}
+    >
+      <CardContent className="p-4">
+        <View className="flex-row items-center gap-3">
+          <View
+            className={cn(
+              'p-2 rounded-full',
+              isSelected ? 'bg-primary/20' : 'bg-muted',
+            )}
+          >
+            <LucideIcon
+              name={icon}
+              className={cn(
+                'size-5',
+                isSelected ? 'text-primary' : 'text-muted-foreground',
+              )}
+            />
+          </View>
+          <View className="flex-1">
+            <Text className="font-semibold text-base mb-1">{title}</Text>
+            <Text className="text-muted-foreground text-sm">{description}</Text>
+          </View>
+        </View>
+      </CardContent>
+    </Card>
+  </TouchableOpacity>
+);
+
+const DateForm: React.FC<{
+  rigType: RigType;
+  isLoading?: boolean;
+}> = ({ rigType, isLoading }) => {
   const { t } = useTranslation();
   const { form } = useRiggingForm();
   const colorScheme = useColorScheme();
@@ -333,30 +492,74 @@ const DateForm: React.FC<{ isLoading?: boolean }> = ({ isLoading }) => {
         <>
           <View>
             <H3 className="text-center">
-              {t('app.highline.rig.dateForm.title')}
+              {rigType === 'immediate'
+                ? t('app.highline.rig.dateForm.immediate.title')
+                : t('app.highline.rig.dateForm.plan.title')}
             </H3>
             <Muted className="text-center">
-              {t('app.highline.rig.dateForm.description')}
+              {rigType === 'immediate'
+                ? t('app.highline.rig.dateForm.immediate.description')
+                : t('app.highline.rig.dateForm.plan.description')}
             </Muted>
           </View>
 
-          <Controller
-            control={form.control}
-            name="rigDate"
-            render={({ field: { value, onChange } }) => (
-              <DatePicker
-                mode="date"
-                locale={i18next.language}
-                date={value}
-                minimumDate={new Date()}
-                onDateChange={(date) => onChange(date)}
-                timeZoneOffsetInMinutes={0}
-                theme={colorScheme.colorScheme}
-              />
-            )}
-          />
+          {rigType === 'plan' && (
+            <Controller
+              control={form.control}
+              name="rigDate"
+              render={({ field: { value, onChange } }) => (
+                <DatePicker
+                  mode="date"
+                  locale={i18next.language}
+                  date={value}
+                  minimumDate={new Date()}
+                  onDateChange={(date) => onChange(date)}
+                  timeZoneOffsetInMinutes={0}
+                  theme={colorScheme.colorScheme}
+                />
+              )}
+            />
+          )}
+
+          {rigType === 'immediate' && (
+            <View className="items-center gap-4">
+              <View className="flex-row items-center gap-2 p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                <LucideIcon name="Clock" className="text-green-600 size-5" />
+                <Text className="text-green-700 dark:text-green-300 font-medium">
+                  {t('app.highline.rig.dateForm.immediate.currentTime', {
+                    time: new Date().toLocaleTimeString('pt-BR', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    }),
+                    date: new Date().toLocaleDateString('pt-BR'),
+                  })}
+                </Text>
+              </View>
+            </View>
+          )}
         </>
       )}
     </>
+  );
+};
+
+const WebbingSetupWithOptionalIndicator: React.FC = () => {
+  const { t } = useTranslation();
+
+  return (
+    <View className="gap-4 w-full">
+      <View className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+        <View className="flex-row items-center gap-2 mb-2">
+          <LucideIcon name="Info" className="text-blue-600 size-5" />
+          <Text className="text-blue-700 dark:text-blue-300 font-semibold">
+            {t('app.highline.rig.optional.title')}
+          </Text>
+        </View>
+        <Text className="text-blue-600 dark:text-blue-400 text-sm">
+          {t('app.highline.rig.optional.description')}
+        </Text>
+      </View>
+      <WebbingSetup />
+    </View>
   );
 };
