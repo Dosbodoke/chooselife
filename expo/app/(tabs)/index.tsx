@@ -18,6 +18,7 @@ import {
   type Highline,
   type HighlineCategory,
 } from '~/hooks/use-highline';
+import { useMapStyle } from '~/hooks/use-map-style';
 import { useOfflineRegion } from '~/hooks/use-offline-region';
 import { calculateZoomLevel } from '~/utils';
 import {
@@ -32,12 +33,6 @@ import ExploreHeader from '~/components/map/explore-header';
 import { MapCardList } from '~/components/map/map-card';
 import { Markers } from '~/components/map/markers';
 import { ChooselifeTrails } from '~/components/map/trail-shape';
-
-const getMapStyle = (mapType: string) => {
-  return mapType === 'satellite'
-    ? Mapbox.StyleURL.SatelliteStreet
-    : Mapbox.StyleURL.Outdoors;
-};
 
 async function getMyLocation(): Promise<
   | {
@@ -85,13 +80,11 @@ async function getMyLocation(): Promise<
 
 export default function Screen() {
   useOfflineRegion();
-  // Refs
+
   const mapRef = useRef<Mapbox.MapView>(null);
   const cameraRef = useRef<Mapbox.Camera>(null);
 
-  // state
   const [isOnMyLocation, setIsOnMyLocation] = useState(false);
-  const [mapType, setMapType] = useState<'satellite' | 'standard'>('satellite');
   const [searchTerm, setSearchTerm] = useState('');
   const setCamera = useMapStore((state) => state.setCamera);
   const [highlightedMarker, setHighlightedMarker] = useMapStore(
@@ -111,6 +104,12 @@ export default function Screen() {
   const { highlines, setSelectedCategory, isLoading } = useHighline({
     searchTerm,
   });
+  const {
+    mapType,
+    setMapType,
+    mapStyle,
+    isLoading: isMapStyleLoading,
+  } = useMapStyle();
 
   const highlinesWithLocation = useMemo(() => {
     return highlines.filter(
@@ -137,6 +136,7 @@ export default function Screen() {
     (text: string) => setSearchTerm(text),
     [],
   );
+
   const handleCategoryChange = useCallback(
     (category: HighlineCategory | null) => setSelectedCategory(category),
     [],
@@ -254,6 +254,11 @@ export default function Screen() {
     };
   }, [throttledCameraUpdate]);
 
+  // Don't render the map until we've loaded the map style preference
+  if (isMapStyleLoading) {
+    return <View style={{ flex: 1 }} />; // You could add a loading spinner here
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <ExploreHeader
@@ -264,7 +269,7 @@ export default function Screen() {
       <Mapbox.MapView
         ref={mapRef}
         style={{ flex: 1 }}
-        styleURL={getMapStyle(mapType)}
+        styleURL={mapStyle}
         scaleBarEnabled={false}
         onCameraChanged={handleCameraChanged}
         onMapIdle={handleCameraChanged}
