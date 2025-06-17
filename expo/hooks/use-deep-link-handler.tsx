@@ -13,6 +13,8 @@ export function useDeepLinkHandler() {
 
     const parsed = Linking.parse(url);
 
+    console.log({ parsed });
+
     // Start with the path from parsed URL
     let pathSegments = [];
 
@@ -40,12 +42,28 @@ export function useDeepLinkHandler() {
       pathSegments = pathSegments.slice(1);
     }
 
+    console.log({ pathSegmentsAfterLocaleRemoval: pathSegments });
+
+    // Reconstruct the path without the locale
     const finalPath = `/${pathSegments.join('/')}`;
+    console.log({ finalPath });
+
     // @ts-expect-error - Dynamic routes need a type override
     router.navigate(finalPath);
   };
 
   useEffect(() => {
+    // Handle initial URL when app is opened from closed state
+    const handleInitialUrl = async () => {
+      const initialUrl = await Linking.getInitialURL();
+      if (initialUrl) {
+        console.log('Initial URL:', initialUrl);
+        handleUrl(initialUrl);
+      }
+    };
+
+    handleInitialUrl();
+
     // This handles links when the app is already open
     const subscription = Linking.addEventListener('url', ({ url }) => {
       handleUrl(url);
