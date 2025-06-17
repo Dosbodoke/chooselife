@@ -5,7 +5,9 @@
         "appID": "6FF7DMX58R.com.bodok.chooselife",
         "paths": [
           "/highline/*",
-          "/profile/*"
+          "/profile/*",
+          "/*/highline/*",
+          "/*/profile/*" 
         ]
       }
     ]
