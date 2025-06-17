@@ -2,12 +2,12 @@
   "applinks": {
     "details": [
       {
-        "appID": "6745024708.com.bodok.chooselife",
+        "appID": "6FF7DMX58R.com.bodok.chooselife",
         "paths": [
-          "/en/highline/*",
-          "/pt/highline/*",
-          "/en/profile/*",
-          "/pt/profile/*"
+          "/highline/*",
+          "/profile/*",
+          "/*/highline/*",
+          "/*/profile/*" 
         ]
       }
     ]
