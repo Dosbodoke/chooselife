@@ -61,7 +61,7 @@ export const TrailShape: React.FC<{
 };
 
 export const ChooselifeTrails = () => {
-  const CHOOSELIFE_TRAILS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  const CHOOSELIFE_TRAILS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10];
   const { data: trails } = useQuery({
     queryKey: ['trails'],
     queryFn: async () => {
