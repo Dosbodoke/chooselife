@@ -142,7 +142,7 @@ export default function Screen() {
     [],
   );
 
-  // Throttled camera change handler (updates at most once every 300ms)
+  // Throttled camera change handler (updates at most once every 500ms)
   const throttledCameraUpdate = useCallback(
     throttle(
       (state: Mapbox.MapState) => {
@@ -151,7 +151,7 @@ export default function Screen() {
         }
         setCamera(state);
       },
-      300,
+      500,
       { leading: true, trailing: true },
     ),
     [setCamera, isOnMyLocation, setIsOnMyLocation],

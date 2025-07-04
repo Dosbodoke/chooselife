@@ -87,7 +87,7 @@ const LocationPickerScreen: React.FC = () => {
         }}
       >
         <Camera />
-        <Mapbox.UserLocation visible={true} />
+        <Mapbox.UserLocation showsUserHeadingIndicator />
 
         {anchorA && (
           <AnchorPin id="anchorA" anchor={anchorA} setAnchor={setAnchorA} />
