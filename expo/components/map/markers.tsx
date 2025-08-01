@@ -22,7 +22,7 @@ interface PointProperties {
 }
 
 export const Markers: React.FC<{
-  cameraRef: React.RefObject<MapboxGL.Camera>;
+  cameraRef: React.RefObject<MapboxGL.Camera | null>;
   highlines: Highline[] | null;
   updateMarkers: (highlines: Highline[], focused: Highline) => void;
 }> = ({ cameraRef, highlines, updateMarkers }) => {

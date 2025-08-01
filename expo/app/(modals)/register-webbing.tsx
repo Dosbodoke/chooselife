@@ -444,7 +444,6 @@ const SelectModel: React.FC<{ control: Control<TRegisterWebbingSchema> }> = ({
           data={models}
           renderItem={({ item }) => renderModelItem(item)}
           ListEmptyComponent={EmptyState}
-          estimatedItemSize={itemSize}
         />
         <Separator className="my-3" />
         <Button
