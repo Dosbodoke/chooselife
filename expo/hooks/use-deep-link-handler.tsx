@@ -13,8 +13,6 @@ export function useDeepLinkHandler() {
 
     const parsed = Linking.parse(url);
 
-    console.log({ parsed });
-
     // Start with the path from parsed URL
     let pathSegments = [];
 
@@ -31,8 +29,6 @@ export function useDeepLinkHandler() {
       pathSegments.push(...pathParts);
     }
 
-    console.log({ pathSegments });
-
     // Check if the first segment is a supported locale
     if (
       pathSegments.length > 0 &&
@@ -42,12 +38,8 @@ export function useDeepLinkHandler() {
       pathSegments = pathSegments.slice(1);
     }
 
-    console.log({ pathSegmentsAfterLocaleRemoval: pathSegments });
-
     // Reconstruct the path without the locale
     const finalPath = `/${pathSegments.join('/')}`;
-    console.log({ finalPath });
-
     // @ts-expect-error - Dynamic routes need a type override
     router.navigate(finalPath);
   };
@@ -57,7 +49,6 @@ export function useDeepLinkHandler() {
     const handleInitialUrl = async () => {
       const initialUrl = await Linking.getInitialURL();
       if (initialUrl) {
-        console.log('Initial URL:', initialUrl);
         handleUrl(initialUrl);
       }
     };
