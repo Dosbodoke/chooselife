@@ -36,7 +36,7 @@
     "@rn-primitives/tabs": "^1.1.0",
     "@rn-primitives/tooltip": "~1.0.3",
     "@rn-primitives/types": "^1.1.0",
-    "@rnmapbox/maps": "10.1.36",
+    "@rnmapbox/maps": "10.1.37",
     "@shopify/flash-list": "^2.0.0",
     "@shopify/react-native-skia": "^2.1.1",
     "@supabase/supabase-js": "^2.50.3",
