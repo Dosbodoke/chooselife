@@ -343,7 +343,6 @@ const LastWalks: React.FC<{ username: string }> = ({ username }) => {
           data={data}
           renderItem={renderWalkItem}
           keyExtractor={(item) => item.id.toString()}
-          estimatedItemSize={100}
           ItemSeparatorComponent={renderSeparator}
           ListEmptyComponent={renderEmptyComponent}
           removeClippedSubviews={false}
