@@ -29,8 +29,6 @@ export function useDeepLinkHandler() {
       pathSegments.push(...pathParts);
     }
 
-    console.log({ pathSegments });
-
     // Check if the first segment is a supported locale
     if (
       pathSegments.length > 0 &&
@@ -40,12 +38,23 @@ export function useDeepLinkHandler() {
       pathSegments = pathSegments.slice(1);
     }
 
+    // Reconstruct the path without the locale
     const finalPath = `/${pathSegments.join('/')}`;
     // @ts-expect-error - Dynamic routes need a type override
     router.navigate(finalPath);
   };
 
   useEffect(() => {
+    // Handle initial URL when app is opened from closed state
+    const handleInitialUrl = async () => {
+      const initialUrl = await Linking.getInitialURL();
+      if (initialUrl) {
+        handleUrl(initialUrl);
+      }
+    };
+
+    handleInitialUrl();
+
     // This handles links when the app is already open
     const subscription = Linking.addEventListener('url', ({ url }) => {
       handleUrl(url);

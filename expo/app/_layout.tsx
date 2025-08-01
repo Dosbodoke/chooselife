@@ -111,6 +111,14 @@ export default function RootLayout() {
                         name="register-highline"
                         options={{ header: () => <OfflineBanner /> }}
                       />
+                      <Stack.Screen
+                        name="en/[...slug]"
+                        options={{ headerShown: false }}
+                      />
+                      <Stack.Screen
+                        name="pt/[...slug]"
+                        options={{ headerShown: false }}
+                      />
                     </Stack>
                     <PortalHost />
                   </BottomSheetModalProvider>
