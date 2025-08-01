@@ -2221,10 +2221,10 @@
   resolved "https://registry.yarnpkg.com/@rn-primitives/utils/-/utils-1.1.0.tgz#93e511dae16a2e5207f1877d1f84ed337b81727c"
   integrity sha512-pIlKWQeYkKRxOy5FZe6B1YWSYFqrfuA7hBUFz8Ryi9KmySNLsB49iAuXV/ZtqDAkxQvNKNSzpqS4omQOCftvXw==
 
-"@rnmapbox/maps@10.1.37":
-  version "10.1.37"
-  resolved "https://registry.yarnpkg.com/@rnmapbox/maps/-/maps-10.1.37.tgz#fee835a18cc7377ba6a1515ce5a1d7e7c02a777c"
-  integrity sha512-9TJ79pjj7v2vQOPJZXO5lJmlYi0xlesRnAPTAwfOjXlHdGPtiucXoxL8+e1xL0PJBVMqVJGOjPLeb1+05kGx2g==
+"@rnmapbox/maps@10.1.40":
+  version "10.1.40"
+  resolved "https://registry.yarnpkg.com/@rnmapbox/maps/-/maps-10.1.40.tgz#fdbd69f8b9a850a4593b33773014759f3267ccd9"
+  integrity sha512-SFoX8mI9BV365rUaYZYr60iPJa8gSWhhPQQrSMdtlZNoNE3vKvv4kcstniE4z/XqZlzqZle/1r1cjONpvIDyqA==
   dependencies:
     "@turf/along" "6.5.0"
     "@turf/distance" "6.5.0"
