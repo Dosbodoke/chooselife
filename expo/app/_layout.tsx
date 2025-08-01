@@ -51,15 +51,15 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <ReactQueryProvider>
-      <I18nProvider>
-        <AuthProvider>
-          <NotificationProvider>
-            <ThemeProvider value={LIGHT_THEME}>
-              <GestureHandlerRootView>
-                <KeyboardProvider>
-                  <StatusBar style="dark" />
-                  <BottomSheetModalProvider>
+    <GestureHandlerRootView>
+      <KeyboardProvider>
+        <BottomSheetModalProvider>
+          <ThemeProvider value={LIGHT_THEME}>
+            <ReactQueryProvider>
+              <I18nProvider>
+                <AuthProvider>
+                  <NotificationProvider>
+                    <StatusBar style="dark" />
                     <Stack
                       screenOptions={{
                         headerBackButtonDisplayMode: 'minimal',
@@ -121,13 +121,13 @@ export default function RootLayout() {
                       />
                     </Stack>
                     <PortalHost />
-                  </BottomSheetModalProvider>
-                </KeyboardProvider>
-              </GestureHandlerRootView>
-            </ThemeProvider>
-          </NotificationProvider>
-        </AuthProvider>
-      </I18nProvider>
-    </ReactQueryProvider>
+                  </NotificationProvider>
+                </AuthProvider>
+              </I18nProvider>
+            </ReactQueryProvider>
+          </ThemeProvider>
+        </BottomSheetModalProvider>
+      </KeyboardProvider>
+    </GestureHandlerRootView>
   );
 }

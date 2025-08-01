@@ -85,7 +85,6 @@ const ListingsBottomSheet: React.FC<{
           data={highlines}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          estimatedItemSize={390}
           removeClippedSubviews={false}
         />
       ) : null}
