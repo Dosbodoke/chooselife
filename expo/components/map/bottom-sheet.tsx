@@ -4,12 +4,14 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type Highline } from '~/hooks/use-highline';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
+import { _layoutAnimation } from '~/utils/constants';
 
 import { HighlineCard } from '../highline/highline-card';
 import { Button } from '../ui/button';
@@ -107,7 +109,6 @@ const CustomBottomSheetHandle: React.FC<{
   highlineLength: number;
   isLoading: boolean;
 }> = ({ highlineLength, isLoading }) => {
-  const { t } = useTranslation();
   const setBottomSheetHandlerHeight = useMapStore(
     (state) => state.setBottomSheeHandlerHeight,
   );
@@ -117,20 +118,31 @@ const CustomBottomSheetHandle: React.FC<{
       onLayout={(e) => {
         setBottomSheetHandlerHeight(e.nativeEvent.layout.height);
       }}
-      className="p-4 bg-white items-center gap-2"
+      className="p-4 gap-2"
     >
-      <View className="w-10 h-1 bg-muted-foreground rounded-md"></View>
+      <View className="mx-auto w-10 h-1 bg-muted-foreground rounded-md" />
       <View className="flex-row justify-between items-center w-full">
-        <Text
-          className={cn(
-            'text-center font-bold text-2xl',
-            isLoading ? 'text-muted-foreground' : 'text-primary',
-          )}
-        >
-          {isLoading
-            ? t('components.map.bottom-sheet.loadingHighlines')
-            : `${highlineLength} highlines`}
-        </Text>
+        <View className="flex-row items-center gap-1">
+          <Animated.Text
+            layout={_layoutAnimation}
+            className={cn(
+              'text-center font-extrabold text-3xl tabular-nums',
+              isLoading ? 'text-muted-foreground' : 'text-primary',
+            )}
+          >
+            {isLoading ? <ActivityIndicator /> : highlineLength}
+          </Animated.Text>
+          <Animated.Text
+            layout={_layoutAnimation}
+            key={'highline-label'}
+            className={cn(
+              'text-center font-extrabold text-3xl',
+              isLoading ? 'text-muted-foreground' : 'text-primary',
+            )}
+          >
+            highline{highlineLength === 1 ? '' : 's'}
+          </Animated.Text>
+        </View>
         <AddHighlineButton />
       </View>
     </View>
