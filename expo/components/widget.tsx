@@ -7,7 +7,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withTiming,
 } from 'react-native-reanimated';
 
 import { LucideIcon } from '~/lib/icons/lucide-icon';
@@ -242,33 +241,15 @@ export function Widget({ items }: WidgetProps) {
                       )}
                     </View>
 
-                    {/* Visual indicator for interactivity */}
-                    <View className="bg-white/20 rounded-full p-2 ml-3">
-                      <LucideIcon
-                        name="ArrowRight"
-                        size={20}
-                        className="text-white"
-                      />
-                    </View>
-                  </View>
-
-                  {/* Call-to-action text */}
-                  <View className="flex-row items-center">
-                    <Text
-                      className="text-sm font-semibold text-white/90 tracking-wide"
-                      style={{
-                        textShadowColor: 'rgba(0, 0, 0, 0.6)',
-                        textShadowOffset: { width: 0, height: 1 },
-                        textShadowRadius: 3,
-                      }}
-                    >
-                      TAP TO EXPLORE
-                    </Text>
-                    <View className="ml-2 flex-row">
-                      <View className="w-1 h-1 bg-white/60 rounded-full mx-0.5" />
-                      <View className="w-1 h-1 bg-white/40 rounded-full mx-0.5" />
-                      <View className="w-1 h-1 bg-white/20 rounded-full mx-0.5" />
-                    </View>
+                    {item.onPress ? (
+                      <View className="bg-white/20 rounded-full p-2 ml-3">
+                        <LucideIcon
+                          name="ArrowRight"
+                          size={20}
+                          className="text-white"
+                        />
+                      </View>
+                    ) : null}
                   </View>
                 </View>
               )}
