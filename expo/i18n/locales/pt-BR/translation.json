@@ -386,7 +386,6 @@
     "map": {
       "bottom-sheet": {
         "map": "Mapa",
-        "loadingHighlines": "Procurando highlines...",
         "add": "Adicionar"
       },
       "explore-header": {

@@ -74,14 +74,12 @@ const ExploreHeader: React.FC<{
   const scrollRef = useRef<ScrollView>(null);
   const searchInputRef = useRef<TextInput>(null);
 
-  // Shared values for the indicator’s horizontal position and width
-  const indicatorX = useSharedValue(0);
-  const indicatorWidth = useSharedValue(0);
-
   // Store each category’s layout (x and width)
   const categoryLayouts = useRef<Array<{ x: number; width: number }>>([]);
 
-  // Create an animated style for the indicator using our shared values.
+  // Selected category Indicator’s horizontal position and width
+  const indicatorX = useSharedValue(0);
+  const indicatorWidth = useSharedValue(0);
   const animatedIndicatorStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: indicatorX.value }],
     width: indicatorWidth.value,
@@ -123,21 +121,25 @@ const ExploreHeader: React.FC<{
   return (
     <SafeAreaOfflineView>
       <View
-        className="bg-background pt-2 pb-4 shadow gap-6 px-6"
+        className="gap-4 pb-1"
         onLayout={(e) => setExploreHeaderHeight(e.nativeEvent.layout.height)}
       >
-        <View className="flex-row items-center justify-between gap-3">
+        <View className="flex-row items-center justify-between px-6">
           <TouchableOpacity
-            className="flex-1 flex-row bg-background gap-3 p-4 items-center border-hairline border-muted rounded-3xl shadow-md"
+            className="flex-1 flex-row bg-muted gap-3 p-4 items-center border-hairline border-muted rounded-3xl"
             onPress={handleFocusSearchInput}
           >
-            <LucideIcon name="Search" className="size-6 text-primary" />
+            <LucideIcon
+              name="Search"
+              strokeWidth={3}
+              className="size-6 text-muted-foreground"
+            />
             <TextInput
               ref={searchInputRef}
               placeholder={t('components.map.explore-header.searchPlaceholder')}
               value={search}
               onChangeText={handleSearchChange}
-              className="flex-1"
+              className="flex-1 text-primary font-semibold placeholder:text-muted-foreground"
             />
           </TouchableOpacity>
         </View>
@@ -147,7 +149,7 @@ const ExploreHeader: React.FC<{
             horizontal
             ref={scrollRef}
             showsHorizontalScrollIndicator={false}
-            contentContainerClassName="relative items-center px-4 pb-1"
+            contentContainerClassName="relative items-center px-6 gap-2"
           >
             {categories.map((item, index) => (
               <TouchableOpacity
@@ -157,22 +159,13 @@ const ExploreHeader: React.FC<{
                 onLayout={(event: LayoutChangeEvent) => {
                   const { x, width } = event.nativeEvent.layout;
                   categoryLayouts.current[index] = { x, width };
-                  // If this category is active on first render, update the indicator immediately.
-                  if (activeIndex === index) {
-                    indicatorX.value = x;
-                    indicatorWidth.value = width;
-                  }
                 }}
-                style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginHorizontal: 8,
-                }}
+                className="bg-background flex-row items-center justify-center gap-2 p-1 pb-3 px-2 rounded-lg"
               >
                 <LucideIcon
                   name={item.icon}
                   className={cn(
-                    'size-6',
+                    'size-5',
                     activeIndex === index
                       ? 'text-primary'
                       : 'text-muted-foreground',
@@ -180,6 +173,7 @@ const ExploreHeader: React.FC<{
                 />
                 <Text
                   className={cn(
+                    'font-semibold',
                     activeIndex === index
                       ? 'text-primary'
                       : 'text-muted-foreground',
@@ -189,10 +183,9 @@ const ExploreHeader: React.FC<{
                 </Text>
               </TouchableOpacity>
             ))}
-
             {activeIndex !== null && (
               <Animated.View
-                className="h-[2px] bg-primary absolute bottom-0"
+                className="h-[2px] bg-blue-500 absolute bottom-0"
                 style={animatedIndicatorStyle}
               />
             )}
