@@ -10,7 +10,6 @@ import type { Highline } from '~/hooks/use-highline';
 import { RigStatuses } from '~/hooks/use-rig-setup';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
-import { highlinesID } from '~/utils/festival-data';
 
 import { Text } from '~/components/ui/text';
 import { H4, Small } from '~/components/ui/typography';
@@ -29,8 +28,6 @@ export const HighlineMapCard: React.FC<MapCardProps> = ({
   isFocused,
   onPress,
 }) => {
-  const isFestivalHighline = highlinesID.includes(highline.id);
-
   const { t } = useTranslation();
   return (
     <Pressable
@@ -52,11 +49,7 @@ export const HighlineMapCard: React.FC<MapCardProps> = ({
           />
         </View>
 
-        <StatusChip
-          status={
-            isFestivalHighline ? 'rigged' : (highline.status as RigStatuses)
-          }
-        />
+        <StatusChip status={highline.status as RigStatuses} />
 
         <View className="absolute top-2 right-2">
           <FavoriteHighline

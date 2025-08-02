@@ -1,4 +1,4 @@
-import { Link, useRouter } from 'expo-router';
+import { Link } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
@@ -20,11 +20,9 @@ export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
 
 export default function HomeScreen() {
   const { t } = useTranslation();
-  const router = useRouter();
-
   return (
     <SafeAreaOfflineView>
-      <ScrollView>
+      <ScrollView contentContainerClassName="pt-8">
         <Widget
           items={[
             {
@@ -34,7 +32,6 @@ export default function HomeScreen() {
               background: supabase.storage
                 .from('promo')
                 .getPublicUrl('highline-walk.webp').data.publicUrl,
-              onPress: () => router.push('/(festival)'),
             },
           ]}
         />
@@ -69,15 +66,13 @@ export default function HomeScreen() {
   );
 }
 
-const QuickAction = React.forwardRef<
-  React.ElementRef<typeof TouchableOpacity>,
-  {
-    onPress?: () => void;
-    label: string;
-    icon: React.ReactNode;
-    isComingSoon?: boolean;
-  }
->(({ onPress, label, icon, isComingSoon = false }, ref) => {
+const QuickAction: React.FC<{
+  ref?: React.RefObject<View | null>;
+  onPress?: () => void;
+  label: string;
+  icon: React.ReactNode;
+  isComingSoon?: boolean;
+}> = ({ ref, onPress, label, icon, isComingSoon = false }) => {
   const { t } = useTranslation();
   return (
     <TouchableOpacity
@@ -104,7 +99,7 @@ const QuickAction = React.forwardRef<
       <Text className="text-xs text-center font-medium">{label}</Text>
     </TouchableOpacity>
   );
-});
+};
 
 // const FeaturedSpot: React.FC = () => {
 //   return (
