@@ -1,5 +1,6 @@
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Text, TextInput, View } from 'react-native';
+import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { z } from 'zod';
 
 import { cn } from '~/lib/utils';
@@ -73,6 +74,14 @@ export const WebbingInput: React.FC<{
 }) => {
   const { t } = useTranslation();
 
+  const textInputRef = useRef<TextInput>(null);
+
+  const handlePress = () => {
+    if (!disabled && textInputRef.current) {
+      textInputRef.current.focus();
+    }
+  };
+
   return (
     <View className="w-full gap-4">
       <View className="flex-row items-center">
@@ -88,16 +97,21 @@ export const WebbingInput: React.FC<{
           disabled={disabled}
         />
 
-        <View className="flex-1 items-center">
+        <TouchableOpacity
+          onPress={handlePress}
+          activeOpacity={disabled ? 1 : 0.7}
+          className="flex-1 items-center"
+        >
           <View className="flex-row items-center">
             <TextInput
+              ref={textInputRef}
               className={cn(
                 'text-center',
                 disabled ? 'text-muted-foreground' : 'text-primary',
               )}
               keyboardType="numeric"
               placeholder="0"
-              value={length}
+              defaultValue={length}
               onChangeText={(text) => {
                 if (/^\d*$/.test(text)) {
                   onLengthChange(text);
@@ -124,7 +138,7 @@ export const WebbingInput: React.FC<{
           <Text className={cn('pt-1', error ? 'text-red-400' : 'text-primary')}>
             {t('components.webbing-input.webbingLength')}
           </Text>
-        </View>
+        </TouchableOpacity>
 
         <LoopSwitch
           checked={rightLoop}
