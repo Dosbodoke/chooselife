@@ -1,7 +1,7 @@
 import MapboxGL from '@rnmapbox/maps';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMapStore } from '~/store/map-store';
-import type { Feature, GeoJsonProperties } from 'geojson';
+import type { GeoJsonProperties } from 'geojson';
 import React, { useCallback, useMemo } from 'react';
 import { View } from 'react-native';
 import { PointFeature } from 'supercluster';
@@ -9,7 +9,6 @@ import useSuperCluster from 'use-supercluster';
 
 import { useAuth } from '~/context/auth';
 import { highlineKeyFactory, type Highline } from '~/hooks/use-highline';
-import { MarkerCL } from '~/lib/icons/MarkerCL';
 import { MIN_CLUSTER_SIZE } from '~/utils/constants';
 
 import { Text } from '~/components/ui/text';
@@ -129,21 +128,6 @@ export const Markers: React.FC<{
     [queryClient, updateMarkers, profile?.id],
   );
 
-  const polylineFeature = useMemo<Feature | null>(() => {
-    if (!highlightedMarker) return null;
-    return {
-      type: 'Feature',
-      geometry: {
-        type: 'LineString',
-        coordinates: [
-          [highlightedMarker.anchor_a_long, highlightedMarker.anchor_a_lat],
-          [highlightedMarker.anchor_b_long, highlightedMarker.anchor_b_lat],
-        ],
-      },
-      properties: {},
-    };
-  }, [highlightedMarker]);
-
   return (
     <>
       {clusters?.map((point) => {
@@ -171,56 +155,73 @@ export const Markers: React.FC<{
         }
 
         return (
-          <MapboxGL.PointAnnotation
-            key={`marker-high-${properties.highID}-A-${
-              properties.highID === highlightedMarker?.id
-                ? 'active'
-                : 'inactive'
-            }`}
-            id={`marker-high-${properties.highID}-A`}
-            coordinate={coordinate}
-            onSelected={() => handleMarkerSelect(properties.highID)}
-          >
-            <View className="size-12">
-              <MarkerCL active={properties.highID === highlightedMarker?.id} />
-            </View>
-          </MapboxGL.PointAnnotation>
-        );
-      })}
-
-      {highlightedMarker && (
-        <>
-          <MapboxGL.PointAnnotation
-            key={`marker-high-${highlightedMarker.id}-B`}
-            id={`marker-high-${highlightedMarker.id}-B`}
-            coordinate={[
-              highlightedMarker.anchor_b_long,
-              highlightedMarker.anchor_b_lat,
-            ]}
-          >
-            <View className="size-12">
-              <MarkerCL active />
-            </View>
-          </MapboxGL.PointAnnotation>
-
-          {polylineFeature && (
+          <>
+            <MapboxGL.PointAnnotation
+              key={`marker-high-${properties.highID}-A-${
+                properties.highID === highlightedMarker?.id
+                  ? 'active'
+                  : 'inactive'
+              }`}
+              id={`marker-high-${properties.highID}-A-${
+                properties.highID === highlightedMarker?.id
+                  ? 'active'
+                  : 'inactive'
+              }`}
+              coordinate={coordinate}
+              onSelected={() => handleMarkerSelect(properties.highID)}
+            >
+              <View className="flex items-center justify-center rounded-full bg-popover shadow-sm size-6">
+                <Text className="text-center text-sm font-bold">A</Text>
+              </View>
+            </MapboxGL.PointAnnotation>
+            <MapboxGL.PointAnnotation
+              key={`marker-high-${properties.highID}-B-${
+                properties.highID === highlightedMarker?.id
+                  ? 'active'
+                  : 'inactive'
+              }`}
+              id={`marker-high-${properties.highID}-B-${
+                properties.highID === highlightedMarker?.id
+                  ? 'active'
+                  : 'inactive'
+              }`}
+              coordinate={[
+                properties.anchorB.longitude,
+                properties.anchorB.latitude,
+              ]}
+              onSelected={() => handleMarkerSelect(properties.highID)}
+            >
+              <View className="flex items-center justify-center rounded-full bg-popover shadow-sm size-6">
+                <Text className="text-center text-sm font-bold">B</Text>
+              </View>
+            </MapboxGL.PointAnnotation>
             <MapboxGL.ShapeSource
-              key={`polyline-source-${highlightedMarker.id}`}
-              id={`highlightedMarker-polyline-source`}
-              shape={polylineFeature}
+              key={`polyline-source-${properties.highID}`}
+              id={`polyline-source-${properties.highID}`}
+              shape={{
+                type: 'Feature',
+                geometry: {
+                  type: 'LineString',
+                  coordinates: [
+                    coordinate,
+                    [properties.anchorB.longitude, properties.anchorB.latitude],
+                  ],
+                },
+                properties: {},
+              }}
             >
               <MapboxGL.LineLayer
-                key={`linelayer-${highlightedMarker.id}`}
-                id={`highlightedMarker-linelayer`}
+                key={`linelayer-${properties.highID}`}
+                id={`linelayer-${properties.highID}`}
                 style={{
-                  lineColor: '#000',
+                  lineColor: '#3b82f6',
                   lineWidth: 3,
                 }}
               />
             </MapboxGL.ShapeSource>
-          )}
-        </>
-      )}
+          </>
+        );
+      })}
     </>
   );
 };
@@ -244,7 +245,7 @@ const ClusteredMarker = React.memo(
       onSelected={onPress}
     >
       <View
-        className="flex items-center justify-center rounded-full bg-popover shadow-lg"
+        className="flex items-center justify-center rounded-full bg-popover shadow-sm"
         style={{ width: size, height: size, borderRadius: size / 2 }}
       >
         <Text className="text-center text-xl font-bold">{pointCount}</Text>
