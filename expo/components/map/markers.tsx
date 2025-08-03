@@ -155,7 +155,7 @@ export const Markers: React.FC<{
         }
 
         return (
-          <>
+          <React.Fragment key={`highline-${properties.highID}`}>
             <MapboxGL.PointAnnotation
               key={`marker-high-${properties.highID}-A-${
                 properties.highID === highlightedMarker?.id
@@ -219,7 +219,7 @@ export const Markers: React.FC<{
                 }}
               />
             </MapboxGL.ShapeSource>
-          </>
+          </React.Fragment>
         );
       })}
     </>
