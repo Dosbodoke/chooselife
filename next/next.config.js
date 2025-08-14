@@ -1,7 +1,9 @@
 import createNextIntlPlugin from "next-intl/plugin";
+import createMDX from "@next/mdx";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   images: {
     remotePatterns: [
       {
@@ -18,6 +20,12 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "unavatar.io",
+        port: "",
+        pathname: "**",
+      },
+      {
+        protocol: "https",
         hostname: process.env.NEXT_PUBLIC_SUPABASE_URL.replace(
           /(^\w+:|^)\/\//,
           ""
@@ -29,6 +37,9 @@ const nextConfig = {
   },
 };
 
+const withMDX = createMDX({
+  extension: /\.(md|mdx)$/,
+});
 const withNextIntl = createNextIntlPlugin();
 
-export default withNextIntl(nextConfig);
+export default withNextIntl(withMDX(nextConfig));
