@@ -174,7 +174,8 @@
     "signOut": "Sair"
   },
   "footer": {
-    "desc": "Site criado por "
+    "desc": "Site criado por ",
+    "privacy": "Política de Privacidade"
   },
   "goBack": "Voltar",
   "usernameDialog": {

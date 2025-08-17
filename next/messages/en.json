@@ -174,7 +174,8 @@
     "signOut": "Sign Out"
   },
   "footer": {
-    "desc": "Website create by "
+    "desc": "Website create by ",
+    "privacy": "Privacy Policy"
   },
   "goBack": "Go Back",
   "usernameDialog": {
