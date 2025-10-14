@@ -1,8 +1,8 @@
 import {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
-  BottomSheetFlashList,
   BottomSheetModal,
+  BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -229,6 +229,27 @@ const gap = 10;
 const availableSpace = screenWidth - (numColumns - 1) * gap;
 const itemSize = availableSpace / numColumns;
 
+const EmptyState = () => {
+  const { t } = useTranslation();
+  return (
+    <View className="items-center justify-center py-10 gap-4">
+      <LucideIcon
+        name="PackagePlus"
+        size={48}
+        className="text-muted-foreground"
+      />
+      <Text className="text-center text-lg font-medium">
+        {t('app.(modals).register-webbing.selectModel.emptyState.title')}
+      </Text>
+      <Text className="text-center text-muted-foreground mb-4">
+        {t(
+          'app.(modals).register-webbing.selectModel.emptyState.description',
+        )}
+      </Text>
+    </View>
+  );
+};
+
 const SelectModel: React.FC<{ control: Control<TRegisterWebbingSchema> }> = ({
   control,
 }) => {
@@ -409,66 +430,35 @@ const SelectModel: React.FC<{ control: Control<TRegisterWebbingSchema> }> = ({
         </TouchableOpacity>
       );
     },
-    [modelIDField.value, handleSelect, renderWebbingImage, t],
+    [modelIDField.value, renderWebbingImage, t],
   );
 
-  // Memoize the empty state component
-  const EmptyState = useMemo(
-    () => (
-      <View className="items-center justify-center py-10 gap-4">
-        <LucideIcon
-          name="PackagePlus"
-          size={48}
-          className="text-muted-foreground"
-        />
-        <Text className="text-center text-lg font-medium">
-          {t('app.(modals).register-webbing.selectModel.emptyState.title')}
-        </Text>
-        <Text className="text-center text-muted-foreground mb-4">
-          {t(
-            'app.(modals).register-webbing.selectModel.emptyState.description',
-          )}
-        </Text>
-      </View>
-    ),
-    [t],
+
+
+  const ModelsList = (
+    <>
+      <BottomSheetScrollView>
+        {models ? models.map((item) => renderModelItem(item)) : <EmptyState />}
+      </BottomSheetScrollView>
+      <Separator className="my-3" />
+      <Button
+        variant="ghost"
+        onPress={() => handleSelect(null)}
+        className="mt-2"
+      >
+        <Text>{t('app.(modals).register-webbing.selectModel.clear')}</Text>
+      </Button>
+    </>
   );
 
-  // Memoize the webbing list component
-  const ModelsList = useMemo(
-    () => (
-      <>
-        <BottomSheetFlashList
-          key={`models-grid-${numColumns}`}
-          numColumns={numColumns}
-          data={models}
-          renderItem={({ item }) => renderModelItem(item)}
-          ListEmptyComponent={EmptyState}
-        />
-        <Separator className="my-3" />
-        <Button
-          variant="ghost"
-          onPress={() => handleSelect(null)}
-          className="mt-2"
-        >
-          <Text>{t('app.(modals).register-webbing.selectModel.clear')}</Text>
-        </Button>
-      </>
-    ),
-    [models, renderModelItem, t, handleSelect],
-  );
+  const BottomSheetContent = (
+    <BottomSheetScrollView className="flex-1 p-4">
+      <Text className="text-lg font-semibold text-center mb-4">
+        {t('app.(modals).register-webbing.selectModel.label')}
+      </Text>
 
-  const BottomSheetContent = useMemo(
-    () => (
-      <View className="flex-1 p-4">
-        <Text className="text-lg font-semibold text-center mb-4">
-          {t('app.(modals).register-webbing.selectModel.label')}
-        </Text>
-
-        {ModelsList}
-      </View>
-    ),
-    [t, models, ModelsList, EmptyState],
+      {ModelsList}
+    </BottomSheetScrollView>
   );
 
   return (
