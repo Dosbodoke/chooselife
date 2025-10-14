@@ -5,6 +5,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: "ChooseLife",
   slug: "chooselife",
   version: "1.3.8",
+  experiments: {
+    typedRoutes: true,
+    reactCompiler: true,
+  },
   newArchEnabled: true,
   orientation: "portrait",
   scheme: "com.bodok.chooselife",
@@ -111,9 +115,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
   ],
-  experiments: {
-    typedRoutes: true,
-  },
   extra: {
     router: {
       origin: false,
