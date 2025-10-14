@@ -1,4 +1,4 @@
-import BottomSheet, { BottomSheetFlashList } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useMapStore } from '~/store/map-store';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -37,11 +37,6 @@ const ListingsBottomSheet: React.FC<{
   const onShowMap = () => {
     bottomSheetRef.current?.collapse();
   };
-
-  const renderItem = React.useCallback(
-    ({ item }: { item: Highline }) => <HighlineCard item={item} />,
-    [],
-  );
 
   // Update index when hasFocusedMarker changes
   React.useEffect(() => {
@@ -83,12 +78,11 @@ const ListingsBottomSheet: React.FC<{
       }}
     >
       {highlines.length > 0 && !hasFocusedMarker ? (
-        <BottomSheetFlashList<Highline>
-          data={highlines}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          removeClippedSubviews={false}
-        />
+        <BottomSheetScrollView>
+          {highlines.map((item) => (
+            <HighlineCard key={item.id} item={item} />
+          ))}
+        </BottomSheetScrollView>
       ) : null}
       <View className="absolute bottom-6 w-full items-center">
         <TouchableOpacity
