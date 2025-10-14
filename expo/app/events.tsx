@@ -1,8 +1,9 @@
 import { Stack } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { SafeAreaView, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useI18n } from '~/context/i18n';
 import { useEvents } from '~/hooks/use-events';
