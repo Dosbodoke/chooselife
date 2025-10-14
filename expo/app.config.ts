@@ -1,4 +1,4 @@
-import { ConfigContext, ExpoConfig } from "expo/config";
+import type { ConfigContext, ExpoConfig } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -22,11 +22,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     config: {
       usesNonExemptEncryption: false,
     },
-    icon: {
-      light: "./assets/icons/ios-light.png",
-      dark: "./assets/icons/ios-dark.png",
-      tinted: "./assets/icons/ios-tinted.png",
-    },
+    icon: "./assets/icons/ios-light.png",
   },
   android: {
     package: "com.bodok.chooselife",
@@ -95,7 +91,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       "@rnmapbox/maps",
       {
-        RNMapboxMapsDownloadToken: process.env.MAPBOX_DOWNLOAD_TOKEN,
+        RNMAPBOX_MAPS_DOWNLOAD_TOKEN: process.env.MAPBOX_DOWNLOAD_TOKEN,
       },
     ],
     [
