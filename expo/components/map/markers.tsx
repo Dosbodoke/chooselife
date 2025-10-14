@@ -3,7 +3,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useMapStore } from '~/store/map-store';
 import type { Feature, GeoJsonProperties } from 'geojson';
 import React, { useCallback, useMemo } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import Animated, {
+  interpolate,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { PointFeature } from 'supercluster';
 import useSuperCluster from 'use-supercluster';
 
@@ -20,6 +27,75 @@ interface PointProperties {
   highID: string;
   anchorB: { latitude: number; longitude: number };
 }
+
+const Marker: React.FC<{ onPress: () => void; active: boolean }> = ({ onPress, active }) => {
+  const animation = useSharedValue(0);
+  const animatedStyle = useAnimatedStyle(() => {
+    const backgroundColor = interpolateColor(
+      animation.value,
+      [0, 1],
+      ['transparent', '#93C5FD']
+    );
+    const scale = interpolate(animation.value, [0, 1], [1, 0.9]);
+    return {
+      backgroundColor,
+      borderRadius: 50,
+      transform: [{ scale }],
+    };
+  });
+
+  const handlePress = () => {
+    animation.value = withSpring(1);
+    if (onPress) onPress();
+  };
+
+  return (
+    <Pressable onPress={handlePress}>
+      <Animated.View
+        style={animatedStyle}
+        className="size-12 flex items-center justify-center"
+      >
+        <MarkerCL active={active} />
+      </Animated.View>
+    </Pressable>
+  );
+};
+
+const AnimatedCluster: React.FC<{
+  pointCount: number;
+  size: number;
+  onPress: () => void;
+}> = ({ pointCount, size, onPress }) => {
+  const animation = useSharedValue(0);
+  const animatedStyle = useAnimatedStyle(() => {
+    const backgroundColor = interpolateColor(
+      animation.value,
+      [0, 1],
+      ['#FFFFFF', '#93C5FD']
+    );
+    const scale = interpolate(animation.value, [0, 1], [1, 0.9]);
+    return {
+      backgroundColor,
+      transform: [{ scale }],
+    };
+  });
+
+  const handlePress = () => {
+    animation.value = withSpring(1);
+    if (onPress) onPress();
+  };
+
+  return (
+    <Pressable onPress={handlePress}>
+      <Animated.View
+        style={[{ width: size, height: size, borderRadius: size / 2 }, animatedStyle]}
+        className="flex items-center justify-center rounded-full bg-popover shadow-lg"
+      >
+        <Text className="text-center text-xl font-bold">{pointCount}</Text>
+      </Animated.View>
+    </Pressable>
+  );
+};
 
 export const Markers: React.FC<{
   cameraRef: React.RefObject<MapboxGL.Camera | null>;
@@ -171,20 +247,19 @@ export const Markers: React.FC<{
         }
 
         return (
-          <MapboxGL.PointAnnotation
+          <MapboxGL.MarkerView
             key={`marker-high-${properties.highID}-A-${
               properties.highID === highlightedMarker?.id
                 ? 'active'
                 : 'inactive'
             }`}
-            id={`marker-high-${properties.highID}-A`}
             coordinate={coordinate}
-            onSelected={() => handleMarkerSelect(properties.highID)}
           >
-            <View className="size-12">
-              <MarkerCL active={properties.highID === highlightedMarker?.id} />
-            </View>
-          </MapboxGL.PointAnnotation>
+            <Marker
+              onPress={() => handleMarkerSelect(properties.highID)}
+              active={properties.highID === highlightedMarker?.id}
+            />
+          </MapboxGL.MarkerView>
         );
       })}
 
@@ -238,18 +313,9 @@ const ClusteredMarker = React.memo(
     size: number;
     onPress: () => void;
   }) => (
-    <MapboxGL.PointAnnotation
-      id={`cluster-${coordinate[0]}-${coordinate[1]}`}
-      coordinate={coordinate}
-      onSelected={onPress}
-    >
-      <View
-        className="flex items-center justify-center rounded-full bg-popover shadow-lg"
-        style={{ width: size, height: size, borderRadius: size / 2 }}
-      >
-        <Text className="text-center text-xl font-bold">{pointCount}</Text>
-      </View>
-    </MapboxGL.PointAnnotation>
+    <MapboxGL.MarkerView coordinate={coordinate}>
+      <AnimatedCluster pointCount={pointCount} size={size} onPress={onPress} />
+    </MapboxGL.MarkerView>
   ),
 );
 
