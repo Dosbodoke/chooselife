@@ -163,11 +163,13 @@ export function Widget({ items }: WidgetProps) {
     });
 
     const handlePressIn = () => {
-      pressedScale.value = withSpring(0.95, { damping: 15 });
+      'worklets';
+      pressedScale.value = withSpring(0.95, { damping: 120 });
     };
 
     const handlePressOut = () => {
-      pressedScale.value = withSpring(1, { damping: 15 });
+      'worklets';
+      pressedScale.value = withSpring(1, { damping: 120 });
     };
 
     return (
