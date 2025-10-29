@@ -47,3 +47,26 @@ export function postGISPointToPosition(point: Point): [number, number] {
   const [, lon, lat] = match;
   return [parseFloat(lon), parseFloat(lat)];
 }
+
+export const calculateMidpoint = (
+  lat1d: number,
+  lon1d: number,
+  lat2d: number,
+  lon2d: number,
+): [number, number] => {
+  const lat1 = (lat1d * Math.PI) / 180;
+  const lon1 = (lon1d * Math.PI) / 180;
+  const lat2 = (lat2d * Math.PI) / 180;
+  const lon2 = (lon2d * Math.PI) / 180;
+
+  const Bx = Math.cos(lat2) * Math.cos(lon2 - lon1);
+  const By = Math.cos(lat2) * Math.sin(lon2 - lon1);
+
+  const lat3 = Math.atan2(
+    Math.sin(lat1) + Math.sin(lat2),
+    Math.sqrt((Math.cos(lat1) + Bx) * (Math.cos(lat1) + Bx) + By * By),
+  );
+  const lon3 = lon1 + Math.atan2(By, Math.cos(lat1) + Bx);
+
+  return [(lon3 * 180) / Math.PI, (lat3 * 180) / Math.PI];
+};
