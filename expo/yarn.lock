@@ -2231,10 +2231,10 @@
   resolved "https://registry.yarnpkg.com/@rn-primitives/utils/-/utils-1.2.0.tgz#867ccbc5ea56a3eec652a66378a86e766d2c3400"
   integrity sha512-vLXV5NuxIHDeb4Bw57FzdUh89/g8gz6GERm8TsbJaSUPsDXfnC/ffeYiZJb0LxNteKE3Nr8na4Jy2n26tFil7w==
 
-"@rnmapbox/maps@^10.2.2":
-  version "10.2.2"
-  resolved "https://registry.yarnpkg.com/@rnmapbox/maps/-/maps-10.2.2.tgz#a7cb87d822502f6c2c34b5d348ce274c01b65ec3"
-  integrity sha512-CHUTMJB9iqwiyKp6WWejT0U1WcS7Qd6EMcPQ2wTuNRQJsAoZUioKWqh1DR/TtX1SMWbxmmgxpp6oD/yAySh7YA==
+"@rnmapbox/maps@^10.2.6":
+  version "10.2.6"
+  resolved "https://registry.yarnpkg.com/@rnmapbox/maps/-/maps-10.2.6.tgz#0d036c29f9be88cda5215cd126e0a48bc88c2af9"
+  integrity sha512-402m/pHrgfo3Isvd3lhW8N8uX9rGQB4OiIqfAgYrpMq7qnBV0CgXaOuaJIBQI1kGgCyHzL1XiypHDRP8JhrvmQ==
   dependencies:
     "@turf/along" "6.5.0"
     "@turf/distance" "6.5.0"
@@ -4073,23 +4073,23 @@ expo-crypto@~15.0.7:
   dependencies:
     base64-js "^1.3.0"
 
-expo-dev-client@~6.0.15:
-  version "6.0.15"
-  resolved "https://registry.yarnpkg.com/expo-dev-client/-/expo-dev-client-6.0.15.tgz#7b715cb45ed560b98c54c2db54197936d7298855"
-  integrity sha512-zdpuK7wPp7q01qE90EDQunL49cumGPEKCGDykB86K0myCPZt1lvkpyy4OHTh3urm3pkikWOb9biuVgLdq7oq/g==
+expo-dev-client@^6.0.16:
+  version "6.0.16"
+  resolved "https://registry.yarnpkg.com/expo-dev-client/-/expo-dev-client-6.0.16.tgz#5e76d783f2e002e3a2b91527ed42611473e6e891"
+  integrity sha512-8GLud/dtNteqChL9pNGqLBSHd7of2scFmsgN5WwWgtt2dET7+EJM/K1zp0FYUzfmIF5NLsf5xUDg6AjDldOLqg==
   dependencies:
-    expo-dev-launcher "6.0.15"
-    expo-dev-menu "7.0.14"
+    expo-dev-launcher "6.0.16"
+    expo-dev-menu "7.0.15"
     expo-dev-menu-interface "2.0.0"
     expo-manifests "~1.0.8"
     expo-updates-interface "~2.0.0"
 
-expo-dev-launcher@6.0.15:
-  version "6.0.15"
-  resolved "https://registry.yarnpkg.com/expo-dev-launcher/-/expo-dev-launcher-6.0.15.tgz#a9c8c04d51b5903f4a405e71d48cfac7e4fbb731"
-  integrity sha512-aFRKg9qcq47Y/1UGTPhtOWrbI5jOFgttOfhdBu9knLKl72jGXpDTdBHsHPkCfIezzDrSoZccl482Hv7RvKfrqA==
+expo-dev-launcher@6.0.16:
+  version "6.0.16"
+  resolved "https://registry.yarnpkg.com/expo-dev-launcher/-/expo-dev-launcher-6.0.16.tgz#1527f1cea70371e9443b26e1802f3327a4c386f4"
+  integrity sha512-OVg5T5ip7evh8zHJeIj2IYgtvTeY8EOiwNQYlmN0JHAw8wlUxYHnSf08RcevVgYTKcIryCyeLG5UHxsQQWbycA==
   dependencies:
-    expo-dev-menu "7.0.14"
+    expo-dev-menu "7.0.15"
     expo-manifests "~1.0.8"
 
 expo-dev-menu-interface@2.0.0:
@@ -4097,10 +4097,10 @@ expo-dev-menu-interface@2.0.0:
   resolved "https://registry.yarnpkg.com/expo-dev-menu-interface/-/expo-dev-menu-interface-2.0.0.tgz#c0d6db65eb4abc44a2701bc2303744619ad05ca6"
   integrity sha512-BvAMPt6x+vyXpThsyjjOYyjwfjREV4OOpQkZ0tNl+nGpsPfcY9mc6DRACoWnH9KpLzyIt3BOgh3cuy/h/OxQjw==
 
-expo-dev-menu@7.0.14:
-  version "7.0.14"
-  resolved "https://registry.yarnpkg.com/expo-dev-menu/-/expo-dev-menu-7.0.14.tgz#41dbf41ecb4b48431cff78ef42f33bfb33ac0a25"
-  integrity sha512-nWyzSztFWfnhDOiKJ6DuZLjIbq+tG9e5y4TDmW6wYlSKKPBXbdOn2UdxaknhSqZrw6NwWMcjyhS+QG4MoDGD8w==
+expo-dev-menu@7.0.15:
+  version "7.0.15"
+  resolved "https://registry.yarnpkg.com/expo-dev-menu/-/expo-dev-menu-7.0.15.tgz#de08beb63e073486ed2bfe2b736f4a1eca8d65df"
+  integrity sha512-aThUhoBUuQVbCS2k0MwP28/au46FqOXAAiGtCYIWp+Hne95RgFO+KaO0VGksJFwK7I9IPbbminm8ijZDf2KzXg==
   dependencies:
     expo-dev-menu-interface "2.0.0"
 
@@ -4145,10 +4145,10 @@ expo-image-picker@~17.0.8:
   dependencies:
     expo-image-loader "~6.0.0"
 
-expo-image@~3.0.9:
-  version "3.0.9"
-  resolved "https://registry.yarnpkg.com/expo-image/-/expo-image-3.0.9.tgz#03bc48a21f7ff32c0a36d24585bc8afac9c72ca7"
-  integrity sha512-GkPIjeqrODMBdpbRWOzbwiq8ztxjgq1rdZrnqwt/pzQavgXPlr4rW/7aigue9Jm5t5vebhMNAuc1A/XIXXqpcA==
+expo-image@^3.0.10:
+  version "3.0.10"
+  resolved "https://registry.yarnpkg.com/expo-image/-/expo-image-3.0.10.tgz#a589098c3688d76c6e238ae90e1efc06ac4902b0"
+  integrity sha512-i4qNCEf9Ur7vDqdfDdFfWnNCAF2efDTdahuDy9iELPS2nzMKBLeeGA2KxYEPuRylGCS96Rwm+SOZJu6INc2ADQ==
 
 expo-json-utils@~0.15.0:
   version "0.15.0"
@@ -4229,10 +4229,10 @@ expo-notifications@~0.32.12:
     expo-application "~7.0.7"
     expo-constants "~18.0.9"
 
-expo-router@~6.0.12:
-  version "6.0.12"
-  resolved "https://registry.yarnpkg.com/expo-router/-/expo-router-6.0.12.tgz#ec2ea4d8d35bd5cb6d005db44805680325fa6d09"
-  integrity sha512-GBfMHAbHoPv7aCfHOEgFNxcadw4euPyI/SqHNNtw+Sm+JtvauHP34wi7Bg25JxatHQ8EdhxAj6w0D8D6QRnayg==
+expo-router@^6.0.14:
+  version "6.0.14"
+  resolved "https://registry.yarnpkg.com/expo-router/-/expo-router-6.0.14.tgz#92a125a8a051186aac59f60040a03c6f8353d21b"
+  integrity sha512-vizLO4SgnMEL+PPs2dXr+etEOuksjue7yUQBCtfCEdqoDkQlB0r35zI7rS34Wt53sxKWSlM2p+038qQEpxtiFw==
   dependencies:
     "@expo/metro-runtime" "^6.1.2"
     "@expo/schema-utils" "^0.1.7"
@@ -4244,7 +4244,7 @@ expo-router@~6.0.12:
     client-only "^0.0.1"
     debug "^4.3.4"
     escape-string-regexp "^4.0.0"
-    expo-server "^1.0.1"
+    expo-server "^1.0.3"
     fast-deep-equal "^3.1.3"
     invariant "^2.2.4"
     nanoid "^3.3.8"
@@ -4267,6 +4267,11 @@ expo-server@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/expo-server/-/expo-server-1.0.1.tgz#9e04605310be090896a85aadce2cb7eaf6aae9b7"
   integrity sha512-J3JlpzNXOkkr4BbapTrcv6klBQcw6NzrBBVIU7qkNE2eU3U1on9rp27wi0+cihjG/QgxSIqQVkrga5z3HWnH0A==
+
+expo-server@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/expo-server/-/expo-server-1.0.3.tgz#d359cb6a723c40e7f55c1b3a1dd9485ed00d4b0e"
+  integrity sha512-SOwdzM/BFAL+vTFlUDJG6ljhyk6TyTl+LRK3ubGmN+Pf18ENRqKj37U8krc5vH926sAsB3IFcE8kJEYf4dG7PA==
 
 expo-splash-screen@~31.0.10:
   version "31.0.10"
@@ -6687,10 +6692,10 @@ react-native-is-edge-to-edge@^1.1.6, react-native-is-edge-to-edge@^1.2.1:
   resolved "https://registry.yarnpkg.com/react-native-is-edge-to-edge/-/react-native-is-edge-to-edge-1.2.1.tgz#64e10851abd9d176cbf2b40562f751622bde3358"
   integrity sha512-FLbPWl/MyYQWz+KwqOZsSyj2JmLKglHatd3xLZWskXOpRaio4LfEDEz8E/A6uD8QoTHW6Aobw1jbEwK7KMgR7Q==
 
-react-native-keyboard-controller@1.18.5:
-  version "1.18.5"
-  resolved "https://registry.yarnpkg.com/react-native-keyboard-controller/-/react-native-keyboard-controller-1.18.5.tgz#ae12131f2019c574178479d2c55784f55e08bb68"
-  integrity sha512-wbYN6Tcu3G5a05dhRYBgjgd74KqoYWuUmroLpigRg9cXy5uYo7prTMIvMgvLtARQtUF7BOtFggUnzgoBOgk0TQ==
+react-native-keyboard-controller@^1.19.3:
+  version "1.19.3"
+  resolved "https://registry.yarnpkg.com/react-native-keyboard-controller/-/react-native-keyboard-controller-1.19.3.tgz#71690b39b8ed88c844d652b0e92f462cd033bfe7"
+  integrity sha512-62vfV/xbZ8xGurbOUIgsDDkgVY4NsTpY7ZjVA97XibUcC/9pXVVyqBAI79dmp+TurSuPnBenf08Va1DJOZf9lg==
   dependencies:
     react-native-is-edge-to-edge "^1.2.1"
 
