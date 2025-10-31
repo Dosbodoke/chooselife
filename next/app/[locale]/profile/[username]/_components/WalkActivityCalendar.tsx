@@ -21,6 +21,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Database } from "@/utils/supabase/database.types";
 
 const chartTheme = {
   light: ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"],
@@ -134,52 +142,45 @@ interface HeatmapProps extends React.HTMLAttributes<HTMLTableElement> {
     [date: string]: number;
   };
 }
-const Heatmap = React.forwardRef<HTMLTableElement, HeatmapProps>(
-  ({ year, data, className, ...props }, ref) => {
-    const [mounted, setMounted] = React.useState(false);
+function Heatmap({ year, data, className, ...props }: HeatmapProps) {
+  const [mounted, setMounted] = React.useState(false);
 
-    // useEffect only runs on the client, so now we can safely show the UI
-    React.useEffect(() => {
-      setMounted(true);
-    }, []);
+  // useEffect only runs on the client, so now we can safely show the UI
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
-    if (!mounted) {
-      return <HeatmapSkeleton />;
-    }
-
-    return (
-      <TooltipProvider delayDuration={0} skipDelayDuration={0}>
-        <div className="scrollbar relative max-w-full overflow-x-auto overflow-y-hidden">
-          <table
-            ref={ref}
-            className={cn(
-              "relative w-max caption-bottom border-separate border-spacing-[3px] overflow-hidden text-sm",
-              className
-            )}
-            {...props}
-          >
-            <HeatmapHeader year={year} />
-            <HeatmapBody year={year} data={data} />
-          </table>
-        </div>
-      </TooltipProvider>
-    );
+  if (!mounted) {
+    return <HeatmapSkeleton />;
   }
-);
-Heatmap.displayName = "Heatmap";
+
+  return (
+    <TooltipProvider delayDuration={0} skipDelayDuration={0}>
+      <div className="scrollbar relative max-w-full overflow-x-auto overflow-y-hidden">
+        <table
+          className={cn(
+            "relative w-max caption-bottom border-separate border-spacing-[3px] overflow-hidden text-sm",
+            className
+          )}
+          {...props}
+        >
+          <HeatmapHeader year={year} />
+          <HeatmapBody year={year} data={data} />
+        </table>
+      </div>
+    </TooltipProvider>
+  );
+}
 
 interface HeatmapLabelProps
   extends React.HTMLAttributes<HTMLTableSectionElement> {
   year: number;
 }
-const HeatmapHeader = React.forwardRef<
-  HTMLTableSectionElement,
-  HeatmapLabelProps
->(({ year, className, ...props }, ref) => {
+function HeatmapHeader({ year, className, ...props }: HeatmapLabelProps) {
   const format = useFormatter();
 
   return (
-    <thead ref={ref} className={cn(className)} {...props}>
+    <thead className={cn(className)} {...props}>
       <tr className="h-[13px]">
         {/* WEEKDAY LABEL COLUMN */}
         <td className="w-7"></td>
@@ -200,8 +201,7 @@ const HeatmapHeader = React.forwardRef<
       </tr>
     </thead>
   );
-});
-HeatmapHeader.displayName = "HeatmapHeader";
+}
 
 interface HeatmapBodyProps
   extends React.HTMLAttributes<HTMLTableSectionElement> {
@@ -211,80 +211,77 @@ interface HeatmapBodyProps
   };
   year: number;
 }
-const HeatmapBody = React.forwardRef<HTMLTableSectionElement, HeatmapBodyProps>(
-  ({ data, year, className, ...props }, ref) => {
-    const { resolvedTheme } = useTheme();
-    const format = useFormatter();
-    const isLeapYear = leapYear(year);
-    const yearStartedAt = zellersCongruence(new Date(`${year}-01-01`));
-    const yearTotalDays = isLeapYear ? 366 : 365;
+function HeatmapBody({ data, year, className, ...props }: HeatmapBodyProps) {
+  const { resolvedTheme } = useTheme();
+  const format = useFormatter();
+  const isLeapYear = leapYear(year);
+  const yearStartedAt = zellersCongruence(new Date(`${year}-01-01`));
+  const yearTotalDays = isLeapYear ? 366 : 365;
 
-    const getLevel = React.useCallback((value: number) => {
-      if (!value || value === 0) return 0;
-      if (value < 3) return 1;
-      if (value < 5) return 2;
-      if (value < 8) return 3;
-      return 4;
-    }, []);
+  const getLevel = React.useCallback((value: number) => {
+    if (!value || value === 0) return 0;
+    if (value < 3) return 1;
+    if (value < 5) return 2;
+    if (value < 8) return 3;
+    return 4;
+  }, []);
 
-    return (
-      <tbody ref={ref} className={cn("", className)} {...props}>
-        {new Array(7).fill(null).map((_, week) => (
-          <tr key={`week=${week}`}>
-            {/* WEEKDAY LABEL */}
-            {week % 2 !== 0 ? (
-              <td className="relative py-[0.125rem] pr-2 text-left">
-                <span className="sr-only">
-                  {format.dateTime(getSunday(week), {
-                    weekday: "short",
-                  })}
-                </span>
-                <span aria-hidden={true} className="absolute -bottom-[3px]">
-                  {format.dateTime(getSunday(week), {
-                    weekday: "short",
-                  })}
-                </span>
-              </td>
-            ) : (
-              <td className="relative py-[0.125rem] pr-2 text-left"></td>
-            )}
+  return (
+    <tbody className={cn("", className)} {...props}>
+      {new Array(7).fill(null).map((_, week) => (
+        <tr key={`week=${week}`}>
+          {/* WEEKDAY LABEL */}
+          {week % 2 !== 0 ? (
+            <td className="relative py-[0.125rem] pr-2 text-left">
+              <span className="sr-only">
+                {format.dateTime(getSunday(week), {
+                  weekday: "short",
+                })}
+              </span>
+              <span aria-hidden={true} className="absolute -bottom-[3px]">
+                {format.dateTime(getSunday(week), {
+                  weekday: "short",
+                })}
+              </span>
+            </td>
+          ) : (
+            <td className="relative py-[0.125rem] pr-2 text-left"></td>
+          )}
 
-            {new Array(53).fill(null).map((_, i) => {
-              const coordinates = [week, i] as [x: number, y: number];
-              const dayOfTheYear = getDayFromCell(
-                coordinates,
-                // TODO: Understant why I need to +1
-                yearStartedAt + 1
-              );
-              const isValidDay =
-                dayOfTheYear > 0 && dayOfTheYear <= yearTotalDays;
+          {new Array(53).fill(null).map((_, i) => {
+            const coordinates = [week, i] as [x: number, y: number];
+            const dayOfTheYear = getDayFromCell(
+              coordinates,
+              // TODO: Understant why I need to +1
+              yearStartedAt + 1
+            );
+            const isValidDay =
+              dayOfTheYear > 0 && dayOfTheYear <= yearTotalDays;
 
-              const date = new Date(year, 0, dayOfTheYear);
-              const dateStr = date.toISOString().split("T")[0];
+            const date = new Date(year, 0, dayOfTheYear);
+            const dateStr = date.toISOString().split("T")[0];
 
-              return (
-                <HeatmapCell
-                  key={`heatmap-day-${coordinates[0]}-${coordinates[1]}`}
-                  coordinates={coordinates}
-                  date={date}
-                  dateStr={dateStr}
-                  hidden={!isValidDay}
-                  cellColor={
-                    chartTheme[resolvedTheme as "dark" | "light"][
-                      getLevel(data[dateStr])
-                    ]
-                  }
-                  amount={data[dateStr]}
-                />
-              );
-            })}
-          </tr>
-        ))}
-      </tbody>
-    );
-  }
-);
-HeatmapBody.displayName = "HeatmapBody";
+            return (
+              <HeatmapCell
+                key={`heatmap-day-${coordinates[0]}-${coordinates[1]}`}
+                coordinates={coordinates}
+                date={date}
+                dateStr={dateStr}
+                hidden={!isValidDay}
+                cellColor={
+                  chartTheme[resolvedTheme as "dark" | "light"][
+                    getLevel(data[dateStr])
+                  ]
+                }
+                amount={data[dateStr]}
+              />
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  );
+}
 
 interface HeatmapCellProps {
   coordinates: [x: number, y: number];
@@ -424,4 +421,53 @@ const YearSwitcher = ({ years, selectedYear }: Props) => {
   );
 };
 
-export { Heatmap, YearSwitcher };
+type Entry =
+  | Database["public"]["Tables"]["entry"]["Row"] & {
+      highline: Database["public"]["Tables"]["highline"]["Row"] | null;
+    };
+export const WalkActivityCard = ({ entries }: { entries: Entry[] }) => {
+  const [year] = useQueryState("year");
+
+  function groupByDay(entries: Entry[]) {
+    const groupedByDay: Record<string, number> = {};
+    const years: Array<string> = [];
+
+    entries.forEach((entry) => {
+      const day = entry.created_at.split("T")[0];
+      const year = day.split("-")[0];
+
+      groupedByDay[day] = groupedByDay[day] + 1 || 1;
+      if (years[years.length - 1] !== year) {
+        years.push(year);
+      }
+    });
+
+    return {
+      years: years,
+      data: groupedByDay,
+    };
+  }
+
+  const { data, years } = groupByDay(entries);
+  const isValidYear = year && /^\d{4}$/.test(year) && years.includes(year);
+  const selectedYear = isValidYear ? year : years[0];
+
+  if (entries.length === 0 || !selectedYear || isNaN(parseInt(selectedYear))) {
+    return null;
+  }
+
+  return (
+    <Card className="mb-4">
+      <CardContent>
+        <CardHeader className="flex-row justify-between space-y-0 p-0 pt-6">
+          <div className="flex-1">
+            <CardTitle>Activity</CardTitle>
+            <CardDescription>Your walk activity over the year.</CardDescription>
+          </div>
+          <YearSwitcher years={years} selectedYear={selectedYear} />
+        </CardHeader>
+        <Heatmap year={parseInt(selectedYear)} data={data} />
+      </CardContent>
+    </Card>
+  );
+};

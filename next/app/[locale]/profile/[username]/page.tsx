@@ -31,10 +31,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 }
 
 export default async function Profile(props: Props) {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const supabase = await useSupabaseServer();
 
-  const searchParams = await props.searchParams;
   const params = await props.params;
   const { username } = params;
 
@@ -81,7 +79,7 @@ export default async function Profile(props: Props) {
         total_full_lines={stats?.total_full_lines || 0}
       />
       <Suspense fallback={<LastWalksSkeleton />}>
-        <LastWalks username={username} year={searchParams["year"]} />
+        <LastWalks username={username} />
       </Suspense>
     </div>
   );
