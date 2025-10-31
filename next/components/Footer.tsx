@@ -2,9 +2,15 @@
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 
-function Footer() {
+export function Footer() {
   const t = useTranslations("footer");
+  const searchParams = useSearchParams();
+
+  if (searchParams.get("view") === "map") {
+    return null;
+  }
 
   return (
     <footer className="w-full py-8 text-base text-gray-900 opacity-75 transition hover:opacity-100 dark:text-gray-400">
@@ -30,5 +36,3 @@ function Footer() {
     </footer>
   );
 }
-
-export default Footer;
