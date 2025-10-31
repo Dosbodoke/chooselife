@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
 import { setRequestLocale, getMessages } from "next-intl/server";
 
-import Footer from "@/components/Footer";
+import { Footer } from "@/components/Footer";
 import NavBar from "@/components/layout/navbar";
 import type { Locales } from "@/utils/supabase/database.types";
 
