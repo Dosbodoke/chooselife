@@ -22,7 +22,7 @@ import type { Database } from "@/utils/supabase/database.types";
 import { useSupabaseServer } from "@/utils/supabase/server";
 
 import FormattedDate from "./FormattedDate";
-import { Heatmap, YearSwitcher } from "./WalkActivityCalendar";
+import { WalkActivityCard } from "./WalkActivityCalendar";
 
 export const dynamic = "force-dynamic";
 type Entry =
@@ -32,66 +32,38 @@ type Entry =
 
 interface Props {
   username: string;
-  year?: string;
 }
 
-export default async function LastWalks({ username, year }: Props) {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+export default async function LastWalks({ username }: Props) {
   const supabase = await useSupabaseServer();
-
   const t = await getTranslations("profile.lastWalks");
 
   const { data: entries } = await supabase
     .from("entry")
     .select(
-      `
-  *,
-  highline (*)
-`
+      `*,
+      highline (*)`
     )
     .eq("instagram", `@${username}`)
     .order("created_at", { ascending: false });
 
   if (!entries) return null;
 
-  function groupByDay(entries: Entry[]) {
-    const groupedByDay: Record<string, number> = {};
-    const years: Array<string> = [];
-
-    entries.forEach((entry) => {
-      const day = entry.created_at.split("T")[0];
-      const year = day.split("-")[0];
-
-      groupedByDay[day] = groupedByDay[day] + 1 || 1;
-      if (years[years.length - 1] !== year) {
-        years.push(year);
-      }
-    });
-
-    return {
-      years: years,
-      data: groupedByDay,
-    };
-  }
-
-  const { data, years } = groupByDay(entries);
-  const selectedYear = year && years.includes(year) ? year : years[0];
-
   return (
-    <Card>
-      <CardContent>
-        <CardHeader className="flex-row justify-between space-y-0 p-0 pt-6">
-          <div className="flex-1">
-            <CardTitle>{t("title")}</CardTitle>
-            <CardDescription>{t("description")}</CardDescription>
-          </div>
-          <YearSwitcher years={years} selectedYear={selectedYear} />
-        </CardHeader>
-
-        <Heatmap year={parseInt(selectedYear)} data={data} />
-        <LastWalksContent entries={entries.slice(0, 5)} />
-      </CardContent>
-    </Card>
+    <>
+      <WalkActivityCard entries={entries} />
+      <Card>
+        <CardContent>
+          <CardHeader className="space-y-0 p-0 pt-6">
+            <div>
+              <CardTitle>{t("title")}</CardTitle>
+              <CardDescription>{t("description")}</CardDescription>
+            </div>
+          </CardHeader>
+          <LastWalksContent entries={entries.slice(0, 5)} />
+        </CardContent>
+      </Card>
+    </>
   );
 }
 
