@@ -7,7 +7,7 @@ import i18next from 'i18next';
 import React from 'react';
 import { initReactI18next } from 'react-i18next';
 
-import type { Locales } from '~/utils/database.types';
+import { type Locales } from '../../packages/database';
 
 export const resources = {
   pt: { translation: translationPt },

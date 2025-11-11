@@ -17,7 +17,7 @@ Mobile and WEB apps made **for Highliners**
 ├── expo # Mobile app, most of the development is going her
 ├── next # Web app where all started
 ├── supabase # Local supabase instance
-└── supabase-gen-types.sh # Helper script to generate types for both mobile and web apps
+├── packages # Shared packages between projects
 ```
 
 For informations on how to run each project check their respectives `README.md`

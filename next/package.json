@@ -55,7 +55,7 @@
     "supercluster": "^8.0.1",
     "tailwind-merge": "^2.2.1",
     "tailwindcss": "3.3.2",
-    "type-fest": "^4.38.0",
+    "type-fest": "^5.2.0",
     "use-supercluster": "^1.2.0",
     "uuid": "^9.0.0",
     "vaul": "^1.1.1",
