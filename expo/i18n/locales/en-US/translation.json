@@ -333,6 +333,23 @@
         "label": "Highline Length (meters)",
         "placeholder": "Enter highline length"
       }
+    },
+    "organizations": {
+      "title": "Organizations",
+      "cardTitle": "Organizations",
+      "cardDescription": "Become a member of one of our partner organizations.",
+      "goToOrganization": "Go to organization {name}",
+      "becomeMember": "Become a Member",
+      "pixInstructions": "Scan the QR code or copy the code below to pay with PIX.",
+      "paymentError": "An error occurred while processing your payment. Please try again.",
+      "payments": "Payments",
+      "form": {
+        "name": "Name",
+        "namePlaceholder": "Your full name",
+        "submit": "Submit",
+        "monthly": "Monthly",
+        "annual": "Annual"
+      }
     }
   },
   "components": {

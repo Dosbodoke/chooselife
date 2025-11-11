@@ -210,6 +210,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
           success: true,
         };
       } catch (error) {
+        console.error({ error });
         setPendingRedirect(null);
         if (error instanceof AuthError) {
           if (error.code === 'user_already_exists') {

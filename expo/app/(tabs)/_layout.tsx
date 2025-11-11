@@ -28,7 +28,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: t('app.(tabs)._layout.indexTitle'),
+          title: t('app.(tabs)._layout.'),
           tabBarHideOnKeyboard: true,
           tabBarIcon: ({ focused }) => (
             <LucideIcon
@@ -40,6 +40,22 @@ export default function TabLayout() {
             />
           ),
           headerShown: false,
+        }}
+      />
+      <Tabs.Screen
+        name="organizations"
+        options={{
+          title: 'SL.A.C',
+          headerShown: false,
+          tabBarIcon: ({ focused }) => (
+            <LucideIcon
+              name="UsersRound"
+              className={cn(
+                'size-6',
+                focused ? 'text-blue-500' : 'text-muted-foreground',
+              )}
+            />
+          ),
         }}
       />
       <Tabs.Screen

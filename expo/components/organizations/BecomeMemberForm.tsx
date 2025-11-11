@@ -1,0 +1,233 @@
+import type { StartSubscriptionResponse } from '@packages/database/functions.types';
+import { useMutation } from '@tanstack/react-query';
+import localImage from '~/assets/images/blurry-dark-blob.jpg';
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+
+import { supabase } from '~/lib/supabase';
+
+import { Text } from '~/components/ui/text';
+
+type PlanType = 'monthly' | 'annual';
+
+export function BecomeMemberForm({
+  isFocused = false,
+}: {
+  isFocused?: boolean;
+}) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const [selectedPlan, setSelectedPlan] = React.useState<PlanType | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: async (values: { plan_type: PlanType }) => {
+      const { data: charge, error } =
+        await supabase.functions.invoke<StartSubscriptionResponse>(
+          'start-subscription',
+          {
+            body: {
+              plan_type: values.plan_type,
+              organizationID: '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1',
+            },
+          },
+        );
+
+      if (error) {
+        const errorContext = error.context;
+        if (errorContext && typeof errorContext.json === 'function') {
+          const errorData = await errorContext.json();
+          throw new Error(errorData?.error || error.message);
+        }
+        throw error;
+      }
+
+      if (!charge) {
+        throw new Error('Invalid response from start-subscription function');
+      }
+
+      return {
+        pixCopyPaste: charge.brCode,
+        qrCodeImage: charge.brCodeBase64,
+        chargeId: charge.id,
+      };
+    },
+    onSuccess: (data) => {
+      if (data) {
+        router.push({
+          pathname: '/payment',
+          params: {
+            qrCodeImage: data.qrCodeImage,
+            pixCopyPaste: data.pixCopyPaste,
+            chargeId: data.chargeId,
+          },
+        });
+      }
+    },
+    onError: (error) => {
+      console.error('Error starting subscription:', error);
+    },
+  });
+
+  const handleSubmit = () => {
+    if (selectedPlan) {
+      mutation.mutate({ plan_type: selectedPlan });
+    }
+  };
+
+  if (!isFocused) return null;
+
+  return (
+    <WithBgBlob>
+      <Animated.View
+        key={`plan-${isFocused}`}
+        entering={isFocused ? FadeIn.duration(300) : undefined}
+        className="gap-12 flex-1 justify-center px-2"
+      >
+        {/* Hero Section */}
+        <View className="items-center mb-2">
+          <Animated.Text
+            entering={FadeInDown.delay(200).duration(400)}
+            className="text-white text-5xl font-black text-center mb-4 leading-tight"
+          >
+            Faça parte{'\n'}da comunidade
+          </Animated.Text>
+          <Animated.Text
+            entering={FadeInDown.delay(350).duration(400)}
+            className="text-white/90 text-center text-lg max-w-md leading-7 font-medium"
+          >
+            Cada membro fortalece o slackline brasileiro e apoia a preservação
+            dos nossos espaços naturais
+          </Animated.Text>
+        </View>
+
+        {/* Plan Cards - Simplified */}
+        <View className="gap-6">
+          {/* Monthly Plan */}
+          <Animated.View entering={FadeInDown.delay(300).duration(400)}>
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedPlan('monthly');
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }}
+              disabled={mutation.isPending}
+              activeOpacity={0.8}
+              className={`bg-white/10 backdrop-blur-xl p-5 rounded-2xl border-2 ${
+                selectedPlan === 'monthly' ? 'border-white' : 'border-white/20'
+              }`}
+            >
+              <View className="flex-row justify-between items-center">
+                <View className="flex-1">
+                  <Text className="text-white text-xl font-bold">Mensal</Text>
+                  <Text className="text-white/60 text-sm">Flexível</Text>
+                </View>
+                <View className="items-end">
+                  <Text className="text-white text-3xl font-bold">R$35</Text>
+                  <Text className="text-white/70 text-xs">/mês</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Annual Plan */}
+          <Animated.View entering={FadeInDown.delay(400).duration(400)}>
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedPlan('annual');
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }}
+              disabled={mutation.isPending}
+              activeOpacity={0.8}
+              className={`bg-white/10 backdrop-blur-xl p-5 rounded-2xl border-2 ${
+                selectedPlan === 'annual'
+                  ? 'border-emerald-400'
+                  : 'border-white/20'
+              } relative`}
+            >
+              <View className="flex-row justify-between items-center">
+                <View className="flex-1">
+                  <Text className="text-white text-xl font-bold">Anual</Text>
+                  <Text className="text-emerald-300 text-sm font-medium">
+                    Economia de 14%
+                  </Text>
+                </View>
+                <View className="items-end">
+                  <Text className="text-white text-3xl font-bold">R$360</Text>
+                  <Text className="text-white/70 text-xs">/ano</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+
+        <View className="gap-4">
+          {/* CTA Button */}
+          <Animated.View entering={FadeInDown.delay(500).duration(400)}>
+            <TouchableOpacity
+              onPress={() => {
+                handleSubmit();
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }}
+              disabled={!selectedPlan || mutation.isPending}
+              className="bg-white rounded-full py-5 items-center justify-center shadow-2xl disabled:opacity-50"
+            >
+              {mutation.isPending ? (
+                <ActivityIndicator color="#000" />
+              ) : (
+                <Text className="text-black text-xl font-bold">
+                  Tornar-me membro
+                </Text>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Footer Note */}
+          <Animated.View
+            entering={FadeIn.delay(600).duration(500)}
+            className="items-center"
+          >
+            <Text className="text-white/50 text-center text-sm leading-5 max-w-xs">
+              Sua contribuição apoia atletas, eventos e a preservação do meio
+              ambiente
+            </Text>
+          </Animated.View>
+        </View>
+      </Animated.View>
+    </WithBgBlob>
+  );
+}
+
+const WithBgBlob = ({ children }: { children: React.ReactNode }) => {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View
+      className="relative flex-1 bg-black px-4"
+      style={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 }}
+    >
+      <Animated.View
+        style={StyleSheet.absoluteFill}
+        entering={FadeIn.duration(1200)}
+      >
+        <Image
+          source={localImage}
+          style={StyleSheet.absoluteFill}
+          blurRadius={50}
+          contentFit="cover"
+          contentPosition="center"
+        />
+      </Animated.View>
+      {children}
+    </View>
+  );
+};
