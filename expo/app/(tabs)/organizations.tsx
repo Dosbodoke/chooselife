@@ -19,7 +19,7 @@ import { supabase } from '~/lib/supabase';
 import { AssembleiaCard } from '~/components/organizations/assembleia-card';
 import { BecomeMember } from '~/components/organizations/BecomeMember';
 import { News } from '~/components/organizations/News';
-import { Payments } from '~/components/organizations/Payments';
+import { Subscription } from '~/components/organizations/Subscription';
 import { Text } from '~/components/ui/text';
 
 import { HeaderInfos } from '../organizations/header-infos';
@@ -133,7 +133,7 @@ export default function OrganizationDetailsPage() {
       />
       <ScrollView
         className="px-4 flex-1"
-        contentContainerClassName="gap-6 pt-6 pb-16"
+        contentContainerClassName="gap-8 pt-6"
         style={{
           paddingTop: insets.top,
         }}
@@ -162,14 +162,9 @@ export default function OrganizationDetailsPage() {
           <HeaderInfos />
         </View>
 
+        {isMember ? <Subscription organization={organization} /> : null}
         <AssembleiaCard />
-
         <News />
-
-        {/* Content */}
-        <View className="flex-1">
-          {isMember ? <Payments organization={organization} /> : null}
-        </View>
       </ScrollView>
       {!isMember ? <BecomeMember /> : null}
     </>
