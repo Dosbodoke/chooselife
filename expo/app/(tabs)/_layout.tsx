@@ -28,7 +28,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: t('app.(tabs)._layout.'),
+          title: t('app.(tabs)._layout.indexTitle'),
           tabBarHideOnKeyboard: true,
           tabBarIcon: ({ focused }) => (
             <LucideIcon
