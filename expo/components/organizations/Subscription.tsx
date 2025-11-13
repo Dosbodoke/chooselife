@@ -416,15 +416,13 @@ export const Subscription = ({
           />
         </Animated.View>
 
-        {subscription.status === 'pending_payment' &&
-          pendingPayment &&
-          !isOverdue && (
-            <PendingPaymentAlert
-              amount={pendingPayment.amount}
-              onPayPress={() => pixMutation.mutate(pendingPayment.id)}
-              isPaying={pixMutation.isPending}
-            />
-          )}
+        {pendingPayment && !isOverdue && (
+          <PendingPaymentAlert
+            amount={pendingPayment.amount}
+            onPayPress={() => pixMutation.mutate(pendingPayment.id)}
+            isPaying={pixMutation.isPending}
+          />
+        )}
 
         {isActive && membershipDuration && !membershipDuration.isExpired && (
           <Animated.View
