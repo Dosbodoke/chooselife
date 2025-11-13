@@ -401,11 +401,11 @@ export const Subscription = ({
       <Animated.View
         entering={FadeInUp.springify()}
         layout={LinearTransition.springify()}
-        className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm"
+        className="bg-white border border-gray-200 rounded-2xl p-5 gap-4"
       >
         <Animated.View
           layout={LinearTransition.springify()}
-          className="flex-row items-center justify-between mb-4"
+          className="flex-row items-center justify-between"
         >
           <Text className="text-lg font-bold text-gray-900">
             Status da Assinatura
@@ -486,27 +486,10 @@ export const Subscription = ({
           </View>
         </Animated.View>
 
-        {subscription.plan_type === 'annual' && annualPrice && monthlyPrice && (
-          <Animated.View
-            entering={FadeInDown.delay(100).springify()}
-            layout={LinearTransition.springify()}
-            className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mt-3"
-          >
-            <Text className="text-emerald-800 text-xs font-bold text-center">
-              Você está economizando R${' '}
-              {(
-                parseFloat(monthlyPrice) * 12 -
-                parseFloat(annualPrice)
-              ).toFixed(2)}{' '}
-              por ano!
-            </Text>
-          </Animated.View>
-        )}
-
         {lastSuccessfulPayment && (
           <Animated.View
             layout={LinearTransition.springify()}
-            className="flex-row items-center pt-3 mt-3 border-t border-gray-100"
+            className="flex-row items-center pt-3 border-t border-gray-100"
           >
             <View className="w-10 h-10 rounded-xl bg-blue-50 items-center justify-center mr-3">
               <CalendarCheck className="text-blue-600" size={20} />
@@ -531,7 +514,7 @@ export const Subscription = ({
         {/* Payment History Button */}
         <TouchableOpacity
           onPress={handleOpenHistory}
-          className="flex-row items-center justify-between pt-3 mt-3 border-t border-gray-100"
+          className="flex-row items-center justify-between pt-3 border-t border-gray-100"
         >
           <View className="flex-row items-center flex-1">
             <View className="w-10 h-10 rounded-xl bg-gray-50 items-center justify-center mr-3">
@@ -587,7 +570,7 @@ export const Subscription = ({
                   key={item.id}
                   entering={FadeInDown.delay(index * 50).springify()}
                   layout={LinearTransition.springify()}
-                  className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm mb-3"
+                  className="bg-white border border-gray-200 rounded-xl p-4 mb-3"
                 >
                   <View className="flex-row items-center justify-between mb-3">
                     <View className="flex-row items-center flex-1">
