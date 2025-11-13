@@ -1,6 +1,7 @@
 import type { StartSubscriptionResponse } from '@packages/database/functions.types';
 import { useMutation } from '@tanstack/react-query';
 import localImage from '~/assets/images/blurry-dark-blob.jpg';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -13,7 +14,6 @@ import {
 } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 
 import { supabase } from '~/lib/supabase';
 
@@ -63,16 +63,14 @@ export function BecomeMemberForm({
       };
     },
     onSuccess: (data) => {
-      if (data) {
-        router.push({
-          pathname: '/payment',
-          params: {
-            qrCodeImage: data.qrCodeImage,
-            pixCopyPaste: data.pixCopyPaste,
-            chargeId: data.chargeId,
-          },
-        });
-      }
+      router.push({
+        pathname: '/payment',
+        params: {
+          qrCodeImage: data.qrCodeImage,
+          pixCopyPaste: data.pixCopyPaste,
+          chargeId: data.chargeId,
+        },
+      });
     },
     onError: (error) => {
       console.error('Error starting subscription:', error);
