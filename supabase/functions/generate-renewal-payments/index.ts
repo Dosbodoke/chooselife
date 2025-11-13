@@ -95,12 +95,10 @@ async function createNotification({
   amount: number;
 }) {
   const title = {
-    pt: `Sua assinatura da ${organizationName} está perto de vencer!`,
+    pt: `Fique em dia com sua assinatura ${organizationName}`,
   };
   const body = {
-    pt: `Para não perder o acesso, realize o pagamento de R$${
-      (amount / 100).toFixed(2)
-    }.`,
+    pt: `O pagamento de R$${(amount / 100).toFixed(2)} para o próximo período já está disponível. O vencimento é em 7 dias.`,
   };
 
   const { error } = await supabaseAdmin
