@@ -1,118 +1,225 @@
+import type { SupabaseClient } from "@supabase";
 import { createSupabaseClient } from "../_shared/supabase-client.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import type {
   AbacatePayCharge,
   CreateAbacatePayChargePayload,
 } from "../_shared/edge-functions.types.ts";
+import type { Database } from "../../../packages/database/index.ts";
+
+// Helper function to handle CORS preflight requests
+function handleCors(req: Request): Response | null {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+  return null;
+}
+
+type User = {
+  id: string;
+  email: string;
+};
+
+async function getUser(supabaseAdmin: SupabaseClient): Promise<User> {
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser();
+  if (error) throw error;
+  if (!user) throw new Error("User not authenticated");
+  if (!user.email) throw new Error("User email is missing");
+  return { id: user.id, email: user.email };
+}
+
+type Profile = {
+  name: string;
+};
+
+async function getUserProfile(
+  supabaseAdmin: SupabaseClient,
+  userId: string,
+): Promise<Profile> {
+  const { data: profileData, error: profileError } = await supabaseAdmin
+    .from("profiles")
+    .select("name")
+    .eq("id", userId)
+    .single();
+
+  if (profileError) throw profileError;
+  if (!profileData) throw new Error("User profile not found");
+  if (!profileData.name) throw new Error("User name not found in profile");
+
+  return profileData;
+}
+
+type Organization = Pick<
+  Database["public"]["Tables"]["organizations"]["Row"],
+  "id" | "monthly_price_amount" | "annual_price_amount"
+>;
+
+async function getOrganization(
+  supabaseAdmin: SupabaseClient,
+  organizationID: string,
+): Promise<Organization> {
+  const { data: orgData, error: orgError } = await supabaseAdmin
+    .from("organizations")
+    .select("id, monthly_price_amount, annual_price_amount")
+    .eq("id", organizationID)
+    .single();
+
+  if (orgError) throw orgError;
+  if (!orgData) throw new Error("Organization not found");
+
+  return orgData;
+}
+
+function getAmount(
+  orgData: Organization,
+  plan_type: "monthly" | "annual",
+): number {
+  const amount = plan_type === "annual"
+    ? orgData.annual_price_amount
+    : orgData.monthly_price_amount;
+
+  if (amount === null || amount === undefined) {
+    throw new Error("Price not set for this plan type");
+  }
+  return amount;
+}
+
+async function upsertSubscription(
+  supabaseAdmin: SupabaseClient,
+  { organization_id, user_id, plan_type }: {
+    organization_id: string;
+    user_id: string;
+    plan_type: "monthly" | "annual";
+  },
+): Promise<{ id: string }> {
+  const { data: subData, error: subError } = await supabaseAdmin
+    .from("subscriptions")
+    .upsert({
+      organization_id,
+      user_id,
+      status: "pending_payment",
+      plan_type,
+    }, { onConflict: "user_id,organization_id" })
+    .select("id")
+    .single();
+
+  if (subError) throw subError;
+  if (!subData) throw new Error("Could not create subscription");
+
+  return subData;
+}
+
+async function createPayment(
+  supabaseAdmin: SupabaseClient,
+  { organization_id, user_id, subscription_id, amount }: {
+    organization_id: string;
+    user_id: string;
+    subscription_id: string;
+    amount: number;
+  },
+): Promise<{ id: string }> {
+  const { data: paymentData, error: paymentError } = await supabaseAdmin
+    .from("payments")
+    .insert({
+      organization_id,
+      user_id,
+      subscription_id,
+      amount,
+      status: "pending",
+    })
+    .select("id")
+    .single();
+
+  if (paymentError) throw paymentError;
+  if (!paymentData) throw new Error("Could not create payment record");
+
+  return paymentData;
+}
+
+async function createCharge(
+  supabaseAdmin: SupabaseClient,
+  { amount, paymentId, customer }: CreateAbacatePayChargePayload,
+): Promise<AbacatePayCharge> {
+  const { data: chargeData, error: chargeError } = await supabaseAdmin
+    .functions.invoke<AbacatePayCharge>(
+      "create-abacate-pay-charge",
+      {
+        body: {
+          amount,
+          paymentId,
+          customer,
+        } satisfies CreateAbacatePayChargePayload,
+      },
+    );
+
+  if (chargeError) {
+    const errorDetails = await chargeError.context?.json();
+    throw new Error(
+      `Failed to create payment charge: ${
+        errorDetails?.error || chargeError.message
+      }`,
+    );
+  }
+
+  if (!chargeData) {
+    throw new Error(
+      "No charge data received from 'create-abacate-pay-charge'",
+    );
+  }
+
+  return chargeData;
+}
+
+type RequestPayload = {
+  organizationID: string;
+  plan_type: "monthly" | "annual";
+};
+
+async function getRequestPayload(req: Request): Promise<RequestPayload> {
+  const { plan_type, organizationID }: RequestPayload = await req.json();
+  if (!plan_type) throw new Error("plan_type is required");
+  if (!organizationID) throw new Error("organizationID is required");
+  return { plan_type, organizationID };
+}
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: corsHeaders,
-    });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
 
   try {
     const supabaseAdmin = createSupabaseClient(
       req.headers.get("Authorization")!,
     );
 
-    // 1. Get user from Authorization header
-    const { data: { user } } = await supabaseAdmin.auth.getUser();
-    if (!user) {
-      throw new Error("User not authenticated");
-    }
+    const { plan_type, organizationID } = await getRequestPayload(req);
 
-    // 2. Get parameters from request body
-    const { plan_type, organizationID }: {
-      organizationID: string;
-      plan_type: "monthly" | "annual";
-    } = await req.json();
-    if (!plan_type) {
-      throw new Error("plan_type is required");
-    }
-    if (!organizationID) {
-      throw new Error("organizationID is required");
-    }
+    const user = await getUser(supabaseAdmin);
+    const profile = await getUserProfile(supabaseAdmin, user.id);
+    const organization = await getOrganization(supabaseAdmin, organizationID);
+    const amount = getAmount(organization, plan_type);
 
-    // 3. Fetch organization price from the database
-    const { data: orgData, error: orgError } = await supabaseAdmin
-      .from("organizations")
-      .select("id, monthly_price_amount, annual_price_amount")
-      .eq("id", organizationID)
-      .single();
+    const subscription = await upsertSubscription(supabaseAdmin, {
+      organization_id: organization.id,
+      user_id: user.id,
+      plan_type,
+    });
 
-    if (orgError) throw orgError;
-    if (!orgData) throw new Error("Organization not found");
+    const payment = await createPayment(supabaseAdmin, {
+      organization_id: organization.id,
+      user_id: user.id,
+      subscription_id: subscription.id,
+      amount,
+    });
 
-    const amount = plan_type === "annual"
-      ? orgData.annual_price_amount
-      : orgData.monthly_price_amount;
+    const chargeData = await createCharge(supabaseAdmin, {
+      amount,
+      paymentId: payment.id,
+      customer: {
+        name: profile.name,
+        email: user.email,
+      },
+    });
 
-    if (amount === null || amount === undefined) {
-      throw new Error("Price not set for this plan type");
-    }
-
-    // 4. Create the subscription record
-    const { data: subData, error: subError } = await supabaseAdmin
-      .from("subscriptions")
-      .upsert({
-        organization_id: orgData.id,
-        user_id: user.id,
-        status: "pending_payment",
-        plan_type,
-      }, { onConflict: "user_id,organization_id" })
-      .select("id")
-      .single();
-
-    if (subError) throw subError;
-    if (!subData) throw new Error("Could not create subscription");
-
-    // 5. Create the initial payment record
-    const { data: paymentData, error: paymentError } = await supabaseAdmin
-      .from("payments")
-      .insert({
-        organization_id: orgData.id,
-        user_id: user.id,
-        subscription_id: subData.id,
-        amount,
-        status: "pending",
-      })
-      .select("id")
-      .single();
-
-    if (paymentError) throw paymentError;
-    if (!paymentData) throw new Error("Could not create payment record");
-
-    // 6. Invoke the 'create-abacate-pay-charge' function to generate a charge and link it
-    const { data: chargeData, error: chargeError } = await supabaseAdmin
-      .functions.invoke<AbacatePayCharge>(
-        "create-abacate-pay-charge",
-        {
-          body: {
-            amount,
-            paymentId: paymentData.id,
-          } satisfies CreateAbacatePayChargePayload,
-        },
-      );
-
-    if (chargeError) {
-      const errorDetails = await chargeError.context?.json();
-      throw new Error(
-        `Failed to create payment charge: ${
-          errorDetails?.error || chargeError.message
-        }`,
-      );
-    }
-
-    if (!chargeData) {
-      throw new Error(
-        "No charge data received from 'create-abacate-pay-charge'",
-      );
-    }
-
-    // 7. Return the successful charge data to the client
     return new Response(
       JSON.stringify(chargeData satisfies AbacatePayCharge),
       {

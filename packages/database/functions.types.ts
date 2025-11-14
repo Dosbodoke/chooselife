@@ -1,6 +1,10 @@
 export type CreateAbacatePayChargePayload = {
   amount: number;
   paymentId: string;
+  customer: {
+    name: string;
+    email: string;
+  };
 };
 
 export type AbacatePayCharge = {
