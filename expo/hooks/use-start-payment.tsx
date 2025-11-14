@@ -1,20 +1,15 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 
-import { useAuth } from '~/context/auth';
 import { queryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 
 const generatePixChargeFn = async ({
   amount,
   paymentId,
-  customerName,
-  customerEmail,
 }: {
   amount: number;
   paymentId: string;
-  customerName: string;
-  customerEmail: string;
 }) => {
   const { data, error } = await supabase.functions.invoke(
     'create-abacate-pay-charge',
@@ -22,10 +17,6 @@ const generatePixChargeFn = async ({
       body: {
         amount,
         paymentId,
-        customer: {
-          name: customerName,
-          email: customerEmail,
-        },
       },
     },
   );
@@ -37,7 +28,6 @@ const generatePixChargeFn = async ({
 export const useStartPayment = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { session, profile } = useAuth();
 
   return useMutation({
     mutationFn: async ({
@@ -47,14 +37,9 @@ export const useStartPayment = () => {
       amount: number;
       paymentId: string;
     }) => {
-      if (!profile?.name || !session?.user.email) {
-        throw new Error('Customer name or email not available in profile.');
-      }
       return generatePixChargeFn({
         amount,
         paymentId,
-        customerName: profile.name,
-        customerEmail: session.user.email,
       });
     },
     onSuccess: (data) => {

@@ -26,10 +26,16 @@ Deno.serve(async (req) => {
       throw new Error("paymentId is required.");
     }
     if (
-      customer === undefined || customer.name === undefined ||
-      customer.email === undefined
+      customer !== undefined && (
+        customer.name === undefined ||
+        customer.email === undefined ||
+        customer.cellphone === undefined ||
+        customer.taxId === undefined
+      )
     ) {
-      throw new Error("customer name and email are required.");
+      throw new Error(
+        "customer info should contain name, email, cellphone and taxId.",
+      );
     }
 
     const abacatePay = AbacatePay.default(Deno.env.get("ABACATE_PAY_API_KEY")!);
@@ -37,10 +43,7 @@ Deno.serve(async (req) => {
       amount: amount,
       description: "Inscrição para se tornar associado da SL.A.C",
       expiresIn: 3600, // 1 hour
-      customer: {
-        name: customer.name,
-        email: customer.email,
-      },
+      customer,
     });
 
     if (pixCode.error !== null) {
