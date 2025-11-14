@@ -104,10 +104,6 @@ create policy "Users can view their own payments."
 on public.payments for select
 using ( auth.uid() = user_id );
 
-create policy "Users can create their own payment records."
-on public.payments for insert
-with check ( auth.uid() = user_id );
-
 create policy "Servers with service_role can update payment records."
 on public.payments for update
 using ( auth.role() = 'service_role' )
