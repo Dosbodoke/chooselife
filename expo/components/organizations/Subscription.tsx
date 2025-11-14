@@ -4,8 +4,7 @@ import {
   BottomSheetModal,
   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import {
   AlertCircle,
   CalendarCheck,
@@ -19,8 +18,7 @@ import {
   XCircle,
 } from 'lucide-react-native';
 import React, { useCallback, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -31,7 +29,9 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { useAuth } from '~/context/auth';
+import { useStartPayment } from '~/hooks/use-start-payment';
 import { PixIcon } from '~/lib/icons/pix';
+import { queryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 import { Tables } from '~/utils/database.types';
@@ -69,18 +69,6 @@ const fetchSubscriptionData = async (
   }
 
   return { subscription, payments };
-};
-
-const generatePixChargeFn = async (paymentId: string) => {
-  const { data, error } = await supabase.functions.invoke(
-    'create-abacate-pay-charge',
-    {
-      body: { paymentId },
-    },
-  );
-
-  if (error) throw error;
-  return data;
 };
 
 const PaymentStatusBadge = ({ status }: { status: string }) => {
@@ -246,41 +234,22 @@ export const Subscription = ({
 }: {
   organization: Tables<'organizations'>;
 }) => {
-  const router = useRouter();
-  const { t } = useTranslation();
   const { profile } = useAuth();
+  const startPaymentMutation = useStartPayment();
 
   // Bottom Sheet configs
   const historySheetRef = useRef<BottomSheetModal>(null);
   const historySnapPoints = ['30%', '90%'];
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['subscription', organization.id, profile?.id],
+    queryKey: queryKeys.subscription.byOrgUser(organization.id, profile!.id),
     queryFn: () => fetchSubscriptionData(organization.id, profile!.id),
     enabled: !!organization.id && !!profile?.id,
   });
 
-  const pixMutation = useMutation({
-    mutationFn: generatePixChargeFn,
-    onSuccess: (data) => {
-      router.push({
-        pathname: '/payment',
-        params: {
-          qrCodeImage: data.qrCodeImage,
-          pixCopyPaste: data.pixCopyPaste,
-          chargeId: data.chargeId,
-        },
-      });
-    },
-    onError: (error) => {
-      Alert.alert(t('organizations.paymentError'));
-      console.error(error);
-    },
-  });
-
-  const handleOpenHistory = useCallback(() => {
+  const handleOpenHistory = () => {
     historySheetRef.current?.present();
-  }, []);
+  };
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -419,8 +388,13 @@ export const Subscription = ({
         {pendingPayment && !isOverdue && (
           <PendingPaymentAlert
             amount={pendingPayment.amount}
-            onPayPress={() => pixMutation.mutate(pendingPayment.id)}
-            isPaying={pixMutation.isPending}
+            onPayPress={() =>
+              startPaymentMutation.mutate({
+                amount: pendingPayment.amount,
+                paymentId: pendingPayment.id,
+              })
+            }
+            isPaying={startPaymentMutation.isPending}
           />
         )}
 
@@ -604,10 +578,13 @@ export const Subscription = ({
                       <TouchableOpacity
                         onPress={() => {
                           historySheetRef.current?.close();
-                          pixMutation.mutate(item.id);
+                          startPaymentMutation.mutate({
+                            amount: item.amount,
+                            paymentId: item.id,
+                          });
                         }}
                         className="bg-emerald-50 border border-emerald-200 rounded-lg py-3 mt-2"
-                        disabled={pixMutation.isPending}
+                        disabled={startPaymentMutation.isPending}
                       >
                         <Text className="text-emerald-700 font-bold text-center text-sm">
                           Gerar Código PIX →

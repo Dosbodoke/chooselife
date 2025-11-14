@@ -341,7 +341,6 @@
       "goToOrganization": "Go to organization {name}",
       "becomeMember": "Become a Member",
       "pixInstructions": "Scan the QR code or copy the code below to pay with PIX.",
-      "paymentError": "An error occurred while processing your payment. Please try again.",
       "payments": "Payments",
       "form": {
         "name": "Name",
