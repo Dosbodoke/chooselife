@@ -40,8 +40,7 @@ export const AssembleiaCard = () => {
               Próxima Assembleia
             </Text>
             <Text className="text-base font-medium text-gray-600 leading-6 mb-3">
-              As Assembleias Gerais Ordinárias são realizadas semestralmente,
-              preferencialmente no segundo mês de cada semestre.
+              As datas das Assembleias Gerais são definidas conforme a necessidade e sempre comunicadas com no mínimo 30 dias de antecedência.
             </Text>
           </View>
         </View>
