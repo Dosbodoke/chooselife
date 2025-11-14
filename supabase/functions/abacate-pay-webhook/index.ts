@@ -1,24 +1,52 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import type { SupabaseClient } from "@supabase";
+import { Tables } from "../_shared/database.types.ts";
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 import crypto from "node:crypto";
 import { Buffer } from "node:buffer";
 
 const ABACATE_PAY_WEBHOOK_SECRET = Deno.env.get("ABACATE_PAY_WEBHOOK_SECRET")!;
-// Public HMAC key
 const ABACATEPAY_PUBLIC_KEY =
   "t9dXRhHHo3yDEj5pVDYz0frf7q6bMKyMRmxxCPIPp3RCplBfXRxqlC6ZpiWmOqj4L63qEaeUOtrCI8P0VMUgo6iIga2ri9ogaHFs0WIIywSMg0q7RmBfybe1E5XJcfC4IW3alNqym0tXoAKkzvfEjZxV6bE0oG2zJrNNYmUCKZyV0KZ3JS8Votf9EAWWYdiDkMkpbMdPggfh1EqHlVkMiTady6jOR3hyzGEHrIz2Ret0xHKMbiqkr9HS1JhNHDX9";
 
+type PaymentStatus = Tables<"payments">["status"];
+
+interface WebhookPayload {
+  id: string;
+  event: string;
+  devMode: boolean;
+  data: {
+    payment: {
+      amount: number;
+      fee: number;
+      method: string;
+    };
+    pixQrCode: {
+      id: string;
+      amount: number;
+      kind: string;
+      status: string;
+    };
+  };
+}
+
+type Payment = Pick<
+  Tables<"payments">,
+  "id" | "subscription_id" | "user_id" | "organization_id"
+>;
+
+interface Subscription {
+  current_period_end: string;
+}
+
 /**
  * Verifies if the webhook signature matches the expected HMAC.
- * @param rawBody Raw request body string.
- * @param signatureFromHeader The signature received from `X-Webhook-Signature`.
- * @returns true if the signature is valid, false otherwise.
  */
 export function verifyAbacateSignature(
   rawBody: string,
   signatureFromHeader: string,
-) {
+): boolean {
   const bodyBuffer = Buffer.from(rawBody, "utf8");
 
   const expectedSig = crypto
@@ -32,138 +60,230 @@ export function verifyAbacateSignature(
   return A.length === B.length && crypto.timingSafeEqual(A, B);
 }
 
-Deno.serve(async (req) => {
-  // 1. Verify the webhook secret from the query parameter (optional, but good for an extra layer)
-  const url = new URL(req.url);
+/**
+ * Validates the webhook secret from query parameters.
+ */
+export function validateWebhookSecret(url: URL): boolean {
   const webhookSecret = url.searchParams.get("webhookSecret");
+  return webhookSecret === ABACATE_PAY_WEBHOOK_SECRET;
+}
 
-  if (webhookSecret !== ABACATE_PAY_WEBHOOK_SECRET) {
-    return new Response("Invalid webhook secret.", { status: 401 });
+/**
+ * Fetches payment record by charge ID.
+ */
+export async function fetchPayment(
+  supabase: SupabaseClient,
+  chargeId: string,
+): Promise<Payment | null> {
+  const { data, error } = await supabase
+    .from("payments")
+    .select("id, subscription_id, user_id, organization_id")
+    .eq("abacate_pay_charge_id", chargeId)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      console.warn(`Payment not found for abacate_pay_charge_id: ${chargeId}`);
+      return null;
+    }
+    throw error;
   }
 
-  const signature = req.headers.get("X-Webhook-Signature")!;
-  const rawBody = await req.text();
+  return data;
+}
 
-  // 2. Verify the webhook signature
-  const isVerified = verifyAbacateSignature(rawBody, signature);
-  if (!isVerified) {
-    return new Response("Signature verification failed.", { status: 401 });
+/**
+ * Updates payment record with new status.
+ */
+export async function updatePaymentStatus(
+  supabase: SupabaseClient,
+  paymentId: string,
+  status: PaymentStatus,
+): Promise<void> {
+  const { error } = await supabase
+    .from("payments")
+    .update({
+      status: status,
+      paid_at: status === "succeeded" ? new Date().toISOString() : null,
+    })
+    .eq("id", paymentId);
+
+  if (error) {
+    console.error("Error updating payment:", error);
+    throw error;
   }
+}
 
-  try {
-    const payload = JSON.parse(rawBody);
-    console.log("Processing webhook event:", payload);
+/**
+ * Calculates the new subscription period end date.
+ */
+export function calculateNewPeriodEnd(currentPeriodEnd: string): Date {
+  const now = new Date();
+  const currentEnd = new Date(currentPeriodEnd);
+  const startDate = currentEnd > now ? currentEnd : now;
 
-    const abacatePayChargeId = payload.data.pixQrCode?.id || payload.data.charge?.id;
-    if (!abacatePayChargeId) {
-      return new Response("Charge ID not found in webhook payload.", { status: 400 });
-    }
+  startDate.setMonth(startDate.getMonth() + 1);
+  return startDate;
+}
 
-    // 3. Determine the internal status based on the event type
-    let paymentStatus: 'succeeded' | 'failed' | null = null;
-    switch (payload.event) {
-      case "billing.paid":
-        paymentStatus = "succeeded";
-        break;
-      case "billing.failed":
-      case "billing.expired": // Assuming expired is also a failure for the payment
-        paymentStatus = "failed";
-        break;
-      default:
-        // Acknowledge other events without processing
-        return new Response(
-          JSON.stringify({
-            received: true,
-            processed: false,
-            message: "Event type not handled.",
-          }),
-          { status: 200 },
-        );
-    }
+/**
+ * Fetches subscription by ID.
+ */
+export async function fetchSubscription(
+  supabase: SupabaseClient,
+  subscriptionId: string,
+): Promise<Subscription | null> {
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select("current_period_end")
+    .eq("id", subscriptionId)
+    .single();
 
-    // Create a Supabase admin client
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  if (error) {
+    console.error(
+      `Failed to fetch subscription ${subscriptionId}:`,
+      error,
     );
+    return null;
+  }
 
-    // 4. Find the payment record using the charge ID
-    const { data: payment, error: paymentFetchError } = await supabaseAdmin
-      .from("payments")
-      .select("id, subscription_id, user_id, organization_id")
-      .eq("abacate_pay_charge_id", abacatePayChargeId)
-      .single();
+  return data;
+}
 
-    if (paymentFetchError) {
-      // If the payment is not found, we acknowledge with 200 to prevent retries.
-      if (paymentFetchError.code === "PGRST116") {
-        console.warn(
-          `Payment not found for abacate_pay_charge_id: ${abacatePayChargeId}`,
-        );
-        return new Response("Payment not found, but acknowledged.", {
-          status: 200,
-        });
-      }
-      console.error("Error fetching payment:", paymentFetchError);
-      throw paymentFetchError;
-    }
+/**
+ * Activates subscription and extends the period.
+ */
+export async function activateSubscription(
+  supabase: SupabaseClient,
+  subscriptionId: string,
+): Promise<void> {
+  const subscription = await fetchSubscription(supabase, subscriptionId);
 
-    // 5. Update the 'payments' table to notify the listening client
-    const { error: paymentUpdateError } = await supabaseAdmin
-      .from("payments")
-      .update({
-        status: paymentStatus,
-        paid_at: paymentStatus === 'succeeded' ? new Date().toISOString() : null,
-      })
-      .eq("id", payment.id);
+  if (!subscription) {
+    console.error(
+      `Cannot activate subscription ${subscriptionId}. Manual intervention may be required.`,
+    );
+    return;
+  }
 
-    if (paymentUpdateError) {
-      console.error("Error updating payment:", paymentUpdateError);
-      throw paymentUpdateError;
-    }
+  const newPeriodEnd = calculateNewPeriodEnd(subscription.current_period_end);
 
-    // 6. If payment was successful, activate the subscription
-    if (paymentStatus === "succeeded" && payment.subscription_id) {
-      const periodEnd = new Date();
-      // Assuming monthly plan for now, as per original logic
-      periodEnd.setMonth(periodEnd.getMonth() + 1);
+  const { error } = await supabase
+    .from("subscriptions")
+    .update({
+      status: "active",
+      current_period_end: newPeriodEnd.toISOString(),
+    })
+    .eq("id", subscriptionId);
 
-      const { error: subscriptionUpdateError } = await supabaseAdmin
-        .from("subscriptions")
-        .update({
-          status: "active",
-          current_period_end: periodEnd.toISOString(),
-        })
-        .eq("id", payment.subscription_id);
+  if (error) {
+    console.error("Error activating subscription:", error);
+  }
+}
 
-      if (subscriptionUpdateError) {
-        // Log error but don't fail the webhook, as payment is processed.
-        // This might need manual intervention.
-        console.error("Error activating subscription:", subscriptionUpdateError);
-      }
-
-      // Add user to the organization
-      const { error: memberInsertError } = await supabaseAdmin
-        .from("organization_members")
-        .upsert({
-          organization_id: payment.organization_id,
-          user_id: payment.user_id,
-          role: "member",
-        });
-
-      if (memberInsertError) {
-        console.error("Error inserting into organization_members:", memberInsertError);
-      }
-    }
-
-    // 7. Acknowledge receipt of the event
-    return new Response(JSON.stringify({ received: true, processed: true }), {
-      status: 200,
+/**
+ * Adds user to organization as a member.
+ */
+export async function addUserToOrganization(
+  supabase: SupabaseClient,
+  organizationId: string,
+  userId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("organization_members")
+    .upsert({
+      organization_id: organizationId,
+      user_id: userId,
+      role: "member",
     });
+
+  if (error) {
+    console.error("Error inserting into organization_members:", error);
+  }
+}
+
+/**
+ * Processes successful payment by activating subscription and adding user to org.
+ */
+export async function processSuccessfulPayment(
+  supabase: SupabaseClient,
+  payment: Payment,
+): Promise<void> {
+  if (payment.subscription_id) {
+    await activateSubscription(supabase, payment.subscription_id);
+  }
+
+  await addUserToOrganization(
+    supabase,
+    payment.organization_id,
+    payment.user_id,
+  );
+}
+
+/**
+ * Main webhook processing logic.
+ */
+export async function processWebhook(
+  supabase: SupabaseClient,
+  payload: WebhookPayload,
+): Promise<{ processed: boolean; message?: string }> {
+  console.log("Processing webhook event:", payload);
+
+  const pixQrCodeId = payload.data.pixQrCode.id;
+  const paymentStatus: PaymentStatus = payload.event === "billing.paid"
+    ? "succeeded"
+    : "failed";
+  const payment = await fetchPayment(supabase, pixQrCodeId);
+  if (!payment) {
+    return {
+      processed: false,
+      message: "Payment not found, but acknowledged.",
+    };
+  }
+
+  await updatePaymentStatus(supabase, payment.id, paymentStatus);
+
+  if (paymentStatus === "succeeded") {
+    await processSuccessfulPayment(supabase, payment);
+  }
+
+  return { processed: true };
+}
+
+/**
+ * Main webhook handler.
+ */
+Deno.serve(async (req) => {
+  try {
+    // Validate webhook secret
+    const url = new URL(req.url);
+    if (!validateWebhookSecret(url)) {
+      return new Response("Invalid webhook secret.", { status: 401 });
+    }
+
+    // Verify signature
+    const signature = req.headers.get("X-Webhook-Signature");
+    if (!signature) {
+      return new Response("Missing signature header.", { status: 401 });
+    }
+    const rawBody = await req.text();
+    if (!verifyAbacateSignature(rawBody, signature)) {
+      return new Response("Signature verification failed.", { status: 401 });
+    }
+
+    // Parse and process webhook
+    const payload: WebhookPayload = JSON.parse(rawBody);
+    const result = await processWebhook(supabaseAdmin, payload);
+
+    return new Response(
+      JSON.stringify({ received: true, ...result }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
   } catch (error) {
     console.error("Webhook processing error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
-    });
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 400, headers: { "Content-Type": "application/json" } },
+    );
   }
 });
