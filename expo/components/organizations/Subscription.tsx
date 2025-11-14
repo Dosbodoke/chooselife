@@ -71,6 +71,60 @@ const fetchSubscriptionData = async (
   return { subscription, payments };
 };
 
+const SkeletonBox = ({ className }: { className?: string }) => (
+  <Animated.View
+    entering={FadeIn}
+    className={cn('bg-gray-200 rounded-lg', className)}
+    style={{ opacity: 0.6 }}
+  />
+);
+
+const SubscriptionSkeleton = () => (
+  <Animated.View
+    entering={FadeIn}
+    className="bg-white border border-gray-200 rounded-2xl p-5 gap-4"
+  >
+    {/* Header */}
+    <View className="flex-row items-center justify-between">
+      <SkeletonBox className="h-6 w-40" />
+      <SkeletonBox className="h-8 w-24 rounded-full" />
+    </View>
+
+    {/* Billing Cycle */}
+    <View className="flex-row items-center">
+      <SkeletonBox className="w-10 h-10 rounded-xl mr-3" />
+      <View className="flex-1 gap-2">
+        <SkeletonBox className="h-3 w-24" />
+        <View className="flex-row items-center gap-2">
+          <SkeletonBox className="h-5 w-16" />
+          <SkeletonBox className="h-6 w-20 rounded-lg" />
+        </View>
+      </View>
+    </View>
+
+    {/* Member Since */}
+    <View className="flex-row items-center pt-3 border-t border-gray-100">
+      <SkeletonBox className="w-10 h-10 rounded-xl mr-3" />
+      <View className="gap-2">
+        <SkeletonBox className="h-3 w-24" />
+        <SkeletonBox className="h-5 w-32" />
+      </View>
+    </View>
+
+    {/* Payment History Button */}
+    <View className="flex-row items-center justify-between pt-3 border-t border-gray-100">
+      <View className="flex-row items-center flex-1">
+        <SkeletonBox className="w-10 h-10 rounded-xl mr-3" />
+        <View className="gap-2">
+          <SkeletonBox className="h-5 w-48" />
+          <SkeletonBox className="h-3 w-32" />
+        </View>
+      </View>
+      <SkeletonBox className="h-6 w-4" />
+    </View>
+  </Animated.View>
+);
+
 const PaymentStatusBadge = ({ status }: { status: string }) => {
   const statusConfig = {
     approved: {
@@ -271,32 +325,8 @@ export const Subscription = ({
     return diffDays;
   };
 
-  const getMembershipDuration = (periodEnd: string | null) => {
-    if (!periodEnd) return null;
-    const endDate = new Date(periodEnd);
-    const today = new Date();
-    const diffTime = endDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const diffMonths = Math.floor(diffDays / 30);
-
-    if (diffDays < 0)
-      return { value: Math.abs(diffDays), unit: 'dias', isExpired: true };
-    if (diffDays === 0) return { value: 0, unit: 'hoje', isExpired: false };
-    if (diffDays < 30)
-      return { value: diffDays, unit: 'dias', isExpired: false };
-    return { value: diffMonths, unit: 'meses', isExpired: false };
-  };
-
   if (isLoading) {
-    return (
-      <Animated.View
-        entering={FadeIn}
-        className="flex-1 justify-center items-center p-6"
-      >
-        <ActivityIndicator size="large" color="#059669" />
-        <Text className="mt-4 text-gray-600">Carregando assinatura...</Text>
-      </Animated.View>
-    );
+    return <SubscriptionSkeleton />;
   }
 
   if (isError) {
@@ -352,9 +382,6 @@ export const Subscription = ({
     daysUntilDue < 0;
 
   const isActive = subscription.status === 'active' && !isOverdue;
-  const membershipDuration = getMembershipDuration(
-    subscription.current_period_end,
-  );
 
   // Calculate pricing info
   const monthlyPrice = organization.monthly_price_amount
@@ -396,40 +423,6 @@ export const Subscription = ({
             }
             isPaying={startPaymentMutation.isPending}
           />
-        )}
-
-        {isActive && membershipDuration && !membershipDuration.isExpired && (
-          <Animated.View
-            entering={FadeInDown.springify()}
-            exiting={FadeOut}
-            layout={LinearTransition.springify()}
-            className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4"
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text className="text-emerald-600 text-xs font-bold mb-1">
-                  Válido até
-                </Text>
-                <Text className="text-gray-900 text-base font-bold">
-                  {new Date(
-                    subscription.current_period_end!,
-                  ).toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </Text>
-              </View>
-              <View className="items-end">
-                <Text className="text-emerald-600 text-3xl font-black">
-                  {membershipDuration.value}
-                </Text>
-                <Text className="text-emerald-600 text-xs font-bold">
-                  {membershipDuration.unit} restantes
-                </Text>
-              </View>
-            </View>
-          </Animated.View>
         )}
 
         <Animated.View
