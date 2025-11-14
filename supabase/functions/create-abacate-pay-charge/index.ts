@@ -1,8 +1,8 @@
 import AbacatePay from "abacatepay-nodejs-sdk";
 import { corsHeaders } from "../_shared/cors.ts";
 import type {
-  CreateAbacatePayChargePayload,
   AbacatePayCharge,
+  CreateAbacatePayChargePayload,
 } from "../_shared/edge-functions.types.ts";
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 
@@ -16,13 +16,20 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { amount, paymentId }: CreateAbacatePayChargePayload =
-      await req.json();
+    const { amount, paymentId, customer }: CreateAbacatePayChargePayload =
+      await req
+        .json();
     if (amount === undefined) {
       throw new Error("amount is required.");
     }
     if (paymentId === undefined) {
       throw new Error("paymentId is required.");
+    }
+    if (
+      customer === undefined || customer.name === undefined ||
+      customer.email === undefined
+    ) {
+      throw new Error("customer name and email are required.");
     }
 
     const abacatePay = AbacatePay.default(Deno.env.get("ABACATE_PAY_API_KEY")!);
@@ -30,6 +37,10 @@ Deno.serve(async (req) => {
       amount: amount,
       description: "Inscrição para se tornar associado da SL.A.C",
       expiresIn: 3600, // 1 hour
+      customer: {
+        name: customer.name,
+        email: customer.email,
+      },
     });
 
     if (pixCode.error !== null) {
@@ -51,9 +62,11 @@ Deno.serve(async (req) => {
 
     // Return the PIX data from the SDK response to the frontend
     return new Response(
-      JSON.stringify({
-        ...pixCode.data,
-      } satisfies AbacatePayCharge),
+      JSON.stringify(
+        {
+          ...pixCode.data,
+        } satisfies AbacatePayCharge,
+      ),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
