@@ -69,13 +69,30 @@ Deno.serve(async (req) => {
     if (subError) throw subError;
     if (!subData) throw new Error("Could not create subscription");
 
-    // 5. Invoke the reusable 'create-abacate-pay-charge' function
+    // 5. Create the initial payment record
+    const { data: paymentData, error: paymentError } = await supabaseAdmin
+      .from("payments")
+      .insert({
+        organization_id: orgData.id,
+        user_id: user.id,
+        subscription_id: subData.id,
+        amount,
+        status: "pending",
+      })
+      .select("id")
+      .single();
+
+    if (paymentError) throw paymentError;
+    if (!paymentData) throw new Error("Could not create payment record");
+
+    // 6. Invoke the 'create-abacate-pay-charge' function to generate a charge and link it
     const { data: chargeData, error: chargeError } = await supabaseAdmin
       .functions.invoke<AbacatePayCharge>(
         "create-abacate-pay-charge",
         {
           body: {
             amount,
+            paymentId: paymentData.id,
           } satisfies CreateAbacatePayChargePayload,
         },
       );
@@ -94,26 +111,6 @@ Deno.serve(async (req) => {
         "No charge data received from 'create-abacate-pay-charge'",
       );
     }
-
-    if (!chargeData.id) {
-      throw new Error(
-        "id not found in 'create-abacate-pay-charge' response",
-      );
-    }
-
-    // 6. Create the initial payment record with the charge ID
-    const { error: paymentError } = await supabaseAdmin
-      .from("payments")
-      .insert({
-        organization_id: orgData.id,
-        user_id: user.id,
-        subscription_id: subData.id,
-        amount,
-        status: "pending",
-        abacate_pay_charge_id: chargeData.id,
-      });
-
-    if (paymentError) throw paymentError;
 
     // 7. Return the successful charge data to the client
     return new Response(

@@ -16,6 +16,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { queryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 
 const WithBgBlob = ({ children }: { children: React.ReactNode }) => {
@@ -70,7 +71,9 @@ export default function PaymentScreen() {
         (payload) => {
           if (payload.new.status === 'succeeded') {
             setPaymentStatus('SUCCESS');
-            queryClient.invalidateQueries({ queryKey: ['profile'] });
+            queryClient.invalidateQueries({
+              queryKey: queryKeys.subscription.all,
+            });
             setTimeout(() => {
               if (router.canGoBack()) router.back();
             }, 3000);

@@ -4,6 +4,7 @@ import type {
   CreateAbacatePayChargePayload,
   AbacatePayCharge,
 } from "../_shared/edge-functions.types.ts";
+import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 
 if (!Deno.env.get("ABACATE_PAY_API_KEY")) {
   throw new Error("Missing ABACATE_PAY_API_KEY environment variable.");
@@ -15,9 +16,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { amount }: CreateAbacatePayChargePayload = await req.json();
+    const { amount, paymentId }: CreateAbacatePayChargePayload =
+      await req.json();
     if (amount === undefined) {
       throw new Error("amount is required.");
+    }
+    if (paymentId === undefined) {
+      throw new Error("paymentId is required.");
     }
 
     const abacatePay = AbacatePay.default(Deno.env.get("ABACATE_PAY_API_KEY")!);
@@ -30,6 +35,17 @@ Deno.serve(async (req) => {
     if (pixCode.error !== null) {
       throw new Error(
         `Abacate Pay SDK error: ${JSON.stringify(pixCode.error)}`,
+      );
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from("payments")
+      .update({ abacate_pay_charge_id: pixCode.data.id })
+      .eq("id", paymentId);
+
+    if (updateError) {
+      throw new Error(
+        `Failed to update payment record: ${updateError.message}`,
       );
     }
 

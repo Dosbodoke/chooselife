@@ -14,6 +14,7 @@ import {
 } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
+import { queryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 
 import { AssembleiaCard } from '~/components/organizations/assembleia-card';
@@ -63,7 +64,7 @@ export default function OrganizationDetailsPage() {
     isLoading: isLoadingOrg,
     isError: isErrorOrg,
   } = useQuery({
-    queryKey: ['organizations', ORG_SLUG],
+    queryKey: queryKeys.organizations.bySlug(ORG_SLUG),
     queryFn: () => fetchOrganization(ORG_SLUG),
     enabled: !!ORG_SLUG,
   });
@@ -73,16 +74,21 @@ export default function OrganizationDetailsPage() {
     isLoading: isLoadingMember,
     isError: isErrorMember,
   } = useQuery({
-    queryKey: ['organizations', ORG_SLUG, 'members', profile?.id],
+    queryKey: queryKeys.organizations.members(ORG_SLUG, profile!.id),
     queryFn: () => checkMembership(organization!.id, profile!.id),
     enabled: !!organization?.id && !!profile,
   });
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await queryClient.invalidateQueries({
-      queryKey: ['organizations', ORG_SLUG],
-    });
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.organizations.bySlug(ORG_SLUG),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.organizations.members(ORG_SLUG, profile!.id),
+      }),
+    ]);
     setRefreshing(false);
   };
 

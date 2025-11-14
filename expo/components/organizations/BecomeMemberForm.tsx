@@ -5,7 +5,6 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -26,7 +25,6 @@ export function BecomeMemberForm({
 }: {
   isFocused?: boolean;
 }) {
-  const { t } = useTranslation();
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = React.useState<PlanType | null>(null);
 
