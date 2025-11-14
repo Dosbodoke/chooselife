@@ -28,27 +28,6 @@ async function getUser(supabaseAdmin: SupabaseClient): Promise<User> {
   return { id: user.id, email: user.email };
 }
 
-type Profile = {
-  name: string;
-};
-
-async function getUserProfile(
-  supabaseAdmin: SupabaseClient,
-  userId: string,
-): Promise<Profile> {
-  const { data: profileData, error: profileError } = await supabaseAdmin
-    .from("profiles")
-    .select("name")
-    .eq("id", userId)
-    .single();
-
-  if (profileError) throw profileError;
-  if (!profileData) throw new Error("User profile not found");
-  if (!profileData.name) throw new Error("User name not found in profile");
-
-  return profileData;
-}
-
 type Organization = Pick<
   Database["public"]["Tables"]["organizations"]["Row"],
   "id" | "monthly_price_amount" | "annual_price_amount"
@@ -194,7 +173,6 @@ Deno.serve(async (req) => {
     const { plan_type, organizationID } = await getRequestPayload(req);
 
     const user = await getUser(supabaseAdmin);
-    const profile = await getUserProfile(supabaseAdmin, user.id);
     const organization = await getOrganization(supabaseAdmin, organizationID);
     const amount = getAmount(organization, plan_type);
 
@@ -214,10 +192,7 @@ Deno.serve(async (req) => {
     const chargeData = await createCharge(supabaseAdmin, {
       amount,
       paymentId: payment.id,
-      customer: {
-        name: profile.name,
-        email: user.email,
-      },
+      customer: undefined,
     });
 
     return new Response(

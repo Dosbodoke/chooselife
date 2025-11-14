@@ -4,7 +4,9 @@ export type CreateAbacatePayChargePayload = {
   customer: {
     name: string;
     email: string;
-  };
+    cellphone: string;
+    taxId: string;
+  } | undefined;
 };
 
 export type AbacatePayCharge = {
