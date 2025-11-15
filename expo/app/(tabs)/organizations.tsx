@@ -8,10 +8,7 @@ import {
   ScrollView,
   View,
 } from 'react-native';
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
 import { queryKeys } from '~/lib/query-keys';
@@ -54,7 +51,6 @@ const checkMembership = async (organizationID: string, userId: string) => {
 };
 
 export default function OrganizationDetailsPage() {
-  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
@@ -137,41 +133,41 @@ export default function OrganizationDetailsPage() {
           title: organization.name,
         }}
       />
-      <ScrollView
-        className="px-4 flex-1"
-        contentContainerClassName="gap-8 pt-6"
-        style={{
-          paddingTop: insets.top,
-        }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#059669"
-          />
-        }
-      >
-        <View>
-          <View className="pt-6 pb-4">
-            <Text className="text-black text-4xl font-black">
-              {organization.name}
-            </Text>
-            <Text className="text-lg font-medium mb-2">
-              Slackliners Associados do Cerrado
-            </Text>
-            <Text className="text-base text-gray-600 leading-6">
-              Associação esportiva, cultural e artística de slackline sem fins
-              lucrativos, dedicada ao desenvolvimento e disseminação do esporte.
-            </Text>
+      <SafeAreaView className="flex-1">
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="gap-8 px-4 py-6"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#059669"
+            />
+          }
+        >
+          <View>
+            <View className="pt-6 pb-4">
+              <Text className="text-black text-4xl font-black">
+                {organization.name}
+              </Text>
+              <Text className="text-lg font-medium mb-2">
+                Slackliners Associados do Cerrado
+              </Text>
+              <Text className="text-base text-gray-600 leading-6">
+                Associação esportiva, cultural e artística de slackline sem fins
+                lucrativos, dedicada ao desenvolvimento e disseminação do
+                esporte.
+              </Text>
+            </View>
+
+            <HeaderInfos />
           </View>
 
-          <HeaderInfos />
-        </View>
-
-        {isMember ? <Subscription organization={organization} /> : null}
-        <AssembleiaCard />
-        <News />
-      </ScrollView>
+          {isMember ? <Subscription organization={organization} /> : null}
+          <AssembleiaCard />
+          <News />
+        </ScrollView>
+      </SafeAreaView>
       {!isMember ? <BecomeMember /> : null}
     </>
   );
