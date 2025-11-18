@@ -18,7 +18,7 @@ export const composeDbServerClient = ({
 
     const dbServerClient = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
       {
         cookies: cookieMethods(),
         auth: {
@@ -27,7 +27,7 @@ export const composeDbServerClient = ({
           persistSession: true,
           detectSessionInUrl: true,
         },
-      }
+      },
     );
 
     return {
