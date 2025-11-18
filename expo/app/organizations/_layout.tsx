@@ -5,7 +5,6 @@ export default function OrganizationsLayout() {
   return (
     <Stack>
       <Stack.Screen name="index" />
-      <Stack.Screen name="[slug]" />
       <Stack.Screen
         name="member"
         options={{
