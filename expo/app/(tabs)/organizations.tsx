@@ -16,11 +16,10 @@ import { supabase } from '~/lib/supabase';
 
 import { AssembleiaCard } from '~/components/organizations/assembleia-card';
 import { BecomeMember } from '~/components/organizations/BecomeMember';
+import { HeaderInfos } from '~/components/organizations/header-infos';
 import { News } from '~/components/organizations/News';
 import { Subscription } from '~/components/organizations/Subscription';
 import { Text } from '~/components/ui/text';
-
-import { HeaderInfos } from '../organizations/header-infos';
 
 // TODO: When more orgs were to be implemented, it should be created the /organizations/[slug] route
 const ORG_SLUG = 'slac' as const;
