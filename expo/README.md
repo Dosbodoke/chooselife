@@ -79,14 +79,9 @@ Supabase serves as the project's backend, handling database and authentication.
 #### Connecting to Expo
 
 1.  **Get API Keys:**
-    * Find your Project URL and anon keys in the Supabase dashboard (API Settings).
+    * Find your Project URL and publishable keys in the Supabase dashboard (API Settings).
 2.  **Create `.env` File:**
-    * Create a `.env` file at the project root and add your Supabase credentials:
-
-        ```
-        EXPO_PUBLIC_SUPABASE_URL=YOUR_SUPABASE_URL
-        EXPO_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
-        ```
+    * Run `cp .env.example .env` and add fill it with your Supabase credentials:
 
 ### Mapbox Configuration
 
