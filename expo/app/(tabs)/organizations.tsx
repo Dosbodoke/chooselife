@@ -159,7 +159,7 @@ export default function OrganizationDetailsPage() {
               </Text>
             </View>
 
-            <HeaderInfos />
+            <HeaderInfos slug={organization.slug} />
           </View>
 
           {isMember ? <Subscription organization={organization} /> : null}
