@@ -15,7 +15,7 @@ export default function MemberShowcaseScreen() {
     <View className="flex-1 bg-white">
       <Pressable
         onPress={router.back}
-        className="absolute right-3 p-2.5 rounded-full bg-foreground/10 z-50"
+        className="absolute right-6 p-2.5 rounded-full bg-foreground/10 z-50"
         style={{
           top: insets.top + 12,
         }}
