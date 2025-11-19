@@ -24,3 +24,15 @@ export function date18YearsAgo() {
   date.setFullYear(date.getFullYear() - 18);
   return date.toISOString().split("T")[0];
 }
+
+export function formatCurrency(amountInCents: number | null): string {
+  if (amountInCents === null) {
+    return '';
+  }
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amountInCents / 100);
+}

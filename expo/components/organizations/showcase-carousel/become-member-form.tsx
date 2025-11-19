@@ -14,13 +14,15 @@ import {
 import Animated, {
   FadeIn,
   FadeInDown,
-  runOnJS,
   SharedValue,
   useAnimatedReaction,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { supabase } from '~/lib/supabase';
+import { Tables } from '~/utils/database-generated.types';
+import { formatCurrency } from '~/utils';
 
 import { Text } from '~/components/ui/text';
 
@@ -30,17 +32,15 @@ export function BecomeMemberForm({
   scrollY,
   itemIndex,
   itemHeight,
-  slug,
+  org,
 }: {
   scrollY: SharedValue<number>;
   itemIndex: number;
   itemHeight: number;
-  slug: string;
+  org: Tables<'organizations'>;
 }) {
   const router = useRouter();
-  const [selectedPlan, setSelectedPlan] = React.useState<PlanType | null>(
-    null
-  );
+  const [selectedPlan, setSelectedPlan] = React.useState<PlanType | null>(null);
   const [isFocused, setIsFocused] = React.useState(false);
 
   useAnimatedReaction(
@@ -49,11 +49,20 @@ export function BecomeMemberForm({
     },
     (focused, prevFocused) => {
       if (focused !== prevFocused) {
-        runOnJS(setIsFocused)(focused);
+        scheduleOnRN(setIsFocused, focused);
       }
     },
-    []
+    [],
   );
+
+  const annualDiscountPercentage =
+    org.monthly_price_amount && org.annual_price_amount
+      ? Math.round(
+          ((org.monthly_price_amount * 12 - org.annual_price_amount) /
+            (org.monthly_price_amount * 12)) *
+            100,
+        )
+      : 0;
 
   const mutation = useMutation({
     mutationFn: async (values: { plan_type: PlanType }) => {
@@ -63,9 +72,9 @@ export function BecomeMemberForm({
           {
             body: {
               plan_type: values.plan_type,
-              slug,
+              slug: org.slug,
             },
-          }
+          },
         );
 
       if (error) {
@@ -155,7 +164,9 @@ export function BecomeMemberForm({
                   <Text className="text-white/60 text-sm">Flexível</Text>
                 </View>
                 <View className="items-end">
-                  <Text className="text-white text-3xl font-bold">R$35</Text>
+                  <Text className="text-white text-3xl font-bold">
+                    {formatCurrency(org.monthly_price_amount)}
+                  </Text>
                   <Text className="text-white/70 text-xs">/mês</Text>
                 </View>
               </View>
@@ -180,12 +191,16 @@ export function BecomeMemberForm({
               <View className="flex-row justify-between items-center">
                 <View className="flex-1">
                   <Text className="text-white text-xl font-bold">Anual</Text>
-                  <Text className="text-emerald-300 text-sm font-medium">
-                    Economia de 14%
-                  </Text>
+                  {!!annualDiscountPercentage && (
+                    <Text className="text-emerald-300 text-sm font-medium">
+                      Economia de {annualDiscountPercentage}%
+                    </Text>
+                  )}
                 </View>
                 <View className="items-end">
-                  <Text className="text-white text-3xl font-bold">R$360</Text>
+                  <Text className="text-white text-3xl font-bold">
+                    {formatCurrency(org.annual_price_amount)}
+                  </Text>
                   <Text className="text-white/70 text-xs">/ano</Text>
                 </View>
               </View>
