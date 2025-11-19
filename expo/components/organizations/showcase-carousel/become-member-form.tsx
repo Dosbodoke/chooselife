@@ -1,29 +1,22 @@
 import type { StartSubscriptionResponse } from '@packages/database/functions.types';
 import { useMutation } from '@tanstack/react-query';
-import localImage from '~/assets/images/blurry-dark-blob.jpg';
 import * as Haptics from 'expo-haptics';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import {
-  ActivityIndicator,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
   SharedValue,
   useAnimatedReaction,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { supabase } from '~/lib/supabase';
-import { Tables } from '~/utils/database-generated.types';
 import { formatCurrency } from '~/utils';
+import { Tables } from '~/utils/database-generated.types';
 
+import { BgBlob } from '~/components/bg-blog';
 import { Text } from '~/components/ui/text';
 
 type PlanType = 'monthly' | 'annual';
@@ -120,7 +113,7 @@ export function BecomeMemberForm({
   if (!isFocused) return null;
 
   return (
-    <WithBgBlob>
+    <BgBlob>
       <Animated.View
         key={`plan-${isFocused}`}
         entering={isFocused ? FadeIn.duration(300) : undefined}
@@ -241,31 +234,6 @@ export function BecomeMemberForm({
           </Animated.View>
         </View>
       </Animated.View>
-    </WithBgBlob>
+    </BgBlob>
   );
 }
-
-const WithBgBlob = ({ children }: { children: React.ReactNode }) => {
-  const insets = useSafeAreaInsets();
-
-  return (
-    <View
-      className="relative flex-1 bg-black px-4"
-      style={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 }}
-    >
-      <Animated.View
-        style={StyleSheet.absoluteFill}
-        entering={FadeIn.duration(1200)}
-      >
-        <Image
-          source={localImage}
-          style={StyleSheet.absoluteFill}
-          blurRadius={50}
-          contentFit="cover"
-          contentPosition="center"
-        />
-      </Animated.View>
-      {children}
-    </View>
-  );
-};
