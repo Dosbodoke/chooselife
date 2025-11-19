@@ -184,7 +184,7 @@ export default function PaymentScreen() {
 
         {/* QR Code */}
         <Animated.View
-          entering={ZoomIn.delay(700).duration(500)}
+          entering={FadeInDown.delay(700).duration(500)}
           className="items-center mb-8"
         >
           <View className="bg-white p-6 rounded-3xl shadow-2xl">
