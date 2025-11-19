@@ -1,48 +1,18 @@
 import { useQueryClient } from '@tanstack/react-query';
-import localImage from '~/assets/images/slac-pricing-bg.jpeg';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { Image as ExpoImage } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Check, CheckCircle2, Copy } from 'lucide-react-native';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeInUp,
-  ZoomIn,
-} from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text, TouchableOpacity, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { queryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 
-const WithBgBlob = ({ children }: { children: React.ReactNode }) => {
-  const insets = useSafeAreaInsets();
-
-  return (
-    <View
-      className="relative flex-1 bg-black px-4"
-      style={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 }}
-    >
-      <Animated.View
-        style={StyleSheet.absoluteFill}
-        entering={FadeInUp.duration(1000)}
-      >
-        <ExpoImage
-          source={localImage}
-          style={StyleSheet.absoluteFill}
-          blurRadius={50}
-          contentFit="cover"
-          contentPosition="center"
-        />
-      </Animated.View>
-      {children}
-    </View>
-  );
-};
+import { BgBlob } from '~/components/bg-blog';
 
 export default function PaymentScreen() {
   const router = useRouter();
@@ -51,9 +21,10 @@ export default function PaymentScreen() {
     pixCopyPaste: string;
     chargeId: string;
   }>();
-  const [copied, setCopied] = React.useState(false);
   const queryClient = useQueryClient();
-  const [paymentStatus, setPaymentStatus] = React.useState('PENDING'); // PENDING, SUCCESS, FAILED
+  const [paymentStatus, setPaymentStatus] = React.useState<
+    'PENDING' | 'SUCCESS' | 'FAILED'
+  >('PENDING');
 
   React.useEffect(() => {
     if (!chargeId) return;
@@ -89,21 +60,9 @@ export default function PaymentScreen() {
     };
   }, [chargeId, router, queryClient]);
 
-  const handleCopy = async () => {
-    if (pixCopyPaste) {
-      await Clipboard.setStringAsync(pixCopyPaste);
-
-      // Adiciona o feedback tátil aqui
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   if (paymentStatus === 'SUCCESS') {
     return (
-      <WithBgBlob>
+      <BgBlob>
         <View className="flex-1 justify-center items-center gap-4">
           <Animated.View entering={ZoomIn}>
             <CheckCircle2 size={64} color="#10B981" />
@@ -121,13 +80,13 @@ export default function PaymentScreen() {
             Você agora é um membro.
           </Animated.Text>
         </View>
-      </WithBgBlob>
+      </BgBlob>
     );
   }
 
   if (paymentStatus === 'FAILED') {
     return (
-      <WithBgBlob>
+      <BgBlob>
         <View className="flex-1 justify-center items-center gap-4">
           <Animated.Text className="text-white text-2xl font-bold">
             Pagamento falhou
@@ -136,24 +95,24 @@ export default function PaymentScreen() {
             <Text className="text-white underline">Tentar novamente</Text>
           </TouchableOpacity>
         </View>
-      </WithBgBlob>
+      </BgBlob>
     );
   }
 
   if (!qrCodeImage || !pixCopyPaste) {
     return (
-      <WithBgBlob>
+      <BgBlob>
         <View className="flex-1 justify-center items-center">
           <Text className="text-white">
             Error: Missing payment information.
           </Text>
         </View>
-      </WithBgBlob>
+      </BgBlob>
     );
   }
 
   return (
-    <WithBgBlob>
+    <BgBlob>
       <View className="flex-1 pt-16">
         {/* Header * */}
         <View className="items-center mb-8">
@@ -199,33 +158,53 @@ export default function PaymentScreen() {
           entering={FadeIn.delay(900).duration(300)}
           className="items-center mb-6 px-4"
         >
-          <TouchableOpacity
-            onPress={handleCopy}
-            activeOpacity={0.8}
-            className={`bg-white/10 backdrop-blur-xl px-6 py-3 rounded-full border ${
-              copied ? 'border-emerald-400/50' : 'border-transparent'
-            }`}
-          >
-            <View className="flex-row items-center gap-2">
-              {copied ? (
-                <>
-                  <Check size={18} color="#10B981" />
-                  <Text className="text-emerald-400 text-sm font-semibold tracking-wide">
-                    Copiado!
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Copy size={18} color="#FFFFFF" />
-                  <Text className="text-white/90 text-sm font-semibold tracking-wide">
-                    Copiar PIX
-                  </Text>
-                </>
-              )}
-            </View>
-          </TouchableOpacity>
+          <CopyCode code={pixCopyPaste} />
         </Animated.View>
       </View>
-    </WithBgBlob>
+    </BgBlob>
   );
 }
+
+const CopyCode = ({ code }: { code: string }) => {
+  const [copied, setCopied] = React.useState(false);
+
+  const handleCopy = async () => {
+    if (code) {
+      await Clipboard.setStringAsync(code);
+
+      // Adiciona o feedback tátil aqui
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      onPress={handleCopy}
+      activeOpacity={0.8}
+      className={`bg-white/10 backdrop-blur-xl px-6 py-3 rounded-full border ${
+        copied ? 'border-emerald-400/50' : 'border-transparent'
+      }`}
+    >
+      <View className="flex-row items-center gap-2">
+        {copied ? (
+          <>
+            <Check size={18} color="#10B981" />
+            <Text className="text-emerald-400 text-sm font-semibold tracking-wide">
+              Copiado!
+            </Text>
+          </>
+        ) : (
+          <>
+            <Copy size={18} color="#FFFFFF" />
+            <Text className="text-white/90 text-sm font-semibold tracking-wide">
+              Copiar PIX
+            </Text>
+          </>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+};
