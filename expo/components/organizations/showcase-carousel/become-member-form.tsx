@@ -11,7 +11,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  runOnJS,
+  SharedValue,
+  useAnimatedReaction,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { supabase } from '~/lib/supabase';
@@ -21,12 +27,29 @@ import { Text } from '~/components/ui/text';
 type PlanType = 'monthly' | 'annual';
 
 export function BecomeMemberForm({
-  isFocused = false,
+  scrollY,
+  itemIndex,
+  itemHeight,
 }: {
-  isFocused?: boolean;
+  scrollY: SharedValue<number>;
+  itemIndex: number;
+  itemHeight: number;
 }) {
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = React.useState<PlanType | null>(null);
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  useAnimatedReaction(
+    () => {
+      return Math.round(scrollY.value / itemHeight) === itemIndex;
+    },
+    (focused, prevFocused) => {
+      if (focused !== prevFocused) {
+        runOnJS(setIsFocused)(focused);
+      }
+    },
+    [],
+  );
 
   const mutation = useMutation({
     mutationFn: async (values: { plan_type: PlanType }) => {
@@ -193,8 +216,8 @@ export function BecomeMemberForm({
             className="items-center"
           >
             <Text className="text-white/50 text-center text-sm leading-5 max-w-xs">
-              Sua contribuição apoia atletas, eventos e a preservação do meio
-              ambiente
+              Ao clicar nesse botão você deve realizar o primeiro pagamento para
+              se tornar membro.
             </Text>
           </Animated.View>
         </View>
