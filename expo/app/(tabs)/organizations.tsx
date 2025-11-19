@@ -167,7 +167,7 @@ export default function OrganizationDetailsPage() {
           <News />
         </ScrollView>
       </SafeAreaView>
-      {!isMember ? <BecomeMember /> : null}
+      {!isMember ? <BecomeMember slug={organization.slug} /> : null}
     </>
   );
 }
