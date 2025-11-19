@@ -117,7 +117,7 @@ export function ShowcaseItem({
         </Text>
         <View
           className={cn(
-            'w-[62%] aspect-[1/2] items-center justify-center rounded-3xl p-0 border border-neutral-100 shadow-2xl shadow-black/5',
+            'relative w-[62%] aspect-[1/2] items-center justify-center rounded-xl overflow-hidden',
           )}
         >
           <ExpoImage
