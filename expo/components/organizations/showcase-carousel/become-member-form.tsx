@@ -30,13 +30,17 @@ export function BecomeMemberForm({
   scrollY,
   itemIndex,
   itemHeight,
+  slug,
 }: {
   scrollY: SharedValue<number>;
   itemIndex: number;
   itemHeight: number;
+  slug: string;
 }) {
   const router = useRouter();
-  const [selectedPlan, setSelectedPlan] = React.useState<PlanType | null>(null);
+  const [selectedPlan, setSelectedPlan] = React.useState<PlanType | null>(
+    null
+  );
   const [isFocused, setIsFocused] = React.useState(false);
 
   useAnimatedReaction(
@@ -48,7 +52,7 @@ export function BecomeMemberForm({
         runOnJS(setIsFocused)(focused);
       }
     },
-    [],
+    []
   );
 
   const mutation = useMutation({
@@ -59,9 +63,9 @@ export function BecomeMemberForm({
           {
             body: {
               plan_type: values.plan_type,
-              organizationID: '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1',
+              slug,
             },
-          },
+          }
         );
 
       if (error) {

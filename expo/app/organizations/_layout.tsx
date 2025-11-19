@@ -6,11 +6,9 @@ export default function OrganizationsLayout() {
     <Stack>
       <Stack.Screen name="index" />
       <Stack.Screen
-        name="member"
+        name="[slug]/member"
         options={{
           headerShown: false,
-          animation: 'slide_from_bottom',
-          animationDuration: 300,
         }}
       />
     </Stack>

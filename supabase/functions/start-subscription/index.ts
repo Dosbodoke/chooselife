@@ -35,12 +35,12 @@ type Organization = Pick<
 
 async function getOrganization(
   supabaseAdmin: SupabaseClient,
-  organizationID: string,
+  slug: string,
 ): Promise<Organization> {
   const { data: orgData, error: orgError } = await supabaseAdmin
     .from("organizations")
     .select("id, monthly_price_amount, annual_price_amount")
-    .eq("id", organizationID)
+    .eq("slug", slug)
     .single();
 
   if (orgError) throw orgError;
@@ -150,15 +150,15 @@ async function createCharge(
 }
 
 type RequestPayload = {
-  organizationID: string;
+  slug: string;
   plan_type: "monthly" | "annual";
 };
 
 async function getRequestPayload(req: Request): Promise<RequestPayload> {
-  const { plan_type, organizationID }: RequestPayload = await req.json();
+  const { plan_type, slug }: RequestPayload = await req.json();
   if (!plan_type) throw new Error("plan_type is required");
-  if (!organizationID) throw new Error("organizationID is required");
-  return { plan_type, organizationID };
+  if (!slug) throw new Error("slug is required");
+  return { plan_type, slug };
 }
 
 Deno.serve(async (req) => {
@@ -170,10 +170,10 @@ Deno.serve(async (req) => {
       req.headers.get("Authorization")!,
     );
 
-    const { plan_type, organizationID } = await getRequestPayload(req);
+    const { plan_type, slug } = await getRequestPayload(req);
 
     const user = await getUser(supabaseAdmin);
-    const organization = await getOrganization(supabaseAdmin, organizationID);
+    const organization = await getOrganization(supabaseAdmin, slug);
     const amount = getAmount(organization, plan_type);
 
     const subscription = await upsertSubscription(supabaseAdmin, {

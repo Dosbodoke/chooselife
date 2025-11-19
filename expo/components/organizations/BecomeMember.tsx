@@ -6,13 +6,13 @@ import { View } from 'react-native';
 import { Button } from '~/components/ui/button';
 import { Text } from '~/components/ui/text';
 
-export const BecomeMember = () => {
+export const BecomeMember = ({ slug }: { slug: string }) => {
   const { t } = useTranslation();
   const router = useRouter();
 
   return (
     <View className="absolute bottom-0 left-0 w-full px-6 py-4 bg-white">
-      <Button onPress={() => router.push('/organizations/member')}>
+      <Button onPress={() => router.push(`/organizations/${slug}/member`)}>
         <Text>{t('app.organizations.becomeMember')}</Text>
       </Button>
     </View>

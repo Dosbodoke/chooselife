@@ -60,7 +60,7 @@ export const showcaseData: ShowcaseItemData[] = [
 
 const carouselData = [...showcaseData, { type: 'form' }];
 
-export function Carousel() {
+export function Carousel({ slug }: { slug: string }) {
   const { width, height } = useWindowDimensions();
 
   const animatedRef =
@@ -73,7 +73,7 @@ export function Carousel() {
   });
 
   const isFormScreen = useDerivedValue(
-    () => currentIndex.value === carouselData.length - 1,
+    () => currentIndex.value === carouselData.length - 1
   );
 
   const paginationStyle = useAnimatedStyle(() => {
@@ -90,7 +90,7 @@ export function Carousel() {
         scheduleOnRN(Haptics.impactAsync, Haptics.ImpactFeedbackStyle.Light);
       }
     },
-    [currentIndex],
+    [currentIndex]
   );
 
   return (
@@ -120,6 +120,7 @@ export function Carousel() {
                 scrollY={scrollY}
                 itemIndex={index}
                 itemHeight={height}
+                slug={slug}
               />
             )}
           </View>
