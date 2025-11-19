@@ -1,8 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, View, Text } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useOrganization } from '~/hooks/use-organization';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 
 import { Carousel } from '~/components/organizations/showcase-carousel';
@@ -12,10 +13,24 @@ export default function MemberShowcaseScreen() {
   const insets = useSafeAreaInsets();
   const { slug } = useLocalSearchParams<{ slug: string }>();
 
-  if (!slug) {
+  const {
+    data: organization,
+    isLoading,
+    isError,
+  } = useOrganization(slug || '');
+
+  if (!slug || isError || !organization) {
     return (
       <View className="flex-1 justify-center items-center">
         <Text>Organization not found.</Text>
+      </View>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 justify-center items-center">
+        <ActivityIndicator />
       </View>
     );
   }
@@ -33,7 +48,7 @@ export default function MemberShowcaseScreen() {
         <LucideIcon name="X" size={20} className="fill-muted" />
       </Pressable>
 
-      <Carousel slug={slug} />
+      <Carousel org={organization} />
     </View>
   );
 }

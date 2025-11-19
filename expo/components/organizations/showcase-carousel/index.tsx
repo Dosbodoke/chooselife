@@ -12,6 +12,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { Tables } from '~/utils/database-generated.types';
+
 import { BecomeMemberForm } from './become-member-form';
 import { PaginationIndicator } from './pagination-indicator';
 import { ShowcaseItem, type ShowcaseItemData } from './showcase-item';
@@ -60,7 +62,7 @@ export const showcaseData: ShowcaseItemData[] = [
 
 const carouselData = [...showcaseData, { type: 'form' }];
 
-export function Carousel({ slug }: { slug: string }) {
+export function Carousel({ org }: { org: Tables<'organizations'> }) {
   const { width, height } = useWindowDimensions();
 
   const animatedRef =
@@ -73,7 +75,7 @@ export function Carousel({ slug }: { slug: string }) {
   });
 
   const isFormScreen = useDerivedValue(
-    () => currentIndex.value === carouselData.length - 1
+    () => currentIndex.value === carouselData.length - 1,
   );
 
   const paginationStyle = useAnimatedStyle(() => {
@@ -90,7 +92,7 @@ export function Carousel({ slug }: { slug: string }) {
         scheduleOnRN(Haptics.impactAsync, Haptics.ImpactFeedbackStyle.Light);
       }
     },
-    [currentIndex]
+    [currentIndex],
   );
 
   return (
@@ -120,7 +122,7 @@ export function Carousel({ slug }: { slug: string }) {
                 scrollY={scrollY}
                 itemIndex={index}
                 itemHeight={height}
-                slug={slug}
+                org={org}
               />
             )}
           </View>
