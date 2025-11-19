@@ -1,32 +1,34 @@
-// import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { CalendarIcon, MapPinIcon, Users } from 'lucide-react-native';
 import React from 'react';
 import { View } from 'react-native';
 
-// import { supabase } from '~/lib/supabase';
+import { queryKeys } from '~/lib/query-keys';
+import { supabase } from '~/lib/supabase';
 
+import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 
-// const fetchMemberCount = async (organizationID: string) => {
-//   const { count, error } = await supabase
-//     .from('organization_members')
-//     .select('*', { count: 'exact', head: true })
-//     .eq('organization_id', organizationID);
+const fetchMemberCount = async (slug: string) => {
+  const { count, error } = await supabase
+    .from('organization_members')
+    .select('*, organizations!inner(*)', { count: 'exact', head: true })
+    .eq('organizations.slug', slug);
 
-//   if (error) {
-//     console.error('Error fetching member count:', error);
-//     return 0;
-//   }
+  if (error) {
+    console.error('Error fetching member count:', error);
+    return 0;
+  }
 
-//   return count || 0;
-// };
+  return count || 0;
+};
 
-export const HeaderInfos = () => {
-  // const { data: memberCount } = useQuery({
-  //   queryKey: ['organizations', slug, 'memberCount'],
-  //   queryFn: () => fetchMemberCount(slug),
-  //   enabled: !!slug,
-  // });
+export const HeaderInfos = ({ slug }: { slug: string }) => {
+  const { data: memberCount, isLoading } = useQuery({
+    queryKey: queryKeys.organizations.memberCount(slug),
+    queryFn: () => fetchMemberCount(slug),
+    enabled: !!slug,
+  });
 
   return (
     <View>
@@ -37,7 +39,13 @@ export const HeaderInfos = () => {
           </View>
           <View>
             <Text className="text-black/70 text-xs font-semibold">Membros</Text>
-            <Text className="text-black text-lg font-bold">0</Text>
+            {isLoading ? (
+              <Skeleton className="h-5 w-12" />
+            ) : (
+              <Text className="text-black text-lg font-bold">
+                {memberCount ?? 0}
+              </Text>
+            )}
           </View>
         </View>
 

@@ -12,5 +12,7 @@ export const queryKeys = {
     bySlug: (slug: string) => [...queryKeys.organizations.all, slug] as const,
     members: (slug: string, userId: string) =>
       [...queryKeys.organizations.bySlug(slug), 'members', userId] as const,
+    memberCount: (slug: string) =>
+      [...queryKeys.organizations.bySlug(slug), 'memberCount'] as const,
   },
 };
