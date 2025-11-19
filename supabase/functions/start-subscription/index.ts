@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase";
 import { createSupabaseClient } from "../_shared/supabase-client.ts";
+import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import type {
   AbacatePayCharge,
@@ -20,8 +21,8 @@ type User = {
   email: string;
 };
 
-async function getUser(supabaseAdmin: SupabaseClient): Promise<User> {
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser();
+async function getUser(supabase: SupabaseClient): Promise<User> {
+  const { data: { user }, error } = await supabase.auth.getUser();
   if (error) throw error;
   if (!user) throw new Error("User not authenticated");
   if (!user.email) throw new Error("User email is missing");
@@ -34,10 +35,10 @@ type Organization = Pick<
 >;
 
 async function getOrganization(
-  supabaseAdmin: SupabaseClient,
+  supabase: SupabaseClient,
   slug: string,
 ): Promise<Organization> {
-  const { data: orgData, error: orgError } = await supabaseAdmin
+  const { data: orgData, error: orgError } = await supabase
     .from("organizations")
     .select("id, monthly_price_amount, annual_price_amount")
     .eq("slug", slug)
@@ -166,14 +167,14 @@ Deno.serve(async (req) => {
   if (corsResponse) return corsResponse;
 
   try {
-    const supabaseAdmin = createSupabaseClient(
+    const supabase = createSupabaseClient(
       req.headers.get("Authorization")!,
     );
 
     const { plan_type, slug } = await getRequestPayload(req);
 
-    const user = await getUser(supabaseAdmin);
-    const organization = await getOrganization(supabaseAdmin, slug);
+    const user = await getUser(supabase);
+    const organization = await getOrganization(supabase, slug);
     const amount = getAmount(organization, plan_type);
 
     const subscription = await upsertSubscription(supabaseAdmin, {
