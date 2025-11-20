@@ -96,6 +96,7 @@ export function BecomeMemberForm({
           qrCodeImage: data.qrCodeImage,
           pixCopyPaste: data.pixCopyPaste,
           chargeId: data.chargeId,
+          paymentContext: 'new_member',
         },
       });
     },

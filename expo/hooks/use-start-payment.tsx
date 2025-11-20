@@ -51,6 +51,7 @@ export const useStartPayment = () => {
           pixCopyPaste: data.brCode,
           qrCodeImage: data.brCodeBase64,
           chargeId: data.id,
+          paymentContext: 'subscription_renewal',
         },
       });
     },

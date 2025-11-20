@@ -16,11 +16,13 @@ import { BgBlob } from '~/components/bg-blog';
 
 export default function PaymentScreen() {
   const router = useRouter();
-  const { qrCodeImage, pixCopyPaste, chargeId } = useLocalSearchParams<{
-    qrCodeImage: string;
-    pixCopyPaste: string;
-    chargeId: string;
-  }>();
+  const { qrCodeImage, pixCopyPaste, chargeId, paymentContext } =
+    useLocalSearchParams<{
+      qrCodeImage: string;
+      pixCopyPaste: string;
+      chargeId: string;
+      paymentContext: 'new_member' | 'subscription_renewal';
+    }>();
   const queryClient = useQueryClient();
   const [paymentStatus, setPaymentStatus] = React.useState<
     'PENDING' | 'SUCCESS' | 'FAILED'
@@ -77,7 +79,9 @@ export default function PaymentScreen() {
             entering={FadeIn.delay(400)}
             className="text-white/80 text-lg text-center"
           >
-            Você agora é um membro.
+            {paymentContext === 'subscription_renewal'
+              ? 'Você está em dia com a Associação!'
+              : 'Bem-vindo(a)! Você agora é membro oficial da Associação.'}
           </Animated.Text>
         </View>
       </BgBlob>
@@ -130,14 +134,17 @@ export default function PaymentScreen() {
             entering={FadeInDown.delay(400).duration(300)}
             className="text-3xl font-bold text-black text-center mb-2"
           >
-            Finalize seu cadastro
+            {paymentContext === 'subscription_renewal'
+              ? 'Pague sua mensalidade'
+              : 'Finalize seu cadastro'}
           </Animated.Text>
           <Animated.Text
             entering={FadeInDown.delay(500).duration(300)}
             className="text-black text-center text-xl leading-6"
           >
-            Realize o pagamento para{'\n'}
-            se tornar membro oficial
+            {paymentContext === 'subscription_renewal'
+              ? 'Realize o pagamento para ficar em dia com a Associação'
+              : 'Realize o pagamento para se tornar membro oficial'}
           </Animated.Text>
         </View>
 
