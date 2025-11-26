@@ -114,6 +114,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         ],
       },
     ],
+    [
+      "@sentry/react-native/expo",
+      {
+        "url": "https://sentry.io/",
+        "project": "app-chooselife",
+        "organization": "bodok",
+      },
+    ],
   ],
   extra: {
     router: {
