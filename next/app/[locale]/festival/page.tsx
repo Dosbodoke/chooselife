@@ -1,10 +1,10 @@
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
-import { setRequestLocale, getTranslations } from "next-intl/server";
+import { getTranslations,setRequestLocale } from "next-intl/server";
 import { Suspense } from "react";
-import type { Locales } from "@/i18n/routing";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { Locales } from "@/i18n/routing";
 
 import { FestivalTabs } from "./_components/festival-tabs";
 

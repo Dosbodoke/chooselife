@@ -5,15 +5,15 @@ import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
-import { setRequestLocale, getMessages } from "next-intl/server";
+import { getMessages,setRequestLocale } from "next-intl/server";
 
 import { Footer } from "@/components/Footer";
 import NavBar from "@/components/layout/navbar";
+import { routing } from "@/i18n/routing";
 import type { Locales } from "@/utils/supabase/database.types";
 
 import UsernameDialog from "./_components/UsernameDialog";
 import Providers from "./Providers";
-import { routing } from "@/i18n/routing";
 
 const APP_NAME = "Chooselife";
 const APP_DEFAULT_TITLE = "Chooselife";

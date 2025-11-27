@@ -1,8 +1,7 @@
+import type { Database } from "@packages/database/database-generated.types";
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useMemo } from "react";
-
-import type { Database } from "@packages/database/database-generated.types";
 
 export type TypedSupabaseClient = SupabaseClient<Database>;
 

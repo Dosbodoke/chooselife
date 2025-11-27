@@ -1,13 +1,15 @@
 "use server";
 
 import { type CookieOptions, createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+
+import type { Database } from "@/utils/supabase/database.types";
+
 import {
   type NotificationFormData,
   notificationSchema,
 } from "../[locale]/notifications/_components/validations";
-import type { Database } from "@/utils/supabase/database.types";
 
 type ActionResult = {
   success: boolean;

@@ -3,9 +3,9 @@ import { UnfoldHorizontalIcon, UnfoldVerticalIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import type { Highline } from "@/app/actions/getHighline";
-import { Button } from "@/components/ui/button";
 import { FavoriteHighline } from "@/components/FavoriteHighline";
 import HighlineImage from "@/components/HighlineImage";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -13,8 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import { Link } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
 
 interface Props {
   highline: Highline;

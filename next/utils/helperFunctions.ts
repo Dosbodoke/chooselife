@@ -1,4 +1,4 @@
-import L, { type LatLng } from "leaflet";
+import { type LatLng } from "leaflet";
 import { ReadonlyURLSearchParams } from "next/navigation";
 
 import type { Point } from "@/utils/supabase/database.types";

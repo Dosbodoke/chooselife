@@ -3,8 +3,8 @@ import { CrownIcon } from "lucide-react";
 import Image from "next/image";
 import React from "react";
 
-import { cn } from "@/lib/utils";
 import { Link } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
 
 import { UsernameLink } from "./UsernameLink";
 

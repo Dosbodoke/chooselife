@@ -6,6 +6,13 @@ import { useQueryState } from "nuqs";
 import * as React from "react";
 
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -21,13 +28,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Database } from "@/utils/supabase/database.types";
 
 const chartTheme = {
@@ -106,7 +106,7 @@ function getColSpan(year: number) {
 
   for (let y = 0; y < 53; y++) {
     for (let x = 0; x < 7; x++) {
-      let currentDay = getDayFromCell([x, y], yearStartedAt + 1);
+      const currentDay = getDayFromCell([x, y], yearStartedAt + 1);
       if (currentDay === daysInMonth[currentMonthIdx] + daysGone) {
         monthColSpan.push({
           month: currentMonthIdx,

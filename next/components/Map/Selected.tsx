@@ -10,8 +10,8 @@ import { useQueryState } from "nuqs";
 import React from "react";
 
 import { getHighline } from "@/app/actions/getHighline";
-import { cn } from "@/lib/utils";
 import { Link } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
 
 import HighlineImage from "../HighlineImage";
 import { Button } from "../ui/button";

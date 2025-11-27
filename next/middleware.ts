@@ -2,9 +2,10 @@ import { type CookieOptions } from "@supabase/ssr";
 import { getCookie, setCookie } from "cookies-next";
 import { type NextRequest, type NextResponse } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
-import { routing } from "./i18n/routing";
 
 import { composeDbServerClient } from "@/utils/supabase/compose-db-server-client";
+
+import { routing } from "./i18n/routing";
 
 /**
  * Function that returns an object with methods for handling cookies. Can be used as an argument to the createDbServerClient method in server scenarios.
