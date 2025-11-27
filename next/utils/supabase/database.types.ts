@@ -1,1 +1,1 @@
-export * from "@packages/database/database-generated.types";
+export * from "@packages/database/index";
