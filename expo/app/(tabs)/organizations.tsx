@@ -126,7 +126,10 @@ export default function OrganizationDetailsPage() {
 
   return (
     <>
-      <SafeAreaView className="flex-1">
+      <SafeAreaView
+        className="flex-1 bg-white"
+        edges={['top', 'left', 'right']}
+      >
         <ScrollView
           className="flex-1"
           contentContainerClassName="gap-8 px-4 py-6"
