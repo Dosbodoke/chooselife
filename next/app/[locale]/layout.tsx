@@ -5,7 +5,7 @@ import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
-import { getMessages,setRequestLocale } from "next-intl/server";
+import { getMessages, setRequestLocale } from "next-intl/server";
 
 import { Footer } from "@/components/Footer";
 import NavBar from "@/components/layout/navbar";
@@ -81,7 +81,7 @@ export default async function RootLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: Locales }>;
+  params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) {
@@ -97,7 +97,7 @@ export default async function RootLayout({
     // refer to https://github.com/pacocoursey/next-themes#with-app
     <html lang={locale} suppressHydrationWarning>
       <body className={`min-h-screen md:px-0 ${GeistSans.variable} font-sans`}>
-        <Providers locale={locale} messages={messages}>
+        <Providers locale={locale as Locales} messages={messages}>
           <div className="relative flex h-full min-h-screen flex-col">
             <NavBar />
             <main className="flex-1">
