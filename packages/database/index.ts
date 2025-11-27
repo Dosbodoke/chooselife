@@ -2,8 +2,8 @@ import { MergeDeep } from "type-fest";
 import type {
   Database as DatabaseGenerated,
   Enums,
-} from "./database-generated.types.ts";
-export type * from "./database-generated.types.ts";
+} from "./database-generated.types";
+export type * from "./database-generated.types";
 
 export type Locales = Enums<"language">;
 export type Functions = Database["public"]["Functions"];
