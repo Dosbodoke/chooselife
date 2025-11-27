@@ -36,7 +36,7 @@ export default function DownloadApp(props: Props) {
       window.location.href = ANDROID_PLAY_STORE_URL;
       return;
     }
-  }, []);
+  }, [ANDROID_PLAY_STORE_URL, IOS_APP_STORE_URL]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center">

@@ -35,7 +35,7 @@ export const MapControls = () => {
       map.flyTo(e.latlng, map.getZoom());
       setIsLocated(true);
     },
-    movestart: (e) => {
+    movestart: () => {
       if (isLocated) setIsLocated(false);
     },
   });

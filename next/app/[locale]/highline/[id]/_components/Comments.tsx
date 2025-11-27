@@ -5,7 +5,6 @@ import { useFormatter } from "next-intl";
 import React from "react";
 
 import type { Highline } from "@/app/actions/getHighline";
-import LoadingSkeleton from "@/components/Ranking/LoadingSkeleton";
 import { UsernameLink } from "@/components/Ranking/UsernameLink";
 import SeeMore from "@/components/SeeMore";
 import { supabaseBrowser } from "@/utils/supabase/client";
@@ -43,7 +42,7 @@ function Comments({ highline }: Props) {
     queryKey: ["entry", highline.id, "comments"],
     queryFn: ({ pageParam }) => fetchComments({ pageParam }),
     initialPageParam: 1,
-    getNextPageParam: (lastPage, allPages, lastPageParam, allPageParams) => {
+    getNextPageParam: (lastPage, allPages) => {
       const nextPage = allPages.length + 1;
       return lastPage?.length === PAGE_SIZE ? nextPage : undefined;
     },

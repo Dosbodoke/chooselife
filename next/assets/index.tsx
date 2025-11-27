@@ -155,12 +155,6 @@ export const UploadCloudIcon = (props: SVGAttributes<SVGElement>) => (
   </svg>
 );
 
-const themeTransition = {
-  type: "spring",
-  stiffness: 200,
-  damping: 10,
-};
-
 export const SpeedlineIcon = (props: SVGAttributes<SVGElement>) => (
   <svg
     width="28"
