@@ -1,9 +1,16 @@
 import type { StartSubscriptionResponse } from '@packages/database/functions.types';
+import * as Sentry from '@sentry/react-native';
 import { useMutation } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -12,6 +19,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
 import { formatCurrency } from '~/utils';
 import { Tables } from '~/utils/database-generated.types';
@@ -35,6 +43,7 @@ export function BecomeMemberForm({
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = React.useState<PlanType | null>(null);
   const [isFocused, setIsFocused] = React.useState(false);
+  const { session } = useAuth();
 
   useAnimatedReaction(
     () => {
@@ -106,9 +115,27 @@ export function BecomeMemberForm({
   });
 
   const handleSubmit = () => {
-    if (selectedPlan) {
-      mutation.mutate({ plan_type: selectedPlan });
+    if (!selectedPlan) return;
+
+    if (!session?.user) {
+      router.push(`/(modals)/login?redirect_to=/organizations`);
+      return;
     }
+
+    Alert.alert(
+      'Termos de Adesão',
+      'Ao assinar este instrumento, declaro estar ciente do inteiro teor do estatuto social da associação, bem como dos direitos e dos deveres impostos aos membros desta instituição.\n\nPor fim, comprometo-me a honrar, em dia, com todas as parcelas pecuniárias por mim devidas a esta instituição, notadamente a (a) seguinte (s), sob pena de justo desligamento da associação.',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Concordar',
+          onPress: () => mutation.mutate({ plan_type: selectedPlan }),
+        },
+      ],
+    );
   };
 
   if (!isFocused) return null;
@@ -232,6 +259,29 @@ export function BecomeMemberForm({
               Ao clicar nesse botão você deve realizar o primeiro pagamento para
               se tornar membro.
             </Text>
+            <TouchableOpacity
+              onPress={() => {
+                const { data } = supabase.storage
+                  .from('documents')
+                  .getPublicUrl('estatuto-slac.pdf');
+                if (data?.publicUrl) {
+                  Linking.openURL(data.publicUrl);
+                } else {
+                  const error = new Error(
+                    'Could not get public URL for estatuto-slac.pdf',
+                  );
+                  Sentry.captureException(error);
+                  Alert.alert(
+                    'Erro',
+                    'Não foi possível abrir o estatuto. Tente novamente mais tarde.',
+                  );
+                }
+              }}
+            >
+              <Text className="text-white/70 text-center text-sm mt-2 underline">
+                Ver Estatuto da Associação
+              </Text>
+            </TouchableOpacity>
           </Animated.View>
         </View>
       </Animated.View>

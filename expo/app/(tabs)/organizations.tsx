@@ -69,7 +69,7 @@ export default function OrganizationDetailsPage() {
     isLoading: isLoadingMember,
     isError: isErrorMember,
   } = useQuery({
-    queryKey: queryKeys.organizations.members(ORG_SLUG, profile!.id),
+    queryKey: queryKeys.organizations.members(ORG_SLUG, profile?.id ?? ''),
     queryFn: () => checkMembership(organization!.id, profile!.id),
     enabled: !!organization?.id && !!profile,
   });
@@ -81,7 +81,7 @@ export default function OrganizationDetailsPage() {
         queryKey: queryKeys.organizations.bySlug(ORG_SLUG),
       }),
       queryClient.invalidateQueries({
-        queryKey: queryKeys.organizations.members(ORG_SLUG, profile!.id),
+        queryKey: queryKeys.organizations.members(ORG_SLUG, profile?.id ?? ''),
       }),
     ]);
     setRefreshing(false);

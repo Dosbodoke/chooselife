@@ -397,8 +397,9 @@ export function AuthProvider(props: React.PropsWithChildren) {
 
       try {
         if (pendingRedirect && pendingRedirect !== 'back') {
+          const decodedRedirect = decodeURIComponent(pendingRedirect);
           // @ts-expect-error redirect_to search parameter
-          router.replace(pendingRedirect);
+          router.replace(decodedRedirect);
           return;
         }
 

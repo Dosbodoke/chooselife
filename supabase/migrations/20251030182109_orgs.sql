@@ -70,9 +70,9 @@ alter table public.payments enable row level security;
 -- RLS POLICIES --
 
 -- Policies for organizations
-create policy "Authenticated users can view organizations."
+create policy "All users can view organizations."
 on public.organizations for select
-using ( auth.role() = 'authenticated' );
+using ( true );
 
 create policy "Owners can manage their own organization."
 on public.organizations for all
