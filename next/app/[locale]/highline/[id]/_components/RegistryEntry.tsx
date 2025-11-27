@@ -32,10 +32,9 @@ import {
 import { Input } from "@/components/ui/input";
 import NumberPicker from "@/components/ui/NumberPicker";
 import { Textarea } from "@/components/ui/textarea";
+import { UserPicker } from "@/components/user-picker";
 import { transformTimeStringToSeconds } from "@/utils/helperFunctions";
 import useSupabaseBrowser from "@/utils/supabase/client";
-
-import { UserPicker } from "@/components/user-picker";
 
 const formSchema = z.object({
   instagram: z

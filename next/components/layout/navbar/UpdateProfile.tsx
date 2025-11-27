@@ -36,8 +36,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import { useRouter } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
 import useSupabaseBrowser from "@/utils/supabase/client";
 import type { Database } from "@/utils/supabase/database.types";
 

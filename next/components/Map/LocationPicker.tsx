@@ -90,8 +90,8 @@ export const LocationPicker = ({
 
   let distance: number | null = null;
   if (anchorA && (anchorB || center)) {
-    let latlng1 = L.latLng(anchorA.lat, anchorA.lng);
-    let latlng2 = L.latLng(
+    const latlng1 = L.latLng(anchorA.lat, anchorA.lng);
+    const latlng2 = L.latLng(
       anchorB?.lat || center.lat,
       anchorB?.lng || center.lng
     );

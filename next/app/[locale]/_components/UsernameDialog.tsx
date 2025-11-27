@@ -138,7 +138,6 @@ export default function UsernameDialog() {
                     translatedMessage={
                       form.formState.errors.username?.message
                         ? t(
-                            // @ts-ignore: Workaround for error translations
                             `fields.username.errors.${form.formState.errors.username.message}`
                           )
                         : undefined
@@ -163,7 +162,6 @@ export default function UsernameDialog() {
                     translatedMessage={
                       form.formState.errors.displayName?.message
                         ? t(
-                            // @ts-ignore: Workaround for error translations
                             `fields.displayName.errors.${form.formState.errors.displayName.message}`
                           )
                         : undefined

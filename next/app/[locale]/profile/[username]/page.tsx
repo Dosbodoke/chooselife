@@ -3,13 +3,13 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
 import UpdateProfile from "@/components/layout/navbar/UpdateProfile";
+import type { Locales } from "@/i18n/routing";
 import { useSupabaseServer } from "@/utils/supabase/server";
 
 import LastWalks, { LastWalksSkeleton } from "./_components/LastWalks";
 import Stats from "./_components/Stats";
 import UserHeader from "./_components/UserHeader";
 import UserNotFound from "./_components/UserNotFound";
-import type { Locales } from "@/i18n/routing";
 
 export const dynamic = "force-dynamic";
 
