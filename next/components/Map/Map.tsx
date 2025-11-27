@@ -16,10 +16,9 @@ import { Selected } from "./Selected";
 import { UserLocationMarker } from "./UserLocationMarker";
 
 const MapComponent: React.FC<{
-  locale: string;
   isPickingLocation: boolean;
   focusedMarker: string | null;
-}> = ({ locale, isPickingLocation, focusedMarker }) => {
+}> = ({ isPickingLocation, focusedMarker }) => {
   const mapRef = useRef<Map | null>(null);
   const [highlineIds, setHighlineIds] = useState<string[]>([]);
 

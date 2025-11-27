@@ -14,7 +14,6 @@ import { Button, ButtonLoading } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerFooter,
   DrawerHeader,
@@ -38,7 +37,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import {supabaseBrowser} from "@/utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 import type { Database } from "@/utils/supabase/database.types";
 
 const formSchema = z.object({
@@ -107,7 +106,7 @@ export default function UpdateProfile({
     profileMutation.mutate(data);
   };
 
-  const onError = (e: unknown) => {
+  const onError = () => {
     console.log("Invalid form");
   };
 

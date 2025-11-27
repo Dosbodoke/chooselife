@@ -43,6 +43,16 @@ const eslintConfig = [
       "import/first": "error",
       "import/newline-after-import": "warn",
       "import/no-duplicates": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+        },
+      ],
     },
   },
 ];

@@ -215,7 +215,7 @@ const CreateHighline = ({
     mutate(formData);
   };
 
-  const onError = (e: unknown) => {
+  const onError = () => {
     console.log("Invalid form");
   };
 

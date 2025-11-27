@@ -399,7 +399,7 @@ interface Props {
   selectedYear: string;
 }
 const YearSwitcher = ({ years, selectedYear }: Props) => {
-  const [year, setYear] = useQueryState("year");
+  const [_, setYear] = useQueryState("year");
 
   function handleYearChange(year: string) {
     setYear(year);
