@@ -15,10 +15,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link, useRouter } from "@/i18n/navigation";
-import useSupabaseBrowser from "@/utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 
 export default function ProfileMenu({ user }: { user: User }) {
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
   const t = useTranslations("profileMenu");
   const router = useRouter();
 

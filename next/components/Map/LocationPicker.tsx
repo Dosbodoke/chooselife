@@ -20,7 +20,7 @@ import {
   getDistance,
   locationToPostGISPoint,
 } from "@/utils/helperFunctions";
-import useSupabaseBrowser from "@/utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 
 export const LocationPicker = ({
   focusedMarker,
@@ -30,7 +30,7 @@ export const LocationPicker = ({
   isPicking: boolean;
 }) => {
   const queryClient = useQueryClient();
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
   const insertLocationMutation = useMutation<
     undefined,
     Error,

@@ -4,7 +4,7 @@ import { Suspense } from "react";
 
 import UpdateProfile from "@/components/layout/navbar/UpdateProfile";
 import type { Locales } from "@/i18n/routing";
-import { useSupabaseServer } from "@/utils/supabase/server";
+import { createSupabaseClient } from "@/utils/supabase/server";
 
 import LastWalks, { LastWalksSkeleton } from "./_components/LastWalks";
 import Stats from "./_components/Stats";
@@ -31,7 +31,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 }
 
 export default async function Profile(props: Props) {
-  const supabase = await useSupabaseServer();
+  const supabase = await createSupabaseClient();
 
   const params = await props.params;
   const { username } = params;

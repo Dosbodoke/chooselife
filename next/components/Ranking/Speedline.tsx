@@ -2,7 +2,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import React from "react";
 
 import { transformSecondsToTimeString } from "@/utils/helperFunctions";
-import useSupabaseBrowser from "@/utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 
 import SeeMore from "../SeeMore";
 import { Leaderboard } from "./leaderboard";
@@ -15,10 +15,10 @@ interface Props {
 const PAGE_SIZE = 5;
 
 function Speedline({ highlines_id }: Props) {
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
 
   async function fetchEntries({ pageParam = 1 }) {
-    const { data, error } = await supabase.rpc("get_crossing_time", {
+    const { data } = await supabase.rpc("get_crossing_time", {
       highline_id: highlines_id,
       page_number: pageParam,
       page_size: PAGE_SIZE,

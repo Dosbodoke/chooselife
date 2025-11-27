@@ -3,13 +3,12 @@ import React from "react";
 import { getHighline } from "@/app/actions/getHighline";
 import { Ranking } from "@/components/Ranking";
 import { TabsContent } from "@/components/ui/tabs";
-import { useSupabaseServer } from "@/utils/supabase/server";
+import { createSupabaseClient } from "@/utils/supabase/server";
 
 import { Highline } from "../../_components/Highline";
 
 export const FestivalTabs = async () => {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const supabase = await useSupabaseServer();
+  const supabase = await createSupabaseClient();
 
   const { data: sectors } = await supabase
     .from("sector")

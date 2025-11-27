@@ -15,10 +15,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import useSupabaseBrowser from "@/utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 
 export default function DeleteAccountPage() {
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

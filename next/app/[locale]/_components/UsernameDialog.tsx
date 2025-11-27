@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "@/i18n/navigation";
-import useSupabaseBrowser from "@/utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 
 const formSchema = z.object({
   username: z
@@ -43,7 +43,7 @@ const formSchema = z.object({
 type FormSchema = z.infer<typeof formSchema>;
 
 export default function UsernameDialog() {
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
 
   const t = useTranslations("usernameDialog");
   const router = useRouter();

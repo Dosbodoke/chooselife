@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import useSupabaseBrowser from "@/utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 import { useLoginModal } from "@/utils/useLoginModal";
 
 export function FavoriteHighline({
@@ -16,7 +16,7 @@ export function FavoriteHighline({
   isFavorite: boolean;
   id: string;
 }) {
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
   const [favorite, setFavorite] = useState(isFavorite);
   const { toggleLoginModal } = useLoginModal();
 

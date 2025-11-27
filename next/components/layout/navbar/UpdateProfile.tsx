@@ -38,7 +38,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import useSupabaseBrowser from "@/utils/supabase/client";
+import {supabaseBrowser} from "@/utils/supabase/client";
 import type { Database } from "@/utils/supabase/database.types";
 
 const formSchema = z.object({
@@ -62,7 +62,7 @@ export default function UpdateProfile({
   const t = useTranslations("updateProfile");
   const [open, setOpen] = useState(false);
   const router = useRouter();
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
   const form = useForm<FormSchema>({
     mode: "onTouched",
     resolver: zodResolver(formSchema),
