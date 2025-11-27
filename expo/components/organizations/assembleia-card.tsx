@@ -8,7 +8,19 @@ import { Text } from '~/components/ui/text';
 
 import { Card, CardContent } from '../ui/card';
 
+const NEXT_ASSEMBLY_DATE = new Date('2025-12-23T23:59:59');
+
 export const AssembleiaCard = () => {
+  if (new Date() > NEXT_ASSEMBLY_DATE) {
+    return null;
+  }
+
+  const formattedDate = new Intl.DateTimeFormat('pt-BR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(NEXT_ASSEMBLY_DATE);
+
   return (
     <Card className="overflow-hidden">
       <Image
@@ -38,6 +50,9 @@ export const AssembleiaCard = () => {
           <View className="flex-1">
             <Text className="text-lg font-black text-gray-900">
               Próxima Assembleia
+            </Text>
+            <Text className="text-base font-medium text-gray-500 mb-3">
+              {formattedDate}
             </Text>
             <Text className="text-base font-medium text-gray-600 leading-6 mb-3">
               As datas das Assembleias Gerais são definidas conforme a necessidade e sempre comunicadas com no mínimo 30 dias de antecedência.
