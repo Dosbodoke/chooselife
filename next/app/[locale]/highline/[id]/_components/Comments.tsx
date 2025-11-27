@@ -8,7 +8,7 @@ import type { Highline } from "@/app/actions/getHighline";
 import LoadingSkeleton from "@/components/Ranking/LoadingSkeleton";
 import { UsernameLink } from "@/components/Ranking/UsernameLink";
 import SeeMore from "@/components/SeeMore";
-import useSupabaseBrowser from "@/utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 
 interface Props {
   highline: Highline;
@@ -17,7 +17,7 @@ interface Props {
 const PAGE_SIZE = 5;
 
 function Comments({ highline }: Props) {
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
   const format = useFormatter();
 
   async function fetchComments({ pageParam }: { pageParam: number }) {

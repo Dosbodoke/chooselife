@@ -21,7 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounceValue } from "@/hooks/use-debounce-value";
 import { cn } from "@/lib/utils";
-import useSupabaseBrowser from "@/utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 import { Tables } from "@/utils/supabase/database.types";
 
 interface UserOption {
@@ -81,7 +81,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
 }) => {
   const onValueChangeRef = React.useRef(onValueChange);
   onValueChangeRef.current = onValueChange; // Update ref on every render
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
   const t = useTranslations("userPicker");
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
 

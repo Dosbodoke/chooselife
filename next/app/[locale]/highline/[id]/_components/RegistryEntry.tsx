@@ -34,7 +34,7 @@ import NumberPicker from "@/components/ui/NumberPicker";
 import { Textarea } from "@/components/ui/textarea";
 import { UserPicker } from "@/components/user-picker";
 import { transformTimeStringToSeconds } from "@/utils/helperFunctions";
-import useSupabaseBrowser from "@/utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 
 const formSchema = z.object({
   instagram: z
@@ -72,7 +72,7 @@ interface Props {
 }
 
 export const RegistryEntry = ({ highlineId, highlineDistance }: Props) => {
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
 
   const t = useTranslations("highline.register");
   const queryClient = useQueryClient();
@@ -165,7 +165,7 @@ export const RegistryEntry = ({ highlineId, highlineDistance }: Props) => {
         <Button variant="default">{t("trigger")}</Button>
       </DrawerTrigger>
 
-      <DrawerContent onPointerDownOutside={(e) => true && e.preventDefault()}>
+      <DrawerContent onPointerDownOutside={(e) => e.preventDefault()}>
         <div className="scrollbar mx-auto flex w-full max-w-md flex-col overflow-auto rounded-t-[10px] p-4">
           {formMutation.isSuccess ? (
             <>

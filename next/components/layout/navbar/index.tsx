@@ -1,4 +1,4 @@
-import { useSupabaseServer } from "@/utils/supabase/server";
+import { createSupabaseClient } from "@/utils/supabase/server";
 
 import GoBack from "./GoBack";
 import LocaleSwitcher from "./LocaleSwitcher";
@@ -7,8 +7,7 @@ import SignUp from "./SignUp";
 import { ThemeModeToggler } from "./ThemeToggler";
 
 export default async function NavBar() {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const supabase = await useSupabaseServer();
+  const supabase = await createSupabaseClient();
 
   const {
     data: { user },

@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import React from "react";
 
-import useSupabaseBrowser from "@/utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 
 import SeeMore from "../SeeMore";
 import { Leaderboard } from "./leaderboard";
@@ -16,7 +16,7 @@ interface Props {
 const PAGE_SIZE = 5;
 
 function Distance({ highlines_ids, startDate, endDate }: Props) {
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
 
   async function fetchEntries({ pageParam = 1 }) {
     const { data } = await supabase.rpc("get_total_walked", {

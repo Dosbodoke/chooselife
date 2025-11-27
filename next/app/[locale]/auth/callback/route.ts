@@ -3,7 +3,7 @@
 
 import { NextResponse } from "next/server";
 
-import { useSupabaseServer } from "@/utils/supabase/server";
+import { createSupabaseClient } from "@/utils/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +15,7 @@ export async function GET(request: Request) {
   const redirectTo = requestUrl.searchParams.get("redirect_to");
 
   if (code) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const supabase = await useSupabaseServer();
+    const supabase = await createSupabaseClient();
 
     await supabase.auth.exchangeCodeForSession(code);
   }

@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/popover";
 import { transformSecondsToTimeString } from "@/utils/helperFunctions";
 import type { Database } from "@/utils/supabase/database.types";
-import { useSupabaseServer } from "@/utils/supabase/server";
+import { createSupabaseClient } from "@/utils/supabase/server";
 
 import FormattedDate from "./FormattedDate";
 import { WalkActivityCard } from "./WalkActivityCalendar";
@@ -35,7 +35,7 @@ interface Props {
 }
 
 export default async function LastWalks({ username }: Props) {
-  const supabase = await useSupabaseServer();
+  const supabase = await createSupabaseClient();
   const t = await getTranslations("profile.lastWalks");
 
   const { data: entries } = await supabase
