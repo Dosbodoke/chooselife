@@ -126,12 +126,6 @@ export default function OrganizationDetailsPage() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerBackButtonDisplayMode: 'minimal',
-          title: organization.name,
-        }}
-      />
       <SafeAreaView className="flex-1">
         <ScrollView
           className="flex-1"
