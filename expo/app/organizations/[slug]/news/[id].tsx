@@ -1,5 +1,5 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { Send } from 'lucide-react-native';
+import { Stack, useLocalSearchParams, router } from 'expo-router';
+import { Send, ChevronLeft } from 'lucide-react-native';
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -77,7 +77,21 @@ export default function NewsDetail() {
   if (isLoading) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Discussão', headerBackButtonDisplayMode: "minimal"  }} />
+        <Stack.Screen
+          options={{
+            title: 'Discussão',
+            headerLeft: ({ tintColor }) => (
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={20}
+              className="ml-1 mt-2"
+              style={{ alignItems: "center", "justifyContent": "center" }}
+            >
+              <ChevronLeft color={tintColor ?? '#000'} size={24} />
+            </Pressable>
+            ),
+          }}
+        />
         <SafeAreaView className="flex-1 bg-white" edges={['bottom']}>
           <KeyboardControllerView style={{ flex: 1 }}>
             <NewsDetailSkeleton />
@@ -106,7 +120,21 @@ export default function NewsDetail() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Discussão', headerBackTitle: 'Voltar' }} />
+      <Stack.Screen
+        options={{
+          title: 'Discussão',
+          headerLeft: ({ tintColor }) => (
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={20}
+              className="ml-1 mt-2"
+              style={{ alignItems: "center", "justifyContent": "center" }}
+            >
+              <ChevronLeft color={tintColor ?? '#000'} size={24} />
+            </Pressable>
+          ),
+        }}
+      />
       <SafeAreaView className="flex-1 bg-white" edges={['bottom']}>
         <KeyboardControllerView 
           style={{ flex: 1 }}
