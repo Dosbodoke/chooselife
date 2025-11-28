@@ -14,17 +14,20 @@ import { supabase } from '~/lib/supabase';
 
 import { BgBlob } from '~/components/bg-blog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '~/context/auth';
 
 export default function PaymentScreen() {
   const router = useRouter();
-  const { qrCodeImage, pixCopyPaste, chargeId, paymentContext } =
+  const { qrCodeImage, pixCopyPaste, chargeId, paymentContext, slug } =
     useLocalSearchParams<{
       qrCodeImage: string;
       pixCopyPaste: string;
       chargeId: string;
       paymentContext: 'new_member' | 'subscription_renewal';
+      slug?: string;
     }>();
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
   const [paymentStatus, setPaymentStatus] = React.useState<
     'PENDING' | 'SUCCESS' | 'FAILED'
   >('PENDING');
@@ -56,8 +59,20 @@ export default function PaymentScreen() {
             queryClient.invalidateQueries({
               queryKey: queryKeys.subscription.all,
             });
+            if (slug && profile?.id) {
+              queryClient.invalidateQueries({
+                queryKey: queryKeys.organizations.isMember(slug, profile.id),
+              });
+              queryClient.invalidateQueries({
+                queryKey: queryKeys.organizations.memberCount(slug),
+              });
+            }
             setTimeout(() => {
-              handleClose()
+              if (paymentContext === 'new_member') {
+                router.navigate('/(tabs)/organizations');
+              } else {
+                handleClose();
+              }
             }, 3000);
           } else if (payload.new.status === 'failed') {
             setPaymentStatus('FAILED');
@@ -69,7 +84,7 @@ export default function PaymentScreen() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [chargeId, router, queryClient]);
+  }, [chargeId, router, queryClient, slug, profile?.id, paymentContext]);
 
   if (paymentStatus === 'SUCCESS') {
     return (

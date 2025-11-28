@@ -108,6 +108,7 @@ export function BecomeMemberForm({
           pixCopyPaste: data.pixCopyPaste,
           chargeId: data.chargeId,
           paymentContext: 'new_member',
+          slug: org.slug,
         },
       });
     },
