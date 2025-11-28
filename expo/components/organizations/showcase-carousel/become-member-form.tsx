@@ -114,6 +114,24 @@ export function BecomeMemberForm({
     },
   });
 
+  const handleOpenEstatuto = () => {
+    const { data } = supabase.storage
+      .from('documents')
+      .getPublicUrl('estatuto-slac.pdf');
+    if (data?.publicUrl) {
+      Linking.openURL(data.publicUrl);
+    } else {
+      const error = new Error(
+        'Could not get public URL for estatuto-slac.pdf',
+      );
+      Sentry.captureException(error);
+      Alert.alert(
+        'Erro',
+        'Não foi possível abrir o estatuto. Tente novamente mais tarde.',
+      );
+    }
+  }
+
   const handleSubmit = () => {
     if (!selectedPlan) return;
 
@@ -124,17 +142,26 @@ export function BecomeMemberForm({
 
     Alert.alert(
       'Termos de Adesão',
-      'Ao assinar este instrumento, declaro estar ciente do inteiro teor do estatuto social da associação, bem como dos direitos e dos deveres impostos aos membros desta instituição.\n\nPor fim, comprometo-me a honrar, em dia, com todas as parcelas pecuniárias por mim devidas a esta instituição, notadamente a (a) seguinte (s), sob pena de justo desligamento da associação.',
+      'Ao assinar este instrumento, declaro estar ciente do inteiro teor do estatuto social da associação, bem como dos direitos e dos deveres impostos aos membros desta instituição.\n\nPor fim, comprometo-me a honrar, em dia, com todas as parcelas pecuniárias por mim devidas a esta instituição, sob pena de justo desligamento da associação.',
       [
         {
-          text: 'Cancelar',
-          style: 'cancel',
+          text: "Ver Estatuto",
+          onPress: () => handleOpenEstatuto()
         },
         {
+          text: 'Cancelar',
+          style: 'destructive',
+        },
+        {
+          isPreferred: true,
           text: 'Concordar',
           onPress: () => mutation.mutate({ plan_type: selectedPlan }),
         },
       ],
+      {
+        cancelable: true,
+        userInterfaceStyle: "dark"
+      }
     );
   };
 
@@ -260,23 +287,7 @@ export function BecomeMemberForm({
               se tornar membro.
             </Text>
             <TouchableOpacity
-              onPress={() => {
-                const { data } = supabase.storage
-                  .from('documents')
-                  .getPublicUrl('estatuto-slac.pdf');
-                if (data?.publicUrl) {
-                  Linking.openURL(data.publicUrl);
-                } else {
-                  const error = new Error(
-                    'Could not get public URL for estatuto-slac.pdf',
-                  );
-                  Sentry.captureException(error);
-                  Alert.alert(
-                    'Erro',
-                    'Não foi possível abrir o estatuto. Tente novamente mais tarde.',
-                  );
-                }
-              }}
+              onPress={() => handleOpenEstatuto}
             >
               <Text className="text-white/70 text-center text-sm mt-2 underline">
                 Ver Estatuto da Associação
