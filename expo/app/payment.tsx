@@ -5,7 +5,7 @@ import { Image as ExpoImage } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Check, CheckCircle2, Copy } from 'lucide-react-native';
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import { LucideIcon } from '~/lib/icons/lucide-icon';
@@ -13,6 +13,7 @@ import { queryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 
 import { BgBlob } from '~/components/bg-blog';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function PaymentScreen() {
   const router = useRouter();
@@ -27,6 +28,14 @@ export default function PaymentScreen() {
   const [paymentStatus, setPaymentStatus] = React.useState<
     'PENDING' | 'SUCCESS' | 'FAILED'
   >('PENDING');
+
+  const handleClose = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
+  };
 
   React.useEffect(() => {
     if (!chargeId) return;
@@ -48,7 +57,7 @@ export default function PaymentScreen() {
               queryKey: queryKeys.subscription.all,
             });
             setTimeout(() => {
-              if (router.canGoBack()) router.back();
+              handleClose()
             }, 3000);
           } else if (payload.new.status === 'failed') {
             setPaymentStatus('FAILED');
@@ -65,6 +74,7 @@ export default function PaymentScreen() {
   if (paymentStatus === 'SUCCESS') {
     return (
       <BgBlob>
+        <CloseButton onClose={handleClose} />
         <View className="flex-1 justify-center items-center gap-4">
           <Animated.View entering={ZoomIn}>
             <CheckCircle2 size={64} color="#10B981" />
@@ -91,6 +101,7 @@ export default function PaymentScreen() {
   if (paymentStatus === 'FAILED') {
     return (
       <BgBlob>
+        <CloseButton onClose={handleClose} />
         <View className="flex-1 justify-center items-center gap-4">
           <Animated.Text className="text-white text-2xl font-bold">
             Pagamento falhou
@@ -106,6 +117,7 @@ export default function PaymentScreen() {
   if (!qrCodeImage || !pixCopyPaste) {
     return (
       <BgBlob>
+        <CloseButton onClose={handleClose} />
         <View className="flex-1 justify-center items-center">
           <Text className="text-white">
             Error: Missing payment information.
@@ -117,6 +129,7 @@ export default function PaymentScreen() {
 
   return (
     <BgBlob>
+      <CloseButton onClose={handleClose} />
       <View className="flex-1 pt-16">
         {/* Header * */}
         <View className="items-center mb-8">
@@ -215,3 +228,20 @@ const CopyCode = ({ code }: { code: string }) => {
     </TouchableOpacity>
   );
 };
+
+const CloseButton = ({ onClose }: { onClose: () => void}) => {
+  const insets = useSafeAreaInsets();
+
+  return (
+  <Pressable
+        onPress={onClose}
+        className="absolute right-6 p-2.5 rounded-full bg-background/80 z-50"
+        style={{
+          top: insets.top + 12,
+        }}
+        hitSlop={12}
+      >
+        <LucideIcon name="X" size={20} className="fill-muted" />
+      </Pressable>
+      )
+}
