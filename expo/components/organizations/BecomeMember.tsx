@@ -6,12 +6,21 @@ import { View } from 'react-native';
 import { Button } from '~/components/ui/button';
 import { Text } from '~/components/ui/text';
 
-export const BecomeMember = ({ slug }: { slug: string }) => {
+export const BecomeMember = ({
+  slug,
+  ref,
+}: {
+  slug: string;
+  ref?: React.RefObject<View | null>;
+}) => {
   const { t } = useTranslation();
   const router = useRouter();
 
   return (
-    <View className="absolute bottom-0 left-0 w-full px-6 py-4 bg-white">
+    <View
+      ref={ref}
+      className="absolute bottom-0 left-0 w-full px-6 py-4 bg-white"
+    >
       <Button onPress={() => router.push(`/organizations/${slug}/member`)}>
         <Text>{t('app.organizations.becomeMember')}</Text>
       </Button>
