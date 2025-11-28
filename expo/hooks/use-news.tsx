@@ -9,7 +9,9 @@ const query = supabase
   .from('news')
   .select('*, organizations(slug), news_reactions(reaction), comments_count:news_comments(count)');
 
-export type News = QueryData<typeof query>;
+export type News = (QueryData<typeof query>[number] & {
+  organizations: { slug: string } | null;
+})[];
 
 export const useNews = (organizationId: string) => {
   return useQuery<News, Error>({
