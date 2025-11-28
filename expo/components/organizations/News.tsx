@@ -53,9 +53,7 @@ const NewsCard = ({ news }: { news: NewsType[number] }) => {
       : { previewContent: news.content, isClamped: false };
   }, [news.content]);
 
-  const organizationSlug = Array.isArray(news.organizations)
-    ? news.organizations[0]?.slug
-    : news.organizations?.slug;
+  const organizationSlug = news.organizations?.slug;
 
   return (
     <View className="bg-gray-100 rounded-lg p-4">
