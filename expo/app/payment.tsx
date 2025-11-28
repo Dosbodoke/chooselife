@@ -132,7 +132,7 @@ export default function PaymentScreen() {
           </Animated.View>
           <Animated.Text
             entering={FadeInDown.delay(400).duration(300)}
-            className="text-3xl font-bold text-black text-center mb-2"
+            className="text-3xl font-bold text-white text-center mb-2"
           >
             {paymentContext === 'subscription_renewal'
               ? 'Pague sua mensalidade'
@@ -140,7 +140,7 @@ export default function PaymentScreen() {
           </Animated.Text>
           <Animated.Text
             entering={FadeInDown.delay(500).duration(300)}
-            className="text-black text-center text-xl leading-6"
+            className="text-white text-center text-xl leading-6"
           >
             {paymentContext === 'subscription_renewal'
               ? 'Realize o pagamento para ficar em dia com a Associação'
