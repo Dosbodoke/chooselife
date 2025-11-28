@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2.49.8";
+import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 import {
   Expo,
   ExpoPushMessage,
@@ -44,11 +44,6 @@ interface NotificationResult {
   errors?: string[];
 }
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-);
-
 // Create a new Expo SDK client with better error handling
 const expo = new Expo({
   // accessToken: Deno.env.get("EXPO_ACCESS_TOKEN"),
@@ -57,22 +52,6 @@ const expo = new Expo({
 
 // Fallback locale if user's locale is missing
 const FALLBACK_LOCALE: Locales = "pt";
-
-// Enhanced input validation
-function validateEnvironmentVariables(): void {
-  const required = [
-    "SUPABASE_URL",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    // "EXPO_ACCESS_TOKEN",
-  ];
-  const missing = required.filter((key) => !Deno.env.get(key));
-
-  if (missing.length > 0) {
-    throw new Error(
-      `Missing required environment variables: ${missing.join(", ")}`,
-    );
-  }
-}
 
 function validateNotificationRecord(record: NotificationRecord): void {
   if (!record.id) {
@@ -138,7 +117,7 @@ async function cleanupInvalidTokens(invalidTokens: string[]): Promise<void> {
 
   try {
     console.log(`Cleaning up ${invalidTokens.length} invalid tokens`);
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from("push_tokens")
       .delete()
       .in("token", invalidTokens);
@@ -314,7 +293,7 @@ async function fetchTargetTokens(
     // Send to a specific user
     console.log(`Fetching tokens for user: ${notificationRecord.user_id}`);
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("push_tokens")
       .select(`
         token,
@@ -342,7 +321,7 @@ async function fetchTargetTokens(
     // Send to all users (broadcast)
     console.log("Fetching all push tokens for broadcast");
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("push_tokens")
       .select(`
         token, 
@@ -370,8 +349,6 @@ Deno.serve(async (req) => {
   const startTime = Date.now();
 
   try {
-    validateEnvironmentVariables();
-
     // Validate request method
     if (req.method !== "POST") {
       return new Response(

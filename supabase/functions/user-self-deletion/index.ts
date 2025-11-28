@@ -2,7 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2.49.8";
 import { corsHeaders } from "../_shared/cors.ts";
 
-console.log(`Function "user-self-deletion" up and running!`);
+import { supabaseAdmin } from "../_shared/supabase-admin.ts";
+import { createSupabaseClient } from "../_shared/supabase-client.ts";
 
 Deno.serve(async (req: Request) => {
   // This is needed if you're planning to invoke your function from a browser.
@@ -10,20 +11,7 @@ Deno.serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
   try {
-    // Create a Supabase client with the Auth context of the logged in user.
-    const supabaseClient = createClient(
-      // Supabase API URL - env var exported by default.
-      Deno.env.get("SUPABASE_URL") ?? "",
-      // Supabase API ANON KEY - env var exported by default.
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      // Create client with Auth context of the user that called the function.
-      // This way your row-level-security (RLS) policies are applied.
-      {
-        global: {
-          headers: { Authorization: req.headers.get("Authorization")! },
-        },
-      },
-    );
+    const supabaseClient = createSupabaseClient(req.headers.get("Authorization")!,)
 
     // Now we can get the session or user object
     const {
@@ -34,12 +22,6 @@ Deno.serve(async (req: Request) => {
       "profiles",
     ).select("id, profile_picture").eq("id", user?.id);
     if (!user || profileError) throw profileError;
-
-    // Create the admin client to delete files & user with the Admin API.
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    );
 
     // Delete avatar from storage if exists and is not an external URL
     if (profiles.length > 0 && profiles[0].profile_picture) {

@@ -19,7 +19,7 @@ grant usage on schema net to postgres;
 /*
 -- Run this in your Supabase SQL Editor:
 select vault.create_secret('https://<your-project-ref>.supabase.co', 'project_url', 'URL for the Supabase project');
-select vault.create_secret('<your-service-role-key>', 'service_role_key', 'Supabase service role key');
+select vault.create_secret('<your-service-role-key>', 'secret_key', 'Supabase service role key');
 */
 
 -- 3. Schedule the function to run daily at midnight UTC.
@@ -34,7 +34,7 @@ select
           url:= (select decrypted_secret from vault.decrypted_secrets where name = 'project_url') || '/functions/v1/generate-renewal-payments',
           headers:=jsonb_build_object(
             'Content-Type', 'application/json',
-            'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'service_role_key')
+            'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'secret_key')
           ),
           body:='{}'::jsonb
       ) as request_id;
@@ -47,5 +47,5 @@ select
 -- NOTE: To delete the secrets if you unschedule the job (run manually in SQL Editor):
 /*
 delete from vault.secrets where name = 'project_url';
-delete from vault.secrets where name = 'service_role_key';
+delete from vault.secrets where name = 'secret_key';
 */
