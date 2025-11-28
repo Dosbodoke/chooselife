@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { Mountain } from 'lucide-react-native';
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   RefreshControl,
@@ -53,6 +53,8 @@ export default function OrganizationDetailsPage() {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
+  const [bottomPadding, setBottomPadding] = useState(0);
+  const becomeMemberRef = useRef<View>(null);
 
   const {
     data: organization,
@@ -87,6 +89,17 @@ export default function OrganizationDetailsPage() {
     setRefreshing(false);
   };
 
+  useLayoutEffect(() => {
+    if (isMember) {
+      setBottomPadding(0);
+      return;
+    }
+
+    becomeMemberRef.current?.measureInWindow((_x, _y, _width, height) => {
+      setBottomPadding(height);
+    });
+  }, [isMember, organization?.slug]);
+
   const isLoading = isLoadingOrg || isLoadingMember;
   const isError = isErrorOrg || isErrorMember;
 
@@ -105,7 +118,6 @@ export default function OrganizationDetailsPage() {
   }
 
   if (isError || !organization) {
-    console.log({ isError, organization });
     return (
       <>
         <Stack.Screen options={{ title: 'Team Not Found' }} />
@@ -133,6 +145,7 @@ export default function OrganizationDetailsPage() {
         <ScrollView
           className="flex-1"
           contentContainerClassName="gap-8 px-4 py-6"
+          contentContainerStyle={{ paddingBottom: bottomPadding + 24 }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -161,10 +174,12 @@ export default function OrganizationDetailsPage() {
 
           {isMember ? <Subscription organization={organization} /> : null}
           <AssembleiaCard />
-          <News />
+          <News organizationId={organization.id} />
         </ScrollView>
       </SafeAreaView>
-      {!isMember ? <BecomeMember slug={organization.slug} /> : null}
+      {!isMember ? (
+        <BecomeMember slug={organization.slug} ref={becomeMemberRef} />
+      ) : null}
     </>
   );
 }

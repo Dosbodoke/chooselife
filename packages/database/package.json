@@ -7,7 +7,7 @@
     "gen-types": "supabase gen types typescript --local --schema storage,public,functions > database-generated.types.ts"
   },
   "devDependencies": {
-    "supabase": "^1.165.0"
+    "supabase": "^2.62.10"
   },
   "dependencies": {
     "type-fest": "^5.2.0"
