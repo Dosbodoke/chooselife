@@ -4,8 +4,7 @@
   "workspaces": [
     "next",
     "expo",
-    "packages/*",
-    "supabase/functions/*"
+    "packages/*"
   ],
   "scripts": {
     "build": "turbo run build",
