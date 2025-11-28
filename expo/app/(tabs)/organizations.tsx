@@ -3,7 +3,6 @@ import { Stack } from 'expo-router';
 import { Mountain } from 'lucide-react-native';
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   View,
@@ -47,7 +46,6 @@ export default function OrganizationDetailsPage() {
 
   const {
     data: organization,
-    isLoading: isLoadingOrg,
   } = useQuery({
     queryKey: queryKeys.organizations.bySlug(ORG_SLUG),
     queryFn: () => fetchOrganization(ORG_SLUG),
@@ -56,7 +54,6 @@ export default function OrganizationDetailsPage() {
 
   const {
     data: isMember,
-    isLoading: isLoadingMember,
   } = useIsMember(organization?.id);
 
   const onRefresh = async () => {
@@ -82,22 +79,6 @@ export default function OrganizationDetailsPage() {
       setBottomPadding(height);
     });
   }, [isMember, organization?.slug]);
-
-  const isLoading = isLoadingOrg || isLoadingMember;
-
-  if (isLoading) {
-    return (
-      <>
-        <Stack.Screen options={{ title: 'Loading...' }} />
-        <SafeAreaView className="h-full w-full">
-          <View className="flex-1 bg-white justify-center items-center">
-            <ActivityIndicator size="large" color="#059669" />
-            <Text className="text-gray-600 mt-4">Loading team...</Text>
-          </View>
-        </SafeAreaView>
-      </>
-    );
-  }
 
   if (!organization) {
     return (
