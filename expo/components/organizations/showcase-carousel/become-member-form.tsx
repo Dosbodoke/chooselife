@@ -26,6 +26,7 @@ import { Tables } from '~/utils/database-generated.types';
 
 import { BgBlob } from '~/components/bg-blog';
 import { Text } from '~/components/ui/text';
+import { _layoutAnimation } from '~/utils/constants';
 
 type PlanType = 'monthly' | 'annual';
 
@@ -43,6 +44,7 @@ export function BecomeMemberForm({
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = React.useState<PlanType | null>(null);
   const [isFocused, setIsFocused] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const { session } = useAuth();
 
   useAnimatedReaction(
@@ -111,6 +113,9 @@ export function BecomeMemberForm({
     },
     onError: (error) => {
       console.error('Error starting subscription:', error);
+      setErrorMessage(
+        'Não foi possível iniciar a inscrição. Tente novamente mais tarde.',
+      );
     },
   });
 
@@ -198,6 +203,7 @@ export function BecomeMemberForm({
             <TouchableOpacity
               onPress={() => {
                 setSelectedPlan('monthly');
+                setErrorMessage(null);
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
               disabled={mutation.isPending}
@@ -226,6 +232,7 @@ export function BecomeMemberForm({
             <TouchableOpacity
               onPress={() => {
                 setSelectedPlan('annual');
+                setErrorMessage(null);
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
               disabled={mutation.isPending}
@@ -257,8 +264,21 @@ export function BecomeMemberForm({
         </View>
 
         <View className="gap-4">
+          {errorMessage && (
+            <Animated.View
+              entering={FadeIn.duration(300)}
+              className="bg-red-500/80 p-4 rounded-lg"
+            >
+              <Text className="text-white text-center font-bold">
+                {errorMessage}
+              </Text>
+            </Animated.View>
+          )}
           {/* CTA Button */}
-          <Animated.View entering={FadeInDown.delay(500).duration(400)}>
+          <Animated.View
+            entering={FadeInDown.delay(500).duration(400)}
+            layout={_layoutAnimation}
+          >
             <TouchableOpacity
               onPress={() => {
                 handleSubmit();
@@ -280,6 +300,7 @@ export function BecomeMemberForm({
           {/* Footer Note */}
           <Animated.View
             entering={FadeIn.delay(600).duration(500)}
+            layout={_layoutAnimation}
             className="items-center"
           >
             <Text className="text-white/50 text-center text-sm leading-5 max-w-xs">
