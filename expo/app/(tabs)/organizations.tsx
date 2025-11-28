@@ -1,6 +1,4 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
-import { Mountain } from 'lucide-react-native';
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import {
   RefreshControl,
@@ -20,6 +18,8 @@ import { News } from '~/components/organizations/News';
 import { Subscription } from '~/components/organizations/Subscription';
 import { Text } from '~/components/ui/text';
 import { useIsMember } from '~/hooks/use-is-member';
+
+import { OrganizationErrorState } from '~/components/organizations/organization-error-state';
 
 // TODO: When more orgs were to be implemented, it should be created the /organizations/[slug] route
 const ORG_SLUG = 'slac' as const;
@@ -81,22 +81,7 @@ export default function OrganizationDetailsPage() {
   }, [isMember, organization?.slug]);
 
   if (!organization) {
-    return (
-      <>
-        <Stack.Screen options={{ title: 'Team Not Found' }} />
-        <SafeAreaView className="h-full w-full">
-          <View className="flex-1 bg-white justify-center items-center px-6">
-            <Mountain className="text-gray-300 mb-4" size={64} />
-            <Text className="text-gray-900 text-2xl font-bold mb-2">
-              Team Not Found
-            </Text>
-            <Text className="text-gray-600 text-center">
-              This team doesn't exist or you don't have access to it.
-            </Text>
-          </View>
-        </SafeAreaView>
-      </>
-    );
+    return <OrganizationErrorState />;
   }
 
   return (
