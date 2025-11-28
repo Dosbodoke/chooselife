@@ -20,6 +20,7 @@ import { HeaderInfos } from '~/components/organizations/header-infos';
 import { News } from '~/components/organizations/News';
 import { Subscription } from '~/components/organizations/Subscription';
 import { Text } from '~/components/ui/text';
+import { useIsMember } from '~/hooks/use-is-member';
 
 // TODO: When more orgs were to be implemented, it should be created the /organizations/[slug] route
 const ORG_SLUG = 'slac' as const;
@@ -35,19 +36,7 @@ const fetchOrganization = async (slug: string) => {
   return data;
 };
 
-const checkMembership = async (organizationID: string, userId: string) => {
-  if (!organizationID || !userId) return false;
-  const { data, error } = await supabase
-    .from('organization_members')
-    .select('user_id')
-    .eq('organization_id', organizationID)
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (error) {
-    throw error;
-  }
-  return !!data;
-};
+
 
 export default function OrganizationDetailsPage() {
   const queryClient = useQueryClient();
@@ -59,7 +48,6 @@ export default function OrganizationDetailsPage() {
   const {
     data: organization,
     isLoading: isLoadingOrg,
-    isError: isErrorOrg,
   } = useQuery({
     queryKey: queryKeys.organizations.bySlug(ORG_SLUG),
     queryFn: () => fetchOrganization(ORG_SLUG),
@@ -69,12 +57,7 @@ export default function OrganizationDetailsPage() {
   const {
     data: isMember,
     isLoading: isLoadingMember,
-    isError: isErrorMember,
-  } = useQuery({
-    queryKey: queryKeys.organizations.members(ORG_SLUG, profile?.id ?? ''),
-    queryFn: () => checkMembership(organization!.id, profile!.id),
-    enabled: !!organization?.id && !!profile,
-  });
+  } = useIsMember(organization?.id);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -83,7 +66,7 @@ export default function OrganizationDetailsPage() {
         queryKey: queryKeys.organizations.bySlug(ORG_SLUG),
       }),
       queryClient.invalidateQueries({
-        queryKey: queryKeys.organizations.members(ORG_SLUG, profile?.id ?? ''),
+        queryKey: queryKeys.organizations.isMember(organization?.id, profile?.id),
       }),
     ]);
     setRefreshing(false);
@@ -101,7 +84,6 @@ export default function OrganizationDetailsPage() {
   }, [isMember, organization?.slug]);
 
   const isLoading = isLoadingOrg || isLoadingMember;
-  const isError = isErrorOrg || isErrorMember;
 
   if (isLoading) {
     return (
@@ -117,7 +99,7 @@ export default function OrganizationDetailsPage() {
     );
   }
 
-  if (isError || !organization) {
+  if (!organization) {
     return (
       <>
         <Stack.Screen options={{ title: 'Team Not Found' }} />
