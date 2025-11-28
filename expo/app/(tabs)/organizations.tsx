@@ -65,6 +65,9 @@ export default function OrganizationDetailsPage() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.organizations.isMember(ORG_SLUG, profile?.id),
       }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.organizations.memberCount(ORG_SLUG),
+      }),
     ]);
     setRefreshing(false);
   };

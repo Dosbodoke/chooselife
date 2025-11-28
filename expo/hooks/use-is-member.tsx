@@ -19,10 +19,11 @@ export const useIsMember = (
 
       const { count, error } = await supabase
         .from('organization_members')
-        .select('id, organizations!inner(slug)', { count: 'exact' })
+        .select('organizations!inner(slug)', { count: 'exact' })
         .eq('user_id', userId)
         .eq('organizations.slug', organizationSlug);
 
+      console.log({ count, error })
       if (error) {
         throw new Error(error.message);
       }
