@@ -54,7 +54,7 @@ export default function OrganizationDetailsPage() {
 
   const {
     data: isMember,
-  } = useIsMember(organization?.id);
+  } = useIsMember(ORG_SLUG);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -63,7 +63,7 @@ export default function OrganizationDetailsPage() {
         queryKey: queryKeys.organizations.bySlug(ORG_SLUG),
       }),
       queryClient.invalidateQueries({
-        queryKey: queryKeys.organizations.isMember(organization?.id, profile?.id),
+        queryKey: queryKeys.organizations.isMember(ORG_SLUG, profile?.id),
       }),
     ]);
     setRefreshing(false);

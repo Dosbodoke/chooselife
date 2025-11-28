@@ -4,23 +4,24 @@ import { useAuth } from '~/context/auth';
 import { queryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 
-export const useIsMember = (organizationId: string | undefined) => {
+export const useIsMember = (
+  organizationSlug: string | undefined,
+) => {
   const { session } = useAuth();
   const userId = session?.user?.id;
 
   return useQuery<boolean, Error>({
-    queryKey: queryKeys.organizations.isMember(organizationId, userId),
+    queryKey: queryKeys.organizations.isMember(organizationSlug, userId),
     queryFn: async () => {
-      if (!organizationId || !userId) {
+      if (!organizationSlug || !userId) {
         return false;
       }
 
-      // Assuming 'organization_members' is the table linking users to organizations
       const { count, error } = await supabase
-        .from('organization_members') 
-        .select('id', { count: 'exact' })
-        .eq('organization_id', organizationId)
-        .eq('user_id', userId);
+        .from('organization_members')
+        .select('id, organizations!inner(slug)', { count: 'exact' })
+        .eq('user_id', userId)
+        .eq('organizations.slug', organizationSlug);
 
       if (error) {
         throw new Error(error.message);
@@ -28,6 +29,6 @@ export const useIsMember = (organizationId: string | undefined) => {
 
       return (count || 0) > 0;
     },
-    enabled: !!organizationId && !!userId,
+    enabled: !!organizationSlug && !!userId,
   });
 };
