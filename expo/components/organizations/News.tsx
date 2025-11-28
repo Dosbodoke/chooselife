@@ -53,6 +53,10 @@ const NewsCard = ({ news }: { news: NewsType[number] }) => {
       : { previewContent: news.content, isClamped: false };
   }, [news.content]);
 
+  const organizationSlug = Array.isArray(news.organizations)
+    ? news.organizations[0]?.slug
+    : news.organizations?.slug;
+
   return (
     <View className="bg-gray-100 rounded-lg p-4">
       <Text className="text-sm text-gray-600 mb-2">
@@ -86,7 +90,7 @@ const NewsCard = ({ news }: { news: NewsType[number] }) => {
             </Text>
           </View>
         </View>
-        <Link href={`/organizations/news/${news.id}`} asChild>
+        <Link href={`/organizations/${organizationSlug}/news/${news.id}`} asChild>
           <Text className="text-blue-500 font-bold">Participar da discussão</Text>
         </Link>
       </View>

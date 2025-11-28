@@ -7,7 +7,7 @@ import { supabase } from '~/lib/supabase';
 
 const query = supabase
   .from('news')
-  .select('*, news_reactions(reaction), comments_count:news_comments(count)');
+  .select('*, organizations(slug), news_reactions(reaction), comments_count:news_comments(count)');
 
 export type News = QueryData<typeof query>;
 

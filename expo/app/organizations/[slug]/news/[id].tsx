@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Send } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -13,11 +13,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardControllerView } from 'react-native-keyboard-controller';
 
 import { SupabaseAvatar } from '~/components/supabase-avatar';
-import { Skeleton } from '~/components/ui/skeleton'; // Import Skeleton
+import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 import { useMutateComment, useNewsItem } from '~/hooks/use-news';
-import { useIsMember } from '~/hooks/use-is-member'; // NEW
-import { BecomeMember } from '~/components/organizations/BecomeMember'; // NEW
+import { useIsMember } from '~/hooks/use-is-member';
+import { BecomeMember } from '~/components/organizations/BecomeMember';
 
 const NewsDetailSkeleton = () => {
   return (
@@ -53,15 +53,26 @@ const NewsDetailSkeleton = () => {
 };
 
 export default function NewsDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, slug } = useLocalSearchParams<{ id: string; slug: string }>();
   const { data: news, isLoading, isError } = useNewsItem(id);
   const { mutate: addComment, isPending: isAddingComment } = useMutateComment(id!);
   const [commentText, setCommentText] = useState('');
 
-  // NEW: Get membership status and organization slug
-  const organizationId = news?.organization_id;
-  const organizationSlug = news?.organizations?.slug;
-  const { data: isMember, isLoading: isMemberLoading } = useIsMember(organizationId || undefined);
+  const { data: isMember, isLoading: isMemberLoading } = useIsMember(slug);
+
+  const [bottomPadding, setBottomPadding] = useState(0);
+  const becomeMemberRef = useRef<View>(null);
+
+  useLayoutEffect(() => {
+    if (isMember) {
+      setBottomPadding(0);
+      return;
+    }
+
+    becomeMemberRef.current?.measureInWindow((_x, _y, _width, height) => {
+      setBottomPadding(height);
+    });
+  }, [isMember, slug]);
 
   if (isLoading) {
     return (
@@ -100,7 +111,7 @@ export default function NewsDetail() {
         <KeyboardControllerView 
           style={{ flex: 1 }}
         >
-          <ScrollView className="flex-1 p-4" contentContainerStyle={{ paddingBottom: 20 }}>
+          <ScrollView className="flex-1 p-4" contentContainerStyle={{ paddingBottom: bottomPadding + 20 }}>
             <Text className="text-sm text-gray-600 mb-2">
               {new Date(news.created_at).toLocaleDateString()}
             </Text>
@@ -163,13 +174,7 @@ export default function NewsDetail() {
               </Pressable>
             </View>
           ) : (
-            organizationSlug ? (
-              <BecomeMember slug={organizationSlug} />
-            ) : (
-              <View className="p-4 border-t border-gray-200 bg-white">
-                <Text className="text-gray-500">Carregando informações da organização...</Text>
-              </View>
-            )
+            <BecomeMember slug={slug} ref={becomeMemberRef} />
           )}
         </KeyboardControllerView>
       </SafeAreaView>
