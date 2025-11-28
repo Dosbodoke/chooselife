@@ -46,6 +46,7 @@ export default function TabLayout() {
         name="organizations"
         options={{
           title: 'SL.A.C',
+          tabBarLabel: 'SL.A.C',
           headerShown: false,
           tabBarIcon: ({ focused }) => (
             <LucideIcon
