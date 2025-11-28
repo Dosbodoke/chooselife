@@ -66,7 +66,8 @@ const NewsCard = ({ news }: { news: NewsType[number] }) => {
           <View
             className="absolute inset-x-0 bottom-0 h-40"
             style={{
-              experimental_backgroundImage: 'linear-gradient(to bottom, transparent, #f3f4f6)',
+              experimental_backgroundImage:
+                'linear-gradient(to bottom, rgba(243, 244, 246, 0), #f3f4f6)',
             }}
           />
         )}
