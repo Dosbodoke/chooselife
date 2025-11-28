@@ -101,6 +101,9 @@ export default function NewsDetail() {
           style={{ flex: 1 }}
         >
           <ScrollView className="flex-1 p-4" contentContainerStyle={{ paddingBottom: 20 }}>
+            <Text className="text-sm text-gray-600 mb-2">
+              {new Date(news.created_at).toLocaleDateString()}
+            </Text>
             <View className="mb-6">
               <Markdown markdown={news.content} />
             </View>

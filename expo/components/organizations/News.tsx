@@ -55,6 +55,9 @@ const NewsCard = ({ news }: { news: NewsType[number] }) => {
 
   return (
     <View className="bg-gray-100 rounded-lg p-4">
+      <Text className="text-sm text-gray-600 mb-2">
+        {new Date(news.created_at).toLocaleDateString()}
+      </Text>
       <View className="relative">
         <Markdown markdown={previewContent} />
         {isClamped && (
