@@ -25,19 +25,39 @@ export default async function Image({
 
   const { data } = await supabase
     .from("news")
-    .select("content")
+    .select("content, created_at")
     .eq("id", id)
     .single();
 
   const content = data?.content || "";
-  const match = content.match(/^#\s+(.+)$/m);
-  const title = match ? match[1] : "News Update";
 
-  // Use cardBanner.JPG from the public folder
+  // Extract title: First # header until next blank line
+  const lines = content.split("\n");
+  let title = "Veja a matéria";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.startsWith("#")) {
+      // Remove the # and any extra whitespace
+      title = line.replace(/^#+\s*/, "").trim();
+      break;
+    }
+  }
+
+  // Format date
+  const createdAt = data?.created_at;
+  const formattedDate = createdAt
+    ? new Date(createdAt).toLocaleDateString("pt-BR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "";
+
   const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
     ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-    : "http://localhost:3000"; // Fallback for local development
-  const bgImageUrl = `${baseUrl}/cardBanner.JPG`;
+    : "http://localhost:3000";
+  const bgImageUrl = `${baseUrl}/highline-walk.webp`;
 
   return new ImageResponse(
     (
@@ -49,7 +69,7 @@ export default async function Image({
           flexDirection: "column",
           alignItems: "flex-start",
           justifyContent: "flex-end",
-          backgroundColor: "#1a1a1a", // Fallback background color
+          backgroundColor: "#1a1a1a",
           position: "relative",
         }}
       >
@@ -84,8 +104,21 @@ export default async function Image({
             padding: "60px",
             zIndex: 10,
             width: "100%",
+            gap: "16px",
           }}
         >
+          {formattedDate && (
+            <div
+              style={{
+                color: "rgba(255,255,255,0.8)",
+                fontSize: 28,
+                fontWeight: "normal",
+                textShadow: "0 2px 10px rgba(0,0,0,0.5)",
+              }}
+            >
+              {formattedDate}
+            </div>
+          )}
           <div
             style={{
               color: "white",
