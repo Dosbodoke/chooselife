@@ -66,7 +66,7 @@ Replace the placeholder values with your actual project reference and service ro
 ```sql
 -- Run this in your Supabase SQL Editor:
 select vault.create_secret('https://<your-project-ref>.supabase.co', 'project_url', 'URL for the Supabase project');
-select vault.create_secret('<your-service-role-key>', 'service_role_key', 'Supabase service role key');
+select vault.create_secret('<your-service-role-key>', 'secret_key', 'Supabase service role key');
 ```
 
 #### OAuth Configuration
