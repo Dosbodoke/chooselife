@@ -15,7 +15,7 @@ export const HeroPromoCard = () => {
     >
       <Image
         className="absolute z-0"
-        src="/highline-walk.webp"
+        src="/highline-walk.jpg"
         alt="Person walking on a Highline"
         fill
         sizes="100vw"

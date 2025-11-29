@@ -19,38 +19,59 @@ export default async function Image({
 }) {
   const { id } = await params;
 
+  // CORREÇÃO CRÍTICA 1: Use a Service Role Key para ignorar RLS (permissões).
+  // A chave pública (anon) muitas vezes falha se não houver política pública configurada.
+  // Certifique-se de adicionar SUPABASE_SERVICE_ROLE_KEY nas variáveis de ambiente da Vercel.
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+
   const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("news")
     .select("content, created_at")
     .eq("id", id)
     .single();
 
-  const content = data?.content || "";
-
-  // Extract title: First # header, more robust extraction
-  let title = "Ver Publicação";
-
-  // Match first H1 header (# followed by space and text)
-  const headerMatch = content.match(/^#\s+([^\n]+)/m);
-  if (headerMatch && headerMatch[1]) {
-    title = headerMatch[1].trim();
+  // Debug: Se isso aparecer nos logs da Vercel, sabemos que a query falhou
+  if (error || !data) {
+    console.error(`Erro ao buscar notícia ${id}:`, error);
   }
 
-  // Format date
-  const createdAt = data?.created_at;
-  const formattedDate = createdAt
-    ? new Date(createdAt).toLocaleDateString("pt-BR", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : "";
+  const content = data?.content || "";
 
-  // Use absolute URL for production, relative for local
+  // Extração de título melhorada
+  let title = "Ver Publicação";
+
+  // Remove frontmatter se existir ou espaços em branco iniciais antes de tentar o match
+  const cleanContent = content.trim();
+
+  // Regex ajustado:
+  // ^#\s+ : Começa com # e espaço
+  // (.+)  : Captura qualquer coisa (o título)
+  // O flag 'm' (multiline) é essencial.
+  const headerMatch = cleanContent.match(/^#\s+(.+)$/m);
+
+  if (headerMatch && headerMatch[1]) {
+    // Remove caracteres markdown extras que possam ter sobrado (ex: **bold** dentro do título)
+    title = headerMatch[1].replace(/\*\*/g, "").trim();
+  }
+
+  // Formatação de data
+  const createdAt = data?.created_at;
+  let formattedDate = "";
+
+  if (createdAt) {
+    // Forçamos o locale pt-BR e garantimos que a data seja interpretada corretamente
+    formattedDate = new Date(createdAt).toLocaleDateString("pt-BR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }
+
   const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
     ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
     : "http://localhost:3000";
@@ -69,11 +90,13 @@ export default async function Image({
           justifyContent: "flex-end",
           backgroundColor: "#1a1a1a",
           position: "relative",
+          fontFamily: "sans-serif",
         }}
       >
+        {/* Background Image */}
         <img
           src={bgImageUrl}
-          alt="Pessoa andando em um highline"
+          alt="Background"
           style={{
             position: "absolute",
             top: 0,
@@ -84,6 +107,7 @@ export default async function Image({
           }}
         />
 
+        {/* Gradient Overlay - Ajustado para legibilidade */}
         <div
           style={{
             position: "absolute",
@@ -92,9 +116,11 @@ export default async function Image({
             width: "100%",
             height: "100%",
             background:
-              "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 80%)",
+              "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0) 100%)",
           }}
         />
+
+        {/* Content Container */}
         <div
           style={{
             display: "flex",
@@ -102,28 +128,36 @@ export default async function Image({
             padding: "60px",
             zIndex: 10,
             width: "100%",
-            gap: "16px",
+            gap: "10px",
           }}
         >
           {formattedDate && (
             <div
               style={{
-                color: "rgba(255,255,255,0.8)",
-                fontSize: 28,
-                fontWeight: "normal",
-                textShadow: "0 2px 10px rgba(0,0,0,0.5)",
+                color: "#e5e5e5", // Levemente off-white para contraste hierárquico
+                fontSize: 24,
+                fontWeight: 500,
+                textTransform: "capitalize",
+                marginBottom: "8px",
               }}
             >
               {formattedDate}
             </div>
           )}
+
           <div
             style={{
               color: "white",
-              fontSize: 64,
-              fontWeight: "bold",
+              fontSize: 56,
+              fontWeight: 800,
               lineHeight: 1.1,
-              textShadow: "0 2px 10px rgba(0,0,0,0.5)",
+              textShadow: "0 4px 20px rgba(0,0,0,0.8)",
+              display: "flex",
+              flexWrap: "wrap",
+              // Opcional: Se quiser cortar textos MUITO longos para não estourar a imagem:
+              maxHeight: "80%", // Limita a altura
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
           >
             {title}
