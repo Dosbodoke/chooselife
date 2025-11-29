@@ -17,7 +17,7 @@ import Providers from "./Providers";
 
 const APP_NAME = "Chooselife";
 const APP_DEFAULT_TITLE = "Chooselife";
-const APP_TITLE_TEMPLATE = "%s - Chooselife";
+const APP_TITLE_TEMPLATE = "%s 🆑";
 const APP_DESCRIPTION = "O aplicativo feito para o Highliner";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://localhost:3000";
