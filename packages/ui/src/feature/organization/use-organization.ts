@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { queryKeys } from './keys';
+import { useOrganizationContext } from './context';
 
-import { queryKeys } from '~/lib/query-keys';
-import { supabase } from '~/lib/supabase';
-
-const fetchOrganization = async (slug: string) => {
+const fetchOrganization = async (supabase: SupabaseClient, slug: string) => {
   if (!slug) return null;
   const { data, error } = await supabase
     .from('organizations')
@@ -15,9 +15,11 @@ const fetchOrganization = async (slug: string) => {
 };
 
 export const useOrganization = (slug: string) => {
+  const { supabase } = useOrganizationContext();
+  
   return useQuery({
     queryKey: queryKeys.organizations.bySlug(slug),
-    queryFn: () => fetchOrganization(slug),
+    queryFn: () => fetchOrganization(supabase, slug),
     enabled: !!slug,
   });
 };

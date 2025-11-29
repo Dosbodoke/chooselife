@@ -15,8 +15,7 @@ import { KeyboardControllerView } from 'react-native-keyboard-controller';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
-import { useMutateComment, useNewsItem } from '~/hooks/use-news';
-import { useIsMember } from '~/hooks/use-is-member';
+import { useIsMember, useMutateComment, useNewsItem } from '@chooselife/ui';
 import { BecomeMember } from '~/components/organizations/BecomeMember';
 
 const NewsDetailSkeleton = () => {

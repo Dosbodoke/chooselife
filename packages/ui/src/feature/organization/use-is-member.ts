@@ -1,14 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-
-import { useAuth } from '~/context/auth';
-import { queryKeys } from '~/lib/query-keys';
-import { supabase } from '~/lib/supabase';
+import { queryKeys } from './keys';
+import { useOrganizationContext } from './context';
 
 export const useIsMember = (
   organizationSlug: string | undefined,
 ) => {
-  const { session } = useAuth();
-  const userId = session?.user?.id;
+  const { supabase, userId } = useOrganizationContext();
 
   return useQuery<boolean, Error>({
     queryKey: queryKeys.organizations.isMember(organizationSlug, userId),
