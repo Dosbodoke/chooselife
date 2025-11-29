@@ -17,5 +17,6 @@ export const queryKeys = {
   newsItem: {
     all: ['news-item'] as const,
     byId: (id: string) => [...queryKeys.newsItem.all, id] as const,
+    bySlug: (slug: string) => [...queryKeys.newsItem.all, slug] as const,
   },
 };

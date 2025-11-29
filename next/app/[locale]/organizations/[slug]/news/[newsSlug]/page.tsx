@@ -20,7 +20,7 @@ const supabaseStatic = createClient<Database>(supabaseUrl, supabaseKey);
 export async function generateStaticParams() {
   const { data: news } = await supabaseStatic
     .from("news")
-    .select("id, organization_id, organizations(slug)")
+    .select("slug, organization_id, organizations(slug)")
     .order("created_at", { ascending: false })
     .limit(100); // Pre-render the latest 100 news items
 
@@ -29,12 +29,12 @@ export async function generateStaticParams() {
   return news
     .map((item) => ({
       slug: item.organizations?.slug,
-      id: item.id,
+      newsSlug: item.slug,
     }))
     .filter((item) => item.slug); // Ensure slug exists
 }
 
-const getNewsItem = cache(async (id: string) => {
+const getNewsItem = cache(async (slug: string) => {
   // This function runs at request time (or revalidation time), so cookies() is available
   const supabase = await createSupabaseClient();
   const { data, error } = await supabase
@@ -42,7 +42,7 @@ const getNewsItem = cache(async (id: string) => {
     .select(
       "*, organizations(slug), comments:news_comments(*, user:profiles(*))"
     )
-    .eq("id", id)
+    .eq("slug", slug)
     .single();
 
   if (error || !data) {
@@ -53,7 +53,7 @@ const getNewsItem = cache(async (id: string) => {
 
 interface NewsDetailPageProps {
   params: Promise<{
-    id: string;
+    newsSlug: string;
     slug: string;
     locale: string;
   }>;
@@ -70,8 +70,8 @@ function getTitleFromContent(content: string) {
 export async function generateMetadata({
   params,
 }: NewsDetailPageProps): Promise<Metadata> {
-  const { id } = await params;
-  const news = await getNewsItem(id);
+  const { newsSlug } = await params;
+  const news = await getNewsItem(newsSlug);
 
   const title = getTitleFromContent(news?.content || "");
 
@@ -90,8 +90,8 @@ export async function generateMetadata({
 }
 
 export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
-  const { id, slug } = await params;
-  const news = await getNewsItem(id);
+  const { newsSlug, slug } = await params;
+  const news = await getNewsItem(newsSlug);
 
   if (!news) {
     notFound();

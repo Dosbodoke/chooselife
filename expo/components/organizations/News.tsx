@@ -89,7 +89,7 @@ const NewsCard = ({ news }: { news: NewsType[number] }) => {
             </Text>
           </View>
         </View>
-        <Link href={`/organizations/${organizationSlug}/news/${news.id}`} asChild>
+        <Link href={`/organizations/${organizationSlug}/news/${news.slug}`} asChild>
           <Text className="text-blue-500 font-bold">Participar da discussão</Text>
         </Link>
       </View>

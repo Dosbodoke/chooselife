@@ -64,31 +64,32 @@ export const useMutateReaction = (newsId: string, organizationId: string) => {
   });
 };
 
-export const useNewsItem = (newsId: string) => {
+export const useNewsItem = (slug: string) => {
   const { supabase } = useOrganizationContext();
 
   return useQuery({
-    queryKey: queryKeys.newsItem.byId(newsId),
+    queryKey: queryKeys.newsItem.bySlug(slug),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('news')
         .select('*, organizations(slug), comments:news_comments(*, user:profiles(*))')
-        .eq('id', newsId)
+        .eq('slug', slug)
         .single();
 
         if (error) throw new Error(error.message);
       return data;
     },
-    enabled: !!newsId,
+    enabled: !!slug,
   });
 };
 
-export const useMutateComment = (newsId: string) => {
+export const useMutateComment = (newsId: string | undefined) => {
   const queryClient = useQueryClient();
   const { supabase, userId } = useOrganizationContext();
 
   return useMutation({
     mutationFn: async (comment: string) => {
+      if (!newsId) throw new Error('News ID is missing');
       const { error } = await supabase
         .from('news_comments')
         .insert({ news_id: newsId, user_id: userId, comment });
@@ -96,7 +97,7 @@ export const useMutateComment = (newsId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.newsItem.byId(newsId),
+        queryKey: queryKeys.newsItem.all,
       });
     },
   });

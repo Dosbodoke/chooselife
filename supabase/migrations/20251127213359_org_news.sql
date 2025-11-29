@@ -3,6 +3,7 @@ CREATE TABLE news (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   content TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
   organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE
 );
 ALTER TABLE news ENABLE ROW LEVEL SECURITY;

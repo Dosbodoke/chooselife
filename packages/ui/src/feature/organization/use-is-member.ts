@@ -20,7 +20,6 @@ export const useIsMember = (
         .eq('user_id', userId)
         .eq('organizations.slug', organizationSlug);
 
-      console.log({ count, error })
       if (error) {
         throw new Error(error.message);
       }
