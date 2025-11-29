@@ -25,6 +25,10 @@ const eslintConfig = [
   },
   {
     languageOptions: {
+      parserOptions: {
+        project: "./tsconfig.json",
+        tsconfigRootDir: __dirname,
+      },
       globals: {
         React: true,
       },
