@@ -13,7 +13,6 @@ create table public.organizations (
     id uuid not null default gen_random_uuid() primary key,
     name text not null,
     slug text not null unique,
-    owner_id uuid not null references auth.users(id) on delete cascade,
     created_at timestamp with time zone not null default timezone('utc'::text, now()),
     monthly_price_amount integer,
     annual_price_amount integer
@@ -74,10 +73,16 @@ create policy "All users can view organizations."
 on public.organizations for select
 using ( true );
 
-create policy "Owners can manage their own organization."
+create policy "Admins can manage their organization."
 on public.organizations for all
-using ( auth.uid() = owner_id )
-with check ( auth.uid() = owner_id );
+using (
+    exists (
+        select 1 from public.organization_members
+        where organization_id = id
+        and user_id = auth.uid()
+        and role = 'admin'
+    )
+);
 
 -- Policies for organization_members
 create policy "Authenticated users can view organization members."
