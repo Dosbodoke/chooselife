@@ -1,3 +1,4 @@
+import { ENABLE_MEMBERSHIP_REGISTRATION } from '@chooselife/ui';
 import type { StartSubscriptionResponse } from '@packages/database/functions.types';
 import * as Sentry from '@sentry/react-native';
 import { useMutation } from '@tanstack/react-query';
@@ -197,126 +198,143 @@ export function BecomeMemberForm({
           </Animated.Text>
         </View>
 
-        {/* Plan Cards - Simplified */}
-        <View className="gap-6">
-          {/* Monthly Plan */}
-          <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-            <TouchableOpacity
-              onPress={() => {
-                setSelectedPlan('monthly');
-                setErrorMessage(null);
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }}
-              disabled={mutation.isPending}
-              activeOpacity={0.8}
-              className={`bg-white/10 backdrop-blur-xl p-5 rounded-2xl border-2 ${
-                selectedPlan === 'monthly' ? 'border-white' : 'border-white/20'
-              }`}
-            >
-              <View className="flex-row justify-between items-center">
-                <View className="flex-1">
-                  <Text className="text-white text-xl font-bold">Mensal</Text>
-                  <Text className="text-white/60 text-sm">Flexível</Text>
-                </View>
-                <View className="items-end">
-                  <Text className="text-white text-3xl font-bold">
-                    {formatCurrency(org.monthly_price_amount)}
-                  </Text>
-                  <Text className="text-white/70 text-xs">/mês</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
+        {!ENABLE_MEMBERSHIP_REGISTRATION ? (
+          <Animated.View
+            entering={FadeInDown.delay(300).duration(400)}
+            className="bg-white/10 backdrop-blur-xl p-8 rounded-2xl border border-white/20 items-center mt-8"
+          >
+            <Text className="text-white text-2xl font-bold text-center mb-4">
+              Inscrições em Breve
+            </Text>
+            <Text className="text-white/80 text-center text-lg leading-6">
+              O sistema de membros estará disponível em breve. Não se
+              preocupe, ativaremos essa função automaticamente para você!
+            </Text>
           </Animated.View>
+        ) : (
+          <>
+            {/* Plan Cards - Simplified */}
+            <View className="gap-6">
+              {/* Monthly Plan */}
+              <Animated.View entering={FadeInDown.delay(300).duration(400)}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedPlan('monthly');
+                    setErrorMessage(null);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  disabled={mutation.isPending}
+                  activeOpacity={0.8}
+                  className={`bg-white/10 backdrop-blur-xl p-5 rounded-2xl border-2 ${
+                    selectedPlan === 'monthly' ? 'border-white' : 'border-white/20'
+                  }`}
+                >
+                  <View className="flex-row justify-between items-center">
+                    <View className="flex-1">
+                      <Text className="text-white text-xl font-bold">Mensal</Text>
+                      <Text className="text-white/60 text-sm">Flexível</Text>
+                    </View>
+                    <View className="items-end">
+                      <Text className="text-white text-3xl font-bold">
+                        {formatCurrency(org.monthly_price_amount)}
+                      </Text>
+                      <Text className="text-white/70 text-xs">/mês</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </Animated.View>
 
-          {/* Annual Plan */}
-          <Animated.View entering={FadeInDown.delay(400).duration(400)}>
-            <TouchableOpacity
-              onPress={() => {
-                setSelectedPlan('annual');
-                setErrorMessage(null);
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }}
-              disabled={mutation.isPending}
-              activeOpacity={0.8}
-              className={`bg-white/10 backdrop-blur-xl p-5 rounded-2xl border-2 ${
-                selectedPlan === 'annual'
-                  ? 'border-emerald-400'
-                  : 'border-white/20'
-              } relative`}
-            >
-              <View className="flex-row justify-between items-center">
-                <View className="flex-1">
-                  <Text className="text-white text-xl font-bold">Anual</Text>
-                  {!!annualDiscountPercentage && (
-                    <Text className="text-emerald-300 text-sm font-medium">
-                      Economia de {annualDiscountPercentage}%
+              {/* Annual Plan */}
+              <Animated.View entering={FadeInDown.delay(400).duration(400)}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedPlan('annual');
+                    setErrorMessage(null);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  disabled={mutation.isPending}
+                  activeOpacity={0.8}
+                  className={`bg-white/10 backdrop-blur-xl p-5 rounded-2xl border-2 ${
+                    selectedPlan === 'annual'
+                      ? 'border-emerald-400'
+                      : 'border-white/20'
+                  } relative`}
+                >
+                  <View className="flex-row justify-between items-center">
+                    <View className="flex-1">
+                      <Text className="text-white text-xl font-bold">Anual</Text>
+                      {!!annualDiscountPercentage && (
+                        <Text className="text-emerald-300 text-sm font-medium">
+                          Economia de {annualDiscountPercentage}%
+                        </Text>
+                      )}
+                    </View>
+                    <View className="items-end">
+                      <Text className="text-white text-3xl font-bold">
+                        {formatCurrency(org.annual_price_amount)}
+                      </Text>
+                      <Text className="text-white/70 text-xs">/ano</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </Animated.View>
+            </View>
+
+            <View className="gap-4">
+              {errorMessage && (
+                <Animated.View
+                  entering={FadeIn.duration(300)}
+                  className="bg-red-500/80 p-4 rounded-lg"
+                >
+                  <Text className="text-white text-center font-bold">
+                    {errorMessage}
+                  </Text>
+                </Animated.View>
+              )}
+              {/* CTA Button */}
+              <Animated.View
+                entering={FadeInDown.delay(500).duration(400)}
+                layout={_layoutAnimation}
+              >
+                <TouchableOpacity
+                  onPress={() => {
+                    handleSubmit();
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  disabled={!selectedPlan || mutation.isPending}
+                  className="bg-white rounded-full py-5 items-center justify-center shadow-2xl disabled:opacity-50"
+                >
+                  {mutation.isPending ? (
+                    <ActivityIndicator color="#000" />
+                  ) : (
+                    <Text className="text-black text-xl font-bold">
+                      Tornar-me membro
                     </Text>
                   )}
-                </View>
-                <View className="items-end">
-                  <Text className="text-white text-3xl font-bold">
-                    {formatCurrency(org.annual_price_amount)}
-                  </Text>
-                  <Text className="text-white/70 text-xs">/ano</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
+                </TouchableOpacity>
+              </Animated.View>
 
-        <View className="gap-4">
-          {errorMessage && (
-            <Animated.View
-              entering={FadeIn.duration(300)}
-              className="bg-red-500/80 p-4 rounded-lg"
-            >
-              <Text className="text-white text-center font-bold">
-                {errorMessage}
-              </Text>
-            </Animated.View>
-          )}
-          {/* CTA Button */}
-          <Animated.View
-            entering={FadeInDown.delay(500).duration(400)}
-            layout={_layoutAnimation}
-          >
-            <TouchableOpacity
-              onPress={() => {
-                handleSubmit();
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }}
-              disabled={!selectedPlan || mutation.isPending}
-              className="bg-white rounded-full py-5 items-center justify-center shadow-2xl disabled:opacity-50"
-            >
-              {mutation.isPending ? (
-                <ActivityIndicator color="#000" />
-              ) : (
-                <Text className="text-black text-xl font-bold">
-                  Tornar-me membro
+              {/* Footer Note */}
+              <Animated.View
+                entering={FadeIn.delay(600).duration(500)}
+                layout={_layoutAnimation}
+                className="items-center"
+              >
+                <Text className="text-white/50 text-center text-sm leading-5 max-w-xs">
+                  Ao clicar nesse botão você deve realizar o primeiro pagamento para
+                  se tornar membro.
                 </Text>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
-
-          {/* Footer Note */}
-          <Animated.View
-            entering={FadeIn.delay(600).duration(500)}
-            layout={_layoutAnimation}
-            className="items-center"
-          >
-            <Text className="text-white/50 text-center text-sm leading-5 max-w-xs">
-              Ao clicar nesse botão você deve realizar o primeiro pagamento para
-              se tornar membro.
-            </Text>
-            <TouchableOpacity
-              onPress={() => handleOpenEstatuto}
-            >
-              <Text className="text-white/70 text-center text-sm mt-2 underline">
-                Ver Estatuto da Associação
-              </Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
+                <TouchableOpacity
+                  onPress={() => handleOpenEstatuto}
+                >
+                  <Text className="text-white/70 text-center text-sm mt-2 underline">
+                    Ver Estatuto da Associação
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
+            </View>
+          </>
+        )}
       </Animated.View>
     </BgBlob>
   );

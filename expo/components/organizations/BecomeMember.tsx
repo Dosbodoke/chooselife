@@ -1,3 +1,4 @@
+import { ENABLE_MEMBERSHIP_REGISTRATION } from '@chooselife/ui';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
