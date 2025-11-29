@@ -2,6 +2,11 @@ import eslint from '@eslint/js';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import i18nJsonPlugin from 'eslint-plugin-i18n-json';
 import tseslint from 'typescript-eslint';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default tseslint.config(
   {
@@ -37,6 +42,10 @@ export default tseslint.config(
     languageOptions: {
       globals: {
         require: 'readonly',
+      },
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: __dirname,
       },
     },
   },
