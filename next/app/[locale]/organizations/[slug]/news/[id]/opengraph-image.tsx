@@ -18,22 +18,36 @@ export default async function Image({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-
   const cleanId = id.split("?")[0].trim();
 
+  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
+    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+    : "http://localhost:3000";
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  // Use a Service Key se possível para garantir acesso, senão a anon key
   const supabaseKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
-
   const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
-  const { data, error } = await supabase
+  const bgImagePromise = fetch(`${baseUrl}/highline-walk.jpg`).then((res) => {
+    if (!res.ok) throw new Error("Failed to load background image");
+    return res.arrayBuffer();
+  });
+
+  const newsPromise = supabase
     .from("news")
     .select("content, created_at")
     .eq("id", cleanId)
     .single();
+
+  const [bgImageBuffer, { data, error }] = await Promise.all([
+    bgImagePromise.catch((e) => {
+      console.error(e);
+      return null;
+    }),
+    newsPromise,
+  ]);
 
   if (error || !data) {
     console.error(`Erro ao buscar notícia ${cleanId}:`, error);
@@ -41,7 +55,6 @@ export default async function Image({
 
   const content = data?.content || "";
 
-  // Extração de título melhorada
   let title = "Ver Publicação";
   const cleanContent = content.trim();
   const headerMatch = cleanContent.match(/^#\s+(.+)$/m);
@@ -50,10 +63,8 @@ export default async function Image({
     title = headerMatch[1].replace(/\*\*/g, "").trim();
   }
 
-  // Formatação de data
   const createdAt = data?.created_at;
   let formattedDate = "";
-
   if (createdAt) {
     formattedDate = new Date(createdAt).toLocaleDateString("pt-BR", {
       day: "numeric",
@@ -61,12 +72,6 @@ export default async function Image({
       year: "numeric",
     });
   }
-
-  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
-    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-    : "http://localhost:3000";
-
-  const bgImageUrl = `${baseUrl}/highline-walk.jpg`;
 
   return new ImageResponse(
     (
@@ -83,19 +88,21 @@ export default async function Image({
           fontFamily: "sans-serif",
         }}
       >
-        {/* Background Image */}
-        <img
-          src={bgImageUrl}
-          alt="Background"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
-        />
+        {/* Renderiza a imagem do Buffer se existir, senão fica fundo preto */}
+        {bgImageBuffer && (
+          <img
+            src={bgImageBuffer as any}
+            alt="Background"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
+        )}
 
         {/* Gradient Overlay */}
         <div
@@ -153,6 +160,10 @@ export default async function Image({
     ),
     {
       ...size,
+      headers: {
+        // Cache 1 ano. 
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
     }
   );
 }
