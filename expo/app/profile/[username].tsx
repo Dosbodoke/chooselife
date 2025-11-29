@@ -25,6 +25,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 import { H2, H3, Lead, Muted, P } from '~/components/ui/typography';
+import {
+  OrganizationProvider,
+  SlacIcon,
+  useIsMember,
+} from '@chooselife/ui';
 
 export default function Profile() {
   const { t } = useTranslation();
@@ -102,6 +107,14 @@ export default function Profile() {
   );
 }
 
+const ProfileSlacBadge = () => {
+  const { data: isMember } = useIsMember('slac');
+
+  if (!isMember) return null;
+
+  return <SlacIcon width={72} height={72} />;
+};
+
 const UserHeader: React.FC<{
   profile: Tables<'profiles'>;
 }> = ({ profile }) => {
@@ -133,7 +146,12 @@ const UserHeader: React.FC<{
             <SupabaseAvatar profileID={profile.id} />
           </View>
           <View className="flex flex-1">
-            <H3 numberOfLines={1}>{profile.name}</H3>
+            <View className="flex-row flex-wrap items-center justify-between gap-1"> 
+              <H3 numberOfLines={1} className="mr-1">{profile.name}</H3>
+              <OrganizationProvider supabase={supabase} userId={profile.id}>
+                <ProfileSlacBadge />
+              </OrganizationProvider>
+            </View>
             {profile.birthday ? (
               <View className="flex-row gap-1">
                 <LucideIcon
