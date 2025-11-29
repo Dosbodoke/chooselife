@@ -19,10 +19,10 @@ export default async function Image({
 }) {
   const { id } = await params;
 
-  // CORREÇÃO CRÍTICA 1: Use a Service Role Key para ignorar RLS (permissões).
-  // A chave pública (anon) muitas vezes falha se não houver política pública configurada.
-  // Certifique-se de adicionar SUPABASE_SERVICE_ROLE_KEY nas variáveis de ambiente da Vercel.
+  const cleanId = id.split("?")[0].trim();
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  // Use a Service Key se possível para garantir acesso, senão a anon key
   const supabaseKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
@@ -32,30 +32,21 @@ export default async function Image({
   const { data, error } = await supabase
     .from("news")
     .select("content, created_at")
-    .eq("id", id)
+    .eq("id", cleanId)
     .single();
 
-  // Debug: Se isso aparecer nos logs da Vercel, sabemos que a query falhou
   if (error || !data) {
-    console.error(`Erro ao buscar notícia ${id}:`, error);
+    console.error(`Erro ao buscar notícia ${cleanId}:`, error);
   }
 
   const content = data?.content || "";
 
   // Extração de título melhorada
   let title = "Ver Publicação";
-
-  // Remove frontmatter se existir ou espaços em branco iniciais antes de tentar o match
   const cleanContent = content.trim();
-
-  // Regex ajustado:
-  // ^#\s+ : Começa com # e espaço
-  // (.+)  : Captura qualquer coisa (o título)
-  // O flag 'm' (multiline) é essencial.
   const headerMatch = cleanContent.match(/^#\s+(.+)$/m);
 
   if (headerMatch && headerMatch[1]) {
-    // Remove caracteres markdown extras que possam ter sobrado (ex: **bold** dentro do título)
     title = headerMatch[1].replace(/\*\*/g, "").trim();
   }
 
@@ -64,7 +55,6 @@ export default async function Image({
   let formattedDate = "";
 
   if (createdAt) {
-    // Forçamos o locale pt-BR e garantimos que a data seja interpretada corretamente
     formattedDate = new Date(createdAt).toLocaleDateString("pt-BR", {
       day: "numeric",
       month: "long",
@@ -107,7 +97,7 @@ export default async function Image({
           }}
         />
 
-        {/* Gradient Overlay - Ajustado para legibilidade */}
+        {/* Gradient Overlay */}
         <div
           style={{
             position: "absolute",
@@ -134,7 +124,7 @@ export default async function Image({
           {formattedDate && (
             <div
               style={{
-                color: "#e5e5e5", // Levemente off-white para contraste hierárquico
+                color: "#e5e5e5",
                 fontSize: 24,
                 fontWeight: 500,
                 textTransform: "capitalize",
@@ -154,10 +144,6 @@ export default async function Image({
               textShadow: "0 4px 20px rgba(0,0,0,0.8)",
               display: "flex",
               flexWrap: "wrap",
-              // Opcional: Se quiser cortar textos MUITO longos para não estourar a imagem:
-              maxHeight: "80%", // Limita a altura
-              overflow: "hidden",
-              textOverflow: "ellipsis",
             }}
           >
             {title}
