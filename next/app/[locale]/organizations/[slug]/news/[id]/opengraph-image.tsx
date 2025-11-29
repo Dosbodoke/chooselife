@@ -2,15 +2,17 @@ import { Database } from "@chooselife/database";
 import { createClient } from "@supabase/supabase-js";
 import { ImageResponse } from "next/og";
 
+export const revalidate = 3600;
+
 export const runtime = "edge";
 
-export const alt = "News Detail";
+export const alt = "Publicação";
 export const size = {
   width: 1200,
   height: 630,
 };
 
-export const contentType = "image/jpeg";
+export const contentType = "image/png";
 
 export default async function Image({
   params,
