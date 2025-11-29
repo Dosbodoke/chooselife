@@ -52,9 +52,8 @@ const NewsDetailSkeleton = () => {
 };
 
 export default function NewsDetail() {
-  const { newsSlug, slug } = useLocalSearchParams<{
+  const { newsSlug } = useLocalSearchParams<{
     newsSlug: string;
-    slug: string;
   }>();
 
   const { data: news, isLoading, isError } = useNewsItem(newsSlug);
@@ -65,7 +64,8 @@ export default function NewsDetail() {
 
   const [commentText, setCommentText] = useState('');
 
-  const { data: isMember, isLoading: isMemberLoading } = useIsMember(slug);
+  const organizationSlug = news?.organizations?.slug;
+  const { data: isMember, isLoading: isMemberLoading } = useIsMember(organizationSlug);
 
   const [bottomPadding, setBottomPadding] = useState(0);
 
@@ -81,7 +81,7 @@ export default function NewsDetail() {
     becomeMemberRef.current?.measureInWindow((_x, _y, _width, height) => {
       setBottomPadding(height);
     });
-  }, [isMember, slug]);
+  }, [isMember, organizationSlug]);
 
   if (isLoading) {
     return (
@@ -228,7 +228,7 @@ export default function NewsDetail() {
               </Pressable>
             </View>
           ) : (
-            <BecomeMember slug={slug} ref={becomeMemberRef} />
+            organizationSlug && <BecomeMember slug={organizationSlug} ref={becomeMemberRef} />
           )}
         </KeyboardControllerView>
       </SafeAreaView>

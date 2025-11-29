@@ -6,10 +6,10 @@
         "paths": [
           "/highline/*",
           "/profile/*",
-          "/organizations/*/news/*",
+          "/news/*",
           "/*/highline/*",
           "/*/profile/*",
-          "/*/organizations/*/news/*"
+          "/*/news/*"
         ]
       }
     ]

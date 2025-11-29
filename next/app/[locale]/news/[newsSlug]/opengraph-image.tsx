@@ -93,7 +93,8 @@ export default async function Image({
         {/* Renderiza a imagem do Buffer se existir, senão fica fundo preto */}
         {bgImageBuffer && (
           <img
-            src={bgImageBuffer as any}
+            // @ts-expect-error: This is actually working, the image is fetcheng in parallel with the data
+            src={bgImageBuffer}
             alt="Background"
             style={{
               position: "absolute",

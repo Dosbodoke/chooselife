@@ -20,7 +20,7 @@ const supabaseStatic = createClient<Database>(supabaseUrl, supabaseKey);
 export async function generateStaticParams() {
   const { data: news } = await supabaseStatic
     .from("news")
-    .select("slug, organization_id, organizations(slug)")
+    .select("slug")
     .order("created_at", { ascending: false })
     .limit(100); // Pre-render the latest 100 news items
 
@@ -28,10 +28,9 @@ export async function generateStaticParams() {
 
   return news
     .map((item) => ({
-      slug: item.organizations?.slug,
       newsSlug: item.slug,
     }))
-    .filter((item) => item.slug); // Ensure slug exists
+    .filter((item) => item.newsSlug); // Ensure slug exists
 }
 
 const getNewsItem = cache(async (slug: string) => {
@@ -54,7 +53,6 @@ const getNewsItem = cache(async (slug: string) => {
 interface NewsDetailPageProps {
   params: Promise<{
     newsSlug: string;
-    slug: string;
     locale: string;
   }>;
 }
@@ -90,15 +88,10 @@ export async function generateMetadata({
 }
 
 export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
-  const { newsSlug, slug } = await params;
+  const { newsSlug } = await params;
   const news = await getNewsItem(newsSlug);
 
   if (!news) {
-    notFound();
-  }
-
-  // Basic check to ensure the news belongs to the organization in the URL
-  if (news.organizations?.slug !== slug) {
     notFound();
   }
 
