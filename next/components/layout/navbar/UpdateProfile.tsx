@@ -14,7 +14,6 @@ import { Button, ButtonLoading } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerFooter,
   DrawerHeader,
@@ -36,9 +35,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import { useRouter } from "@/i18n/navigation";
-import useSupabaseBrowser from "@/utils/supabase/client";
+import { cn } from "@/lib/utils";
+import { supabaseBrowser } from "@/utils/supabase/client";
 import type { Database } from "@/utils/supabase/database.types";
 
 const formSchema = z.object({
@@ -62,7 +61,7 @@ export default function UpdateProfile({
   const t = useTranslations("updateProfile");
   const [open, setOpen] = useState(false);
   const router = useRouter();
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
   const form = useForm<FormSchema>({
     mode: "onTouched",
     resolver: zodResolver(formSchema),
@@ -107,7 +106,7 @@ export default function UpdateProfile({
     profileMutation.mutate(data);
   };
 
-  const onError = (e: unknown) => {
+  const onError = () => {
     console.log("Invalid form");
   };
 

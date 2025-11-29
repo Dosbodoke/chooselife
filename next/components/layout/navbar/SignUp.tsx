@@ -25,7 +25,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import useSupabaseBrowser from "@/utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 import { useLoginModal } from "@/utils/useLoginModal";
 
 const formSchema = z.object({
@@ -35,7 +35,7 @@ const formSchema = z.object({
 type FormSchema = z.infer<typeof formSchema>;
 
 function SignUp() {
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
   const t = useTranslations("login");
   const { open, toggleLoginModal } = useLoginModal();
 

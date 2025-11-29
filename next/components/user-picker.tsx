@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { cva, type VariantProps } from "class-variance-authority";
-import { BadgeCheckIcon, CheckIcon, XIcon } from "lucide-react";
+import { BadgeCheckIcon, XIcon } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import * as React from "react";
@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import {
   Drawer,
   DrawerContent,
-  DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
@@ -20,10 +19,10 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import useSupabaseBrowser from "@/utils/supabase/client";
 import { useDebounceValue } from "@/hooks/use-debounce-value";
-import { Tables } from "@/utils/supabase/database-generated.types";
+import { cn } from "@/lib/utils";
+import { supabaseBrowser } from "@/utils/supabase/client";
+import { Tables } from "@/utils/supabase/database.types";
 
 interface UserOption {
   username: string;
@@ -82,7 +81,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
 }) => {
   const onValueChangeRef = React.useRef(onValueChange);
   onValueChangeRef.current = onValueChange; // Update ref on every render
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
   const t = useTranslations("userPicker");
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
 

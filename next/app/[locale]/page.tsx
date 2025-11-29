@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useLocale } from "next-intl";
 import { useQueryState } from "nuqs";
 
 import CreateHighline from "@/components/CreateHighline";
@@ -36,8 +35,6 @@ const Map = dynamic(() => import("@/components/Map/Map"), {
 });
 
 export default function Home() {
-  const locale = useLocale();
-
   const [view] = useQueryState("view");
   const [location] = useQueryState("location");
   const [focusedMarker] = useQueryState("focusedMarker");
@@ -50,7 +47,6 @@ export default function Home() {
     <div className="relative mx-2 max-w-screen-xl space-y-4 md:mx-auto">
       {mapOpen ? (
         <Map
-          locale={locale}
           isPickingLocation={isPickingLocation}
           focusedMarker={focusedMarker}
         />

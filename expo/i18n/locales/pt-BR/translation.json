@@ -333,6 +333,22 @@
         "label": "Comprimento do Highline (em metros)",
         "placeholder": "comprimento do Highline"
       }
+    },
+    "organizations": {
+      "title": "Organizações",
+      "cardTitle": "Organizações",
+      "cardDescription": "Associe-se a uma de nossas organizações parceiras.",
+      "goToOrganization": "Ir para organização {name}",
+      "becomeMember": "Tornar-se Membro",
+      "pixInstructions": "Escaneie o QR code ou copie o código abaixo para pagar com PIX.",
+      "payments": "Pagamentos",
+      "form": {
+        "name": "Nome",
+        "namePlaceholder": "Seu nome completo",
+        "submit": "Enviar",
+        "monthly": "Mensal",
+        "annual": "Anual"
+      }
     }
   },
   "components": {

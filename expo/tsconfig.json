@@ -4,8 +4,11 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "~/*": ["*"]
-    }
+      "~/*": ["*"],
+      "@packages/database/*": ["../packages/database/*"],
+    },
+    "jsx": "react-native",
+    "esModuleInterop": true
   },
   "include": [
     "**/*.ts",
@@ -13,5 +16,5 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "nativewind-env.d.ts"
-  ]
+  ],
 }

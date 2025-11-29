@@ -5,19 +5,19 @@ import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
-import { setRequestLocale, getMessages } from "next-intl/server";
+import { getMessages, setRequestLocale } from "next-intl/server";
 
 import { Footer } from "@/components/Footer";
 import NavBar from "@/components/layout/navbar";
+import { routing } from "@/i18n/routing";
 import type { Locales } from "@/utils/supabase/database.types";
 
 import UsernameDialog from "./_components/UsernameDialog";
 import Providers from "./Providers";
-import { routing } from "@/i18n/routing";
 
 const APP_NAME = "Chooselife";
 const APP_DEFAULT_TITLE = "Chooselife";
-const APP_TITLE_TEMPLATE = "%s - Chooselife";
+const APP_TITLE_TEMPLATE = "%s 🆑";
 const APP_DESCRIPTION = "O aplicativo feito para o Highliner";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://localhost:3000";
@@ -81,7 +81,7 @@ export default async function RootLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: Locales }>;
+  params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) {
@@ -97,7 +97,7 @@ export default async function RootLayout({
     // refer to https://github.com/pacocoursey/next-themes#with-app
     <html lang={locale} suppressHydrationWarning>
       <body className={`min-h-screen md:px-0 ${GeistSans.variable} font-sans`}>
-        <Providers locale={locale} messages={messages}>
+        <Providers locale={locale as Locales} messages={messages}>
           <div className="relative flex h-full min-h-screen flex-col">
             <NavBar />
             <main className="flex-1">

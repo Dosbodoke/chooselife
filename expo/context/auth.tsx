@@ -210,6 +210,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
           success: true,
         };
       } catch (error) {
+        console.error({ error });
         setPendingRedirect(null);
         if (error instanceof AuthError) {
           if (error.code === 'user_already_exists') {
@@ -396,8 +397,9 @@ export function AuthProvider(props: React.PropsWithChildren) {
 
       try {
         if (pendingRedirect && pendingRedirect !== 'back') {
+          const decodedRedirect = decodeURIComponent(pendingRedirect);
           // @ts-expect-error redirect_to search parameter
-          router.replace(pendingRedirect);
+          router.replace(decodedRedirect);
           return;
         }
 

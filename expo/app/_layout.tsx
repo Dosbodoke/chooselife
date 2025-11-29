@@ -68,13 +68,13 @@ export default Sentry.wrap(function RootLayout() {
   }, []);
 
   return (
-    <GestureHandlerRootView>
-      <KeyboardProvider>
-        <BottomSheetModalProvider>
-          <ThemeProvider value={LIGHT_THEME}>
-            <ReactQueryProvider>
-              <I18nProvider>
-                <AuthProvider>
+    <I18nProvider>
+      <ReactQueryProvider>
+        <AuthProvider>
+          <GestureHandlerRootView>
+            <KeyboardProvider>
+              <BottomSheetModalProvider>
+                <ThemeProvider value={LIGHT_THEME}>
                   <NotificationProvider>
                     <StatusBar style="dark" />
                     <Stack
@@ -125,8 +125,16 @@ export default Sentry.wrap(function RootLayout() {
                         options={{ headerShown: false }}
                       />
                       <Stack.Screen
+                        name="payment"
+                        options={{ headerShown: false }}
+                      />
+                      <Stack.Screen
                         name="register-highline"
                         options={{ header: () => <OfflineBanner /> }}
+                      />
+                      <Stack.Screen
+                        name="organizations"
+                        options={{ headerShown: false }}
                       />
                       <Stack.Screen
                         name="en/[...slug]"
@@ -139,12 +147,12 @@ export default Sentry.wrap(function RootLayout() {
                     </Stack>
                     <PortalHost />
                   </NotificationProvider>
-                </AuthProvider>
-              </I18nProvider>
-            </ReactQueryProvider>
-          </ThemeProvider>
-        </BottomSheetModalProvider>
-      </KeyboardProvider>
-    </GestureHandlerRootView>
+                </ThemeProvider>
+              </BottomSheetModalProvider>
+            </KeyboardProvider>
+          </GestureHandlerRootView>
+        </AuthProvider>
+      </ReactQueryProvider>
+    </I18nProvider>
   );
 });

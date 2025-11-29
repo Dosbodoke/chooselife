@@ -3,6 +3,7 @@ import type { Metadata, ResolvingMetadata } from "next/types";
 import { cache } from "react";
 
 import { getHighline } from "@/app/actions/getHighline";
+
 import OpenInAPP from "./_components/open-in-app";
 
 export const dynamic = "force-dynamic";

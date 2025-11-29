@@ -52,5 +52,5 @@ export const getHighline = async ({
       : {}),
   });
 
-  return result;
+  return result as { data: Highline[] };
 };

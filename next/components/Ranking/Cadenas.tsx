@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import React from "react";
 
-import useSupabaseBrowser from "@/utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 
 import SeeMore from "../SeeMore";
 import { Leaderboard } from "./leaderboard";
@@ -16,10 +16,10 @@ interface Props {
 const PAGE_SIZE = 5;
 
 function Cadenas({ highlines_ids, startDate, endDate }: Props) {
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
 
   async function fetchCadenas({ pageParam = 1 }) {
-    const { data, error } = await supabase.rpc("get_total_cadenas", {
+    const { data } = await supabase.rpc("get_total_cadenas", {
       highline_ids: highlines_ids,
       page_number: pageParam,
       page_size: PAGE_SIZE,

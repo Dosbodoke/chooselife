@@ -9,6 +9,7 @@ import {
   Pressable,
   TouchableOpacity,
   View,
+  StyleSheet
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
@@ -25,6 +26,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 import { H2, H3, Lead, Muted, P } from '~/components/ui/typography';
+import {
+  OrganizationProvider,
+  useIsMember,
+} from '@chooselife/ui';
+import { Image as ExpoImage } from 'expo-image';
 
 export default function Profile() {
   const { t } = useTranslation();
@@ -102,6 +108,24 @@ export default function Profile() {
   );
 }
 
+const ProfileSlacBadge = () => {
+  const { data: isMember } = useIsMember('slac');
+
+  if (!isMember) return null;
+
+  return (
+    <View
+      className=
+        'w-40 aspect-square items-center justify-center rounded-xl overflow-visible'
+    >
+      <ExpoImage
+        source={{ uri: supabase.storage.from("promo").getPublicUrl("slac-badge.png").data.publicUrl }}
+        style={StyleSheet.absoluteFill}
+      />
+    </View>
+  )
+};
+
 const UserHeader: React.FC<{
   profile: Tables<'profiles'>;
 }> = ({ profile }) => {
@@ -127,13 +151,13 @@ const UserHeader: React.FC<{
 
   return (
     <Card>
-      <CardContent className="flex gap-4 overflow-hidden px-2 py-4">
-        <View className="flex flex-row mt-4 gap-4">
+      <CardContent className="flex gap-4 overflow-hidden px-2 py-4 min-h-60">
+        <View className="flex flex-row mt-4 gap-2">
           <View className="relative overflow-hidden size-16">
             <SupabaseAvatar profileID={profile.id} />
           </View>
-          <View className="flex flex-1">
-            <H3 numberOfLines={1}>{profile.name}</H3>
+          <View className="flex flex-1 gap-2">
+            <H3 numberOfLines={1} className="mr-1">{profile.name}</H3>
             {profile.birthday ? (
               <View className="flex-row gap-1">
                 <LucideIcon
@@ -143,9 +167,12 @@ const UserHeader: React.FC<{
                 <Muted>{calculateAge(profile.birthday)}</Muted>
               </View>
             ) : null}
+            <P>{profile.description}</P>
           </View>
+          <OrganizationProvider supabase={supabase} userId={profile.id}>
+            <ProfileSlacBadge />
+          </OrganizationProvider>
         </View>
-        <P>{profile.description}</P>
       </CardContent>
     </Card>
   );

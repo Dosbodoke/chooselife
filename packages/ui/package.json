@@ -1,0 +1,25 @@
+{
+  "name": "@chooselife/ui",
+  "version": "0.0.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@chooselife/database": "*"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "@tanstack/react-query": "*",
+    "@supabase/supabase-js": "*"
+  },
+  "devDependencies": {
+    "react": "19.1.0",
+    "@tanstack/react-query": "^5.48.0",
+    "@supabase/supabase-js": "^2.86.0",
+    "typescript": "^5.0.0"
+  }
+}

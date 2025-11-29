@@ -4,14 +4,14 @@ import Image from "next/image";
 import { useState } from "react";
 
 import { cn } from "@/lib/utils";
-import useSupabaseBrowser from "@/utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 
 interface HighlinePropsImage {
   coverImageId: string | null;
 }
 
 function HighlineImage({ coverImageId }: HighlinePropsImage) {
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
   const [loaded, setLoaded] = useState(false);
 
   if (!coverImageId) {

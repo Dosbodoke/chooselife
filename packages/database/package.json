@@ -1,0 +1,15 @@
+{
+  "name": "@chooselife/database",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "gen-types": "supabase gen types typescript --local --schema storage,public,functions > database-generated.types.ts"
+  },
+  "devDependencies": {
+    "supabase": "^2.62.10"
+  },
+  "dependencies": {
+    "type-fest": "^5.2.0"
+  }
+}

@@ -30,7 +30,7 @@ import {
   getDistance,
   locationToPostGISPoint,
 } from "@/utils/helperFunctions";
-import useSupabaseBrowser from "@/utils/supabase/client";
+import { supabaseBrowser } from "@/utils/supabase/client";
 import {
   ACCEPTED_IMAGE_TYPES,
   MAX_FILE_SIZE,
@@ -111,7 +111,7 @@ const CreateHighline = ({
     [location]
   );
 
-  const supabase = useSupabaseBrowser();
+  const supabase = supabaseBrowser();
 
   const t = useTranslations("home.newHighline");
   const [newHighlineUUID, setNewHighlineUUID] = useState<string | null>(null);
@@ -215,7 +215,7 @@ const CreateHighline = ({
     mutate(formData);
   };
 
-  const onError = (e: unknown) => {
+  const onError = () => {
     console.log("Invalid form");
   };
 

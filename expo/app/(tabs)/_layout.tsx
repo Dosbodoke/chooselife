@@ -43,6 +43,23 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="organizations"
+        options={{
+          title: 'SL.A.C',
+          tabBarLabel: 'SL.A.C',
+          headerShown: false,
+          tabBarIcon: ({ focused }) => (
+            <LucideIcon
+              name="UsersRound"
+              className={cn(
+                'size-6',
+                focused ? 'text-blue-500' : 'text-muted-foreground',
+              )}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: t('app.(tabs)._layout.settingsTitle'),

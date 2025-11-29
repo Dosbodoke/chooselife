@@ -6,11 +6,7 @@ A mobile app designed for highliners to track their activities, connect with oth
 
 - [Tech Stack](#tech-stack)
 - [Environment Setup](#environment-setup)
-  - [Supabase Configuration](#supabase-configuration)
-    - [Project Setup](#project-setup)
-    - [Database Setup](#database-setup)
-    - [OAuth Configuration](#oauth-configuration)
-    - [Connecting to Expo](#connecting-to-expo)
+  - [Connecting to Expo](#connecting-to-expo)
   - [Mapbox Configuration](#mapbox-configuration)
   - [Push Notifications](#push-notifications)
 - [Running Locally](#running-locally)
@@ -33,50 +29,12 @@ Before setting up the project, ensure you have the following installed:
 
 - Node.js (version 18.18.0 or higher)  
 - Expo CLI (`npm install -g expo-cli`)  
-- Supabase CLI (`npm install -g supabase`)  
 - An Expo account  
-- A Supabase account  
 - A Mapbox account  
 
-To run this project, you need to configure the following services.
+Also, you need to follow the [Supabase setup instructions.](../README.md)
 
-### Supabase Configuration
-
-Supabase serves as the project's backend, handling database and authentication.
-
-1.  **Create a Supabase Project:**
-    * You can either run Supabase locally with `npx supabase init` or create a cloud project at [supabase.com/dashboard/new/new-project](https://supabase.com/dashboard/new/new-project).
-    * This guide focuses on cloud setup.
-
-#### Database Setup
-
-1.  **Link to Your Project:**
-    * Use the following command, replacing `<project-id>` with your project's ID (found in the dashboard URL):
-  
-      ```bash
-      npx supabase link --project-ref <project-id>
-      ```
-
-2.  **Push Migrations:**
-    * Apply database migrations from `supabase/migrations` to your remote database:
-  
-      ```bash
-      npx supabase db push
-      ```
-
-#### OAuth Configuration
-
-1.  **Configure URL Redirects:**
-    * In the Supabase dashboard (Auth > URL Configuration), add a Site URL matching your app's scheme (defined in `app.config.ts`).
-    * Example: `com.bodok.chooselife://*`
-2.  **Enable Social Auth:**
-    * Enable Google and Apple social login in the Supabase dashboard.
-    * Follow these guides:
-        * [Setup Apple oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-apple?queryGroups=platform&platform=react-native)
-        * [Setup Google oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-google?queryGroups=platform&platform=react-native)
-    * [Use Auth locally](https://supabase.com/docs/guides/local-development/overview#use-auth-locally)
-
-#### Connecting to Expo
+### Connecting to Expo
 
 1.  **Get API Keys:**
     * Find your Project URL and publishable keys in the Supabase dashboard (API Settings).

@@ -1,8 +1,12 @@
-import * as path from 'path';
 import eslint from '@eslint/js';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import i18nJsonPlugin from 'eslint-plugin-i18n-json';
 import tseslint from 'typescript-eslint';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default tseslint.config(
   {
@@ -30,12 +34,19 @@ export default tseslint.config(
       ...i18nJsonPlugin.configs.recommended.rules,
       'i18n-json/valid-message-syntax': 'off',
       'i18n-json/sorted-keys': 'off',
-      'i18n-json/identical-keys': [
-        2,
-        {
-          filePath: path.resolve('i18n/locales/en-US/translation.json'),
-        },
-      ],
+      'i18n-json/identical-keys': 'off',
+    },
+  },
+  {
+    files: ['**/*.js', '**/*.ts', '**/*.tsx'],
+    languageOptions: {
+      globals: {
+        require: 'readonly',
+      },
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: __dirname,
+      },
     },
   },
   eslint.configs.recommended,

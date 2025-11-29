@@ -1,36 +1,14 @@
-import { type CookieOptions } from "@supabase/ssr";
-import { getCookie, setCookie } from "cookies-next";
-import { type NextRequest, type NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
+
+import { updateSession } from "@/utils/supabase/middleware"
+
 import { routing } from "./i18n/routing";
 
-import { composeDbServerClient } from "@/utils/supabase/compose-db-server-client";
-
-/**
- * Function that returns an object with methods for handling cookies. Can be used as an argument to the createDbServerClient method in server scenarios.
- */
-export const composeDbReqResClient = (req: NextRequest, res: NextResponse) => {
-  return composeDbServerClient({
-    cookieMethods: () => ({
-      get(name: string) {
-        return getCookie(name, { req, res });
-      },
-      set(name: string, value: string, options: CookieOptions) {
-        return setCookie(name, value, { req, res, ...options });
-      },
-      remove(name: string, options: CookieOptions) {
-        return setCookie(name, "", { req, res, ...options });
-      },
-    }),
-  });
-};
 
 export default async function middleware(req: NextRequest) {
   const handleI18nRouting = createIntlMiddleware(routing);
   const res = handleI18nRouting(req);
-
-  const { dbServerClient } = composeDbReqResClient(req, res);
-  await dbServerClient.auth.getSession(); // automatically refreshes the session if expired
 
   const pathname = req.nextUrl.pathname;
   if (pathname === "/.well-known/apple-app-site-association") {
@@ -38,7 +16,7 @@ export default async function middleware(req: NextRequest) {
     return res;
   }
 
-  return res;
+  return await updateSession(req, res)
 }
 
 export const config = {

@@ -15,13 +15,13 @@ export const HeroPromoCard = () => {
     >
       <Image
         className="absolute z-0"
-        src="/cardBanner.JPG"
+        src="/highline-walk.jpg"
         alt="Person walking on a Highline"
         fill
         sizes="100vw"
         style={{
           objectFit: "cover",
-          objectPosition: "center",
+          objectPosition: "bottom",
         }}
       />
       <BorderBeam className="z-50" duration={10} />

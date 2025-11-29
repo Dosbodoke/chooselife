@@ -8,8 +8,8 @@ import { RegistryEntry } from "@/app/[locale]/highline/[id]/_components/Registry
 import type { Highline } from "@/app/actions/getHighline";
 import { Button } from "@/components/ui/button";
 import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import { Link } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
 
 export const HighlineHeader = ({ highline }: { highline: Highline }) => {
   const t = useTranslations("highline.header");

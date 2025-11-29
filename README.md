@@ -7,7 +7,7 @@ Mobile and WEB apps made **for Highliners**
 </a>
 
 <a href="https://play.google.com/store/apps/details?id=com.bodok.chooselife&hl=pt_BR">
-	<img src="https://storage.googleapis.com/pe-portal-consumer-prod-wagtail-static/images/googleplay-badge-01-getit.width-375.png?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=wagtail%40pe-portal-consumer-prod.iam.gserviceaccount.com%2F20250527%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20250527T134220Z&X-Goog-Expires=86400&X-Goog-SignedHeaders=host&X-Goog-Signature=0d6ad3acf5456f3484d59caf9c69f2ebe22f9538570b433dbfa44f1dbeed9679d2f72ebd5828e564391579dbfd7856d41b9f9daa0d24bf68ed4c9f64c016ad40050e5eea09d6328714286e9e07b6e84494edfc97aca0a920f5611ac88e4833142ce3fa10f5c66a7120e638cb2563be757d2366a0c9fa6570fd949ae027218088b6ae45d62d05a3c51393b5cabc2fe66dc6ee8577adb6446e9946bac37c0027bed9585a3563fade72b734db2272ed28d8fe1f40ab4bf4a30649a9dcd7a5cae5264ea1cad803b520309e20b62bf981b4daacddd5b917fe1077413e2ad44a83008eec47affdd1e1db62a2ec55e6e5117d7a9870267082850ce000a785a0bb5e1c0f" width="200"/>
+	<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" width="200"/>
 </a>
 
 ## Project structure
@@ -17,10 +17,78 @@ Mobile and WEB apps made **for Highliners**
 ├── expo # Mobile app, most of the development is going her
 ├── next # Web app where all started
 ├── supabase # Local supabase instance
-└── supabase-gen-types.sh # Helper script to generate types for both mobile and web apps
+├── packages # Shared packages between projects
 ```
 
 For informations on how to run each project check their respectives `README.md`
+
+## Environment Setup
+
+These instructions cover the setup for the Supabase backend. After setting up Supabase, follow the instructions to setup the clients
+
+- 📱 expo in the `expo/README.md`
+- 🌐 NextJS in the `next/README.md`
+
+### Supabase Configuration
+
+First of all, install the CLI
+
+- Supabase CLI (`npm install -g supabase`)
+
+Supabase serves as the project's backend, handling database and authentication.
+
+1.  **Create a Supabase Project:**
+    * You can either run Supabase locally with `npx supabase init` or create a cloud project at [supabase.com/dashboard/new/new-project](https://supabase.com/dashboard/new/new-project).
+    * This guide focuses on cloud setup.
+
+#### Database Setup
+
+1.  **Link to Your Project:**
+    * Use the following command, replacing `<project-id>` with your project's ID (found in the dashboard URL):
+  
+      ```bash
+      npx supabase link --project-ref <project-id>
+      ```
+
+2.  **Push Migrations:**
+    * Apply database migrations from `supabase/migrations` to your remote database:
+  
+      ```bash
+      npx supabase db push
+      ```
+
+#### Deploying Edge Functions
+
+Some Edge Functions (like `create-abacate-pay-charge`) require specific configurations (e.g., `--no-verify-jwt`) that are critical for their operation. To ensure all functions are deployed correctly with their required flags, **always use the provided deployment script** instead of running `supabase functions deploy` manually.
+
+*   **Deploy all functions:**
+    ```bash
+    npm run deploy:functions
+    ```
+
+#### Cron Jobs Secrets
+Some migrations schedule cron jobs that require secrets to run. You need to [set them up in the Supabase Vault](https://supabase.com/docs/guides/database/vault).
+You can do this by settling it up trough the dashboard or by running the following commands in the Supabase SQL Editor.
+
+Replace the placeholder values with your actual project reference and service role key.
+
+```sql
+-- Run this in your Supabase SQL Editor:
+select vault.create_secret('https://<your-project-ref>.supabase.co', 'project_url', 'URL for the Supabase project');
+select vault.create_secret('<your-service-role-key>', 'secret_key', 'Supabase service role key');
+```
+
+#### OAuth Configuration
+
+1.  **Configure URL Redirects:**
+    * In the Supabase dashboard (Auth > URL Configuration), add a Site URL matching your app's scheme (defined in `app.config.ts`).
+    * Example: `com.bodok.chooselife://*`
+2.  **Enable Social Auth:**
+    * Enable Google and Apple social login in the Supabase dashboard.
+    * Follow these guides:
+        * [Setup Apple oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-apple?queryGroups=platform&platform=react-native)
+        * [Setup Google oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-google?queryGroups=platform&platform=react-native)
+    * [Use Auth locally](https://supabase.com/docs/guides/local-development/overview#use-auth-locally)
 
 ## Contributing
 

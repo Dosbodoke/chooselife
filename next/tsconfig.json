@@ -20,7 +20,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@packages/database/*": ["../packages/database/*"]
     }
   },
   "include": [

@@ -18,5 +18,6 @@
     "fs",
     "http",
     "net"
-  ]
+  ],
+  "deno.enable": true
 }
