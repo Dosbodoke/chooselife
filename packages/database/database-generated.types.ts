@@ -190,18 +190,21 @@ export type Database = {
           created_at: string
           id: string
           organization_id: string | null
+          slug: string
         }
         Insert: {
           content: string
           created_at?: string
           id?: string
           organization_id?: string | null
+          slug: string
         }
         Update: {
           content?: string
           created_at?: string
           id?: string
           organization_id?: string | null
+          slug?: string
         }
         Relationships: [
           {

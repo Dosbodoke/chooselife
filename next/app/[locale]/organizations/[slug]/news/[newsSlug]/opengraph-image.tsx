@@ -17,10 +17,10 @@ export const contentType = "image/png";
 export default async function Image({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ newsSlug: string; locale: string }>;
 }) {
-  const { id } = await params;
-  const cleanId = id.split("?")[0].trim();
+  const { newsSlug } = await params;
+  const cleanNewsSlug = newsSlug.split("?")[0].trim();
 
   const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
     ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
@@ -40,7 +40,7 @@ export default async function Image({
   const newsPromise = supabase
     .from("news")
     .select("content, created_at")
-    .eq("id", cleanId)
+    .eq("slug", cleanNewsSlug)
     .single();
 
   const [bgImageBuffer, { data, error }] = await Promise.all([
@@ -52,7 +52,7 @@ export default async function Image({
   ]);
 
   if (error || !data) {
-    console.error(`Erro ao buscar notícia ${cleanId}:`, error);
+    console.error(`Erro ao buscar notícia ${cleanNewsSlug}:`, error);
   }
 
   const content = data?.content || "";
@@ -163,7 +163,7 @@ export default async function Image({
     {
       ...size,
       headers: {
-        // Cache 1 ano. 
+        // Cache 1 ano.
         "Cache-Control": "public, max-age=31536000, immutable",
       },
     }

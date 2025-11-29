@@ -1,5 +1,6 @@
-import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { Send, ChevronLeft } from 'lucide-react-native';
+import { useIsMember, useMutateComment, useNewsItem } from '@chooselife/ui';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { ChevronLeft, Send } from 'lucide-react-native';
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -8,15 +9,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardControllerView } from 'react-native-keyboard-controller';
 import { Markdown } from 'react-native-remark';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KeyboardControllerView } from 'react-native-keyboard-controller';
 
+import { BecomeMember } from '~/components/organizations/BecomeMember';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
-import { useIsMember, useMutateComment, useNewsItem } from '@chooselife/ui';
-import { BecomeMember } from '~/components/organizations/BecomeMember';
 
 const NewsDetailSkeleton = () => {
   return (
@@ -52,19 +52,29 @@ const NewsDetailSkeleton = () => {
 };
 
 export default function NewsDetail() {
-  const { id, slug } = useLocalSearchParams<{ id: string; slug: string }>();
-  const { data: news, isLoading, isError } = useNewsItem(id);
-  const { mutate: addComment, isPending: isAddingComment } = useMutateComment(id!);
+  const { newsSlug, slug } = useLocalSearchParams<{
+    newsSlug: string;
+    slug: string;
+  }>();
+
+  const { data: news, isLoading, isError } = useNewsItem(newsSlug);
+
+  const { mutate: addComment, isPending: isAddingComment } = useMutateComment(
+    news?.id,
+  );
+
   const [commentText, setCommentText] = useState('');
 
   const { data: isMember, isLoading: isMemberLoading } = useIsMember(slug);
 
   const [bottomPadding, setBottomPadding] = useState(0);
+
   const becomeMemberRef = useRef<View>(null);
 
   useLayoutEffect(() => {
     if (isMember) {
       setBottomPadding(0);
+
       return;
     }
 
@@ -79,18 +89,20 @@ export default function NewsDetail() {
         <Stack.Screen
           options={{
             title: 'Discussão',
+
             headerLeft: ({ tintColor }) => (
-            <Pressable
-              onPress={() => router.back()}
-              hitSlop={20}
-              className="ml-1 mt-2"
-              style={{ alignItems: "center", "justifyContent": "center" }}
-            >
-              <ChevronLeft color={tintColor ?? '#000'} size={24} />
-            </Pressable>
+              <Pressable
+                onPress={() => router.back()}
+                hitSlop={20}
+                className="ml-1 mt-2"
+                style={{ alignItems: 'center', justifyContent: 'center' }}
+              >
+                <ChevronLeft color={tintColor ?? '#000'} size={24} />
+              </Pressable>
             ),
           }}
         />
+
         <SafeAreaView className="flex-1 bg-white" edges={['bottom']}>
           <KeyboardControllerView style={{ flex: 1 }}>
             <NewsDetailSkeleton />
@@ -110,6 +122,7 @@ export default function NewsDetail() {
 
   const handleAddComment = () => {
     if (!commentText.trim()) return;
+
     addComment(commentText, {
       onSuccess: () => {
         setCommentText('');
@@ -122,26 +135,30 @@ export default function NewsDetail() {
       <Stack.Screen
         options={{
           title: 'Discussão',
+
           headerLeft: ({ tintColor }) => (
             <Pressable
               onPress={() => router.back()}
               hitSlop={20}
               className="ml-1 mt-2"
-              style={{ alignItems: "center", "justifyContent": "center" }}
+              style={{ alignItems: 'center', justifyContent: 'center' }}
             >
               <ChevronLeft color={tintColor ?? '#000'} size={24} />
             </Pressable>
           ),
         }}
       />
+
       <SafeAreaView className="flex-1 bg-white" edges={['bottom']}>
-        <KeyboardControllerView 
-          style={{ flex: 1 }}
-        >
-          <ScrollView className="flex-1 p-4" contentContainerStyle={{ paddingBottom: bottomPadding + 20 }}>
+        <KeyboardControllerView style={{ flex: 1 }}>
+          <ScrollView
+            className="flex-1 p-4"
+            contentContainerStyle={{ paddingBottom: bottomPadding + 20 }}
+          >
             <Text className="text-sm text-gray-600 mb-2">
               {new Date(news.created_at).toLocaleDateString()}
             </Text>
+
             <View className="mb-6">
               <Markdown markdown={news.content} />
             </View>
@@ -155,18 +172,27 @@ export default function NewsDetail() {
                 {news.comments?.map((comment) => (
                   <View key={comment.id} className="flex-row gap-3">
                     <View className="h-10 w-10 rounded-full overflow-hidden">
-                      <SupabaseAvatar profileID={comment.user_id ?? undefined} />
+                      <SupabaseAvatar
+                        profileID={comment.user_id ?? undefined}
+                      />
                     </View>
+
                     <View className="flex-1 bg-gray-100 p-3 rounded-lg">
                       <Text className="font-bold text-sm text-black">
-                        {comment.user?.username || comment.user?.name || 'Usuário Desconhecido'}
+                        {comment.user?.username ||
+                          comment.user?.name ||
+                          'Usuário Desconhecido'}
                       </Text>
+
                       <Text className="mt-1 text-black">{comment.comment}</Text>
                     </View>
                   </View>
                 ))}
+
                 {news.comments?.length === 0 && (
-                  <Text className="text-gray-500 italic">Nenhum comentário ainda. Seja o primeiro!</Text>
+                  <Text className="text-gray-500 italic">
+                    Nenhum comentário ainda. Seja o primeiro!
+                  </Text>
                 )}
               </View>
             </View>
@@ -186,6 +212,7 @@ export default function NewsDetail() {
                 multiline
                 placeholderTextColor="#6b7280"
               />
+
               <Pressable
                 onPress={handleAddComment}
                 disabled={isAddingComment || !commentText.trim()}
