@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import {
   RefreshControl,
@@ -7,8 +7,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { OrganizationProvider, useIsMember, useOrganization, queryKeys } from '@chooselife/ui';
 import { useAuth } from '~/context/auth';
-import { queryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 
 import { AssembleiaCard } from '~/components/organizations/assembleia-card';
@@ -17,40 +17,32 @@ import { HeaderInfos } from '~/components/organizations/header-infos';
 import { News } from '~/components/organizations/News';
 import { Subscription } from '~/components/organizations/Subscription';
 import { Text } from '~/components/ui/text';
-import { useIsMember } from '~/hooks/use-is-member';
 
 import { OrganizationErrorState } from '~/components/organizations/organization-error-state';
 
 // TODO: When more orgs were to be implemented, it should be created the /organizations/[slug] route
 const ORG_SLUG = 'slac' as const;
 
-const fetchOrganization = async (slug: string) => {
-  if (!slug) return null;
-  const { data, error } = await supabase
-    .from('organizations')
-    .select('*')
-    .eq('slug', slug)
-    .single();
-  if (error) throw error;
-  return data;
-};
+export default function OrganizationDetailsPageWrapper() {
+  const { session } = useAuth();
 
+  return (
+    <OrganizationProvider supabase={supabase} userId={session?.user.id}>
+      <OrganizationDetailsPage />
+    </OrganizationProvider>
+  );
+}
 
-
-export default function OrganizationDetailsPage() {
+function OrganizationDetailsPage() {
   const queryClient = useQueryClient();
-  const { profile } = useAuth();
+  const { session } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
   const [bottomPadding, setBottomPadding] = useState(0);
   const becomeMemberRef = useRef<View>(null);
 
   const {
     data: organization,
-  } = useQuery({
-    queryKey: queryKeys.organizations.bySlug(ORG_SLUG),
-    queryFn: () => fetchOrganization(ORG_SLUG),
-    enabled: !!ORG_SLUG,
-  });
+  } = useOrganization(ORG_SLUG);
 
   const {
     data: isMember,
@@ -63,7 +55,7 @@ export default function OrganizationDetailsPage() {
         queryKey: queryKeys.organizations.bySlug(ORG_SLUG),
       }),
       queryClient.invalidateQueries({
-        queryKey: queryKeys.organizations.isMember(ORG_SLUG, profile?.id),
+        queryKey: queryKeys.organizations.isMember(ORG_SLUG, session?.user.id),
       }),
       queryClient.invalidateQueries({
         queryKey: queryKeys.organizations.memberCount(ORG_SLUG),

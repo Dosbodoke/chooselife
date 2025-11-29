@@ -1,25 +1,27 @@
 import { QueryData } from '@supabase/supabase-js';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { useAuth } from '~/context/auth';
-import { queryKeys } from '~/lib/query-keys';
-import { supabase } from '~/lib/supabase';
+import { queryKeys } from './keys';
+import { useOrganizationContext, TypedSupabaseClient } from './context';
 
-const query = supabase
-  .from('news')
-  .select('*, organizations(slug), news_reactions(reaction), comments_count:news_comments(count)');
+const getNewsQuery = (client: TypedSupabaseClient, organizationId: string) =>
+  client
+    .from('news')
+    .select('*, organizations(slug), news_reactions(reaction), comments_count:news_comments(count)')
+    .eq('organization_id', organizationId)
+    .order('created_at', { ascending: false });
 
-export type News = (QueryData<typeof query>[number] & {
+export type News = (QueryData<ReturnType<typeof getNewsQuery>>[number] & {
   organizations: { slug: string } | null;
 })[];
 
 export const useNews = (organizationId: string) => {
+  const { supabase } = useOrganizationContext();
+
   return useQuery<News, Error>({
     queryKey: queryKeys.news.byOrg(organizationId),
     queryFn: async () => {
-      const { data, error } = await query
-        .eq('organization_id', organizationId)
-        .order('created_at', { ascending: false });
+      const { data, error } = await getNewsQuery(supabase, organizationId);
 
       if (error) {
         throw new Error(error.message);
@@ -32,7 +34,7 @@ export const useNews = (organizationId: string) => {
 
 export const useMutateReaction = (newsId: string, organizationId: string) => {
   const queryClient = useQueryClient();
-  const { session } = useAuth();
+  const { supabase, userId } = useOrganizationContext();
 
   return useMutation({
     mutationFn: async (reaction: string) => {
@@ -45,12 +47,12 @@ export const useMutateReaction = (newsId: string, organizationId: string) => {
         const { error } = await supabase
           .from('news_reactions')
           .delete()
-          .match({ news_id: newsId, user_id: session?.user?.id, reaction });
+          .match({ news_id: newsId, user_id: userId, reaction });
         if (error) throw new Error(error.message);
       } else {
         const { error } = await supabase
           .from('news_reactions')
-          .insert({ news_id: newsId, user_id: session?.user?.id, reaction });
+          .insert({ news_id: newsId, user_id: userId, reaction });
         if (error) throw new Error(error.message);
       }
     },
@@ -63,6 +65,8 @@ export const useMutateReaction = (newsId: string, organizationId: string) => {
 };
 
 export const useNewsItem = (newsId: string) => {
+  const { supabase } = useOrganizationContext();
+
   return useQuery({
     queryKey: queryKeys.newsItem.byId(newsId),
     queryFn: async () => {
@@ -81,13 +85,13 @@ export const useNewsItem = (newsId: string) => {
 
 export const useMutateComment = (newsId: string) => {
   const queryClient = useQueryClient();
-  const { session } = useAuth();
+  const { supabase, userId } = useOrganizationContext();
 
   return useMutation({
     mutationFn: async (comment: string) => {
       const { error } = await supabase
         .from('news_comments')
-        .insert({ news_id: newsId, user_id: session?.user?.id, comment });
+        .insert({ news_id: newsId, user_id: userId, comment });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {

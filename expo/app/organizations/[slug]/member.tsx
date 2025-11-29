@@ -3,7 +3,7 @@ import React from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useOrganization } from '~/hooks/use-organization';
+import { useOrganization } from '@chooselife/ui';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 
 import { Carousel } from '~/components/organizations/showcase-carousel';

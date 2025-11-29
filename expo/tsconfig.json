@@ -6,7 +6,9 @@
     "paths": {
       "~/*": ["*"],
       "@packages/database/*": ["../packages/database/*"],
-    }
+    },
+    "jsx": "react-native",
+    "esModuleInterop": true
   },
   "include": [
     "**/*.ts",

@@ -7,8 +7,8 @@ import { Markdown } from 'react-native-remark';
 import {
   useMutateReaction,
   useNews,
-  type News as NewsType,
-} from '~/hooks/use-news';
+  type News as NewsType
+} from '@chooselife/ui';
 
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
