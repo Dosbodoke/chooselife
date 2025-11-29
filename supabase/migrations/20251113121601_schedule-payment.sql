@@ -12,15 +12,7 @@ grant all on all tables in schema cron to postgres;
 grant usage on schema net to postgres;
 
 -- IMPORTANT: Store your secrets in the Supabase Vault.
--- You must run the following commands manually in the Supabase SQL Editor once.
--- Replace the placeholder values with your actual project reference and service role key.
--- Do NOT commit your secrets to this migration file.
-
-/*
--- Run this in your Supabase SQL Editor:
-select vault.create_secret('https://<your-project-ref>.supabase.co', 'project_url', 'URL for the Supabase project');
-select vault.create_secret('<your-service-role-key>', 'secret_key', 'Supabase service role key');
-*/
+-- See README.md for instructions on how to set up these secrets ('project_url' and 'secret_key').
 
 -- 3. Schedule the function to run daily at midnight UTC.
 -- This cron job fetches secrets from the vault to securely call the Edge Function.
