@@ -57,6 +57,15 @@ Supabase serves as the project's backend, handling database and authentication.
       npx supabase db push
       ```
 
+#### Deploying Edge Functions
+
+Some Edge Functions (like `create-abacate-pay-charge`) require specific configurations (e.g., `--no-verify-jwt`) that are critical for their operation. To ensure all functions are deployed correctly with their required flags, **always use the provided deployment script** instead of running `supabase functions deploy` manually.
+
+*   **Deploy all functions:**
+    ```bash
+    npm run deploy:functions
+    ```
+
 #### Cron Jobs Secrets
 Some migrations schedule cron jobs that require secrets to run. You need to [set them up in the Supabase Vault](https://supabase.com/docs/guides/database/vault).
 You can do this by settling it up trough the dashboard or by running the following commands in the Supabase SQL Editor.
