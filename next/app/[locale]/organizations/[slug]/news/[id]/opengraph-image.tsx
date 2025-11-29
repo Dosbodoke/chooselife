@@ -10,7 +10,7 @@ export const size = {
   height: 630,
 };
 
-export const contentType = "image/png";
+export const contentType = "image/jpeg";
 
 export default async function Image({
   params,
@@ -30,7 +30,7 @@ export default async function Image({
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
   const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
-  const bgImagePromise = fetch(`${baseUrl}/highline-walk.jpg`).then((res) => {
+  const bgImagePromise = fetch(`${baseUrl}/highline-og.jpg`).then((res) => {
     if (!res.ok) throw new Error("Failed to load background image");
     return res.arrayBuffer();
   });
@@ -160,6 +160,8 @@ export default async function Image({
     ),
     {
       ...size,
+      // @ts-ignore: Explicitly tell Next.js to generate a JPEG
+      type: 'jpeg',
       headers: {
         // Cache 1 ano. 
         "Cache-Control": "public, max-age=31536000, immutable",
