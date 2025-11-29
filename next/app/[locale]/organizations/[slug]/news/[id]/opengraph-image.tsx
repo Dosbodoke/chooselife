@@ -162,8 +162,6 @@ export default async function Image({
     ),
     {
       ...size,
-      // @ts-ignore: Explicitly tell Next.js to generate a JPEG
-      type: 'jpeg',
       headers: {
         // Cache 1 ano. 
         "Cache-Control": "public, max-age=31536000, immutable",
