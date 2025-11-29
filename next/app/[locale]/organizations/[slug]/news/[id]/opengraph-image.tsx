@@ -31,17 +31,13 @@ export default async function Image({
 
   const content = data?.content || "";
 
-  // Extract title: First # header until next blank line
-  const lines = content.split("\n");
-  let title = "Veja a matéria";
+  // Extract title: First # header, more robust extraction
+  let title = "Ver Publicação";
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (line.startsWith("#")) {
-      // Remove the # and any extra whitespace
-      title = line.replace(/^#+\s*/, "").trim();
-      break;
-    }
+  // Match first H1 header (# followed by space and text)
+  const headerMatch = content.match(/^#\s+([^\n]+)/m);
+  if (headerMatch && headerMatch[1]) {
+    title = headerMatch[1].trim();
   }
 
   // Format date
@@ -54,10 +50,12 @@ export default async function Image({
       })
     : "";
 
+  // Use absolute URL for production, relative for local
   const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
     ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
     : "http://localhost:3000";
-  const bgImageUrl = `${baseUrl}/highline-walk.webp`;
+
+  const bgImageUrl = `${baseUrl}/highline-walk.jpg`;
 
   return new ImageResponse(
     (

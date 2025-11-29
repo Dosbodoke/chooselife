@@ -61,8 +61,10 @@ interface NewsDetailPageProps {
 
 // Helper for title extraction
 function getTitleFromContent(content: string) {
-  const match = content.match(/^#\s+(.+)$/m);
-  return match ? match[1] : "News Detail";
+  const headerMatch = content.match(/^#\s+([^\n]+)/m);
+  return headerMatch && headerMatch[1]
+    ? headerMatch[1].trim()
+    : "Ver Publicação";
 }
 
 export async function generateMetadata({
@@ -71,10 +73,19 @@ export async function generateMetadata({
   const { id } = await params;
   const news = await getNewsItem(id);
 
-  const title = news?.content ? getTitleFromContent(news.content) : "";
+  const title = getTitleFromContent(news?.content || "");
 
   return {
     title,
+    openGraph: {
+      title,
+      type: "article",
+      publishedTime: news?.created_at,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+    },
   };
 }
 
