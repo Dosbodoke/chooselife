@@ -46,6 +46,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             host: 'chooselife.club',
             pathPattern: '.*profile/.*',
           },
+          {
+            scheme: 'https',
+            host: 'chooselife.club',
+            pathPattern: '.*organizations/.*/news/.*',
+          },
         ],
         category: ['BROWSABLE', 'DEFAULT'],
       },
