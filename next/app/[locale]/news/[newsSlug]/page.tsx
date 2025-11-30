@@ -7,6 +7,7 @@ import React, { cache } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { ShareButton } from "@/components/ShareButton";
 import { createSupabaseClient } from "@/utils/supabase/server";
 
 export const revalidate = 300; // Revalidate every 5 minutes (ISR)
@@ -95,13 +96,16 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
     notFound();
   }
 
+  const title = getTitleFromContent(news.content);
+
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
       <article className="prose border-x border-dashed p-6 shadow dark:prose-invert lg:prose-xl md:p-10">
-        <header className="mb-8">
-          <time className="mb-2 block text-sm text-gray-500">
+        <header className="mb-8 flex items-center justify-between">
+          <time className="block text-sm text-gray-500">
             {new Date(news.created_at).toLocaleDateString()}
           </time>
+          <ShareButton title={title} />
           {/* Title can be added here if the news table has a title column, using content for now */}
         </header>
 
