@@ -1,5 +1,8 @@
 {
   "home": {
+    "hero": {
+      "subtitle": "Find your balance"
+    },
     "searchPlaceholder": "Highline name",
     "newHighline": {
       "trigger": "New Highline",

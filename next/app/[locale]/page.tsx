@@ -8,6 +8,7 @@ import MapToggle from "@/components/Map/MapToggle";
 
 import { HeroPromoCard } from "./_components/hero-promo-card";
 import { HighlineList } from "./_components/HighlineList";
+import { QrCodeBadge } from "./_components/qr-code-badge";
 import Search from "./_components/search";
 
 const Map = dynamic(() => import("@/components/Map/Map"), {
@@ -44,7 +45,7 @@ export default function Home() {
   const showActionButtons = !isPickingLocation && !focusedMarker && !location;
 
   return (
-    <div className="relative mx-2 max-w-screen-xl space-y-4 md:mx-auto">
+    <>
       {mapOpen ? (
         <Map
           isPickingLocation={isPickingLocation}
@@ -52,9 +53,15 @@ export default function Home() {
         />
       ) : (
         <>
-          <Search />
           <HeroPromoCard />
-          <HighlineList />
+          <QrCodeBadge />
+          <div
+            className="relative z-20 mx-2 max-w-screen-xl space-y-4 md:mx-auto"
+            style={{ marginTop: "70dvh" }}
+          >
+            <Search />
+            <HighlineList />
+          </div>
         </>
       )}
       <CreateHighline
@@ -63,6 +70,6 @@ export default function Home() {
         showTrigger={showActionButtons}
       />
       {showActionButtons ? <MapToggle mapIsOpen={mapOpen} /> : null}
-    </div>
+    </>
   );
 }

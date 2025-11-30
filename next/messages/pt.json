@@ -1,5 +1,8 @@
 {
   "home": {
+    "hero": {
+      "subtitle": "Encontre seu Equilíbrio"
+    },
     "searchPlaceholder": "Nome do Highline",
     "newHighline": {
       "trigger": "Novo Highline",

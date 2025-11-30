@@ -54,6 +54,7 @@
     "react-hook-form": "^7.50.0",
     "react-leaflet": "^5.0.0-rc.1",
     "react-markdown": "^10.1.0",
+    "react-qr-code": "^2.0.18",
     "remark-gfm": "^4.0.1",
     "sonner": "^1.4.0",
     "supercluster": "^8.0.1",

@@ -25,7 +25,7 @@ export default function LocaleSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" className="bg-background">
           <span className="text-lg">{locale == "pt" ? "🇧🇷" : "🇺🇸"}</span>
         </Button>
       </DropdownMenuTrigger>

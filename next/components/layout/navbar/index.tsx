@@ -14,7 +14,7 @@ export default async function NavBar() {
   } = await supabase.auth.getUser();
 
   return (
-    <nav className="flex w-full items-center justify-between gap-4 p-2 pb-4">
+    <nav className="z-50 flex w-full items-center justify-between gap-4 p-2 pb-4">
       <GoBack />
       <div className="flex items-center gap-1">
         <LocaleSwitcher />
