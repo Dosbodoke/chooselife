@@ -4,15 +4,14 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ScrollView,
-  Share,
   TouchableOpacity,
   View,
   type LayoutChangeEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useI18n } from '~/context/i18n';
 import { useHighline } from '~/hooks/use-highline';
+import { useShare } from '~/hooks/use-share';
 import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { MarkerCL } from '~/lib/icons/MarkerCL';
 
@@ -32,7 +31,6 @@ type HighlineTabs = 'details' | 'ranking';
 
 export default function HighlinePage() {
   const { isConnected } = useNetInfo();
-  const { locale } = useI18n();
   const { id: highlineID, setupID } = useLocalSearchParams<{
     id: string;
     setupID?: string;
@@ -43,22 +41,16 @@ export default function HighlinePage() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { highline, isPending } = useHighline({ id: highlineID });
+  const { share } = useShare();
 
   const shareListing = async () => {
     if (!highline) return;
-    try {
-      const url = `${process.env.EXPO_PUBLIC_WEB_URL}/highline/${highline.id}`;
-      await Share.share({
-        title: locale === 'en' ? 'See on Chooselife' : 'Veja no Chooselife',
-
-        message:
-          locale === 'en'
-            ? `Highline ${highline.name} on the Choose Life APP!\n\n🔗 Access now: ${url}`
-            : `Via "${highline.name}" no APP Choose Life!\n\n🔗 Acesse agora: ${url}`,
-      });
-    } catch (err) {
-      console.log('Erro ao compartilhar a highline:', err);
-    }
+    const url = `${process.env.EXPO_PUBLIC_WEB_URL}/highline/${highline.id}`;
+    await share({
+      title: highline.name,
+      url,
+      type: 'highline',
+    });
   };
 
   const tabs = useMemo(

@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
-  Share,
   TextInput,
   View,
 } from 'react-native';
@@ -14,11 +13,11 @@ import { KeyboardControllerView } from 'react-native-keyboard-controller';
 import { Markdown } from 'react-native-remark';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useI18n } from '~/context/i18n';
 import { BecomeMember } from '~/components/organizations/BecomeMember';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
+import { useShare } from '~/hooks/use-share';
 
 const NewsDetailSkeleton = () => {
   return (
@@ -54,7 +53,6 @@ const NewsDetailSkeleton = () => {
 };
 
 export default function NewsDetail() {
-  const { locale } = useI18n();
   const { newsSlug } = useLocalSearchParams<{
     newsSlug: string;
   }>();
@@ -74,6 +72,8 @@ export default function NewsDetail() {
 
   const becomeMemberRef = useRef<View>(null);
 
+  const { share } = useShare();
+
   useLayoutEffect(() => {
     if (isMember) {
       setBottomPadding(0);
@@ -88,24 +88,17 @@ export default function NewsDetail() {
 
   const shareListing = async () => {
     if (!news) return;
-    try {
-      const url = `${process.env.EXPO_PUBLIC_WEB_URL}/news/${news.slug}`;
-      // Extract title from content (first line starting with #) or default
-      const headerMatch = news.content.match(/^#\s+([^\n]+)/m);
-      const title = headerMatch && headerMatch[1]
-        ? headerMatch[1].trim()
-        : 'Ver Publicação';
 
-      await Share.share({
-        title: locale === 'en' ? 'See on Chooselife' : 'Veja no Chooselife',
-        message:
-          locale === 'en'
-            ? `${title} on the Choose Life APP!\n\n🔗 Access now: ${url}`
-            : `${title} no APP Choose Life!\n\n🔗 Acesse agora: ${url}`,
-      });
-    } catch (err) {
-      console.log('Erro ao compartilhar a notícia:', err);
-    }
+    const url = `${process.env.EXPO_PUBLIC_WEB_URL}/news/${news.slug}`;
+    // Extract title from content (first line starting with #) or default
+    const headerMatch = news.content.match(/^#\s+([^\n]+)/m);
+    const title =
+      headerMatch && headerMatch[1] ? headerMatch[1].trim() : 'Ver Publicação';
+
+    await share({
+      title,
+      url,
+    });
   };
 
   const handleGoBack = () => {
