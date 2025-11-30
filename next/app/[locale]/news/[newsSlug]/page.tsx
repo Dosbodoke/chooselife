@@ -100,7 +100,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
-      <article className="prose border-x border-dashed p-6 shadow dark:prose-invert lg:prose-xl md:p-10">
+      <article className="prose border-0 border-dashed p-0 dark:prose-invert lg:prose-xl sm:border-x sm:p-6">
         <header className="mb-8 flex items-center justify-between">
           <time className="block text-sm text-gray-500">
             {new Date(news.created_at).toLocaleDateString()}
