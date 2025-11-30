@@ -161,7 +161,7 @@ function SignUp() {
           onClick={() => {
             toggleLoginModal("open");
           }}
-          className="relative rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-black dark:border-white/[0.2] dark:text-white"
+          className="relative rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-black corner-squircle dark:border-white/[0.2] dark:text-white"
         >
           <span>{t("trigger")}</span>
           <span className="absolute inset-x-0 -bottom-px mx-auto h-px w-1/2 bg-gradient-to-r from-transparent via-blue-500  to-transparent" />

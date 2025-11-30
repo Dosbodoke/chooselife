@@ -2983,6 +2983,13 @@
   dependencies:
     "@tanstack/query-core" "5.90.11"
 
+"@toolwind/corner-shape@^0.0.8-3":
+  version "0.0.8-3"
+  resolved "https://registry.yarnpkg.com/@toolwind/corner-shape/-/corner-shape-0.0.8-3.tgz#40cfed2e71207d6c92af5fe79fe50ab910e5a757"
+  integrity sha512-MPIF81F2bhtXbzEeXF0vnL+PKpnopCHOzBspOkK8osMzWQvPUujZn2XZOMdsu4DF6wsVbbRYQtdsJr486HmIPQ==
+  dependencies:
+    "@types/node" "^20.4.1"
+
 "@turf/along@6.5.0":
   version "6.5.0"
   resolved "https://registry.npmjs.org/@turf/along/-/along-6.5.0.tgz"
@@ -3284,7 +3291,7 @@
   dependencies:
     undici-types "~7.16.0"
 
-"@types/node@^20.8.4":
+"@types/node@^20.4.1", "@types/node@^20.8.4":
   version "20.19.25"
   resolved "https://registry.npmjs.org/@types/node/-/node-20.19.25.tgz"
   integrity sha512-ZsJzA5thDQMSQO788d7IocwwQbI8B5OPzmqNvpf3NY/+MHDAS759Wo0gd2WQeXYt5AAAQjzcrTVC6SKCuYgoCQ==

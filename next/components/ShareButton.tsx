@@ -45,7 +45,7 @@ export function ShareButton({ title, text, url }: ShareButtonProps) {
       variant="outline"
       size="sm"
       onClick={handleShare}
-      className="min-w-[140px] overflow-hidden"
+      className="min-w-[140px] overflow-hidden corner-squircle"
     >
       <AnimatePresence mode="wait" initial={false}>
         {isCopied ? (
