@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { OrganizationProvider, useIsMember, useOrganization, queryKeys } from '@chooselife/ui';
+import { SupabaseProvider, useIsMember, useOrganization, queryKeys } from '@chooselife/ui';
 import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
 
@@ -27,9 +27,9 @@ export default function OrganizationDetailsPageWrapper() {
   const { session } = useAuth();
 
   return (
-    <OrganizationProvider supabase={supabase} userId={session?.user.id}>
+    <SupabaseProvider supabase={supabase} userId={session?.user.id}>
       <OrganizationDetailsPage />
-    </OrganizationProvider>
+    </SupabaseProvider>
   );
 }
 

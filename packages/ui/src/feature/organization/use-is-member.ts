@@ -1,31 +1,27 @@
 import { useQuery } from '@tanstack/react-query';
+
 import { queryKeys } from './keys';
-import { useOrganizationContext } from './context';
+import { useSupabase } from '../../supabase-provider';
 
-export const useIsMember = (
-  organizationSlug: string | undefined,
-) => {
-  const { supabase, userId } = useOrganizationContext();
+export const useIsMember = (organizationSlug: string | undefined) => {
+  const { supabase, userId } = useSupabase();
 
-  return useQuery<boolean, Error>({
+  return useQuery({
     queryKey: queryKeys.organizations.isMember(organizationSlug, userId),
     queryFn: async () => {
-      if (!organizationSlug || !userId) {
-        return false;
-      }
+      if (!userId || !organizationSlug) return false;
 
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from('organization_members')
-        .select('organizations!inner(slug)', { count: 'exact' })
+        .select('*, organizations!inner(slug)')
         .eq('user_id', userId)
-        .eq('organizations.slug', organizationSlug);
+        .eq('organizations.slug', organizationSlug)
+        .maybeSingle();
 
-      if (error) {
-        throw new Error(error.message);
-      }
+      if (error) throw new Error(error.message);
 
-      return (count || 0) > 0;
+      return !!data;
     },
-    enabled: !!organizationSlug && !!userId,
+    enabled: !!userId && !!organizationSlug,
   });
 };

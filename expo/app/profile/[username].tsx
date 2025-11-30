@@ -26,10 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 import { H2, H3, Lead, Muted, P } from '~/components/ui/typography';
-import {
-  OrganizationProvider,
-  useIsMember,
-} from '@chooselife/ui';
+import { SupabaseProvider, useIsMember } from '@chooselife/ui';
 import { Image as ExpoImage } from 'expo-image';
 
 export default function Profile() {
@@ -169,9 +166,9 @@ const UserHeader: React.FC<{
             ) : null}
             <P>{profile.description}</P>
           </View>
-          <OrganizationProvider supabase={supabase} userId={profile.id}>
+          <SupabaseProvider supabase={supabase} userId={profile.id}>
             <ProfileSlacBadge />
-          </OrganizationProvider>
+          </SupabaseProvider>
         </View>
       </CardContent>
     </Card>

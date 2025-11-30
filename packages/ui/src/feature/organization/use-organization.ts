@@ -1,25 +1,36 @@
+import { QueryData } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { queryKeys } from './keys';
-import { useOrganizationContext } from './context';
 
-const fetchOrganization = async (supabase: SupabaseClient, slug: string) => {
-  if (!slug) return null;
-  const { data, error } = await supabase
+import { type TypedSupabaseClient, useSupabase } from '../../supabase-provider';
+import { queryKeys } from './keys';
+
+const getOrganizationQuery = (client: TypedSupabaseClient, slug: string) =>
+  client
     .from('organizations')
-    .select('*')
+    .select(
+      '*',
+    )
     .eq('slug', slug)
     .single();
-  if (error) throw error;
-  return data;
-};
+
+export type Organization = QueryData<ReturnType<typeof getOrganizationQuery>>;
 
 export const useOrganization = (slug: string) => {
-  const { supabase } = useOrganizationContext();
-  
-  return useQuery({
+  const { supabase } = useSupabase();
+
+  const query = useQuery<Organization, Error>({
     queryKey: queryKeys.organizations.bySlug(slug),
-    queryFn: () => fetchOrganization(supabase, slug),
+    queryFn: async () => {
+      const { data, error } = await getOrganizationQuery(supabase, slug);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data;
+    },
     enabled: !!slug,
   });
+
+  return query
 };

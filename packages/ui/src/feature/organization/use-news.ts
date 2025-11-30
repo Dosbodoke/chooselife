@@ -2,7 +2,7 @@ import { QueryData } from '@supabase/supabase-js';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { queryKeys } from './keys';
-import { useOrganizationContext, TypedSupabaseClient } from './context';
+import { useSupabase, TypedSupabaseClient } from '../../supabase-provider';
 
 const getNewsQuery = (client: TypedSupabaseClient, organizationId: string) =>
   client
@@ -16,7 +16,7 @@ export type News = (QueryData<ReturnType<typeof getNewsQuery>>[number] & {
 })[];
 
 export const useNews = (organizationId: string) => {
-  const { supabase } = useOrganizationContext();
+  const { supabase } = useSupabase();
 
   return useQuery<News, Error>({
     queryKey: queryKeys.news.byOrg(organizationId),
@@ -34,7 +34,7 @@ export const useNews = (organizationId: string) => {
 
 export const useMutateReaction = (newsId: string, organizationId: string) => {
   const queryClient = useQueryClient();
-  const { supabase, userId } = useOrganizationContext();
+  const { supabase, userId } = useSupabase();
 
   return useMutation({
     mutationFn: async (reaction: string) => {
@@ -65,7 +65,7 @@ export const useMutateReaction = (newsId: string, organizationId: string) => {
 };
 
 export const useNewsItem = (slug: string) => {
-  const { supabase } = useOrganizationContext();
+  const { supabase } = useSupabase();
 
   return useQuery({
     queryKey: queryKeys.newsItem.bySlug(slug),
@@ -85,7 +85,7 @@ export const useNewsItem = (slug: string) => {
 
 export const useMutateComment = (newsId: string | undefined) => {
   const queryClient = useQueryClient();
-  const { supabase, userId } = useOrganizationContext();
+  const { supabase, userId } = useSupabase();
 
   return useMutation({
     mutationFn: async (comment: string) => {
