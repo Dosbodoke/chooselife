@@ -47,7 +47,7 @@ grant usage on schema net to postgres;
 /*
 -- Run this in your Supabase SQL Editor:
 select vault.create_secret('https://<your-project-ref>.supabase.co', 'project_url', 'URL for the Supabase project');
-select vault.create_secret('<your-service-role-key>', 'service_role_key', 'Supabase service role key');
+select vault.create_secret('<your-secret-key>', 'service_role_key', 'Supabase secret key');
 */
 
 -- 3. Schedule the function to run daily at midnight UTC.

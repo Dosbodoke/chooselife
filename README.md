@@ -38,21 +38,21 @@ First of all, install the CLI
 Supabase serves as the project's backend, handling database and authentication.
 
 1.  **Create a Supabase Project:**
-    * You can either run Supabase locally with `npx supabase init` or create a cloud project at [supabase.com/dashboard/new/new-project](https://supabase.com/dashboard/new/new-project).
-    * This guide focuses on cloud setup.
+    - You can either run Supabase locally with `npx supabase init` or create a cloud project at [supabase.com/dashboard/new/new-project](https://supabase.com/dashboard/new/new-project).
+    - This guide focuses on cloud setup.
 
 #### Database Setup
 
 1.  **Link to Your Project:**
-    * Use the following command, replacing `<project-id>` with your project's ID (found in the dashboard URL):
-  
+    - Use the following command, replacing `<project-id>` with your project's ID (found in the dashboard URL):
+
       ```bash
       npx supabase link --project-ref <project-id>
       ```
 
 2.  **Push Migrations:**
-    * Apply database migrations from `supabase/migrations` to your remote database:
-  
+    - Apply database migrations from `supabase/migrations` to your remote database:
+
       ```bash
       npx supabase db push
       ```
@@ -61,12 +61,13 @@ Supabase serves as the project's backend, handling database and authentication.
 
 Some Edge Functions (like `create-abacate-pay-charge`) require specific configurations (e.g., `--no-verify-jwt`) that are critical for their operation. To ensure all functions are deployed correctly with their required flags, **always use the provided deployment script** instead of running `supabase functions deploy` manually.
 
-*   **Deploy all functions:**
-    ```bash
-    npm run deploy:functions
-    ```
+- **Deploy all functions:**
+  ```bash
+  npm run deploy:functions
+  ```
 
 #### Cron Jobs Secrets
+
 Some migrations schedule cron jobs that require secrets to run. You need to [set them up in the Supabase Vault](https://supabase.com/docs/guides/database/vault).
 You can do this by settling it up trough the dashboard or by running the following commands in the Supabase SQL Editor.
 
@@ -75,20 +76,20 @@ Replace the placeholder values with your actual project reference and service ro
 ```sql
 -- Run this in your Supabase SQL Editor:
 select vault.create_secret('https://<your-project-ref>.supabase.co', 'project_url', 'URL for the Supabase project');
-select vault.create_secret('<your-service-role-key>', 'secret_key', 'Supabase service role key');
+select vault.create_secret('<your-secret-key>', 'secret_key', 'Supabase Secret key');
 ```
 
 #### OAuth Configuration
 
 1.  **Configure URL Redirects:**
-    * In the Supabase dashboard (Auth > URL Configuration), add a Site URL matching your app's scheme (defined in `app.config.ts`).
-    * Example: `com.bodok.chooselife://*`
+    - In the Supabase dashboard (Auth > URL Configuration), add a Site URL matching your app's scheme (defined in `app.config.ts`).
+    - Example: `com.bodok.chooselife://*`
 2.  **Enable Social Auth:**
-    * Enable Google and Apple social login in the Supabase dashboard.
-    * Follow these guides:
-        * [Setup Apple oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-apple?queryGroups=platform&platform=react-native)
-        * [Setup Google oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-google?queryGroups=platform&platform=react-native)
-    * [Use Auth locally](https://supabase.com/docs/guides/local-development/overview#use-auth-locally)
+    - Enable Google and Apple social login in the Supabase dashboard.
+    - Follow these guides:
+      - [Setup Apple oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-apple?queryGroups=platform&platform=react-native)
+      - [Setup Google oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-google?queryGroups=platform&platform=react-native)
+    - [Use Auth locally](https://supabase.com/docs/guides/local-development/overview#use-auth-locally)
 
 ## Contributing
 
@@ -100,4 +101,4 @@ select vault.create_secret('<your-service-role-key>', 'secret_key', 'Supabase se
 
 ## Authors
 
-* [@Dosbodoke](https://www.github.com/Dosbodoke)
+- [@Dosbodoke](https://www.github.com/Dosbodoke)
