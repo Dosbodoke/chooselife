@@ -108,6 +108,14 @@ export default function NewsDetail() {
     }
   };
 
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
+  };
+
   if (isLoading) {
     return (
       <>
@@ -117,7 +125,7 @@ export default function NewsDetail() {
 
             headerLeft: ({ tintColor }) => (
               <Pressable
-                onPress={() => router.back()}
+                onPress={handleGoBack}
                 hitSlop={20}
                 className="ml-1 mt-2"
                 style={{ alignItems: 'center', justifyContent: 'center' }}
@@ -163,7 +171,7 @@ export default function NewsDetail() {
 
           headerLeft: ({ tintColor }) => (
             <Pressable
-              onPress={() => router.back()}
+              onPress={handleGoBack}
               hitSlop={20}
               className="ml-1 mt-2"
               style={{ alignItems: 'center', justifyContent: 'center' }}
