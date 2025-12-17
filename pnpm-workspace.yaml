@@ -1,0 +1,4 @@
+packages:
+  - 'next'
+  - 'expo'
+  - 'packages/*'

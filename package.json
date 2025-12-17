@@ -1,11 +1,6 @@
 {
   "name": "chooselife-monorepo",
   "private": true,
-  "workspaces": [
-    "next",
-    "expo",
-    "packages/*"
-  ],
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
@@ -14,8 +9,8 @@
     "deploy:functions": "./deploy-functions.sh"
   },
   "devDependencies": {
-    "prettier": "^3.0.0", 
+    "prettier": "^3.0.0",
     "turbo": "^2.6.1"
   },
-  "packageManager": "yarn@1.22.22"
+  "packageManager": "pnpm@10.26.0"
 }

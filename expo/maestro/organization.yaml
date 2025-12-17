@@ -1,0 +1,25 @@
+appId: com.bodok.chooselife
+---
+- launchApp:
+    clearState: true
+- runFlow:
+    when:
+      visible:
+        text: "http.*"
+    commands:
+      - tapOn: "http.*"
+- tapOn: Connected to:, http://localhost:8081 # This is a hack to dismiss the Alert 'Must use physical device for Push Notifications'
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- runFlow:
+    when:
+      visible: "Toggle performance monitor"
+    commands:
+      - tapOn:
+          point: 50%,10%
+- tapOn: SL.A.C, tab, 3 of 4
+- assertVisible: SL.A.C
+- assertVisible: Become a Member
