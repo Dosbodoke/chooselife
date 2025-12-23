@@ -20,7 +20,6 @@ import { useAuth, type LoginMethod, type OAuthMethod } from '~/context/auth';
 import { AppleIcon } from '~/lib/icons/Apple';
 import ChooselifeIcon from '~/lib/icons/chooselife-icon';
 import { GoogleIcon } from '~/lib/icons/Google';
-import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
 
 import { Button, buttonTextVariants } from '~/components/ui/button';
@@ -69,7 +68,6 @@ const OAuthButtons: React.FC = () => {
   const { t } = useTranslation();
   const { redirect_to } = useLocalSearchParams<{ redirect_to?: string }>();
   const { performOAuth, lastLoginMethod, isLoginPending } = useAuth();
-  const { colorScheme } = useColorScheme();
 
   const handleLogin = async (method: OAuthMethod) => {
     await performOAuth({ method, redirectTo: redirect_to });
@@ -94,7 +92,7 @@ const OAuthButtons: React.FC = () => {
           className="flex-row gap-3 items-center"
         >
           <View className="h-6 w-6">
-            <AppleIcon fill={colorScheme === 'dark' ? '#FFFFFF' : '#000000'} />
+            <AppleIcon fill="#000000" />
           </View>
           <Text className="text-primary">
             {t('app.(modals).login.oauth.continueApple')}

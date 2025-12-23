@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Position } from 'geojson';
 import i18next from 'i18next';
+import { MapPinIcon, UploadIcon, XIcon } from 'lucide-react-native';
 import React, { memo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -19,7 +20,6 @@ import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
 import { Highline, highlineKeyFactory } from '~/hooks/use-highline';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 import { ACCEPTED_IMAGE_TYPES, MAX_FILE_SIZE } from '~/utils/constants';
@@ -31,10 +31,11 @@ import {
   positionToPostGISPoint,
 } from '~/components/map/utils';
 import { Button } from '~/components/ui/button';
+import { Icon } from '~/components/ui/icon';
 import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
 import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
-import { H1 } from '~/components/ui/typography';
 
 const formSchema = z.object({
   name: z
@@ -306,12 +307,22 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
             control={highlineForm.control}
             name="name"
             render={({ field, fieldState }) => (
-              <Input
-                value={field.value}
-                onChangeText={field.onChange}
-                label={t('components.map.register-modal.name.label')}
-                className={fieldState.error && 'border-destructive'}
-              />
+              <View className="gap-2">
+                <Label nativeID="name">
+                  {t('components.map.register-modal.name.label')}
+                </Label>
+                <Input
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  className={fieldState.error && 'border-destructive'}
+                  aria-labelledby="name"
+                />
+                {fieldState.error ? (
+                  <Text variant="small" className="text-destructive">
+                    {fieldState.error.message}
+                  </Text>
+                ) : null}
+              </View>
             )}
           />
 
@@ -319,13 +330,24 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
             control={highlineForm.control}
             name="height"
             render={({ field, fieldState }) => (
-              <Input
-                value={field.value.toString()}
-                onChangeText={(text) => field.onChange(+text || 0)}
-                label={t('components.map.register-modal.height.label')}
-                keyboardType="number-pad"
-                className={fieldState.error && 'border-destructive'}
-              />
+              <View className="gap-2">
+                <Label nativeID="height">
+                  {t('components.map.register-modal.height.label')}{' '}
+                  <Text variant="muted">{t('common.optional')}</Text>
+                </Label>
+                <Input
+                  value={field.value.toString()}
+                  onChangeText={(text) => field.onChange(+text || 0)}
+                  keyboardType="number-pad"
+                  className={fieldState.error && 'border-destructive'}
+                  aria-labelledby="height"
+                />
+                {fieldState.error ? (
+                  <Text variant="small" className="text-destructive">
+                    {fieldState.error.message}
+                  </Text>
+                ) : null}
+              </View>
             )}
           />
 
@@ -333,15 +355,25 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
             control={highlineForm.control}
             name="length"
             render={({ field, fieldState }) => (
-              <Input
-                value={field.value.toString()}
-                onChangeText={(text) => field.onChange(+text || 0)}
-                label={t('components.map.register-modal.length.label')}
-                contextMenuHidden={true}
-                editable={false}
-                keyboardType="number-pad"
-                className={fieldState.error && 'border-destructive'}
-              />
+              <View className="gap-2">
+                <Label nativeID="length">
+                  {t('components.map.register-modal.length.label')}
+                </Label>
+                <Input
+                  value={field.value.toString()}
+                  onChangeText={(text) => field.onChange(+text || 0)}
+                  contextMenuHidden={true}
+                  editable={false}
+                  keyboardType="number-pad"
+                  className={fieldState.error && 'border-destructive'}
+                  aria-labelledby="length"
+                />
+                {fieldState.error ? (
+                  <Text variant="small" className="text-destructive">
+                    {fieldState.error.message}
+                  </Text>
+                ) : null}
+              </View>
             )}
           />
 
@@ -349,19 +381,30 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
             control={highlineForm.control}
             name="description"
             render={({ field, fieldState }) => (
-              <Textarea
-                keyboardType="default"
-                returnKeyType="done"
-                placeholder={t(
-                  'components.map.register-modal.description.placeholder',
-                )}
-                {...field}
-                submitBehavior="blurAndSubmit"
-                onChangeText={(text) => field.onChange(text)}
-                value={field.value}
-                label={t('components.map.register-modal.description.label')}
-                className={fieldState.error && 'border-destructive'}
-              />
+              <View className="gap-2">
+                <Label nativeID="description">
+                  {t('components.map.register-modal.description.label')}{' '}
+                  <Text variant="muted">{t('common.optional')}</Text>
+                </Label>
+                <Textarea
+                  keyboardType="default"
+                  returnKeyType="done"
+                  placeholder={t(
+                    'components.map.register-modal.description.placeholder',
+                  )}
+                  {...field}
+                  submitBehavior="blurAndSubmit"
+                  onChangeText={(text) => field.onChange(text)}
+                  value={field.value}
+                  className={fieldState.error && 'border-destructive'}
+                  aria-labelledby="description"
+                />
+                {fieldState.error ? (
+                  <Text variant="small" className="text-destructive">
+                    {fieldState.error.message}
+                  </Text>
+                ) : null}
+              </View>
             )}
           />
 
@@ -413,9 +456,9 @@ const SuccessMessage: React.FC<{ id: string; isUpdate: boolean }> = ({
   return (
     <View className="h-full w-full justify-center items-center gap-8">
       <View>
-        <H1 className="text-center">
+        <Text variant="h1" className="text-center">
           {t('components.map.register-modal.success.title')}
-        </H1>
+        </Text>
         <Text className="text-3xl text-center">
           {t('components.map.register-modal.success.subtitle')}
         </Text>
@@ -536,7 +579,7 @@ const HighlineImageUploader = memo(
               onPress={handleRemoveImage}
               className="absolute top-2 right-2 p-2 bg-black/50 rounded-full"
             >
-              <LucideIcon name="X" className="text-white size-4" />
+              <Icon as={XIcon} className="text-white size-4" />
             </TouchableOpacity>
           </>
         ) : (
@@ -547,8 +590,8 @@ const HighlineImageUploader = memo(
               className="flex items-center gap-2"
             >
               <View className="p-3 items-center justify-center rounded-md bg-muted">
-                <LucideIcon
-                  name="Upload"
+                <Icon
+                  as={UploadIcon}
                   className="text-muted-foreground size-8"
                 />
               </View>
@@ -577,7 +620,7 @@ const AnchorPin: React.FC<{
       draggable
       anchor={{ y: 1, x: 0.5 }}
     >
-      <LucideIcon name="MapPin" className="size-9 text-black fill-red-500" />
+      <Icon as={MapPinIcon} className="size-9 text-black fill-red-500" />
     </Mapbox.PointAnnotation>
   );
 };

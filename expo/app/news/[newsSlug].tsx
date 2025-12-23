@@ -13,11 +13,13 @@ import { KeyboardControllerView } from 'react-native-keyboard-controller';
 import { Markdown } from 'react-native-remark';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useShare } from '~/hooks/use-share';
+
 import { BecomeMember } from '~/components/organizations/BecomeMember';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
+import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
-import { useShare } from '~/hooks/use-share';
 
 const NewsDetailSkeleton = () => {
   return (
@@ -66,7 +68,8 @@ export default function NewsDetail() {
   const [commentText, setCommentText] = useState('');
 
   const organizationSlug = news?.organizations?.slug;
-  const { data: isMember, isLoading: isMemberLoading } = useIsMember(organizationSlug);
+  const { data: isMember, isLoading: isMemberLoading } =
+    useIsMember(organizationSlug);
 
   const [bottomPadding, setBottomPadding] = useState(0);
 
@@ -115,15 +118,13 @@ export default function NewsDetail() {
         <Stack.Screen
           options={{
             title: 'Discussão',
-
             headerLeft: ({ tintColor }) => (
               <Pressable
                 onPress={handleGoBack}
                 hitSlop={20}
-                className="ml-1 mt-2"
-                style={{ alignItems: 'center', justifyContent: 'center' }}
+                className="ml-1 mt-1"
               >
-                <ChevronLeft color={tintColor ?? '#000'} size={24} />
+                <Icon as={ChevronLeft} color={tintColor ?? '#000'} size={24} />
               </Pressable>
             ),
           }}
@@ -166,20 +167,19 @@ export default function NewsDetail() {
             <Pressable
               onPress={handleGoBack}
               hitSlop={20}
-              className="ml-1 mt-2"
-              style={{ alignItems: 'center', justifyContent: 'center' }}
+              className="ml-1 mt-1"
             >
-              <ChevronLeft color={tintColor ?? '#000'} size={24} />
+              <Icon as={ChevronLeft} color={tintColor ?? '#000'} size={24} />
             </Pressable>
           ),
           headerRight: ({ tintColor }) => (
             <Pressable
               onPress={shareListing}
               hitSlop={20}
-              className="mr-2 mt-2"
+              className="p-2"
               style={{ alignItems: 'center', justifyContent: 'center' }}
             >
-              <ShareIcon color={tintColor ?? '#000'} size={24} />
+              <Icon as={ShareIcon} color={tintColor ?? '#000'} size={24} />
             </Pressable>
           ),
         }}
@@ -264,7 +264,9 @@ export default function NewsDetail() {
               </Pressable>
             </View>
           ) : (
-            organizationSlug && <BecomeMember slug={organizationSlug} ref={becomeMemberRef} />
+            organizationSlug && (
+              <BecomeMember slug={organizationSlug} ref={becomeMemberRef} />
+            )
           )}
         </KeyboardControllerView>
       </SafeAreaView>

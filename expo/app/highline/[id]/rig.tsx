@@ -1,7 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import i18next from 'i18next';
-import { icons } from 'lucide-react-native';
+import {
+  CalendarIcon,
+  ClockIcon,
+  InfoIcon,
+  ZapIcon,
+  type LucideIcon,
+} from 'lucide-react-native';
+import { useColorScheme } from 'nativewind';
 import React, { useMemo, useState } from 'react';
 import { Controller, type SubmitHandler } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -33,9 +40,7 @@ import { useHighline } from '~/hooks/use-highline';
 import { rigSetupKeyFactory, useRigSetup } from '~/hooks/use-rig-setup';
 import { getWebbingName } from '~/hooks/use-webbings';
 import { HighlineRigIllustration } from '~/lib/icons/highline-rig';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
-import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
 import { TablesInsert } from '~/utils/database.types';
 import { requestReview } from '~/utils/request-review';
@@ -44,8 +49,8 @@ import SuccessAnimation from '~/components/animations/success-animation';
 import { OnboardNavigator, OnboardPaginator } from '~/components/onboard';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
+import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
-import { H1, H3, Muted } from '~/components/ui/typography';
 import { WebbingSetup } from '~/components/webbing-setup';
 
 const DAMPING = 14;
@@ -302,11 +307,11 @@ export const HighlineSetup: React.FC = () => {
     return (
       <View className="h-full items-center justify-center gap-8">
         <View>
-          <H1 className="text-center">
+          <Text variant="h1" className="text-center">
             {isRigged
               ? t('app.highline.rig.success.rigged.title')
               : t('app.highline.rig.success.planned.title')}
-          </H1>
+          </Text>
           <Text className="text-3xl text-center">
             {isRigged
               ? t('app.highline.rig.success.rigged.subtitle')
@@ -397,12 +402,12 @@ const RigTypeSelection: React.FC<{
       />
 
       <View>
-        <H3 className="text-center mb-2">
+        <Text variant="h3" className="text-center mb-2">
           {t('app.highline.rig.typeSelection.title')}
-        </H3>
-        <Muted className="text-center">
+        </Text>
+        <Text variant="muted" className="text-center">
           {t('app.highline.rig.typeSelection.description')}
-        </Muted>
+        </Text>
       </View>
 
       <View className="w-full gap-3">
@@ -410,7 +415,7 @@ const RigTypeSelection: React.FC<{
           type="immediate"
           isSelected={rigType === 'immediate'}
           onSelect={() => onRigTypeChange('immediate')}
-          icon="Zap"
+          icon={ZapIcon}
           title={t('app.highline.rig.typeSelection.immediate.title')}
           description={t(
             'app.highline.rig.typeSelection.immediate.description',
@@ -421,7 +426,7 @@ const RigTypeSelection: React.FC<{
           type="plan"
           isSelected={rigType === 'plan'}
           onSelect={() => onRigTypeChange('plan')}
-          icon="Calendar"
+          icon={CalendarIcon}
           title={t('app.highline.rig.typeSelection.plan.title')}
           description={t('app.highline.rig.typeSelection.plan.description')}
         />
@@ -434,7 +439,7 @@ const RigTypeOption: React.FC<{
   type: RigType;
   isSelected: boolean;
   onSelect: () => void;
-  icon: keyof typeof icons;
+  icon: LucideIcon;
   title: string;
   description: string;
 }> = ({ isSelected, onSelect, icon, title, description }) => (
@@ -453,8 +458,8 @@ const RigTypeOption: React.FC<{
               isSelected ? 'bg-primary/20' : 'bg-muted',
             )}
           >
-            <LucideIcon
-              name={icon}
+            <Icon
+              as={icon}
               className={cn(
                 'size-5',
                 isSelected ? 'text-primary' : 'text-muted-foreground',
@@ -491,16 +496,16 @@ const DateForm: React.FC<{
       ) : (
         <>
           <View>
-            <H3 className="text-center">
+            <Text variant="h3" className="text-center">
               {rigType === 'immediate'
                 ? t('app.highline.rig.dateForm.immediate.title')
                 : t('app.highline.rig.dateForm.plan.title')}
-            </H3>
-            <Muted className="text-center">
+            </Text>
+            <Text variant="muted" className="text-center">
               {rigType === 'immediate'
                 ? t('app.highline.rig.dateForm.immediate.description')
                 : t('app.highline.rig.dateForm.plan.description')}
-            </Muted>
+            </Text>
           </View>
 
           {rigType === 'plan' && (
@@ -524,7 +529,7 @@ const DateForm: React.FC<{
           {rigType === 'immediate' && (
             <View className="items-center gap-4">
               <View className="flex-row items-center gap-2 p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
-                <LucideIcon name="Clock" className="text-green-600 size-5" />
+                <Icon as={ClockIcon} className="text-green-600 size-5" />
                 <Text className="text-green-700 dark:text-green-300 font-medium">
                   {t('app.highline.rig.dateForm.immediate.currentTime', {
                     time: new Date().toLocaleTimeString('pt-BR', {
@@ -550,7 +555,7 @@ const WebbingSetupWithOptionalIndicator: React.FC = () => {
     <View className="gap-4 w-full">
       <View className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
         <View className="flex-row items-center gap-2 mb-2">
-          <LucideIcon name="Info" className="text-blue-600 size-5" />
+          <Icon as={InfoIcon} className="text-blue-600 size-5" />
           <Text className="text-blue-700 dark:text-blue-300 font-semibold">
             {t('app.highline.rig.optional.title')}
           </Text>

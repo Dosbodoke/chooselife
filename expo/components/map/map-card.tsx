@@ -1,5 +1,10 @@
 import { useMapStore } from '~/store/map-store';
 import { Link } from 'expo-router';
+import {
+  ArrowRightIcon,
+  UnfoldHorizontalIcon,
+  UnfoldVerticalIcon,
+} from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, TouchableOpacity, View } from 'react-native';
@@ -8,11 +13,10 @@ import Animated, { Easing, FadeIn, FadeOut } from 'react-native-reanimated';
 
 import type { Highline } from '~/hooks/use-highline';
 import { RigStatuses } from '~/hooks/use-rig-setup';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
 
+import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
-import { H4, Small } from '~/components/ui/typography';
 
 import { FavoriteHighline } from '../highline/favorite-button';
 import { HighlineImage } from '../highline/highline-image';
@@ -68,25 +72,27 @@ export const HighlineMapCard: React.FC<MapCardProps> = ({
               : 'border-0',
           )}
         >
-          <H4 className="text-base font-semibold">{highline.name}</H4>
+          <Text variant="h4" className="text-base font-semibold">
+            {highline.name}
+          </Text>
           <View className="flex gap-2 flex-row">
             <View className="flex items-center pt-2 flex-row">
-              <LucideIcon
-                name="UnfoldVertical"
+              <Icon
+                as={UnfoldVerticalIcon}
                 className="size-4 mr-2 text-primary opacity-70"
               />
-              <Small className="text-sm text-muted-foreground">
+              <Text variant="small" className="text-sm text-muted-foreground">
                 {highline.height}m
-              </Small>
+              </Text>
             </View>
             <View className="flex items-center pt-2 flex-row">
-              <LucideIcon
-                name="UnfoldHorizontal"
+              <Icon
+                as={UnfoldHorizontalIcon}
                 className="size-4 mr-2 text-primary opacity-70"
               />
-              <Small className="text-sm text-muted-foreground">
+              <Text variant="small" className="text-sm text-muted-foreground">
                 {highline.length}m
-              </Small>
+              </Text>
             </View>
           </View>
           <Link href={`/highline/${highline.id}`} asChild>
@@ -94,7 +100,7 @@ export const HighlineMapCard: React.FC<MapCardProps> = ({
               <Text className="text-blue-500">
                 {t('components.map.map-card.seeDatails')}
               </Text>
-              <LucideIcon name="ArrowRight" className="size-4 text-blue-500" />
+              <Icon as={ArrowRightIcon} className="size-4 text-blue-500" />
             </TouchableOpacity>
           </Link>
         </View>

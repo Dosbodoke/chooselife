@@ -122,7 +122,7 @@
     "(tabs)": {
       "_layout": {
         "indexTitle": "Explorar",
-        "settingsTitle": "Configurações",
+        "settingsTitle": "Perfil",
         "homeTitle": "Início"
       },
       "home": {
@@ -176,7 +176,18 @@
           "title": "BOA CHOOSEN",
           "message": "Seu rolê está registrado e será usado para calcular as suas estatísticas.",
           "offlineMessage": "Como você está offline, a próxima vez que tiver conexão com internet seu rolê será salvo.",
-          "button": "Ver o Highline"
+          "button": "Ver o Highline",
+          "mainType": {
+            "cadena": "Cadena",
+            "fullLine": "Full Line",
+            "walk": "Travessia"
+          },
+          "recorded_label": "{{type}} Registrado",
+          "distance_label": "Distância",
+          "time_label": "Tempo",
+          "count_label": "Contagem",
+          "share_dialog_title": "Compartilhar seu rolê",
+          "share_button": "Compartilhar / Salvar"
         },
         "fields": {
           "instagram": {

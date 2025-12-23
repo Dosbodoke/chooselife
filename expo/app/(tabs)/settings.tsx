@@ -7,13 +7,17 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useRouter } from 'expo-router';
+import {
+  ChevronRightIcon,
+  LanguagesIcon,
+  PencilIcon,
+} from 'lucide-react-native';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { Tables } from '~/utils/database.types';
 
@@ -27,9 +31,9 @@ import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { MyWebbings } from '~/components/settings/my-webbing';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
+import { Icon } from '~/components/ui/icon';
 import { Separator } from '~/components/ui/separator';
 import { Text } from '~/components/ui/text';
-import { H2, Muted } from '~/components/ui/typography';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -52,8 +56,12 @@ export default function SettingsPage() {
                   <SupabaseAvatar profileID={profile.id} />
                 </View>
                 <View className="flex-1">
-                  <H2 className="flex-shrink">{profile.name}</H2>
-                  <Muted>{t('app.(tabs).settings.viewProfile')}</Muted>
+                  <Text variant="h2" className="flex-shrink">
+                    {profile.name}
+                  </Text>
+                  <Text variant="muted">
+                    {t('app.(tabs).settings.viewProfile')}
+                  </Text>
                 </View>
               </TouchableOpacity>
             </Link>
@@ -88,7 +96,7 @@ export default function SettingsPage() {
         <Link href={`/login?redirect_to=settings`} asChild>
           <Button
             disabled={isLoginPending}
-            className="w-fit bg-primary text-center py-4 text-primary-foreground"
+            className="w-fit bg-primary text-center"
           >
             <Text>{t('app.(tabs).settings.logIn')}</Text>
           </Button>
@@ -127,13 +135,10 @@ const ChangeLanguage: React.FC = () => {
         <Separator></Separator>
         <View className="flex-row justify-between">
           <View className="flex-row gap-2">
-            <LucideIcon
-              name="Languages"
-              className="size-6 text-muted-foreground"
-            />
+            <Icon as={LanguagesIcon} className="size-6 text-muted-foreground" />
             <Text>{t('app.(tabs).settings.changeLanguage')}</Text>
           </View>
-          <LucideIcon name="ChevronRight" className="size-6 text-foreground" />
+          <Icon as={ChevronRightIcon} className="size-6 text-foreground" />
         </View>
         <Separator></Separator>
       </TouchableOpacity>
@@ -241,13 +246,10 @@ const EditProfileButton: React.FC = () => {
         <Separator></Separator>
         <View className="flex-row justify-between">
           <View className="flex-row gap-2">
-            <LucideIcon
-              name="Pencil"
-              className="size-6 text-muted-foreground"
-            />
+            <Icon as={PencilIcon} className="size-6 text-muted-foreground" />
             <Text>{t('app.(tabs).settings.editProfile.triggerLabel')}</Text>
           </View>
-          <LucideIcon name="ChevronRight" className="size-6 text-foreground" />
+          <Icon as={ChevronRightIcon} className="size-6 text-foreground" />
         </View>
         <View></View>
       </TouchableOpacity>

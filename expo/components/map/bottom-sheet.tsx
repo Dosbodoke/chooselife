@@ -2,6 +2,7 @@ import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useMapStore } from '~/store/map-store';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { MapIcon } from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
@@ -9,9 +10,10 @@ import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type Highline } from '~/hooks/use-highline';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
 import { _layoutAnimation } from '~/utils/constants';
+
+import { Icon } from '~/components/ui/icon';
 
 import { HighlineCard } from '../highline/highline-card';
 import { Button } from '../ui/button';
@@ -92,7 +94,7 @@ const ListingsBottomSheet: React.FC<{
           <Text className="text-primary-foreground">
             {t('components.map.bottom-sheet.map')}
           </Text>
-          <LucideIcon name="Map" className="h-6 w-6 text-primary-foreground" />
+          <Icon as={MapIcon} className="h-6 w-6 text-primary-foreground" />
         </TouchableOpacity>
       </View>
     </BottomSheet>

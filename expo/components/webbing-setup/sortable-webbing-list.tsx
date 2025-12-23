@@ -1,3 +1,10 @@
+import {
+  AlertTriangleIcon,
+  CirclePlusIcon,
+  GripVerticalIcon,
+  MoveHorizontalIcon,
+  TriangleAlertIcon,
+} from 'lucide-react-native';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
@@ -24,19 +31,26 @@ import type {
   WebType,
 } from '~/context/rig-form';
 import { useWebbing } from '~/hooks/use-webbings';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
+import { DAMPING } from '~/utils/constants';
 
 import { SupabaseAvatar } from '~/components/supabase-avatar';
-import { Alert } from '~/components/ui/alert';
+import {
+  Alert,
+  AlertContent,
+  AlertDescription,
+  AlertIcon,
+  AlertTitle,
+} from '~/components/ui/alert';
+import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 import type { WebbingValidationErrors } from '~/components/webbing-setup/setup-canvas';
 
 export const ROW_HEIGHT = 48;
 
-const _layoutAnimation = LinearTransition.springify().damping(14);
-const _exitingAnimation = FadeOut.springify().damping(14);
-const _enteringAnimation = FadeInDown.springify().damping(14);
+const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
+const _exitingAnimation = FadeOut.springify().damping(DAMPING);
+const _enteringAnimation = FadeInDown.springify().damping(DAMPING);
 
 const AnimatedTouchableOpacity =
   Animated.createAnimatedComponent(TouchableOpacity);
@@ -136,7 +150,13 @@ const WebListSection: React.FC<{
             />
           ))}
         </View>
-        {errorMessage && <Alert message={errorMessage} />}
+        {errorMessage && (
+          <Alert variant="warning">
+            <AlertContent>
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </AlertContent>
+          </Alert>
+        )}
         <AddSectionButton type={type} handleNewSection={handleNewSection} />
       </View>
     </View>
@@ -372,8 +392,8 @@ const WebRow: React.FC<{
     >
       <GestureDetector gesture={panGesture}>
         <View>
-          <LucideIcon
-            name="GripVertical"
+          <Icon
+            as={GripVerticalIcon}
             className="size-6 text-muted-foreground"
           />
         </View>
@@ -391,8 +411,8 @@ const WebRow: React.FC<{
           {webbing.webbingId ? (
             <WebRowAvatar webbingID={+webbing.webbingId} />
           ) : null}
-          <LucideIcon
-            name="MoveHorizontal"
+          <Icon
+            as={MoveHorizontalIcon}
             className="size-4 text-primary opacity-70"
           />
           <Text className="text-muted-foreground">{webbing.length}m</Text>
@@ -423,7 +443,7 @@ const AddSectionButton: React.FC<{
       onPress={() => handleNewSection(type)}
       className="flex-row gap-1 items-center ml-2"
     >
-      <LucideIcon name="CirclePlus" className="size-6 text-primary" />
+      <Icon as={CirclePlusIcon} className="size-6 text-primary" />
       <Text className="text-base text-primary">
         {type === 'main'
           ? t('components.webbing-setup.sortable-webbing-list.addMainSection')

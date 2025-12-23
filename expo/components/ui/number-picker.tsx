@@ -1,3 +1,4 @@
+import { MinusIcon, PlusIcon } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import Animated, {
@@ -7,9 +8,9 @@ import Animated, {
   FadeOutUp,
 } from 'react-native-reanimated';
 
-import { MinusIcon } from '~/lib/icons/MinusIcon';
-import { PlusIcon } from '~/lib/icons/PlusIcon';
 import { cn } from '~/lib/utils';
+
+import { Icon } from '~/components/ui/icon';
 
 interface Props {
   value: number;
@@ -39,7 +40,7 @@ function NumberPicker({ value, className, onChange }: Props) {
         className="size-10 justify-center items-center rounded-lg bg-muted"
         onPress={handleDecrement}
       >
-        <MinusIcon className="text-muted-foreground" />
+        <Icon as={MinusIcon} className="text-muted-foreground" />
       </TouchableOpacity>
       <View className="size-8 items-center justify-center">
         <Animated.Text
@@ -55,7 +56,7 @@ function NumberPicker({ value, className, onChange }: Props) {
         className="size-10 justify-center items-center rounded-lg bg-blue-600 dark:bg-blue-700"
         onPress={handleIncrement}
       >
-        <PlusIcon className="text-white" />
+        <Icon as={PlusIcon} className="text-white" />
       </TouchableOpacity>
     </View>
   );

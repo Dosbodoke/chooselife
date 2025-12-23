@@ -1,10 +1,9 @@
 import { useRouter } from 'expo-router';
+import { ArrowDownIcon } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity } from 'react-native';
 import Animated from 'react-native-reanimated';
-
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 
 import {
   DropdownMenu,
@@ -15,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
+import { Icon } from '~/components/ui/icon';
 
 import { Text } from '../ui/text';
 import { type Category } from './index';
@@ -45,8 +45,8 @@ export const CategoryDropdown = ({
       <DropdownMenuTrigger asChild>
         <TouchableOpacity className="group flex-row items-center gap-1">
           <Animated.View>
-            <LucideIcon
-              name="ArrowDown"
+            <Icon
+              as={ArrowDownIcon}
               className="size-4 text-gray-900 dark:text-white"
             />
           </Animated.View>

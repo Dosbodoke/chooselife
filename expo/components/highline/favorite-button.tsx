@@ -1,3 +1,4 @@
+import { HeartIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Animated, {
@@ -9,8 +10,9 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { useToggleFavoriteMutation } from '~/hooks/use-highline';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
+
+import { Icon } from '~/components/ui/icon';
 
 export const FavoriteHighline: React.FC<{
   isFavorite: boolean;
@@ -19,7 +21,6 @@ export const FavoriteHighline: React.FC<{
   hearthClassName?: string; // Classname for unfilled hearth
 }> = ({ isFavorite, id, className, hearthClassName }) => {
   const [favorite, setFavorite] = useState(isFavorite);
-
   const liked = useSharedValue(isFavorite ? 1 : 0);
 
   useEffect(() => {
@@ -49,38 +50,48 @@ export const FavoriteHighline: React.FC<{
     };
   });
 
+  const handlePress = async () => {
+    const nextFavorite = !favorite;
+    const nextValue = nextFavorite ? 1 : 0;
+
+    // Perform optimistic updates before any async gaps
+    setFavorite(nextFavorite);
+    liked.value = withSpring(nextValue);
+
+    try {
+      await mutateAsync(
+        { id, isFavorite: favorite },
+        {
+          onError: (_error, variables) => {
+            // Revert local state if mutation fails.
+            const revertValue = variables.isFavorite ? 1 : 0;
+            setFavorite(variables.isFavorite);
+            liked.value = withSpring(revertValue);
+          },
+        },
+      );
+    } catch (e) {
+      console.error('Failed to toggle favorite status:', e);
+    }
+  };
+
   return (
     <Pressable
       className={cn('flex p-2 rounded-full bg-white', className)}
-      onPress={async () => {
-        // Optimistically toggle local state.
-        setFavorite((prev) => !prev);
-        liked.value = withSpring(liked.value ? 0 : 1);
-
-        await mutateAsync(
-          { id, isFavorite: favorite },
-          {
-            onError: (_error, variables) => {
-              // Revert local state if mutation fails.
-              setFavorite(variables.isFavorite);
-              liked.value = withSpring(variables.isFavorite ? 1 : 0);
-            },
-          },
-        );
-      }}
+      onPress={handlePress}
     >
       <Animated.View
         className="items-center justify-center"
         style={[StyleSheet.absoluteFillObject, outlineStyle]}
       >
-        <LucideIcon
-          name="Heart"
+        <Icon
+          as={HeartIcon}
           className={cn('size-6 text-black', hearthClassName)}
         />
       </Animated.View>
 
       <Animated.View className="items-center justify-center" style={fillStyle}>
-        <LucideIcon name="Heart" className="size-6 text-red-500 fill-red-500" />
+        <Icon as={HeartIcon} className="size-6 text-red-500 fill-red-500" />
       </Animated.View>
     </Pressable>
   );

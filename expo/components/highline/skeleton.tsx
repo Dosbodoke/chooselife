@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
+import { ChevronLeftIcon } from 'lucide-react-native';
 import { TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { LucideIcon } from '~/lib/icons/lucide-icon';
-
+import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
 
 const HighlineSkeleton = () => {
@@ -25,7 +25,7 @@ const HighlineSkeleton = () => {
             router.canGoBack() ? router.back() : router.replace('/(tabs)')
           }
         >
-          <LucideIcon name="ChevronLeft" className="text-primary size-6" />
+          <Icon as={ChevronLeftIcon} className="text-primary size-6" />
         </TouchableOpacity>
 
         <View className="flex-row items-center justify-center gap-3">

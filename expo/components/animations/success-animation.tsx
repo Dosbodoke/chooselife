@@ -1,7 +1,8 @@
+import { CheckIcon } from 'lucide-react-native';
 import React, { useEffect, useRef } from 'react';
 import { Animated, View } from 'react-native';
 
-import { Check } from '~/lib/icons/Check';
+import { Icon } from '~/components/ui/icon';
 
 export default function SuccessAnimation({
   size = 120,
@@ -126,7 +127,8 @@ export default function SuccessAnimation({
             alignItems: 'center',
           }}
         >
-          <Check
+          <Icon
+            as={CheckIcon}
             style={{
               alignSelf: 'center',
             }}

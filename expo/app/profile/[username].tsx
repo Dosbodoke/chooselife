@@ -1,20 +1,22 @@
+import { SupabaseProvider, useIsMember } from '@chooselife/ui';
 import { FlashList } from '@shopify/flash-list';
 import { QueryData } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
+import { Image as ExpoImage } from 'expo-image';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { CalendarIcon, ChevronLeftIcon, FrownIcon } from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Pressable,
+  StyleSheet,
   TouchableOpacity,
   View,
-  StyleSheet
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 import { EnduranceIcon, SpeedlineIcon } from '~/lib/icons';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { transformSecondsToTimeString } from '~/utils';
 import { Tables } from '~/utils/database.types';
@@ -23,11 +25,9 @@ import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
-import { H2, H3, Lead, Muted, P } from '~/components/ui/typography';
-import { SupabaseProvider, useIsMember } from '@chooselife/ui';
-import { Image as ExpoImage } from 'expo-image';
 
 export default function Profile() {
   const { t } = useTranslation();
@@ -90,7 +90,7 @@ export default function Profile() {
           }
           className="p-2 flex-row items-center rounded-full "
         >
-          <LucideIcon name="ChevronLeft" className="text-primary size-6" />
+          <Icon as={ChevronLeftIcon} className="text-primary size-6" />
           <Text className="text-primary font-semibold text-xl">{username}</Text>
         </TouchableOpacity>
         <UserHeader profile={profile} />
@@ -111,16 +111,16 @@ const ProfileSlacBadge = () => {
   if (!isMember) return null;
 
   return (
-    <View
-      className=
-        'w-40 aspect-square items-center justify-center rounded-xl overflow-visible'
-    >
+    <View className="w-40 aspect-square items-center justify-center rounded-xl overflow-visible">
       <ExpoImage
-        source={{ uri: supabase.storage.from("promo").getPublicUrl("slac-badge.png").data.publicUrl }}
+        source={{
+          uri: supabase.storage.from('promo').getPublicUrl('slac-badge.png')
+            .data.publicUrl,
+        }}
         style={StyleSheet.absoluteFill}
       />
     </View>
-  )
+  );
 };
 
 const UserHeader: React.FC<{
@@ -154,17 +154,19 @@ const UserHeader: React.FC<{
             <SupabaseAvatar profileID={profile.id} />
           </View>
           <View className="flex flex-1 gap-2">
-            <H3 numberOfLines={1} className="mr-1">{profile.name}</H3>
+            <Text variant="h3" numberOfLines={1} className="mr-1">
+              {profile.name}
+            </Text>
             {profile.birthday ? (
               <View className="flex-row gap-1">
-                <LucideIcon
-                  name="Calendar"
+                <Icon
+                  as={CalendarIcon}
                   className="size-4 text-muted-foreground"
                 />
-                <Muted>{calculateAge(profile.birthday)}</Muted>
+                <Text variant="muted">{calculateAge(profile.birthday)}</Text>
               </View>
             ) : null}
-            <P>{profile.description}</P>
+            <Text variant="p">{profile.description}</Text>
           </View>
           <SupabaseProvider supabase={supabase} userId={profile.id}>
             <ProfileSlacBadge />
@@ -197,27 +199,27 @@ const Stats: React.FC<{
               {displayDistanceInKM ? 'km' : 'm'}
             </Text>
           </View>
-          <Lead className="text-base">
+          <Text variant="lead" className="text-base">
             {t('app.profile.[username].Stats.walked')}
-          </Lead>
+          </Text>
         </View>
 
         <View className="bg-gray-200 w-px h-full"></View>
 
         <View className="flex items-center justify-center gap-2">
           <Text className="text-3xl font-extrabold">{total_cadenas}</Text>
-          <Lead className="text-base">
+          <Text variant="lead" className="text-base">
             {t('app.profile.[username].Stats.sent')}
-          </Lead>
+          </Text>
         </View>
 
         <View className="bg-gray-200 w-px h-full"></View>
 
         <View className="flex items-center justify-center gap-2">
           <Text className="text-3xl font-extrabold">{total_full_lines}</Text>
-          <Lead className="text-base">
+          <Text variant="lead" className="text-base">
             {t('app.profile.[username].Stats.fullLine')}
-          </Lead>
+          </Text>
         </View>
       </CardContent>
     </Card>
@@ -233,9 +235,9 @@ const UserNotFound: React.FC<{ username: string }> = ({ username }) => {
   return (
     <SafeAreaOfflineView className="flex-1">
       <View className="flex items-center justify-center h-full gap-4">
-        <H2 className="text-center">
+        <Text variant="h2" className="text-center">
           {t('app.profile.[username].UserNotFound.title', { username })}
-        </H2>
+        </Text>
         <Button
           onPress={() => {
             if (canGoBack) {
@@ -345,8 +347,8 @@ const LastWalks: React.FC<{ username: string }> = ({ username }) => {
 
     return (
       <View className="items-center py-4">
-        <LucideIcon
-          name="Frown"
+        <Icon
+          as={FrownIcon}
           className="size-40 text-muted-foreground"
           strokeWidth={0.5}
         />

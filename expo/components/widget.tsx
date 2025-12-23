@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { ArrowRightIcon } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Dimensions, Pressable, Text, View } from 'react-native';
 import Animated, {
@@ -9,7 +10,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 
-import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { Icon } from '~/components/ui/icon';
 
 const { width: screenWidth } = Dimensions.get('window');
 const CARD_WIDTH = screenWidth - 16;
@@ -245,8 +246,8 @@ export function Widget({ items }: WidgetProps) {
 
                     {item.onPress ? (
                       <View className="bg-white/20 rounded-full p-2 ml-3">
-                        <LucideIcon
-                          name="ArrowRight"
+                        <Icon
+                          as={ArrowRightIcon}
                           size={20}
                           className="text-white"
                         />

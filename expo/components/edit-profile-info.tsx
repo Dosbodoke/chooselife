@@ -15,7 +15,6 @@ import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
 
 import { AvatarUploader, SupabaseAvatar } from './supabase-avatar';
-import { Muted } from './ui/typography';
 
 export const profileInfoSchema = z.object({
   name: z.string().min(1, i18next.t('app.setProfile.errors.nameRequired')),
@@ -42,7 +41,7 @@ const DateInput: React.FC<{
     <View className="w-full gap-2">
       <View className="flex-row items-center">
         <Text className="text-sm font-medium text-foreground">{label}</Text>
-        {optional && <Muted>{t('common.optional')}</Muted>}
+        {optional && <Text variant="muted">{t('common.optional')}</Text>}
       </View>
 
       <Pressable
