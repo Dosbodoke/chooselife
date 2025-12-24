@@ -2,6 +2,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import HighlineWalkImage from '~/assets/images/highline-walk.webp';
 import { BlurView } from 'expo-blur';
 import { Image as ExpoImage } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -516,10 +517,7 @@ const SuccessCard: React.FC<SuccessCardProps> = ({ offline, data }) => {
         className="absolute inset-0"
       >
         <ExpoImage
-          source={
-            supabase.storage.from('promo').getPublicUrl('highline-walk.webp')
-              .data.publicUrl
-          }
+          source={HighlineWalkImage}
           style={{ position: 'absolute', top: 0, right: 0, left: 0, bottom: 0 }}
           contentFit="cover"
         />

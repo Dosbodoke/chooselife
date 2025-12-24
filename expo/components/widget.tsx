@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import { Image as ExpoImage, ImageSource } from 'expo-image';
 import { ArrowRightIcon } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Dimensions, Pressable, Text, View } from 'react-native';
@@ -20,7 +20,7 @@ interface WidgetItem {
   id: string;
   title: string;
   subtitle?: string;
-  background: string;
+  background: string | ImageSource;
   content?: React.ReactNode;
   onPress?: () => void;
 }
@@ -199,8 +199,12 @@ export function Widget({ items }: WidgetProps) {
               className="absolute inset-0"
               style={backgroundAnimatedStyle}
             >
-              <Image
-                source={{ uri: item.background }}
+              <ExpoImage
+                source={
+                  typeof item.background === 'string'
+                    ? { uri: item.background }
+                    : item.background
+                }
                 style={{
                   flex: 1,
                   width: '100%',

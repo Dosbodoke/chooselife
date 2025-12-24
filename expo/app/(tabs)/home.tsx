@@ -1,3 +1,4 @@
+import HighlineWalkImage from '~/assets/images/highline-walk.webp';
 import { Link } from 'expo-router';
 import {
   BookIcon,
@@ -11,7 +12,6 @@ import { ScrollView, TouchableOpacity, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 
 import { useEvents } from '~/hooks/use-events';
-import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 
 import { EventCard, EventCardSkeleton } from '~/components/event-card';
@@ -35,9 +35,7 @@ export default function HomeScreen() {
               id: 'chooselife',
               title: t('app.(tabs).home.banner.title'),
               subtitle: t('app.(tabs).home.banner.description'),
-              background: supabase.storage
-                .from('promo')
-                .getPublicUrl('highline-walk.webp').data.publicUrl,
+              background: HighlineWalkImage,
             },
           ]}
         />
