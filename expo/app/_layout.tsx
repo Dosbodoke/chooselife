@@ -109,6 +109,7 @@ export default Sentry.wrap(function RootLayout() {
                           name="(modals)/login"
                           options={{
                             presentation: 'modal',
+                            animation: 'slide_from_bottom',
                             title: 'Entrar ou criar conta',
                           }}
                         />
