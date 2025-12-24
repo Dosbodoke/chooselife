@@ -3,12 +3,17 @@ import { Text, TouchableOpacity, View } from 'react-native';
 
 import { useI18n } from '~/context/i18n';
 
-export const LanguageSwitcher = () => {
+export const LanguageSwitcher = ({ onSwitch }: { onSwitch?: () => void }) => {
   const { setLocale, locale } = useI18n();
+
+  const handleSwitch = (locale: 'en' | 'pt') => {
+    setLocale(locale);
+    onSwitch?.();
+  };
 
   return (
     <View className="justify-center items-center gap-4 p-4 w-full">
-      <TouchableOpacity className="w-full" onPress={() => setLocale('en')}>
+      <TouchableOpacity className="w-full" onPress={() => handleSwitch('en')}>
         <View
           className={`flex-row items-center p-3 rounded-full border-2 ${
             locale === 'en'
@@ -27,7 +32,7 @@ export const LanguageSwitcher = () => {
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity className="w-full" onPress={() => setLocale('pt')}>
+      <TouchableOpacity className="w-full" onPress={() => handleSwitch('pt')}>
         <View
           className={`flex-row items-center p-3 rounded-full border-2 ${
             locale === 'pt'

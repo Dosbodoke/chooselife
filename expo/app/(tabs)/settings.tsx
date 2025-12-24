@@ -240,7 +240,9 @@ const ChangeLanguage: React.FC<{ isLast?: boolean }> = ({ isLast }) => {
         }}
       >
         <BottomSheetView className="p-4 items-center gap-4 bg-white rounded-3xl">
-          <LanguageSwitcher />
+          <LanguageSwitcher
+            onSwitch={() => bottomSheetModalRef.current?.dismiss()}
+          />
         </BottomSheetView>
       </BottomSheetModal>
     </>
