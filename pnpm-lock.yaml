@@ -8,9 +8,18 @@ importers:
 
   .:
     devDependencies:
+      next:
+        specifier: ^15.2.4
+        version: 15.5.9(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       prettier:
         specifier: ^3.0.0
         version: 3.7.4
+      react:
+        specifier: 19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: 19.1.0
+        version: 19.1.0(react@19.1.0)
       turbo:
         specifier: ^2.6.1
         version: 2.6.3
