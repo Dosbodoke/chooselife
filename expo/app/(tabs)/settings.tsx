@@ -10,7 +10,10 @@ import { Link, useRouter } from 'expo-router';
 import {
   ChevronRightIcon,
   LanguagesIcon,
+  LogOutIcon,
   PencilIcon,
+  Trash2Icon,
+  type LucideIcon,
 } from 'lucide-react-native';
 import React from 'react';
 import { useForm } from 'react-hook-form';
@@ -19,6 +22,7 @@ import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
+import { cn } from '~/lib/utils';
 import { Tables } from '~/utils/database.types';
 
 import {
@@ -32,7 +36,6 @@ import { MyWebbings } from '~/components/settings/my-webbing';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
-import { Separator } from '~/components/ui/separator';
 import { Text } from '~/components/ui/text';
 
 export default function SettingsPage() {
@@ -41,72 +44,151 @@ export default function SettingsPage() {
 
   if (profile && profile.username) {
     return (
-      <SafeAreaOfflineView className="h-full w-full">
-        <ScrollView contentContainerClassName="min-h-screen justify-between h-full flex-1 p-4 pt-9">
-          <View className="gap-6">
-            <Link
-              href={{
-                pathname: '/profile/[username]',
-                params: { username: profile.username },
-              }}
-              asChild
-            >
-              <TouchableOpacity className="flex flex-row gap-4">
-                <View className="relative overflow-hidden size-16">
-                  <SupabaseAvatar profileID={profile.id} />
-                </View>
-                <View className="flex-1">
-                  <Text variant="h2" className="flex-shrink">
-                    {profile.name}
-                  </Text>
-                  <Text variant="muted">
-                    {t('app.(tabs).settings.viewProfile')}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            </Link>
+      <SafeAreaOfflineView className="h-full w-full bg-gray-100">
+        <ScrollView contentContainerClassName="py-8 px-4 gap-6">
+          {/* Profile Header */}
+          <Link
+            href={{
+              pathname: '/profile/[username]',
+              params: { username: profile.username },
+            }}
+            asChild
+          >
+            <TouchableOpacity className="flex-row items-center gap-4 bg-white p-4 rounded-xl">
+              <View className="relative overflow-hidden size-16 rounded-full">
+                <SupabaseAvatar profileID={profile.id} />
+              </View>
+              <View className="flex-1">
+                <Text variant="h2" className="text-xl">
+                  {profile.name}
+                </Text>
+                <Text className="text-muted-foreground">
+                  {t('app.(tabs).settings.viewProfile')}
+                </Text>
+              </View>
+              <Icon
+                as={ChevronRightIcon}
+                className="size-5 text-muted-foreground"
+              />
+            </TouchableOpacity>
+          </Link>
 
+          {/* My Webbings */}
+          <View>
             <MyWebbings />
           </View>
 
-          <View className="gap-4">
-            <View>
-              <EditProfileButton />
-              <ChangeLanguage />
-            </View>
-
-            <View className="gap-2">
-              <Button variant="link" onPress={logout}>
-                <Text className="text-foreground underline">
-                  {t('app.(tabs).settings.logOut')}
-                </Text>
-              </Button>
-              <DeleteAccount />
-            </View>
+          {/* Settings Group */}
+          <View className="bg-white rounded-xl overflow-hidden">
+            <EditProfileButton />
+            <ChangeLanguage isLast />
           </View>
+
+          {/* Account Actions */}
+          <View className="bg-white rounded-xl overflow-hidden">
+            <SettingsItem
+              icon={LogOutIcon}
+              iconColor="#8E8E93"
+              label={t('app.(tabs).settings.logOut')}
+              onPress={logout}
+            />
+            <DeleteAccount isLast />
+          </View>
+
+          <Text className="text-center text-muted-foreground text-xs mt-4">
+            Version 1.3.11
+          </Text>
         </ScrollView>
       </SafeAreaOfflineView>
     );
   }
 
   return (
-    <SafeAreaOfflineView className="flex-1">
+    <SafeAreaOfflineView className="flex-1 bg-gray-100">
       <View className="p-4 gap-4 flex justify-end h-full">
-        <ChangeLanguage />
+        <View className="bg-white rounded-xl overflow-hidden">
+          <ChangeLanguage isLast />
+        </View>
         <Link href={`/login?redirect_to=settings`} asChild>
-          <Button
-            disabled={isLoginPending}
-            className="w-fit bg-primary text-center"
-          >
+          <Button disabled={isLoginPending} className="w-full bg-primary">
             <Text>{t('app.(tabs).settings.logIn')}</Text>
           </Button>
         </Link>
+        <Text className="text-center text-muted-foreground text-xs mt-4">
+          Version 1.3.11
+        </Text>
       </View>
     </SafeAreaOfflineView>
   );
 }
 
-const ChangeLanguage: React.FC = () => {
+// Reusable Settings Item Component
+interface SettingsItemProps {
+  icon?: LucideIcon;
+  iconColor?: string;
+  label: string;
+  onPress?: () => void;
+  rightElement?: React.ReactNode;
+  isLast?: boolean;
+  destructive?: boolean;
+}
+
+const SettingsItem: React.FC<SettingsItemProps> = ({
+  icon: IconComponent,
+  iconColor = '#007AFF', // Default iOS Blue
+  label,
+  onPress,
+  rightElement,
+  isLast = false,
+  destructive = false,
+}) => {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      className={cn(
+        'flex-row items-center pl-4 bg-white active:bg-gray-50',
+        !isLast && '',
+      )}
+    >
+      {/* Icon Container */}
+      {IconComponent && (
+        <View
+          className="size-8 rounded-md items-center justify-center mr-4"
+          style={{ backgroundColor: iconColor }}
+        >
+          <Icon as={IconComponent} className="text-white size-5" />
+        </View>
+      )}
+
+      {/* Content */}
+      <View
+        className={cn(
+          'flex-1 flex-row items-center justify-between py-3 pr-4',
+          !isLast && 'border-b border-gray-100',
+        )}
+      >
+        <Text
+          className={cn(
+            'text-base',
+            destructive ? 'text-red-500' : 'text-foreground',
+          )}
+        >
+          {label}
+        </Text>
+        <View className="flex-row items-center gap-2">
+          {rightElement}
+          <Icon
+            as={ChevronRightIcon}
+            className="size-5 text-muted-foreground/60"
+          />
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+const ChangeLanguage: React.FC<{ isLast?: boolean }> = ({ isLast }) => {
   const { t } = useTranslation();
   const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
 
@@ -131,17 +213,13 @@ const ChangeLanguage: React.FC = () => {
 
   return (
     <>
-      <TouchableOpacity className="gap-4" onPress={openModal}>
-        <Separator></Separator>
-        <View className="flex-row justify-between">
-          <View className="flex-row gap-2">
-            <Icon as={LanguagesIcon} className="size-6 text-muted-foreground" />
-            <Text>{t('app.(tabs).settings.changeLanguage')}</Text>
-          </View>
-          <Icon as={ChevronRightIcon} className="size-6 text-foreground" />
-        </View>
-        <Separator></Separator>
-      </TouchableOpacity>
+      <SettingsItem
+        icon={LanguagesIcon}
+        iconColor="#34C759" // iOS Green
+        label={t('app.(tabs).settings.changeLanguage')}
+        onPress={openModal}
+        isLast={isLast}
+      />
       <BottomSheetModal
         ref={bottomSheetModalRef}
         backdropComponent={renderBackdrop}
@@ -161,7 +239,7 @@ const ChangeLanguage: React.FC = () => {
           },
         }}
       >
-        <BottomSheetView className="p-4 items-center gap-4">
+        <BottomSheetView className="p-4 items-center gap-4 bg-white rounded-3xl">
           <LanguageSwitcher />
         </BottomSheetView>
       </BottomSheetModal>
@@ -242,17 +320,12 @@ const EditProfileButton: React.FC = () => {
 
   return (
     <>
-      <TouchableOpacity className="gap-4" onPress={openModal}>
-        <Separator></Separator>
-        <View className="flex-row justify-between">
-          <View className="flex-row gap-2">
-            <Icon as={PencilIcon} className="size-6 text-muted-foreground" />
-            <Text>{t('app.(tabs).settings.editProfile.triggerLabel')}</Text>
-          </View>
-          <Icon as={ChevronRightIcon} className="size-6 text-foreground" />
-        </View>
-        <View></View>
-      </TouchableOpacity>
+      <SettingsItem
+        icon={PencilIcon}
+        iconColor="#007AFF" // iOS Blue
+        label={t('app.(tabs).settings.editProfile.triggerLabel')}
+        onPress={openModal}
+      />
       <BottomSheetModal
         ref={bottomSheetModalRef}
         backdropComponent={renderBackdrop}
@@ -268,7 +341,7 @@ const EditProfileButton: React.FC = () => {
           },
         }}
       >
-        <BottomSheetView className="p-4 items-center gap-4">
+        <BottomSheetView className="p-4 items-center gap-4 bg-white">
           <ProfileInfoForm form={form} />
           <Button
             className="w-full"
@@ -283,7 +356,7 @@ const EditProfileButton: React.FC = () => {
   );
 };
 
-const DeleteAccount: React.FC = () => {
+const DeleteAccount: React.FC<{ isLast?: boolean }> = ({ isLast }) => {
   const router = useRouter();
   const { t } = useTranslation();
   const { logout, profile } = useAuth();
@@ -316,10 +389,13 @@ const DeleteAccount: React.FC = () => {
     );
   };
   return (
-    <Button variant="link" onPress={handleDeleteAccount}>
-      <Text className="text-red-500">
-        {t('app.(tabs).settings.delete.label')}
-      </Text>
-    </Button>
+    <SettingsItem
+      icon={Trash2Icon}
+      iconColor="#FF3B30" // iOS Red
+      label={t('app.(tabs).settings.delete.label')}
+      onPress={handleDeleteAccount}
+      isLast={isLast}
+      destructive
+    />
   );
 };
