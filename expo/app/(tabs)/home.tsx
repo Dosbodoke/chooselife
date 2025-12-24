@@ -49,11 +49,6 @@ export default function HomeScreen() {
               />
             </Link>
             <QuickAction
-              icon={<Icon as={UsersIcon} className="text-primary" />}
-              label={t('app.(tabs).home.quickActions.community')}
-              isComingSoon
-            />
-            <QuickAction
               icon={<Icon as={BookIcon} className="text-primary" />}
               label={t('app.(tabs).home.quickActions.learn')}
               isComingSoon
