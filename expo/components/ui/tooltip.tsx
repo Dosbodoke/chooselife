@@ -19,10 +19,9 @@ function TooltipContent({
   portalHost,
   side = 'top',
   ...props
-}: TooltipPrimitive.ContentProps &
-  React.RefAttributes<TooltipPrimitive.ContentRef> & {
-    portalHost?: string;
-  }) {
+}: React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> & {
+  portalHost?: string;
+}) {
   return (
     <TooltipPrimitive.Portal hostName={portalHost}>
       <FullWindowOverlay>
@@ -43,8 +42,8 @@ function TooltipContent({
                     web: cn(
                       'animate-in fade-in-0 zoom-in-95 origin-(--radix-tooltip-content-transform-origin) w-fit text-balance',
                       side === 'bottom' && 'slide-in-from-top-2',
-                      side === 'left' && 'slide-in-from-right-2',
-                      side === 'right' && 'slide-in-from-left-2',
+                      (side as string) === 'left' && 'slide-in-from-right-2',
+                      (side as string) === 'right' && 'slide-in-from-left-2',
                       side === 'top' && 'slide-in-from-bottom-2'
                     ),
                   }),

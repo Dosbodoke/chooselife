@@ -50,10 +50,10 @@ export function useLeaderboardQuery<TFunc extends LeaderboardFunctions>({
     if (error) {
       throw new Error(error.message);
     }
-    return data;
+    return data as unknown as Functions[TFunc]['Returns'];
   }
 
-  // Safely extract start_date and end_date if they exist in params
+  // Safely ex111tract start_date and end_date if they exist in params
   const startDate =
     'start_date' in params
       ? (params.start_date as string | undefined)
