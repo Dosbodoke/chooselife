@@ -441,9 +441,7 @@ export type Database = {
           birthday: string | null
           deletion_requested: string | null
           description: string | null
-          expo_push_token: string | null
           id: string
-          language: Database["public"]["Enums"]["language"] | null
           name: string | null
           profile_picture: string | null
           username: string | null
@@ -452,9 +450,7 @@ export type Database = {
           birthday?: string | null
           deletion_requested?: string | null
           description?: string | null
-          expo_push_token?: string | null
           id: string
-          language?: Database["public"]["Enums"]["language"] | null
           name?: string | null
           profile_picture?: string | null
           username?: string | null
@@ -463,9 +459,7 @@ export type Database = {
           birthday?: string | null
           deletion_requested?: string | null
           description?: string | null
-          expo_push_token?: string | null
           id?: string
-          language?: Database["public"]["Enums"]["language"] | null
           name?: string | null
           profile_picture?: string | null
           username?: string | null
