@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { useRiggingForm } from '~/context/rig-form';
+import { DAMPING } from '~/utils/constants';
 
 import {
   Card,
@@ -22,7 +23,6 @@ import { WebForm } from '~/components/webbing-setup/web-form';
 
 import { SetupCanva, type WebbingValidationErrors } from './setup-canvas';
 
-const DAMPING = 14;
 export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
 export const _exitingAnimation = FadeOut.springify().damping(DAMPING);
 export const _enteringAnimation = FadeInDown.springify().damping(DAMPING);

@@ -15,24 +15,24 @@ import { Text } from '~/components/ui/text';
 
 const NewsCardSkeleton = () => {
   return (
-    <View className="bg-gray-100 rounded-lg p-4 gap-2">
+    <View className="bg-white rounded-xl p-4 gap-2">
       {/* Title */}
-      <Skeleton className="h-7 w-3/4 bg-gray-300" />
+      <Skeleton className="h-7 w-3/4 bg-gray-200" />
       
       {/* Content */}
       <View className="gap-1 my-2">
-        <Skeleton className="h-4 w-full bg-gray-300" />
-        <Skeleton className="h-4 w-full bg-gray-300" />
-        <Skeleton className="h-4 w-2/3 bg-gray-300" />
+        <Skeleton className="h-4 w-full bg-gray-200" />
+        <Skeleton className="h-4 w-full bg-gray-200" />
+        <Skeleton className="h-4 w-2/3 bg-gray-200" />
       </View>
 
       {/* Footer */}
       <View className="flex-row justify-between items-center mt-2">
         <View className="flex-row gap-4">
-          <Skeleton className="h-5 w-10 bg-gray-300" />
-          <Skeleton className="h-5 w-10 bg-gray-300" />
+          <Skeleton className="h-5 w-10 bg-gray-200" />
+          <Skeleton className="h-5 w-10 bg-gray-200" />
         </View>
-        <Skeleton className="h-5 w-32 bg-gray-300" />
+        <Skeleton className="h-5 w-32 bg-gray-200" />
       </View>
     </View>
   );
@@ -56,8 +56,8 @@ const NewsCard = ({ news }: { news: NewsType[number] }) => {
   const organizationSlug = news.organizations?.slug;
 
   return (
-    <View className="bg-gray-100 rounded-lg p-4">
-      <Text className="text-sm text-gray-600 mb-2">
+    <View className="bg-white rounded-xl p-4">
+      <Text className="text-sm text-gray-500 mb-2">
         {new Date(news.created_at).toLocaleDateString()}
       </Text>
       <View className="relative">
@@ -67,7 +67,7 @@ const NewsCard = ({ news }: { news: NewsType[number] }) => {
             className="absolute inset-x-0 bottom-0 h-40"
             style={{
               experimental_backgroundImage:
-                'linear-gradient(to bottom, rgba(243, 244, 246, 0), #f3f4f6)',
+                'linear-gradient(to bottom, rgba(255, 255, 255, 0), #ffffff)',
             }}
           />
         )}

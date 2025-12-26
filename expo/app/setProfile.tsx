@@ -21,7 +21,6 @@ import { useAuth } from '~/context/auth';
 import { type Profile } from '~/hooks/use-profile';
 import HighlineIllustration from '~/lib/icons/highline-illustration';
 import { supabase } from '~/lib/supabase';
-import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
 
 import {
@@ -32,7 +31,6 @@ import {
 import { LanguageSwitcher } from '~/components/language-switcher';
 import { OnboardNavigator, OnboardPaginator } from '~/components/onboard';
 import { Text } from '~/components/ui/text';
-import { H2, H3, Muted } from '~/components/ui/typography';
 
 const profileSchema = profileInfoSchema.extend({
   username: z
@@ -45,7 +43,6 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 export default function SetProfile() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const colorSchema = useColorScheme();
   const router = useRouter();
   const { session, profile } = useAuth();
   const [isValidating, setIsValidating] = useState(false);
@@ -187,11 +184,10 @@ export default function SetProfile() {
         contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 16 }}
         keyboardShouldPersistTaps="handled"
       >
-        <H2 className="text-center border-0">{t('app.setProfile.title')}</H2>
-        <HighlineIllustration
-          mode={colorSchema.colorScheme}
-          className="w-full h-auto"
-        />
+        <Text variant="h2" className="text-center border-0">
+          {t('app.setProfile.title')}
+        </Text>
+        <HighlineIllustration className="w-full h-auto" />
 
         <Animated.View
           key={`step-${index}`}
@@ -223,12 +219,12 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
   return (
     <View className="gap-4">
       <View>
-        <H3 className="text-center">
+        <Text variant="h3" className="text-center">
           {t('app.setProfile.UsernameForm.title')}
-        </H3>
-        <Muted className="text-center">
+        </Text>
+        <Text variant="muted" className="text-center">
           {t('app.setProfile.UsernameForm.subtitle')}
-        </Muted>
+        </Text>
       </View>
 
       <Controller

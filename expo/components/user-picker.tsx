@@ -7,6 +7,7 @@ import {
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import { useQuery } from '@tanstack/react-query';
+import { BadgeCheckIcon, SearchIcon, XIcon } from 'lucide-react-native';
 import React, {
   useCallback,
   useEffect,
@@ -34,11 +35,11 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { useDebounceValue } from '~/hooks/use-debounce-value';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { _layoutAnimation, DAMPING, STIFFNESS } from '~/utils/constants';
 import type { Tables } from '~/utils/database.types';
 
+import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
 
 interface UserOption {
@@ -87,11 +88,7 @@ const Badge: React.FC<{
       {children}
       {onRemove && (
         <Pressable hitSlop={18} onPress={handlePress}>
-          <LucideIcon
-            name="X"
-            className="size-4 text-red-400"
-            strokeWidth={3}
-          />
+          <Icon as={XIcon} className="size-4 text-red-400" strokeWidth={3} />
         </Pressable>
       )}
     </Animated.View>
@@ -191,7 +188,7 @@ const VerifiedUser: React.FC<{
           <Text className="text-sm text-gray-500">{username}</Text>
         </View>
 
-        <LucideIcon name="BadgeCheck" className="size-6 text-blue-500" />
+        <Icon as={BadgeCheckIcon} className="size-6 text-blue-500" />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -397,8 +394,8 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                   <Badge key={`badge-${value.username}`} variant="selected">
                     <View className="flex-row items-center gap-2">
                       {value.verified && (
-                        <LucideIcon
-                          name="BadgeCheck"
+                        <Icon
+                          as={BadgeCheckIcon}
                           className="size-4 text-blue-500"
                         />
                       )}
@@ -444,7 +441,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
 
             {/* Search Input */}
             <View className="flex-row items-center bg-white rounded-lg border border-gray-300 px-3">
-              <LucideIcon name="Search" size={20} className="text-primary" />
+              <Icon as={SearchIcon} size={20} className="text-primary" />
 
               <BottomSheetTextInput
                 placeholder={t('components.user-picker.searchPlaceholder')}
@@ -488,8 +485,8 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                     >
                       <View className="flex-row items-center">
                         {value.verified && (
-                          <LucideIcon
-                            name="BadgeCheck"
+                          <Icon
+                            as={BadgeCheckIcon}
                             className="size-4 text-blue-500 mr-1"
                           />
                         )}

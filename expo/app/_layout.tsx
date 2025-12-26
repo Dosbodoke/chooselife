@@ -1,9 +1,11 @@
 import '~/global.css';
 
+import { SupabaseProvider } from '@chooselife/ui';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { DefaultTheme, Theme, ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import Mapbox from '@rnmapbox/maps';
+import * as Sentry from '@sentry/react-native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -11,21 +13,19 @@ import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
-import { AuthProvider } from '~/context/auth';
+import { AuthProvider, useAuth } from '~/context/auth';
 import { I18nProvider } from '~/context/i18n';
 import { NotificationProvider } from '~/context/notifications';
 import { ReactQueryProvider } from '~/context/react-query';
 import { useDeepLinkHandler } from '~/hooks/use-deep-link-handler';
+import { supabase } from '~/lib/supabase';
 import { setAndroidNavigationBar } from '~/utils/android-navigation-bar';
 import { NAV_THEME } from '~/utils/constants';
 
 import { OfflineBanner } from '~/components/offline-banner';
-import * as Sentry from '@sentry/react-native';
-import { SupabaseProvider } from '@chooselife/ui';
-import { supabase } from '~/lib/supabase';
-import { useAuth } from '~/context/auth';
 
 Sentry.init({
+  enabled: !__DEV__,
   dsn: 'https://6311d6bb9e36e9b9087bc81255984302@o4508814892466176.ingest.us.sentry.io/4509506390982656',
 
   // Adds more context data to events (IP address, cookies, user, etc.)
@@ -35,7 +35,10 @@ Sentry.init({
   // Configure Session Replay
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1,
-  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+  integrations: [
+    Sentry.mobileReplayIntegration(),
+    Sentry.feedbackIntegration(),
+  ],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
@@ -106,6 +109,7 @@ export default Sentry.wrap(function RootLayout() {
                           name="(modals)/login"
                           options={{
                             presentation: 'modal',
+                            animation: 'slide_from_bottom',
                             title: 'Entrar ou criar conta',
                           }}
                         />

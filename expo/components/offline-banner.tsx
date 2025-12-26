@@ -1,11 +1,11 @@
 import { useNetInfo } from '@react-native-community/netinfo';
+import { WifiOffIcon } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { LucideIcon } from '~/lib/icons/lucide-icon';
-
+import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 
 export const SafeAreaOfflineView: React.FC<{
@@ -25,7 +25,7 @@ export const SafeAreaOfflineView: React.FC<{
         className={className}
       >
         <View className="w-full py-2 bg-red-100 flex-row items-center justify-center gap-2">
-          <LucideIcon name="WifiOff" className="size-5 text-red-500" />
+          <Icon as={WifiOffIcon} className="size-5 text-red-500" />
           <Text className="text-red-500 flex-shrink">
             {t('components.offlineBannerMessage')}
           </Text>
@@ -56,7 +56,7 @@ export const OfflineBanner: React.FC = () => {
       className="w-full py-2 bg-red-100 flex-row items-center justify-center gap-2"
       style={{ paddingTop: top }}
     >
-      <LucideIcon name="WifiOff" className="size-5 text-red-500" />
+      <Icon as={WifiOffIcon} className="size-5 text-red-500" />
       <Text className="text-red-500 flex-shrink">
         {t('components.offlineBannerMessage')}
       </Text>

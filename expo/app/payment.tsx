@@ -3,18 +3,24 @@ import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { Image as ExpoImage } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Check, CheckCircle2, Copy } from 'lucide-react-native';
+import {
+  CheckCircle2Icon,
+  CheckIcon,
+  CopyIcon,
+  HandCoinsIcon,
+  XIcon,
+} from 'lucide-react-native';
 import React from 'react';
 import { Pressable, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { useAuth } from '~/context/auth';
 import { queryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 
 import { BgBlob } from '~/components/bg-blog';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '~/context/auth';
+import { Icon } from '~/components/ui/icon';
 
 export default function PaymentScreen() {
   const router = useRouter();
@@ -92,7 +98,7 @@ export default function PaymentScreen() {
         <CloseButton onClose={handleClose} />
         <View className="flex-1 justify-center items-center gap-4">
           <Animated.View entering={ZoomIn}>
-            <CheckCircle2 size={64} color="#10B981" />
+            <Icon as={CheckCircle2Icon} size={64} color="#10B981" />
           </Animated.View>
           <Animated.Text
             entering={FadeIn.delay(200)}
@@ -152,11 +158,7 @@ export default function PaymentScreen() {
             entering={FadeInDown.delay(300).duration(300)}
             className="bg-emerald-500/20 backdrop-blur-xl rounded-full p-4 mb-4 border-2 border-emerald-400/30"
           >
-            <LucideIcon
-              name="HandCoins"
-              size={32}
-              className="text-emerald-500"
-            />
+            <Icon as={HandCoinsIcon} size={32} className="text-emerald-500" />
           </Animated.View>
           <Animated.Text
             entering={FadeInDown.delay(400).duration(300)}
@@ -226,14 +228,14 @@ const CopyCode = ({ code }: { code: string }) => {
       <View className="flex-row items-center gap-2">
         {copied ? (
           <>
-            <Check size={18} color="#10B981" />
+            <Icon as={CheckIcon} size={18} color="#10B981" />
             <Text className="text-emerald-400 text-sm font-semibold tracking-wide">
               Copiado!
             </Text>
           </>
         ) : (
           <>
-            <Copy size={18} color="#FFFFFF" />
+            <Icon as={CopyIcon} size={18} color="#FFFFFF" />
             <Text className="text-white/90 text-sm font-semibold tracking-wide">
               Copiar PIX
             </Text>
@@ -244,19 +246,19 @@ const CopyCode = ({ code }: { code: string }) => {
   );
 };
 
-const CloseButton = ({ onClose }: { onClose: () => void}) => {
+const CloseButton = ({ onClose }: { onClose: () => void }) => {
   const insets = useSafeAreaInsets();
 
   return (
-  <Pressable
-        onPress={onClose}
-        className="absolute right-6 p-2.5 rounded-full bg-background/80 z-50"
-        style={{
-          top: insets.top + 12,
-        }}
-        hitSlop={12}
-      >
-        <LucideIcon name="X" size={20} className="fill-muted" />
-      </Pressable>
-      )
-}
+    <Pressable
+      onPress={onClose}
+      className="absolute right-6 p-2.5 rounded-full bg-background/80 z-50"
+      style={{
+        top: insets.top + 12,
+      }}
+      hitSlop={12}
+    >
+      <Icon as={XIcon} size={20} className="fill-muted" />
+    </Pressable>
+  );
+};

@@ -9,7 +9,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@chooselife/database": "*"
+    "@chooselife/database": "workspace:*"
   },
   "peerDependencies": {
     "react": "*",

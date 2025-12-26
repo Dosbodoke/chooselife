@@ -2,11 +2,11 @@ import Mapbox from '@rnmapbox/maps';
 import { useMapStore } from '~/store/map-store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { Position } from 'geojson';
+import { MapPinIcon } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import {
   DEFAULT_LATITUDE,
   DEFAULT_LONGITUDE,
@@ -15,6 +15,7 @@ import {
 
 import { PickerControls } from '~/components/map/picker-button';
 import { haversineDistance } from '~/components/map/utils';
+import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 
 const LocationPickerScreen: React.FC = () => {
@@ -143,7 +144,7 @@ const FakeMarker: React.FC<{
       className="absolute bottom-1/2 flex w-full items-center justify-center"
     >
       <DistanceLabel anchorA={anchorA} anchorB={anchorB} />
-      <LucideIcon name="MapPin" className="size-9 text-black fill-red-500" />
+      <Icon as={MapPinIcon} className="size-9 text-black fill-red-500" />
     </View>
   );
 };
@@ -163,7 +164,7 @@ const AnchorPin: React.FC<{
       }}
       anchor={{ y: 1, x: 0.5 }}
     >
-      <LucideIcon name="MapPin" className="size-9 text-black fill-red-500" />
+      <Icon as={MapPinIcon} className="size-9 text-black fill-red-500" />
     </Mapbox.PointAnnotation>
   );
 };

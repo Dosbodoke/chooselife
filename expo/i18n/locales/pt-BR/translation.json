@@ -122,7 +122,7 @@
     "(tabs)": {
       "_layout": {
         "indexTitle": "Explorar",
-        "settingsTitle": "Configurações",
+        "settingsTitle": "Perfil",
         "homeTitle": "Início"
       },
       "home": {
@@ -132,7 +132,6 @@
         },
         "quickActions": {
           "setupSimulator": "Simulador de Setup",
-          "community": "Comunidade",
           "learn": "Aprenda"
         },
         "sections": {
@@ -176,7 +175,18 @@
           "title": "BOA CHOOSEN",
           "message": "Seu rolê está registrado e será usado para calcular as suas estatísticas.",
           "offlineMessage": "Como você está offline, a próxima vez que tiver conexão com internet seu rolê será salvo.",
-          "button": "Ver o Highline"
+          "button": "Ver o Highline",
+          "mainType": {
+            "cadena": "Cadena",
+            "fullLine": "Full Line",
+            "walk": "Travessia"
+          },
+          "recorded_label": "{{type}} Registrado",
+          "distance_label": "Distância",
+          "time_label": "Tempo",
+          "count_label": "Contagem",
+          "share_dialog_title": "Compartilhar seu rolê",
+          "share_button": "Compartilhar / Salvar"
         },
         "fields": {
           "instagram": {
@@ -298,8 +308,9 @@
       }
     },
     "+not-found": {
-      "title": "Essa tela não existe.",
-      "subtitle": "Ir para o mapa"
+      "title": "Você tomou um Leash Fall!",
+      "description": "A página que você tentou encontrar não existe e essa é o backup. Mas não se preocupe, vamos te colocar de volta na linha.",
+      "subtitle": "Ir para o Mapa"
     },
     "events": {
       "title": "Eventos",

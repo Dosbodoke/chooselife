@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'ChooseLife',
   slug: 'chooselife',
-  version: '1.3.11',
+  version: '1.3.12',
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
@@ -39,17 +39,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           {
             scheme: 'https',
             host: 'chooselife.club',
-            pathPattern: '.*highline/.*',
+            pathPattern: '/.*highline/.*',
           },
           {
             scheme: 'https',
             host: 'chooselife.club',
-            pathPattern: '.*profile/.*',
+            pathPattern: '/.*profile/.*',
           },
           {
             scheme: 'https',
             host: 'chooselife.club',
-            pathPattern: '.*news/.*',
+            pathPattern: '/.*news/.*',
           },
         ],
         category: ['BROWSABLE', 'DEFAULT'],

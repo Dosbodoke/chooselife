@@ -13,7 +13,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { supabase } from '~/lib/supabase';
-import { Tables } from '~/utils/database-generated.types';
+import { Tables } from '~/utils/database.types';
 
 import { BecomeMemberForm } from './become-member-form';
 import { PaginationIndicator } from './pagination-indicator';

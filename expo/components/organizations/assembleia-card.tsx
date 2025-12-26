@@ -1,9 +1,9 @@
 import { Image } from 'expo-image';
+import { CalendarIcon } from 'lucide-react-native';
 import React from 'react';
 import { View } from 'react-native';
 
-import { LucideIcon } from '~/lib/icons/lucide-icon';
-
+import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 
 import { Card, CardContent } from '../ui/card';
@@ -22,21 +22,21 @@ export const AssembleiaCard = () => {
   }).format(NEXT_ASSEMBLY_DATE);
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden p-0">
       <Image
         style={{
           position: 'absolute',
           inset: 0,
           width: '100%',
           height: '100%',
-          opacity: 0.4,
+          opacity: 0.3,
         }}
         source={{
           uri: 'https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/images/heroui-native-example/home-components-light.png',
         }}
         contentFit="cover"
       />
-      <CardContent>
+      <CardContent className="py-6">
         <View className="flex-row gap-4">
           <View
             className="rounded-xl overflow-hidden w-12 h-12 items-center justify-center"
@@ -45,7 +45,7 @@ export const AssembleiaCard = () => {
                 'linear-gradient(135deg, #6366f1, #4f46e5)',
             }}
           >
-            <LucideIcon name="Calendar" className="text-white" />
+            <Icon as={CalendarIcon} className="text-white" />
           </View>
           <View className="flex-1">
             <Text className="text-lg font-black text-gray-900">
@@ -55,7 +55,9 @@ export const AssembleiaCard = () => {
               {formattedDate}
             </Text>
             <Text className="text-base font-medium text-gray-600 leading-6 mb-3">
-              As datas das Assembleias Gerais são definidas conforme a necessidade e sempre comunicadas com no mínimo 30 dias de antecedência.
+              As datas das Assembleias Gerais são definidas conforme a
+              necessidade e sempre comunicadas com no mínimo 30 dias de
+              antecedência.
             </Text>
           </View>
         </View>

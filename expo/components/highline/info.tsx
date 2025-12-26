@@ -6,7 +6,6 @@ import { useHighline } from '~/hooks/use-highline';
 
 import { Card, CardContent } from '~/components/ui/card';
 import { Text } from '~/components/ui/text';
-import { H1, Lead } from '~/components/ui/typography';
 
 import { HighlineHistory } from './history';
 
@@ -19,8 +18,10 @@ export default function Info() {
   return (
     <View className="flex-1 gap-4">
       <View>
-        <H1>{highline.name}</H1>
-        {highline.description ? <Lead>{highline.description}</Lead> : null}
+        <Text variant="h1">{highline.name}</Text>
+        {highline.description ? (
+          <Text variant="lead">{highline.description}</Text>
+        ) : null}
       </View>
 
       <HighlineDimensions height={highline.height} distance={highline.length} />
@@ -37,7 +38,7 @@ const HighlineDimensions: React.FC<{
 
   return (
     <Card>
-      <CardContent className="flex flex-row justify-evenly items-center px-2 py-4 sm:gap-8">
+      <CardContent className="flex flex-row justify-evenly items-center sm:gap-8">
         <View className="flex items-center justify-center gap-2">
           <View className="flex-row">
             <Text className="text-3xl font-extrabold">{height}</Text>
@@ -45,9 +46,9 @@ const HighlineDimensions: React.FC<{
               m
             </Text>
           </View>
-          <Lead className="text-base">
+          <Text variant="lead" className="text-base">
             {t('components.highline.info.height')}
-          </Lead>
+          </Text>
         </View>
 
         <View className="bg-gray-200 w-px h-full"></View>
@@ -59,9 +60,9 @@ const HighlineDimensions: React.FC<{
               m
             </Text>
           </View>
-          <Lead className="text-base">
+          <Text variant="lead" className="text-base">
             {t('components.highline.info.length')}
-          </Lead>
+          </Text>
         </View>
       </CardContent>
     </Card>

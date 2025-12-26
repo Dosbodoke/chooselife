@@ -1,4 +1,10 @@
 import { Link } from 'expo-router';
+import {
+  CalendarIcon,
+  ChevronDownIcon,
+  MapPinIcon,
+  TicketIcon,
+} from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
@@ -12,10 +18,10 @@ import Animated, {
 
 import { useI18n } from '~/context/i18n';
 import type { Event } from '~/hooks/use-events';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 
 import { Button } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
+import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 
@@ -42,7 +48,7 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
   });
 
   return (
-    <AnimatedCard layout={_layoutAnimation} className="shadow w-full">
+    <AnimatedCard layout={_layoutAnimation} className="w-full py-0 drop-shadow">
       <Pressable onPress={toggleExpand}>
         <CardContent className="p-3 overflow-hidden">
           <View className="flex-row gap-3">
@@ -60,15 +66,15 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
               <View className="flex-row justify-between items-start">
                 <Text className="font-medium flex-1 mr-2">{event.title}</Text>
                 <Animated.View style={rotateStyle}>
-                  <LucideIcon
-                    name="ChevronDown"
+                  <Icon
+                    as={ChevronDownIcon}
                     className="size-5 text-muted-foreground"
                   />
                 </Animated.View>
               </View>
               <View className="items-center flex-row gap-1">
-                <LucideIcon
-                  name="MapPin"
+                <Icon
+                  as={MapPinIcon}
                   className="size-4 text-muted-foreground"
                 />
                 <Text className="text-sm text-muted-foreground">
@@ -95,8 +101,8 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
 
                 {/* Event Type */}
                 <View className="flex-row items-center gap-2">
-                  <LucideIcon
-                    name="Ticket"
+                  <Icon
+                    as={TicketIcon}
                     className="size-4 text-muted-foreground"
                   />
                   <Text className="text-sm capitalize">{event.type}</Text>
@@ -104,8 +110,8 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
 
                 {/* Date/Time Info */}
                 <View className="flex-row items-center gap-2">
-                  <LucideIcon
-                    name="Calendar"
+                  <Icon
+                    as={CalendarIcon}
                     className="size-4 text-muted-foreground"
                   />
                   <Text className="text-sm">

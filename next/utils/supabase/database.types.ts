@@ -1,1 +1,1 @@
-export * from "@packages/database/index";
+export * from "@chooselife/database";

@@ -1,9 +1,15 @@
 import { Link } from 'expo-router';
+import {
+  FactoryIcon,
+  FrownIcon,
+  LayersIcon,
+  LinkIcon,
+  MoveHorizontalIcon,
+} from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 
 import { getWebbingName, useUserWebbings } from '~/hooks/use-webbings';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { Tables } from '~/utils/database.types';
 
 import {
@@ -13,6 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from '~/components/ui/card';
+import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 
 import { Skeleton } from '../ui/skeleton';
@@ -64,8 +71,8 @@ const EmptyWebbing: React.FC = () => {
   return (
     <View className="justify-center items-center">
       <View>
-        <LucideIcon
-          name="Frown"
+        <Icon
+          as={FrownIcon}
           className="size-24 text-muted-foreground"
           strokeWidth={1}
         />
@@ -106,8 +113,8 @@ const WebbingItem: React.FC<{
 
         <View className="mt-2 flex-row flex-wrap gap-x-4 gap-y-2">
           <View className="flex-row items-center">
-            <LucideIcon
-              name="MoveHorizontal"
+            <Icon
+              as={MoveHorizontalIcon}
               className="size-4 text-primary mr-1"
             />
             <Text className="text-sm">{webbing.length}m</Text>
@@ -116,24 +123,18 @@ const WebbingItem: React.FC<{
           {webbing.model ? (
             <>
               <View className="flex-row items-center">
-                <LucideIcon
-                  name="Factory"
-                  className="size-4 text-primary mr-1"
-                />
+                <Icon as={FactoryIcon} className="size-4 text-primary mr-1" />
                 <Text className="text-sm">{webbing.model.material}</Text>
               </View>
 
               <View className="flex-row items-center">
-                <LucideIcon
-                  name="Layers"
-                  className="size-4 text-primary mr-1"
-                />
+                <Icon as={LayersIcon} className="size-4 text-primary mr-1" />
                 <Text className="text-sm">{webbing.model.weave}</Text>
               </View>
             </>
           ) : null}
           <View className="flex-row items-center">
-            <LucideIcon name="Link" className="size-4 text-primary mr-1" />
+            <Icon as={LinkIcon} className="size-4 text-primary mr-1" />
             <Text className="text-sm">{`${loopQuantity} ${loopQuantity === 2 ? t('common.loops') : t('common.loop')}`}</Text>
           </View>
         </View>
