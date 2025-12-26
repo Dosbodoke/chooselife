@@ -120,8 +120,9 @@
       "seeMore": "see more"
     },
     "notFound": {
-      "title": "Highline don't exists",
-      "buttonLabel": "Go back to home page"
+      "title": "You took a leash fall!",
+      "description": "Don't worry, the backup is solid. This page isn't rigged, but we can get you back on the line.",
+      "buttonLabel": "Climb back up"
     }
   },
   "profile": {

@@ -120,8 +120,9 @@
       "seeMore": "carregar mais"
     },
     "notFound": {
-      "title": "Highline não existe",
-      "buttonLabel": "Voltar para a página inicial"
+      "title": "Você caiu no leash!",
+      "description": "Não se preocupe, o backup é sólido. Essa página não está montada, mas vamos te colocar de volta na fita.",
+      "buttonLabel": "Subir na fita"
     }
   },
   "profile": {
