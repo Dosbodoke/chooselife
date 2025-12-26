@@ -308,8 +308,9 @@
       }
     },
     "+not-found": {
-      "title": "This screen doesn't exist.",
-      "subtitle": "Go to map screen"
+      "title": "You took a leash fall!",
+      "description": "The page you tried to access doesn't exist and this one is the backup. But don't worry, we can get you back on the line.",
+      "subtitle": "Go to MAP"
     },
     "events": {
       "title": "Events",

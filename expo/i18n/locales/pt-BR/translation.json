@@ -308,8 +308,9 @@
       }
     },
     "+not-found": {
-      "title": "Essa tela não existe.",
-      "subtitle": "Ir para o mapa"
+      "title": "Você tomou um Leash Fall!",
+      "description": "A página que você tentou encontrar não existe e essa é o backup. Mas não se preocupe, vamos te colocar de volta na linha.",
+      "subtitle": "Ir para o Mapa"
     },
     "events": {
       "title": "Eventos",
