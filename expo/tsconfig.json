@@ -6,6 +6,7 @@
     "paths": {
       "~/*": ["*"],
       "@packages/database/*": ["../packages/database/*"],
+      "@chooselife/ui": ["../packages/ui/src"]
     },
     "jsx": "react-native",
     "esModuleInterop": true

@@ -21,7 +21,8 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@packages/database/*": ["../packages/database/*"]
+      "@chooselife/database": ["../packages/database"],
+      "@chooselife/ui": ["../packages/ui/src"]
     }
   },
   "include": [

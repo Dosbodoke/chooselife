@@ -1,23 +1,23 @@
 import AsyncStorage from 'expo-sqlite/kv-store';
+import { MoonStar, SunIcon } from 'lucide-react-native';
+import { useColorScheme } from 'nativewind';
 import { Pressable, View } from 'react-native';
 
-import { MoonStar } from '~/lib/icons/MoonStar';
-import { Sun } from '~/lib/icons/Sun';
-import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/utils';
 import { setAndroidNavigationBar } from '~/utils/android-navigation-bar';
 
-import { H4 } from '~/components/ui/typography';
+import { Icon } from '~/components/ui/icon';
+import { Text } from '~/components/ui/text';
 
 export const SelectTheme = () => {
-  const { isDarkColorScheme, setColorScheme } = useColorScheme();
+  const { colorScheme, setColorScheme } = useColorScheme();
 
   return (
     <View className="flex flex-row justify-between">
-      <H4>Tema</H4>
+      <Text variant="h4">Tema</Text>
       <Pressable
         onPress={() => {
-          const newTheme = isDarkColorScheme ? 'light' : 'dark';
+          const newTheme = colorScheme === 'dark' ? 'light' : 'dark';
           setColorScheme(newTheme);
           setAndroidNavigationBar(newTheme);
           AsyncStorage.setItem('theme', newTheme);
@@ -31,14 +31,20 @@ export const SelectTheme = () => {
               pressed && 'opacity-70',
             )}
           >
-            {isDarkColorScheme ? (
-              <MoonStar
+            {colorScheme === 'dark' ? (
+              <Icon
+                as={MoonStar}
                 className="text-foreground"
                 size={23}
                 strokeWidth={1.25}
               />
             ) : (
-              <Sun className="text-foreground" size={24} strokeWidth={1.25} />
+              <Icon
+                as={SunIcon}
+                className="text-foreground"
+                size={24}
+                strokeWidth={1.25}
+              />
             )}
           </View>
         )}

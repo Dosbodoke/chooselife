@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { CalendarRangeIcon, FrownIcon, UsersIcon } from 'lucide-react-native';
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
@@ -10,7 +11,6 @@ import {
   type RigStatuses,
   type Setup,
 } from '~/hooks/use-rig-setup';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
 
 import { SupabaseAvatar } from '~/components/supabase-avatar';
@@ -18,9 +18,11 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '~/components/ui/card';
+import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 
@@ -127,12 +129,14 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
         )}
       </CardContent>
 
-      {/* Card Footer with Action Button */}
-      {isPending ? (
-        <Skeleton className="w-full h-10 rounded-md px-6 py-4 border-t border-border" />
-      ) : (
-        actionButton
-      )}
+      <CardFooter>
+        {/* Card Footer with Action Button */}
+        {isPending ? (
+          <Skeleton className="w-full h-10 rounded-md px-6 py-4 border-t border-border" />
+        ) : (
+          actionButton
+        )}
+      </CardFooter>
     </Card>
   );
 };
@@ -143,7 +147,7 @@ const ActionButton: React.FC<{
   onPress: () => void;
 }> = ({ text, color, onPress }) => (
   <TouchableOpacity
-    className="px-6 py-4 border-t border-border w-full rounded-lg active:bg-muted"
+    className="pt-4 border-t border-border w-full rounded-lg active:bg-muted"
     onPress={onPress}
     activeOpacity={0.7}
   >
@@ -176,7 +180,7 @@ const LoadingSkeleton: React.FC = () => (
 
 const EmptyState: React.FC<{ text: string }> = ({ text }) => (
   <View className="py-8 items-center">
-    <LucideIcon name="Frown" className="text-muted-foreground size-12 mb-3" />
+    <Icon as={FrownIcon} className="text-muted-foreground size-12 mb-3" />
     <Text className="text-muted-foreground text-center text-base">{text}</Text>
   </View>
 );
@@ -284,7 +288,7 @@ export const Riggers: React.FC<{ riggers: string[] }> = ({ riggers }) => {
   if (riggers.length === 0) {
     return (
       <View className="flex-row items-center gap-2">
-        <LucideIcon name="Users" className="text-muted-foreground size-4" />
+        <Icon as={UsersIcon} className="text-muted-foreground size-4" />
         <Text className="text-muted-foreground text-sm">
           No riggers assigned
         </Text>
@@ -328,11 +332,7 @@ export const Riggers: React.FC<{ riggers: string[] }> = ({ riggers }) => {
 
 const CalendarBadge: React.FC<{ date: string }> = ({ date }) => (
   <View className="flex-row gap-1.5 items-center bg-muted border border-border rounded-lg px-2.5 py-1.5 shadow-sm">
-    <LucideIcon
-      name="CalendarRange"
-      className="text-muted-foreground"
-      size={14}
-    />
+    <Icon as={CalendarRangeIcon} className="text-muted-foreground" size={14} />
     <Text className="text-muted-foreground font-medium text-sm">{date}</Text>
   </View>
 );

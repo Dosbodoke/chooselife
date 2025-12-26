@@ -1,12 +1,13 @@
 import { cva } from 'class-variance-authority';
 import { Link } from 'expo-router';
+import { CrownIcon } from 'lucide-react-native';
 import React from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
 
 import { SupabaseAvatar } from '~/components/supabase-avatar';
+import { Icon } from '~/components/ui/icon';
 
 interface PodiumProps {
   username: string;
@@ -58,8 +59,8 @@ const Podium = ({ username, value, position, profilePicture }: PodiumProps) => {
               className={cn('flex w-[96%] flex-col items-center gap-3 py-4')}
             >
               <View className="flex flex-col items-center gap-1">
-                <LucideIcon
-                  name="Crown"
+                <Icon
+                  as={CrownIcon}
                   className={cn('size-6', podiumVariants({ text: variant }))}
                 />
                 <View className="relative overflow-hidden size-16">

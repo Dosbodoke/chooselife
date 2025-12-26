@@ -1,3 +1,9 @@
+import {
+  CheckIcon,
+  ChevronLeftIcon,
+  MapPinnedIcon,
+  MapPinOffIcon,
+} from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
@@ -7,7 +13,7 @@ import Animated, {
   LinearTransition,
 } from 'react-native-reanimated';
 
-import { LucideIcon } from '~/lib/icons/lucide-icon';
+import { Icon } from '~/components/ui/icon';
 
 type Stage = 'initial' | 'partial' | 'final';
 
@@ -37,8 +43,8 @@ export const PickerControls: React.FC<{
           layout={LinearTransition.springify().damping(80).stiffness(200)}
           className="p-3 border-r-hairline border-border"
         >
-          <LucideIcon
-            name={stage === 'initial' ? 'ChevronLeft' : 'MapPinOff'}
+          <Icon
+            as={stage === 'initial' ? ChevronLeftIcon : MapPinOffIcon}
             className="size-6 text-red-500"
           />
         </AnimatedTouchableOpacity>
@@ -57,8 +63,8 @@ export const PickerControls: React.FC<{
           layout={LinearTransition.springify().damping(80).stiffness(200)}
           className="p-3 border-l-hairline border-border"
         >
-          <LucideIcon
-            name={stage === 'final' ? 'Check' : 'MapPinned'}
+          <Icon
+            as={stage === 'final' ? CheckIcon : MapPinnedIcon}
             className="size-6 text-green-500"
           />
         </AnimatedTouchableOpacity>

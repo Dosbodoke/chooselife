@@ -1,6 +1,14 @@
 import { useMapStore } from '~/store/map-store';
 import * as Haptics from 'expo-haptics';
-import { icons } from 'lucide-react-native';
+import {
+  ActivityIcon,
+  CalendarClockIcon,
+  HeartIcon,
+  PowerOffIcon,
+  RulerIcon,
+  SearchIcon,
+  type LucideIcon,
+} from 'lucide-react-native';
 import React, { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -17,9 +25,9 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { type HighlineCategory } from '~/hooks/use-highline';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
 
+import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 
 import { SafeAreaOfflineView } from '../offline-banner';
@@ -37,33 +45,33 @@ const ExploreHeader: React.FC<{
   const categories: Array<{
     category: HighlineCategory;
     name: string;
-    icon: keyof typeof icons;
+    icon: LucideIcon;
   }> = useMemo(
     () => [
       {
         category: 'favorites',
         name: t('components.map.explore-header.categories.favorites'),
-        icon: 'Heart',
+        icon: HeartIcon,
       },
       {
         category: 'big line',
         name: t('components.map.explore-header.categories.bigLine'),
-        icon: 'Ruler',
+        icon: RulerIcon,
       },
       {
         category: 'rigged',
         name: t('components.map.explore-header.categories.rigged'),
-        icon: 'Activity',
+        icon: ActivityIcon,
       },
       {
         category: 'unrigged',
         name: t('components.map.explore-header.categories.unrigged'),
-        icon: 'PowerOff',
+        icon: PowerOffIcon,
       },
       {
         category: 'planned',
         name: t('components.map.explore-header.categories.planned'),
-        icon: 'CalendarClock',
+        icon: CalendarClockIcon,
       },
     ],
     [t],
@@ -129,8 +137,8 @@ const ExploreHeader: React.FC<{
             className="flex-1 flex-row bg-muted gap-3 p-4 items-center border-hairline border-muted rounded-3xl"
             onPress={handleFocusSearchInput}
           >
-            <LucideIcon
-              name="Search"
+            <Icon
+              as={SearchIcon}
               strokeWidth={3}
               className="size-6 text-muted-foreground"
             />
@@ -162,8 +170,8 @@ const ExploreHeader: React.FC<{
                 }}
                 className="bg-background flex-row items-center justify-center gap-2 p-1 pb-3 px-2 rounded-lg"
               >
-                <LucideIcon
-                  name={item.icon}
+                <Icon
+                  as={item.icon}
                   className={cn(
                     'size-5',
                     activeIndex === index

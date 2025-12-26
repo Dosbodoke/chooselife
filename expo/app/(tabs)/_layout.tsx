@@ -1,8 +1,15 @@
 import { Tabs } from 'expo-router';
+import {
+  EarthIcon,
+  TentTreeIcon,
+  UserCircleIcon,
+  UsersRoundIcon,
+} from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
+
+import { Icon } from '~/components/ui/icon';
 
 export default function TabLayout() {
   const { t } = useTranslation();
@@ -14,8 +21,8 @@ export default function TabLayout() {
           title: t('app.(tabs)._layout.homeTitle'),
           tabBarHideOnKeyboard: true,
           tabBarIcon: ({ focused }) => (
-            <LucideIcon
-              name="TentTree"
+            <Icon
+              as={TentTreeIcon}
               className={cn(
                 'size-6',
                 focused ? 'text-blue-500' : 'text-muted-foreground',
@@ -31,8 +38,8 @@ export default function TabLayout() {
           title: t('app.(tabs)._layout.indexTitle'),
           tabBarHideOnKeyboard: true,
           tabBarIcon: ({ focused }) => (
-            <LucideIcon
-              name="Earth"
+            <Icon
+              as={EarthIcon}
               className={cn(
                 'size-6',
                 focused ? 'text-blue-500' : 'text-muted-foreground',
@@ -49,8 +56,8 @@ export default function TabLayout() {
           tabBarLabel: 'SL.A.C',
           headerShown: false,
           tabBarIcon: ({ focused }) => (
-            <LucideIcon
-              name="UsersRound"
+            <Icon
+              as={UsersRoundIcon}
               className={cn(
                 'size-6',
                 focused ? 'text-blue-500' : 'text-muted-foreground',
@@ -65,8 +72,8 @@ export default function TabLayout() {
           title: t('app.(tabs)._layout.settingsTitle'),
           headerShown: false,
           tabBarIcon: ({ focused }) => (
-            <LucideIcon
-              name="Settings"
+            <Icon
+              as={UserCircleIcon}
               className={cn(
                 'size-6',
                 focused ? 'text-blue-500' : 'text-muted-foreground',

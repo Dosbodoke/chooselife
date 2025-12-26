@@ -24,7 +24,7 @@ export default function EventsPage() {
   return (
     <>
       <Stack.Screen options={{ title: t('app.events.title') }} />
-      <SafeAreaView className="flex-1 pt-6">
+      <SafeAreaView className="flex-1 pt-6" edges={["left", "right", "bottom"]}>
         <ScrollView>
           <View className="p-4">
             {/* --- Loading State --- */}

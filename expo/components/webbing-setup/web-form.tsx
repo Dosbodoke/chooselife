@@ -4,6 +4,13 @@ import {
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import { Link, useRouter } from 'expo-router';
+import {
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  MoveHorizontalIcon,
+  PackagePlusIcon,
+  TrashIcon,
+} from 'lucide-react-native';
 import { useCallback, useId, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
@@ -27,17 +34,17 @@ import {
   WebbingWithModel,
   WebbingWithUsage,
 } from '~/hooks/use-webbings';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { cn } from '~/lib/utils';
+import { DAMPING } from '~/utils/constants';
 
 import { Button } from '~/components/ui/button';
+import { Icon } from '~/components/ui/icon';
 import { Label } from '~/components/ui/label';
 import { Separator } from '~/components/ui/separator';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 import { WebbingInput } from '~/components/webbing-input';
 
-const DAMPING = 14;
 export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
 export const _exitingAnimation = FadeOut.springify().damping(DAMPING);
 export const _enteringAnimation = FadeInDown.springify().damping(DAMPING);
@@ -141,8 +148,8 @@ export const WebForm: React.FC = () => {
           onPress={() => setFocusedWebbing(null)}
           className="p-1"
         >
-          <LucideIcon
-            name="ChevronLeft"
+          <Icon
+            as={ChevronLeftIcon}
             size={16}
             className="text-primary text-center"
           />
@@ -151,11 +158,7 @@ export const WebForm: React.FC = () => {
         {webbing.webbingId && <WebbingOwner webbingID={+webbing.webbingId} />}
 
         <TouchableOpacity onPress={() => handleDeleteSection} className="p-1">
-          <LucideIcon
-            name="Trash"
-            size={16}
-            className="text-red-500 text-center"
-          />
+          <Icon as={TrashIcon} size={16} className="text-red-500 text-center" />
         </TouchableOpacity>
       </View>
       <SelectMyWebbing
@@ -301,7 +304,7 @@ const SelectMyWebbing: React.FC<{
             ? getWebbingName(selectedWebbingName)
             : t('components.webbing-setup.selectMyWebbing.placeholder')}
         </Text>
-        <LucideIcon name="ChevronDown" className="text-foreground" />
+        <Icon as={ChevronDownIcon} className="text-foreground" />
       </TouchableOpacity>
     ),
     [id, handleOpenPress, selectedWebbingName, getWebbingName, t],
@@ -333,8 +336,8 @@ const SelectMyWebbing: React.FC<{
           </Text>
 
           <View className="flex flex-row gap-2 items-center">
-            <LucideIcon
-              name="MoveHorizontal"
+            <Icon
+              as={MoveHorizontalIcon}
               className={cn(
                 'text-foreground',
                 isUsed && 'text-muted-foreground',
@@ -375,8 +378,8 @@ const SelectMyWebbing: React.FC<{
   const EmptyState = useMemo(
     () => (
       <View className="items-center justify-center py-10 gap-4">
-        <LucideIcon
-          name="PackagePlus"
+        <Icon
+          as={PackagePlusIcon}
           size={48}
           className="text-muted-foreground"
         />

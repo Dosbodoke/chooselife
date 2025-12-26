@@ -1,9 +1,11 @@
 import { Link } from 'expo-router';
+import { MoveHorizontalIcon, MoveVerticalIcon } from 'lucide-react-native';
 import { Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 
 import type { Highline } from '~/hooks/use-highline';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
+
+import { Icon } from '~/components/ui/icon';
 
 import { FavoriteHighline } from './favorite-button';
 import { HighlineImage } from './highline-image';
@@ -27,15 +29,15 @@ export const HighlineCard: React.FC<{ item: Highline }> = ({ item }) => {
           <Text className="text-base text-foreground">{item.name}</Text>
           <View className="flex flex-row items-center gap-4 text-sm text-muted-foreground">
             <View className="flex flex-row gap-2 items-center">
-              <LucideIcon
-                name="MoveVertical"
+              <Icon
+                as={MoveVerticalIcon}
                 className="size-4 text-primary opacity-70"
               />
               <Text className="text-muted-foreground">{item.height}m</Text>
             </View>
             <View className="flex flex-row gap-2 items-center">
-              <LucideIcon
-                name="MoveHorizontal"
+              <Icon
+                as={MoveHorizontalIcon}
                 className="size-4 text-primary opacity-70"
               />
               <Text className="text-muted-foreground">{item.length}m</Text>

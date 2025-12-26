@@ -1,5 +1,11 @@
 import { useNetInfo } from '@react-native-community/netinfo';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import {
+  ChevronLeftIcon,
+  EarthIcon,
+  PencilIcon,
+  ShareIcon,
+} from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -12,7 +18,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useHighline } from '~/hooks/use-highline';
 import { useShare } from '~/hooks/use-share';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { MarkerCL } from '~/lib/icons/MarkerCL';
 
 import { FavoriteHighline } from '~/components/highline/favorite-button';
@@ -24,6 +29,7 @@ import { HighlineSkeleton } from '~/components/highline/skeleton';
 import { OfflineBanner } from '~/components/offline-banner';
 import { Ranking } from '~/components/ranking';
 import { Button } from '~/components/ui/button';
+import { Icon } from '~/components/ui/icon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { Text } from '~/components/ui/text';
 
@@ -108,19 +114,19 @@ export default function HighlinePage() {
               router.canGoBack() ? router.back() : router.replace('/(tabs)')
             }
           >
-            <LucideIcon name="ChevronLeft" className="text-primary size-6" />
+            <Icon as={ChevronLeftIcon} className="text-primary size-6" />
           </TouchableOpacity>
           <View className="flex-row items-center justify-center gap-3">
             <Link href={`/highline/${highlineID}/edit`} asChild>
               <TouchableOpacity className="p-2 rounded-full bg-white items-center justify-center">
-                <LucideIcon name="Pencil" className="text-primary size-6" />
+                <Icon as={PencilIcon} className="text-primary size-6" />
               </TouchableOpacity>
             </Link>
             <TouchableOpacity
               className="p-2 rounded-full bg-white items-center justify-center"
               onPress={shareListing}
             >
-              <LucideIcon name="Share" className="text-primary size-6" />
+              <Icon as={ShareIcon} className="text-primary size-6" />
             </TouchableOpacity>
             <FavoriteHighline
               isFavorite={!!highline?.is_favorite}
@@ -213,7 +219,7 @@ const BottomActions = ({
         <Button className="flex-1 flex-row gap-2 items-start" variant="outline">
           {hasLocation ? (
             <>
-              <LucideIcon name="Earth" className="size-6 text-primary" />
+              <Icon as={EarthIcon} className="size-6 text-primary" />
               <Text className="text-primary">
                 {t('app.highline.index.BottomActions.seeOnMap')}
               </Text>

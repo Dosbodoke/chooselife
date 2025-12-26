@@ -8,6 +8,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import {
+  ChevronDownIcon,
+  PackagePlusIcon,
+  TorusIcon,
+} from 'lucide-react-native';
 import React, { useCallback, useId, useMemo, useRef } from 'react';
 import {
   Control,
@@ -27,7 +32,6 @@ import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
 import { useWebbingsKeyFactory } from '~/hooks/use-webbings';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import RegisterWebbingIllustration from '~/lib/icons/register-webbing';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
@@ -36,13 +40,13 @@ import { requestReview } from '~/utils/request-review';
 
 import { OnboardNavigator } from '~/components/onboard';
 import { Button } from '~/components/ui/button';
+import { Icon } from '~/components/ui/icon';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { Separator } from '~/components/ui/separator';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
-import { H3, Muted } from '~/components/ui/typography';
 import { WebbingInput, webbingSchema } from '~/components/webbing-input';
 
 // Extend your existing webbing schema with a "model" field.
@@ -147,12 +151,12 @@ const PrefillForm: React.FC<{
       </View>
 
       <View>
-        <H3 className="text-center">
+        <Text variant="h3" className="text-center">
           {t('app.(modals).register-webbing.title')}
-        </H3>
-        <Muted className="text-center">
+        </Text>
+        <Text variant="muted" className="text-center">
           {t('app.(modals).register-webbing.description')}
-        </Muted>
+        </Text>
       </View>
 
       <WebbingInput
@@ -170,13 +174,24 @@ const PrefillForm: React.FC<{
         control={form.control}
         name="tagName"
         render={({ field, fieldState }) => (
-          <Input
-            value={field.value}
-            onChangeText={field.onChange}
-            label={t('app.(modals).register-webbing.tagName.label')}
-            placeholder={t('app.(modals).register-webbing.tagName.placeholder')}
-            className={fieldState.error && 'border-destructive'}
-          />
+          <View className="gap-2">
+            <Label nativeID="tagname">
+              {t('app.(modals).register-webbing.tagName.label')}
+            </Label>
+            <Input
+              value={field.value}
+              onChangeText={field.onChange}
+              placeholder={t(
+                'app.(modals).register-webbing.tagName.placeholder',
+              )}
+              className={fieldState.error && 'border-destructive'}
+            />
+            {fieldState.error ? (
+              <Text variant="small" className="text-destructive">
+                {fieldState.error.message}
+              </Text>
+            ) : null}
+          </View>
         )}
       />
 
@@ -184,17 +199,28 @@ const PrefillForm: React.FC<{
         control={form.control}
         name="note"
         render={({ field, fieldState }) => (
-          <Textarea
-            keyboardType="default"
-            returnKeyType="done"
-            placeholder={t('app.(modals).register-webbing.note.placeholder')}
-            {...field}
-            submitBehavior="blurAndSubmit"
-            onChangeText={(text) => field.onChange(text)}
-            value={field.value}
-            label={t('app.(modals).register-webbing.note.label')}
-            className={fieldState.error && 'border-destructive'}
-          />
+          <View className="gap-2">
+            <Label nativeID="note">
+              {t('app.(modals).register-webbing.note.label')}{' '}
+              <Text variant="muted">{t('common.optional')}</Text>
+            </Label>
+            <Textarea
+              keyboardType="default"
+              returnKeyType="done"
+              placeholder={t('app.(modals).register-webbing.note.placeholder')}
+              {...field}
+              submitBehavior="blurAndSubmit"
+              onChangeText={(text) => field.onChange(text)}
+              value={field.value}
+              className={fieldState.error && 'border-destructive'}
+              aria-labelledby="note"
+            />
+            {fieldState.error ? (
+              <Text variant="small" className="text-destructive">
+                {fieldState.error.message}
+              </Text>
+            ) : null}
+          </View>
         )}
       />
     </View>
@@ -233,18 +259,12 @@ const EmptyState = () => {
   const { t } = useTranslation();
   return (
     <View className="items-center justify-center py-10 gap-4">
-      <LucideIcon
-        name="PackagePlus"
-        size={48}
-        className="text-muted-foreground"
-      />
+      <Icon as={PackagePlusIcon} size={48} className="text-muted-foreground" />
       <Text className="text-center text-lg font-medium">
         {t('app.(modals).register-webbing.selectModel.emptyState.title')}
       </Text>
       <Text className="text-center text-muted-foreground mb-4">
-        {t(
-          'app.(modals).register-webbing.selectModel.emptyState.description',
-        )}
+        {t('app.(modals).register-webbing.selectModel.emptyState.description')}
       </Text>
     </View>
   );
@@ -336,8 +356,8 @@ const SelectModel: React.FC<{ control: Control<TRegisterWebbingSchema> }> = ({
         <View
           className={`${dimensions} flex items-center justify-center rounded-md border ${getMaterialColor(model.material)}`}
         >
-          <LucideIcon
-            name="Torus"
+          <Icon
+            as={TorusIcon}
             className={`${iconSize} ${
               model.material === 'nylon'
                 ? 'text-blue-500'
@@ -374,7 +394,7 @@ const SelectModel: React.FC<{ control: Control<TRegisterWebbingSchema> }> = ({
             {t('app.(modals).register-webbing.selectModel.placeholder')}
           </Text>
         )}
-        <LucideIcon name="ChevronDown" className="text-foreground" />
+        <Icon as={ChevronDownIcon} className="text-foreground" />
       </TouchableOpacity>
     );
   }, [id, handleOpenPress, renderWebbingImage, modelIDField.value, t]);
@@ -432,8 +452,6 @@ const SelectModel: React.FC<{ control: Control<TRegisterWebbingSchema> }> = ({
     },
     [modelIDField.value, renderWebbingImage, t],
   );
-
-
 
   const ModelsList = (
     <>

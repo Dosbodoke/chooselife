@@ -1,17 +1,23 @@
+import HighlineWalkImage from '~/assets/images/highline-walk.webp';
 import { Link } from 'expo-router';
+import {
+  BookIcon,
+  CalendarIcon,
+  PencilRulerIcon,
+  UsersIcon,
+} from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 
 import { useEvents } from '~/hooks/use-events';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
-import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 
 import { EventCard, EventCardSkeleton } from '~/components/event-card';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { Card, CardContent } from '~/components/ui/card';
+import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 import { Widget } from '~/components/widget';
 
@@ -29,9 +35,7 @@ export default function HomeScreen() {
               id: 'chooselife',
               title: t('app.(tabs).home.banner.title'),
               subtitle: t('app.(tabs).home.banner.description'),
-              background: supabase.storage
-                .from('promo')
-                .getPublicUrl('highline-walk.webp').data.publicUrl,
+              background: HighlineWalkImage,
             },
           ]}
         />
@@ -40,19 +44,12 @@ export default function HomeScreen() {
           <View className="flex-row justify-around my-6">
             <Link asChild href="/setup-simulator">
               <QuickAction
-                icon={
-                  <LucideIcon name="PencilRuler" className="text-primary" />
-                }
+                icon={<Icon as={PencilRulerIcon} className="text-primary" />}
                 label={t('app.(tabs).home.quickActions.setupSimulator')}
               />
             </Link>
             <QuickAction
-              icon={<LucideIcon name="Users" className="text-primary" />}
-              label={t('app.(tabs).home.quickActions.community')}
-              isComingSoon
-            />
-            <QuickAction
-              icon={<LucideIcon name="Book" className="text-primary" />}
+              icon={<Icon as={BookIcon} className="text-primary" />}
               label={t('app.(tabs).home.quickActions.learn')}
               isComingSoon
             />
@@ -138,7 +135,7 @@ const Ranking: React.FC = () => {
       <Text className="text-lg font-bold mb-3">
         {t('app.(tabs).home.sections.Ranking')}
       </Text>
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden py-0">
         <CardContent className="p-4 py-20 bg-primary-foreground items-center">
           <Text className="font-bold">{t('common.soon')}</Text>
         </CardContent>
@@ -176,7 +173,7 @@ const UpcomingEvents: React.FC = () => {
         ) : (
           <View className="rounded-lg border border-gray-200 p-6 items-center justify-center">
             <View className="w-16 h-16 bg-gray-100 rounded-full items-center justify-center mb-4">
-              <LucideIcon name="Calendar" className="text-primary" />
+              <Icon as={CalendarIcon} className="text-primary" />
             </View>
             <Text className="text-base font-medium text-gray-900 mb-1">
               {t('app.(tabs).home.sections.UpcomingEvents.noEventsTitle')}

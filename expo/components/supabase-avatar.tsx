@@ -1,17 +1,18 @@
 import { useAssets } from 'expo-asset';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import { CameraIcon } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 
 import { useProfile } from '~/hooks/use-profile';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 import { Button } from '~/components/ui/button';
+import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 
 import { Skeleton } from './ui/skeleton';
@@ -147,7 +148,7 @@ export const AvatarUploader: React.FC<{
       onPress={uploadAvatar}
       disabled={uploading}
     >
-      <LucideIcon name="Camera" className="size-5 text-black" strokeWidth={2} />
+      <Icon as={CameraIcon} className="size-5 text-black" strokeWidth={2} />
       <Text>{t('components.supabase-avatar.buttonLabel')}</Text>
     </Button>
   );

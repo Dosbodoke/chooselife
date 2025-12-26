@@ -23,7 +23,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
 import { formatCurrency } from '~/utils';
-import { Tables } from '~/utils/database-generated.types';
+import { Tables } from '~/utils/database.types';
 
 import { BgBlob } from '~/components/bg-blog';
 import { Text } from '~/components/ui/text';

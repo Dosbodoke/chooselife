@@ -1,12 +1,12 @@
+import { useOrganization } from '@chooselife/ui';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { XIcon } from 'lucide-react-native';
 import React from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useOrganization } from '@chooselife/ui';
-import { LucideIcon } from '~/lib/icons/lucide-icon';
-
 import { Carousel } from '~/components/organizations/showcase-carousel';
+import { Icon } from '~/components/ui/icon';
 
 export default function MemberShowcaseScreen() {
   const router = useRouter();
@@ -45,7 +45,7 @@ export default function MemberShowcaseScreen() {
         }}
         hitSlop={12}
       >
-        <LucideIcon name="X" size={20} className="fill-muted" />
+        <Icon as={XIcon} size={20} className="fill-muted" />
       </Pressable>
 
       <Carousel org={organization} />
