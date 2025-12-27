@@ -16,6 +16,7 @@ import useSuperCluster from 'use-supercluster';
 
 import { useAuth } from '~/context/auth';
 import { highlineKeyFactory, type Highline } from '~/hooks/use-highline';
+import { RigStatuses } from '~/hooks/use-rig-setup';
 import { MIN_CLUSTER_SIZE } from '~/utils/constants';
 
 import { Text } from '~/components/ui/text';
@@ -26,19 +27,37 @@ interface PointProperties {
   cluster: boolean;
   category: string;
   highID: string;
+  status: RigStatuses;
 }
 
-const AnchorMarker: React.FC<{ label: 'A' | 'B'; isHighlighted: boolean }> = ({
-  label,
-  isHighlighted,
-}) => (
-  <View
-    style={{ opacity: isHighlighted ? 1 : 0.85 }}
-    className="bg-blue-500 size-6 rounded-full flex items-center justify-center border-2 border-white shadow-lg"
-  >
-    <Text className="text-white font-bold text-xs">{label}</Text>
-  </View>
-);
+const statusColor: Record<RigStatuses, string> = {
+  planned: 'bg-amber-300',
+  rigged: 'bg-green-500',
+  unrigged: 'bg-red-500',
+};
+
+const lineStatusColor: Record<RigStatuses, string> = {
+  planned: '#ffd54f', // Amber 300
+  rigged: '#22C55E',  // Green 500
+  unrigged: '#f44336', // Red 500
+};
+
+const AnchorMarker: React.FC<{
+  label: 'A' | 'B';
+  isHighlighted: boolean;
+  status?: RigStatuses;
+}> = ({ label, isHighlighted, status }) => {
+  const bgColor = status ? statusColor[status] : 'bg-blue-500';
+
+  return (
+    <View
+      style={{ opacity: isHighlighted ? 1 : 0.85 }}
+      className={`${bgColor} size-6 rounded-full flex items-center justify-center border-2 border-white shadow-lg`}
+    >
+      <Text className="text-white font-bold text-xs">{label}</Text>
+    </View>
+  );
+};
 
 const LengthLabel: React.FC<{ distance: number; isHighlighted: boolean }> = ({
   distance,
@@ -133,6 +152,7 @@ export const Markers: React.FC<{
         cluster: false,
         category: 'highline',
         highID: h.id,
+        status: h.status as RigStatuses,
       },
       geometry: {
         type: 'Point',
@@ -252,7 +272,11 @@ export const Markers: React.FC<{
             coordinate={[longitude, latitude]}
           >
             <Pressable onPress={() => handleMarkerSelect(properties.highID)}>
-              <AnchorMarker label="A" isHighlighted={isHighlighted} />
+              <AnchorMarker
+                label="A"
+                isHighlighted={isHighlighted}
+                status={properties.status}
+              />
             </Pressable>
           </MapboxGL.MarkerView>
         );
@@ -284,7 +308,11 @@ export const Markers: React.FC<{
               coordinate={[highline.anchor_a_long, highline.anchor_a_lat]}
             >
               <Pressable onPress={() => handleMarkerSelect(highline.id)}>
-                <AnchorMarker label="A" isHighlighted={isHighlighted} />
+                <AnchorMarker
+                  label="A"
+                  isHighlighted={isHighlighted}
+                  status={highline.status as RigStatuses}
+                />
               </Pressable>
             </MapboxGL.MarkerView>
 
@@ -293,7 +321,11 @@ export const Markers: React.FC<{
               coordinate={[highline.anchor_b_long, highline.anchor_b_lat]}
             >
               <Pressable onPress={() => handleMarkerSelect(highline.id)}>
-                <AnchorMarker label="B" isHighlighted={isHighlighted} />
+                <AnchorMarker
+                  label="B"
+                  isHighlighted={isHighlighted}
+                  status={highline.status as RigStatuses}
+                />
               </Pressable>
             </MapboxGL.MarkerView>
 
@@ -314,7 +346,9 @@ export const Markers: React.FC<{
               <MapboxGL.LineLayer
                 id={`line-layer-${highline.id}`}
                 style={{
-                  lineColor: isHighlighted ? '#3b82f6' : '#000000',
+                  lineColor: highline.status
+                    ? lineStatusColor[highline.status as RigStatuses]
+                    : '#000000',
                   lineWidth: isHighlighted ? 3 : 1.5,
                   lineOpacity: isHighlighted ? 0.9 : 0.4,
                 }}

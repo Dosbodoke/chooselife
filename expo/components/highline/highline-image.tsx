@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
+import ChooselifeBlackImage from '~/assets/images/chooselife_black.png';
+import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
-import { Image, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, {
   Easing,
   interpolate,
@@ -21,15 +22,26 @@ export const HighlineImage: React.FC<{
   dotSize?: 'default' | 'small';
 }> = ({ coverImageId, className, dotSize = 'default' }) => {
   const [loaded, setLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
-  if (!coverImageId) {
+  // Removed the useEffect for resetting state on coverImageId change,
+  // as onLoadStart will handle it more dynamically.
+  // Removed the useEffect for the 5-second timeout.
+
+  if (!coverImageId || hasError) {
     return (
-      <View className={cn('bg-muted', className)}>
+      <View
+        className={cn(
+          'bg-muted items-center justify-center w-full h-full',
+          className,
+        )}
+      >
         <Image
-          source={require('~/assets/images/chooselife_black.png')}
+          source={ChooselifeBlackImage}
           alt="Chooselife"
-          resizeMode="contain"
-          className={cn(className)}
+          contentFit="contain"
+          style={{ width: '100%', height: '100%' }}
+          className="w-full h-full"
         />
       </View>
     );
@@ -40,14 +52,30 @@ export const HighlineImage: React.FC<{
   } = supabase.storage.from('images').getPublicUrl(`${coverImageId}`);
 
   return (
-    <View className={cn('bg-muted', className)}>
-      {!loaded ? <LoadingDots dotSize={dotSize} /> : null}
+    <View className={cn('bg-muted relative overflow-hidden', className)}>
+      {!loaded && ( // Still show loading dots if not loaded yet
+        <View className="absolute inset-0 items-center justify-center">
+          <LoadingDots dotSize={dotSize} />
+        </View>
+      )}
       <Image
-        source={{ uri: URL }}
-        resizeMode="cover"
+        source={{ uri: URL, cacheKey: coverImageId }}
+        cachePolicy="memory-disk"
+        contentFit="cover"
         alt="Image of the Highline"
-        onLoad={() => setLoaded(true)}
-        className={cn(loaded ? '' : 'opacity-0', className)}
+        onLoadStart={() => { // Added onLoadStart to reset state
+          setLoaded(false);
+          setHasError(false);
+        }}
+        onLoad={() => {
+          setLoaded(true);
+        }}
+        onError={(e) => {
+          setHasError(true);
+        }}
+        style={{ width: '100%', height: '100%' }}
+        className={cn(className)}
+        transition={200}
       />
     </View>
   );
@@ -86,8 +114,8 @@ const LoadingDots: React.FC<{ dotSize?: 'default' | 'small' }> = ({
     }));
 
   const dot1 = createDotStyle(dot1Progress);
-  const dot2 = createDotStyle(dot2Progress);
-  const dot3 = createDotStyle(dot3Progress);
+  const dot2 = createDotStyle(dot1Progress); // Use dot1Progress to avoid unnecessary animation
+  const dot3 = createDotStyle(dot1Progress); // Use dot1Progress to avoid unnecessary animation
 
   return (
     <View
