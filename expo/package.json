@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@chooselife/ui": "workspace:*",
+    "@expo/ui": "0.2.0-beta.9",
     "@expo/vector-icons": "^14.0.2",
     "@gorhom/bottom-sheet": "^5.2.6",
     "@hookform/resolvers": "^3.9.0",

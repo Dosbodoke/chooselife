@@ -5,10 +5,9 @@ import { LegendList } from '@legendapp/list';
 import { useMapStore } from '~/store/map-store';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { MapIcon } from 'lucide-react-native';
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,18 +15,16 @@ import { type Highline } from '~/hooks/use-highline';
 import { cn } from '~/lib/utils';
 import { _layoutAnimation } from '~/utils/constants';
 
-import { Icon } from '~/components/ui/icon';
-
 import { HighlineCard } from '../highline/highline-card';
 import { Button } from '../ui/button';
 import { Text } from '../ui/text';
+import { MapToggle } from './map-toggle';
 
 const ListingsBottomSheet: React.FC<{
   highlines: Highline[];
   hasFocusedMarker: boolean;
   isLoading: boolean;
 }> = ({ highlines, hasFocusedMarker, isLoading }) => {
-  const { t } = useTranslation();
   const { top } = useSafeAreaInsets();
   const bottomSheetHandlerHeight = useMapStore(
     (state) => state.bottomSheetHandlerHeight,
@@ -97,17 +94,7 @@ const ListingsBottomSheet: React.FC<{
           renderScrollComponent={BottomSheetScrollView}
         />
       ) : null}
-      <View className="absolute bottom-20 w-full items-center">
-        <TouchableOpacity
-          onPress={onShowMap}
-          className="bg-primary p-3 h-12 rounded-3xl flex gap-2 flex-row my-auto items-center"
-        >
-          <Text className="text-primary-foreground">
-            {t('components.map.bottom-sheet.map')}
-          </Text>
-          <Icon as={MapIcon} className="h-6 w-6 text-primary-foreground" />
-        </TouchableOpacity>
-      </View>
+      <MapToggle onPress={onShowMap} />
     </BottomSheet>
   );
 };
