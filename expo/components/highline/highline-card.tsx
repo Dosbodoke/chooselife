@@ -12,25 +12,12 @@ import { Icon } from '~/components/ui/icon';
 import { FavoriteHighline } from './favorite-button';
 import { HighlineImage } from './highline-image';
 
-import { GlassContainer, GlassView } from 'expo-glass-effect';
-
 const ReanimatedSquircleView = Animated.createAnimatedComponent(SquircleView);
 cssInterop(ReanimatedSquircleView, {
   className: {
     target: 'style',
   },
 });
-cssInterop(GlassView, {
-  className: {
-    target: 'style',
-  },
-});
-cssInterop(GlassContainer, {
-  className: {
-    target: 'style',
-  },
-});
-
 
 export const HighlineCard: React.FC<{ item: Highline }> = ({ item }) => {
   return (
@@ -66,7 +53,7 @@ export const HighlineCard: React.FC<{ item: Highline }> = ({ item }) => {
           <View className="flex-1 p-5 justify-between">
             {/* Top Row: Favorite Button */}
             <View className="flex-row justify-end">
-                <FavoriteHighline isFavorite={item.is_favorite} id={item.id} />
+              <FavoriteHighline isFavorite={item.is_favorite} id={item.id} />
             </View>
 
             {/* Bottom Content: Title & Stats */}
@@ -83,9 +70,9 @@ export const HighlineCard: React.FC<{ item: Highline }> = ({ item }) => {
                 {item.name}
               </Text>
 
-              <GlassContainer className="flex-row gap-3">
+              <View className="flex-row gap-3">
                 {/* Height Pill */}
-                <GlassView className="flex-row items-center bg-black/40 px-2.5 py-1.5 rounded-lg backdrop-blur-sm border border-white/10">
+                <View className="flex-row items-center bg-black/40 px-2.5 py-1.5 rounded-lg backdrop-blur-sm border border-white/10">
                   <Icon
                     as={MoveVerticalIcon}
                     className="text-white/90 size-3.5 mr-1.5"
@@ -93,10 +80,10 @@ export const HighlineCard: React.FC<{ item: Highline }> = ({ item }) => {
                   <Text className="text-white text-xs font-bold tracking-wide">
                     {item.height}m
                   </Text>
-                </GlassView>
+                </View>
 
                 {/* Length Pill */}
-                <GlassView className="flex-row items-center bg-black/40 px-2.5 py-1.5 rounded-lg backdrop-blur-sm border border-white/10">
+                <View className="flex-row items-center bg-black/40 px-2.5 py-1.5 rounded-lg backdrop-blur-sm border border-white/10">
                   <Icon
                     as={MoveHorizontalIcon}
                     className="text-white/90 size-3.5 mr-1.5"
@@ -104,8 +91,8 @@ export const HighlineCard: React.FC<{ item: Highline }> = ({ item }) => {
                   <Text className="text-white text-xs font-bold tracking-wide">
                     {item.length}m
                   </Text>
-                </GlassView>
-              </GlassContainer>
+                </View>
+              </View>
             </View>
           </View>
         </ReanimatedSquircleView>
