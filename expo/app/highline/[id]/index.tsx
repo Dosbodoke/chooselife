@@ -109,24 +109,24 @@ export default function HighlinePage() {
           }}
         >
           <TouchableOpacity
-            className="p-2 rounded-full bg-white items-center justify-center"
+            className="p-2 rounded-full bg-black/60 items-center justify-center"
             onPress={() =>
               router.canGoBack() ? router.back() : router.replace('/(tabs)')
             }
           >
-            <Icon as={ChevronLeftIcon} className="text-primary size-6" />
+            <Icon as={ChevronLeftIcon} className="text-white size-6" />
           </TouchableOpacity>
           <View className="flex-row items-center justify-center gap-3">
             <Link href={`/highline/${highlineID}/edit`} asChild>
-              <TouchableOpacity className="p-2 rounded-full bg-white items-center justify-center">
-                <Icon as={PencilIcon} className="text-primary size-6" />
+              <TouchableOpacity className="p-2 rounded-full bg-black/60 items-center justify-center">
+                <Icon as={PencilIcon} className="text-white size-6" />
               </TouchableOpacity>
             </Link>
             <TouchableOpacity
-              className="p-2 rounded-full bg-white items-center justify-center"
+              className="p-2 rounded-full bg-black/60 items-center justify-center"
               onPress={shareListing}
             >
-              <Icon as={ShareIcon} className="text-primary size-6" />
+              <Icon as={ShareIcon} className="text-white size-6" />
             </TouchableOpacity>
             <FavoriteHighline
               isFavorite={!!highline?.is_favorite}
