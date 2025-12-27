@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'ChooseLife',
   slug: 'chooselife',
-  version: '1.3.12',
+  version: '1.3.13',
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
