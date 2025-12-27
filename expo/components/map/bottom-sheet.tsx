@@ -1,9 +1,12 @@
-import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import BottomSheet, {
+  useBottomSheetScrollableCreator,
+} from '@gorhom/bottom-sheet';
+import { LegendList } from '@legendapp/list';
 import { useMapStore } from '~/store/map-store';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { MapIcon } from 'lucide-react-native';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -30,6 +33,7 @@ const ListingsBottomSheet: React.FC<{
     (state) => state.bottomSheetHandlerHeight,
   );
   const bottomSheetRef = React.useRef<BottomSheet>(null);
+  const BottomSheetScrollView = useBottomSheetScrollableCreator();
 
   // If the handler height is not yet measured, use 15% as an approximation of it's height
   const snapPoints = React.useMemo(() => {
@@ -48,6 +52,11 @@ const ListingsBottomSheet: React.FC<{
     }
     bottomSheetRef.current?.expand();
   }, [hasFocusedMarker]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: Highline }) => <HighlineCard item={item} />,
+    [],
+  );
 
   return (
     <BottomSheet
@@ -80,13 +89,15 @@ const ListingsBottomSheet: React.FC<{
       }}
     >
       {highlines.length > 0 && !hasFocusedMarker ? (
-        <BottomSheetScrollView>
-          {highlines.map((item) => (
-            <HighlineCard key={item.id} item={item} />
-          ))}
-        </BottomSheetScrollView>
+        <LegendList
+          data={highlines}
+          renderItem={renderItem}
+          keyExtractor={(item: Highline) => item.id}
+          contentContainerStyle={{ paddingHorizontal: 16 }}
+          renderScrollComponent={BottomSheetScrollView}
+        />
       ) : null}
-      <View className="absolute bottom-6 w-full items-center">
+      <View className="absolute bottom-20 w-full items-center">
         <TouchableOpacity
           onPress={onShowMap}
           className="bg-primary p-3 h-12 rounded-3xl flex gap-2 flex-row my-auto items-center"
