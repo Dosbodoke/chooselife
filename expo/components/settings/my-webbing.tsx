@@ -9,6 +9,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 
+import { useWebbingUsage } from '@chooselife/ui';
 import { getWebbingName, useUserWebbings } from '~/hooks/use-webbings';
 import { Tables } from '~/utils/database.types';
 
@@ -69,15 +70,16 @@ const MyWebbings: React.FC = () => {
 const EmptyWebbing: React.FC = () => {
   const { t } = useTranslation();
   return (
-    <View className="justify-center items-center">
-      <View>
+    <View className="justify-center items-center py-6 gap-3">
+      <View className="w-16 h-16 rounded-full bg-muted items-center justify-center">
         <Icon
           as={FrownIcon}
-          className="size-24 text-muted-foreground"
-          strokeWidth={1}
+          size={32}
+          className="text-muted-foreground"
+          strokeWidth={1.5}
         />
       </View>
-      <Text className="text-muted-foreground">
+      <Text className="text-muted-foreground text-center">
         {t('components.settings.my-webbing.empty')}
       </Text>
     </View>
@@ -88,7 +90,7 @@ const WebbingList: React.FC<{
   webbings: WebbingWithModel[];
 }> = ({ webbings }) => {
   return (
-    <View className="gap-6">
+    <View className="gap-3">
       {webbings.map((webbing) => (
         <WebbingItem key={webbing.id} webbing={webbing} />
       ))}
@@ -100,46 +102,129 @@ const WebbingItem: React.FC<{
   webbing: WebbingWithModel;
 }> = ({ webbing }) => {
   const { t } = useTranslation();
+  
   // Get loop status info
   let loopQuantity = 0;
   if (webbing.left_loop) loopQuantity += 1;
   if (webbing.right_loop) loopQuantity += 1;
 
-  return (
-    <View className="flex-row gap-4">
-      <Text className="text-muted-foreground">{`#${webbing.id}`}</Text>
-      <View className="flex-1">
-        <Text className="font-bold">{getWebbingName(webbing)}</Text>
+  // Get recommended lifetime and strength class from model
+  const recommendedDays = (webbing.model as { recommended_lifetime_days?: number | null } | null)?.recommended_lifetime_days ?? null;
+  const strengthClass = (webbing.model as { strength_class?: string | null } | null)?.strength_class ?? null;
 
-        <View className="mt-2 flex-row flex-wrap gap-x-4 gap-y-2">
-          <View className="flex-row items-center">
-            <Icon
-              as={MoveHorizontalIcon}
-              className="size-4 text-primary mr-1"
-            />
-            <Text className="text-sm">{webbing.length}m</Text>
+  // Get usage stats from shared hook
+  const { data: usage } = useWebbingUsage(webbing.id, recommendedDays);
+
+  // Default values when data is loading
+  const usageData = usage ?? {
+    usageDays: 0,
+    rigCount: 0,
+    percentageUsed: 0,
+    status: 'good' as const,
+  };
+
+  const statusColors = {
+    good: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
+    inspect: { bg: 'bg-amber-100', text: 'text-amber-700' },
+    replace: { bg: 'bg-red-100', text: 'text-red-700' },
+  };
+
+  const statusColor = statusColors[usageData.status];
+
+  return (
+    <Link href={`/webbing/${webbing.id}` as `/webbing/${number}`} asChild>
+      <TouchableOpacity activeOpacity={0.7}>
+        <View className="flex-row gap-3 p-3 rounded-xl bg-muted/30 border border-border">
+          {/* ID Badge - designed to suggest physical marking */}
+          <View className="items-center justify-center w-14 py-2 rounded-lg border-2 border-dashed border-primary/50 bg-primary/5">
+            <Text className="text-[10px] font-medium text-primary/70 uppercase tracking-wide">ID</Text>
+            <Text className="text-lg font-bold text-primary">{webbing.id}</Text>
           </View>
 
-          {webbing.model ? (
-            <>
-              <View className="flex-row items-center">
-                <Icon as={FactoryIcon} className="size-4 text-primary mr-1" />
-                <Text className="text-sm">{webbing.model.material}</Text>
+          {/* Content */}
+          <View className="flex-1 gap-2">
+            {/* Header: Name + Type + Status */}
+            <View className="flex-row items-center justify-between gap-2">
+              <Text className="font-semibold text-base text-foreground flex-1" numberOfLines={1}>
+                {getWebbingName(webbing)}
+              </Text>
+              {strengthClass && (
+                <View className="px-2 py-0.5 rounded-full bg-primary/10 border border-primary/30">
+                  <Text className="text-[10px] font-bold text-primary">
+                    Type {strengthClass}
+                  </Text>
+                </View>
+              )}
+              {recommendedDays && (
+                <View className={`px-2 py-0.5 rounded-full ${statusColor.bg}`}>
+                  <Text className={`text-[10px] font-semibold uppercase ${statusColor.text}`}>
+                    {usageData.status}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Lifetime Progress Bar */}
+            {recommendedDays && (
+              <View className="gap-1">
+                <View className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <View
+                    className={`h-full rounded-full ${
+                      usageData.status === 'replace'
+                        ? 'bg-red-500'
+                        : usageData.status === 'inspect'
+                        ? 'bg-amber-500'
+                        : 'bg-emerald-500'
+                    }`}
+                    style={{ width: `${Math.min(100, usageData.percentageUsed)}%` }}
+                  />
+                </View>
+                <Text className="text-[10px] text-muted-foreground">
+                  {usageData.usageDays} / {recommendedDays} days used
+                </Text>
+              </View>
+            )}
+
+            {/* Properties */}
+            <View className="flex-row flex-wrap gap-2">
+              {/* Length */}
+              <View className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-blue-100">
+                <Icon as={MoveHorizontalIcon} size={12} className="text-blue-600" />
+                <Text className="text-xs font-medium text-blue-700">{webbing.length}m</Text>
               </View>
 
-              <View className="flex-row items-center">
-                <Icon as={LayersIcon} className="size-4 text-primary mr-1" />
-                <Text className="text-sm">{webbing.model.weave}</Text>
+              {webbing.model ? (
+                <>
+                  {/* Material */}
+                  <View className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-emerald-100">
+                    <Icon as={FactoryIcon} size={12} className="text-emerald-600" />
+                    <Text className="text-xs font-medium text-emerald-700 capitalize">
+                      {webbing.model.material}
+                    </Text>
+                  </View>
+
+                  {/* Weave */}
+                  <View className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-amber-100">
+                    <Icon as={LayersIcon} size={12} className="text-amber-600" />
+                    <Text className="text-xs font-medium text-amber-700 capitalize">
+                      {webbing.model.weave}
+                    </Text>
+                  </View>
+                </>
+              ) : null}
+
+              {/* Loops */}
+              <View className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-violet-100">
+                <Icon as={LinkIcon} size={12} className="text-violet-600" />
+                <Text className="text-xs font-medium text-violet-700">
+                  {`${loopQuantity} ${loopQuantity === 2 ? t('common.loops') : t('common.loop')}`}
+                </Text>
               </View>
-            </>
-          ) : null}
-          <View className="flex-row items-center">
-            <Icon as={LinkIcon} className="size-4 text-primary mr-1" />
-            <Text className="text-sm">{`${loopQuantity} ${loopQuantity === 2 ? t('common.loops') : t('common.loop')}`}</Text>
+            </View>
           </View>
         </View>
-      </View>
-    </View>
+      </TouchableOpacity>
+    </Link>
   );
 };
 

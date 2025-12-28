@@ -705,6 +705,10 @@ export type Database = {
           image_url: string | null
           material: Database["public"]["Enums"]["material_enum"]
           name: string
+          recommended_lifetime_days: number | null
+          strength_class:
+            | Database["public"]["Enums"]["strength_class_enum"]
+            | null
           weave: Database["public"]["Enums"]["weave_enum"]
         }
         Insert: {
@@ -712,6 +716,10 @@ export type Database = {
           image_url?: string | null
           material: Database["public"]["Enums"]["material_enum"]
           name: string
+          recommended_lifetime_days?: number | null
+          strength_class?:
+            | Database["public"]["Enums"]["strength_class_enum"]
+            | null
           weave: Database["public"]["Enums"]["weave_enum"]
         }
         Update: {
@@ -719,6 +727,10 @@ export type Database = {
           image_url?: string | null
           material?: Database["public"]["Enums"]["material_enum"]
           name?: string
+          recommended_lifetime_days?: number | null
+          strength_class?:
+            | Database["public"]["Enums"]["strength_class_enum"]
+            | null
           weave?: Database["public"]["Enums"]["weave_enum"]
         }
         Relationships: []
@@ -803,6 +815,13 @@ export type Database = {
           total_distance_walked: number
         }[]
       }
+      get_webbing_usage_days: {
+        Args: { webbing_id_param: number }
+        Returns: {
+          rig_count: number
+          usage_days: number
+        }[]
+      }
       highlines_in_view: {
         Args: {
           max_lat: number
@@ -834,6 +853,7 @@ export type Database = {
       material_enum: "nylon" | "dyneema" | "polyester"
       organization_role_enum: "admin" | "member"
       payment_status_enum: "pending" | "succeeded" | "failed"
+      strength_class_enum: "A+" | "A" | "B" | "C"
       subscription_plan_type_enum: "monthly" | "annual"
       subscription_status_enum: "pending_payment" | "active" | "canceled"
       weave_enum: "flat" | "tubular"
@@ -1569,6 +1589,7 @@ export const Constants = {
       material_enum: ["nylon", "dyneema", "polyester"],
       organization_role_enum: ["admin", "member"],
       payment_status_enum: ["pending", "succeeded", "failed"],
+      strength_class_enum: ["A+", "A", "B", "C"],
       subscription_plan_type_enum: ["monthly", "annual"],
       subscription_status_enum: ["pending_payment", "active", "canceled"],
       weave_enum: ["flat", "tubular"],
