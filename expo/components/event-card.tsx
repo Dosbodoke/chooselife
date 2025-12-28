@@ -3,7 +3,6 @@ import { Link } from 'expo-router';
 import {
   CalendarIcon,
   ChevronDownIcon,
-  GlobeIcon,
   MapPinIcon,
   ShareIcon,
   TicketIcon,
@@ -11,7 +10,7 @@ import {
 import { cssInterop } from 'nativewind';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import SquircleView from 'react-native-fast-squircle';
 import Animated, {
   FadeInUp,
@@ -37,7 +36,7 @@ import FestivalBgImage from '~/assets/images/festival.webp';
 import EducationBgImage from '~/assets/images/education.webp';
 import ContestsBgImage from '~/assets/images/contest.webp';
 import { ISAIcon } from '~/lib/icons/isa';
-
+import { DAMPING } from '~/utils/constants';
 
 // Configure SquircleView for NativeWind
 const StyledSquircle = SquircleView;
@@ -50,7 +49,7 @@ cssInterop(AnimatedSquircle, {
   className: { target: 'style' },
 });
 
-const DAMPING = 80;
+
 export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
 export const _exitingAnimation = FadeOut.springify().damping(DAMPING);
 export const _enteringAnimation = FadeInUp.springify().damping(DAMPING);
