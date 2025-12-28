@@ -1,132 +1,11 @@
 import { useMapStore } from '~/store/map-store';
-import { Link } from 'expo-router';
-import {
-  ArrowRightIcon,
-  UnfoldHorizontalIcon,
-  UnfoldVerticalIcon,
-} from 'lucide-react-native';
 import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { Pressable, TouchableOpacity, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import Animated, { Easing, FadeIn, FadeOut } from 'react-native-reanimated';
 
 import type { Highline } from '~/hooks/use-highline';
-import { RigStatuses } from '~/hooks/use-rig-setup';
-import { cn } from '~/lib/utils';
 
-import { Icon } from '~/components/ui/icon';
-import { Text } from '~/components/ui/text';
-
-import { FavoriteHighline } from '../highline/favorite-button';
-import { HighlineImage } from '../highline/highline-image';
-
-interface MapCardProps {
-  highline: Highline;
-  isFocused: boolean;
-  onPress: (high: Highline) => void;
-}
-
-export const HighlineMapCard: React.FC<MapCardProps> = ({
-  highline,
-  isFocused,
-  onPress,
-}) => {
-  const { t } = useTranslation();
-  return (
-    <Pressable
-      onPress={() => onPress(highline)}
-      className={cn(
-        'inline-block rounded-lg bg-background shadow shadow-foreground/10',
-        'aspect-video min-w-[24rem] overflow-hidden',
-        isFocused
-          ? 'border border-blue-500 dark:border-blue-600'
-          : 'border border-border',
-      )}
-    >
-      <View className="flex flex-row h-full gap-2 p-0">
-        <View className="absolute inset-0 bg-muted-foreground">
-          <HighlineImage
-            coverImageId={highline.cover_image}
-            className="w-full h-full"
-            dotSize="small"
-          />
-        </View>
-
-        <StatusChip status={highline.status as RigStatuses} />
-
-        <View className="absolute top-2 right-2">
-          <FavoriteHighline
-            id={highline.id}
-            isFavorite={highline.is_favorite}
-            className="bg-black/60"
-            hearthClassName="text-white"
-          />
-        </View>
-
-        <View
-          className={cn(
-            'absolute rounded-md inset-x-3 flex gap-2 bg-background bottom-3 p-2',
-            isFocused
-              ? 'border-2 border-blue-500 dark:border-blue-600'
-              : 'border-0',
-          )}
-        >
-          <Text variant="h4" className="text-base font-semibold">
-            {highline.name}
-          </Text>
-          <View className="flex gap-2 flex-row">
-            <View className="flex items-center pt-2 flex-row">
-              <Icon
-                as={UnfoldVerticalIcon}
-                className="size-4 mr-2 text-primary opacity-70"
-              />
-              <Text variant="small" className="text-sm text-muted-foreground">
-                {highline.height}m
-              </Text>
-            </View>
-            <View className="flex items-center pt-2 flex-row">
-              <Icon
-                as={UnfoldHorizontalIcon}
-                className="size-4 mr-2 text-primary opacity-70"
-              />
-              <Text variant="small" className="text-sm text-muted-foreground">
-                {highline.length}m
-              </Text>
-            </View>
-          </View>
-          <Link href={`/highline/${highline.id}`} asChild>
-            <TouchableOpacity className="flex-row gap-1 mt-auto items-center">
-              <Text className="text-blue-500">
-                {t('components.map.map-card.seeDatails')}
-              </Text>
-              <Icon as={ArrowRightIcon} className="size-4 text-blue-500" />
-            </TouchableOpacity>
-          </Link>
-        </View>
-      </View>
-    </Pressable>
-  );
-};
-
-const StatusChip: React.FC<{ status: RigStatuses }> = ({ status }) => {
-  const { t } = useTranslation();
-
-  const dotStyle: Record<RigStatuses, string> = {
-    planned: 'bg-amber-300',
-    rigged: 'bg-green-500',
-    unrigged: 'bg-red-500',
-  };
-
-  return (
-    <View className="absolute top-2 left-2 bg-black/60 py-2 px-4 rounded-full flex flex-row gap-2 items-center">
-      <View className={cn('size-2 rounded-full', dotStyle[status])} />
-      <Text className="text-white text-sm font-semibold tracking-wide">
-        {t(`components.map.explore-header.categories.${status}`)}
-      </Text>
-    </View>
-  );
-};
+import { HighlineCard } from '../highline/highline-card';
 
 export const MapCardList = ({
   highlines,
@@ -146,7 +25,7 @@ export const MapCardList = ({
       exiting={FadeOut.duration(300).easing(Easing.inOut(Easing.ease))}
       style={{
         position: 'absolute',
-        bottom: bottomSheetHandlerHeight + 16, // Bottom sheet handle + padding
+        bottom: bottomSheetHandlerHeight + 0  , // Bottom sheet handle + padding
         left: 0,
         right: 0,
       }}
@@ -157,11 +36,12 @@ export const MapCardList = ({
         contentContainerClassName="px-2 gap-4"
       >
         {highlines.map((high) => (
-          <HighlineMapCard
+          <HighlineCard
             key={`highline-card-${high.id}`}
-            highline={high}
+            item={high}
             isFocused={high.id === focusedMarker?.id}
-            onPress={changeFocusedMarker}
+            onPress={() => changeFocusedMarker(high)}
+            className="h-48 w-80"
           />
         ))}
       </ScrollView>

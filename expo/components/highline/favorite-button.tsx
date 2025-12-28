@@ -77,7 +77,7 @@ export const FavoriteHighline: React.FC<{
 
   return (
     <Pressable
-      className={cn('flex p-2 rounded-full bg-white', className)}
+      className={cn('flex p-2 rounded-full bg-black/60', className)}
       onPress={handlePress}
     >
       <Animated.View
@@ -86,7 +86,7 @@ export const FavoriteHighline: React.FC<{
       >
         <Icon
           as={HeartIcon}
-          className={cn('size-6 text-black', hearthClassName)}
+          className={cn('size-6 text-white', hearthClassName)}
         />
       </Animated.View>
 
