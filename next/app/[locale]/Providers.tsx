@@ -25,20 +25,20 @@ function Providers({ locale, messages, children }: Props) {
   return (
     <Suspense>
       <QueryClientProvider client={queryClient}>
-        <NuqsAdapter>
-          <NextIntlClientProvider
-            locale={locale}
-            messages={messages}
-            now={now}
-            timeZone="America/Sao_Paulo"
-          >
-            <ThemeProvider attribute="class" defaultTheme="system">
-              <Toaster />
-              <SpeedInsights />
-              {children}
-            </ThemeProvider>
-          </NextIntlClientProvider>
-        </NuqsAdapter>
+          <NuqsAdapter>
+            <NextIntlClientProvider
+              locale={locale}
+              messages={messages}
+              now={now}
+              timeZone="America/Sao_Paulo"
+            >
+              <ThemeProvider attribute="class" defaultTheme="system">
+                <Toaster />
+                <SpeedInsights />
+                {children}
+              </ThemeProvider>
+            </NextIntlClientProvider>
+          </NuqsAdapter>
         <ReactQueryDevtools />
       </QueryClientProvider>
     </Suspense>

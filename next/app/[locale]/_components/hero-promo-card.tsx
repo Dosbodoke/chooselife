@@ -35,22 +35,38 @@ export const HeroPromoCard = () => {
       <div className="absolute inset-x-0 bottom-0 h-[60vh] bg-gradient-to-t from-background via-stone-950/80 to-transparent" />
 
       <div className="relative z-10 flex h-full w-full flex-col items-center justify-center px-4 pb-32 text-center text-white">
-        <Link href={"/news/introduzindo-slac"}>
-          <button
-            role="button"
-            className="group relative grid overflow-hidden rounded-full px-4 py-1 shadow-[0_1000px_0_0_hsl(0_0%_20%)_inset] transition-colors duration-200 active:scale-[.98]"
-          >
-            <span>
-              <span className="spark mask-gradient animate-flip before:animate-rotate absolute inset-0 h-[100%] w-[100%] overflow-hidden rounded-full [mask:linear-gradient(white,_transparent_50%)] before:absolute before:aspect-square before:w-[200%] before:rotate-[-90deg] before:bg-[conic-gradient(from_0deg,transparent_0_340deg,white_360deg)] before:content-[''] before:[inset:0_auto_auto_50%] before:[translate:-50%_-15%]" />
-            </span>
-            <span className="backdrop absolute inset-[1px] rounded-full bg-neutral-950 transition-colors duration-200 group-hover:bg-neutral-900" />
-            <span className="absolute inset-x-0 bottom-0 h-full w-full bg-gradient-to-tr from-primary/20 blur-md"></span>
-            <span className="z-10 flex items-center justify-center gap-1 py-0.5 text-sm text-neutral-100">
-              ✨ Conheça a SL.A.C.
-              <ArrowRightIcon className="size-3 ml-1 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
-            </span>
-          </button>
-        </Link>
+        {/* Action Buttons Row */}
+        <div className="flex gap-3 mb-4">
+          <Link href={"/news/introduzindo-slac"}>
+            <button
+              role="button"
+              className="group relative grid overflow-hidden rounded-full px-4 py-1 shadow-[0_1000px_0_0_hsl(0_0%_20%)_inset] transition-colors duration-200 active:scale-[.98]"
+            >
+              <span>
+                <span className="spark mask-gradient animate-flip before:animate-rotate absolute inset-0 h-[100%] w-[100%] overflow-hidden rounded-full [mask:linear-gradient(white,_transparent_50%)] before:absolute before:aspect-square before:w-[200%] before:rotate-[-90deg] before:bg-[conic-gradient(from_0deg,transparent_0_340deg,white_360deg)] before:content-[''] before:[inset:0_auto_auto_50%] before:[translate:-50%_-15%]" />
+              </span>
+              <span className="backdrop absolute inset-[1px] rounded-full bg-neutral-950 transition-colors duration-200 group-hover:bg-neutral-900" />
+              <span className="absolute inset-x-0 bottom-0 h-full w-full bg-gradient-to-tr from-primary/20 blur-md"></span>
+              <span className="z-10 flex items-center justify-center gap-1 py-0.5 text-sm text-neutral-100">
+                ✨ Conheça a SL.A.C.
+                <ArrowRightIcon className="size-3 ml-1 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
+              </span>
+            </button>
+          </Link>
+          <Link href={"/events"}>
+            <button
+              role="button"
+              className="group relative grid overflow-hidden rounded-full px-4 py-1 shadow-[0_1000px_0_0_hsl(0_0%_20%)_inset] transition-colors duration-200 active:scale-[.98]"
+            >
+              <span className="backdrop absolute inset-[1px] rounded-full bg-neutral-950 transition-colors duration-200 group-hover:bg-neutral-900" />
+              <span className="absolute inset-x-0 bottom-0 h-full w-full bg-gradient-to-tr from-cyan-500/20 blur-md"></span>
+              <span className="z-10 flex items-center justify-center gap-1.5 py-0.5 text-sm text-neutral-100">
+                {`🗓️ ${t("hero.events")}`}
+                <ArrowRightIcon className="size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
+              </span>
+            </button>
+          </Link>
+        </div>
         <h1 className="text-6xl font-bold tracking-tighter drop-shadow-lg sm:text-7xl md:text-8xl">
           Choose Life
         </h1>

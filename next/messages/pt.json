@@ -1,7 +1,8 @@
 {
   "home": {
     "hero": {
-      "subtitle": "Encontre seu Equilíbrio"
+      "subtitle": "Encontre seu Equilíbrio",
+      "events": "Eventos"
     },
     "searchPlaceholder": "Nome do Highline",
     "newHighline": {
@@ -88,9 +89,9 @@
         "placeholder": "Exemplo: 2:59"
       },
       "witness": {
-          "label": "Testemunhas",
-          "description": "Se a testemunha não tiver no APP, use o @ do instagram dela.",
-          "placeholder": "@festivalchooselife, @juangsandrade"
+        "label": "Testemunhas",
+        "description": "Se a testemunha não tiver no APP, use o @ do instagram dela.",
+        "placeholder": "@festivalchooselife, @juangsandrade"
       },
       "comment": {
         "label": "Comentário",
@@ -298,7 +299,7 @@
     "selectUsers": "Selecionar usuários",
     "searchPlaceholder": "Buscar usuários...",
     "selectedUsers": "Usuários Selecionados",
-    "verifiedUsers": "Usuários Verificados", 
+    "verifiedUsers": "Usuários Verificados",
     "instagramUsers": "Instagram",
     "clearAll": "Limpar Tudo",
     "loading": "Carregando...",

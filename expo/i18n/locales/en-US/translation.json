@@ -314,7 +314,15 @@
     },
     "events": {
       "title": "Events",
-      "noEvents": "No events matching your criteria were found."
+      "noEvents": "No events matching your criteria were found.",
+      "noEventsFiltered": "No events found for this category.",
+      "filters": {
+        "all": "All",
+        "contests": "Contests",
+        "education": "Education",
+        "festivals": "Festivals",
+        "allCountries": "All Countries"
+      }
     },
     "setProfile": {
       "title": "Set Up Your Profile",
@@ -496,14 +504,15 @@
       }
     },
     "event-card": {
-      "book": "book"
+      "book": "book",
+      "viewDetails": "View Details"
     },
     "supabase-avatar": {
       "buttonLabel": "Edit"
     },
     "user-picker": {
       "header": "Select Users",
-      "searchPlaceholder": "Search Highliners...", 
+      "searchPlaceholder": "Search Highliners...",
       "selectedUsers": "Selected Users",
       "clearAll": "Clear All",
       "verifiedUsers": "Verified Users"
