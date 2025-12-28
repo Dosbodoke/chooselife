@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import { Image, ImageSource } from 'expo-image';
 import { Link } from 'expo-router';
 import {
   CalendarIcon,
@@ -32,6 +32,13 @@ import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 import { htmlToMarkdown } from '~/utils/html-utils';
 
+// Import category background image
+import FestivalBgImage from '~/assets/images/festival.webp';
+import EducationBgImage from '~/assets/images/education.webp';
+import ContestsBgImage from '~/assets/images/contest.webp';
+import { ISAIcon } from '~/lib/icons/isa';
+
+
 // Configure SquircleView for NativeWind
 const StyledSquircle = SquircleView;
 cssInterop(StyledSquircle, {
@@ -48,18 +55,9 @@ export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
 export const _exitingAnimation = FadeOut.springify().damping(DAMPING);
 export const _enteringAnimation = FadeInUp.springify().damping(DAMPING);
 
-/** Category gradient colors for the date box background */
-const CATEGORY_GRADIENTS: Record<string, { from: string; to: string }> = {
-  contests: { from: 'rgba(59, 130, 246, 0.9)', to: 'rgba(37, 99, 235, 0.95)' }, // Blue
-  education: { from: 'rgba(34, 197, 94, 0.9)', to: 'rgba(22, 163, 74, 0.95)' }, // Green
-  events: { from: 'rgba(249, 115, 22, 0.9)', to: 'rgba(234, 88, 12, 0.95)' }, // Orange
-  default: { from: 'rgba(0, 0, 0, 0.85)', to: 'rgba(0, 0, 0, 0.95)' }, // Black (internal events)
-};
-
 /** Get gradient for event category */
 function getCategoryGradient(type?: string): string {
-  const colors = CATEGORY_GRADIENTS[type || 'default'] || CATEGORY_GRADIENTS.default;
-  return `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)`;
+  return `linear-gradient(135deg, ${"rgba(0, 0, 0, 0.85)"} 0%, ${"rgba(0, 0, 0, 0.95)"} 100%)`;
 }
 
 /** Category colors for badge dot indicator */
@@ -69,15 +67,51 @@ const CATEGORY_BADGE_COLORS: Record<string, { bg: string; dot: string; text: str
   events: { bg: 'bg-orange-50', dot: 'bg-orange-500', text: 'text-orange-700' },
 };
 
-// Import category background image
-import CategoryBgImage from '~/assets/images/highline-walk.webp';
-import { ISAIcon } from '~/lib/icons/isa';
+/** Valid category image types */
+type CategoryImageType = 'festival' | 'education' | 'contests';
+
+/** Category image configuration */
+type CategoryConfig = {
+  image: ImageSource;
+  overlayOpacity: number; // 0-100, will be used as bg-black/XX
+  contentPosition: 'left' | 'center' | 'right' | 'top' | 'bottom';
+};
+
+/** Category background images and styling configuration */
+const CATEGORY_CONFIG: Record<CategoryImageType, CategoryConfig> = {
+  festival: {
+    image: FestivalBgImage as ImageSource,
+    overlayOpacity: 45,
+    contentPosition: "left",
+  },
+  education: {
+    image: EducationBgImage as ImageSource,
+    overlayOpacity: 15,
+    contentPosition: 'center',
+  },
+  contests: {
+    image: ContestsBgImage as ImageSource,
+    overlayOpacity: 35,
+    contentPosition: "right",
+  },
+};
+
+/** Type guard to check if a string is a valid category image type */
+function isCategoryImageType(type: string | undefined): type is CategoryImageType {
+  return type !== undefined && type in CATEGORY_CONFIG;
+}
+
+/** Get category config with type safety */
+function getCategoryConfig(type: CategoryImageType): CategoryConfig {
+  return CATEGORY_CONFIG[type];
+}
+
 
 /** DateBox component - Shows date with optional background image */
 const DateBox: React.FC<{
   monthShort: string;
   dayOfMonth: number;
-  eventType?: string;
+  eventType?: CategoryImageType;
   imageUrl?: string | null;
   isISAEvent?: boolean;
 }> = ({ monthShort, dayOfMonth, eventType, imageUrl, isISAEvent = false }) => {
@@ -89,7 +123,7 @@ const DateBox: React.FC<{
   const showCategoryImage = isISAEvent && !hasCustomImage;
 
   return (
-    <View className="items-center justify-center rounded-2xl min-w-[72px] min-h-[72px] overflow-hidden">
+    <View className="items-center justify-center min-w-[100px] self-stretch overflow-hidden">
       {/* Background: Custom Image, Category Image, or Gradient */}
       {hasCustomImage ? (
         <>
@@ -104,17 +138,26 @@ const DateBox: React.FC<{
           {/* Dark Overlay for text readability */}
           <View className="absolute inset-0 bg-black/50" />
         </>
-      ) : showCategoryImage ? (
-        <>
-          {/* Category Background Image for ISA events */}
-          <Image
-            source={CategoryBgImage}
-            contentFit="cover"
-            style={{ position: 'absolute', width: '100%', height: '100%' }}
-          />
-          {/* Dark Overlay for text readability (no color tint) */}
-          <View className="absolute inset-0 bg-black/45" />
-        </>
+      ) : showCategoryImage && eventType ? (
+        (() => {
+          const config = getCategoryConfig(eventType);
+          return (
+            <>
+              {/* Category Background Image for ISA events */}
+              <Image
+                source={config.image}
+                contentFit="cover"
+                contentPosition={config.contentPosition}
+                style={{ position: 'absolute', width: '100%', height: '100%' }}
+              />
+              {/* Dark Overlay for text readability */}
+              <View 
+                className="absolute inset-0" 
+                style={{ backgroundColor: `rgba(0, 0, 0, ${config.overlayOpacity / 100})` }}
+              />
+            </>
+          );
+        })()
       ) : (
         /* Gradient Background for internal events */
         <View
@@ -139,16 +182,17 @@ const DateBox: React.FC<{
 };
 
 /** Get human readable category label */
-function getCategoryLabel(type?: string): string {
+function getCategoryLabel(type?: string): CategoryImageType {
+  console.log(type);
   switch (type) {
     case 'contests':
-      return 'Contest';
+      return 'contests';
     case 'education':
-      return 'Education';
+      return 'education';
     case 'events':
-      return 'Festival';
+      return 'festival';
     default:
-      return 'Event';
+      return 'festival';
   }
 }
 
@@ -169,8 +213,8 @@ const CategoryBadge: React.FC<{ type?: string }> = ({ type }) => {
 /** ISA Badge component - shows ISA source indicator (absolute positioned) */
 const ISABadge: React.FC = () => {
   return (
-    <View className="absolute bottom-3 right-3 z-10">
-      <ISAIcon width={52} height={28} />
+    <View className="absolute bottom-2 right-2 z-10">
+      <ISAIcon width={44} height={24} />
     </View>
   );
 };
@@ -181,7 +225,7 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
   const [expanded, setExpanded] = useState(false);
 
   const isFromISA = isISAEvent(event);
-  const eventType = isFromISA ? event.type : 'default';
+  const eventType: CategoryImageType = isFromISA ? getCategoryLabel(event.type) : 'festival';
 
   const toggleExpand = () => {
     setExpanded((prev) => !prev);
@@ -239,7 +283,7 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
       {/* ISA Badge - Bottom Right */}
       {isFromISA && <ISABadge />}
       <Pressable onPress={toggleExpand} className="active:bg-muted/30">
-        <View className="p-4">
+        <View className="pr-4 py-0">
           <View className="flex-row gap-4">
             {/* Date Box - With optional image or category gradient */}
             <DateBox
@@ -255,7 +299,7 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
             />
 
             {/* Main Content */}
-            <View className="flex-1 justify-center gap-1">
+            <View className="flex-1 justify-center gap-1 py-2">
               {/* Title Row with Share Button */}
               <View className="flex-row justify-between items-start gap-2">
                 <Text
