@@ -1,7 +1,8 @@
 {
   "home": {
     "hero": {
-      "subtitle": "Find your balance"
+      "subtitle": "Find your balance",
+      "events": "Events"
     },
     "searchPlaceholder": "Highline name",
     "newHighline": {
@@ -304,7 +305,7 @@
     "loading": "Loading...",
     "noUsersFound": "No users found",
     "user": "user",
-    "users": "users", 
+    "users": "users",
     "moreSelected": "+{count} more"
   }
 }

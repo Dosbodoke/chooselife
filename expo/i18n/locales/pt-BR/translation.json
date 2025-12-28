@@ -314,7 +314,15 @@
     },
     "events": {
       "title": "Eventos",
-      "noEvents": "Não foram encontrados eventos que correspondam aos seus critérios."
+      "noEvents": "Não foram encontrados eventos que correspondam aos seus critérios.",
+      "noEventsFiltered": "Nenhum evento encontrado para esta categoria.",
+      "filters": {
+        "all": "Todos",
+        "contests": "Competições",
+        "education": "Educação",
+        "festivals": "Festivais",
+        "allCountries": "Todos os Países"
+      }
     },
     "setProfile": {
       "title": "Configure Seu Perfil",
@@ -496,14 +504,15 @@
       }
     },
     "event-card": {
-      "book": "Inscrever-se"
+      "book": "Inscrever-se",
+      "viewDetails": "Ver Detalhes"
     },
     "supabase-avatar": {
       "buttonLabel": "Editar"
     },
     "user-picker": {
       "header": "Selecionar Usuários",
-      "searchPlaceholder": "Procurar highliners...", 
+      "searchPlaceholder": "Procurar highliners...",
       "selectedUsers": "Usuários selecionados",
       "clearAll": "Limpar tudo",
       "verifiedUsers": "Usuário verificado"

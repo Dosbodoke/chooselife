@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 
-import { useEvents } from '~/hooks/use-events';
+import { useEvents } from '@chooselife/ui/';
 import { cn } from '~/lib/utils';
 
 import { EventCard, EventCardSkeleton } from '~/components/event-card';
