@@ -182,7 +182,6 @@ const DateBox: React.FC<{
 
 /** Get human readable category label */
 function getCategoryLabel(type?: string): CategoryImageType {
-  console.log(type);
   switch (type) {
     case 'contests':
       return 'contests';
