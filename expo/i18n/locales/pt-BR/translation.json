@@ -109,14 +109,20 @@
           }
         },
         "tagName": {
-          "min": "Must be at least 3 characters",
+          "min": "Deve conter pelo menos 3 caracteres",
           "label": "Nome da Fita",
           "placeholder": "Nome para identificação desta fita"
         },
         "note": {
           "label": "Nota",
           "placeholder": "Adicione qualquer informação adicional para esta fita"
-        }
+        },
+        "strengthClass": {
+          "label": "Classe de Resistência",
+          "lockedHint": "Determinada pelo modelo selecionado",
+          "placeholder": "Selecione a classe de resistência"
+        },
+        "recommendedLifetime": "Vida útil recomendada: {{days}} dias"
       }
     },
     "(tabs)": {
@@ -501,6 +507,32 @@
         "add": "adicionar",
         "description": "Visualize e acompanhe o histórico de suas fitas.",
         "empty": "Você ainda não cadastrou nenhuma fita"
+      }
+    },
+    "webbing-detail": {
+      "notFound": "Fita não encontrada",
+      "lifetime": {
+        "title": "Vida Útil da Fita",
+        "status": "Status: {{status}}",
+        "recommendedLifetime": "Vida útil recomendada: {{days}} dias",
+        "daysUsed": "{{days}} dias usados",
+        "daysRemaining": "{{days}} dias restantes",
+        "learnMore": "Saiba mais sobre padrões ISA",
+        "statusGood": "Bom",
+        "statusInspect": "Inspecionar",
+        "statusReplace": "Substituir"
+      },
+      "specifications": {
+        "title": "Especificações",
+        "length": "Comprimento",
+        "material": "Material",
+        "weave": "Trama",
+        "loops": "Olhais"
+      },
+      "history": {
+        "title": "Histórico de Uso ({{count}} montagens)",
+        "empty": "Nenhum histórico de uso.\nVincule esta fita ao montar um highline.",
+        "days": "{{days}} dias"
       }
     },
     "event-card": {

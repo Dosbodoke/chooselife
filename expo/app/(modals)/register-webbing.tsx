@@ -1,11 +1,10 @@
 import {
-  BottomSheetBackdrop,
   BottomSheetBackdropProps,
   BottomSheetModal,
+  BottomSheetModalProvider,
   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import {
@@ -18,20 +17,24 @@ import {
   Control,
   Controller,
   FieldErrors,
-  SubmitHandler,
   useController,
-  useForm,
   UseFormReturn,
   useWatch,
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Dimensions, TouchableOpacity, View } from 'react-native';
+import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
+import {
+  Gesture,
+  GestureDetector,
+} from 'react-native-gesture-handler';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import Animated, {
+  interpolate,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { z } from 'zod';
 
-import { useAuth } from '~/context/auth';
-import { useWebbingsKeyFactory } from '~/hooks/use-webbings';
 import RegisterWebbingIllustration from '~/lib/icons/register-webbing';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
@@ -43,106 +46,88 @@ import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
-import { Separator } from '~/components/ui/separator';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
-import { WebbingInput, webbingSchema } from '~/components/webbing-input';
+import { WebbingInput } from '~/components/webbing-input';
 
-// Extend your existing webbing schema with a "model" field.
-const registerWebbingSchema = webbingSchema.extend({
-  modelID: z.string().optional(),
-  note: z.string(),
-  tagName: z.string().min(1),
-});
-type TRegisterWebbingSchema = z.infer<typeof registerWebbingSchema>;
+import {
+  STRENGTH_CLASS_OPTIONS,
+  getRecommendedLifetimeDays,
+  getWeaveColor,
+  getMaterialColor,
+  getMaterialIconColor,
+  getStrengthClassColor,
+  useRegisterWebbing,
+  type RegisterWebbingFormData,
+} from '@chooselife/ui';
 
 export default function RegisterWebbing() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const { profile } = useAuth();
   const router = useRouter();
-  const form = useForm<TRegisterWebbingSchema>({
-    resolver: zodResolver(registerWebbingSchema),
-    mode: 'onChange',
-    defaultValues: {
-      modelID: '',
-      note: '',
-      tagName: '',
-      length: '',
-      leftLoop: false,
-      rightLoop: false,
-    },
-  });
-
-  const mutation = useMutation({
-    mutationFn: async (data: TRegisterWebbingSchema) => {
-      if (!profile) throw new Error('User not authenticated');
-
-      const { error } = await supabase
-        .from('webbing')
-        .insert({
-          model: data.modelID ? +data.modelID : undefined,
-          description: data.note,
-          tag_name: data.tagName,
-          user_id: profile.id,
-          left_loop: data.leftLoop,
-          right_loop: data.rightLoop,
-          length: +data.length,
-        })
-        .single();
-
-      if (error) throw error;
-    },
+  
+  const { form, handleSubmit, isLoading } = useRegisterWebbing({
     onSuccess: () => {
       requestReview();
-      queryClient.invalidateQueries({
-        queryKey: useWebbingsKeyFactory.webbings(),
-      });
       router.back();
     },
   });
 
-  const onSubmit: SubmitHandler<TRegisterWebbingSchema> = async (data) => {
-    await mutation.mutateAsync(data);
-  };
-
-  const onError = (e: FieldErrors<TRegisterWebbingSchema>) => {
+  const onError = (e: FieldErrors<RegisterWebbingFormData>) => {
     console.log({ e });
   };
 
   return (
-    <SafeAreaView className="flex-1">
-      <KeyboardAwareScrollView
-        contentContainerClassName="px-6 pt-3 pb-8 gap-4"
-        keyboardShouldPersistTaps="handled"
-      >
-        <PrefillForm form={form} />
+    <BottomSheetModalProvider>
+      <SafeAreaView className="flex-1">
+        <KeyboardAwareScrollView
+          contentContainerClassName="px-6 pt-3 pb-8 gap-4"
+          keyboardShouldPersistTaps="handled"
+        >
+          <PrefillForm form={form} />
 
-        <View className="flex-grow">{/* Spacer to push paginator down */}</View>
+          <View className="flex-grow">{/* Spacer to push paginator down */}</View>
 
-        <OnboardNavigator
-          total={1}
-          selectedIndex={0}
-          onIndexChange={() => {}} // There is only one step
-          onFinish={form.handleSubmit(onSubmit, onError)}
-          goBack={router.back}
-          isLoading={mutation.isPending}
-          finishLabel={t('app.(modals).register-webbing.finishLabel')}
-        />
-      </KeyboardAwareScrollView>
-    </SafeAreaView>
+          <OnboardNavigator
+            total={1}
+            selectedIndex={0}
+            onIndexChange={() => {}} // There is only one step
+            onFinish={form.handleSubmit(handleSubmit, onError)}
+            goBack={router.back}
+            isLoading={isLoading}
+            finishLabel={t('app.(modals).register-webbing.finishLabel')}
+          />
+        </KeyboardAwareScrollView>
+      </SafeAreaView>
+    </BottomSheetModalProvider>
   );
 }
 
 const PrefillForm: React.FC<{
-  form: UseFormReturn<TRegisterWebbingSchema>;
+  form: UseFormReturn<RegisterWebbingFormData>;
 }> = ({ form }) => {
   const { t } = useTranslation();
-  const [leftLoop, rightLoop, length] = useWatch({
+  const [leftLoop, rightLoop, length, modelID] = useWatch({
     control: form.control,
-    name: ['leftLoop', 'rightLoop', 'length'],
+    name: ['leftLoop', 'rightLoop', 'length', 'modelID'],
   });
+
+  // Fetch models to get the selected model's strength class
+  const { data: models } = useQuery({
+    queryKey: ['webbingModels'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('webbing_model')
+        .select('*')
+        .order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Get selected model's strength class
+  const selectedModel = models?.find((m) => m.id.toString() === modelID);
+  const modelStrengthClass = (selectedModel as { strength_class?: string } | undefined)?.strength_class ?? null;
 
   return (
     <View className="gap-6">
@@ -169,6 +154,10 @@ const PrefillForm: React.FC<{
         error={form.formState.errors.length?.message ?? null}
       />
       <SelectModel control={form.control} />
+      <StrengthClassSelector 
+        control={form.control} 
+        modelStrengthClass={modelStrengthClass}
+      />
 
       <Controller
         control={form.control}
@@ -227,33 +216,82 @@ const PrefillForm: React.FC<{
   );
 };
 
-// Helper function to get color for weave badge
-const getWeaveColor = (weave: string) => {
-  const colorMap: Record<string, string> = {
-    flat: 'bg-amber-100 text-amber-800 hover:bg-amber-100',
-    tubular: 'bg-rose-100 text-rose-800 hover:bg-rose-100',
-  };
 
-  return colorMap[weave] || '';
+
+// Strength class selector component
+const StrengthClassSelector: React.FC<{
+  control: Control<RegisterWebbingFormData>;
+  modelStrengthClass: string | null;
+}> = ({ control, modelStrengthClass }) => {
+  const { t } = useTranslation();
+  const { field } = useController({ control, name: 'strengthClass' });
+
+  // Use model's strength class when available, otherwise use form field value
+  const hasModel = !!modelStrengthClass;
+  const displayValue = hasModel ? modelStrengthClass : field.value;
+  const recommendedDays = getRecommendedLifetimeDays((displayValue as 'A+' | 'A' | 'B' | 'C') ?? null);
+
+  return (
+    <View className="gap-2">
+      <Label nativeID="strengthClass">
+        {t('app.(modals).register-webbing.strengthClass.label')}
+        {!hasModel && (
+          <>
+            {' '}
+            <Text variant="muted">{t('common.optional')}</Text>
+          </>
+        )}
+      </Label>
+      
+      {/* Strength class buttons */}
+      <View className="flex-row gap-2">
+        {STRENGTH_CLASS_OPTIONS.map((option) => {
+          const isSelected = displayValue === option;
+          return (
+            <TouchableOpacity
+              key={option}
+              disabled={hasModel}
+              onPress={() => field.onChange(isSelected ? undefined : option)}
+              className={cn(
+                'flex-1 py-3 rounded-lg border items-center justify-center',
+                isSelected
+                  ? getStrengthClassColor(option)
+                  : 'border-border bg-muted/30',
+                hasModel && !isSelected && 'opacity-40',
+              )}
+            >
+              <Text
+                className={cn(
+                  'font-bold text-lg',
+                  isSelected ? '' : 'text-muted-foreground',
+                )}
+              >
+                {option}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Recommended lifetime info */}
+      {recommendedDays && (
+        <Text variant="muted" className="text-sm">
+          {t('app.(modals).register-webbing.recommendedLifetime', {
+            days: recommendedDays,
+          })}
+        </Text>
+      )}
+    </View>
+  );
 };
 
-// Helper function to get background color for material (used for fallback)
-const getMaterialColor = (material: string) => {
-  const colorMap: Record<string, string> = {
-    nylon: 'bg-blue-50',
-    dyneema: 'bg-green-50',
-    polyester: 'bg-purple-50',
-  };
-
-  return colorMap[material] || 'bg-gray-50';
-};
-
+// Grid layout constants - 2 columns
 const screenWidth = Dimensions.get('window').width;
-const numColumns = 3;
-const gap = 10;
-
-const availableSpace = screenWidth - (numColumns - 1) * gap;
-const itemSize = availableSpace / numColumns;
+const numColumns = 2;
+const horizontalPadding = 32; // p-4 on each side
+const gap = 12;
+const availableSpace = screenWidth - horizontalPadding - (numColumns - 1) * gap;
+const itemWidth = availableSpace / numColumns;
 
 const EmptyState = () => {
   const { t } = useTranslation();
@@ -270,7 +308,7 @@ const EmptyState = () => {
   );
 };
 
-const SelectModel: React.FC<{ control: Control<TRegisterWebbingSchema> }> = ({
+const SelectModel: React.FC<{ control: Control<RegisterWebbingFormData> }> = ({
   control,
 }) => {
   const { t } = useTranslation();
@@ -314,27 +352,54 @@ const SelectModel: React.FC<{ control: Control<TRegisterWebbingSchema> }> = ({
     bottomSheetModalRef.current?.present();
   }, []);
 
+  // Custom backdrop that blocks all touch gestures from propagating to parent modal
   const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        pressBehavior="close"
-      />
-    ),
+    (props: BottomSheetBackdropProps) => {
+      const CustomBackdrop = () => {
+        const animatedStyle = useAnimatedStyle(() => ({
+          opacity: interpolate(props.animatedIndex.value, [-1, 0], [0, 0.5]),
+        }));
+
+        // Pan gesture that captures swipes but does nothing - prevents propagation
+        const panGesture = Gesture.Pan();
+
+        // Tap gesture to close the modal
+        const closeModal = () => bottomSheetModalRef.current?.close();
+        const tapGesture = Gesture.Tap().onEnd(() => {
+          scheduleOnRN(closeModal);
+        });
+
+        // Compose gestures - pan takes priority to block swipes
+        const composedGesture = Gesture.Race(panGesture, tapGesture);
+
+        return (
+          <GestureDetector gesture={composedGesture}>
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFillObject,
+                { backgroundColor: 'black' },
+                animatedStyle,
+              ]}
+            />
+          </GestureDetector>
+        );
+      };
+
+      return <CustomBackdrop />;
+    },
     [],
   );
 
   const renderWebbingImage = useCallback(
     (model: Tables<'webbing_model'>, size: 'sm' | 'lg') => {
-      const dimensions = size === 'sm' ? 'h-8 w-8' : 'h-16 w-16';
-      const iconSize = size === 'sm' ? 'h-4 w-4' : 'h-8 w-8';
+      const dimensions = size === 'sm' ? 'h-10 w-10' : 'h-20 w-20';
+      const iconSize = size === 'sm' ? 20 : 40;
+      const borderRadius = size === 'sm' ? 'rounded-lg' : 'rounded-xl';
 
       if (model.image_url) {
         return (
           <View
-            className={`relative ${dimensions} overflow-hidden rounded-md border`}
+            className={`relative ${dimensions} overflow-hidden ${borderRadius} border border-border bg-muted`}
           >
             <Image
               source={{
@@ -343,9 +408,8 @@ const SelectModel: React.FC<{ control: Control<TRegisterWebbingSchema> }> = ({
                   .getPublicUrl(model.image_url).data.publicUrl,
               }}
               contentFit="cover"
-              alt={`Imagem da fita ${model.name}`}
+              alt={`${model.name}`}
               style={{ width: '100%', height: '100%' }}
-              className="object-cover"
             />
           </View>
         );
@@ -354,17 +418,12 @@ const SelectModel: React.FC<{ control: Control<TRegisterWebbingSchema> }> = ({
       // Fallback with styled background and icon
       return (
         <View
-          className={`${dimensions} flex items-center justify-center rounded-md border ${getMaterialColor(model.material)}`}
+          className={`${dimensions} flex items-center justify-center ${borderRadius} border border-border bg-muted/50`}
         >
           <Icon
             as={TorusIcon}
-            className={`${iconSize} ${
-              model.material === 'nylon'
-                ? 'text-blue-500'
-                : model.material === 'dyneema'
-                  ? 'text-green-500'
-                  : 'text-purple-500'
-            }`}
+            size={iconSize}
+            className={getMaterialIconColor(model.material)}
           />
         </View>
       );
@@ -408,41 +467,45 @@ const SelectModel: React.FC<{ control: Control<TRegisterWebbingSchema> }> = ({
           key={item.id}
           onPress={() => handleSelect(item)}
           style={{
-            height: itemSize,
-            width: itemSize,
-            margin: gap / 2,
+            width: itemWidth,
           }}
           className={cn(
-            'flex flex-col items-center p-3 rounded-md text-center transition-colors',
-            isSelected ? 'bg-primary/20' : 'hover:bg-muted',
+            'flex flex-col items-center p-4 rounded-2xl border',
+            isSelected
+              ? 'border-primary bg-primary/5'
+              : 'border-border bg-muted/30',
           )}
         >
-          {/* Webbing image - 1:1 aspect ratio */}
+          {/* Webbing image */}
           {renderWebbingImage(item, 'lg')}
 
           {/* Details */}
-          <View className="flex flex-col items-center gap-1.5 w-full mt-2">
-            <Text className="font-medium text-foreground text-sm line-clamp-1">
+          <View className="flex flex-col items-center gap-2 w-full mt-3">
+            <Text
+              className="font-semibold text-foreground text-sm text-center"
+              numberOfLines={1}
+            >
               {item.name}
             </Text>
-            <View className="flex flex-row flex-wrap justify-center gap-1">
+            <View className="flex flex-row flex-wrap justify-center gap-1.5">
               <View
                 className={cn(
-                  'rounded px-1.5 py-0',
+                  'rounded-full px-2.5 py-0.5',
                   getMaterialColor(item.material),
                 )}
               >
-                <Text className="text-xs">
+                <Text className="text-xs font-medium capitalize">
                   {item.material}
-                  {/* {t(`material.${item.material}`)} */}
                 </Text>
               </View>
               <View
-                className={cn('rounded px-1.5 py-0', getWeaveColor(item.weave))}
+                className={cn(
+                  'rounded-full px-2.5 py-0.5',
+                  getWeaveColor(item.weave),
+                )}
               >
-                <Text className="text-xs">
+                <Text className="text-xs font-medium capitalize">
                   {item.weave}
-                  {/* {t(`weave.${item.weave}`)} */}
                 </Text>
               </View>
             </View>
@@ -450,33 +513,7 @@ const SelectModel: React.FC<{ control: Control<TRegisterWebbingSchema> }> = ({
         </TouchableOpacity>
       );
     },
-    [modelIDField.value, renderWebbingImage, t],
-  );
-
-  const ModelsList = (
-    <>
-      <BottomSheetScrollView>
-        {models ? models.map((item) => renderModelItem(item)) : <EmptyState />}
-      </BottomSheetScrollView>
-      <Separator className="my-3" />
-      <Button
-        variant="ghost"
-        onPress={() => handleSelect(null)}
-        className="mt-2"
-      >
-        <Text>{t('app.(modals).register-webbing.selectModel.clear')}</Text>
-      </Button>
-    </>
-  );
-
-  const BottomSheetContent = (
-    <BottomSheetScrollView className="flex-1 p-4">
-      <Text className="text-lg font-semibold text-center mb-4">
-        {t('app.(modals).register-webbing.selectModel.label')}
-      </Text>
-
-      {ModelsList}
-    </BottomSheetScrollView>
+    [modelIDField.value, renderWebbingImage, handleSelect],
   );
 
   return (
@@ -493,13 +530,54 @@ const SelectModel: React.FC<{ control: Control<TRegisterWebbingSchema> }> = ({
 
           <BottomSheetModal
             ref={bottomSheetModalRef}
-            snapPoints={['60%']}
+            snapPoints={['70%']}
             enablePanDownToClose
             backdropComponent={renderBackdrop}
-            handleIndicatorStyle={{ backgroundColor: '#999' }}
+            handleIndicatorStyle={{ backgroundColor: '#ccc', width: 40 }}
             enableDynamicSizing={false}
+            activeOffsetY={[-10, 10]}
+            failOffsetX={[-5, 5]}
+            backgroundStyle={{ backgroundColor: '#ffffff' }}
           >
-            {BottomSheetContent}
+            <View className="flex-1 px-4 pb-4">
+              {/* Header */}
+              <View className="pb-4 border-b border-border mb-4">
+                <Text className="text-xl font-bold text-center text-foreground">
+                  {t('app.(modals).register-webbing.selectModel.label')}
+                </Text>
+              </View>
+
+              {/* Grid */}
+              <BottomSheetScrollView
+                contentContainerStyle={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: gap,
+                  paddingBottom: 80,
+                }}
+              >
+                {models ? (
+                  models.map((item) => renderModelItem(item))
+                ) : (
+                  <EmptyState />
+                )}
+              </BottomSheetScrollView>
+
+              {/* Clear button */}
+              {modelIDField.value && (
+                <View className="absolute bottom-4 left-4 right-4">
+                  <Button
+                    variant="outline"
+                    onPress={() => handleSelect(null)}
+                    className="bg-background"
+                  >
+                    <Text>
+                      {t('app.(modals).register-webbing.selectModel.clear')}
+                    </Text>
+                  </Button>
+                </View>
+              )}
+            </View>
           </BottomSheetModal>
         </>
       )}

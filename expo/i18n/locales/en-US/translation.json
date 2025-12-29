@@ -116,7 +116,13 @@
         "note": {
           "label": "Note",
           "placeholder": "Add any additional information for this webbing"
-        }
+        },
+        "strengthClass": {
+          "label": "Strength Class",
+          "lockedHint": "Determined by the selected model",
+          "placeholder": "Select strength class"
+        },
+        "recommendedLifetime": "Recommended lifetime: {{days}} days"
       }
     },
     "(tabs)": {
@@ -501,6 +507,32 @@
         "add": "add",
         "description": "View and track the history of your webbings.",
         "empty": "You haven't registered any webbing yet"
+      }
+    },
+    "webbing-detail": {
+      "notFound": "Webbing not found",
+      "lifetime": {
+        "title": "Webbing Lifetime",
+        "status": "Status: {{status}}",
+        "recommendedLifetime": "Recommended lifetime: {{days}} days",
+        "daysUsed": "{{days}} days used",
+        "daysRemaining": "{{days}} days remaining",
+        "learnMore": "Learn about ISA webbing standards",
+        "statusGood": "Good",
+        "statusInspect": "Inspect",
+        "statusReplace": "Replace"
+      },
+      "specifications": {
+        "title": "Specifications",
+        "length": "Length",
+        "material": "Material",
+        "weave": "Weave",
+        "loops": "Loops"
+      },
+      "history": {
+        "title": "Usage History ({{count}} rigs)",
+        "empty": "No usage history yet.\nLink this webbing when rigging a highline.",
+        "days": "{{days}} days"
       }
     },
     "event-card": {

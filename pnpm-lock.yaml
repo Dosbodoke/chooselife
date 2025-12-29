@@ -641,6 +641,12 @@ importers:
       ical.js:
         specifier: ^2.2.1
         version: 2.2.1
+      react-hook-form:
+        specifier: '*'
+        version: 7.68.0(react@19.1.0)
+      zod:
+        specifier: '*'
+        version: 3.25.76
     devDependencies:
       '@supabase/supabase-js':
         specifier: ^2.86.0
