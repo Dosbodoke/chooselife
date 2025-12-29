@@ -4,8 +4,7 @@ import {
   BottomSheetModalProvider,
   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import {
@@ -18,9 +17,7 @@ import {
   Control,
   Controller,
   FieldErrors,
-  SubmitHandler,
   useController,
-  useForm,
   UseFormReturn,
   useWatch,
 } from 'react-hook-form';
@@ -37,10 +34,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { z } from 'zod';
 
-import { useAuth } from '~/context/auth';
-import { useWebbingsKeyFactory } from '~/hooks/use-webbings';
 import RegisterWebbingIllustration from '~/lib/icons/register-webbing';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
@@ -55,7 +49,7 @@ import { Label } from '~/components/ui/label';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
-import { WebbingInput, webbingSchema } from '~/components/webbing-input';
+import { WebbingInput } from '~/components/webbing-input';
 
 import {
   STRENGTH_CLASS_OPTIONS,
@@ -64,71 +58,22 @@ import {
   getMaterialColor,
   getMaterialIconColor,
   getStrengthClassColor,
+  useRegisterWebbing,
+  type RegisterWebbingFormData,
 } from '@chooselife/ui';
-
-// Extend your existing webbing schema with fields for model and strength class
-const registerWebbingSchema = webbingSchema.extend({
-  modelID: z.string().optional(),
-  note: z.string(),
-  tagName: z.string().min(1),
-  strengthClass: z.enum(STRENGTH_CLASS_OPTIONS).optional(),
-});
-type TRegisterWebbingSchema = z.infer<typeof registerWebbingSchema>;
 
 export default function RegisterWebbing() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const { profile } = useAuth();
   const router = useRouter();
-  const form = useForm<TRegisterWebbingSchema>({
-    resolver: zodResolver(registerWebbingSchema),
-    mode: 'onChange',
-    defaultValues: {
-      modelID: '',
-      note: '',
-      tagName: '',
-      length: '',
-      leftLoop: false,
-      rightLoop: false,
-      strengthClass: undefined,
-    },
-  });
-
-  const mutation = useMutation({
-    mutationFn: async (data: TRegisterWebbingSchema) => {
-      if (!profile) throw new Error('User not authenticated');
-
-      const { error } = await supabase
-        .from('webbing')
-        .insert({
-          model: data.modelID ? +data.modelID : undefined,
-          description: data.note,
-          tag_name: data.tagName,
-          user_id: profile.id,
-          left_loop: data.leftLoop,
-          right_loop: data.rightLoop,
-          length: +data.length,
-          // Only save strength_class if no model is selected (custom webbing)
-          strength_class: data.modelID ? undefined : data.strengthClass,
-        })
-        .single();
-
-      if (error) throw error;
-    },
+  
+  const { form, handleSubmit, isLoading } = useRegisterWebbing({
     onSuccess: () => {
       requestReview();
-      queryClient.invalidateQueries({
-        queryKey: useWebbingsKeyFactory.webbings(),
-      });
       router.back();
     },
   });
 
-  const onSubmit: SubmitHandler<TRegisterWebbingSchema> = async (data) => {
-    await mutation.mutateAsync(data);
-  };
-
-  const onError = (e: FieldErrors<TRegisterWebbingSchema>) => {
+  const onError = (e: FieldErrors<RegisterWebbingFormData>) => {
     console.log({ e });
   };
 
@@ -147,9 +92,9 @@ export default function RegisterWebbing() {
             total={1}
             selectedIndex={0}
             onIndexChange={() => {}} // There is only one step
-            onFinish={form.handleSubmit(onSubmit, onError)}
+            onFinish={form.handleSubmit(handleSubmit, onError)}
             goBack={router.back}
-            isLoading={mutation.isPending}
+            isLoading={isLoading}
             finishLabel={t('app.(modals).register-webbing.finishLabel')}
           />
         </KeyboardAwareScrollView>
@@ -159,7 +104,7 @@ export default function RegisterWebbing() {
 }
 
 const PrefillForm: React.FC<{
-  form: UseFormReturn<TRegisterWebbingSchema>;
+  form: UseFormReturn<RegisterWebbingFormData>;
 }> = ({ form }) => {
   const { t } = useTranslation();
   const [leftLoop, rightLoop, length, modelID] = useWatch({
@@ -275,7 +220,7 @@ const PrefillForm: React.FC<{
 
 // Strength class selector component
 const StrengthClassSelector: React.FC<{
-  control: Control<TRegisterWebbingSchema>;
+  control: Control<RegisterWebbingFormData>;
   modelStrengthClass: string | null;
 }> = ({ control, modelStrengthClass }) => {
   const { t } = useTranslation();
@@ -363,7 +308,7 @@ const EmptyState = () => {
   );
 };
 
-const SelectModel: React.FC<{ control: Control<TRegisterWebbingSchema> }> = ({
+const SelectModel: React.FC<{ control: Control<RegisterWebbingFormData> }> = ({
   control,
 }) => {
   const { t } = useTranslation();

@@ -15,7 +15,9 @@
   "peerDependencies": {
     "@supabase/supabase-js": "*",
     "@tanstack/react-query": "*",
-    "react": "*"
+    "react": "*",
+    "react-hook-form": "*",
+    "zod": "*"
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.86.0",
