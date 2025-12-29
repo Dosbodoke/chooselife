@@ -109,14 +109,20 @@
           }
         },
         "tagName": {
-          "min": "Must be at least 3 characters",
+          "min": "Deve conter pelo menos 3 caracteres",
           "label": "Nome da Fita",
           "placeholder": "Nome para identificação desta fita"
         },
         "note": {
           "label": "Nota",
           "placeholder": "Adicione qualquer informação adicional para esta fita"
-        }
+        },
+        "strengthClass": {
+          "label": "Classe de Resistência",
+          "lockedHint": "Determinada pelo modelo selecionado",
+          "placeholder": "Selecione a classe de resistência"
+        },
+        "recommendedLifetime": "Vida útil recomendada: {{days}} dias"
       }
     },
     "(tabs)": {

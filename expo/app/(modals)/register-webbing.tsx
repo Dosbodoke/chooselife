@@ -57,11 +57,17 @@ import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
 import { WebbingInput, webbingSchema } from '~/components/webbing-input';
 
-// Extend your existing webbing schema with a "model" field.
+import {
+  STRENGTH_CLASS_OPTIONS,
+  getRecommendedLifetimeDays,
+} from '@chooselife/ui';
+
+// Extend your existing webbing schema with fields for model and strength class
 const registerWebbingSchema = webbingSchema.extend({
   modelID: z.string().optional(),
   note: z.string(),
   tagName: z.string().min(1),
+  strengthClass: z.enum(STRENGTH_CLASS_OPTIONS).optional(),
 });
 type TRegisterWebbingSchema = z.infer<typeof registerWebbingSchema>;
 
@@ -80,6 +86,7 @@ export default function RegisterWebbing() {
       length: '',
       leftLoop: false,
       rightLoop: false,
+      strengthClass: undefined,
     },
   });
 
@@ -97,6 +104,8 @@ export default function RegisterWebbing() {
           left_loop: data.leftLoop,
           right_loop: data.rightLoop,
           length: +data.length,
+          // Only save strength_class if no model is selected (custom webbing)
+          strength_class: data.modelID ? undefined : data.strengthClass,
         })
         .single();
 
@@ -149,10 +158,27 @@ const PrefillForm: React.FC<{
   form: UseFormReturn<TRegisterWebbingSchema>;
 }> = ({ form }) => {
   const { t } = useTranslation();
-  const [leftLoop, rightLoop, length] = useWatch({
+  const [leftLoop, rightLoop, length, modelID] = useWatch({
     control: form.control,
-    name: ['leftLoop', 'rightLoop', 'length'],
+    name: ['leftLoop', 'rightLoop', 'length', 'modelID'],
   });
+
+  // Fetch models to get the selected model's strength class
+  const { data: models } = useQuery({
+    queryKey: ['webbingModels'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('webbing_model')
+        .select('*')
+        .order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Get selected model's strength class
+  const selectedModel = models?.find((m) => m.id.toString() === modelID);
+  const modelStrengthClass = (selectedModel as { strength_class?: string } | undefined)?.strength_class ?? null;
 
   return (
     <View className="gap-6">
@@ -179,6 +205,10 @@ const PrefillForm: React.FC<{
         error={form.formState.errors.length?.message ?? null}
       />
       <SelectModel control={form.control} />
+      <StrengthClassSelector 
+        control={form.control} 
+        modelStrengthClass={modelStrengthClass}
+      />
 
       <Controller
         control={form.control}
@@ -264,6 +294,84 @@ const getMaterialIconColor = (material: string) => {
     polyester: 'text-violet-500',
   };
   return colorMap[material] || 'text-gray-500';
+};
+
+// Strength class color helper
+const getStrengthClassColor = (strengthClass: string) => {
+  const colorMap: Record<string, string> = {
+    'A+': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    A: 'bg-teal-100 text-teal-700 border-teal-200',
+    B: 'bg-blue-100 text-blue-700 border-blue-200',
+    C: 'bg-amber-100 text-amber-700 border-amber-200',
+  };
+  return colorMap[strengthClass] || 'bg-gray-100 text-gray-700 border-gray-200';
+};
+
+// Strength class selector component
+const StrengthClassSelector: React.FC<{
+  control: Control<TRegisterWebbingSchema>;
+  modelStrengthClass: string | null;
+}> = ({ control, modelStrengthClass }) => {
+  const { t } = useTranslation();
+  const { field } = useController({ control, name: 'strengthClass' });
+
+  // Use model's strength class when available, otherwise use form field value
+  const hasModel = !!modelStrengthClass;
+  const displayValue = hasModel ? modelStrengthClass : field.value;
+  const recommendedDays = getRecommendedLifetimeDays((displayValue as 'A+' | 'A' | 'B' | 'C') ?? null);
+
+  return (
+    <View className="gap-2">
+      <Label nativeID="strengthClass">
+        {t('app.(modals).register-webbing.strengthClass.label')}
+        {!hasModel && (
+          <>
+            {' '}
+            <Text variant="muted">{t('common.optional')}</Text>
+          </>
+        )}
+      </Label>
+      
+      {/* Strength class buttons */}
+      <View className="flex-row gap-2">
+        {STRENGTH_CLASS_OPTIONS.map((option) => {
+          const isSelected = displayValue === option;
+          return (
+            <TouchableOpacity
+              key={option}
+              disabled={hasModel}
+              onPress={() => field.onChange(isSelected ? undefined : option)}
+              className={cn(
+                'flex-1 py-3 rounded-lg border items-center justify-center',
+                isSelected
+                  ? getStrengthClassColor(option)
+                  : 'border-border bg-muted/30',
+                hasModel && !isSelected && 'opacity-40',
+              )}
+            >
+              <Text
+                className={cn(
+                  'font-bold text-lg',
+                  isSelected ? '' : 'text-muted-foreground',
+                )}
+              >
+                {option}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Recommended lifetime info */}
+      {recommendedDays && (
+        <Text variant="muted" className="text-sm">
+          {t('app.(modals).register-webbing.recommendedLifetime', {
+            days: recommendedDays,
+          })}
+        </Text>
+      )}
+    </View>
+  );
 };
 
 // Grid layout constants - 2 columns

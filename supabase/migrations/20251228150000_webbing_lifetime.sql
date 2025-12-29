@@ -14,8 +14,11 @@ ALTER TABLE public.webbing_model
 ADD COLUMN IF NOT EXISTS strength_class public.strength_class_enum,
 ADD COLUMN IF NOT EXISTS recommended_lifetime_days INTEGER;
 
+-- Allows individual webbings to have a custom strength class when no model is selected
+ALTER TABLE public.webbing 
+ADD COLUMN IF NOT EXISTS strength_class public.strength_class_enum;
+
 -- Update existing models with default values based on material
--- ISA Guidelines: Nylon degrades faster than Polyester
 UPDATE public.webbing_model
 SET 
   strength_class = 'B',

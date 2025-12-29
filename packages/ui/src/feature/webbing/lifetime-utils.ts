@@ -1,11 +1,11 @@
-import type { WebbingLifetimeStatus, WebbingUsage } from './types';
+import type { WebbingLifetimeStatus, WebbingUsage, TStrengthClass } from './types';
 
 /**
  * ISA recommended lifetime days by strength class and material
  */
 export const LIFETIME_DEFAULTS: Record<
   string,
-  Record<string, number>
+  Record<TStrengthClass, number>
 > = {
   nylon: {
     'A+': 720,
@@ -26,6 +26,18 @@ export const LIFETIME_DEFAULTS: Record<
     C: 540,
   },
 };
+
+/**
+ * Get recommended lifetime days for a strength class
+ * Uses polyester as default material (middle ground)
+ */
+export function getRecommendedLifetimeDays(
+  strengthClass: TStrengthClass | null,
+  material: string = 'polyester',
+): number | null {
+  if (!strengthClass) return null;
+  return LIFETIME_DEFAULTS[material]?.[strengthClass] ?? null;
+}
 
 /**
  * Calculate lifetime status based on usage percentage

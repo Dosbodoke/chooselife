@@ -6,7 +6,12 @@ export type RigSetup = Database['public']['Tables']['rig_setup']['Row'];
 export type RigSetupWebbing =
   Database['public']['Tables']['rig_setup_webbing']['Row'];
 
-export type StrengthClass = 'A+' | 'A' | 'B' | 'C';
+
+/**
+ * Strength class options for UI selectors
+ */
+export const STRENGTH_CLASS_OPTIONS = ['A+', 'A', 'B', 'C'] as const;
+export type TStrengthClass = (typeof STRENGTH_CLASS_OPTIONS)[number];
 
 export interface WebbingUsage {
   usageDays: number;
