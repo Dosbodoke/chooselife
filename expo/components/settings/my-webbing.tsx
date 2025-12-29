@@ -5,6 +5,7 @@ import {
   LayersIcon,
   LinkIcon,
   MoveHorizontalIcon,
+  PlusIcon,
 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
@@ -22,6 +23,7 @@ import {
 } from '~/components/ui/card';
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
+import { WebbingCardBackground } from '~/components/webbing-card-background';
 
 import { Skeleton } from '../ui/skeleton';
 
@@ -34,23 +36,33 @@ const MyWebbings: React.FC = () => {
   const { data: webbings, isPending } = useUserWebbings();
 
   return (
-    <Card>
-      <CardHeader>
-        <View className="flex-row justify-between">
-          <CardTitle>{t('components.settings.my-webbing.title')}</CardTitle>
+    <Card className="overflow-hidden relative min-h-[140px]">
+      <WebbingCardBackground />
+
+      <CardHeader className="relative z-10">
+        <View className="flex-row items-center justify-between gap-4">
+          <View className="flex-1 gap-1">
+            <CardTitle className="text-xl tracking-tight">
+              {t('components.settings.my-webbing.title')}
+            </CardTitle>
+            <CardDescription className="text-sm leading-snug">
+              {t('components.settings.my-webbing.description')}
+            </CardDescription>
+          </View>
           <Link asChild href={`/(modals)/register-webbing`}>
-            <TouchableOpacity className="p-1">
-              <Text className="text-base font-semibold text-blue-500">
+            <TouchableOpacity 
+              activeOpacity={0.7}
+              className="flex-row items-center gap-1.5 px-3 py-2 bg-primary/10 rounded-full border border-primary/20"
+            >
+              <Icon as={PlusIcon} size={16} className="text-primary" />
+              <Text className="text-xs font-bold text-primary uppercase tracking-wide">
                 {t('components.settings.my-webbing.add')}
               </Text>
             </TouchableOpacity>
           </Link>
         </View>
-        <CardDescription>
-          {t('components.settings.my-webbing.description')}
-        </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="relative z-10">
         {isPending ? (
           <View className="gap-2">
             <SkeletonWebbingitem />
