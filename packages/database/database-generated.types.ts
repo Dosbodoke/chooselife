@@ -666,6 +666,9 @@ export type Database = {
           length: number
           model: number | null
           right_loop: boolean
+          strength_class:
+            | Database["public"]["Enums"]["strength_class_enum"]
+            | null
           tag_name: string | null
           user_id: string
         }
@@ -676,6 +679,9 @@ export type Database = {
           length: number
           model?: number | null
           right_loop: boolean
+          strength_class?:
+            | Database["public"]["Enums"]["strength_class_enum"]
+            | null
           tag_name?: string | null
           user_id: string
         }
@@ -686,6 +692,9 @@ export type Database = {
           length?: number
           model?: number | null
           right_loop?: boolean
+          strength_class?:
+            | Database["public"]["Enums"]["strength_class_enum"]
+            | null
           tag_name?: string | null
           user_id?: string
         }

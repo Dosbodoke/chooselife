@@ -1,10 +1,9 @@
-import type { Database } from '@chooselife/database';
+import type { Tables } from '@chooselife/database';
 
-export type WebbingModel = Database['public']['Tables']['webbing_model']['Row'];
-export type Webbing = Database['public']['Tables']['webbing']['Row'];
-export type RigSetup = Database['public']['Tables']['rig_setup']['Row'];
-export type RigSetupWebbing =
-  Database['public']['Tables']['rig_setup_webbing']['Row'];
+export type WebbingModel = Tables<'webbing_model'>;
+export type Webbing = Tables<'webbing'>;
+export type RigSetup = Tables<'rig_setup'>;
+export type RigSetupWebbing = Tables<'rig_setup_webbing'>;
 
 
 /**
