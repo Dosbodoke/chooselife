@@ -60,6 +60,10 @@ import { WebbingInput, webbingSchema } from '~/components/webbing-input';
 import {
   STRENGTH_CLASS_OPTIONS,
   getRecommendedLifetimeDays,
+  getWeaveColor,
+  getMaterialColor,
+  getMaterialIconColor,
+  getStrengthClassColor,
 } from '@chooselife/ui';
 
 // Extend your existing webbing schema with fields for model and strength class
@@ -267,45 +271,7 @@ const PrefillForm: React.FC<{
   );
 };
 
-// Helper function to get color for weave badge
-const getWeaveColor = (weave: string) => {
-  const colorMap: Record<string, string> = {
-    flat: 'bg-amber-100 text-amber-700',
-    tubular: 'bg-rose-100 text-rose-700',
-  };
-  return colorMap[weave] || 'bg-gray-100 text-gray-700';
-};
 
-// Helper function to get color for material badge
-const getMaterialColor = (material: string) => {
-  const colorMap: Record<string, string> = {
-    nylon: 'bg-blue-100 text-blue-700',
-    dyneema: 'bg-emerald-100 text-emerald-700',
-    polyester: 'bg-violet-100 text-violet-700',
-  };
-  return colorMap[material] || 'bg-gray-100 text-gray-700';
-};
-
-// Helper function to get fallback icon color for material
-const getMaterialIconColor = (material: string) => {
-  const colorMap: Record<string, string> = {
-    nylon: 'text-blue-500',
-    dyneema: 'text-emerald-500',
-    polyester: 'text-violet-500',
-  };
-  return colorMap[material] || 'text-gray-500';
-};
-
-// Strength class color helper
-const getStrengthClassColor = (strengthClass: string) => {
-  const colorMap: Record<string, string> = {
-    'A+': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    A: 'bg-teal-100 text-teal-700 border-teal-200',
-    B: 'bg-blue-100 text-blue-700 border-blue-200',
-    C: 'bg-amber-100 text-amber-700 border-amber-200',
-  };
-  return colorMap[strengthClass] || 'bg-gray-100 text-gray-700 border-gray-200';
-};
 
 // Strength class selector component
 const StrengthClassSelector: React.FC<{
