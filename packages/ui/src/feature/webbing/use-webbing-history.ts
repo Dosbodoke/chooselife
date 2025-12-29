@@ -33,7 +33,7 @@ function calculateDurationDays(
 export function useWebbingHistory(webbingId: number | undefined) {
   const { supabase } = useSupabase();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: webbingHistoryKeyFactory.byId(webbingId ?? 0),
     enabled: !!webbingId,
     queryFn: async (): Promise<WebbingRigHistory[]> => {
@@ -93,4 +93,9 @@ export function useWebbingHistory(webbingId: number | undefined) {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  return {
+    ...query,
+    data: query.data ?? [],
+  };
 }

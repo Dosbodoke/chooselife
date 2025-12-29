@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Linking, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useWebbingUsage, useWebbingHistory } from '@chooselife/ui';
+import { useWebbingUsage, useWebbingHistory, getTranslatedStatus } from '@chooselife/ui';
 import { getWebbingName, useUserWebbings } from '~/hooks/use-webbings';
 
 import { Icon } from '~/components/ui/icon';
@@ -22,7 +22,7 @@ import { Text } from '~/components/ui/text';
 
 export default function WebbingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const webbingId = id ? parseInt(id, 10) : undefined;
 
@@ -35,30 +35,13 @@ export default function WebbingDetailScreen() {
   const strengthClass = (webbing?.model as { strength_class?: string | null } | null)?.strength_class ?? null;
 
   // Get usage stats and history from shared hooks
-  const { data: usage } = useWebbingUsage(webbingId, recommendedDays);
-  const { data: history } = useWebbingHistory(webbingId);
-
-  // Default values when data is loading
-  const usageData = usage ?? {
-    usageDays: 0,
-    rigCount: 0,
-    percentageUsed: 0,
-    status: 'good' as const,
-  };
-  const historyData = history ?? [];
+  const { data: usageData } = useWebbingUsage(webbingId, recommendedDays);
+  const { data: historyData } = useWebbingHistory(webbingId);
 
   // ISA webbing document URL
   const ISA_WEBBING_PDF_URL = 'https://data.slacklineinternational.org/publications/accident-reports/highline_webbing_lifetime_warning_2022_v1_en.pdf/';
 
-  // Get translated status
-  const getTranslatedStatus = (status: 'good' | 'inspect' | 'replace') => {
-    const statusMap = {
-      good: t('components.webbing-detail.lifetime.statusGood'),
-      inspect: t('components.webbing-detail.lifetime.statusInspect'),
-      replace: t('components.webbing-detail.lifetime.statusReplace'),
-    };
-    return statusMap[status];
-  };
+
 
   if (isPending) {
     return (
@@ -156,7 +139,7 @@ export default function WebbingDetailScreen() {
                 </Text>
               </View>
               <Text className={`text-sm mt-1 ${statusColor.text}`}>
-                {t('components.webbing-detail.lifetime.status', { status: getTranslatedStatus(usageData.status) })}
+                {t('components.webbing-detail.lifetime.status', { status: getTranslatedStatus(usageData.status, i18n.language) })}
               </Text>
               {recommendedDays && (
                 <Text className="text-xs text-muted-foreground mt-0.5">

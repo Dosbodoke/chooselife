@@ -9,7 +9,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 
-import { useWebbingUsage } from '@chooselife/ui';
+import { useWebbingUsage, getTranslatedStatus } from '@chooselife/ui';
 import { getWebbingName, useUserWebbings } from '~/hooks/use-webbings';
 import { Tables } from '~/utils/database.types';
 
@@ -101,7 +101,7 @@ const WebbingList: React.FC<{
 const WebbingItem: React.FC<{
   webbing: WebbingWithModel;
 }> = ({ webbing }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   // Get loop status info
   let loopQuantity = 0;
@@ -112,16 +112,8 @@ const WebbingItem: React.FC<{
   const recommendedDays = (webbing.model as { recommended_lifetime_days?: number | null } | null)?.recommended_lifetime_days ?? null;
   const strengthClass = (webbing.model as { strength_class?: string | null } | null)?.strength_class ?? null;
 
-  // Get usage stats from shared hook
-  const { data: usage } = useWebbingUsage(webbing.id, recommendedDays);
-
-  // Default values when data is loading
-  const usageData = usage ?? {
-    usageDays: 0,
-    rigCount: 0,
-    percentageUsed: 0,
-    status: 'good' as const,
-  };
+  // Get usage stats from shared hook (returns guaranteed non-undefined data)
+  const { data: usageData } = useWebbingUsage(webbing.id, recommendedDays);
 
   const statusColors = {
     good: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
@@ -158,7 +150,7 @@ const WebbingItem: React.FC<{
               {recommendedDays && (
                 <View className={`px-2 py-0.5 rounded-full ${statusColor.bg}`}>
                   <Text className={`text-[10px] font-semibold uppercase ${statusColor.text}`}>
-                    {usageData.status}
+                    {getTranslatedStatus(usageData.status, i18n.language)}
                   </Text>
                 </View>
               )}

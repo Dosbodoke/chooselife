@@ -17,6 +17,17 @@ interface WebbingUsageRpcResponse {
 }
 
 /**
+ * Default webbing usage when data is loading or unavailable
+ */
+export const DEFAULT_WEBBING_USAGE: WebbingUsage = {
+  usageDays: 0,
+  rigCount: 0,
+  recommendedLifetimeDays: null,
+  percentageUsed: 0,
+  status: 'good',
+};
+
+/**
  * Query key factory for webbing usage
  */
 export const webbingUsageKeyFactory = {
@@ -27,6 +38,7 @@ export const webbingUsageKeyFactory = {
 /**
  * Hook to fetch usage days for a specific webbing
  * Calls the get_webbing_usage_days database function
+ * Returns DEFAULT_WEBBING_USAGE while loading - data is guaranteed to be defined
  */
 export function useWebbingUsage(
   webbingId: number | undefined,
@@ -34,9 +46,10 @@ export function useWebbingUsage(
 ) {
   const { supabase } = useSupabase();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: webbingUsageKeyFactory.byId(webbingId ?? 0),
     enabled: !!webbingId,
+    placeholderData: DEFAULT_WEBBING_USAGE,
     queryFn: async (): Promise<WebbingUsage> => {
       if (!webbingId) {
         throw new Error('Webbing ID is required');
@@ -64,4 +77,11 @@ export function useWebbingUsage(
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Return with guaranteed data (never undefined due to placeholderData)
+  return {
+    ...query,
+    data: query.data ?? DEFAULT_WEBBING_USAGE,
+  };
 }
+

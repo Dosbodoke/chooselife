@@ -112,6 +112,42 @@ export function getStatusColor(status: WebbingLifetimeStatus): {
 }
 
 /**
+ * Status translations by locale
+ */
+const STATUS_TRANSLATIONS: Record<string, Record<WebbingLifetimeStatus, string>> = {
+  en: {
+    good: 'Good',
+    inspect: 'Inspect',
+    replace: 'Replace',
+  },
+  pt: {
+    good: 'Bom',
+    inspect: 'Inspecionar',
+    replace: 'Substituir',
+  },
+  es: {
+    good: 'Bueno',
+    inspect: 'Inspeccionar',
+    replace: 'Reemplazar',
+  },
+};
+
+/**
+ * Get translated status label based on locale
+ * @param status - The lifetime status
+ * @param locale - Language code ('en', 'pt', 'es')
+ */
+export function getTranslatedStatus(
+  status: WebbingLifetimeStatus,
+  locale: string = 'en',
+): string {
+  // Extract base locale (e.g., 'pt-BR' -> 'pt')
+  const baseLocale = locale.split('-')[0];
+  const translations = STATUS_TRANSLATIONS[baseLocale] ?? STATUS_TRANSLATIONS['en'];
+  return translations[status];
+}
+
+/**
  * Build WebbingUsage object from raw data
  */
 export function buildWebbingUsage(
