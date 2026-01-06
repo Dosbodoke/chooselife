@@ -1,4 +1,5 @@
 import { useMapStore } from '~/store/map-store';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView } from 'react-native-gesture-handler';
 import Animated, { Easing, FadeIn, FadeOut } from 'react-native-reanimated';
@@ -16,9 +17,21 @@ export const MapCardList = ({
   focusedMarker: Highline | null;
   changeFocusedMarker: (high: Highline) => void;
 }) => {
+  const router = useRouter();
   const bottomSheetHandlerHeight = useMapStore(
     (state) => state.bottomSheetHandlerHeight,
   );
+
+  const handleCardPress = (high: Highline) => {
+    if (high.id === focusedMarker?.id) {
+      // If already focused, navigate to highline page
+      router.push(`/highline/${high.id}`);
+    } else {
+      // Otherwise, focus the card
+      changeFocusedMarker(high);
+    }
+  };
+
   return (
     <Animated.View
       entering={FadeIn.duration(300).easing(Easing.inOut(Easing.ease))}
@@ -40,7 +53,7 @@ export const MapCardList = ({
             key={`highline-card-${high.id}`}
             item={high}
             isFocused={high.id === focusedMarker?.id}
-            onPress={() => changeFocusedMarker(high)}
+            onPress={() => handleCardPress(high)}
             className="h-48 w-80"
           />
         ))}
