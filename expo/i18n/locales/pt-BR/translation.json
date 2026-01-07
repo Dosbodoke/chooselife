@@ -170,6 +170,10 @@
     },
     "highline": {
       "index": {
+        "tabs": {
+          "details": "Detalhes",
+          "ranking": "Ranking"
+        },
         "BottomActions": {
           "seeOnMap": "Ver no Mapa",
           "addToMap": "Adicionar ao Mapa",
@@ -397,6 +401,12 @@
       "info": {
         "height": "Altura",
         "length": "Comprimento"
+      },
+      "location-weather-card": {
+        "noLocation": "Sem Localização",
+        "addLocationHint": "Toque para adicionar coordenadas para este highline",
+        "viewOnMap": "Ver no Mapa",
+        "openInExplorer": "Abrir no explorador"
       },
       "not-found": {
         "title": "Highline não existe",
