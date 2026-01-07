@@ -33,7 +33,6 @@ import ExploreHeader from '~/components/map/explore-header';
 import { MapCardList } from '~/components/map/map-card';
 import { Markers } from '~/components/map/markers';
 import { ChooselifeTrails } from '~/components/map/trail-shape';
-import { WeatherInfoCard } from '~/components/map/weather-info-card';
 
 async function getMyLocation(): Promise<
   | {
@@ -87,7 +86,6 @@ export default function Screen() {
 
   const [isOnMyLocation, setIsOnMyLocation] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [weatherEnabled, setWeatherEnabled] = useState(false);
   const setCamera = useMapStore((state) => state.setCamera);
   const [highlightedMarker, setHighlightedMarker] = useMapStore(
     useShallow((state) => [
@@ -127,7 +125,7 @@ export default function Screen() {
     const newZoom = calculateZoomLevel(region.latitudeDelta);
     cameraRef.current?.setCamera({
       centerCoordinate: [region.longitude, region.latitude],
-      zoomLevel: newZoom,
+      zoomLevel: 5,
       animationDuration: 1000,
       animationMode: 'flyTo',
     });
@@ -188,9 +186,6 @@ export default function Screen() {
     [setHighlightedMarker],
   );
 
-  const handleToggleWeather = useCallback(() => {
-    setWeatherEnabled((prev) => !prev);
-  }, []);
 
   useEffect(() => {
     if (!focusedMarker || !highlines) {
@@ -308,8 +303,6 @@ export default function Screen() {
         goToMyLocation={goToMyLocation}
         mapType={mapType}
         setMapType={setMapType}
-        weatherEnabled={weatherEnabled}
-        onToggleWeather={handleToggleWeather}
       />
 
       {clusteredMarkers.length > 0 ? (
@@ -325,15 +318,6 @@ export default function Screen() {
         hasFocusedMarker={!!focusedMarker}
         isLoading={isLoading}
       />
-
-      {weatherEnabled && (
-        <WeatherInfoCard
-          latitude={highlightedMarker?.anchor_a_lat ?? DEFAULT_LATITUDE}
-          longitude={highlightedMarker?.anchor_a_long ?? DEFAULT_LONGITUDE}
-          onClose={handleToggleWeather}
-          locationName={highlightedMarker?.name}
-        />
-      )}
     </View>
   );
 }

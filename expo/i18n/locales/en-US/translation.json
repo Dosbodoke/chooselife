@@ -539,6 +539,15 @@
       "book": "book",
       "viewDetails": "View Details"
     },
+    "weather-card": {
+      "title": "Weather Forecast",
+      "wind": "Wind",
+      "humidity": "Humidity",
+      "precipitation": "Precipitation",
+      "gusts": "Gusts",
+      "elevation": "Elevation",
+      "dataSource": "Data: Open-Meteo"
+    },
     "supabase-avatar": {
       "buttonLabel": "Edit"
     },

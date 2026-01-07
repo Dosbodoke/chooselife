@@ -5,11 +5,13 @@ import { LegendList } from '@legendapp/list';
 import { useMapStore } from '~/store/map-store';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React, { useCallback } from 'react';
+import { PlusIcon } from 'lucide-react-native';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useShallow } from 'zustand/react/shallow';
 
 import { type Highline } from '~/hooks/use-highline';
 import { cn } from '~/lib/utils';
@@ -17,8 +19,17 @@ import { _layoutAnimation } from '~/utils/constants';
 
 import { HighlineCard } from '../highline/highline-card';
 import { Button } from '../ui/button';
+import { Icon } from '../ui/icon';
 import { Text } from '../ui/text';
 import { MapToggle } from './map-toggle';
+import { WeatherInfoCard, WeatherSummary } from './weather-info-card';
+
+// Default coordinates (Brasília, Brazil)
+const DEFAULT_LATITUDE = -15.7782081;
+const DEFAULT_LONGITUDE = -47.93371;
+
+// Throttle delay for weather coordinate updates (ms)
+const WEATHER_THROTTLE_DELAY = 2000;
 
 const ListingsBottomSheet: React.FC<{
   highlines: Highline[];
@@ -29,8 +40,29 @@ const ListingsBottomSheet: React.FC<{
   const bottomSheetHandlerHeight = useMapStore(
     (state) => state.bottomSheetHandlerHeight,
   );
+  const camera = useMapStore(
+    useShallow((state) => state.camera),
+  );
   const bottomSheetRef = React.useRef<BottomSheet>(null);
   const BottomSheetScrollView = useBottomSheetScrollableCreator();
+
+  // Throttled weather coordinates - only update after camera has been stable
+  const [throttledCoords, setThrottledCoords] = useState({
+    latitude: camera?.center?.[1] ?? DEFAULT_LATITUDE,
+    longitude: camera?.center?.[0] ?? DEFAULT_LONGITUDE,
+  });
+
+  // Throttle coordinate updates to prevent excessive API calls
+  useEffect(() => {
+    const latitude = camera?.center?.[1] ?? DEFAULT_LATITUDE;
+    const longitude = camera?.center?.[0] ?? DEFAULT_LONGITUDE;
+
+    const timeoutId = setTimeout(() => {
+      setThrottledCoords({ latitude, longitude });
+    }, WEATHER_THROTTLE_DELAY);
+
+    return () => clearTimeout(timeoutId);
+  }, [camera?.center]);
 
   // If the handler height is not yet measured, use 15% as an approximation of it's height
   const snapPoints = React.useMemo(() => {
@@ -42,7 +74,7 @@ const ListingsBottomSheet: React.FC<{
   };
 
   // Update index when hasFocusedMarker changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (hasFocusedMarker) {
       bottomSheetRef.current?.collapse();
       return;
@@ -54,6 +86,16 @@ const ListingsBottomSheet: React.FC<{
     ({ item }: { item: Highline }) => <HighlineCard item={item} />,
     [],
   );
+
+  const ListHeader = useCallback(() => (
+    <View className="mb-2">
+      <WeatherInfoCard
+        latitude={throttledCoords.latitude}
+        longitude={throttledCoords.longitude}
+        compact
+      />
+    </View>
+  ), [throttledCoords.latitude, throttledCoords.longitude]);
 
   return (
     <BottomSheet
@@ -68,6 +110,8 @@ const ListingsBottomSheet: React.FC<{
         <CustomBottomSheetHandle
           highlineLength={highlines.length}
           isLoading={isLoading}
+          weatherLatitude={throttledCoords.latitude}
+          weatherLongitude={throttledCoords.longitude}
         />
       )}
       style={{
@@ -92,6 +136,7 @@ const ListingsBottomSheet: React.FC<{
           keyExtractor={(item: Highline) => item.id}
           contentContainerStyle={{ paddingHorizontal: 16 }}
           renderScrollComponent={BottomSheetScrollView}
+          ListHeaderComponent={ListHeader}
         />
       ) : null}
       <MapToggle onPress={onShowMap} />
@@ -102,7 +147,9 @@ const ListingsBottomSheet: React.FC<{
 const CustomBottomSheetHandle: React.FC<{
   highlineLength: number;
   isLoading: boolean;
-}> = ({ highlineLength, isLoading }) => {
+  weatherLatitude: number;
+  weatherLongitude: number;
+}> = ({ highlineLength, isLoading, weatherLatitude, weatherLongitude }) => {
   const setBottomSheetHandlerHeight = useMapStore(
     (state) => state.setBottomSheeHandlerHeight,
   );
@@ -137,28 +184,36 @@ const CustomBottomSheetHandle: React.FC<{
             highline{highlineLength === 1 ? '' : 's'}
           </Animated.Text>
         </View>
-        <AddHighlineButton />
+        <View className="flex-row items-center gap-3">
+          <WeatherSummary
+            latitude={weatherLatitude}
+            longitude={weatherLongitude}
+          />
+          <AddHighlineButton />
+        </View>
       </View>
     </View>
   );
 };
 
 const AddHighlineButton: React.FC = () => {
-  const { t } = useTranslation();
   const router = useRouter();
   const camera = useMapStore((state) => state.camera);
 
   return (
     <Button
+      size="icon"
+      className="rounded-full"
       onPress={() => {
         router.push(
           `/location-picker?lat=${camera.center[1]}&lng=${camera.center[0]}&zoom=${camera.zoom}`,
         );
       }}
     >
-      <Text>{t('components.map.bottom-sheet.add')}</Text>
+      <Icon as={PlusIcon} className="size-5 text-primary-foreground" />
     </Button>
   );
 };
 
 export default ListingsBottomSheet;
+

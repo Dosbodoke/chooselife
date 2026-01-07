@@ -1,6 +1,5 @@
 import { useMapStore } from '~/store/map-store';
 import {
-  CloudSunIcon,
   LocateFixedIcon,
   LocateIcon,
   MapIcon,
@@ -19,9 +18,7 @@ const MapControls: React.FC<{
   isOnMyLocation: boolean;
   goToMyLocation: () => void;
   setMapType: (newMapType: MapType) => Promise<void>;
-  weatherEnabled?: boolean;
-  onToggleWeather?: () => void;
-}> = ({ mapType, isOnMyLocation, goToMyLocation, setMapType, weatherEnabled, onToggleWeather }) => {
+}> = ({ mapType, isOnMyLocation, goToMyLocation, setMapType }) => {
   const exploreHeaderHeight = useMapStore((state) => state.exploreHeaderHeight);
   const insetTop = useSafeAreaInsets().top;
 
@@ -44,7 +41,7 @@ const MapControls: React.FC<{
       <View className="w-full h-px bg-muted-foreground" />
 
       <TouchableOpacity
-        className="p-1 items-center justify-center py-2"
+        className="p-1 items-center justify-center pt-2"
         onPress={() =>
           setMapType(mapType === 'standard' ? 'satellite' : 'standard')
         }
@@ -55,26 +52,8 @@ const MapControls: React.FC<{
           strokeWidth={2}
         />
       </TouchableOpacity>
-
-      {onToggleWeather && (
-        <>
-          <View className="w-full h-px bg-muted-foreground" />
-
-          <TouchableOpacity
-            className="p-1 items-center justify-center pt-2"
-            onPress={onToggleWeather}
-          >
-            <Icon
-              as={CloudSunIcon}
-              className={weatherEnabled ? "size-6 text-blue-500" : "size-6 text-black"}
-              strokeWidth={2}
-            />
-          </TouchableOpacity>
-        </>
-      )}
     </View>
   );
 };
 
 export default MapControls;
-

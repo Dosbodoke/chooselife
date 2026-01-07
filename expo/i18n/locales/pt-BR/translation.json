@@ -539,6 +539,15 @@
       "book": "Inscrever-se",
       "viewDetails": "Ver Detalhes"
     },
+    "weather-card": {
+      "title": "Previsão do Tempo",
+      "wind": "Vento",
+      "humidity": "Umidade",
+      "precipitation": "Precipitação",
+      "gusts": "Rajadas",
+      "elevation": "Elevação",
+      "dataSource": "Dados: Open-Meteo"
+    },
     "supabase-avatar": {
       "buttonLabel": "Editar"
     },

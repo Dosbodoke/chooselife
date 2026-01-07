@@ -26,6 +26,7 @@ import Info from '~/components/highline/info';
 import { HighlineNotFound } from '~/components/highline/not-found';
 import { RigModal } from '~/components/highline/rig-confirmations';
 import { HighlineSkeleton } from '~/components/highline/skeleton';
+import { WeatherInfoCard } from '~/components/map/weather-info-card';
 import { OfflineBanner } from '~/components/offline-banner';
 import { Ranking } from '~/components/ranking';
 import { Button } from '~/components/ui/button';
@@ -167,6 +168,14 @@ export default function HighlinePage() {
               </TabsContent>
             ))}
           </Tabs>
+
+          {/* Weather info card */}
+          {highline.anchor_a_lat && highline.anchor_a_long && (
+            <WeatherInfoCard
+              latitude={highline.anchor_a_lat}
+              longitude={highline.anchor_a_long}
+            />
+          )}
         </View>
       </ScrollView>
 
