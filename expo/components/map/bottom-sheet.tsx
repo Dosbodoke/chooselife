@@ -129,6 +129,7 @@ const ListingsBottomSheet: React.FC<{
           contentContainerStyle={{ paddingHorizontal: 16 }}
           renderScrollComponent={BottomSheetScrollView}
           ListHeaderComponent={ListHeader}
+          recycleItems
         />
       ) : null}
       <MapToggle onPress={onShowMap} />
