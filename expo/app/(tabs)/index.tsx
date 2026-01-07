@@ -1,7 +1,7 @@
 import Mapbox from '@rnmapbox/maps';
 import { useMapStore } from '~/store/map-store';
 import * as Location from 'expo-location';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import throttle from 'lodash.throttle';
 import React, {
   useCallback,
@@ -85,6 +85,7 @@ export default function Screen() {
   const cameraRef = useRef<Mapbox.Camera>(null);
 
   const [isOnMyLocation, setIsOnMyLocation] = useState(false);
+  const [isMapReady, setIsMapReady] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const setCamera = useMapStore((state) => state.setCamera);
   const [highlightedMarker, setHighlightedMarker] = useMapStore(
@@ -99,6 +100,8 @@ export default function Screen() {
 
   // URL params
   const { focusedMarker } = useLocalSearchParams<{ focusedMarker?: string }>();
+  const router = useRouter();
+  const hasFocusedMarkerBeenHandled = useRef(false);
 
   // Hooks
   const { highlines, setSelectedCategory, isLoading } = useHighline({
@@ -188,9 +191,8 @@ export default function Screen() {
 
 
   useEffect(() => {
-    if (!focusedMarker || !highlines) {
-      setHighlightedMarker(null);
-      setClusteredMarkers([]);
+    // Wait for map AND highlines data to be loaded before trying to find the focused marker
+    if (!focusedMarker || !highlines || highlines.length === 0 || isLoading || !isMapReady) {
       return;
     }
 
@@ -202,35 +204,31 @@ export default function Screen() {
       setHighlightedMarker(highlineToFocus);
       setClusteredMarkers([highlineToFocus]);
 
-      // Calculate the southwest and northeast bounds from the two anchors.
-      const minLat = Math.min(
-        highlineToFocus.anchor_a_lat,
-        highlineToFocus.anchor_b_lat,
-      );
-      const maxLat = Math.max(
-        highlineToFocus.anchor_a_lat,
-        highlineToFocus.anchor_b_lat,
-      );
-      const minLng = Math.min(
-        highlineToFocus.anchor_a_long,
-        highlineToFocus.anchor_b_long,
-      );
-      const maxLng = Math.max(
-        highlineToFocus.anchor_a_long,
-        highlineToFocus.anchor_b_long,
-      );
+      // Calculate bounds from the two anchors
+      const ne: [number, number] = [
+        Math.max(highlineToFocus.anchor_a_long, highlineToFocus.anchor_b_long),
+        Math.max(highlineToFocus.anchor_a_lat, highlineToFocus.anchor_b_lat),
+      ];
+      const sw: [number, number] = [
+        Math.min(highlineToFocus.anchor_a_long, highlineToFocus.anchor_b_long),
+        Math.min(highlineToFocus.anchor_a_lat, highlineToFocus.anchor_b_lat),
+      ];
 
-      cameraRef.current?.fitBounds(
-        [maxLng, maxLat], // northeast [lng, lat]
-        [minLng, minLat], // southwest [lng, lat]
-        [0, 50, 200, 250, 1000], // padding
-      );
+      // Use fitBounds with padding: [top, right, bottom, left]
+      // Smaller padding = tighter zoom on the highline
+      // Bottom padding larger to account for the card overlay
+      cameraRef.current?.fitBounds(ne, sw, [100, 50, 300, 50], 1000);
+
+      // Mark as handled and clear the URL param so clicking other markers works
+      hasFocusedMarkerBeenHandled.current = true;
+      router.setParams({ focusedMarker: undefined });
     }
-  }, [focusedMarker, highlines]);
+  }, [focusedMarker, highlines, isLoading, isMapReady, router]);
 
-  // Adjust camera when a marker is highlighted.
+  // Adjust camera when a marker is highlighted (from clicking on map or card)
   useEffect(() => {
     if (!highlightedMarker) return;
+
     const ne: [number, number] = [
       Math.max(
         highlightedMarker.anchor_a_long,
@@ -246,7 +244,7 @@ export default function Screen() {
       Math.min(highlightedMarker.anchor_a_lat, highlightedMarker.anchor_b_lat),
     ];
     cameraRef.current?.fitBounds(ne, sw, [50, 50, 200, 250], 1000);
-  }, [highlightedMarker, cameraRef]);
+  }, [highlightedMarker, cameraRef, focusedMarker]);
 
   // Clean up the throttle function on unmount
   useEffect(() => {
@@ -275,6 +273,7 @@ export default function Screen() {
         onCameraChanged={handleCameraChanged}
         onMapIdle={handleCameraChanged}
         onDidFinishLoadingMap={() => {
+          setIsMapReady(true);
           if (!focusedMarker) {
             goToMyLocation();
           }

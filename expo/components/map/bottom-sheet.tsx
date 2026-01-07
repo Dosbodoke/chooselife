@@ -7,7 +7,6 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { PlusIcon } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,18 +14,13 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { type Highline } from '~/hooks/use-highline';
 import { cn } from '~/lib/utils';
-import { _layoutAnimation } from '~/utils/constants';
+import { DEFAULT_LATITUDE, DEFAULT_LONGITUDE, _layoutAnimation } from '~/utils/constants';
 
 import { HighlineCard } from '../highline/highline-card';
 import { Button } from '../ui/button';
 import { Icon } from '../ui/icon';
-import { Text } from '../ui/text';
 import { MapToggle } from './map-toggle';
 import { WeatherInfoCard, WeatherSummary } from './weather-info-card';
-
-// Default coordinates (Brasília, Brazil)
-const DEFAULT_LATITUDE = -15.7782081;
-const DEFAULT_LONGITUDE = -47.93371;
 
 // Throttle delay for weather coordinate updates (ms)
 const WEATHER_THROTTLE_DELAY = 2000;
@@ -77,9 +71,7 @@ const ListingsBottomSheet: React.FC<{
   useEffect(() => {
     if (hasFocusedMarker) {
       bottomSheetRef.current?.collapse();
-      return;
     }
-    bottomSheetRef.current?.expand();
   }, [hasFocusedMarker]);
 
   const renderItem = useCallback(
@@ -129,7 +121,7 @@ const ListingsBottomSheet: React.FC<{
         marginTop: top,
       }}
     >
-      {highlines.length > 0 && !hasFocusedMarker ? (
+      {highlines.length > 0 ? (
         <LegendList
           data={highlines}
           renderItem={renderItem}
