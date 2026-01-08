@@ -170,6 +170,10 @@
     },
     "highline": {
       "index": {
+        "tabs": {
+          "details": "Detalhes",
+          "ranking": "Ranking"
+        },
         "BottomActions": {
           "seeOnMap": "Ver no Mapa",
           "addToMap": "Adicionar ao Mapa",
@@ -398,6 +402,12 @@
         "height": "Altura",
         "length": "Comprimento"
       },
+      "location-weather-card": {
+        "noLocation": "Sem Localização",
+        "addLocationHint": "Toque para adicionar coordenadas para este highline",
+        "viewOnMap": "Ver no Mapa",
+        "openInExplorer": "Abrir no explorador"
+      },
       "not-found": {
         "title": "Highline não existe",
         "goBack": "Voltar",
@@ -538,6 +548,15 @@
     "event-card": {
       "book": "Inscrever-se",
       "viewDetails": "Ver Detalhes"
+    },
+    "weather-card": {
+      "title": "Previsão do Tempo",
+      "wind": "Vento",
+      "humidity": "Umidade",
+      "precipitation": "Precipitação",
+      "gusts": "Rajadas",
+      "elevation": "Elevação",
+      "dataSource": "Dados: Open-Meteo"
     },
     "supabase-avatar": {
       "buttonLabel": "Editar"

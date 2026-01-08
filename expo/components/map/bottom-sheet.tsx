@@ -4,50 +4,43 @@ import BottomSheet, {
 import { LegendList } from '@legendapp/list';
 import { useMapStore } from '~/store/map-store';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
-import React, { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, View } from 'react-native';
-import Animated from 'react-native-reanimated';
+import React, { useCallback, useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { type Highline } from '~/hooks/use-highline';
-import { cn } from '~/lib/utils';
-import { _layoutAnimation } from '~/utils/constants';
+import { type Highline, useHighline } from '~/hooks/use-highline';
 
 import { HighlineCard } from '../highline/highline-card';
-import { Button } from '../ui/button';
-import { Text } from '../ui/text';
+import ExploreHeader from './explore-header';
 import { MapToggle } from './map-toggle';
 
-const ListingsBottomSheet: React.FC<{
-  highlines: Highline[];
-  hasFocusedMarker: boolean;
-  isLoading: boolean;
-}> = ({ highlines, hasFocusedMarker, isLoading }) => {
+const ListingsBottomSheet: React.FC = () => {
   const { top } = useSafeAreaInsets();
   const bottomSheetHandlerHeight = useMapStore(
     (state) => state.bottomSheetHandlerHeight,
   );
+  const searchQuery = useMapStore((state) => state.searchQuery);
+  const activeCategory = useMapStore((state) => state.activeCategory);
+  const hasFocusedMarker = useMapStore((state) => state.hasFocusedMarker);
+  
   const bottomSheetRef = React.useRef<BottomSheet>(null);
   const BottomSheetScrollView = useBottomSheetScrollableCreator();
 
-  // If the handler height is not yet measured, use 15% as an approximation of it's height
+  const { highlines } = useHighline({ searchTerm: searchQuery, category: activeCategory });
+
   const snapPoints = React.useMemo(() => {
-    return [bottomSheetHandlerHeight || '15%', '100%'];
+    return [bottomSheetHandlerHeight || '35%', '100%'];
   }, [bottomSheetHandlerHeight]);
 
-  const onShowMap = () => {
-    bottomSheetRef.current?.collapse();
-  };
+  const onShowMap = () => bottomSheetRef.current?.collapse();
 
-  // Update index when hasFocusedMarker changes
-  React.useEffect(() => {
-    if (hasFocusedMarker) {
-      bottomSheetRef.current?.collapse();
-      return;
-    }
-    bottomSheetRef.current?.expand();
+  const setExpandBottomSheet = useMapStore((state) => state.setExpandBottomSheet);
+  useEffect(() => {
+    setExpandBottomSheet(() => bottomSheetRef.current?.expand());
+    return () => setExpandBottomSheet(null);
+  }, [setExpandBottomSheet]);
+
+  useEffect(() => {
+    if (hasFocusedMarker) bottomSheetRef.current?.collapse();
   }, [hasFocusedMarker]);
 
   const renderItem = useCallback(
@@ -55,109 +48,43 @@ const ListingsBottomSheet: React.FC<{
     [],
   );
 
+  const renderHandle = useCallback(() => <ExploreHeader />, []);
+
   return (
     <BottomSheet
       ref={bottomSheetRef}
       snapPoints={snapPoints}
       enablePanDownToClose={false}
       enableDynamicSizing={false}
-      onChange={() => {
-        Haptics.selectionAsync();
-      }}
-      handleComponent={() => (
-        <CustomBottomSheetHandle
-          highlineLength={highlines.length}
-          isLoading={isLoading}
-        />
-      )}
+      keyboardBehavior="extend"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
+      handleComponent={renderHandle}
+      onChange={() => Haptics.selectionAsync()}
       style={{
         overflow: 'hidden',
         elevation: 4,
         shadowColor: '#000',
         shadowOpacity: 0.3,
         shadowRadius: 4,
-        shadowOffset: {
-          width: 1,
-          height: 1,
-        },
+        shadowOffset: { width: 1, height: 1 },
+        borderRadius: 16
       }}
-      containerStyle={{
-        marginTop: top,
-      }}
+      containerStyle={{ marginTop: top }}
     >
-      {highlines.length > 0 && !hasFocusedMarker ? (
+      {highlines.length > 0 ? (
         <LegendList
           data={highlines}
           renderItem={renderItem}
           keyExtractor={(item: Highline) => item.id}
           contentContainerStyle={{ paddingHorizontal: 16 }}
           renderScrollComponent={BottomSheetScrollView}
+          keyboardShouldPersistTaps="always"
+          recycleItems
         />
       ) : null}
       <MapToggle onPress={onShowMap} />
     </BottomSheet>
-  );
-};
-
-const CustomBottomSheetHandle: React.FC<{
-  highlineLength: number;
-  isLoading: boolean;
-}> = ({ highlineLength, isLoading }) => {
-  const setBottomSheetHandlerHeight = useMapStore(
-    (state) => state.setBottomSheeHandlerHeight,
-  );
-
-  return (
-    <View
-      onLayout={(e) => {
-        setBottomSheetHandlerHeight(e.nativeEvent.layout.height);
-      }}
-      className="p-4 gap-2"
-    >
-      <View className="mx-auto w-10 h-1 bg-muted-foreground rounded-md" />
-      <View className="flex-row justify-between items-center w-full">
-        <View className="flex-row items-center gap-1">
-          <Animated.Text
-            layout={_layoutAnimation}
-            className={cn(
-              'text-center font-extrabold text-3xl tabular-nums',
-              isLoading ? 'text-muted-foreground' : 'text-primary',
-            )}
-          >
-            {isLoading ? <ActivityIndicator /> : highlineLength}
-          </Animated.Text>
-          <Animated.Text
-            layout={_layoutAnimation}
-            key={'highline-label'}
-            className={cn(
-              'text-center font-extrabold text-3xl',
-              isLoading ? 'text-muted-foreground' : 'text-primary',
-            )}
-          >
-            highline{highlineLength === 1 ? '' : 's'}
-          </Animated.Text>
-        </View>
-        <AddHighlineButton />
-      </View>
-    </View>
-  );
-};
-
-const AddHighlineButton: React.FC = () => {
-  const { t } = useTranslation();
-  const router = useRouter();
-  const camera = useMapStore((state) => state.camera);
-
-  return (
-    <Button
-      onPress={() => {
-        router.push(
-          `/location-picker?lat=${camera.center[1]}&lng=${camera.center[0]}&zoom=${camera.zoom}`,
-        );
-      }}
-    >
-      <Text>{t('components.map.bottom-sheet.add')}</Text>
-    </Button>
   );
 };
 
