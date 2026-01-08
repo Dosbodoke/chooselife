@@ -1,5 +1,13 @@
 import { LinearTransition } from "react-native-reanimated";
 
+// Re-export animation constants from shared package
+export { ANIMATION_DAMPING, ANIMATION_STIFFNESS } from "@chooselife/ui";
+
+// For backward compatibility, also export as DAMPING and STIFFNESS
+import { ANIMATION_DAMPING, ANIMATION_STIFFNESS } from "@chooselife/ui";
+export const DAMPING = ANIMATION_DAMPING;
+export const STIFFNESS = ANIMATION_STIFFNESS;
+
 export const NAV_THEME = {
   light: {
     background: "hsl(0 0% 100%)", // background
@@ -19,9 +27,7 @@ export const NAV_THEME = {
   },
 };
 
-// Animations
-export const DAMPING = 80;
-export const STIFFNESS = 200;
+// Animations - using shared constants
 export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
 
 // For MapView
@@ -33,7 +39,7 @@ export const INITIAL_REGION = {
 };
 export const DEFAULT_LATITUDE = INITIAL_REGION.latitude;
 export const DEFAULT_LONGITUDE = INITIAL_REGION.longitude;
-export const DEFAULT_ZOOM = 12;
+export const DEFAULT_ZOOM = 5;
 export const MIN_CLUSTER_SIZE = 30;
 
 // For Supabase Storage

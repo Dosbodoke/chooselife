@@ -4,9 +4,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { Position } from 'geojson';
 import { MapPinIcon } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { highlineKeyFactory } from '~/hooks/use-highline';
+import { supabase } from '~/lib/supabase';
 import {
   DEFAULT_LATITUDE,
   DEFAULT_LONGITUDE,
@@ -14,18 +17,47 @@ import {
 } from '~/utils/constants';
 
 import { PickerControls } from '~/components/map/picker-button';
-import { haversineDistance } from '~/components/map/utils';
+import { haversineDistance, positionToPostGISPoint } from '~/components/map/utils';
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 
 const LocationPickerScreen: React.FC = () => {
   const mapRef = useRef<Mapbox.MapView>(null);
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  // Check if we're editing an existing highline
+  const { editHighlineId } = useLocalSearchParams<{ editHighlineId?: string }>();
 
   // State to store the two picked locations
   const [anchorA, setAnchorA] = useState<Position | null>(null);
   const [anchorB, setAnchorB] = useState<Position | null>(null);
   const setCamera = useMapStore((state) => state.setCamera);
+
+  // Mutation to update existing highline location
+  const updateLocationMutation = useMutation({
+    mutationFn: async ({ anchorA, anchorB }: { anchorA: Position; anchorB: Position }) => {
+      if (!editHighlineId) throw new Error('No highline ID provided');
+
+      const length = haversineDistance(anchorA[1], anchorA[0], anchorB[1], anchorB[0]);
+
+      const { error } = await supabase
+        .from('highline')
+        .update({
+          anchor_a: positionToPostGISPoint(anchorA),
+          anchor_b: positionToPostGISPoint(anchorB),
+          length: Math.round(length),
+        })
+        .eq('id', editHighlineId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: highlineKeyFactory.list() });
+      queryClient.invalidateQueries({ queryKey: highlineKeyFactory.detail(editHighlineId!) });
+      router.back();
+    },
+  });
 
   const handlePickLocation = useCallback(async () => {
     const center = await mapRef.current?.getCenter();
@@ -39,7 +71,13 @@ const LocationPickerScreen: React.FC = () => {
       return;
     }
 
-    // Screen with form to register the highline
+    // If editing existing highline, update its location
+    if (editHighlineId) {
+      updateLocationMutation.mutate({ anchorA, anchorB });
+      return;
+    }
+
+    // Otherwise, go to register form for new highline
     router.push({
       pathname: '/register-highline',
       params: {
@@ -47,7 +85,7 @@ const LocationPickerScreen: React.FC = () => {
         anchorB: JSON.stringify(anchorB),
       },
     });
-  }, [anchorA, anchorB, router]);
+  }, [anchorA, anchorB, router, editHighlineId, updateLocationMutation]);
 
   // Undo the last location selection (or navigate back if none selected)
   const handleUndoPickLocation = useCallback(() => {
@@ -75,6 +113,12 @@ const LocationPickerScreen: React.FC = () => {
 
   return (
     <View className="relative flex-1">
+      {updateLocationMutation.isPending && (
+        <View className="absolute inset-0 z-50 bg-black/50 items-center justify-center">
+          <ActivityIndicator size="large" color="white" />
+        </View>
+      )}
+
       <Mapbox.MapView
         style={{ width: '100%', height: '100%' }}
         scaleBarEnabled={false}

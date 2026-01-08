@@ -1,7 +1,7 @@
 import Mapbox from '@rnmapbox/maps';
 import { useMapStore } from '~/store/map-store';
 import * as Location from 'expo-location';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import throttle from 'lodash.throttle';
 import React, {
   useCallback,
@@ -16,7 +16,6 @@ import { useShallow } from 'zustand/react/shallow';
 import {
   useHighline,
   type Highline,
-  type HighlineCategory,
 } from '~/hooks/use-highline';
 import { useMapStyle } from '~/hooks/use-map-style';
 import { useOfflineRegion } from '~/hooks/use-offline-region';
@@ -29,10 +28,10 @@ import {
 
 import ListingsBottomSheet from '~/components/map/bottom-sheet';
 import MapControls from '~/components/map/controls';
-import ExploreHeader from '~/components/map/explore-header';
 import { MapCardList } from '~/components/map/map-card';
 import { Markers } from '~/components/map/markers';
 import { ChooselifeTrails } from '~/components/map/trail-shape';
+import WeatherCrosshair from '~/components/map/weather-crosshair';
 
 async function getMyLocation(): Promise<
   | {
@@ -85,7 +84,9 @@ export default function Screen() {
   const cameraRef = useRef<Mapbox.Camera>(null);
 
   const [isOnMyLocation, setIsOnMyLocation] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [isMapReady, setIsMapReady] = useState(false);
+  const searchQuery = useMapStore((state) => state.searchQuery);
+  const activeCategory = useMapStore((state) => state.activeCategory);
   const setCamera = useMapStore((state) => state.setCamera);
   const [highlightedMarker, setHighlightedMarker] = useMapStore(
     useShallow((state) => [
@@ -96,13 +97,20 @@ export default function Screen() {
   const [clusteredMarkers, setClusteredMarkers] = useMapStore(
     useShallow((state) => [state.clusteredMarkers, state.setClusteredMarkers]),
   );
+  const setHasFocusedMarker = useMapStore((state) => state.setHasFocusedMarker);
 
-  // URL params
   const { focusedMarker } = useLocalSearchParams<{ focusedMarker?: string }>();
+  const router = useRouter();
+  const hasFocusedMarkerBeenHandled = useRef(false);
+  
+  // Sync focusedMarker from URL params to store
+  useEffect(() => {
+    setHasFocusedMarker(!!focusedMarker);
+  }, [focusedMarker, setHasFocusedMarker]);
 
-  // Hooks
-  const { highlines, setSelectedCategory, isLoading } = useHighline({
-    searchTerm,
+  const { highlines, isLoading } = useHighline({
+    searchTerm: searchQuery,
+    category: activeCategory,
   });
   const {
     mapType,
@@ -125,22 +133,12 @@ export default function Screen() {
     const newZoom = calculateZoomLevel(region.latitudeDelta);
     cameraRef.current?.setCamera({
       centerCoordinate: [region.longitude, region.latitude],
-      zoomLevel: newZoom,
+      zoomLevel: 5,
       animationDuration: 1000,
       animationMode: 'flyTo',
     });
     setIsOnMyLocation(true);
   }, []);
-
-  const handleSearchChange = useCallback(
-    (text: string) => setSearchTerm(text),
-    [],
-  );
-
-  const handleCategoryChange = useCallback(
-    (category: HighlineCategory | null) => setSelectedCategory(category),
-    [],
-  );
 
   // Throttled camera change handler (updates at most once every 500ms)
   const throttledCameraUpdate = useCallback(
@@ -186,10 +184,10 @@ export default function Screen() {
     [setHighlightedMarker],
   );
 
+
   useEffect(() => {
-    if (!focusedMarker || !highlines) {
-      setHighlightedMarker(null);
-      setClusteredMarkers([]);
+    // Wait for map AND highlines data to be loaded before trying to find the focused marker
+    if (!focusedMarker || !highlines || highlines.length === 0 || isLoading || !isMapReady) {
       return;
     }
 
@@ -201,35 +199,31 @@ export default function Screen() {
       setHighlightedMarker(highlineToFocus);
       setClusteredMarkers([highlineToFocus]);
 
-      // Calculate the southwest and northeast bounds from the two anchors.
-      const minLat = Math.min(
-        highlineToFocus.anchor_a_lat,
-        highlineToFocus.anchor_b_lat,
-      );
-      const maxLat = Math.max(
-        highlineToFocus.anchor_a_lat,
-        highlineToFocus.anchor_b_lat,
-      );
-      const minLng = Math.min(
-        highlineToFocus.anchor_a_long,
-        highlineToFocus.anchor_b_long,
-      );
-      const maxLng = Math.max(
-        highlineToFocus.anchor_a_long,
-        highlineToFocus.anchor_b_long,
-      );
+      // Calculate bounds from the two anchors
+      const ne: [number, number] = [
+        Math.max(highlineToFocus.anchor_a_long, highlineToFocus.anchor_b_long),
+        Math.max(highlineToFocus.anchor_a_lat, highlineToFocus.anchor_b_lat),
+      ];
+      const sw: [number, number] = [
+        Math.min(highlineToFocus.anchor_a_long, highlineToFocus.anchor_b_long),
+        Math.min(highlineToFocus.anchor_a_lat, highlineToFocus.anchor_b_lat),
+      ];
 
-      cameraRef.current?.fitBounds(
-        [maxLng, maxLat], // northeast [lng, lat]
-        [minLng, minLat], // southwest [lng, lat]
-        [0, 50, 200, 250, 1000], // padding
-      );
+      // Use fitBounds with padding: [top, right, bottom, left]
+      // Smaller padding = tighter zoom on the highline
+      // Bottom padding larger to account for the card overlay
+      cameraRef.current?.fitBounds(ne, sw, [100, 50, 300, 50], 1000);
+
+      // Mark as handled and clear the URL param so clicking other markers works
+      hasFocusedMarkerBeenHandled.current = true;
+      router.setParams({ focusedMarker: undefined });
     }
-  }, [focusedMarker, highlines]);
+  }, [focusedMarker, highlines, isLoading, isMapReady, router]);
 
-  // Adjust camera when a marker is highlighted.
+  // Adjust camera when a marker is highlighted (from clicking on map or card)
   useEffect(() => {
     if (!highlightedMarker) return;
+
     const ne: [number, number] = [
       Math.max(
         highlightedMarker.anchor_a_long,
@@ -245,7 +239,7 @@ export default function Screen() {
       Math.min(highlightedMarker.anchor_a_lat, highlightedMarker.anchor_b_lat),
     ];
     cameraRef.current?.fitBounds(ne, sw, [50, 50, 200, 250], 1000);
-  }, [highlightedMarker, cameraRef]);
+  }, [highlightedMarker, cameraRef, focusedMarker]);
 
   // Clean up the throttle function on unmount
   useEffect(() => {
@@ -256,16 +250,11 @@ export default function Screen() {
 
   // Don't render the map until we've loaded the map style preference
   if (isMapStyleLoading) {
-    return <View style={{ flex: 1 }} />; // You could add a loading spinner here
+    return <View style={{ flex: 1 }} />;
   }
 
   return (
     <View style={{ flex: 1 }}>
-      <ExploreHeader
-        onSearchChange={handleSearchChange}
-        onCategoryChange={handleCategoryChange}
-      />
-
       <Mapbox.MapView
         ref={mapRef}
         style={{ flex: 1 }}
@@ -274,6 +263,7 @@ export default function Screen() {
         onCameraChanged={handleCameraChanged}
         onMapIdle={handleCameraChanged}
         onDidFinishLoadingMap={() => {
+          setIsMapReady(true);
           if (!focusedMarker) {
             goToMyLocation();
           }
@@ -297,6 +287,8 @@ export default function Screen() {
         />
       </Mapbox.MapView>
 
+      <WeatherCrosshair />
+
       <MapControls
         isOnMyLocation={isOnMyLocation}
         goToMyLocation={goToMyLocation}
@@ -312,11 +304,7 @@ export default function Screen() {
         />
       ) : null}
 
-      <ListingsBottomSheet
-        highlines={highlines}
-        hasFocusedMarker={!!focusedMarker}
-        isLoading={isLoading}
-      />
+      <ListingsBottomSheet />
     </View>
   );
 }

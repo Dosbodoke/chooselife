@@ -170,6 +170,10 @@
     },
     "highline": {
       "index": {
+        "tabs": {
+          "details": "Details",
+          "ranking": "Ranking"
+        },
         "BottomActions": {
           "seeOnMap": "See on Map",
           "addToMap": "Add to Map",
@@ -398,6 +402,12 @@
         "height": "Height",
         "length": "Length"
       },
+      "location-weather-card": {
+        "noLocation": "No Location Set",
+        "addLocationHint": "Tap to add coordinates for this highline",
+        "viewOnMap": "View on Map",
+        "openInExplorer": "Open in the explorer"
+      },
       "not-found": {
         "title": "Highline doesn't exist",
         "goBack": "Go Back",
@@ -538,6 +548,15 @@
     "event-card": {
       "book": "book",
       "viewDetails": "View Details"
+    },
+    "weather-card": {
+      "title": "Weather Forecast",
+      "wind": "Wind",
+      "humidity": "Humidity",
+      "precipitation": "Precipitation",
+      "gusts": "Gusts",
+      "elevation": "Elevation",
+      "dataSource": "Data: Open-Meteo"
     },
     "supabase-avatar": {
       "buttonLabel": "Edit"
