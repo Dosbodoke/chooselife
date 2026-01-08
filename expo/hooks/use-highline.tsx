@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
@@ -18,19 +18,19 @@ export type HighlineCategory =
 export interface UseHighlineListParams {
   id?: undefined;
   searchTerm?: string;
+  category?: HighlineCategory | null;
 }
 
 export interface UseHighlineSingleParams {
   id: string;
   searchTerm?: never;
+  category?: never;
 }
 
 export type UseHighlineListResult = {
   highlines: Highline[];
   isLoading: boolean;
   error: unknown;
-  selectedCategory: HighlineCategory | null;
-  setSelectedCategory: (value: HighlineCategory | null) => void;
 };
 
 export type UseHighlineSingleResult = {
@@ -120,7 +120,7 @@ export function useHighline(
   }
 
   // Highline List Query
-  const { searchTerm } = params;
+  const { searchTerm, category } = params;
   const {
     data: highlines,
     isLoading,
@@ -149,9 +149,6 @@ export function useHighline(
     gcTime: Infinity,
   });
 
-  const [selectedCategory, setSelectedCategory] =
-    useState<HighlineCategory | null>(null);
-
   const filteredHighlines = useMemo(() => {
     if (!highlines) return [];
     let filtered = highlines;
@@ -162,8 +159,8 @@ export function useHighline(
       );
     }
 
-    if (selectedCategory) {
-      switch (selectedCategory) {
+    if (category) {
+      switch (category) {
         case 'favorites':
           filtered = filtered.filter((highline) => highline.is_favorite);
           break;
@@ -191,14 +188,12 @@ export function useHighline(
     }
 
     return filtered;
-  }, [highlines, searchTerm, selectedCategory]);
+  }, [highlines, searchTerm, category]);
 
   return {
     highlines: filteredHighlines,
     isLoading,
     error,
-    selectedCategory,
-    setSelectedCategory,
   };
 }
 
