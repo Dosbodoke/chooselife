@@ -89,10 +89,20 @@ const ExploreHeader = React.memo(() => {
     setLocalInput(searchQuery);
   }, [searchQuery]);
   
-  // Read camera for weather
   const camera = useMapStore(useShallow((state) => state.camera));
-  const weatherLatitude = camera?.center?.[1] ?? DEFAULT_LATITUDE;
-  const weatherLongitude = camera?.center?.[0] ?? DEFAULT_LONGITUDE;
+  const [weatherCoords, setWeatherCoords] = useState({
+    latitude: camera?.center?.[1] ?? DEFAULT_LATITUDE,
+    longitude: camera?.center?.[0] ?? DEFAULT_LONGITUDE,
+  });
+  
+  useEffect(() => {
+    const latitude = camera?.center?.[1] ?? DEFAULT_LATITUDE;
+    const longitude = camera?.center?.[0] ?? DEFAULT_LONGITUDE;
+    const timeoutId = setTimeout(() => {
+      setWeatherCoords({ latitude, longitude });
+    }, 2000); // Only update after 2s of no camera changes
+    return () => clearTimeout(timeoutId);
+  }, [camera?.center]);
   
   const { highlines, isLoading } = useHighline({ searchTerm: searchQuery, category: activeCategory });
 
@@ -165,8 +175,8 @@ const ExploreHeader = React.memo(() => {
         </View>
         <View className="flex-row items-center gap-3">
           <WeatherSummary
-            latitude={weatherLatitude}
-            longitude={weatherLongitude}
+            latitude={weatherCoords.latitude}
+            longitude={weatherCoords.longitude}
           />
           <AddHighlineButton />
         </View>
