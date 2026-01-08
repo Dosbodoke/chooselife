@@ -4,15 +4,9 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 
-import { useHighline } from '~/hooks/use-highline';
-
 import { WeatherInfoCard } from '~/components/map/weather-info-card';
 import { Icon } from '~/components/ui/icon';
-import { Text } from '~/components/ui/text';
-
-// ============================================================================
-// Types
-// ============================================================================
+import { Text } from '~/components/ui/text';  
 
 interface LocationWeatherCardProps {
   hasLocation: boolean;
@@ -20,16 +14,18 @@ interface LocationWeatherCardProps {
   longitude?: number;
 }
 
-// ============================================================================
-// Empty State Component
-// ============================================================================
-
 const EmptyLocationState: React.FC = () => {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   return (
-    <Link href={`/highline/${id}/edit`} asChild>
+    <Link
+      href={{
+        pathname: '/location-picker',
+        params: { editHighlineId: id },
+      }}
+      asChild
+    >
       <TouchableOpacity
         activeOpacity={0.7}
         className="bg-white rounded-2xl p-6 items-center justify-center"
@@ -47,10 +43,6 @@ const EmptyLocationState: React.FC = () => {
     </Link>
   );
 };
-
-// ============================================================================
-// Location Action Button
-// ============================================================================
 
 const ViewOnMapButton: React.FC<{ highlineId: string }> = ({ highlineId }) => {
   const { t } = useTranslation();
@@ -80,10 +72,6 @@ const ViewOnMapButton: React.FC<{ highlineId: string }> = ({ highlineId }) => {
     </Link>
   );
 };
-
-// ============================================================================
-// Main Component
-// ============================================================================
 
 /**
  * Unified card combining location/map action and weather information.

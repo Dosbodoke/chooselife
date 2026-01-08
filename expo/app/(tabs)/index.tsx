@@ -16,7 +16,6 @@ import { useShallow } from 'zustand/react/shallow';
 import {
   useHighline,
   type Highline,
-  type HighlineCategory,
 } from '~/hooks/use-highline';
 import { useMapStyle } from '~/hooks/use-map-style';
 import { useOfflineRegion } from '~/hooks/use-offline-region';
@@ -29,7 +28,6 @@ import {
 
 import ListingsBottomSheet from '~/components/map/bottom-sheet';
 import MapControls from '~/components/map/controls';
-import ExploreHeader from '~/components/map/explore-header';
 import { MapCardList } from '~/components/map/map-card';
 import { Markers } from '~/components/map/markers';
 import { ChooselifeTrails } from '~/components/map/trail-shape';
@@ -86,7 +84,8 @@ export default function Screen() {
 
   const [isOnMyLocation, setIsOnMyLocation] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const searchQuery = useMapStore((state) => state.searchQuery);
+  const activeCategory = useMapStore((state) => state.activeCategory);
   const setCamera = useMapStore((state) => state.setCamera);
   const [highlightedMarker, setHighlightedMarker] = useMapStore(
     useShallow((state) => [
@@ -97,15 +96,20 @@ export default function Screen() {
   const [clusteredMarkers, setClusteredMarkers] = useMapStore(
     useShallow((state) => [state.clusteredMarkers, state.setClusteredMarkers]),
   );
+  const setHasFocusedMarker = useMapStore((state) => state.setHasFocusedMarker);
 
-  // URL params
   const { focusedMarker } = useLocalSearchParams<{ focusedMarker?: string }>();
   const router = useRouter();
   const hasFocusedMarkerBeenHandled = useRef(false);
+  
+  // Sync focusedMarker from URL params to store
+  useEffect(() => {
+    setHasFocusedMarker(!!focusedMarker);
+  }, [focusedMarker, setHasFocusedMarker]);
 
-  // Hooks
-  const { highlines, setSelectedCategory, isLoading } = useHighline({
-    searchTerm,
+  const { highlines, isLoading } = useHighline({
+    searchTerm: searchQuery,
+    category: activeCategory,
   });
   const {
     mapType,
@@ -134,16 +138,6 @@ export default function Screen() {
     });
     setIsOnMyLocation(true);
   }, []);
-
-  const handleSearchChange = useCallback(
-    (text: string) => setSearchTerm(text),
-    [],
-  );
-
-  const handleCategoryChange = useCallback(
-    (category: HighlineCategory | null) => setSelectedCategory(category),
-    [],
-  );
 
   // Throttled camera change handler (updates at most once every 500ms)
   const throttledCameraUpdate = useCallback(
@@ -255,16 +249,11 @@ export default function Screen() {
 
   // Don't render the map until we've loaded the map style preference
   if (isMapStyleLoading) {
-    return <View style={{ flex: 1 }} />; // You could add a loading spinner here
+    return <View style={{ flex: 1 }} />;
   }
 
   return (
     <View style={{ flex: 1 }}>
-      <ExploreHeader
-        onSearchChange={handleSearchChange}
-        onCategoryChange={handleCategoryChange}
-      />
-
       <Mapbox.MapView
         ref={mapRef}
         style={{ flex: 1 }}
@@ -312,11 +301,7 @@ export default function Screen() {
         />
       ) : null}
 
-      <ListingsBottomSheet
-        highlines={highlines}
-        hasFocusedMarker={!!focusedMarker}
-        isLoading={isLoading}
-      />
+      <ListingsBottomSheet />
     </View>
   );
 }
