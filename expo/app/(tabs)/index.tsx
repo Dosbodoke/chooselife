@@ -31,6 +31,7 @@ import MapControls from '~/components/map/controls';
 import { MapCardList } from '~/components/map/map-card';
 import { Markers } from '~/components/map/markers';
 import { ChooselifeTrails } from '~/components/map/trail-shape';
+import WeatherCrosshair from '~/components/map/weather-crosshair';
 
 async function getMyLocation(): Promise<
   | {
@@ -285,6 +286,8 @@ export default function Screen() {
           updateMarkers={handleMarkerUpdate}
         />
       </Mapbox.MapView>
+
+      <WeatherCrosshair />
 
       <MapControls
         isOnMyLocation={isOnMyLocation}
