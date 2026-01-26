@@ -19,13 +19,12 @@ const MapControls: React.FC<{
   goToMyLocation: () => void;
   setMapType: (newMapType: MapType) => Promise<void>;
 }> = ({ mapType, isOnMyLocation, goToMyLocation, setMapType }) => {
-  const exploreHeaderHeight = useMapStore((state) => state.exploreHeaderHeight);
   const insetTop = useSafeAreaInsets().top;
 
   return (
     <View
       className="absolute right-2 rounded-lg bg-card p-2"
-      style={{ top: exploreHeaderHeight + insetTop + 16 }}
+      style={{ top: insetTop + 16 }}
     >
       <TouchableOpacity
         className="p-1 items-center justify-center pb-2"

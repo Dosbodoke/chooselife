@@ -2,7 +2,7 @@ import Mapbox from '@rnmapbox/maps';
 import { BBox, Position } from 'geojson';
 import { create } from 'zustand';
 
-import { Highline } from '~/hooks/use-highline';
+import { Highline, HighlineCategory } from '~/hooks/use-highline';
 import {
   DEFAULT_LATITUDE,
   DEFAULT_LONGITUDE,
@@ -20,18 +20,23 @@ type State = {
   };
   highlightedMarker: Highline | null;
   clusteredMarkers: Highline[];
-  // Keep track of the handle height so the Highlited marker card can be positioned correctly and the minimum snap point fits only the handler
   bottomSheetHandlerHeight: number;
-  // Keep track of the handle height so the Highlited marker card can be positioned correctly and the minimum snap point fits only the handler
-  exploreHeaderHeight: number;
+  expandBottomSheet: (() => void) | null;
+  // Search/filter state
+  searchQuery: string;
+  activeCategory: HighlineCategory | null;
+  hasFocusedMarker: boolean;
 };
 
 type Actions = {
   setCamera: (camera: Mapbox.MapState) => void;
   setBottomSheeHandlerHeight: (height: number) => void;
-  setExploreHeaderHeight: (height: number) => void;
   setHighlightedMarker: (marker: Highline | null) => void;
   setClusteredMarkers: (markers: Highline[]) => void;
+  setExpandBottomSheet: (fn: (() => void) | null) => void;
+  setSearchQuery: (query: string) => void;
+  setActiveCategory: (category: HighlineCategory | null) => void;
+  setHasFocusedMarker: (value: boolean) => void;
 };
 
 export const useMapStore = create<State & Actions>((set) => ({
@@ -42,8 +47,11 @@ export const useMapStore = create<State & Actions>((set) => ({
   },
   highlightedMarker: null,
   clusteredMarkers: [],
-  exploreHeaderHeight: 0,
   bottomSheetHandlerHeight: 0,
+  expandBottomSheet: null,
+  searchQuery: '',
+  activeCategory: null,
+  hasFocusedMarker: false,
   setCamera: (state: Mapbox.MapState) => {
     set(() => {
       const { sw, ne } = state.properties.bounds;
@@ -56,11 +64,6 @@ export const useMapStore = create<State & Actions>((set) => ({
         },
       };
     });
-  },
-  setExploreHeaderHeight: (height: number) => {
-    set(() => ({
-      exploreHeaderHeight: height,
-    }));
   },
   setBottomSheeHandlerHeight: (height: number) => {
     set(() => ({
@@ -75,6 +78,26 @@ export const useMapStore = create<State & Actions>((set) => ({
   setClusteredMarkers: (markers: Highline[]) => {
     set(() => ({
       clusteredMarkers: markers,
+    }));
+  },
+  setExpandBottomSheet: (fn: (() => void) | null) => {
+    set(() => ({
+      expandBottomSheet: fn,
+    }));
+  },
+  setSearchQuery: (query: string) => {
+    set(() => ({
+      searchQuery: query,
+    }));
+  },
+  setActiveCategory: (category: HighlineCategory | null) => {
+    set(() => ({
+      activeCategory: category,
+    }));
+  },
+  setHasFocusedMarker: (value: boolean) => {
+    set(() => ({
+      hasFocusedMarker: value,
     }));
   },
 }));
