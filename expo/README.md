@@ -13,6 +13,10 @@ A mobile app designed for highliners to track their activities, connect with oth
 - [Testing](#testing)
   - [Unit Tests](#unit-tests)
   - [E2E Tests with Maestro](#e2e-tests-with-maestro)
+- [Deployment](#deployment)
+  - [OTA Updates](#ota-updates)
+  - [Store Builds](#store-builds)
+  - [Forcing a Store Update](#forcing-a-store-update)
 - [Contributing](#contributing)
 - [Authors](#authors)
 - [License](#license)
@@ -20,72 +24,75 @@ A mobile app designed for highliners to track their activities, connect with oth
 ## Tech Stack
 
 **Front-end:**
-* [Expo](https://expo.dev/) - React Native framework for cross-platform development.
-* [NativeWind](https://www.nativewind.dev/) - Tailwind CSS for React Native.
+
+- [Expo](https://expo.dev/) - React Native framework for cross-platform development.
+- [NativeWind](https://www.nativewind.dev/) - Tailwind CSS for React Native.
 
 **Back-end:**
-* [Supabase](https://supabase.com/) - Open-source Firebase alternative (database, authentication, etc.).
+
+- [Supabase](https://supabase.com/) - Open-source Firebase alternative (database, authentication, etc.).
 
 ## Environment Setup
 
 Before setting up the project, ensure you have the following installed:
 
-- Node.js (version 18.18.0 or higher)  
-- Expo CLI (`npm install -g expo-cli`)  
-- An Expo account  
-- A Mapbox account  
+- Node.js (version 18.18.0 or higher)
+- Expo CLI (`npm install -g expo-cli`)
+- An Expo account
+- A Mapbox account
 
 Also, you need to follow the [Supabase setup instructions.](../README.md)
 
 ### Connecting to Expo
 
 1.  **Get API Keys:**
-    * Find your Project URL and publishable keys in the Supabase dashboard (API Settings).
+    - Find your Project URL and publishable keys in the Supabase dashboard (API Settings).
 2.  **Create `.env` File:**
-    * Run `cp .env.example .env` and add fill it with your Supabase credentials:
+    - Run `cp .env.example .env` and add fill it with your Supabase credentials:
 
 ### Mapbox Configuration
 
 1.  **Get Mapbox Keys:**
-    * Obtain your public Mapbox key from your Mapbox account.
+    - Obtain your public Mapbox key from your Mapbox account.
 2.  **Add to `.env`:**
-    * Add the public key to your `.env` file:
+    - Add the public key to your `.env` file:
 
-        ```
-        EXPO_PUBLIC_MAPBOX_PUBLIC_KEY=YOUR_MAPBOX_PUBLIC_KEY
-        ```
+      ```
+      EXPO_PUBLIC_MAPBOX_PUBLIC_KEY=YOUR_MAPBOX_PUBLIC_KEY
+      ```
+
 3.  **Add Download Token**
-    * Create a new token with all public scopes and **DOWNLOADS:READ** Secret Scope, put it under `MAPBOX_DOWNLOAD_TOKEN` in your `.env`.
+    - Create a new token with all public scopes and **DOWNLOADS:READ** Secret Scope, put it under `MAPBOX_DOWNLOAD_TOKEN` in your `.env`.
 
-        ```
-        MAPBOX_DOWNLOAD_TOKEN=YOUR_MAPBOX_DOWNLOAD_TOKEN
-        ```
+      ```
+      MAPBOX_DOWNLOAD_TOKEN=YOUR_MAPBOX_DOWNLOAD_TOKEN
+      ```
 
 ### Push Notifications
 
 1.  **Expo Push Notification Setup:**
-    * Follow the [Expo push notification setup guide](https://docs.expo.dev/push-notifications/push-notifications-setup/) (especially steps 3 and 4).
+    - Follow the [Expo push notification setup guide](https://docs.expo.dev/push-notifications/push-notifications-setup/) (especially steps 3 and 4).
 2.  **Supabase Integration:**
-    * Integrate Supabase for backend push notifications. Refer to the [integration guide](https://supabase.com/docs/guides/functions/examples/push-notifications?queryGroups=platform&platform=expo).
+    - Integrate Supabase for backend push notifications. Refer to the [integration guide](https://supabase.com/docs/guides/functions/examples/push-notifications?queryGroups=platform&platform=expo).
 3.  **Sending Notifications:**
-    * Notifications can be sent via:
-        * Supabase Edge Function: Deploy with `supabase functions deploy push-notification` and set up a database webhook as described in the Supabase guide.
-        * `sendPushNotification` helper function within the mobile app.
+    - Notifications can be sent via:
+      - Supabase Edge Function: Deploy with `supabase functions deploy push-notification` and set up a database webhook as described in the Supabase guide.
+      - `sendPushNotification` helper function within the mobile app.
 
 ## Running Locally
 
 1.  **Install Expo EAS:**
-    * Install Expo EAS: [expo.dev/eas](https://expo.dev/eas).
+    - Install Expo EAS: [expo.dev/eas](https://expo.dev/eas).
 2.  **Create Development Build:**
-    * Build a development version:
-        ```bash
-        npx eas build -e development
-        ```
+    - Build a development version:
+      ```bash
+      npx eas build -e development
+      ```
 3.  **Start Development Server:**
-    * Start the Expo development server:
-        ```bash
-        npx expo start -c
-        ```
+    - Start the Expo development server:
+      ```bash
+      npx expo start -c
+      ```
 
 ## Testing
 
@@ -114,6 +121,7 @@ We use [Maestro](https://maestro.mobile.dev/) for end-to-end testing. Maestro te
 #### Prerequisites
 
 1. **Install Maestro:**
+
    ```bash
    # macOS
    brew install maestro
@@ -152,20 +160,20 @@ pnpm maestro:store
 
 #### Available Test Scripts
 
-| Script | Description |
-|--------|-------------|
-| `pnpm dev:test:ota` | Start Metro with `EXPO_PUBLIC_TEST_OTA=true` |
-| `pnpm dev:test:store` | Start Metro with `EXPO_PUBLIC_TEST_STORE=true` |
-| `pnpm maestro:ota` | Run OTA update E2E tests |
-| `pnpm maestro:store` | Run store update E2E test |
-| `pnpm maestro` | Run all Maestro tests |
+| Script                | Description                                      |
+| --------------------- | ------------------------------------------------ |
+| `pnpm dev:test:ota`   | Start Metro with `EXPO_PUBLIC_TEST_OTA=true`     |
+| `pnpm dev:test:store` | Start Metro with `EXPO_PUBLIC_TEST_STORE=true`   |
+| `pnpm maestro:ota`    | Run OTA update E2E tests                         |
+| `pnpm maestro:store`  | Run store update E2E test                        |
+| `pnpm maestro`        | Run all Maestro tests                            |
 | `pnpm maestro:studio` | Open Maestro Studio for interactive test writing |
 
 #### Test Environment Variables
 
-| Variable | Purpose |
-|----------|---------|
-| `EXPO_PUBLIC_TEST_OTA=true` | Simulates an available OTA update in dev builds |
+| Variable                      | Purpose                                         |
+| ----------------------------- | ----------------------------------------------- |
+| `EXPO_PUBLIC_TEST_OTA=true`   | Simulates an available OTA update in dev builds |
 | `EXPO_PUBLIC_TEST_STORE=true` | Simulates a required store update in dev builds |
 
 These flags only work in development builds (`__DEV__ === true`) and are ignored in production.
@@ -176,3 +184,58 @@ These flags only work in development builds (`__DEV__ === true`) and are ignored
 2. Place test files in `.maestro/` directory
 3. Use `testID` props on components for reliable element selection
 4. See existing tests in `.maestro/updates/` for examples
+
+## Deployment
+
+### OTA Updates
+
+OTA (Over-The-Air) updates push JavaScript bundle changes to users without requiring a new store build. The app checks for updates on launch and when returning from the background (throttled to once per hour).
+
+When an update is available, users see a bottom sheet prompt with two options:
+
+- **Update Now** — downloads the update and restarts the app immediately
+- **Next Time** — dismisses the prompt and downloads the update silently in the background; it applies automatically on the next app launch
+
+To publish an OTA update:
+
+```bash
+# Publish to the production channel
+eas update --branch production
+
+# Or for a specific message
+eas update --branch production --message "Fix crash on profile screen"
+```
+
+> **Note:** OTA updates can only change JavaScript/assets. Native code changes (new libraries, permission changes, etc.) require a new store build.
+
+### Store Builds
+
+For changes that require a new native binary (new SDK version, native module changes, etc.):
+
+```bash
+# Build for both platforms
+eas build --profile production --platform all
+
+# Submit to stores
+eas submit --platform ios
+eas submit --platform android
+
+# Or build and deploy to TestFlight for testing
+npx testflight
+```
+
+After publishing a new store build, update the `version` field in `app.config.ts` to match.
+
+#### Forcing Users to Update
+
+The app checks a `min_app_version` config in Supabase on every launch. If the user's app version is below the minimum, a blocking modal appears directing them to update from the store.
+
+When you ship a breaking change that requires all users to be on the latest version, bump the minimum version in Supabase:
+
+```sql
+UPDATE app_config
+SET value = '{"ios": "1.4.0", "android": "1.4.0"}'
+WHERE key = 'min_app_version';
+```
+
+Any user running a version below `1.4.0` will see a blocking modal and cannot use the app until they update from the store.

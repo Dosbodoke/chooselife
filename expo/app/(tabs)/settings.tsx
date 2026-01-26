@@ -20,6 +20,8 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
 
+import Constants from 'expo-constants';
+
 import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
@@ -96,7 +98,7 @@ export default function SettingsPage() {
           </View>
 
           <Text className="text-center text-muted-foreground text-xs mt-4">
-            Version 1.3.15
+            Version {Constants.expoConfig?.version ?? ''}
           </Text>
         </ScrollView>
       </SafeAreaOfflineView>
@@ -115,7 +117,7 @@ export default function SettingsPage() {
           </Button>
         </Link>
         <Text className="text-center text-muted-foreground text-xs mt-4">
-          Version 1.3.15
+          Version {Constants.expoConfig?.version ?? ''}
         </Text>
       </View>
     </SafeAreaOfflineView>
