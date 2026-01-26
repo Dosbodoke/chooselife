@@ -1,0 +1,30 @@
+appId: com.bodok.chooselife
+name: OTA Update Prompt - Display and Interactions
+tags:
+  - updates
+  - ota
+
+---
+# Test: OTA Update prompt is displayed when an update is available
+# Requires: EXPO_PUBLIC_TEST_OTA=true (pnpm dev:test:ota)
+- launchApp:
+    appId: com.bodok.chooselife
+
+# Wait for the prompt to appear (may take a moment after app loads)
+- extendedWaitUntil:
+    visible:
+      text: "New & Improved"
+    timeout: 10000
+
+# Take screenshot and verify buttons exist
+- takeScreenshot: ota-update-prompt-initial
+
+- assertVisible:
+    text: "Update Now"
+
+- assertVisible:
+    text: "Next Time"
+
+# Dismiss the prompt so it doesn't interfere with other tests
+- tapOn:
+    text: "Next Time"

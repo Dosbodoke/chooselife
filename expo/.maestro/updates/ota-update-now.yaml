@@ -1,0 +1,37 @@
+appId: com.bodok.chooselife
+name: OTA Update - Tap Update Now
+tags:
+  - updates
+  - ota
+
+---
+# Test: Tapping "Update Now" triggers download
+# Requires: EXPO_PUBLIC_TEST_OTA=true (pnpm dev:test:ota)
+- launchApp:
+    appId: com.bodok.chooselife
+
+# Wait for update prompt to appear
+- extendedWaitUntil:
+    visible:
+      text: "New & Improved"
+    timeout: 10000
+
+# Tap Update Now button
+- tapOn:
+    text: "Update Now"
+
+# Should show downloading state
+- assertVisible:
+    text: "Updating..."
+    optional: true
+
+# Take screenshot of download progress
+- takeScreenshot: ota-update-downloading
+
+# Wait for download to complete - prompt should dismiss
+# In production, the app restarts after successful download
+- extendedWaitUntil:
+    notVisible:
+      text: "New & Improved"
+    timeout: 15000
+    optional: true

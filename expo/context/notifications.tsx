@@ -96,7 +96,7 @@ async function registerForPushNotificationsAsync() {
       token = `${e}`;
     }
   } else {
-    alert('Must use physical device for Push Notifications');
+    console.warn('Must use physical device for Push Notifications');
   }
 
   return token;

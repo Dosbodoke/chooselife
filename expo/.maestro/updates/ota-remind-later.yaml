@@ -1,0 +1,33 @@
+appId: com.bodok.chooselife
+name: OTA Update - Tap Later (Remind Later)
+tags:
+  - updates
+  - ota
+
+---
+# Test: Tapping "Later" dismisses the prompt
+# Requires: EXPO_PUBLIC_TEST_OTA=true (pnpm dev:test:ota)
+- launchApp:
+    appId: com.bodok.chooselife
+
+# Wait for update prompt to appear
+- extendedWaitUntil:
+    visible:
+      text: "New & Improved"
+    timeout: 10000
+
+# Take screenshot before dismissing
+- takeScreenshot: ota-before-remind-later
+
+# Tap Next Time button
+- tapOn:
+    text: "Next Time"
+
+# Prompt should be dismissed
+- extendedWaitUntil:
+    notVisible:
+      text: "New & Improved"
+    timeout: 5000
+
+# Take screenshot after dismissing
+- takeScreenshot: ota-after-remind-later

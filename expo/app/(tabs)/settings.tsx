@@ -96,7 +96,7 @@ export default function SettingsPage() {
           </View>
 
           <Text className="text-center text-muted-foreground text-xs mt-4">
-            Version 1.3.14
+            Version 1.3.15
           </Text>
         </ScrollView>
       </SafeAreaOfflineView>
@@ -115,7 +115,7 @@ export default function SettingsPage() {
           </Button>
         </Link>
         <Text className="text-center text-muted-foreground text-xs mt-4">
-          Version 1.3.14
+          Version 1.3.15
         </Text>
       </View>
     </SafeAreaOfflineView>

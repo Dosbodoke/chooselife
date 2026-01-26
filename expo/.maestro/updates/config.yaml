@@ -1,0 +1,13 @@
+# Maestro Configuration for Update Tests
+#
+# OTA Update Tests (non-blocking prompt):
+#   Terminal 1: pnpm dev:test:ota    # Starts Metro with EXPO_PUBLIC_TEST_OTA=true
+#   Terminal 2: pnpm maestro:ota     # Runs OTA update tests
+#
+# Store Update Tests (blocking modal):
+#   Terminal 1: pnpm dev:test:store  # Starts Metro with EXPO_PUBLIC_TEST_STORE=true
+#   Terminal 2: pnpm maestro:store   # Runs store update test
+#
+# Note: Don't enable both flags at once - the store modal blocks the OTA prompt.
+
+name: Update Feature Tests

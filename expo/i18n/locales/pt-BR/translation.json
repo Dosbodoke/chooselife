@@ -599,5 +599,22 @@
     "rig-form": {
       "unknownWebbing": "Fita sem nome"
     }
+  },
+  "updates": {
+    "ota": {
+      "title": "Nova Atualização",
+      "description": "Deixamos o ChooseLife ainda melhor. Atualize agora para aproveitar as melhorias.",
+      "updateNow": "Atualizar Agora",
+      "updateLater": "Na Próxima",
+      "downloading": "Atualizando...",
+      "errorTitle": "Falha na Atualização",
+      "errorDescription": "Algo deu errado. Por favor, tente novamente.",
+      "retry": "Tentar Novamente"
+    },
+    "store": {
+      "title": "Hora de Atualizar",
+      "description": "Uma versão nova e melhor do ChooseLife está disponível. Atualize para manter sua experiência segura e fluida.",
+      "updateNow": "Atualizar Agora"
+    }
   }
 }

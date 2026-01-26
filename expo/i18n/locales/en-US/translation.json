@@ -599,5 +599,22 @@
     "rig-form": {
       "unknownWebbing": "Unknown Webbing"
     }
+  },
+  "updates": {
+    "ota": {
+      "title": "New & Improved",
+      "description": "We've made ChooseLife better. Update now for the latest improvements.",
+      "updateNow": "Update Now",
+      "updateLater": "Next Time",
+      "downloading": "Updating...",
+      "errorTitle": "Update Failed",
+      "errorDescription": "Something went wrong. Please try again.",
+      "retry": "Try Again"
+    },
+    "store": {
+      "title": "Time to Update",
+      "description": "A newer, better version of ChooseLife is available. Update to keep your experience safe and smooth.",
+      "updateNow": "Update Now"
+    }
   }
 }

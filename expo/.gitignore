@@ -53,3 +53,6 @@ expo-env.d.ts
 .env.local
 
 .env.local
+
+# Jest Tests
+coverage/

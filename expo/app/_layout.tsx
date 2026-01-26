@@ -17,6 +17,7 @@ import { AuthProvider, useAuth } from '~/context/auth';
 import { I18nProvider } from '~/context/i18n';
 import { NotificationProvider } from '~/context/notifications';
 import { ReactQueryProvider } from '~/context/react-query';
+import { UpdateProvider, UpdatePrompt, StoreUpdateModal } from '~/features/updates';
 import { useDeepLinkHandler } from '~/hooks/use-deep-link-handler';
 import { supabase } from '~/lib/supabase';
 import { setAndroidNavigationBar } from '~/utils/android-navigation-bar';
@@ -93,85 +94,89 @@ export default Sentry.wrap(function RootLayout() {
                 <BottomSheetModalProvider>
                   <ThemeProvider value={LIGHT_THEME}>
                     <NotificationProvider>
-                      <StatusBar style="dark" />
-                      <Stack
-                        screenOptions={{
-                          headerBackButtonDisplayMode: 'minimal',
-                        }}
-                      >
-                        <Stack.Screen
-                          name="(tabs)"
-                          options={{
-                            headerShown: false,
+                      <UpdateProvider>
+                        <StatusBar style="dark" />
+                        <Stack
+                          screenOptions={{
+                            headerBackButtonDisplayMode: 'minimal',
                           }}
-                        />
-                        <Stack.Screen
-                          name="(modals)/login"
-                          options={{
-                            presentation: 'modal',
-                            animation: 'slide_from_bottom',
-                            title: 'Entrar ou criar conta',
-                          }}
-                        />
-                        <Stack.Screen
-                          name="webbing/[id]"
-                          options={{
-                            presentation: 'modal',
-                            animation: 'slide_from_bottom',
-                            headerShown: false,
-                          }}
-                        />
-                        <Stack.Screen
-                          name="(modals)/register-webbing"
-                          options={{
-                            presentation: 'modal',
-                            headerShown: false,
-                          }}
-                        />
-                        <Stack.Screen
-                          name="highline/[id]"
-                          options={{
-                            headerShown: false,
-                          }}
-                        />
-                        <Stack.Screen
-                          name="profile/[username]"
-                          options={{
-                            headerShown: false,
-                          }}
-                        />
-                        <Stack.Screen
-                          name="setProfile"
-                          options={{
-                            headerShown: false,
-                          }}
-                        />
-                        <Stack.Screen
-                          name="location-picker"
-                          options={{ headerShown: false }}
-                        />
-                        <Stack.Screen
-                          name="payment"
-                          options={{ headerShown: false }}
-                        />
-                        <Stack.Screen
-                          name="register-highline"
-                          options={{ header: () => <OfflineBanner /> }}
-                        />
-                        <Stack.Screen
-                          name="organizations"
-                          options={{ headerShown: false }}
-                        />
-                        <Stack.Screen
-                          name="en/[...slug]"
-                          options={{ headerShown: false }}
-                        />
-                        <Stack.Screen
-                          name="pt/[...slug]"
-                          options={{ headerShown: false }}
-                        />
-                      </Stack>
-                      <PortalHost />
+                        >
+                          <Stack.Screen
+                            name="(tabs)"
+                            options={{
+                              headerShown: false,
+                            }}
+                          />
+                          <Stack.Screen
+                            name="(modals)/login"
+                            options={{
+                              presentation: 'modal',
+                              animation: 'slide_from_bottom',
+                              title: 'Entrar ou criar conta',
+                            }}
+                          />
+                          <Stack.Screen
+                            name="webbing/[id]"
+                            options={{
+                              presentation: 'modal',
+                              animation: 'slide_from_bottom',
+                              headerShown: false,
+                            }}
+                          />
+                          <Stack.Screen
+                            name="(modals)/register-webbing"
+                            options={{
+                              presentation: 'modal',
+                              headerShown: false,
+                            }}
+                          />
+                          <Stack.Screen
+                            name="highline/[id]"
+                            options={{
+                              headerShown: false,
+                            }}
+                          />
+                          <Stack.Screen
+                            name="profile/[username]"
+                            options={{
+                              headerShown: false,
+                            }}
+                          />
+                          <Stack.Screen
+                            name="setProfile"
+                            options={{
+                              headerShown: false,
+                            }}
+                          />
+                          <Stack.Screen
+                            name="location-picker"
+                            options={{ headerShown: false }}
+                          />
+                          <Stack.Screen
+                            name="payment"
+                            options={{ headerShown: false }}
+                          />
+                          <Stack.Screen
+                            name="register-highline"
+                            options={{ header: () => <OfflineBanner /> }}
+                          />
+                          <Stack.Screen
+                            name="organizations"
+                            options={{ headerShown: false }}
+                          />
+                          <Stack.Screen
+                            name="en/[...slug]"
+                            options={{ headerShown: false }}
+                          />
+                          <Stack.Screen
+                            name="pt/[...slug]"
+                            options={{ headerShown: false }}
+                          />
+                        </Stack>
+                        <UpdatePrompt />
+                        <StoreUpdateModal />
+                        <PortalHost />
+                      </UpdateProvider>
                     </NotificationProvider>
                   </ThemeProvider>
                 </BottomSheetModalProvider>

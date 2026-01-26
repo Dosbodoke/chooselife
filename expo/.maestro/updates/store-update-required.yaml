@@ -1,0 +1,32 @@
+appId: com.bodok.chooselife
+name: Store Update Required - Blocking Modal (iOS)
+tags:
+  - updates
+  - store
+  - ios
+
+---
+# This test is iOS only - Android uses native Play Store UI
+# Test: Store update modal blocks the app when version is below minimum
+# Note: clearState requires a standalone build (not Expo Go)
+- launchApp:
+    appId: com.bodok.chooselife
+
+# Store update modal should be visible
+- assertVisible:
+    text: "Time to Update"
+
+- assertVisible:
+    text: "A newer, better version of ChooseLife is available. Update to keep your experience safe and smooth."
+
+- assertVisible:
+    text: "Update Now"
+
+# Take screenshot of blocking modal
+- takeScreenshot: store-update-required-modal
+
+# Verify the modal is blocking (no other content visible)
+# The modal should cover the entire screen
+
+# Note: Tapping "Update Now" will open App Store
+# We don't test that interaction to avoid leaving the app

@@ -1,0 +1,32 @@
+appId: com.bodok.chooselife
+name: OTA Update Prompt - Portuguese (pt-BR)
+tags:
+  - updates
+  - ota
+  - i18n
+  - pt-BR
+
+---
+# Prerequisites:
+# - Device/simulator language set to Portuguese (Brazil)
+# Requires: EXPO_PUBLIC_TEST_OTA=true (pnpm dev:test:ota)
+- launchApp:
+    appId: com.bodok.chooselife
+
+# Wait for the prompt to appear
+- extendedWaitUntil:
+    visible:
+      text: "Novo & Melhorado"
+    timeout: 10000
+
+- assertVisible:
+    text: "Deixamos o ChooseLife ainda melhor. Atualize agora para aproveitar as melhorias."
+
+- assertVisible:
+    text: "Atualizar Agora"
+
+- assertVisible:
+    text: "Na Próxima"
+
+# Take screenshot
+- takeScreenshot: ota-update-prompt-pt-br

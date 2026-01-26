@@ -10,6 +10,9 @@ A mobile app designed for highliners to track their activities, connect with oth
   - [Mapbox Configuration](#mapbox-configuration)
   - [Push Notifications](#push-notifications)
 - [Running Locally](#running-locally)
+- [Testing](#testing)
+  - [Unit Tests](#unit-tests)
+  - [E2E Tests with Maestro](#e2e-tests-with-maestro)
 - [Contributing](#contributing)
 - [Authors](#authors)
 - [License](#license)
@@ -83,3 +86,93 @@ Also, you need to follow the [Supabase setup instructions.](../README.md)
         ```bash
         npx expo start -c
         ```
+
+## Testing
+
+### Unit Tests
+
+Run unit tests with Jest:
+
+```bash
+# Run all tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Run tests with coverage report
+pnpm test:coverage
+
+# Run tests for a specific feature
+pnpm test features/updates
+```
+
+### E2E Tests with Maestro
+
+We use [Maestro](https://maestro.mobile.dev/) for end-to-end testing. Maestro tests are located in the `.maestro/` directory.
+
+#### Prerequisites
+
+1. **Install Maestro:**
+   ```bash
+   # macOS
+   brew install maestro
+
+   # Other platforms: https://maestro.mobile.dev/getting-started/installing-maestro
+   ```
+
+2. **Development Build:**
+   You need a development build installed on the simulator. The app must be able to connect to Metro bundler.
+
+#### Running E2E Tests
+
+E2E tests require two terminals - one running Metro bundler with test flags, and another running Maestro.
+
+**OTA Update Tests** (non-blocking bottom sheet prompt):
+
+```bash
+# Terminal 1: Start Metro with OTA test flag
+pnpm dev:test:ota
+
+# Terminal 2: Run OTA update tests
+pnpm maestro:ota
+```
+
+**Store Update Tests** (blocking full-screen modal):
+
+```bash
+# Terminal 1: Start Metro with store test flag
+pnpm dev:test:store
+
+# Terminal 2: Run store update test
+pnpm maestro:store
+```
+
+> **Note:** Don't enable both test flags at once. The store update modal is blocking and will prevent OTA tests from running.
+
+#### Available Test Scripts
+
+| Script | Description |
+|--------|-------------|
+| `pnpm dev:test:ota` | Start Metro with `EXPO_PUBLIC_TEST_OTA=true` |
+| `pnpm dev:test:store` | Start Metro with `EXPO_PUBLIC_TEST_STORE=true` |
+| `pnpm maestro:ota` | Run OTA update E2E tests |
+| `pnpm maestro:store` | Run store update E2E test |
+| `pnpm maestro` | Run all Maestro tests |
+| `pnpm maestro:studio` | Open Maestro Studio for interactive test writing |
+
+#### Test Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `EXPO_PUBLIC_TEST_OTA=true` | Simulates an available OTA update in dev builds |
+| `EXPO_PUBLIC_TEST_STORE=true` | Simulates a required store update in dev builds |
+
+These flags only work in development builds (`__DEV__ === true`) and are ignored in production.
+
+#### Writing New Maestro Tests
+
+1. Use `pnpm maestro:studio` to interactively build tests
+2. Place test files in `.maestro/` directory
+3. Use `testID` props on components for reliable element selection
+4. See existing tests in `.maestro/updates/` for examples
