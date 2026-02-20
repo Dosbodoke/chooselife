@@ -2,7 +2,7 @@ import { Link } from 'expo-router';
 import { MessageSquare, ThumbsUp } from 'lucide-react-native'; // Added ThumbsUp, removed Smile
 import React from 'react';
 import { Pressable, View } from 'react-native';
-import { Markdown } from 'react-native-remark';
+import { EnrichedMarkdownText } from 'react-native-enriched-markdown';
 
 import {
   useMutateReaction,
@@ -61,7 +61,7 @@ const NewsCard = ({ news }: { news: NewsType[number] }) => {
         {new Date(news.created_at).toLocaleDateString()}
       </Text>
       <View className="relative">
-        <Markdown markdown={previewContent} />
+        <EnrichedMarkdownText markdown={previewContent} />
         {isClamped && (
           <View
             className="absolute inset-x-0 bottom-0 h-40"

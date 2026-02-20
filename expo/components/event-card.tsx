@@ -19,7 +19,7 @@ import Animated, {
   LinearTransition,
   useAnimatedStyle,
 } from 'react-native-reanimated';
-import { Markdown } from 'react-native-remark';
+import { EnrichedMarkdownText } from 'react-native-enriched-markdown';
 
 import { useI18n } from '~/context/i18n';
 import { type Event, isISAEvent, getCountryFlag } from '@chooselife/ui';
@@ -361,7 +361,7 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
                   <View>
                     {isFromISA ? (
                       <View className="text-sm">
-                        <Markdown markdown={htmlToMarkdown(event.description)} />
+                        <EnrichedMarkdownText markdown={htmlToMarkdown(event.description)} />
                       </View>
                     ) : (
                       <Text className="text-sm text-muted-foreground leading-relaxed">

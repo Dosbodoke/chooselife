@@ -9,8 +9,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import * as Linking from 'expo-linking';
 import { KeyboardControllerView } from 'react-native-keyboard-controller';
-import { Markdown } from 'react-native-remark';
+import { EnrichedMarkdownText } from 'react-native-enriched-markdown';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useShare } from '~/hooks/use-share';
@@ -196,7 +197,10 @@ export default function NewsDetail() {
             </Text>
 
             <View className="mb-6">
-              <Markdown markdown={news.content} />
+              <EnrichedMarkdownText
+                markdown={news.content}
+                onLinkPress={(e) => Linking.openURL(e.url)}
+              />
             </View>
 
             <View className="border-t border-gray-200 pt-4">
