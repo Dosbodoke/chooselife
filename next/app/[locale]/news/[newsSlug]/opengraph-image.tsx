@@ -1,4 +1,5 @@
 import { Database } from "@chooselife/database";
+import { extractNewsTitleFromMarkdown } from "@chooselife/ui";
 import { createClient } from "@supabase/supabase-js";
 import { ImageResponse } from "next/og";
 
@@ -56,14 +57,7 @@ export default async function Image({
   }
 
   const content = data?.content || "";
-
-  let title = "Ver Publicação";
-  const cleanContent = content.trim();
-  const headerMatch = cleanContent.match(/^#\s+(.+)$/m);
-
-  if (headerMatch && headerMatch[1]) {
-    title = headerMatch[1].replace(/\*\*/g, "").trim();
-  }
+  const title = extractNewsTitleFromMarkdown(content);
 
   const createdAt = data?.created_at;
   let formattedDate = "";

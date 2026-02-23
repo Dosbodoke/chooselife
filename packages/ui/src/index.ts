@@ -1,5 +1,6 @@
 export * from './supabase-provider';
 export * from './feature/organization';
+export * from './feature/news';
 export * from './feature/flags';
 export * from './feature/calendar';
 export * from './feature/webbing';

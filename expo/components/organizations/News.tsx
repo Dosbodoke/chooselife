@@ -2,14 +2,15 @@ import { Link } from 'expo-router';
 import { MessageSquare, ThumbsUp } from 'lucide-react-native'; // Added ThumbsUp, removed Smile
 import React from 'react';
 import { Pressable, View } from 'react-native';
-import { EnrichedMarkdownText } from 'react-native-enriched-markdown';
 
 import {
+  buildNewsPreview,
   useMutateReaction,
   useNews,
-  type News as NewsType
+  type News as NewsType,
 } from '@chooselife/ui';
 
+import { NewsMarkdown } from '~/components/news/NewsMarkdown';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 
@@ -42,18 +43,10 @@ const NewsCard = ({ news }: { news: NewsType[number] }) => {
   const { mutate: react } = useMutateReaction(news.id, news.organization_id!);
   const reactions = news.news_reactions?.length || 0;
 
-  const { previewContent, isClamped } = React.useMemo(() => {
-    if (!news.content) return { previewContent: '', isClamped: false };
-    const limit = 500;
-    if (news.content.length <= limit)
-      return { previewContent: news.content, isClamped: false };
-    const end = news.content.indexOf('\n', limit);
-    return end !== -1
-      ? { previewContent: news.content.slice(0, end), isClamped: true }
-      : { previewContent: news.content, isClamped: false };
-  }, [news.content]);
-
-  const organizationSlug = news.organizations?.slug;
+  const { previewContent, isClamped } = React.useMemo(
+    () => buildNewsPreview(news.content),
+    [news.content],
+  );
 
   return (
     <View className="bg-white rounded-xl p-4">
@@ -61,7 +54,7 @@ const NewsCard = ({ news }: { news: NewsType[number] }) => {
         {new Date(news.created_at).toLocaleDateString()}
       </Text>
       <View className="relative">
-        <EnrichedMarkdownText markdown={previewContent} />
+        <NewsMarkdown markdown={previewContent} />
         {isClamped && (
           <View
             className="absolute inset-x-0 bottom-0 h-40"

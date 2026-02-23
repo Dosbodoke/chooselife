@@ -1,4 +1,10 @@
-import { useIsMember, useMutateComment, useNewsItem } from '@chooselife/ui';
+import {
+  buildNewsWebUrl,
+  extractNewsTitleFromMarkdown,
+  useIsMember,
+  useMutateComment,
+  useNewsItem,
+} from '@chooselife/ui';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, Send, Share as ShareIcon } from 'lucide-react-native';
 import React, { useLayoutEffect, useRef, useState } from 'react';
@@ -9,14 +15,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import * as Linking from 'expo-linking';
 import { KeyboardControllerView } from 'react-native-keyboard-controller';
-import { EnrichedMarkdownText } from 'react-native-enriched-markdown';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useShare } from '~/hooks/use-share';
 
 import { BecomeMember } from '~/components/organizations/BecomeMember';
+import { NewsMarkdown } from '~/components/news/NewsMarkdown';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
@@ -93,11 +98,8 @@ export default function NewsDetail() {
   const shareListing = async () => {
     if (!news) return;
 
-    const url = `${process.env.EXPO_PUBLIC_WEB_URL}/news/${news.slug}`;
-    // Extract title from content (first line starting with #) or default
-    const headerMatch = news.content.match(/^#\s+([^\n]+)/m);
-    const title =
-      headerMatch && headerMatch[1] ? headerMatch[1].trim() : 'Ver Publicação';
+    const url = buildNewsWebUrl(process.env.EXPO_PUBLIC_WEB_URL ?? '', news.slug);
+    const title = extractNewsTitleFromMarkdown(news.content);
 
     await share({
       title,
@@ -197,10 +199,7 @@ export default function NewsDetail() {
             </Text>
 
             <View className="mb-6">
-              <EnrichedMarkdownText
-                markdown={news.content}
-                onLinkPress={(e) => Linking.openURL(e.url)}
-              />
+              <NewsMarkdown markdown={news.content} />
             </View>
 
             <View className="border-t border-gray-200 pt-4">

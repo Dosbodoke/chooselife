@@ -1,12 +1,16 @@
 import { Database } from "@chooselife/database";
+import {
+  extractNewsTitleFromMarkdown,
+  getNewsItemBySlugQuery,
+  getNewsSlugsQuery,
+} from "@chooselife/ui";
 import { createClient } from "@supabase/supabase-js";
 import { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import React, { cache } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { cache } from "react";
 
+import { NewsMarkdown } from "@/components/news/NewsMarkdown";
 import { ShareButton } from "@/components/ShareButton";
 import { createSupabaseClient } from "@/utils/supabase/server";
 
@@ -19,11 +23,7 @@ const supabaseStatic = createClient<Database>(supabaseUrl, supabaseKey);
 
 // Generate static params for ISR
 export async function generateStaticParams() {
-  const { data: news } = await supabaseStatic
-    .from("news")
-    .select("slug")
-    .order("created_at", { ascending: false })
-    .limit(100); // Pre-render the latest 100 news items
+  const { data: news } = await getNewsSlugsQuery(supabaseStatic, 100); // Pre-render the latest 100 news items
 
   if (!news) return [];
 
@@ -37,13 +37,7 @@ export async function generateStaticParams() {
 const getNewsItem = cache(async (slug: string) => {
   // This function runs at request time (or revalidation time), so cookies() is available
   const supabase = await createSupabaseClient();
-  const { data, error } = await supabase
-    .from("news")
-    .select(
-      "*, organizations(slug), comments:news_comments(*, user:profiles(*))"
-    )
-    .eq("slug", slug)
-    .single();
+  const { data, error } = await getNewsItemBySlugQuery(supabase, slug);
 
   if (error || !data) {
     return null;
@@ -58,21 +52,13 @@ interface NewsDetailPageProps {
   }>;
 }
 
-// Helper for title extraction
-function getTitleFromContent(content: string) {
-  const headerMatch = content.match(/^#\s+([^\n]+)/m);
-  return headerMatch && headerMatch[1]
-    ? headerMatch[1].trim()
-    : "Ver Publicação";
-}
-
 export async function generateMetadata({
   params,
 }: NewsDetailPageProps): Promise<Metadata> {
   const { newsSlug } = await params;
   const news = await getNewsItem(newsSlug);
 
-  const title = getTitleFromContent(news?.content || "");
+  const title = extractNewsTitleFromMarkdown(news?.content || "");
 
   return {
     title,
@@ -96,7 +82,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
     notFound();
   }
 
-  const title = getTitleFromContent(news.content);
+  const title = extractNewsTitleFromMarkdown(news.content);
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
@@ -110,9 +96,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
         </header>
 
         <div className="markdown-content">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {news.content}
-          </ReactMarkdown>
+          <NewsMarkdown markdown={news.content} />
         </div>
 
         <div className="mt-12 border-t border-gray-200 pt-8">

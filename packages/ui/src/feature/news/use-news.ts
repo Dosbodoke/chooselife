@@ -1,19 +1,14 @@
-import { QueryData } from '@supabase/supabase-js';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { queryKeys } from './keys';
-import { useSupabase, TypedSupabaseClient } from '../../supabase-provider';
+import {
+  getNewsByOrganizationQuery,
+  getNewsItemBySlugQuery,
+} from './queries';
+import type { News, NewsItem } from './types';
+import { queryKeys } from '../organization/keys';
+import { useSupabase } from '../../supabase-provider';
 
-const getNewsQuery = (client: TypedSupabaseClient, organizationId: string) =>
-  client
-    .from('news')
-    .select('*, organizations(slug), news_reactions(reaction), comments_count:news_comments(count)')
-    .eq('organization_id', organizationId)
-    .order('created_at', { ascending: false });
-
-export type News = (QueryData<ReturnType<typeof getNewsQuery>>[number] & {
-  organizations: { slug: string } | null;
-})[];
+export type { News } from './types';
 
 export const useNews = (organizationId: string) => {
   const { supabase } = useSupabase();
@@ -21,7 +16,10 @@ export const useNews = (organizationId: string) => {
   return useQuery<News, Error>({
     queryKey: queryKeys.news.byOrg(organizationId),
     queryFn: async () => {
-      const { data, error } = await getNewsQuery(supabase, organizationId);
+      const { data, error } = await getNewsByOrganizationQuery(
+        supabase,
+        organizationId,
+      );
 
       if (error) {
         throw new Error(error.message);
@@ -67,16 +65,12 @@ export const useMutateReaction = (newsId: string, organizationId: string) => {
 export const useNewsItem = (slug: string) => {
   const { supabase } = useSupabase();
 
-  return useQuery({
+  return useQuery<NewsItem, Error>({
     queryKey: queryKeys.newsItem.bySlug(slug),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('news')
-        .select('*, organizations(slug), comments:news_comments(*, user:profiles(*))')
-        .eq('slug', slug)
-        .single();
+      const { data, error } = await getNewsItemBySlugQuery(supabase, slug);
 
-        if (error) throw new Error(error.message);
+      if (error) throw new Error(error.message);
       return data;
     },
     enabled: !!slug,
