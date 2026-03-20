@@ -1,6 +1,5 @@
 import { ENABLE_MEMBERSHIP_REGISTRATION } from '@chooselife/ui';
 import type { StartSubscriptionResponse } from '@packages/database/functions.types';
-import * as Sentry from '@sentry/react-native';
 import { useMutation } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -22,6 +21,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
+import { getR2PublicUrl } from '~/lib/r2';
 import { formatCurrency } from '~/utils';
 import { Tables } from '~/utils/database.types';
 
@@ -122,21 +122,8 @@ export function BecomeMemberForm({
   });
 
   const handleOpenEstatuto = () => {
-    const { data } = supabase.storage
-      .from('documents')
-      .getPublicUrl('estatuto-slac.pdf');
-    if (data?.publicUrl) {
-      Linking.openURL(data.publicUrl);
-    } else {
-      const error = new Error(
-        'Could not get public URL for estatuto-slac.pdf',
-      );
-      Sentry.captureException(error);
-      Alert.alert(
-        'Erro',
-        'Não foi possível abrir o estatuto. Tente novamente mais tarde.',
-      );
-    }
+    const url = getR2PublicUrl('documents', 'estatuto-slac.pdf');
+    Linking.openURL(url);
   }
 
   const handleSubmit = () => {

@@ -3,6 +3,7 @@ import type { Metadata, ResolvingMetadata } from "next/types";
 import { cache } from "react";
 
 import { getHighline } from "@/app/actions/getHighline";
+import { getR2PublicUrl } from "@/lib/r2";
 
 import OpenInAPP from "./_components/open-in-app";
 
@@ -32,17 +33,9 @@ export async function generateMetadata(
   const highline = highlines[0];
   const previousImages = (await parent).openGraph?.images || [];
 
-  // Get the image URL from Supabase if cover_image exists
-  let imageUrl;
-  if (highline.cover_image) {
-    // Create a server-side supabase client to get the public URL
-    // Note: You might need to extract this logic into a separate utility function
-    // that can be used both in metadata generation and in your component
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (supabaseUrl) {
-      imageUrl = `${supabaseUrl}/storage/v1/object/public/images/${highline.cover_image}`;
-    }
-  }
+  const imageUrl = highline.cover_image
+    ? getR2PublicUrl("images", highline.cover_image)
+    : undefined;
 
   return {
     title: highline.name || `Highline: ${id}`,

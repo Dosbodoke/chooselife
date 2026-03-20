@@ -13,7 +13,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 
-import { supabase } from '~/lib/supabase';
+import { getR2PublicUrl } from '~/lib/r2';
 import { cn } from '~/lib/utils';
 
 export const HighlineImage: React.FC<{
@@ -47,9 +47,7 @@ export const HighlineImage: React.FC<{
     );
   }
 
-  const {
-    data: { publicUrl: URL },
-  } = supabase.storage.from('images').getPublicUrl(`${coverImageId}`);
+  const URL = getR2PublicUrl('images', coverImageId);
 
   return (
     <View className={cn('bg-muted relative overflow-hidden', className)}>
@@ -63,14 +61,15 @@ export const HighlineImage: React.FC<{
         cachePolicy="memory-disk"
         contentFit="cover"
         alt="Image of the Highline"
-        onLoadStart={() => { // Added onLoadStart to reset state
+        onLoadStart={() => {
+          // Added onLoadStart to reset state
           setLoaded(false);
           setHasError(false);
         }}
         onLoad={() => {
           setLoaded(true);
         }}
-        onError={(e) => {
+        onError={() => {
           setHasError(true);
         }}
         style={{ width: '100%', height: '100%' }}

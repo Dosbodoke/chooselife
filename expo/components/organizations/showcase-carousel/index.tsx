@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { supabase } from '~/lib/supabase';
+import { getR2PublicUrl } from '~/lib/r2';
 import { Tables } from '~/utils/database.types';
 
 import { BecomeMemberForm } from './become-member-form';
@@ -25,22 +25,19 @@ export type Props = {
 
 export const showcaseData: ShowcaseItemData[] = [
   {
-    image: supabase.storage.from('promo').getPublicUrl('slac-carousel-1.jpeg')
-      .data.publicUrl,
+    image: getR2PublicUrl('promo', 'slac-carousel-1.jpeg'),
     title: 'Nossa Missão',
     description:
       'Desenvolver e disseminar o slackline em todas as suas vertentes, promovendo o equilíbrio, a arte e o bem-estar através do esporte.',
   },
   {
-    image: supabase.storage.from('promo').getPublicUrl('slac-carousel-2.jpg')
-      .data.publicUrl,
+    image: getR2PublicUrl('promo', 'slac-carousel-2.jpg'),
     title: 'Apoio aos Atletas',
     description:
       'Promovemos e apoiamos atletas, eventos e campeonatos vinculados ao slackline através de incentivos financeiros, equipamentos e infraestrutura.',
   },
   {
-    image: supabase.storage.from('promo').getPublicUrl('slac-carousel-3.jpg')
-      .data.publicUrl,
+    image: getR2PublicUrl('promo', 'slac-carousel-3.jpg'),
     title: 'Educação e Cultura',
     description:
       'Organizamos cursos, seminários, palestras e workshops sobre segurança, técnicas de montagem, primeiros socorros e conscientização esportiva.',
