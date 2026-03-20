@@ -11,6 +11,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1013.0",
+    "@aws-sdk/s3-request-presigner": "^3.1013.0",
     "@chooselife/ui": "workspace:*",
     "@hookform/resolvers": "^3.3.4",
     "@radix-ui/react-checkbox": "^1.1.2",

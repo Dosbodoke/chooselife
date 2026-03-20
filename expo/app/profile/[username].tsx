@@ -18,6 +18,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 import { EnduranceIcon, SpeedlineIcon } from '~/lib/icons';
 import { supabase } from '~/lib/supabase';
+import { getR2PublicUrl } from '~/lib/r2';
 import { transformSecondsToTimeString } from '~/utils';
 import { Tables } from '~/utils/database.types';
 
@@ -114,8 +115,7 @@ const ProfileSlacBadge = () => {
     <View className="w-40 aspect-square items-center justify-center rounded-xl overflow-visible">
       <ExpoImage
         source={{
-          uri: supabase.storage.from('promo').getPublicUrl('slac-badge.png')
-            .data.publicUrl,
+          uri: getR2PublicUrl('promo', 'slac-badge.png'),
         }}
         style={StyleSheet.absoluteFill}
       />

@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 
 import { useProfile } from '~/hooks/use-profile';
-import { supabase } from '~/lib/supabase';
+import { getR2PublicUrl, uploadToR2 } from '~/lib/r2';
 import { cn } from '~/lib/utils';
 
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
@@ -42,13 +42,7 @@ export const SupabaseAvatar: React.FC<{
         return;
       }
 
-      const { data: avatarData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(data.profile_picture);
-
-      if (avatarData) {
-        setProfileURL(avatarData.publicUrl);
-      }
+      setProfileURL(getR2PublicUrl('avatars', data.profile_picture));
     }
   }, [data?.profile_picture]);
 
@@ -117,18 +111,12 @@ export const AvatarUploader: React.FC<{
 
       const fileExt = image.uri?.split('.').pop()?.toLowerCase() ?? 'jpeg';
       const path = `${Date.now()}.${fileExt}`;
-      const { data, error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(path, arraybuffer, {
-          contentType: image.mimeType ?? 'image/jpeg',
-        });
+      const contentType = image.mimeType ?? 'image/jpeg';
 
-      if (uploadError) {
-        throw uploadError;
-      }
+      await uploadToR2('avatars', path, arraybuffer, contentType);
 
       if (onUpload) {
-        onUpload(data.path);
+        onUpload(path);
       }
     } catch (error) {
       if (error instanceof Error) {
