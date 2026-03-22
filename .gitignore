@@ -3,3 +3,4 @@ node_modules/
 .next/
 .expo/
 .vercel/
+.DS_Store
