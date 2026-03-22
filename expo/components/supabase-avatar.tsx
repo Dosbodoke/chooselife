@@ -113,10 +113,10 @@ export const AvatarUploader: React.FC<{
       const path = `${Date.now()}.${fileExt}`;
       const contentType = image.mimeType ?? 'image/jpeg';
 
-      await uploadToR2('avatars', path, arraybuffer, contentType);
+      const resolvedKey = await uploadToR2('avatars', path, arraybuffer, contentType);
 
       if (onUpload) {
-        onUpload(path);
+        onUpload(resolvedKey);
       }
     } catch (error) {
       if (error instanceof Error) {

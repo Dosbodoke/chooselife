@@ -176,7 +176,8 @@ const CreateHighline = ({
         }),
       });
       if (!presignRes.ok) throw new Error("Couldn't get upload URL");
-      const { presignedUrl } = await presignRes.json();
+      const { presignedUrl, key: resolvedKey } = await presignRes.json();
+      imageID = resolvedKey;
 
       // Upload directly to R2
       const uploadRes = await fetch(presignedUrl, {

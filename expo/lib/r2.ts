@@ -43,7 +43,7 @@ export async function uploadToR2(
     throw new Error(`Failed to get presigned URL: ${error}`);
   }
 
-  const { presignedUrl } = await presignRes.json();
+  const { presignedUrl, key: resolvedKey } = await presignRes.json();
 
   // Upload directly to R2
   const uploadRes = await fetch(presignedUrl, {
@@ -56,7 +56,7 @@ export async function uploadToR2(
     throw new Error('Failed to upload file to R2');
   }
 
-  return key;
+  return resolvedKey;
 }
 
 /**

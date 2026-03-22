@@ -3,7 +3,7 @@ import type { Metadata, ResolvingMetadata } from "next/types";
 import { cache } from "react";
 
 import { getHighline } from "@/app/actions/getHighline";
-import { getR2PublicUrl } from "@/lib/r2";
+import { getR2PublicUrl } from "@/lib/storage/r2";
 
 import OpenInAPP from "./_components/open-in-app";
 
