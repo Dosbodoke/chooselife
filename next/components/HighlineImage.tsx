@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 
 import { cn } from "@/lib/utils";
-import { getR2PublicUrl } from "@/lib/r2";
+import { getR2PublicUrl } from "@/lib/storage/r2";
 
 interface HighlinePropsImage {
   coverImageId: string | null;
