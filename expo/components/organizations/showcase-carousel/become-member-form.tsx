@@ -317,7 +317,7 @@ export function BecomeMemberForm({
                   Ao clicar nesse botão você deve realizar o primeiro pagamento
                   para se tornar membro.
                 </Text>
-                <TouchableOpacity onPress={() => handleOpenEstatuto}>
+                <TouchableOpacity onPress={handleOpenEstatuto}>
                   <Text className="text-white/70 text-center text-sm mt-2 underline">
                     Ver Estatuto da Associação
                   </Text>
