@@ -30,7 +30,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "cdn.chooselife.club",
+        hostname: "*.chooselife.club",
         port: "",
         pathname: "**",
       },

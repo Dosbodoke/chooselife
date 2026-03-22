@@ -1,4 +1,5 @@
-export const R2_PUBLIC_URL = "https://cdn.chooselife.club";
+export const R2_PUBLIC_URL =
+  process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "https://cdn.chooselife.club";
 
 /**
  * Returns the public CDN URL for a file in R2 storage.
