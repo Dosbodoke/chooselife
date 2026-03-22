@@ -1,5 +1,10 @@
 import { Button, Host, HStack, Image, Text } from '@expo/ui/swift-ui';
-import { frame } from '@expo/ui/swift-ui/modifiers';
+import {
+  buttonStyle,
+  font,
+  foregroundStyle,
+  frame,
+} from '@expo/ui/swift-ui/modifiers';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -21,15 +26,19 @@ export const MapToggle: React.FC<MapToggleProps> = ({ onPress }) => {
   return (
     <View className="absolute bottom-20 w-full items-center">
       <Host matchContents>
-        <Button onPress={onPress} variant="glass" role="default">
+        <Button
+          onPress={onPress}
+          role="default"
+          modifiers={[buttonStyle('glass')]}
+        >
           <HStack
             alignment="center"
             spacing={8}
-            modifiers={[
-              frame({ minHeight: 32, minWidth: 96 }),
-            ]}
+            modifiers={[frame({ minHeight: 32, minWidth: 96 })]}
           >
-            <Text color="white" weight="medium">
+            <Text
+              modifiers={[foregroundStyle('white'), font({ weight: 'medium' })]}
+            >
               {t('components.map.bottom-sheet.map')}
             </Text>
             <Image
