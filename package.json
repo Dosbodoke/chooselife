@@ -11,8 +11,8 @@
   "devDependencies": {
     "next": "^15.2.4",
     "prettier": "^3.0.0",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
     "turbo": "^2.6.1"
   },
   "packageManager": "pnpm@10.26.0",
