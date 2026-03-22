@@ -121,9 +121,13 @@ export function BecomeMemberForm({
     },
   });
 
-  const handleOpenEstatuto = () => {
+  const handleOpenEstatuto = async () => {
     const url = getR2PublicUrl('documents', 'estatuto-slac.pdf');
-    Linking.openURL(url);
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert('Erro', 'Não foi possível abrir o estatuto.');
+    }
   };
 
   const handleSubmit = () => {
