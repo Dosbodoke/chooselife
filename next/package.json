@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.26.0",
+  "engines": {
+    "node": ">=22.14.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
