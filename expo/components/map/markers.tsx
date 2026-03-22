@@ -1,7 +1,6 @@
 import MapboxGL from '@rnmapbox/maps';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMapStore } from '~/store/map-store';
-import type { GeoJsonProperties } from 'geojson';
 import React, { useCallback, useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, {
@@ -11,8 +10,10 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import { PointFeature } from 'supercluster';
-import useSuperCluster from 'use-supercluster';
+import SuperclusterClass, {
+  isClusterFeature,
+  type Supercluster,
+} from 'react-native-clusterer';
 
 import { useAuth } from '~/context/auth';
 import { highlineKeyFactory, type Highline } from '~/hooks/use-highline';
@@ -142,9 +143,7 @@ export const Markers: React.FC<{
   const camera = useMapStore((state) => state.camera);
   const highlightedMarker = useMapStore((state) => state.highlightedMarker);
 
-  const points = useMemo<
-    PointFeature<GeoJsonProperties & PointProperties>[]
-  >(() => {
+  const points = useMemo<Supercluster.PointFeature<PointProperties>[]>(() => {
     if (!highlines) return [];
     return highlines.map((h) => ({
       type: 'Feature',
@@ -161,21 +160,25 @@ export const Markers: React.FC<{
     }));
   }, [highlines]);
 
-  const { clusters, supercluster } = useSuperCluster({
-    points,
-    bounds: camera.bounds,
-    zoom: camera.zoom,
-    options: { radius: 40, maxZoom: 25 },
-  });
+  const supercluster = useMemo(() => {
+    return new SuperclusterClass<PointProperties>({
+      radius: 40,
+      maxZoom: 25,
+    }).load(points);
+  }, [points]);
+
+  const clusters = useMemo(() => {
+    return supercluster.getClusters(camera.bounds, Math.floor(camera.zoom));
+  }, [supercluster, camera.bounds, camera.zoom]);
 
   const handleClusterPress = useCallback(
     (cluster_id: number): void => {
-      if (!supercluster) return;
       const expansionZoom =
         supercluster.getClusterExpansionZoom(cluster_id) || 20;
       const clampedZoom = Math.min(expansionZoom, 17);
       const cluster = clusters.find(
-        (c) => c.properties.cluster && c.properties.cluster_id === cluster_id,
+        (c) =>
+          isClusterFeature(c) && c.properties.cluster_id === cluster_id,
       );
       if (!cluster) return;
       const [lng, lat] = cluster.geometry.coordinates;
@@ -184,7 +187,7 @@ export const Markers: React.FC<{
       const shouldHighlightCards = zoomDifference < 0.5;
 
       if (shouldHighlightCards) {
-        const leaves = supercluster.getLeaves(cluster_id);
+        const leaves = supercluster.getLeaves(cluster_id, Infinity);
         const highlinesData =
           queryClient.getQueryData<Highline[]>(
             highlineKeyFactory.list(profile?.id),
@@ -238,44 +241,46 @@ export const Markers: React.FC<{
     <>
       {/* Loop 1: Render Anchor A's and Clusters */}
       {clusters.map((point) => {
-        const { properties } = point;
         const [longitude, latitude] = point.geometry.coordinates;
         if (typeof longitude !== 'number' || typeof latitude !== 'number') {
           return null;
         }
 
-        if (properties.cluster) {
+        if (isClusterFeature(point)) {
           // Hide clusters when individual markers are selected
           if (highlightedMarker) {
             return null;
           }
           const size = Math.max(
-            (properties.point_count * 40) / (points.length || 1),
+            (point.properties.point_count * 40) / (points.length || 1),
             MIN_CLUSTER_SIZE,
           );
           return (
             <ClusteredMarker
-              key={`cluster-${properties.cluster_id}`}
+              key={`cluster-${point.properties.cluster_id}`}
               size={size}
               coordinate={[longitude, latitude]}
-              pointCount={properties.point_count}
-              onPress={() => handleClusterPress(properties.cluster_id)}
+              pointCount={point.properties.point_count}
+              onPress={() => handleClusterPress(point.properties.cluster_id)}
             />
           );
         }
 
-        const isHighlighted = highlightedMarker?.id === properties.highID;
+        const isHighlighted =
+          highlightedMarker?.id === point.properties.highID;
         return (
           <MapboxGL.MarkerView
-            key={`marker-A-${properties.highID}`}
-            id={`marker-A-${properties.highID}`}
+            key={`marker-A-${point.properties.highID}`}
+            id={`marker-A-${point.properties.highID}`}
             coordinate={[longitude, latitude]}
           >
-            <Pressable onPress={() => handleMarkerSelect(properties.highID)}>
+            <Pressable
+              onPress={() => handleMarkerSelect(point.properties.highID)}
+            >
               <AnchorMarker
                 label="A"
                 isHighlighted={isHighlighted}
-                status={properties.status}
+                status={point.properties.status}
               />
             </Pressable>
           </MapboxGL.MarkerView>
