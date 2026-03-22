@@ -158,19 +158,34 @@ const CreateHighline = ({
       }
     }
 
-    // Upload the image
+    // Upload the image to R2
     let imageID: string | null = null;
     if (image && image.length > 0) {
       const file = image[0];
       const extension = file.type.split("/")[1];
       imageID = `${uuidv4()}.${extension}`;
-      // Create a new Blob from the file
-      const blob = new Blob([await file.arrayBuffer()], { type: file.type });
-      // Upload the blob
-      const { error } = await supabase.storage
-        .from("images")
-        .upload(imageID, blob);
-      if (error) throw new Error("Couldn't upload the image");
+
+      // Get presigned URL from API
+      const presignRes = await fetch("/api/storage/presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bucket: "images",
+          key: imageID,
+          contentType: file.type,
+        }),
+      });
+      if (!presignRes.ok) throw new Error("Couldn't get upload URL");
+      const { presignedUrl, key: resolvedKey } = await presignRes.json();
+      imageID = resolvedKey;
+
+      // Upload directly to R2
+      const uploadRes = await fetch(presignedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: await file.arrayBuffer(),
+      });
+      if (!uploadRes.ok) throw new Error("Couldn't upload the image");
     }
 
     const { data, error } = await supabase

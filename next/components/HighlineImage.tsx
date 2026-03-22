@@ -4,14 +4,13 @@ import Image from "next/image";
 import { useState } from "react";
 
 import { cn } from "@/lib/utils";
-import { supabaseBrowser } from "@/utils/supabase/client";
+import { getR2PublicUrl } from "@/lib/storage/r2";
 
 interface HighlinePropsImage {
   coverImageId: string | null;
 }
 
 function HighlineImage({ coverImageId }: HighlinePropsImage) {
-  const supabase = supabaseBrowser();
   const [loaded, setLoaded] = useState(false);
 
   if (!coverImageId) {
@@ -28,9 +27,7 @@ function HighlineImage({ coverImageId }: HighlinePropsImage) {
     );
   }
 
-  const {
-    data: { publicUrl: URL },
-  } = supabase.storage.from("images").getPublicUrl(`${coverImageId}`);
+  const URL = getR2PublicUrl("images", coverImageId);
 
   return (
     <div className="h-full w-full drop-shadow">

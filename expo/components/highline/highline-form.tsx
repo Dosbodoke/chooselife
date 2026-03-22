@@ -21,6 +21,7 @@ import { z } from 'zod';
 import { useAuth } from '~/context/auth';
 import { Highline, highlineKeyFactory } from '~/hooks/use-highline';
 import { supabase } from '~/lib/supabase';
+import { getR2PublicUrl, uploadToR2, deleteFromR2 } from '~/lib/r2';
 import { cn } from '~/lib/utils';
 import { ACCEPTED_IMAGE_TYPES, MAX_FILE_SIZE } from '~/utils/constants';
 import { requestReview } from '~/utils/request-review';
@@ -119,9 +120,7 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
       description: highline?.description || '',
       image: highline?.cover_image
         ? {
-            uri: supabase.storage
-              .from('images')
-              .getPublicUrl(highline.cover_image).data.publicUrl,
+            uri: getR2PublicUrl('images', highline.cover_image),
           }
         : null,
     },
@@ -182,19 +181,19 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
         if (imageID) shouldDeleteExisting = true;
         const extension = formData.image.mimeType.split('/')[1];
         imageID = `${uuidv4()}.${extension}`;
-        const { error } = await supabase.storage
-          .from('images')
-          .upload(imageID, decode(formData.image.base64), {
-            contentType: formData.image.mimeType,
-          });
-        if (error) throw new Error("Couldn't upload the image");
+        await uploadToR2(
+          'images',
+          imageID,
+          decode(formData.image.base64),
+          formData.image.mimeType,
+        );
       }
 
       // Update Highline
       if (highline?.id) {
         // Delete old image
         if (highline.cover_image && shouldDeleteExisting) {
-          await supabase.storage.from('images').remove([highline.cover_image!]);
+          await deleteFromR2('images', highline.cover_image);
         }
 
         const { data: updatedHighline, error } = await supabase

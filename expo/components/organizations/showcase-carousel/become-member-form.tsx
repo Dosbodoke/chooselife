@@ -1,6 +1,5 @@
 import { ENABLE_MEMBERSHIP_REGISTRATION } from '@chooselife/ui';
 import type { StartSubscriptionResponse } from '@packages/database/functions.types';
-import * as Sentry from '@sentry/react-native';
 import { useMutation } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -21,13 +20,14 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { useAuth } from '~/context/auth';
+import { getR2PublicUrl } from '~/lib/r2';
 import { supabase } from '~/lib/supabase';
 import { formatCurrency } from '~/utils';
+import { _layoutAnimation } from '~/utils/constants';
 import { Tables } from '~/utils/database.types';
 
 import { BgBlob } from '~/components/bg-blog';
 import { Text } from '~/components/ui/text';
-import { _layoutAnimation } from '~/utils/constants';
 
 type PlanType = 'monthly' | 'annual';
 
@@ -122,22 +122,9 @@ export function BecomeMemberForm({
   });
 
   const handleOpenEstatuto = () => {
-    const { data } = supabase.storage
-      .from('documents')
-      .getPublicUrl('estatuto-slac.pdf');
-    if (data?.publicUrl) {
-      Linking.openURL(data.publicUrl);
-    } else {
-      const error = new Error(
-        'Could not get public URL for estatuto-slac.pdf',
-      );
-      Sentry.captureException(error);
-      Alert.alert(
-        'Erro',
-        'Não foi possível abrir o estatuto. Tente novamente mais tarde.',
-      );
-    }
-  }
+    const url = getR2PublicUrl('documents', 'estatuto-slac.pdf');
+    Linking.openURL(url);
+  };
 
   const handleSubmit = () => {
     if (!selectedPlan) return;
@@ -152,8 +139,8 @@ export function BecomeMemberForm({
       'Ao assinar este instrumento, declaro estar ciente do inteiro teor do estatuto social da associação, bem como dos direitos e dos deveres impostos aos membros desta instituição.\n\nPor fim, comprometo-me a honrar, em dia, com todas as parcelas pecuniárias por mim devidas a esta instituição, sob pena de justo desligamento da associação.',
       [
         {
-          text: "Ver Estatuto",
-          onPress: () => handleOpenEstatuto()
+          text: 'Ver Estatuto',
+          onPress: () => handleOpenEstatuto(),
         },
         {
           text: 'Cancelar',
@@ -167,8 +154,8 @@ export function BecomeMemberForm({
       ],
       {
         cancelable: true,
-        userInterfaceStyle: "dark"
-      }
+        userInterfaceStyle: 'dark',
+      },
     );
   };
 
@@ -207,8 +194,8 @@ export function BecomeMemberForm({
               Inscrições em Breve
             </Text>
             <Text className="text-white/80 text-center text-lg leading-6">
-              O sistema de membros estará disponível em breve. Não se
-              preocupe, ativaremos essa função automaticamente para você!
+              O sistema de membros estará disponível em breve. Não se preocupe,
+              ativaremos essa função automaticamente para você!
             </Text>
           </Animated.View>
         ) : (
@@ -226,12 +213,16 @@ export function BecomeMemberForm({
                   disabled={mutation.isPending}
                   activeOpacity={0.8}
                   className={`bg-white/10 backdrop-blur-xl p-5 rounded-2xl border-2 ${
-                    selectedPlan === 'monthly' ? 'border-white' : 'border-white/20'
+                    selectedPlan === 'monthly'
+                      ? 'border-white'
+                      : 'border-white/20'
                   }`}
                 >
                   <View className="flex-row justify-between items-center">
                     <View className="flex-1">
-                      <Text className="text-white text-xl font-bold">Mensal</Text>
+                      <Text className="text-white text-xl font-bold">
+                        Mensal
+                      </Text>
                       <Text className="text-white/60 text-sm">Flexível</Text>
                     </View>
                     <View className="items-end">
@@ -262,7 +253,9 @@ export function BecomeMemberForm({
                 >
                   <View className="flex-row justify-between items-center">
                     <View className="flex-1">
-                      <Text className="text-white text-xl font-bold">Anual</Text>
+                      <Text className="text-white text-xl font-bold">
+                        Anual
+                      </Text>
                       {!!annualDiscountPercentage && (
                         <Text className="text-emerald-300 text-sm font-medium">
                           Economia de {annualDiscountPercentage}%
@@ -321,12 +314,10 @@ export function BecomeMemberForm({
                 className="items-center"
               >
                 <Text className="text-white/50 text-center text-sm leading-5 max-w-xs">
-                  Ao clicar nesse botão você deve realizar o primeiro pagamento para
-                  se tornar membro.
+                  Ao clicar nesse botão você deve realizar o primeiro pagamento
+                  para se tornar membro.
                 </Text>
-                <TouchableOpacity
-                  onPress={() => handleOpenEstatuto}
-                >
+                <TouchableOpacity onPress={handleOpenEstatuto}>
                   <Text className="text-white/70 text-center text-sm mt-2 underline">
                     Ver Estatuto da Associação
                   </Text>
