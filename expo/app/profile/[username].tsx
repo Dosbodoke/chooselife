@@ -15,10 +15,11 @@ import {
   View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EnduranceIcon, SpeedlineIcon } from '~/lib/icons';
-import { supabase } from '~/lib/supabase';
 import { getR2PublicUrl } from '~/lib/r2';
+import { supabase } from '~/lib/supabase';
 import { transformSecondsToTimeString } from '~/utils';
 import { Tables } from '~/utils/database.types';
 
@@ -33,6 +34,7 @@ import { Text } from '~/components/ui/text';
 export default function Profile() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { bottom } = useSafeAreaInsets();
   const { username } = useLocalSearchParams<{ username: string }>();
 
   const { data: profile, isPending: profilePending } = useQuery({
@@ -66,6 +68,9 @@ export default function Profile() {
     enabled: !!profile,
   });
 
+  console.log('Rendering profile page');
+  console.log({ profilePending, profile });
+
   if (profilePending) {
     return (
       <View className="flex-1 items-center justify-center">
@@ -75,13 +80,17 @@ export default function Profile() {
   }
 
   if (!profile) {
+    console.log('Profile not found, rendering UserNotFound component');
     return <UserNotFound username={username ?? ''} />;
   }
 
+  console.log('Profile found, rendering profile page');
   return (
-    <SafeAreaOfflineView>
+    <SafeAreaOfflineView className="flex-1">
       <KeyboardAwareScrollView
-        contentContainerClassName="min-h-screen px-2 py-4 gap-4"
+        contentContainerClassName="px-2 py-4 gap-4"
+        automaticallyAdjustContentInsets={false}
+        contentInset={{ bottom: bottom }}
         keyboardShouldPersistTaps="handled"
         removeClippedSubviews={false}
       >
