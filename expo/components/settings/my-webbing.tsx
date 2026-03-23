@@ -1,3 +1,4 @@
+import { getTranslatedStatus, useWebbingUsage } from '@chooselife/ui';
 import { Link } from 'expo-router';
 import {
   FactoryIcon,
@@ -10,7 +11,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 
-import { useWebbingUsage, getTranslatedStatus } from '@chooselife/ui';
 import { getWebbingName, useUserWebbings } from '~/hooks/use-webbings';
 import { Tables } from '~/utils/database.types';
 
@@ -50,7 +50,7 @@ const MyWebbings: React.FC = () => {
             </CardDescription>
           </View>
           <Link asChild href={`/(modals)/register-webbing`}>
-            <TouchableOpacity 
+            <TouchableOpacity
               activeOpacity={0.7}
               className="flex-row items-center gap-1.5 px-3 py-2 bg-primary/10 rounded-full border border-primary/20"
             >
@@ -114,15 +114,19 @@ const WebbingItem: React.FC<{
   webbing: WebbingWithModel;
 }> = ({ webbing }) => {
   const { t, i18n } = useTranslation();
-  
+
   // Get loop status info
   let loopQuantity = 0;
   if (webbing.left_loop) loopQuantity += 1;
   if (webbing.right_loop) loopQuantity += 1;
 
   // Get recommended lifetime and strength class from model
-  const recommendedDays = (webbing.model as { recommended_lifetime_days?: number | null } | null)?.recommended_lifetime_days ?? null;
-  const strengthClass = (webbing.model as { strength_class?: string | null } | null)?.strength_class ?? null;
+  const recommendedDays =
+    (webbing.model as { recommended_lifetime_days?: number | null } | null)
+      ?.recommended_lifetime_days ?? null;
+  const strengthClass =
+    (webbing.model as { strength_class?: string | null } | null)
+      ?.strength_class ?? null;
 
   // Get usage stats from shared hook (returns guaranteed non-undefined data)
   const { data: usageData } = useWebbingUsage(webbing.id, recommendedDays);
@@ -138,10 +142,12 @@ const WebbingItem: React.FC<{
   return (
     <Link href={`/webbing/${webbing.id}` as `/webbing/${number}`} asChild>
       <TouchableOpacity activeOpacity={0.7}>
-        <View className="flex-row gap-3 p-3 rounded-xl bg-muted/30 border border-border">
+        <View className="flex-row gap-3 p-3 rounded-xl bg-white border border-border">
           {/* ID Badge - designed to suggest physical marking */}
           <View className="items-center justify-center w-14 py-2 rounded-lg border-2 border-dashed border-primary/50 bg-primary/5">
-            <Text className="text-[10px] font-medium text-primary/70 uppercase tracking-wide">ID</Text>
+            <Text className="text-[10px] font-medium text-primary/70 uppercase tracking-wide">
+              ID
+            </Text>
             <Text className="text-lg font-bold text-primary">{webbing.id}</Text>
           </View>
 
@@ -149,7 +155,10 @@ const WebbingItem: React.FC<{
           <View className="flex-1 gap-2">
             {/* Header: Name + Type + Status */}
             <View className="flex-row items-center justify-between gap-2">
-              <Text className="font-semibold text-base text-foreground flex-1" numberOfLines={1}>
+              <Text
+                className="font-semibold text-base text-foreground flex-1"
+                numberOfLines={1}
+              >
                 {getWebbingName(webbing)}
               </Text>
               {strengthClass && (
@@ -161,7 +170,9 @@ const WebbingItem: React.FC<{
               )}
               {recommendedDays && (
                 <View className={`px-2 py-0.5 rounded-full ${statusColor.bg}`}>
-                  <Text className={`text-[10px] font-semibold uppercase ${statusColor.text}`}>
+                  <Text
+                    className={`text-[10px] font-semibold uppercase ${statusColor.text}`}
+                  >
                     {getTranslatedStatus(usageData.status, i18n.language)}
                   </Text>
                 </View>
@@ -177,10 +188,12 @@ const WebbingItem: React.FC<{
                       usageData.status === 'replace'
                         ? 'bg-red-500'
                         : usageData.status === 'inspect'
-                        ? 'bg-amber-500'
-                        : 'bg-emerald-500'
+                          ? 'bg-amber-500'
+                          : 'bg-emerald-500'
                     }`}
-                    style={{ width: `${Math.min(100, usageData.percentageUsed)}%` }}
+                    style={{
+                      width: `${Math.min(100, usageData.percentageUsed)}%`,
+                    }}
                   />
                 </View>
                 <Text className="text-[10px] text-muted-foreground">
@@ -193,15 +206,25 @@ const WebbingItem: React.FC<{
             <View className="flex-row flex-wrap gap-2">
               {/* Length */}
               <View className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-blue-100">
-                <Icon as={MoveHorizontalIcon} size={12} className="text-blue-600" />
-                <Text className="text-xs font-medium text-blue-700">{webbing.length}m</Text>
+                <Icon
+                  as={MoveHorizontalIcon}
+                  size={12}
+                  className="text-blue-600"
+                />
+                <Text className="text-xs font-medium text-blue-700">
+                  {webbing.length}m
+                </Text>
               </View>
 
               {webbing.model ? (
                 <>
                   {/* Material */}
                   <View className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-emerald-100">
-                    <Icon as={FactoryIcon} size={12} className="text-emerald-600" />
+                    <Icon
+                      as={FactoryIcon}
+                      size={12}
+                      className="text-emerald-600"
+                    />
                     <Text className="text-xs font-medium text-emerald-700 capitalize">
                       {webbing.model.material}
                     </Text>
@@ -209,7 +232,11 @@ const WebbingItem: React.FC<{
 
                   {/* Weave */}
                   <View className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-amber-100">
-                    <Icon as={LayersIcon} size={12} className="text-amber-600" />
+                    <Icon
+                      as={LayersIcon}
+                      size={12}
+                      className="text-amber-600"
+                    />
                     <Text className="text-xs font-medium text-amber-700 capitalize">
                       {webbing.model.weave}
                     </Text>
