@@ -319,9 +319,13 @@ const SelectMyWebbing: React.FC<{
   const renderWebbingItem = useCallback(
     (item: WebbingWithUsage) => {
       const itemId = item.id.toString();
-      const isUsed = usedWebbingIds.has(itemId) || item.isUsed;
+      const isCurrentSelection = itemId === webbing.webbingId;
+      const isUsed =
+        usedWebbingIds.has(itemId) || item.isUsed || isCurrentSelection;
       const inUseLabel = t('components.webbing-setup.selectMyWebbing.inUse');
-      const label = getWebbingName(item) + (isUsed ? ` ${inUseLabel}` : '');
+      const label =
+        getWebbingName(item) +
+        (isUsed && !isCurrentSelection ? ` ${inUseLabel}` : '');
 
       return (
         <TouchableOpacity
@@ -331,7 +335,7 @@ const SelectMyWebbing: React.FC<{
           className={cn(
             'flex-row justify-between items-center py-3 px-4 mb-1 rounded-md',
             isUsed ? 'opacity-50' : 'active:bg-muted',
-            itemId === webbing.webbingId && 'bg-primary/20',
+            isCurrentSelection && 'bg-primary/20',
           )}
         >
           <Text
@@ -407,14 +411,18 @@ const SelectMyWebbing: React.FC<{
         {data?.map(renderWebbingItem)}
         {RegisterButton}
 
-        <Separator className="my-3" />
-        <Button
-          variant="ghost"
-          onPress={() => handleSelect(null)}
-          className="mt-2"
-        >
-          <Text>{t('components.webbing-setup.selectMyWebbing.clear')}</Text>
-        </Button>
+        {webbing.webbingId && (
+          <>
+            <Separator className="my-3" />
+            <Button
+              variant="ghost"
+              onPress={() => handleSelect(null)}
+              className="mt-2"
+            >
+              <Text>{t('components.webbing-setup.selectMyWebbing.clear')}</Text>
+            </Button>
+          </>
+        )}
       </>
     ),
     [data, renderWebbingItem, t, handleSelect, RegisterButton],

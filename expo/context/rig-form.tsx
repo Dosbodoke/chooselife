@@ -93,25 +93,25 @@ export const RigFormProvider: React.FC<{
     name: 'webbing.backup',
   });
 
-  const handleNewSection = React.useCallback((type: WebType) => {
-    const webbing: WebbingSchemaWithPreffiled = {
-      length: '50',
-      leftLoop: false,
-      rightLoop: false,
-      tagName: getWebbingName(null),
-    };
+  const handleNewSection = React.useCallback(
+    (type: WebType) => {
+      const webbing: WebbingSchemaWithPreffiled = {
+        length: '50',
+        leftLoop: false,
+        rightLoop: false,
+        tagName: getWebbingName(null),
+      };
 
-    if (type === 'main') {
-      main.append(webbing);
-    } else if (type === 'backup') {
-      backup.append(webbing);
-    }
-
-    setFocusedWebbing({
-      type,
-      index: type === 'main' ? main.fields.length : backup.fields.length,
-    });
-  }, []);
+      if (type === 'main') {
+        main.append(webbing);
+        setFocusedWebbing({ type, index: main.fields.length });
+      } else if (type === 'backup') {
+        backup.append(webbing);
+        setFocusedWebbing({ type, index: backup.fields.length });
+      }
+    },
+    [main, backup],
+  );
 
   return (
     <RiggingFormContext.Provider
