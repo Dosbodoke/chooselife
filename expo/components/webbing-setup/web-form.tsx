@@ -157,7 +157,12 @@ export const WebForm: React.FC = () => {
 
         {webbing.webbingId && <WebbingOwner webbingID={+webbing.webbingId} />}
 
-        <TouchableOpacity onPress={() => handleDeleteSection} className="p-1">
+        <TouchableOpacity
+          onPress={() =>
+            handleDeleteSection(focusedWebbing.type, focusedWebbing.index)
+          }
+          className="p-1"
+        >
           <Icon as={TrashIcon} size={16} className="text-red-500 text-center" />
         </TouchableOpacity>
       </View>
