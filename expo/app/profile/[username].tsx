@@ -68,9 +68,6 @@ export default function Profile() {
     enabled: !!profile,
   });
 
-  console.log('Rendering profile page');
-  console.log({ profilePending, profile });
-
   if (profilePending) {
     return (
       <View className="flex-1 items-center justify-center">
@@ -80,11 +77,9 @@ export default function Profile() {
   }
 
   if (!profile) {
-    console.log('Profile not found, rendering UserNotFound component');
     return <UserNotFound username={username ?? ''} />;
   }
 
-  console.log('Profile found, rendering profile page');
   return (
     <SafeAreaOfflineView className="flex-1">
       <KeyboardAwareScrollView
