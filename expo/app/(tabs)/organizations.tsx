@@ -30,6 +30,7 @@ import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { AssembleiaCard } from '~/components/organizations/assembleia-card';
 import { News } from '~/components/organizations/News';
 import { OrganizationErrorState } from '~/components/organizations/organization-error-state';
+import { OrganizationLoadingState } from '~/components/organizations/organization-loading-state';
 import { Subscription } from '~/components/organizations/Subscription';
 import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
@@ -54,7 +55,7 @@ function OrganizationDetailsPage() {
   const { session } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
 
-  const { data: organization } = useOrganization(ORG_SLUG);
+  const { data: organization, isLoading } = useOrganization(ORG_SLUG);
 
   const { data: isMember } = useIsMember(ORG_SLUG);
 
@@ -73,6 +74,10 @@ function OrganizationDetailsPage() {
     ]);
     setRefreshing(false);
   };
+
+  if (isLoading) {
+    return <OrganizationLoadingState />;
+  }
 
   if (!organization) {
     return <OrganizationErrorState />;
