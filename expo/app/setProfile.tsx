@@ -14,7 +14,7 @@ import Animated, {
   FadeOut,
   FadeOutLeft,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from '~/components/styled';
 import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';

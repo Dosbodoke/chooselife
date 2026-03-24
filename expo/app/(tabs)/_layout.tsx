@@ -5,8 +5,8 @@ import {
   UserCircleIcon,
   UsersRoundIcon,
 } from 'lucide-react-native';
-import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
 import { cn } from '~/lib/utils';

@@ -1,10 +1,8 @@
 import { Link } from 'expo-router';
 import { MoveHorizontalIcon, MoveVerticalIcon } from 'lucide-react-native';
-import { cssInterop } from 'nativewind';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, TouchableOpacity, View, Pressable } from 'react-native';
-import SquircleView from 'react-native-fast-squircle';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 
 import type { Highline } from '~/hooks/use-highline';
@@ -12,16 +10,12 @@ import { RigStatuses } from '~/hooks/use-rig-setup';
 import { cn } from '~/lib/utils';
 
 import { Icon } from '~/components/ui/icon';
+import { StyledSquircle } from '~/components/styled';
 
 import { FavoriteHighline } from './favorite-button';
 import { HighlineImage } from './highline-image';
 
-const ReanimatedSquircleView = Animated.createAnimatedComponent(SquircleView);
-cssInterop(ReanimatedSquircleView, {
-  className: {
-    target: 'style',
-  },
-});
+const ReanimatedSquircleView = Animated.createAnimatedComponent(StyledSquircle);
 
 interface HighlineCardProps {
   item: Highline;

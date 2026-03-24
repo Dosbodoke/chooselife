@@ -33,7 +33,7 @@ import Animated, {
   useAnimatedStyle,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from '~/components/styled';
 
 import RegisterWebbingIllustration from '~/lib/icons/register-webbing';
 import { supabase } from '~/lib/supabase';

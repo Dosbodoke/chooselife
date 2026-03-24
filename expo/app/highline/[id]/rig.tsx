@@ -8,7 +8,7 @@ import {
   ZapIcon,
   type LucideIcon,
 } from 'lucide-react-native';
-import { useColorScheme } from 'nativewind';
+import { useUniwind } from 'uniwind';
 import React, { useMemo, useState } from 'react';
 import { Controller, type SubmitHandler } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -388,7 +388,8 @@ const RigTypeSelection: React.FC<{
   isLoading?: boolean;
 }> = ({ rigType, onRigTypeChange, isLoading }) => {
   const { t } = useTranslation();
-  const colorScheme = useColorScheme();
+  const { theme } = useUniwind();
+  const colorScheme = theme as 'light' | 'dark';
 
   if (isLoading) {
     return <ActivityIndicator size="large" />;
@@ -397,7 +398,7 @@ const RigTypeSelection: React.FC<{
   return (
     <>
       <HighlineRigIllustration
-        mode={colorScheme.colorScheme}
+        mode={colorScheme}
         className="w-full h-auto"
       />
 
@@ -482,12 +483,13 @@ const DateForm: React.FC<{
 }> = ({ rigType, isLoading }) => {
   const { t } = useTranslation();
   const { form } = useRiggingForm();
-  const colorScheme = useColorScheme();
+  const { theme } = useUniwind();
+  const colorScheme = theme as 'light' | 'dark';
 
   return (
     <>
       <HighlineRigIllustration
-        mode={colorScheme.colorScheme}
+        mode={colorScheme}
         className="w-full h-auto"
       />
 
@@ -520,7 +522,7 @@ const DateForm: React.FC<{
                   minimumDate={new Date()}
                   onDateChange={(date) => onChange(date)}
                   timeZoneOffsetInMinutes={0}
-                  theme={colorScheme.colorScheme}
+                  theme={colorScheme}
                 />
               )}
             />

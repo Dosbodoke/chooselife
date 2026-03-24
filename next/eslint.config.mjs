@@ -20,7 +20,6 @@ const eslintConfig = [
       "postcss.config.js",
       "next-env.d.ts",
       "global.d.ts",
-      "tailwind.config.ts",
     ],
   },
   {

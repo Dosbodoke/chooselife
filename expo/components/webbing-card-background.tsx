@@ -6,15 +6,15 @@ import {
   RadialGradient,
   vec,
 } from '@shopify/react-native-skia';
-import { useColorScheme } from 'nativewind';
+import { useUniwind } from 'uniwind';
 import React from 'react';
 import { View, Dimensions } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const WebbingCardBackground: React.FC = () => {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { theme } = useUniwind();
+  const isDark = theme === 'dark';
   const color = isDark ? '#ffffff' : '#000000';
   
   // Blueprint Grid Generation

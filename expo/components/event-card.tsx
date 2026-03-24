@@ -1,3 +1,8 @@
+import { getCountryFlag, isISAEvent, type Event } from '@chooselife/ui';
+import ContestsBgImage from '~/assets/images/contest.webp';
+import EducationBgImage from '~/assets/images/education.webp';
+// Import category background image
+import FestivalBgImage from '~/assets/images/festival.webp';
 import { Image, ImageSource } from 'expo-image';
 import { Link } from 'expo-router';
 import {
@@ -7,11 +12,9 @@ import {
   ShareIcon,
   TicketIcon,
 } from 'lucide-react-native';
-import { cssInterop } from 'nativewind';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
-import SquircleView from 'react-native-fast-squircle';
 import Animated, {
   FadeInUp,
   FadeOut,
@@ -22,45 +25,33 @@ import Animated, {
 import { Markdown } from 'react-native-remark';
 
 import { useI18n } from '~/context/i18n';
-import { type Event, isISAEvent, getCountryFlag } from '@chooselife/ui';
 import { useShare } from '~/hooks/use-share';
+import { ISAIcon } from '~/lib/icons/isa';
+import { DAMPING } from '~/utils/constants';
+import { htmlToMarkdown } from '~/utils/html-utils';
 
+import { StyledSquircle } from '~/components/styled';
 import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
-import { htmlToMarkdown } from '~/utils/html-utils';
-
-// Import category background image
-import FestivalBgImage from '~/assets/images/festival.webp';
-import EducationBgImage from '~/assets/images/education.webp';
-import ContestsBgImage from '~/assets/images/contest.webp';
-import { ISAIcon } from '~/lib/icons/isa';
-import { DAMPING } from '~/utils/constants';
-
-// Configure SquircleView for NativeWind
-const StyledSquircle = SquircleView;
-cssInterop(StyledSquircle, {
-  className: { target: 'style' },
-});
 
 const AnimatedSquircle = Animated.createAnimatedComponent(StyledSquircle);
-cssInterop(AnimatedSquircle, {
-  className: { target: 'style' },
-});
-
 
 export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
 export const _exitingAnimation = FadeOut.springify().damping(DAMPING);
 export const _enteringAnimation = FadeInUp.springify().damping(DAMPING);
 
 /** Get gradient for event category */
-function getCategoryGradient(type?: string): string {
-  return `linear-gradient(135deg, ${"rgba(0, 0, 0, 0.85)"} 0%, ${"rgba(0, 0, 0, 0.95)"} 100%)`;
+function getCategoryGradient(): string {
+  return `linear-gradient(135deg, ${'rgba(0, 0, 0, 0.85)'} 0%, ${'rgba(0, 0, 0, 0.95)'} 100%)`;
 }
 
 /** Category colors for badge dot indicator */
-const CATEGORY_BADGE_COLORS: Record<string, { bg: string; dot: string; text: string }> = {
+const CATEGORY_BADGE_COLORS: Record<
+  string,
+  { bg: string; dot: string; text: string }
+> = {
   contests: { bg: 'bg-blue-50', dot: 'bg-blue-500', text: 'text-blue-700' },
   education: { bg: 'bg-green-50', dot: 'bg-green-500', text: 'text-green-700' },
   events: { bg: 'bg-orange-50', dot: 'bg-orange-500', text: 'text-orange-700' },
@@ -81,7 +72,7 @@ const CATEGORY_CONFIG: Record<CategoryImageType, CategoryConfig> = {
   festival: {
     image: FestivalBgImage as ImageSource,
     overlayOpacity: 45,
-    contentPosition: "left",
+    contentPosition: 'left',
   },
   education: {
     image: EducationBgImage as ImageSource,
@@ -91,20 +82,14 @@ const CATEGORY_CONFIG: Record<CategoryImageType, CategoryConfig> = {
   contests: {
     image: ContestsBgImage as ImageSource,
     overlayOpacity: 35,
-    contentPosition: "right",
+    contentPosition: 'right',
   },
 };
-
-/** Type guard to check if a string is a valid category image type */
-function isCategoryImageType(type: string | undefined): type is CategoryImageType {
-  return type !== undefined && type in CATEGORY_CONFIG;
-}
 
 /** Get category config with type safety */
 function getCategoryConfig(type: CategoryImageType): CategoryConfig {
   return CATEGORY_CONFIG[type];
 }
-
 
 /** DateBox component - Shows date with optional background image */
 const DateBox: React.FC<{
@@ -115,7 +100,7 @@ const DateBox: React.FC<{
   isISAEvent?: boolean;
 }> = ({ monthShort, dayOfMonth, eventType, imageUrl, isISAEvent = false }) => {
   const [imageError, setImageError] = useState(false);
-  
+
   // For external images (from event data)
   const hasCustomImage = imageUrl && !imageError;
   // For ISA events, show category background image
@@ -150,9 +135,11 @@ const DateBox: React.FC<{
                 style={{ position: 'absolute', width: '100%', height: '100%' }}
               />
               {/* Dark Overlay for text readability */}
-              <View 
-                className="absolute inset-0" 
-                style={{ backgroundColor: `rgba(0, 0, 0, ${config.overlayOpacity / 100})` }}
+              <View
+                className="absolute inset-0"
+                style={{
+                  backgroundColor: `rgba(0, 0, 0, ${config.overlayOpacity / 100})`,
+                }}
               />
             </>
           );
@@ -162,7 +149,7 @@ const DateBox: React.FC<{
         <View
           className="absolute inset-0"
           style={{
-            experimental_backgroundImage: getCategoryGradient(eventType),
+            experimental_backgroundImage: getCategoryGradient(),
           }}
         />
       )}
@@ -196,11 +183,17 @@ function getCategoryLabel(type?: string): CategoryImageType {
 
 /** Category Badge - Shows event type with colored dot indicator */
 const CategoryBadge: React.FC<{ type?: string }> = ({ type }) => {
-  const colors = CATEGORY_BADGE_COLORS[type || ''] || { bg: 'bg-gray-50', dot: 'bg-gray-500', text: 'text-gray-700' };
+  const colors = CATEGORY_BADGE_COLORS[type || ''] || {
+    bg: 'bg-gray-50',
+    dot: 'bg-gray-500',
+    text: 'text-gray-700',
+  };
   const label = getCategoryLabel(type);
 
   return (
-    <View className={`flex-row items-center gap-1.5 ${colors.bg} px-2.5 py-1 rounded-full border border-gray-200/50`}>
+    <View
+      className={`flex-row items-center gap-1.5 ${colors.bg} px-2.5 py-1 rounded-full border border-gray-200/50`}
+    >
       {/* Colored Dot */}
       <View className={`size-2 rounded-full ${colors.dot}`} />
       <Text className={`text-xs font-semibold ${colors.text}`}>{label}</Text>
@@ -223,7 +216,9 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
   const [expanded, setExpanded] = useState(false);
 
   const isFromISA = isISAEvent(event);
-  const eventType: CategoryImageType = isFromISA ? getCategoryLabel(event.type) : 'festival';
+  const eventType: CategoryImageType = isFromISA
+    ? getCategoryLabel(event.type)
+    : 'festival';
 
   const toggleExpand = () => {
     setExpanded((prev) => !prev);
@@ -269,7 +264,7 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
       {/* Country Flag Background Indicator */}
       {event.country && getCountryFlag(event.country) && (
         <View className="absolute top-0 -right-6 z-0 overflow-hidden">
-          <Text 
+          <Text
             className="text-[120px] opacity-25"
             style={{ transform: [{ rotate: '15deg' }] }}
           >
@@ -313,7 +308,10 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
                     className="p-1.5 rounded-full active:bg-muted/50"
                     hitSlop={8}
                   >
-                    <Icon as={ShareIcon} className="size-4 text-muted-foreground" />
+                    <Icon
+                      as={ShareIcon}
+                      className="size-4 text-muted-foreground"
+                    />
                   </Pressable>
                   {/* Expand Button */}
                   <Animated.View style={rotateStyle}>
@@ -361,7 +359,9 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
                   <View>
                     {isFromISA ? (
                       <View className="text-sm">
-                        <Markdown markdown={htmlToMarkdown(event.description)} />
+                        <Markdown
+                          markdown={htmlToMarkdown(event.description)}
+                        />
                       </View>
                     ) : (
                       <Text className="text-sm text-muted-foreground leading-relaxed">
@@ -375,10 +375,7 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
                 <View className="flex-row flex-wrap gap-2">
                   {/* Date Range Pill */}
                   <View className="flex-row items-center gap-2 bg-muted/50 px-3 py-2 rounded-xl">
-                    <Icon
-                      as={CalendarIcon}
-                      className="size-4 text-primary"
-                    />
+                    <Icon as={CalendarIcon} className="size-4 text-primary" />
                     <Text className="text-sm font-medium text-foreground">
                       {formatEventDate(
                         startDate,
@@ -391,10 +388,7 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
                   {/* Event Type Pill (for internal events) */}
                   {!isFromISA && event.type && (
                     <View className="flex-row items-center gap-2 bg-muted/50 px-3 py-2 rounded-xl">
-                      <Icon
-                        as={TicketIcon}
-                        className="size-4 text-primary"
-                      />
+                      <Icon as={TicketIcon} className="size-4 text-primary" />
                       <Text className="text-sm font-medium capitalize text-foreground">
                         {event.type}
                       </Text>
