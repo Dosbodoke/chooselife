@@ -94,7 +94,7 @@ export const ProfileInfoForm: React.FC<{
             <View className="relative overflow-hidden size-32">
               <SupabaseAvatar URL={value} />
             </View>
-            <View className="absolute bottom-0 translate-y-1/2 left-0 right-0 items-center">
+            <View className="absolute bottom-0 left-0 right-0 items-center" style={{ transform: [{ translateY: '50%' }] }}>
               <AvatarUploader onUpload={onChange} className="shadow p-[1px]" />
             </View>
           </View>

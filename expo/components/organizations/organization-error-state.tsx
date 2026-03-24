@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 import { Mountain } from 'lucide-react-native';
 import React from 'react';
 import { View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from '~/components/styled';
 
 import { Text } from '~/components/ui/text';
 

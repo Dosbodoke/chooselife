@@ -14,7 +14,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from '~/components/styled';
 
 import { useAuth, type LoginMethod, type OAuthMethod } from '~/context/auth';
 import { AppleIcon } from '~/lib/icons/Apple';
@@ -354,7 +354,7 @@ const GreenDot: React.FC<{ pulse?: boolean }> = ({ pulse }) => {
   }
 
   return (
-    <View className="absolute right-4 top-1/2 translate-y-1/2 items-center justify-center">
+    <View className="absolute right-4 top-1/2 items-center justify-center" style={{ transform: [{ translateY: '-50%' }] }}>
       {/* The animated pulse layer */}
       <Animated.View
         style={[

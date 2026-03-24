@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from '~/components/styled';
 
 import { Button } from '~/components/ui/button';
 import { Text } from '~/components/ui/text';

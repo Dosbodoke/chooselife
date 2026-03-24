@@ -1,8 +1,11 @@
-const { withNativeWind } = require('nativewind/metro');
+const { withUniwindConfig } = require('uniwind/metro');
 const {
   getSentryExpoConfig
 } = require("@sentry/react-native/metro");
 
 const config = getSentryExpoConfig(__dirname);
 
-module.exports = withNativeWind(config, { input: './global.css', inlineRem: 16 });
+module.exports = withUniwindConfig(config, {
+  cssEntryFile: './global.css',
+  polyfills: { rem: 16 },
+});

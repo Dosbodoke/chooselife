@@ -524,77 +524,84 @@ const SuccessCard: React.FC<SuccessCardProps> = ({ offline, data }) => {
 
         <View
           className="flex-1 justify-center px-6"
-          style={{ paddingTop: insets.top }}
+          style={{ 
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom + 120 // Space for bottom buttons
+          }}
         >
           <View className="overflow-hidden rounded-3xl border border-white/20">
             <BlurView
               intensity={Platform.OS === 'android' ? 100 : 40}
               tint="dark"
-              className="items-center p-6 gap-6"
             >
-              <View className="items-center gap-2">
-                <Text className="text-white font-bold text-3xl tracking-wider text-center">
-                  {t('app.highline.register.success.title') || 'NICE SEND!'}
-                </Text>
-                <Text className="text-white/70 text-sm font-medium uppercase tracking-widest">
-                  {t('app.highline.register.success.recorded_label', {
-                    type: mainType,
-                  })}
-                </Text>
-              </View>
+              <View className="items-center p-6 gap-6">
+                <View className="items-center gap-2">
+                  <Text className="text-white font-bold text-3xl tracking-wider text-center">
+                    {t('app.highline.register.success.title') || 'NICE SEND!'}
+                  </Text>
+                  <Text className="text-white/90 text-sm font-medium uppercase tracking-widest text-center">
+                    {t('app.highline.register.success.recorded_label', {
+                      type: mainType,
+                    })}
+                  </Text>
+                </View>
 
-              <View className="h-40 w-40 items-center justify-center bg-white/10 rounded-full">
-                <SuccessAnimation />
-              </View>
+                <View className="h-40 w-40 items-center justify-center bg-white/10 rounded-full">
+                  <SuccessAnimation />
+                </View>
 
-              <View className="flex-row w-full justify-around border-t border-b border-white/10 py-4">
-                <View className="items-center">
-                  <Text className="text-2xl font-bold text-white">
-                    {data.distance}
-                    <Text className="text-base font-normal text-white/60">
-                      m
+                <View className="flex-row w-full justify-around border-t border-white/10 pt-4">
+                  <View className="items-center">
+                    <Text className="text-2xl font-bold text-white">
+                      {data.distance}
+                      <Text className="text-base font-normal text-white/60">
+                        m
+                      </Text>
                     </Text>
-                  </Text>
-                  <Text className="text-xs text-white/50 uppercase">
-                    {t('app.highline.register.success.distance_label')}
-                  </Text>
+                    <Text className="text-xs text-white/50 uppercase">
+                      {t('app.highline.register.success.distance_label')}
+                    </Text>
+                  </View>
+
+                  {data.time ? (
+                    <View className="items-center">
+                      <Text className="text-2xl font-bold text-white">
+                        {data.time}
+                      </Text>
+                      <Text className="text-xs text-white/50 uppercase">
+                        {t('app.highline.register.success.time_label')}
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  <View className="items-center">
+                    <Text className="text-2xl font-bold text-white">
+                      {data.cadenas + data.full_lines > 0
+                        ? data.cadenas + data.full_lines
+                        : 1}
+                    </Text>
+                    <Text className="text-xs text-white/50 uppercase">
+                      {t('app.highline.register.success.count_label')}
+                    </Text>
+                  </View>
                 </View>
 
-                <View className="items-center">
-                  <Text className="text-2xl font-bold text-white">
-                    {data.time || '--:--'}
-                  </Text>
-                  <Text className="text-xs text-white/50 uppercase">
-                    {t('app.highline.register.success.time_label')}
-                  </Text>
-                </View>
-
-                <View className="items-center">
-                  <Text className="text-2xl font-bold text-white">
-                    {data.cadenas + data.full_lines > 0
-                      ? data.cadenas + data.full_lines
-                      : 1}
-                  </Text>
-                  <Text className="text-xs text-white/50 uppercase">
-                    {t('app.highline.register.success.count_label')}
-                  </Text>
-                </View>
+                <Text className="text-center text-white/80 leading-5 text-sm px-4">
+                  {t(
+                    `app.highline.register.success.${offline ? 'offlineMessage' : 'message'}`,
+                  )}
+                </Text>
               </View>
             </BlurView>
           </View>
         </View>
       </View>
 
-      {/* Message and Buttons (not part of the shared image) */}
+      {/* Buttons (not part of the shared image) */}
       <View
         className="absolute bottom-0 left-0 right-0 px-6 pb-5"
         style={{ paddingBottom: insets.bottom + 20 }}
       >
-        <Text className="text-center text-white/80 leading-5 mb-3">
-          {t(
-            `app.highline.register.success.${offline ? 'offlineMessage' : 'message'}`,
-          )}
-        </Text>
         <View className="w-full gap-3">
           <Button
             className="w-full bg-white active:bg-white/90"
@@ -607,14 +614,14 @@ const SuccessCard: React.FC<SuccessCardProps> = ({ offline, data }) => {
 
           <Button
             variant="outline"
-            className="w-full border-white/20 active:bg-white/10"
+            className="w-full border-white/20 active:bg-white/10 bg-transparent"
             onPress={onShare}
             disabled={isSharing}
           >
             {isSharing ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
-              <Text className="text-black font-semibold">
+              <Text className="text-white font-semibold">
                 {t('app.highline.register.success.share_button')}
               </Text>
             )}

@@ -1,6 +1,3 @@
-export const calculateZoomLevel = (latitudeDelta: number): number => {
-  return Math.round(Math.log2(360 / latitudeDelta));
-};
 
 export function transformTimeStringToSeconds(timeString: string): number {
   const [minutes, seconds] = timeString.split(":").map(Number);
