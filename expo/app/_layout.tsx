@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { Uniwind } from 'uniwind';
 
 import { AuthProvider, useAuth } from '~/context/auth';
 import { I18nProvider } from '~/context/i18n';
@@ -66,6 +67,7 @@ export {
 
 // Prevent the splash screen from auto-hiding.
 SplashScreen.preventAutoHideAsync();
+Uniwind.setTheme('light');
 
 function SupabaseWrapper({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
