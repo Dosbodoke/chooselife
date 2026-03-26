@@ -9,13 +9,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { EnrichedMarkdownText } from 'react-native-enriched-markdown';
 import { KeyboardControllerView } from 'react-native-keyboard-controller';
-import { Markdown } from 'react-native-remark';
-import { SafeAreaView } from '~/components/styled';
 
 import { useShare } from '~/hooks/use-share';
 
 import { BecomeMember } from '~/components/organizations/BecomeMember';
+import { SafeAreaView } from '~/components/styled';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
@@ -195,9 +195,7 @@ export default function NewsDetail() {
               {new Date(news.created_at).toLocaleDateString()}
             </Text>
 
-            <View className="mb-6">
-              <Markdown markdown={news.content} />
-            </View>
+            <EnrichedMarkdownText flavor="github" markdown={news.content} />
 
             <View className="border-t border-gray-200 pt-4">
               <Text className="text-lg font-bold mb-4 text-black">
