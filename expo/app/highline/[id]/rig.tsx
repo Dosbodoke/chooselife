@@ -8,7 +8,6 @@ import {
   ZapIcon,
   type LucideIcon,
 } from 'lucide-react-native';
-import { useUniwind } from 'uniwind';
 import React, { useMemo, useState } from 'react';
 import { Controller, type SubmitHandler } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -28,6 +27,7 @@ import Animated, {
   LinearTransition,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useUniwind } from 'uniwind';
 
 import { useAuth } from '~/context/auth';
 import {
@@ -46,11 +46,7 @@ import { TablesInsert } from '~/utils/database.types';
 import { requestReview } from '~/utils/request-review';
 
 import SuccessAnimation from '~/components/animations/success-animation';
-import {
-  OnboardHeader,
-  OnboardNavigator,
-  OnboardPaginator,
-} from '~/components/onboard';
+import { OnboardHeader, OnboardNavigator } from '~/components/onboard';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
 import { Icon } from '~/components/ui/icon';
@@ -369,23 +365,23 @@ export const HighlineSetup: React.FC = () => {
       >
         {steps[step]}
       </Animated.View>
-<View className="flex-grow" />
-<View className="gap-4 pb-8">
-  <OnboardNavigator
-    total={steps.length}
-    selectedIndex={step}
-    onIndexChange={handleNextStep}
-    onFinish={form.handleSubmit(handleSave)}
-    finishLabel={
-      rigType === 'immediate'
-        ? t('app.highline.rig.navigator.rigNow')
-        : t('app.highline.rig.navigator.planRig')
-    }
-    goBack={router.back}
-    isLoading={mutation.isPending || setupIsPending}
-    showBack={false}
-  />
-</View>
+      <View className="grow" />
+      <View className="gap-4 pb-8">
+        <OnboardNavigator
+          total={steps.length}
+          selectedIndex={step}
+          onIndexChange={handleNextStep}
+          onFinish={form.handleSubmit(handleSave)}
+          finishLabel={
+            rigType === 'immediate'
+              ? t('app.highline.rig.navigator.rigNow')
+              : t('app.highline.rig.navigator.planRig')
+          }
+          goBack={router.back}
+          isLoading={mutation.isPending || setupIsPending}
+          showBack={false}
+        />
+      </View>
     </KeyboardAwareScrollView>
   );
 };
@@ -405,10 +401,7 @@ const RigTypeSelection: React.FC<{
 
   return (
     <>
-      <HighlineRigIllustration
-        mode={colorScheme}
-        className="w-full h-auto"
-      />
+      <HighlineRigIllustration mode={colorScheme} className="w-full h-auto" />
 
       <View className="w-full">
         <Text variant="h3" className="text-left mb-2">
