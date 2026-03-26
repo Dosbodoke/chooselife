@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
+import { ChevronLeft } from 'lucide-react-native';
 import Animated, {
   FadeInDown,
   FadeInLeft,
@@ -98,7 +99,7 @@ function PaginationIndicator({
   );
 }
 
-function OnboardPaginator({
+export function OnboardPaginator({
   selectedIndex,
   total,
 }: {
@@ -121,7 +122,36 @@ function OnboardPaginator({
   );
 }
 
-function OnboardNavigator({
+export function OnboardHeader({
+  selectedIndex,
+  total,
+  onBack,
+}: {
+  selectedIndex: number;
+  total: number;
+  onBack?: () => void;
+}) {
+  return (
+    <View className="flex-row items-center justify-between">
+      {onBack ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          onPress={onBack}
+          className="rounded-full"
+        >
+          <ChevronLeft className="text-foreground" size={24} />
+        </Button>
+      ) : (
+        <View className="w-10 h-10" />
+      )}
+      <OnboardPaginator total={total} selectedIndex={selectedIndex} />
+      <View className="w-10 h-10" />
+    </View>
+  );
+}
+
+export function OnboardNavigator({
   selectedIndex,
   total,
   onIndexChange,
@@ -129,6 +159,7 @@ function OnboardNavigator({
   goBack,
   isLoading,
   finishLabel,
+  showBack = true,
 }: {
   selectedIndex: number;
   total: number;
@@ -139,6 +170,7 @@ function OnboardNavigator({
   isLoading?: boolean;
   // Text to be shown on the button when the last step is reached
   finishLabel?: string;
+  showBack?: boolean;
 }) {
   const { t } = useTranslation();
   const handleBack = () => {
@@ -162,7 +194,7 @@ function OnboardNavigator({
 
   return (
     <View className="flex-row gap-2">
-      {selectedIndex > 0 || goBack ? (
+      {showBack && (selectedIndex > 0 || goBack) ? (
         <AnimatedButton
           variant="outline"
           onPress={handleBack}
@@ -175,7 +207,7 @@ function OnboardNavigator({
         </AnimatedButton>
       ) : null}
       <AnimatedButton
-        className="flex-1"
+        className="flex-1 rounded-full"
         variant="default"
         onPress={handleForward}
         disabled={isLoading}
@@ -212,4 +244,3 @@ function OnboardNavigator({
   );
 }
 
-export { OnboardNavigator, OnboardPaginator };
