@@ -8,11 +8,7 @@ import {
 } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useHighline } from '~/hooks/use-highline';
@@ -21,7 +17,6 @@ import { useShare } from '~/hooks/use-share';
 import { FavoriteHighline } from '~/components/highline/favorite-button';
 import { HighlineImage } from '~/components/highline/highline-image';
 import Info from '~/components/highline/info';
-import { LocationWeatherCard } from '~/components/highline/location-weather-card';
 import { HighlineNotFound } from '~/components/highline/not-found';
 import { RigModal } from '~/components/highline/rig-confirmations';
 import { HighlineSkeleton } from '~/components/highline/skeleton';
@@ -75,10 +70,7 @@ export default function HighlinePage() {
   );
 
   // Padding for FAB
-  const paddingBottom = useMemo(
-    () => insets.bottom + 100,
-    [insets.bottom],
-  );
+  const paddingBottom = useMemo(() => insets.bottom + 100, [insets.bottom]);
 
   if (isPending) {
     return <HighlineSkeleton />;
@@ -166,15 +158,6 @@ export default function HighlinePage() {
               </TabsContent>
             ))}
           </Tabs>
-
-          {/* Location & Weather Card */}
-          {tab === 'details' && (
-            <LocationWeatherCard
-              hasLocation={!!highline.anchor_a_lat}
-              latitude={highline.anchor_a_lat ?? undefined}
-              longitude={highline.anchor_a_long ?? undefined}
-            />
-          )}
         </View>
       </ScrollView>
 
