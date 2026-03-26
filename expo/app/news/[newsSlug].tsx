@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { KeyboardControllerView } from 'react-native-keyboard-controller';
 import { Markdown } from 'react-native-remark';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from '~/components/styled';
 
 import { useShare } from '~/hooks/use-share';
 

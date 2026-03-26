@@ -1,4 +1,3 @@
-import { cssInterop } from 'nativewind';
 import Svg, { Path, SvgProps } from 'react-native-svg';
 
 const RigCarabinerIcon = (props: SvgProps) => (
@@ -14,13 +13,4 @@ const RigCarabinerIcon = (props: SvgProps) => (
   </Svg>
 );
 
-export default cssInterop(RigCarabinerIcon, {
-  className: {
-    target: 'style',
-    nativeStyleToProp: {
-      color: true,
-      opacity: true,
-      fill: true,
-    },
-  },
-});
+export default RigCarabinerIcon;

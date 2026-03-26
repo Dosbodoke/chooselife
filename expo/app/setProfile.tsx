@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PostgrestError } from '@supabase/supabase-js';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import i18next from 'i18next';
 import React, { useState } from 'react';
@@ -14,12 +15,11 @@ import Animated, {
   FadeOut,
   FadeOutLeft,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from '~/components/styled';
 import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
 import { type Profile } from '~/hooks/use-profile';
-import HighlineIllustration from '~/lib/icons/highline-illustration';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 
@@ -29,7 +29,10 @@ import {
   type ProfileInfoSchema,
 } from '~/components/edit-profile-info';
 import { LanguageSwitcher } from '~/components/language-switcher';
-import { OnboardNavigator, OnboardPaginator } from '~/components/onboard';
+import {
+  OnboardHeader,
+  OnboardNavigator,
+} from '~/components/onboard';
 import { Text } from '~/components/ui/text';
 
 const profileSchema = profileInfoSchema.extend({
@@ -82,6 +85,7 @@ export default function SetProfile() {
       return profileData;
     },
     onSuccess: (profileData: Profile) => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       queryClient.setQueryData<Profile>(
         ['profile', profileData.id],
         profileData,
@@ -89,6 +93,7 @@ export default function SetProfile() {
       router.replace('/(tabs)');
     },
     onError: (error) => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       console.log({ error });
       if ((error as PostgrestError).code === '23505') {
         form.setError('username', {
@@ -143,19 +148,39 @@ export default function SetProfile() {
   };
 
   const steps = [
-    <LanguageSwitcher key="LanguageSwitcher" />,
+    <View key="LanguageSwitcher" className="gap-4">
+      <View>
+        <Text variant="h3" className="text-left">
+          {t('app.setProfile.LanguageStep.title')}
+        </Text>
+        <Text variant="muted" className="text-left">
+          {t('app.setProfile.LanguageStep.subtitle')}
+        </Text>
+      </View>
+      <LanguageSwitcher />
+    </View>,
     <UsernameForm key="username" form={form} />,
-    <ProfileInfoForm
-      key="profileInfo"
-      // @ts-expect-error Info form doesn't have username
-      form={form as UseFormReturn<ProfileInfoSchema>}
-    />,
-    // <PrefferedTheme key="theme" />,
+    <View key="profileInfo" className="gap-4">
+      <View>
+        <Text variant="h3" className="text-left">
+          {t('app.setProfile.ProfileInfoForm.title')}
+        </Text>
+        <Text variant="muted" className="text-left">
+          {t('app.setProfile.ProfileInfoForm.subtitle')}
+        </Text>
+      </View>
+      <ProfileInfoForm
+        // @ts-expect-error Info form doesn't have username
+        form={form as UseFormReturn<ProfileInfoSchema>}
+        layout="onboarding"
+      />
+    </View>,
   ];
 
   const handleNextStep = async (newStep: number) => {
     // Move back
     if (newStep >= 0 && newStep < index) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setIndex((prevIndex) => prevIndex - 1);
       return;
     }
@@ -163,17 +188,24 @@ export default function SetProfile() {
     // Validate the username in the first step
     if (index === 1) {
       const isUsernameValid = await validateUsername();
-      if (!isUsernameValid) return;
+      if (!isUsernameValid) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
     }
 
     // Manually trigger the validation of a required field
     if (index === 2) {
       const validName = await form.trigger('name');
-      if (!validName) return;
+      if (!validName) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
     }
 
     // Move forward
     if (index < steps.length - 1) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       setIndex((prevIndex) => prevIndex + 1);
     }
   };
@@ -184,11 +216,11 @@ export default function SetProfile() {
         contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 16 }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text variant="h2" className="text-center border-0">
-          {t('app.setProfile.title')}
-        </Text>
-        <HighlineIllustration className="w-full h-auto" />
-
+        <OnboardHeader
+          total={steps.length}
+          selectedIndex={index}
+          onBack={index > 0 ? () => handleNextStep(index - 1) : undefined}
+        />
         <Animated.View
           key={`step-${index}`}
           entering={FadeInRight}
@@ -198,14 +230,13 @@ export default function SetProfile() {
         </Animated.View>
 
         <View className="mt-auto gap-4">
-          <OnboardPaginator total={steps.length} selectedIndex={index} />
-
           <OnboardNavigator
             total={steps.length}
             selectedIndex={index}
             onIndexChange={handleNextStep}
             onFinish={form.handleSubmit((data) => mutation.mutate(data))}
             isLoading={mutation.isPending || isValidating}
+            showBack={false}
           />
         </View>
       </KeyboardAwareScrollView>
@@ -219,10 +250,10 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
   return (
     <View className="gap-4">
       <View>
-        <Text variant="h3" className="text-center">
+        <Text variant="h3" className="text-left">
           {t('app.setProfile.UsernameForm.title')}
         </Text>
-        <Text variant="muted" className="text-center">
+        <Text variant="muted" className="text-left">
           {t('app.setProfile.UsernameForm.subtitle')}
         </Text>
       </View>
@@ -232,8 +263,8 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
         name="username"
         render={({ field: { onChange, value }, fieldState: { error } }) => (
           <View className="gap-2">
-            <View className="flex-row items-center justify-center gap-1 my-4">
-              <Text className="text-muted-foreground font-semibold text-3xl">
+            <View className="flex-row items-center justify-start gap-2 my-4">
+              <Text className="text-muted-foreground font-semibold text-4xl">
                 @
               </Text>
               <TextInput
@@ -242,9 +273,11 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
                 placeholder={t('app.setProfile.UsernameForm.inputPlaceholder')}
                 autoCapitalize="none"
                 returnKeyType="done"
+                allowFontScaling={false}
+                style={{ fontSize: 32 }}
                 className={cn(
                   error?.message ? 'border-red-500' : 'border-muted-foreground',
-                  'text-foreground border-b-hairline min-w-32',
+                  'text-foreground border-b-hairline min-w-0 flex-1',
                 )}
               />
             </View>
@@ -254,7 +287,7 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
                 exiting={FadeOut}
                 className="mb-4"
               >
-                <Text className="text-red-500 text-center">
+                <Text className="text-red-500 text-left">
                   {error.message}
                 </Text>
               </Animated.View>

@@ -336,12 +336,17 @@
     },
     "setProfile": {
       "title": "Set Up Your Profile",
+      "LanguageStep": {
+        "title": "Choose Your Language",
+        "subtitle": "Select your preferred language."
+      },
       "UsernameForm": {
         "title": "Choose Your Username",
         "subtitle": "This is how you will be identified.",
         "inputPlaceholder": "Your username"
       },
       "ProfileInfoForm": {
+        "title": "Your Profile",
         "subtitle": "Tell us more about yourself.",
         "inputPlaceholderName": "Your name",
         "birthdayLabel": "Date of Birth:",

@@ -1,9 +1,9 @@
-import { CrosshairIcon } from 'lucide-react-native';
+import { useMapStore } from '~/store/map-store';
+import { PlusIcon } from 'lucide-react-native';
 import React from 'react';
 import { View } from 'react-native';
 
 import { Icon } from '~/components/ui/icon';
-import { useMapStore } from '~/store/map-store';
 
 /**
  * WeatherCrosshair - A centered crosshair that indicates where the weather data is coming from.
@@ -15,14 +15,14 @@ const WeatherCrosshair: React.FC = () => {
   );
 
   return (
-    <View 
-      className="absolute inset-0 justify-center items-center" 
+    <View
+      className="absolute inset-0 justify-center items-center"
       pointerEvents="none"
     >
       <View style={{ marginBottom: bottomSheetHandlerHeight / 2 }}>
         <Icon
-          as={CrosshairIcon}
-          className="size-8 text-red-500 opacity-90"
+          as={PlusIcon}
+          className="size-5 text-red-500 opacity-90"
           strokeWidth={2}
         />
       </View>

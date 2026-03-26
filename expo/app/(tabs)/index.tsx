@@ -13,13 +13,9 @@ import React, {
 import { View } from 'react-native';
 import { useShallow } from 'zustand/react/shallow';
 
-import {
-  useHighline,
-  type Highline,
-} from '~/hooks/use-highline';
+import { useHighline, type Highline } from '~/hooks/use-highline';
 import { useMapStyle } from '~/hooks/use-map-style';
 import { useOfflineRegion } from '~/hooks/use-offline-region';
-import { calculateZoomLevel } from '~/utils';
 import {
   DEFAULT_LATITUDE,
   DEFAULT_LONGITUDE,
@@ -102,7 +98,7 @@ export default function Screen() {
   const { focusedMarker } = useLocalSearchParams<{ focusedMarker?: string }>();
   const router = useRouter();
   const hasFocusedMarkerBeenHandled = useRef(false);
-  
+
   // Sync focusedMarker from URL params to store
   useEffect(() => {
     setHasFocusedMarker(!!focusedMarker);
@@ -130,7 +126,6 @@ export default function Screen() {
     const region = await getMyLocation();
     if (!region) return;
 
-    const newZoom = calculateZoomLevel(region.latitudeDelta);
     cameraRef.current?.setCamera({
       centerCoordinate: [region.longitude, region.latitude],
       zoomLevel: 5,
@@ -184,10 +179,15 @@ export default function Screen() {
     [setHighlightedMarker],
   );
 
-
   useEffect(() => {
     // Wait for map AND highlines data to be loaded before trying to find the focused marker
-    if (!focusedMarker || !highlines || highlines.length === 0 || isLoading || !isMapReady) {
+    if (
+      !focusedMarker ||
+      !highlines ||
+      highlines.length === 0 ||
+      isLoading ||
+      !isMapReady
+    ) {
       return;
     }
 

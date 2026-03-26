@@ -1,5 +1,5 @@
-import { cssInterop } from 'nativewind';
 import Svg, { Path, SvgProps } from 'react-native-svg';
+import { withSvgClass } from './with-svg-class';
 
 const ChooselifeIcon = (props: SvgProps) => (
   <Svg width={24} height={24} viewBox="0 0 700 700" fill="none" {...props}>
@@ -10,15 +10,4 @@ const ChooselifeIcon = (props: SvgProps) => (
   </Svg>
 );
 
-export default cssInterop(ChooselifeIcon, {
-  className: {
-    target: 'style',
-    nativeStyleToProp: {
-      color: true,
-      opacity: true,
-      fill: true,
-    },
-  },
-});
-
-// export default ChooselifeIcon;
+export default withSvgClass(ChooselifeIcon);

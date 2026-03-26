@@ -7,6 +7,7 @@ import { useHighline } from '~/hooks/use-highline';
 import { Text } from '~/components/ui/text';
 
 import { HighlineHistory } from './history';
+import { LocationWeatherCard } from './location-weather-card';
 
 export default function Info() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,7 +31,13 @@ export default function Info() {
 
       {/* Dimensions Card */}
       <HighlineDimensions height={highline.height} distance={highline.length} />
-      
+
+      <LocationWeatherCard
+        hasLocation={!!highline.anchor_a_lat}
+        latitude={highline.anchor_a_lat ?? undefined}
+        longitude={highline.anchor_a_long ?? undefined}
+      />
+
       {/* History */}
       <HighlineHistory highline={highline} />
     </View>
