@@ -2,7 +2,7 @@ import i18next from 'i18next';
 import React from 'react';
 import { Controller, UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Keyboard, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { z } from 'zod';
@@ -183,13 +183,12 @@ export const ProfileInfoForm: React.FC<{
           <Textarea
             value={value}
             keyboardType="default"
-            returnKeyType="done"
             placeholder={t(
               'app.setProfile.ProfileInfoForm.descriptionPlaceholder',
             )}
-            submitBehavior="blurAndSubmit"
+            // Keep Enter as newline for multiline text instead of submitting.
+            submitBehavior="newline"
             className={cn('w-full', error && 'border-destructive')}
-            onSubmitEditing={() => Keyboard.dismiss()}
             onChangeText={onChange}
           />
         )}
