@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 
@@ -6,8 +7,9 @@ import { useI18n } from '~/context/i18n';
 export const LanguageSwitcher = ({ onSwitch }: { onSwitch?: () => void }) => {
   const { setLocale, locale } = useI18n();
 
-  const handleSwitch = (locale: 'en' | 'pt') => {
-    setLocale(locale);
+  const handleSwitch = (newLocale: 'en' | 'pt') => {
+    Haptics.selectionAsync();
+    setLocale(newLocale);
     onSwitch?.();
   };
 

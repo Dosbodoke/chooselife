@@ -41,7 +41,7 @@ import { cn } from '~/lib/utils';
 import { Tables } from '~/utils/database.types';
 import { requestReview } from '~/utils/request-review';
 
-import { OnboardNavigator } from '~/components/onboard';
+import { OnboardHeader, OnboardNavigator } from '~/components/onboard';
 import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
 import { Input } from '~/components/ui/input';
@@ -84,6 +84,7 @@ export default function RegisterWebbing() {
           contentContainerClassName="px-6 pt-3 pb-8 gap-4"
           keyboardShouldPersistTaps="handled"
         >
+          <OnboardHeader total={1} selectedIndex={0} onBack={router.back} />
           <PrefillForm form={form} />
 
           <View className="flex-grow">{/* Spacer to push paginator down */}</View>
@@ -96,6 +97,7 @@ export default function RegisterWebbing() {
             goBack={router.back}
             isLoading={isLoading}
             finishLabel={t('app.(modals).register-webbing.finishLabel')}
+            showBack={false}
           />
         </KeyboardAwareScrollView>
       </SafeAreaView>
@@ -136,10 +138,10 @@ const PrefillForm: React.FC<{
       </View>
 
       <View>
-        <Text variant="h3" className="text-center">
+        <Text variant="h3" className="text-left">
           {t('app.(modals).register-webbing.title')}
         </Text>
-        <Text variant="muted" className="text-center">
+        <Text variant="muted" className="text-left">
           {t('app.(modals).register-webbing.description')}
         </Text>
       </View>

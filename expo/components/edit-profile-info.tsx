@@ -2,7 +2,7 @@ import i18next from 'i18next';
 import React from 'react';
 import { Controller, UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Keyboard, Pressable, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { z } from 'zod';
@@ -39,15 +39,19 @@ const DateInput: React.FC<{
 
   return (
     <View className="w-full gap-2">
-      <View className="flex-row items-center">
+      <View className="flex-row items-center gap-1">
         <Text className="text-sm font-medium text-foreground">{label}</Text>
-        {optional && <Text variant="muted">{t('common.optional')}</Text>}
+        {optional && (
+          <Text className="text-sm text-muted-foreground">
+            {t('common.optional')}
+          </Text>
+        )}
       </View>
 
       <Pressable
         onPress={onPress}
         className={cn(
-          'border rounded-md px-3 py-3 bg-background min-h-[44px] justify-center',
+          'border rounded-md px-3 py-3 bg-background min-h-11 justify-center',
           error ? 'border-red-500' : 'border-border',
           'active:bg-muted/50', // Visual feedback on press
         )}
@@ -73,9 +77,11 @@ const DateInput: React.FC<{
 
 export const ProfileInfoForm: React.FC<{
   form: UseFormReturn<ProfileInfoSchema>;
-}> = ({ form }) => {
+  layout?: 'onboarding' | 'sheet';
+}> = ({ form, layout = 'onboarding' }) => {
   const { t } = useTranslation();
   const [showDatePicker, setShowDatePicker] = React.useState(false);
+  const isSheetLayout = layout === 'sheet';
 
   const handleDateChange = (date: Date) => {
     setShowDatePicker(false);
@@ -85,18 +91,24 @@ export const ProfileInfoForm: React.FC<{
   };
 
   return (
-    <View className="justify-center items-center gap-4 w-full">
+    <View className="w-full gap-4 items-start">
       <Controller
         control={form.control}
         name="profilePicture"
         render={({ field: { value, onChange } }) => (
-          <View className="relative w-full items-center mb-6">
-            <View className="relative overflow-hidden size-32">
+          <View className="w-full flex-row items-center gap-4">
+            <View
+              className={cn(
+                'relative overflow-hidden rounded-full',
+                isSheetLayout ? 'size-20' : 'size-24',
+              )}
+            >
               <SupabaseAvatar URL={value} />
             </View>
-            <View className="absolute bottom-0 left-0 right-0 items-center" style={{ transform: [{ translateY: '50%' }] }}>
-              <AvatarUploader onUpload={onChange} className="shadow p-[1px]" />
-            </View>
+            <AvatarUploader
+              onUpload={onChange}
+              className={cn('px-4 py-2', !isSheetLayout && 'shadow')}
+            />
           </View>
         )}
       />
@@ -105,7 +117,7 @@ export const ProfileInfoForm: React.FC<{
         control={form.control}
         name="name"
         render={({ field: { onChange, value }, fieldState: { error } }) => (
-          <View>
+          <View className="w-full items-start">
             <TextInput
               value={value}
               onChangeText={onChange}
@@ -113,14 +125,18 @@ export const ProfileInfoForm: React.FC<{
                 'app.setProfile.ProfileInfoForm.inputPlaceholderName',
               )}
               returnKeyType="done"
+              style={{
+                fontSize: isSheetLayout ? 20 : 24,
+                borderBottomWidth: StyleSheet.hairlineWidth,
+              }}
               className={cn(
                 error?.message ? 'border-red-500' : 'border-muted-foreground',
-                'text-lg text-foreground border-b-hairline pb-1 min-w-48',
+                'text-foreground pb-2 w-full text-left',
               )}
             />
             {error && (
               <Animated.View entering={FadeIn} exiting={FadeOut}>
-                <Text className="text-red-500">{error.message}</Text>
+                <Text className="text-red-500 text-left">{error.message}</Text>
               </Animated.View>
             )}
           </View>

@@ -46,7 +46,11 @@ import { TablesInsert } from '~/utils/database.types';
 import { requestReview } from '~/utils/request-review';
 
 import SuccessAnimation from '~/components/animations/success-animation';
-import { OnboardNavigator, OnboardPaginator } from '~/components/onboard';
+import {
+  OnboardHeader,
+  OnboardNavigator,
+  OnboardPaginator,
+} from '~/components/onboard';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
 import { Icon } from '~/components/ui/icon';
@@ -353,6 +357,11 @@ export const HighlineSetup: React.FC = () => {
         paddingBottom: Platform.OS === 'ios' ? 24 + insets.bottom : 0,
       }}
     >
+      <OnboardHeader
+        total={steps.length}
+        selectedIndex={step}
+        onBack={step > 0 ? () => handleNextStep(step - 1) : undefined}
+      />
       <Animated.View
         className="gap-4 items-center"
         entering={FadeInRight}
@@ -360,24 +369,23 @@ export const HighlineSetup: React.FC = () => {
       >
         {steps[step]}
       </Animated.View>
-
-      <View className="flex-grow" />
-      <View className="gap-4 pb-8">
-        <OnboardPaginator total={steps.length} selectedIndex={step} />
-        <OnboardNavigator
-          total={steps.length}
-          selectedIndex={step}
-          onIndexChange={handleNextStep}
-          onFinish={form.handleSubmit(handleSave)}
-          finishLabel={
-            rigType === 'immediate'
-              ? t('app.highline.rig.navigator.rigNow')
-              : t('app.highline.rig.navigator.planRig')
-          }
-          goBack={router.back}
-          isLoading={mutation.isPending || setupIsPending}
-        />
-      </View>
+<View className="flex-grow" />
+<View className="gap-4 pb-8">
+  <OnboardNavigator
+    total={steps.length}
+    selectedIndex={step}
+    onIndexChange={handleNextStep}
+    onFinish={form.handleSubmit(handleSave)}
+    finishLabel={
+      rigType === 'immediate'
+        ? t('app.highline.rig.navigator.rigNow')
+        : t('app.highline.rig.navigator.planRig')
+    }
+    goBack={router.back}
+    isLoading={mutation.isPending || setupIsPending}
+    showBack={false}
+  />
+</View>
     </KeyboardAwareScrollView>
   );
 };
@@ -402,11 +410,11 @@ const RigTypeSelection: React.FC<{
         className="w-full h-auto"
       />
 
-      <View>
-        <Text variant="h3" className="text-center mb-2">
+      <View className="w-full">
+        <Text variant="h3" className="text-left mb-2">
           {t('app.highline.rig.typeSelection.title')}
         </Text>
-        <Text variant="muted" className="text-center">
+        <Text variant="muted" className="text-left">
           {t('app.highline.rig.typeSelection.description')}
         </Text>
       </View>
@@ -488,22 +496,19 @@ const DateForm: React.FC<{
 
   return (
     <>
-      <HighlineRigIllustration
-        mode={colorScheme}
-        className="w-full h-auto"
-      />
+      <HighlineRigIllustration mode={colorScheme} className="w-full h-auto" />
 
       {isLoading ? (
         <ActivityIndicator size="large" />
       ) : (
         <>
-          <View>
-            <Text variant="h3" className="text-center">
+          <View className="w-full">
+            <Text variant="h3" className="text-left">
               {rigType === 'immediate'
                 ? t('app.highline.rig.dateForm.immediate.title')
                 : t('app.highline.rig.dateForm.plan.title')}
             </Text>
-            <Text variant="muted" className="text-center">
+            <Text variant="muted" className="text-left">
               {rigType === 'immediate'
                 ? t('app.highline.rig.dateForm.immediate.description')
                 : t('app.highline.rig.dateForm.plan.description')}

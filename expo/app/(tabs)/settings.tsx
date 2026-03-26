@@ -345,8 +345,8 @@ const EditProfileButton: React.FC = () => {
           },
         }}
       >
-        <BottomSheetView className="p-4 items-center gap-4 bg-white">
-          <ProfileInfoForm form={form} />
+        <BottomSheetView className="p-4 gap-4 bg-white">
+          <ProfileInfoForm form={form} layout="sheet" />
           <Button
             className="w-full"
             onPress={form.handleSubmit((data) => mutation.mutate(data))}
