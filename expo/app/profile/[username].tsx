@@ -98,7 +98,9 @@ export default function Profile() {
           <Icon as={ChevronLeftIcon} className="text-primary size-6" />
           <Text className="text-primary font-semibold text-xl">{username}</Text>
         </TouchableOpacity>
-        <UserHeader profile={profile} />
+        <SupabaseProvider supabase={supabase} userId={profile.id}>
+          <UserHeader profile={profile} />
+        </SupabaseProvider>
         <Stats
           total_cadenas={stats?.total_cadenas || 0}
           total_distance_walked={stats?.total_distance_walked || 0}
@@ -111,18 +113,31 @@ export default function Profile() {
 }
 
 const ProfileSlacBadge = () => {
-  const { data: isMember } = useIsMember('slac');
-
-  if (!isMember) return null;
-
   return (
-    <View className="w-40 aspect-square items-center justify-center rounded-xl overflow-visible">
+    <View className="size-20 shrink-0 items-center justify-center">
       <ExpoImage
         source={{
           uri: getR2PublicUrl('promo', 'slac-badge.png'),
         }}
+        contentFit="contain"
         style={StyleSheet.absoluteFill}
       />
+    </View>
+  );
+};
+
+const ProfileMembership = () => {
+  const { data: isSlacMember } = useIsMember('slac');
+
+  if (!isSlacMember) return null;
+
+  return (
+    <View className="flex-row items-center justify-between border-t border-border pt-3">
+      <View className="flex-1 pr-3">
+        <Text variant="muted">Membro da</Text>
+        <Text className="font-semibold">Slackliners Associados do Cerrado</Text>
+      </View>
+      <ProfileSlacBadge />
     </View>
   );
 };
@@ -152,12 +167,12 @@ const UserHeader: React.FC<{
 
   return (
     <Card>
-      <CardContent className="flex gap-4 overflow-hidden px-2 py-4 min-h-60">
-        <View className="flex flex-row mt-4 gap-2">
+      <CardContent className="flex gap-4 overflow-hidden px-3 py-4">
+        <View className="flex-row items-start gap-3">
           <View className="relative overflow-hidden size-16">
             <SupabaseAvatar profileID={profile.id} />
           </View>
-          <View className="flex flex-1 gap-2">
+          <View className="flex-1 gap-1 pt-1">
             <Text variant="h3" numberOfLines={1} className="mr-1">
               {profile.name}
             </Text>
@@ -170,12 +185,14 @@ const UserHeader: React.FC<{
                 <Text variant="muted">{calculateAge(profile.birthday)}</Text>
               </View>
             ) : null}
-            <Text variant="p">{profile.description}</Text>
           </View>
-          <SupabaseProvider supabase={supabase} userId={profile.id}>
-            <ProfileSlacBadge />
-          </SupabaseProvider>
         </View>
+        {profile.description ? (
+          <Text variant="p" className="leading-7">
+            {profile.description}
+          </Text>
+        ) : null}
+        <ProfileMembership />
       </CardContent>
     </Card>
   );
