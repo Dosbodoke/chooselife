@@ -84,6 +84,7 @@ export default function Screen() {
   const searchQuery = useMapStore((state) => state.searchQuery);
   const activeCategory = useMapStore((state) => state.activeCategory);
   const setCamera = useMapStore((state) => state.setCamera);
+  const setUserLocation = useMapStore((state) => state.setUserLocation);
   const [highlightedMarker, setHighlightedMarker] = useMapStore(
     useShallow((state) => [
       state.highlightedMarker,
@@ -126,6 +127,10 @@ export default function Screen() {
     const region = await getMyLocation();
     if (!region) return;
 
+    setUserLocation({
+      latitude: region.latitude,
+      longitude: region.longitude,
+    });
     cameraRef.current?.setCamera({
       centerCoordinate: [region.longitude, region.latitude],
       zoomLevel: 5,
@@ -133,7 +138,7 @@ export default function Screen() {
       animationMode: 'flyTo',
     });
     setIsOnMyLocation(true);
-  }, []);
+  }, [setUserLocation]);
 
   // Throttled camera change handler (updates at most once every 500ms)
   const throttledCameraUpdate = useCallback(

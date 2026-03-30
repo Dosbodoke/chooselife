@@ -7,6 +7,7 @@ import Animated, { Easing, FadeIn, FadeOut } from 'react-native-reanimated';
 import type { Highline } from '~/hooks/use-highline';
 
 import { HighlineCard } from '../highline/highline-card';
+import { getHighlineBrowseCoordinate, haversineDistance } from './utils';
 
 export const MapCardList = ({
   highlines,
@@ -21,6 +22,40 @@ export const MapCardList = ({
   const bottomSheetHandlerHeight = useMapStore(
     (state) => state.bottomSheetHandlerHeight,
   );
+  const userLocation = useMapStore((state) => state.userLocation);
+
+  const distanceByHighlineId = React.useMemo(() => {
+    if (!userLocation) {
+      return new Map<string, number>();
+    }
+
+    return new Map(
+      highlines.flatMap((highline) => {
+        const browseCoordinate = getHighlineBrowseCoordinate({
+          anchorALat: highline.anchor_a_lat,
+          anchorALong: highline.anchor_a_long,
+          anchorBLat: highline.anchor_b_lat,
+          anchorBLong: highline.anchor_b_long,
+        });
+
+        if (!browseCoordinate) {
+          return [];
+        }
+
+        return [
+          [
+            highline.id,
+            haversineDistance(
+              userLocation.latitude,
+              userLocation.longitude,
+              browseCoordinate[1],
+              browseCoordinate[0],
+            ),
+          ] as const,
+        ];
+      }),
+    );
+  }, [highlines, userLocation]);
 
   const handleCardPress = (high: Highline) => {
     if (high.id === focusedMarker?.id) {
@@ -55,6 +90,7 @@ export const MapCardList = ({
             isFocused={high.id === focusedMarker?.id}
             onPress={() => handleCardPress(high)}
             className="h-48 w-80"
+            distanceFromUserMeters={distanceByHighlineId.get(high.id)}
           />
         ))}
       </ScrollView>

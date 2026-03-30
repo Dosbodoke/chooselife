@@ -18,6 +18,10 @@ type State = {
     center: Position;
     bounds: BBox;
   };
+  userLocation: {
+    latitude: number;
+    longitude: number;
+  } | null;
   highlightedMarker: Highline | null;
   clusteredMarkers: Highline[];
   bottomSheetHandlerHeight: number;
@@ -30,6 +34,12 @@ type State = {
 
 type Actions = {
   setCamera: (camera: Mapbox.MapState) => void;
+  setUserLocation: (
+    location: {
+      latitude: number;
+      longitude: number;
+    } | null,
+  ) => void;
   setBottomSheeHandlerHeight: (height: number) => void;
   setHighlightedMarker: (marker: Highline | null) => void;
   setClusteredMarkers: (markers: Highline[]) => void;
@@ -45,6 +55,7 @@ export const useMapStore = create<State & Actions>((set) => ({
     center: [DEFAULT_LONGITUDE, DEFAULT_LATITUDE],
     bounds: regionToBoundingBox(INITIAL_REGION),
   },
+  userLocation: null,
   highlightedMarker: null,
   clusteredMarkers: [],
   bottomSheetHandlerHeight: 0,
@@ -64,6 +75,11 @@ export const useMapStore = create<State & Actions>((set) => ({
         },
       };
     });
+  },
+  setUserLocation: (location) => {
+    set(() => ({
+      userLocation: location,
+    }));
   },
   setBottomSheeHandlerHeight: (height: number) => {
     set(() => ({
