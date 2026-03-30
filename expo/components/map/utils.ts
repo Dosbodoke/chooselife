@@ -1,6 +1,7 @@
-import { BBox, Position } from "geojson";
-import { INITIAL_REGION } from "~/utils/constants";
-import { Point } from "~/utils/database.types";
+import { BBox, Position } from 'geojson';
+
+import { Point } from '~/utils/database.types';
+import { INITIAL_REGION } from '~/utils/constants';
 
 export const regionToBoundingBox = (region: typeof INITIAL_REGION): BBox => {
   let lngD: number;
@@ -31,6 +32,57 @@ export const haversineDistance = (
     Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
+};
+
+type BrowseCoordinateInput = {
+  anchorALat?: number | null;
+  anchorALong?: number | null;
+  anchorBLat?: number | null;
+  anchorBLong?: number | null;
+};
+
+const isFiniteNumber = (value: number | null | undefined): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
+
+export const getHighlineBrowseCoordinate = ({
+  anchorALat,
+  anchorALong,
+  anchorBLat,
+  anchorBLong,
+}: BrowseCoordinateInput): [number, number] | null => {
+  if (!isFiniteNumber(anchorALat) || !isFiniteNumber(anchorALong)) {
+    return null;
+  }
+
+  const anchorALatValue = anchorALat;
+  const anchorALongValue = anchorALong;
+
+  if (isFiniteNumber(anchorBLat) && isFiniteNumber(anchorBLong)) {
+    const anchorBLatValue = anchorBLat;
+    const anchorBLongValue = anchorBLong;
+
+    return [
+      (anchorALongValue + anchorBLongValue) / 2,
+      (anchorALatValue + anchorBLatValue) / 2,
+    ];
+  }
+
+  return [anchorALongValue, anchorALatValue];
+};
+
+export const approximateDistanceScore = (
+  originLat: number,
+  originLon: number,
+  targetLat: number,
+  targetLon: number,
+) => {
+  const averageLatitudeInRadians =
+    (((originLat + targetLat) / 2) * Math.PI) / 180;
+  const longitudeDelta =
+    (targetLon - originLon) * Math.cos(averageLatitudeInRadians);
+  const latitudeDelta = targetLat - originLat;
+
+  return longitudeDelta ** 2 + latitudeDelta ** 2;
 };
 
 export function positionToPostGISPoint(

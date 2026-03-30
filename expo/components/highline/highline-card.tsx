@@ -2,15 +2,15 @@ import { Link } from 'expo-router';
 import { MoveHorizontalIcon, MoveVerticalIcon } from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Text, TouchableOpacity, View, Pressable } from 'react-native';
+import { Pressable, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 
 import type { Highline } from '~/hooks/use-highline';
 import { RigStatuses } from '~/hooks/use-rig-setup';
 import { cn } from '~/lib/utils';
 
-import { Icon } from '~/components/ui/icon';
 import { StyledSquircle } from '~/components/styled';
+import { Icon } from '~/components/ui/icon';
 
 import { FavoriteHighline } from './favorite-button';
 import { HighlineImage } from './highline-image';
@@ -22,10 +22,12 @@ interface HighlineCardProps {
   className?: string;
   onPress?: () => void;
   isFocused?: boolean;
+  distanceFromUserMeters?: number | null;
 }
 
 interface CardContentProps {
   item: Highline;
+  distanceFromUserMeters?: number | null;
 }
 
 const StatusChip: React.FC<{ status: RigStatuses }> = ({ status }) => {
@@ -47,29 +49,79 @@ const StatusChip: React.FC<{ status: RigStatuses }> = ({ status }) => {
   );
 };
 
-const StatsPills: React.FC<{ height: number; length: number }> = ({ height, length }) => (
-  <View className="flex-row gap-2">
-    <View className="flex-row items-center bg-black/40 px-2 py-1 rounded-lg backdrop-blur-sm border border-white/10">
-      <Icon as={MoveVerticalIcon} className="text-white/90 size-3 mr-1" />
-      <Text className="text-white text-xs font-bold">{height}m</Text>
+const formatDistanceFromUser = (
+  distanceFromUserMeters: number,
+  locale: string,
+) => {
+  if (distanceFromUserMeters < 1000) {
+    return `${new Intl.NumberFormat(locale, {
+      maximumFractionDigits: 0,
+    }).format(distanceFromUserMeters)}m`;
+  }
+
+  const distanceInKilometers = distanceFromUserMeters / 1000;
+  const maximumFractionDigits = distanceInKilometers >= 10 ? 0 : 1;
+
+  return `${new Intl.NumberFormat(locale, {
+    minimumFractionDigits: maximumFractionDigits,
+    maximumFractionDigits,
+  }).format(distanceInKilometers)}km`;
+};
+
+const StatsPills: React.FC<{
+  height: number;
+  length: number;
+  distanceFromUserMeters?: number | null;
+}> = ({ height, length, distanceFromUserMeters }) => {
+  const { i18n, t } = useTranslation();
+
+  const formattedDistance =
+    typeof distanceFromUserMeters === 'number'
+      ? t('components.highline.card.distanceFromYou', {
+          distance: formatDistanceFromUser(
+            distanceFromUserMeters,
+            i18n.resolvedLanguage ?? i18n.language,
+          ),
+        })
+      : null;
+
+  return (
+    <View className="flex-row flex-wrap gap-2">
+      <View className="flex-row items-center bg-black/40 px-2 py-1 rounded-lg backdrop-blur-sm border border-white/10">
+        <Icon as={MoveVerticalIcon} className="text-white/90 size-3 mr-1" />
+        <Text className="text-white text-xs font-bold">{height}m</Text>
+      </View>
+      <View className="flex-row items-center bg-black/40 px-2 py-1 rounded-lg backdrop-blur-sm border border-white/10">
+        <Icon as={MoveHorizontalIcon} className="text-white/90 size-3 mr-1" />
+        <Text className="text-white text-xs font-bold">{length}m</Text>
+      </View>
+      {formattedDistance ? (
+        <View className="bg-black/55 px-2.5 py-1 rounded-lg backdrop-blur-sm border border-white/15">
+          <Text className="text-white text-xs font-bold">
+            {formattedDistance}
+          </Text>
+        </View>
+      ) : null}
     </View>
-    <View className="flex-row items-center bg-black/40 px-2 py-1 rounded-lg backdrop-blur-sm border border-white/10">
-      <Icon as={MoveHorizontalIcon} className="text-white/90 size-3 mr-1" />
-      <Text className="text-white text-xs font-bold">{length}m</Text>
-    </View>
-  </View>
-);
+  );
+};
 
 // ============================================================================
 // Card Content (renders inside the squircle)
 // ============================================================================
 
-const CardContent: React.FC<CardContentProps> = ({ item }) => {
+const CardContent: React.FC<CardContentProps> = ({
+  item,
+  distanceFromUserMeters,
+}) => {
   return (
     <>
       {/* Background Image */}
       <View className="absolute inset-0">
-        <HighlineImage coverImageId={item.cover_image} className="h-full w-full" />
+        <HighlineImage
+          coverImageId={item.cover_image}
+          className="h-full w-full"
+        />
       </View>
 
       {/* Gradient Overlay */}
@@ -106,7 +158,11 @@ const CardContent: React.FC<CardContentProps> = ({ item }) => {
           >
             {item.name}
           </Text>
-          <StatsPills height={item.height} length={item.length} />
+          <StatsPills
+            height={item.height}
+            length={item.length}
+            distanceFromUserMeters={distanceFromUserMeters}
+          />
         </View>
       </View>
     </>
@@ -118,6 +174,7 @@ export const HighlineCard: React.FC<HighlineCardProps> = ({
   className,
   onPress,
   isFocused,
+  distanceFromUserMeters,
 }) => {
   const content = (
     <ReanimatedSquircleView
@@ -130,7 +187,10 @@ export const HighlineCard: React.FC<HighlineCardProps> = ({
       entering={FadeInRight}
       exiting={FadeOutLeft}
     >
-      <CardContent item={item} />
+      <CardContent
+        item={item}
+        distanceFromUserMeters={distanceFromUserMeters}
+      />
     </ReanimatedSquircleView>
   );
 

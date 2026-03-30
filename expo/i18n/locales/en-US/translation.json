@@ -387,6 +387,9 @@
   },
   "components": {
     "highline": {
+      "card": {
+        "distanceFromYou": "{{distance}} from you"
+      },
       "history": {
         "title": "Rig History",
         "description": "Recording your setup not only preserves the higline history but also shows you care about safety.",

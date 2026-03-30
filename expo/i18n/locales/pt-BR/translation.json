@@ -387,6 +387,9 @@
   },
   "components": {
     "highline": {
+      "card": {
+        "distanceFromYou": "{{distance}} de você"
+      },
       "history": {
         "title": "Histórico de montagem",
         "description": "Registrar a montagem é mais do que manter o histórico da via, é se preocupar com a segurança.",
