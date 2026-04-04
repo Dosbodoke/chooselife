@@ -9,4 +9,8 @@ export const routing = defineRouting({
 
   // Used when no locale matches
   defaultLocale: locales[0],
+
+  // Don't prefix URLs with the default locale (pt)
+  // This avoids the redirect from / -> /pt
+  localePrefix: "as-needed",
 });
