@@ -58,6 +58,13 @@ export const metadata: Metadata = {
     },
     description: APP_DESCRIPTION,
   },
+  alternates: {
+    canonical: BASE_URL,
+    languages: {
+      pt: `${BASE_URL}`,
+      en: `${BASE_URL}/en`,
+    },
+  },
   other: {
     "apple-itunes-app": `app-id=${process.env.NEXT_PUBLIC_APPLE_APP_ID}, app-argument=${BASE_URL}`,
   },
