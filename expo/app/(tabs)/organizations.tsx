@@ -102,7 +102,7 @@ function OrganizationDetailsPage() {
             {/* Placeholder for Logo if needed, matching Settings profile pic style if we had one */}
             {/* <View className="size-16 rounded-full bg-gray-200" /> */}
             <View className="flex-1">
-              <Text className="text-xl font-bold text-foreground">
+              <Text className="text-3xl font-bold text-foreground">
                 {organization.name}
               </Text>
               <Text className="text-muted-foreground">
