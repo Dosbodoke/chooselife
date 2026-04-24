@@ -35,28 +35,14 @@ export async function generateMetadata(
 
   const localePrefix = locale === "pt" ? "" : `/${locale}`;
   const canonicalPath = `${localePrefix}/highline/${id}`;
+  const imageVersion = highline.cover_image || highline.created_at || id;
+  const imageUrl = `${BASE_URL}${canonicalPath}/opengraph-image?v=${encodeURIComponent(
+    imageVersion
+  )}`;
   const title = highline.name || `Highline: ${id}`;
   const description =
     highline.description ||
     `Highline with height ${highline.height}m and length ${highline.length}m`;
-  const imageParams = new URLSearchParams({
-    id,
-    title,
-  });
-
-  if (highline.cover_image) {
-    imageParams.set("cover", highline.cover_image);
-  }
-
-  if (highline.height) {
-    imageParams.set("height", Math.round(highline.height).toString());
-  }
-
-  if (highline.length) {
-    imageParams.set("length", Math.round(highline.length).toString());
-  }
-
-  const imageUrl = `${BASE_URL}/api/highline-og?${imageParams.toString()}`;
 
   return {
     title,
