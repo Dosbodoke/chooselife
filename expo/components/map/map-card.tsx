@@ -73,7 +73,7 @@ export const MapCardList = ({
       exiting={FadeOut.duration(300).easing(Easing.inOut(Easing.ease))}
       style={{
         position: 'absolute',
-        bottom: bottomSheetHandlerHeight + 0  , // Bottom sheet handle + padding
+        bottom: focusedMarker ? 12 : bottomSheetHandlerHeight,
         left: 0,
         right: 0,
       }}
