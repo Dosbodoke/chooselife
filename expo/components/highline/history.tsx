@@ -13,6 +13,7 @@ import {
 } from '~/hooks/use-rig-setup';
 import { cn } from '~/lib/utils';
 
+import { StyledSquircle } from '~/components/styled';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import {
   Card,
@@ -211,9 +212,8 @@ const TimelineItem: React.FC<{
         status: 'unrigged' as RigStatuses,
         content: (
           <TimelineContent
-            label={t('components.highline.history.timeline.from')}
+            label={t('components.highline.history.timeline.rigPeriod')}
             date={rigDate.toLocaleDateString('pt-BR')}
-            endLabel={t('components.highline.history.timeline.to')}
             endDate={new Date(setup.unrigged_at).toLocaleDateString('pt-BR')}
           />
         ),
@@ -264,20 +264,11 @@ const TimelineItem: React.FC<{
 const TimelineContent: React.FC<{
   label: string;
   date: string;
-  endLabel?: string;
   endDate?: string;
-}> = ({ label, date, endLabel, endDate }) => (
-  <View className="flex-row flex-wrap gap-2 items-center">
+}> = ({ label, date, endDate }) => (
+  <View className="gap-2">
     <Text className="text-foreground font-semibold text-base">{label}</Text>
-    <CalendarBadge date={date} />
-    {endLabel && endDate && (
-      <>
-        <Text className="text-foreground font-semibold text-base">
-          {endLabel}
-        </Text>
-        <CalendarBadge date={endDate} />
-      </>
-    )}
+    <CalendarBadge date={date} endDate={endDate} />
   </View>
 );
 
@@ -330,9 +321,23 @@ export const Riggers: React.FC<{ riggers: string[] }> = ({ riggers }) => {
   );
 };
 
-const CalendarBadge: React.FC<{ date: string }> = ({ date }) => (
-  <View className="flex-row gap-1.5 items-center bg-muted border border-border rounded-lg px-2.5 py-1.5 shadow-sm">
-    <Icon as={CalendarRangeIcon} className="text-muted-foreground" size={14} />
-    <Text className="text-muted-foreground font-medium text-sm">{date}</Text>
-  </View>
+const CalendarBadge: React.FC<{ date: string; endDate?: string }> = ({
+  date,
+  endDate,
+}) => (
+  <StyledSquircle
+    className="self-start flex-row gap-1.5 items-center bg-sky-50 border border-sky-100 rounded-xl px-3 py-1.5 shadow-sm"
+    cornerSmoothing={0.2}
+    style={{ borderRadius: 12 }}
+  >
+    <Icon
+      as={CalendarRangeIcon}
+      className="text-sky-500"
+      size={14}
+      strokeWidth={2.5}
+    />
+    <Text className="text-sky-600 font-bold text-sm">
+      {endDate ? `${date} - ${endDate}` : date}
+    </Text>
+  </StyledSquircle>
 );

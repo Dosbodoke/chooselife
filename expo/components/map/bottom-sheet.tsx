@@ -31,6 +31,7 @@ const ListingsBottomSheet: React.FC = () => {
   const searchQuery = useMapStore((state) => state.searchQuery);
   const activeCategory = useMapStore((state) => state.activeCategory);
   const hasFocusedMarker = useMapStore((state) => state.hasFocusedMarker);
+  const highlightedMarker = useMapStore((state) => state.highlightedMarker);
   const browseOrigin = useMapStore((state) => state.camera.center);
   const userLocation = useMapStore((state) => state.userLocation);
 
@@ -121,9 +122,16 @@ const ListingsBottomSheet: React.FC = () => {
 
   const setExpandBottomSheet = useMapStore((state) => state.setExpandBottomSheet);
   useEffect(() => {
+    if (highlightedMarker) {
+      bottomSheetRef.current?.close();
+      setExpandBottomSheet(null);
+      return;
+    }
+
+    bottomSheetRef.current?.collapse();
     setExpandBottomSheet(() => bottomSheetRef.current?.expand());
     return () => setExpandBottomSheet(null);
-  }, [setExpandBottomSheet]);
+  }, [highlightedMarker, setExpandBottomSheet]);
 
   useEffect(() => {
     if (hasFocusedMarker) bottomSheetRef.current?.collapse();

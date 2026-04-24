@@ -21,7 +21,7 @@ const getHigh = cache(async ({ id }: { id: string }) => {
 
 export async function generateMetadata(
   { params }: Props,
-  parent: ResolvingMetadata
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { locale, id } = await params;
 
@@ -31,11 +31,10 @@ export async function generateMetadata(
     return { title: "Highline Not Found" };
   }
   const highline = highlines[0];
-  const previousImages = (await parent).openGraph?.images || [];
 
   const imageUrl = highline.cover_image
     ? getR2PublicUrl("images", highline.cover_image)
-    : undefined;
+    : "/highline-og.jpg";
 
   return {
     title: highline.name || `Highline: ${id}`,
@@ -45,9 +44,16 @@ export async function generateMetadata(
       description:
         highline.description ||
         `Highline with height ${highline.height}m and length ${highline.length}m`,
-      url: `/${locale}/${id}`,
+      url: `/${locale}/highline/${id}`,
       siteName: "ChooseLife",
-      images: imageUrl ? [imageUrl, ...previousImages] : previousImages,
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: highline.name || `Highline: ${id}`,
+        },
+      ],
       locale: locale,
       type: "website",
     },
@@ -57,7 +63,7 @@ export async function generateMetadata(
       description:
         highline.description ||
         `Highline with height ${highline.height}m and length ${highline.length}m`,
-      images: imageUrl ? [imageUrl] : [],
+      images: [imageUrl],
     },
   };
 }
