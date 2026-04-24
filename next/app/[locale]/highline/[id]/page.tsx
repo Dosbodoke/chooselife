@@ -42,6 +42,7 @@ export async function generateMetadata(
   const imageParams = new URLSearchParams({
     id,
     title,
+    v: "2",
   });
 
   if (highline.cover_image) {
@@ -76,7 +77,7 @@ export async function generateMetadata(
           width: 1200,
           height: 630,
           alt: highline.name || `Highline: ${id}`,
-          type: "image/png",
+          type: "image/jpeg",
         },
       ],
       locale: locale,
