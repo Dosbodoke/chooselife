@@ -401,8 +401,7 @@
         },
         "timeline": {
           "riggedSince": "Rigged since",
-          "from": "From",
-          "to": "to",
+          "rigPeriod": "Rig period",
           "plannedFor": "Planned for"
         }
       },

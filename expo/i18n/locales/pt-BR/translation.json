@@ -401,8 +401,7 @@
         },
         "timeline": {
           "riggedSince": "Montada desde",
-          "from": "De",
-          "to": "até",
+          "rigPeriod": "Período de montagem",
           "plannedFor": "Planejado para"
         }
       },
