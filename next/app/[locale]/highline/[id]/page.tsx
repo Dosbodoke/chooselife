@@ -3,11 +3,12 @@ import type { Metadata, ResolvingMetadata } from "next/types";
 import { cache } from "react";
 
 import { getHighline } from "@/app/actions/getHighline";
-import { getR2PublicUrl } from "@/lib/storage/r2";
 
 import OpenInAPP from "./_components/open-in-app";
 
 export const dynamic = "force-dynamic";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://chooselife.club";
 
 type Props = {
   params: Promise<{ id: string; locale: string }>;
@@ -32,26 +33,33 @@ export async function generateMetadata(
   }
   const highline = highlines[0];
 
-  const imageUrl = highline.cover_image
-    ? getR2PublicUrl("images", highline.cover_image)
-    : "/highline-og.jpg";
+  const localePrefix = locale === "pt" ? "" : `/${locale}`;
+  const canonicalPath = `${localePrefix}/highline/${id}`;
+  const imageUrl = `${BASE_URL}${canonicalPath}/opengraph-image`;
+  const title = highline.name || `Highline: ${id}`;
+  const description =
+    highline.description ||
+    `Highline with height ${highline.height}m and length ${highline.length}m`;
 
   return {
-    title: highline.name || `Highline: ${id}`,
-    description: highline.description || "View details about this highline",
+    title,
+    description,
+    alternates: {
+      canonical: `${BASE_URL}${canonicalPath}`,
+    },
     openGraph: {
-      title: highline.name || `Highline: ${id}`,
-      description:
-        highline.description ||
-        `Highline with height ${highline.height}m and length ${highline.length}m`,
-      url: `/${locale}/highline/${id}`,
+      title,
+      description,
+      url: `${BASE_URL}${canonicalPath}`,
       siteName: "ChooseLife",
       images: [
         {
           url: imageUrl,
-          width: 1200,
-          height: 630,
+          secureUrl: imageUrl,
+          width: 400,
+          height: 210,
           alt: highline.name || `Highline: ${id}`,
+          type: "image/png",
         },
       ],
       locale: locale,
@@ -59,10 +67,8 @@ export async function generateMetadata(
     },
     twitter: {
       card: "summary_large_image",
-      title: highline.name || `Highline: ${id}`,
-      description:
-        highline.description ||
-        `Highline with height ${highline.height}m and length ${highline.length}m`,
+      title,
+      description,
       images: [imageUrl],
     },
   };
