@@ -1,13 +1,25 @@
 import { supabase } from '~/lib/supabase';
 
-const R2_PUBLIC_URL = process.env.EXPO_PUBLIC_R2_PUBLIC_URL!;
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL!;
+const DEFAULT_R2_PUBLIC_URL = 'https://cdn.chooselife.club';
+const DEFAULT_WEB_URL = 'https://chooselife.club';
+
+const R2_PUBLIC_URL =
+  process.env.EXPO_PUBLIC_R2_PUBLIC_URL || DEFAULT_R2_PUBLIC_URL;
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || DEFAULT_WEB_URL;
 
 /**
  * Returns the public CDN URL for a file in R2 storage.
  */
 export function getR2PublicUrl(bucket: string, path: string): string {
-  return `${R2_PUBLIC_URL}/${bucket}/${path}`;
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  const baseUrl = R2_PUBLIC_URL.replace(/\/+$/, '');
+  const normalizedBucket = bucket.replace(/^\/+|\/+$/g, '');
+  const normalizedPath = path.replace(/^\/+/, '');
+
+  return `${baseUrl}/${normalizedBucket}/${normalizedPath}`;
 }
 
 /**
@@ -46,10 +58,12 @@ export async function uploadToR2(
   const { presignedUrl, key: resolvedKey } = await presignRes.json();
 
   // Upload directly to R2
+  const uploadBody = body instanceof Uint8Array ? body.buffer : body;
+
   const uploadRes = await fetch(presignedUrl, {
     method: 'PUT',
     headers: { 'Content-Type': contentType },
-    body,
+    body: uploadBody as BodyInit,
   });
 
   if (!uploadRes.ok) {
