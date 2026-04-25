@@ -71,6 +71,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     favicon: './assets/icons/favicon.png',
   },
   plugins: [
+    'react-native-enriched-markdown',
     'expo-apple-authentication',
     'expo-sqlite',
     'expo-router',

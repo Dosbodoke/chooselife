@@ -1,14 +1,13 @@
-import { Link } from 'expo-router';
-import { MessageSquare, ThumbsUp } from 'lucide-react-native'; // Added ThumbsUp, removed Smile
-import React from 'react';
-import { Pressable, View } from 'react-native';
-import { Markdown } from 'react-native-remark';
-
 import {
   useMutateReaction,
   useNews,
-  type News as NewsType
+  type News as NewsType,
 } from '@chooselife/ui';
+import { router } from 'expo-router';
+import { MessageSquare, ThumbsUp } from 'lucide-react-native'; // Added ThumbsUp, removed Smile
+import React from 'react';
+import { EnrichedMarkdownText } from 'react-native-enriched-markdown';
+import { Pressable, type GestureResponderEvent, View } from 'react-native';
 
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
@@ -18,7 +17,7 @@ const NewsCardSkeleton = () => {
     <View className="bg-white rounded-xl p-4 gap-2">
       {/* Title */}
       <Skeleton className="h-7 w-3/4 bg-gray-200" />
-      
+
       {/* Content */}
       <View className="gap-1 my-2">
         <Skeleton className="h-4 w-full bg-gray-200" />
@@ -53,15 +52,24 @@ const NewsCard = ({ news }: { news: NewsType[number] }) => {
       : { previewContent: news.content, isClamped: false };
   }, [news.content]);
 
-  const organizationSlug = news.organizations?.slug;
+  // const organizationSlug = news.organizations?.slug;
+  const newsHref = `/news/${news.slug}` as const;
+  const handlePress = () => {
+    router.push(newsHref);
+  };
+
+  const handleReactionPress = (event: GestureResponderEvent) => {
+    event.stopPropagation();
+    react('thumbsUp');
+  };
 
   return (
-    <View className="bg-white rounded-xl p-4">
+    <Pressable className="bg-white rounded-xl p-4" onPress={handlePress}>
       <Text className="text-sm text-gray-500 mb-2">
         {new Date(news.created_at).toLocaleDateString()}
       </Text>
       <View className="relative">
-        <Markdown markdown={previewContent} />
+        <EnrichedMarkdownText markdown={previewContent} selectable={false} />
         {isClamped && (
           <View
             className="absolute inset-x-0 bottom-0 h-40"
@@ -77,7 +85,7 @@ const NewsCard = ({ news }: { news: NewsType[number] }) => {
         <View className="flex-row items-center gap-4">
           <Pressable
             className="flex-row items-center gap-1"
-            onPress={() => react('thumbsUp')}
+            onPress={handleReactionPress}
           >
             <ThumbsUp className="w-4 h-4 text-gray-500" />
             <Text className="text-gray-500">{reactions}</Text>
@@ -89,11 +97,11 @@ const NewsCard = ({ news }: { news: NewsType[number] }) => {
             </Text>
           </View>
         </View>
-        <Link href={`/news/${news.slug}`} asChild>
-          <Text className="text-blue-500 font-bold">Participar da discussão</Text>
-        </Link>
+        <Text className="text-blue-500 font-bold">
+          Participar da discussão
+        </Text>
       </View>
-    </View>
+    </Pressable>
   );
 };
 

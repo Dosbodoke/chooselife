@@ -14,6 +14,7 @@ import {
 } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { EnrichedMarkdownText } from 'react-native-enriched-markdown';
 import { Pressable, View } from 'react-native';
 import Animated, {
   FadeInUp,
@@ -22,7 +23,6 @@ import Animated, {
   LinearTransition,
   useAnimatedStyle,
 } from 'react-native-reanimated';
-import { Markdown } from 'react-native-remark';
 
 import { useI18n } from '~/context/i18n';
 import { useShare } from '~/hooks/use-share';
@@ -359,7 +359,7 @@ export const EventCard: React.FC<{ event: Event }> = ({ event }) => {
                   <View>
                     {isFromISA ? (
                       <View className="text-sm">
-                        <Markdown
+                        <EnrichedMarkdownText
                           markdown={htmlToMarkdown(event.description)}
                         />
                       </View>

@@ -9,6 +9,14 @@ import OpenInAPP from "./_components/open-in-app";
 
 export const dynamic = "force-dynamic";
 
+function getBaseUrl() {
+  if (process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  return process.env.NEXT_PUBLIC_BASE_URL || "https://chooselife.club";
+}
+
 type Props = {
   params: Promise<{ id: string; locale: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -32,26 +40,40 @@ export async function generateMetadata(
   }
   const highline = highlines[0];
 
-  const imageUrl = highline.cover_image
+  const baseUrl = getBaseUrl();
+  const localePrefix = locale === "pt" ? "" : `/${locale}`;
+  const canonicalPath = `${localePrefix}/highline/${id}`;
+  const imageSource = highline.cover_image
     ? getR2PublicUrl("images", highline.cover_image)
-    : "/highline-og.jpg";
+    : `${baseUrl}/highline-og.jpg`;
+  const imageCacheKey = encodeURIComponent(
+    highline.cover_image || highline.created_at || id
+  );
+  const imageUrl = `${baseUrl}${canonicalPath}/opengraph-image?image=${imageCacheKey}`;
+  const title = highline.name || `Highline: ${id}`;
+  const description =
+    highline.description ||
+    `Highline with height ${highline.height}m and length ${highline.length}m`;
 
   return {
-    title: highline.name || `Highline: ${id}`,
-    description: highline.description || "View details about this highline",
+    title,
+    description,
+    alternates: {
+      canonical: `${baseUrl}${canonicalPath}`,
+    },
     openGraph: {
-      title: highline.name || `Highline: ${id}`,
-      description:
-        highline.description ||
-        `Highline with height ${highline.height}m and length ${highline.length}m`,
-      url: `/${locale}/highline/${id}`,
+      title,
+      description,
+      url: `${baseUrl}${canonicalPath}`,
       siteName: "ChooseLife",
       images: [
         {
           url: imageUrl,
-          width: 1200,
-          height: 630,
+          secureUrl: imageUrl,
+          width: 400,
+          height: 210,
           alt: highline.name || `Highline: ${id}`,
+          type: "image/png",
         },
       ],
       locale: locale,
@@ -59,10 +81,8 @@ export async function generateMetadata(
     },
     twitter: {
       card: "summary_large_image",
-      title: highline.name || `Highline: ${id}`,
-      description:
-        highline.description ||
-        `Highline with height ${highline.height}m and length ${highline.length}m`,
+      title,
+      description,
       images: [imageUrl],
     },
   };
