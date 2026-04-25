@@ -3,12 +3,19 @@ import type { Metadata, ResolvingMetadata } from "next/types";
 import { cache } from "react";
 
 import { getHighline } from "@/app/actions/getHighline";
+import { getR2PublicUrl } from "@/lib/storage/r2";
 
 import OpenInAPP from "./_components/open-in-app";
 
 export const dynamic = "force-dynamic";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://chooselife.club";
+function getBaseUrl() {
+  if (process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  return process.env.NEXT_PUBLIC_BASE_URL || "https://chooselife.club";
+}
 
 type Props = {
   params: Promise<{ id: string; locale: string }>;
@@ -33,9 +40,16 @@ export async function generateMetadata(
   }
   const highline = highlines[0];
 
+  const baseUrl = getBaseUrl();
   const localePrefix = locale === "pt" ? "" : `/${locale}`;
   const canonicalPath = `${localePrefix}/highline/${id}`;
-  const imageUrl = `${BASE_URL}${canonicalPath}/opengraph-image`;
+  const imageSource = highline.cover_image
+    ? getR2PublicUrl("images", highline.cover_image)
+    : `${baseUrl}/highline-og.jpg`;
+  const imageCacheKey = encodeURIComponent(
+    highline.cover_image || highline.created_at || id
+  );
+  const imageUrl = `${baseUrl}${canonicalPath}/opengraph-image?image=${imageCacheKey}`;
   const title = highline.name || `Highline: ${id}`;
   const description =
     highline.description ||
@@ -45,12 +59,12 @@ export async function generateMetadata(
     title,
     description,
     alternates: {
-      canonical: `${BASE_URL}${canonicalPath}`,
+      canonical: `${baseUrl}${canonicalPath}`,
     },
     openGraph: {
       title,
       description,
-      url: `${BASE_URL}${canonicalPath}`,
+      url: `${baseUrl}${canonicalPath}`,
       siteName: "ChooseLife",
       images: [
         {

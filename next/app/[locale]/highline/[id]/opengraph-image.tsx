@@ -4,8 +4,6 @@ import { ImageResponse } from "next/og";
 
 import { getR2PublicUrl } from "@/lib/storage/r2";
 
-export const revalidate = 3600;
-
 export const runtime = "edge";
 
 export const alt = "Highline";
@@ -22,10 +20,19 @@ type Props = {
 
 type Highline = {
   cover_image: string | null;
+  created_at: string | null;
   height: number | null;
   length: number | null;
   name: string | null;
 };
+
+function getBaseUrl() {
+  if (process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  return process.env.NEXT_PUBLIC_BASE_URL || "https://chooselife.club";
+}
 
 async function getHighlineForOg(id: string): Promise<Highline | null> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -62,19 +69,20 @@ async function fetchImageBuffer(url: string): Promise<ArrayBuffer | null> {
 
 export default async function Image({ params }: Props) {
   const { id } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
-    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const baseUrl = getBaseUrl();
   const highline = await getHighlineForOg(id);
   const title = highline?.name || "Chooselife Highline";
   const stats = [
     highline?.height ? `${Math.round(highline.height)}m de altura` : null,
     highline?.length ? `${Math.round(highline.length)}m de comprimento` : null,
   ].filter(Boolean);
-  const backgroundUrl = highline?.cover_image
+  const backgroundSource = highline?.cover_image
     ? getR2PublicUrl("images", highline.cover_image)
     : `${baseUrl}/highline-og.jpg`;
-  const backgroundImage = await fetchImageBuffer(backgroundUrl);
+  const optimizedBackgroundUrl = `${baseUrl}/_next/image?url=${encodeURIComponent(
+    backgroundSource
+  )}&w=1200&q=75`;
+  const backgroundImage = await fetchImageBuffer(optimizedBackgroundUrl);
 
   return new ImageResponse(
     (
@@ -110,7 +118,10 @@ export default async function Image({ params }: Props) {
         <div
           style={{
             position: "absolute",
-            inset: 0,
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
             background:
               "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 45%, rgba(0,0,0,0.04) 100%)",
           }}
