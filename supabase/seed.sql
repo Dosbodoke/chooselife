@@ -12,6 +12,8 @@ SET
   description = EXCLUDED.description;
 
 -- Create the local festival row used by the web and mobile queue feature.
+-- start_at is inferred from the current UTC day.
+-- end_at is 4 days after start_at.
 INSERT INTO public.festival (
   slug,
   name,
@@ -24,8 +26,8 @@ VALUES (
   'chooselife-2026',
   'Festival Chooselife',
   'The biggest Highline festival in Brazil',
-  '2026-06-19T00:00:00Z',
-  '2026-06-22T23:59:59Z',
+  date_trunc('day', now() AT TIME ZONE 'utc') AT TIME ZONE 'utc',
+  (date_trunc('day', now() AT TIME ZONE 'utc') AT TIME ZONE 'utc') + interval '4 days',
   true
 )
 ON CONFLICT (slug) DO UPDATE
@@ -121,8 +123,15 @@ INNER JOIN public.profiles AS profile
 WHERE festival.slug = 'chooselife-2026'
 ON CONFLICT (festival_id, profile_id) DO NOTHING;
 
--- Add a few guest queue entries so the web and mobile queue UI is populated
--- even before creating test accounts locally.
+-- Add queue entries for the first festival highline.
+-- Entry 1:
+--   joined now
+--   called 1 minute after joining
+--
+-- Entry 2:
+--   same queue
+--   joined 1 minute after entry 1
+--   not called yet
 INSERT INTO public.festival_queue_entry (
   id,
   festival_id,
@@ -140,11 +149,8 @@ SELECT
   NULL,
   seeded.display_name,
   seeded.status,
-  timezone('utc'::text, now()) - seeded.joined_offset,
-  CASE
-    WHEN seeded.called_offset IS NULL THEN NULL
-    ELSE timezone('utc'::text, now()) - seeded.called_offset
-  END
+  seeded.joined_at,
+  seeded.called_at
 FROM public.festival AS festival
 INNER JOIN (
   VALUES
@@ -153,54 +159,35 @@ INNER JOIN (
       '11111111-1111-4111-8111-111111111111'::uuid,
       'Luna',
       'called'::public.festival_queue_status_enum,
-      interval '90 minutes',
-      interval '84 minutes'
+      now(),
+      now() + interval '1 minute'
     ),
     (
       'aaaaaaa2-aaaa-4aaa-8aaa-aaaaaaaaaaa2'::uuid,
       '11111111-1111-4111-8111-111111111111'::uuid,
       'Nico',
       'waiting'::public.festival_queue_status_enum,
-      interval '56 minutes',
-      NULL::interval
-    ),
-    (
-      'aaaaaaa3-aaaa-4aaa-8aaa-aaaaaaaaaaa3'::uuid,
-      '11111111-1111-4111-8111-111111111111'::uuid,
-      'Maya',
-      'waiting'::public.festival_queue_status_enum,
-      interval '32 minutes',
-      NULL::interval
-    ),
-    (
-      'bbbbbbb1-bbbb-4bbb-8bbb-bbbbbbbbbbb1'::uuid,
-      '33333333-3333-4333-8333-333333333333'::uuid,
-      'Pedro',
-      'waiting'::public.festival_queue_status_enum,
-      interval '45 minutes',
-      NULL::interval
-    ),
-    (
-      'bbbbbbb2-bbbb-4bbb-8bbb-bbbbbbbbbbb2'::uuid,
-      '33333333-3333-4333-8333-333333333333'::uuid,
-      'Ana',
-      'waiting'::public.festival_queue_status_enum,
-      interval '20 minutes',
-      NULL::interval
+      now() + interval '1 minute',
+      NULL::timestamptz
     )
 ) AS seeded(
   id,
   highline_id,
   display_name,
   status,
-  joined_offset,
-  called_offset
+  joined_at,
+  called_at
 )
   ON TRUE
 WHERE festival.slug = 'chooselife-2026'
 ON CONFLICT (id) DO UPDATE
 SET
+  highline_id = EXCLUDED.highline_id,
+  profile_id = EXCLUDED.profile_id,
   display_name = EXCLUDED.display_name,
   status = EXCLUDED.status,
   joined_at = EXCLUDED.joined_at,
-  called_at = EXCLUDED.called_at;
+  called_at = EXCLUDED.called_at,
+  completed_at = NULL,
+  removed_at = NULL,
+  removed_by = NULL;
