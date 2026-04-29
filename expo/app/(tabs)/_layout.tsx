@@ -1,3 +1,4 @@
+import { useMapStore } from '~/store/map-store'; // ← import your store
 import { Tabs } from 'expo-router';
 import {
   EarthIcon,
@@ -17,6 +18,11 @@ import { Icon } from '~/components/ui/icon';
 export default function TabLayout() {
   const { t } = useTranslation();
   const { profile } = useAuth();
+
+  // Get the clustered markers from the same store used by ExploreMap
+  const clusteredMarkers = useMapStore((state) => state.clusteredMarkers);
+  const isCardVisible = clusteredMarkers.length > 0;
+
   return (
     <Tabs>
       <Tabs.Screen
@@ -41,6 +47,8 @@ export default function TabLayout() {
         options={{
           title: t('app.(tabs)._layout.indexTitle'),
           tabBarHideOnKeyboard: true,
+          // Hide the tab bar only when cards are visible
+          tabBarStyle: { display: isCardVisible ? 'none' : 'flex' },
           tabBarIcon: ({ focused }) => (
             <Icon
               as={EarthIcon}

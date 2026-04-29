@@ -180,7 +180,7 @@ export const HighlineCard: React.FC<HighlineCardProps> = ({
     <ReanimatedSquircleView
       className={cn(
         'h-48 w-full overflow-hidden rounded-2xl bg-muted relative mb-3',
-        isFocused && 'border-2 border-blue-500',
+        isFocused && 'border-2 border-white',
         className,
       )}
       cornerSmoothing={1}
