@@ -241,7 +241,53 @@
   },
   "festival": {
     "cardSubTitle": "Acompanhe o ranking do festival em tempo real",
-    "pageSubTitle": "O maior festival de Highline do Brasil"
+    "pageSubTitle": "O maior festival de Highline do Brasil",
+    "tabs": {
+      "highlines": "Highlines",
+      "ranking": "Ranking"
+    },
+    "queue": {
+      "loading": "Atualizando a fila...",
+      "defaultSector": "Highlines do festival",
+      "openQueue": "Abrir fila",
+      "current": "Na vez",
+      "waitingCountLabel": "aguardando",
+      "previewTitle": "Prévia da fila",
+      "lineupTitle": "Ordem da fila",
+      "empty": "Ainda não há ninguém nesta fila.",
+      "estimateNow": "Previsão: agora",
+      "estimateAt": "Previsão: {time}",
+      "viewerPosition": "Você está na posição #{position}.",
+      "drawerDescription": "Fila do setor {sector}.",
+      "drawerDescriptionNoSector": "Fila deste highline do festival.",
+      "panelTitle": "Fila do highline",
+      "panelDescription": "Entre na fila, acompanhe a vez atual e deixe os monitores avançarem a ordem durante o festival.",
+      "monitorBadge": "Modo monitor",
+      "authRequired": "Você precisa estar logado para entrar com o próprio nome na fila.",
+      "joinButton": "Entrar na fila",
+      "joinHelper": "Você precisa de uma conta para entrar, mas ainda pode editar o nome exibido na fila.",
+      "namePlaceholder": "Digite seu nome",
+      "manualJoinTitle": "Adicionar alguém manualmente",
+      "manualJoinHelper": "A staff do festival pode adicionar qualquer nome livre na fila.",
+      "manualJoinButton": "Adicionar na fila",
+      "manualNamePlaceholder": "Digite qualquer nome",
+      "leaveButton": "Sair da fila",
+      "callNext": "Chamar próximo",
+      "manageTitle": "Gerenciar entradas",
+      "removeButton": "Remover",
+      "messages": {
+        "joinSuccess": "Adicionado à fila.",
+        "joinError": "Não foi possível entrar na fila.",
+        "manualAddSuccess": "Entrada adicionada à fila.",
+        "manualAddError": "Não foi possível adicionar a entrada na fila.",
+        "leaveSuccess": "Removido da fila.",
+        "leaveError": "Não foi possível sair da fila.",
+        "callNextSuccess": "Fila avançada.",
+        "callNextError": "Não foi possível avançar a fila.",
+        "removeSuccess": "Entrada removida da fila.",
+        "removeError": "Não foi possível remover a entrada da fila."
+      }
+    }
   },
   "privacyPolicy": {
     "title": "Política de Privacidade",

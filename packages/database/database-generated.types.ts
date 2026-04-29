@@ -101,6 +101,179 @@ export type Database = {
         }
         Relationships: []
       }
+      festival: {
+        Row: {
+          created_at: string
+          end_at: string
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          start_at: string
+          subtitle: string | null
+        }
+        Insert: {
+          created_at?: string
+          end_at: string
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          start_at: string
+          subtitle?: string | null
+        }
+        Update: {
+          created_at?: string
+          end_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          start_at?: string
+          subtitle?: string | null
+        }
+        Relationships: []
+      }
+      festival_highline: {
+        Row: {
+          created_at: string
+          festival_id: string
+          highline_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          festival_id: string
+          highline_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          festival_id?: string
+          highline_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "festival_highline_festival_id_fkey"
+            columns: ["festival_id"]
+            isOneToOne: false
+            referencedRelation: "festival"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "festival_highline_highline_id_fkey"
+            columns: ["highline_id"]
+            isOneToOne: false
+            referencedRelation: "highline"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      festival_queue_entry: {
+        Row: {
+          called_at: string | null
+          completed_at: string | null
+          display_name: string
+          festival_id: string
+          highline_id: string
+          id: string
+          joined_at: string
+          profile_id: string | null
+          removed_at: string | null
+          removed_by: string | null
+          status: Database["public"]["Enums"]["festival_queue_status_enum"]
+        }
+        Insert: {
+          called_at?: string | null
+          completed_at?: string | null
+          display_name: string
+          festival_id: string
+          highline_id: string
+          id?: string
+          joined_at?: string
+          profile_id?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
+          status?: Database["public"]["Enums"]["festival_queue_status_enum"]
+        }
+        Update: {
+          called_at?: string | null
+          completed_at?: string | null
+          display_name?: string
+          festival_id?: string
+          highline_id?: string
+          id?: string
+          joined_at?: string
+          profile_id?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
+          status?: Database["public"]["Enums"]["festival_queue_status_enum"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "festival_queue_entry_festival_id_fkey"
+            columns: ["festival_id"]
+            isOneToOne: false
+            referencedRelation: "festival"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "festival_queue_entry_highline_id_fkey"
+            columns: ["highline_id"]
+            isOneToOne: false
+            referencedRelation: "highline"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "festival_queue_entry_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "festival_queue_entry_removed_by_fkey"
+            columns: ["removed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      festival_staff: {
+        Row: {
+          created_at: string
+          festival_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          festival_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          festival_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "festival_staff_festival_id_fkey"
+            columns: ["festival_id"]
+            isOneToOne: false
+            referencedRelation: "festival"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "festival_staff_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorite_highline: {
         Row: {
           created_at: string
@@ -749,6 +922,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      call_next_festival_queue: {
+        Args: { festival_slug: string; target_highline_id: string }
+        Returns: {
+          called_at: string | null
+          completed_at: string | null
+          display_name: string
+          festival_id: string
+          highline_id: string
+          id: string
+          joined_at: string
+          profile_id: string | null
+          removed_at: string | null
+          removed_by: string | null
+          status: Database["public"]["Enums"]["festival_queue_status_enum"]
+        }
+      }
       get_crossing_time: {
         Args: { highline_id: string; page_number: number; page_size: number }
         Returns: {
@@ -858,6 +1047,7 @@ export type Database = {
       validate_locale_keys: { Args: { json_data: Json }; Returns: boolean }
     }
     Enums: {
+      festival_queue_status_enum: "waiting" | "called" | "completed" | "removed"
       language: "en" | "pt"
       material_enum: "nylon" | "dyneema" | "polyester"
       organization_role_enum: "admin" | "member"
@@ -1594,6 +1784,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      festival_queue_status_enum: ["waiting", "called", "completed", "removed"],
       language: ["en", "pt"],
       material_enum: ["nylon", "dyneema", "polyester"],
       organization_role_enum: ["admin", "member"],
@@ -1611,4 +1802,3 @@ export const Constants = {
     },
   },
 } as const
-

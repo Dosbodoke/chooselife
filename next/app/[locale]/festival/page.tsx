@@ -1,12 +1,13 @@
-import { Loader2 } from "lucide-react";
 import Image from "next/image";
-import { getTranslations,setRequestLocale } from "next-intl/server";
-import { Suspense } from "react";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Locales } from "@/i18n/routing";
+import { createSupabaseClient } from "@/utils/supabase/server";
 
 import { FestivalTabs } from "./_components/festival-tabs";
+
+const FESTIVAL_SLUG = "chooselife-2026";
 
 type Props = {
   params: Promise<{ locale: Locales; username: string }>;
@@ -18,9 +19,13 @@ export default async function Festival({ params }: Props) {
 
   setRequestLocale(locale);
   const t = await getTranslations("festival");
+  const supabase = await createSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
-    <section className="w-full py-12 md:py-24 lg:py-32">
+    <section className="relative w-full py-12 md:py-24 lg:py-32">
       <Image
         src="/festival-hero.png"
         fill
@@ -28,7 +33,7 @@ export default async function Festival({ params }: Props) {
         alt="Illustration of a someone walking a Highline"
       />
       <div className="absolute inset-0 -z-10 max-h-screen bg-gradient-to-t from-slate-900 from-10%" />
-      <div className="container px-4 md:px-6">
+      <div className="mx-auto w-full max-w-7xl px-4 md:px-6">
         <div className="flex flex-col items-center justify-center space-y-6">
           <div className="space-y-2 text-center">
             <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
@@ -38,24 +43,12 @@ export default async function Festival({ params }: Props) {
               {t("pageSubTitle")}
             </p>
           </div>
-          <Tabs className="w-full" defaultValue="ranking">
+          <Tabs className="mx-auto w-full" defaultValue="highlines">
             <TabsList className="mx-auto grid w-full max-w-md grid-cols-2">
-              {/* <TabsTrigger value="schedule">Schedule</TabsTrigger> */}
-              <TabsTrigger value="ranking">Ranking</TabsTrigger>
-              <TabsTrigger value="highlines">Highlines</TabsTrigger>
+              <TabsTrigger value="highlines">{t("tabs.highlines")}</TabsTrigger>
+              <TabsTrigger value="ranking">{t("tabs.ranking")}</TabsTrigger>
             </TabsList>
-            {/* <TabsContent value="schedule">
-              <div>foo</div>
-            </TabsContent> */}
-            <Suspense
-              fallback={
-                <div className="mt-12 grid w-full place-items-center">
-                  <Loader2 className="h-20 w-20 animate-spin text-primary"></Loader2>
-                </div>
-              }
-            >
-              <FestivalTabs />
-            </Suspense>
+            <FestivalTabs festivalSlug={FESTIVAL_SLUG} userId={user?.id} />
           </Tabs>
         </div>
       </div>

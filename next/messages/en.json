@@ -241,7 +241,53 @@
   },
   "festival": {
     "cardSubTitle": "Follow the festival ranking in real time",
-    "pageSubTitle": "The biggest Highline festival in Brazil"
+    "pageSubTitle": "The biggest Highline festival in Brazil",
+    "tabs": {
+      "highlines": "Highlines",
+      "ranking": "Ranking"
+    },
+    "queue": {
+      "loading": "Refreshing queue...",
+      "defaultSector": "Festival highlines",
+      "openQueue": "Open queue",
+      "current": "Current",
+      "waitingCountLabel": "waiting",
+      "previewTitle": "Queue preview",
+      "lineupTitle": "Queue lineup",
+      "empty": "No one is in this queue yet.",
+      "estimateNow": "Estimated turn: now",
+      "estimateAt": "Estimated turn: {time}",
+      "viewerPosition": "You are #{position} in line.",
+      "drawerDescription": "Queue for the {sector} sector.",
+      "drawerDescriptionNoSector": "Queue for this festival highline.",
+      "panelTitle": "Highline queue",
+      "panelDescription": "Join the line, follow the current turn, and let monitors move the queue during the festival.",
+      "monitorBadge": "Monitor mode",
+      "authRequired": "You need to be signed in to add yourself to the queue.",
+      "joinButton": "Join queue",
+      "joinHelper": "You need an account to join, but the display name can still be edited for the queue.",
+      "namePlaceholder": "Type your name",
+      "manualJoinTitle": "Add someone manually",
+      "manualJoinHelper": "Festival staff can add any free-form name to the queue.",
+      "manualJoinButton": "Add to queue",
+      "manualNamePlaceholder": "Type any name",
+      "leaveButton": "Leave queue",
+      "callNext": "Call next",
+      "manageTitle": "Manage entries",
+      "removeButton": "Remove",
+      "messages": {
+        "joinSuccess": "Added to the queue.",
+        "joinError": "Could not join the queue.",
+        "manualAddSuccess": "Queue entry added.",
+        "manualAddError": "Could not add the queue entry.",
+        "leaveSuccess": "Removed from the queue.",
+        "leaveError": "Could not leave the queue.",
+        "callNextSuccess": "Queue advanced.",
+        "callNextError": "Could not advance the queue.",
+        "removeSuccess": "Queue entry removed.",
+        "removeError": "Could not remove the queue entry."
+      }
+    }
   },
   "privacyPolicy": {
     "title": "Privacy Policy",

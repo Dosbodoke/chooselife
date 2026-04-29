@@ -1,5 +1,6 @@
+import { useEvents } from '@chooselife/ui/';
 import HighlineWalkImage from '~/assets/images/highline-walk.webp';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import {
   BookIcon,
   CalendarIcon,
@@ -11,7 +12,6 @@ import { useTranslation } from 'react-i18next';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 
-import { useEvents } from '@chooselife/ui/';
 import { cn } from '~/lib/utils';
 
 import { EventCard, EventCardSkeleton } from '~/components/event-card';
@@ -26,6 +26,8 @@ export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
 
 export default function HomeScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
+
   return (
     <SafeAreaOfflineView>
       <ScrollView contentContainerClassName="pt-8">
@@ -36,6 +38,9 @@ export default function HomeScreen() {
               title: t('app.(tabs).home.banner.title'),
               subtitle: t('app.(tabs).home.banner.description'),
               background: HighlineWalkImage,
+              onPress: () => {
+                router.push('/festival');
+              },
             },
           ]}
         />
