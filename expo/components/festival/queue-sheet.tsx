@@ -28,17 +28,19 @@ import { Text } from '~/components/ui/text';
 
 const QueueEntryRow: React.FC<{
   canManage: boolean;
+  currentCalledAt?: string | null;
   entry: FestivalQueueEntry;
   isViewer: boolean;
   onRemove: (entryId: string) => void;
-}> = ({ canManage, entry, isViewer, onRemove }) => {
+}> = ({ canManage, currentCalledAt, entry, isViewer, onRemove }) => {
   const { i18n, t } = useTranslation();
   const estimate = React.useMemo(
     () =>
       getFestivalQueuePositionEstimate({
+        currentCalledAt,
         queuePosition: entry.queuePosition,
       }),
-    [entry.queuePosition],
+    [currentCalledAt, entry.queuePosition],
   );
   const estimateLabel =
     estimate.minutesUntilTurn === 0
@@ -217,6 +219,7 @@ export const FestivalQueueSheet: React.FC<{
   );
 
   const activeEntries = card?.queueSummary.activeEntries ?? [];
+  const currentCalledAt = card?.queueSummary.calledEntry?.called_at ?? null;
   const viewerEntry = card?.queueSummary.viewerEntry ?? null;
 
   const handleLeave = React.useCallback(async () => {
@@ -310,6 +313,7 @@ export const FestivalQueueSheet: React.FC<{
                   <QueueEntryRow
                     key={entry.id}
                     canManage={canManage}
+                    currentCalledAt={currentCalledAt}
                     entry={entry}
                     isViewer={entry.id === viewerEntry?.id}
                     onRemove={handleRemove}
