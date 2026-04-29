@@ -40,7 +40,7 @@
         "queueEmpty": "Esta fila está vazia no momento.",
         "calledStatus": "Chamado",
         "waitingStatus": "Na fila",
-        "estimateNow": "Previsão: agora",
+        "elapsedWalkingTime": "Na fita há {{time}}",
         "estimateAt": "Previsão: {{time}}",
         "removeButton": "Remover",
         "staffBadge": "Staff",

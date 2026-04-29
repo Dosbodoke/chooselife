@@ -1,5 +1,7 @@
 import {
+  formatElapsedTime,
   formatFestivalQueueEstimateTime,
+  getElapsedMinutes,
   getFestivalQueuePositionEstimate,
   useJoinFestivalQueue,
   useLeaveFestivalQueue,
@@ -34,6 +36,21 @@ const QueueEntryRow: React.FC<{
   onRemove: (entryId: string) => void;
 }> = ({ canManage, currentCalledAt, entry, isViewer, onRemove }) => {
   const { i18n, t } = useTranslation();
+  const [now, setNow] = React.useState(() => new Date());
+
+  const isCurrentCalledEntry =
+    entry.status === 'called' && entry.queuePosition === 1 && !!currentCalledAt;
+
+  React.useEffect(() => {
+    if (!isCurrentCalledEntry) return;
+
+    const intervalId = setInterval(() => {
+      setNow(new Date());
+    }, 15_000);
+
+    return () => clearInterval(intervalId);
+  }, [isCurrentCalledEntry]);
+
   const estimate = React.useMemo(
     () =>
       getFestivalQueuePositionEstimate({
@@ -42,8 +59,17 @@ const QueueEntryRow: React.FC<{
       }),
     [currentCalledAt, entry.queuePosition],
   );
-  const estimateLabel =
-    estimate.minutesUntilTurn === 0
+
+  const elapsedMinutes = React.useMemo(
+    () => getElapsedMinutes(currentCalledAt, now),
+    [currentCalledAt, now],
+  );
+
+  const estimateLabel = isCurrentCalledEntry
+    ? t('app.(festival).highlines.elapsedWalkingTime', {
+        time: formatElapsedTime(elapsedMinutes ?? 0),
+      })
+    : estimate.minutesUntilTurn === 0
       ? t('app.(festival).highlines.estimateNow')
       : t('app.(festival).highlines.estimateAt', {
           time: formatFestivalQueueEstimateTime({
@@ -71,6 +97,7 @@ const QueueEntryRow: React.FC<{
           <Text className="text-base font-semibold text-slate-900">
             {entry.display_name}
           </Text>
+
           {isViewer ? (
             <View className="rounded-full bg-slate-100 px-2 py-1">
               <Text className="text-[10px] font-semibold uppercase tracking-[0.8px] text-slate-500">
@@ -79,8 +106,15 @@ const QueueEntryRow: React.FC<{
             </View>
           ) : null}
         </View>
+
         {estimateLabel ? (
-          <Text className="text-xs text-slate-400">{estimateLabel}</Text>
+          <Text
+            className={`text-xs ${
+              isCurrentCalledEntry ? 'text-emerald-700' : 'text-slate-400'
+            }`}
+          >
+            {estimateLabel}
+          </Text>
         ) : null}
       </View>
 

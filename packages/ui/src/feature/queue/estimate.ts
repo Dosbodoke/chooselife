@@ -77,3 +77,36 @@ export function formatFestivalQueueEstimateTime(args: {
     minute: "2-digit",
   }).format(args.date);
 }
+
+export function getElapsedMinutes(startedAt: string | null | undefined, now: Date): number | null {
+  if (!startedAt) return null;
+
+  const startedAtDate = new Date(startedAt);
+
+  if (Number.isNaN(startedAtDate.getTime())) {
+    return null;
+  }
+
+  const elapsedMs = now.getTime() - startedAtDate.getTime();
+
+  return Math.max(0, Math.floor(elapsedMs / 60_000));
+};
+
+export function formatElapsedTime(minutes: number): string {
+  if (minutes < 1) {
+    return 'menos de 1 min';
+  }
+
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  if (remainingMinutes === 0) {
+    return `${hours}h`;
+  }
+
+  return `${hours}h ${remainingMinutes}min`;
+};

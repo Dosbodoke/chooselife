@@ -40,7 +40,7 @@
         "queueEmpty": "This queue is empty for now.",
         "calledStatus": "Called",
         "waitingStatus": "Waiting",
-        "estimateNow": "Estimated turn: now",
+        "elapsedWalkingTime": "Elapsed walking time",
         "estimateAt": "Estimated turn: {{time}}",
         "removeButton": "Remove",
         "staffBadge": "Staff",
