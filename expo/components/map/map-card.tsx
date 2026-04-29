@@ -131,7 +131,7 @@ export const MapCardList = ({
     }
   };
 
-  const sidePadding = (width - CARD_WIDTH) / 2;
+  const sidePadding = Math.max(0, (width - CARD_WIDTH) / 2);
 
   return (
     <Animated.View
