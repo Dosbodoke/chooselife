@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 
-import { Highline } from "~/hooks/use-highline";
+import { Highline } from '~/hooks/use-highline';
 
 export function getHighlineBounds(highline: Highline) {
   const ne: [number, number] = [
