@@ -1,14 +1,14 @@
 import Mapbox from '@rnmapbox/maps';
 import { useMapStore } from '~/store/map-store';
-import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import throttle from 'lodash.throttle';
-import React, { Activity, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Activity, useCallback, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useHighline, type Highline } from '~/hooks/use-highline';
 import { useMapStyle } from '~/hooks/use-map-style';
+import { useMountEffect } from '~/hooks/use-mount-effect';
 import { useOfflineRegion } from '~/hooks/use-offline-region';
 import {
   DEFAULT_LATITUDE,
@@ -23,47 +23,32 @@ import { Markers } from '~/components/map/markers';
 import { ChooselifeTrails } from '~/components/map/trail-shape';
 import WeatherCrosshair from '~/components/map/weather-crosshair';
 
-async function getMyLocation(): Promise<
-  | {
-      latitude: number;
-      longitude: number;
-      latitudeDelta: number;
-      longitudeDelta: number;
-    }
-  | undefined
-> {
-  try {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      console.warn('Location permission not granted');
-      return;
-    }
+import { getHighlineBounds, getMyLocation } from '../utils';
 
-    let location;
-    try {
-      location = await Location.getCurrentPositionAsync({});
-    } catch (error) {
-      console.warn(
-        'Error fetching current position, trying last known position',
-        error,
-      );
-      location = await Location.getLastKnownPositionAsync({});
-      if (!location) {
-        throw new Error('Unable to obtain a location fix');
-      }
-    }
+function FocusedMarkerController({
+  highline,
+  focusHighline,
+  clearFocusedMarker,
+  setClusteredMarkers,
+  setHighlightedMarker,
+}: {
+  highline: Highline;
+  focusHighline: (
+    highline: Highline,
+    padding: [number, number, number, number],
+  ) => void;
+  clearFocusedMarker: () => void;
+  setClusteredMarkers: (highlines: Highline[]) => void;
+  setHighlightedMarker: (highline: Highline | null) => void;
+}) {
+  useMountEffect(() => {
+    setHighlightedMarker(highline);
+    setClusteredMarkers([highline]);
+    focusHighline(highline, [100, 50, 300, 50]);
+    clearFocusedMarker();
+  });
 
-    const { latitude, longitude } = location.coords;
-    return {
-      latitude,
-      longitude,
-      latitudeDelta: 0.1,
-      longitudeDelta: 0.1,
-    };
-  } catch (error) {
-    console.error('Error fetching location:', error);
-    return;
-  }
+  return null;
 }
 
 export default function ExploreMap() {
@@ -87,18 +72,12 @@ export default function ExploreMap() {
   const [clusteredMarkers, setClusteredMarkers] = useMapStore(
     useShallow((state) => [state.clusteredMarkers, state.setClusteredMarkers]),
   );
-  const setHasFocusedMarker = useMapStore((state) => state.setHasFocusedMarker);
 
   const { focusedMarker } = useLocalSearchParams<{ focusedMarker?: string }>();
   const router = useRouter();
-  const hasFocusedMarkerBeenHandled = useRef(false);
 
   const isMapCardVisible = clusteredMarkers.length > 0;
   const isSheetAvailable = !isMapCardVisible && !focusedMarker;
-
-  useEffect(() => {
-    setHasFocusedMarker(!!focusedMarker);
-  }, [focusedMarker, setHasFocusedMarker]);
 
   const { highlines, isLoading } = useHighline({
     searchTerm: searchQuery,
@@ -118,6 +97,22 @@ export default function ExploreMap() {
     );
   }, [highlines]);
 
+  const focusedHighline = useMemo(() => {
+    if (!focusedMarker || isLoading || highlines.length === 0) {
+      return null;
+    }
+
+    return highlines.find((highline) => highline.id === focusedMarker) ?? null;
+  }, [focusedMarker, highlines, isLoading]);
+
+  const focusHighline = useCallback(
+    (highline: Highline, padding: [number, number, number, number]) => {
+      const { ne, sw } = getHighlineBounds(highline);
+      cameraRef.current?.fitBounds(ne, sw, padding, 1000);
+    },
+    [],
+  );
+
   const goToMyLocation = useCallback(async () => {
     const region = await getMyLocation();
     if (!region) return;
@@ -135,19 +130,24 @@ export default function ExploreMap() {
     setIsOnMyLocation(true);
   }, [setUserLocation]);
 
-  const throttledCameraUpdate = useCallback(
-    throttle(
-      (state: Mapbox.MapState) => {
-        if (isOnMyLocation) {
+  const throttledCameraUpdate = useMemo(
+    () =>
+      throttle(
+        (state: Mapbox.MapState) => {
           setIsOnMyLocation(false);
-        }
-        setCamera(state);
-      },
-      500,
-      { leading: true, trailing: true },
-    ),
-    [setCamera, isOnMyLocation],
+          setCamera(state);
+        },
+        500,
+        { leading: true, trailing: true },
+      ),
+    [setCamera],
   );
+
+  useMountEffect(() => {
+    return () => {
+      throttledCameraUpdate.cancel();
+    };
+  });
 
   const handleCameraChanged = useCallback(
     (state: Mapbox.MapState) => {
@@ -167,77 +167,18 @@ export default function ExploreMap() {
     (highlines: Highline[], focused: Highline) => {
       setClusteredMarkers(highlines);
       setHighlightedMarker(focused);
+      focusHighline(focused, [50, 50, 200, 250]);
     },
-    [setClusteredMarkers, setHighlightedMarker],
+    [focusHighline, setClusteredMarkers, setHighlightedMarker],
   );
 
   const handleChangeFocusedMarker = useCallback(
     (high: Highline) => {
       setHighlightedMarker(high);
+      focusHighline(high, [50, 50, 200, 250]);
     },
-    [setHighlightedMarker],
+    [focusHighline, setHighlightedMarker],
   );
-
-  useEffect(() => {
-    if (
-      !focusedMarker ||
-      !highlines ||
-      highlines.length === 0 ||
-      isLoading ||
-      !isMapReady
-    ) {
-      return;
-    }
-
-    const highlineToFocus = highlines.find(
-      (highline) => highline.id === focusedMarker,
-    );
-
-    if (highlineToFocus) {
-      setHighlightedMarker(highlineToFocus);
-      setClusteredMarkers([highlineToFocus]);
-
-      const ne: [number, number] = [
-        Math.max(highlineToFocus.anchor_a_long, highlineToFocus.anchor_b_long),
-        Math.max(highlineToFocus.anchor_a_lat, highlineToFocus.anchor_b_lat),
-      ];
-      const sw: [number, number] = [
-        Math.min(highlineToFocus.anchor_a_long, highlineToFocus.anchor_b_long),
-        Math.min(highlineToFocus.anchor_a_lat, highlineToFocus.anchor_b_lat),
-      ];
-
-      cameraRef.current?.fitBounds(ne, sw, [100, 50, 300, 50], 1000);
-
-      hasFocusedMarkerBeenHandled.current = true;
-      router.setParams({ focusedMarker: undefined });
-    }
-  }, [focusedMarker, highlines, isLoading, isMapReady, router]);
-
-  useEffect(() => {
-    if (!highlightedMarker) return;
-
-    const ne: [number, number] = [
-      Math.max(
-        highlightedMarker.anchor_a_long,
-        highlightedMarker.anchor_b_long,
-      ),
-      Math.max(highlightedMarker.anchor_a_lat, highlightedMarker.anchor_b_lat),
-    ];
-    const sw: [number, number] = [
-      Math.min(
-        highlightedMarker.anchor_a_long,
-        highlightedMarker.anchor_b_long,
-      ),
-      Math.min(highlightedMarker.anchor_a_lat, highlightedMarker.anchor_b_lat),
-    ];
-    cameraRef.current?.fitBounds(ne, sw, [50, 50, 200, 250], 1000);
-  }, [highlightedMarker, focusedMarker]);
-
-  useEffect(() => {
-    return () => {
-      throttledCameraUpdate.cancel();
-    };
-  }, [throttledCameraUpdate]);
 
   if (isMapStyleLoading) {
     return <View style={{ flex: 1 }} />;
@@ -276,6 +217,19 @@ export default function ExploreMap() {
           updateMarkers={handleMarkerUpdate}
         />
       </Mapbox.MapView>
+
+      {isMapReady && focusedHighline ? (
+        <FocusedMarkerController
+          key={focusedHighline.id}
+          highline={focusedHighline}
+          focusHighline={focusHighline}
+          clearFocusedMarker={() =>
+            router.setParams({ focusedMarker: undefined })
+          }
+          setClusteredMarkers={setClusteredMarkers}
+          setHighlightedMarker={setHighlightedMarker}
+        />
+      ) : null}
 
       <WeatherCrosshair />
 
