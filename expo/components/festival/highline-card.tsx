@@ -30,10 +30,6 @@ export const FestivalHighlineCardView: React.FC<{
   onPress: () => void;
 }> = ({ card, onPress }) => {
   const { t } = useTranslation();
-  const nextNames = card.queueSummary.nextEntries
-    .slice(0, 3)
-    .map((entry) => entry.display_name)
-    .join(' • ');
 
   return (
     <Pressable

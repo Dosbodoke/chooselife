@@ -256,6 +256,7 @@
       "lineupTitle": "Ordem da fila",
       "empty": "Ainda não há ninguém nesta fila.",
       "estimateNow": "Previsão: agora",
+      "elapsedWalkingTime": "Na fita há {time}",
       "estimateAt": "Previsão: {time}",
       "viewerPosition": "Você está na posição #{position}.",
       "drawerDescription": "Fila do setor {sector}.",

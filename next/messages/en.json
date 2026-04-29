@@ -256,6 +256,7 @@
       "lineupTitle": "Queue lineup",
       "empty": "No one is in this queue yet.",
       "estimateNow": "Estimated turn: now",
+      "elapsedWalkingTime": "Walking time: {time}",
       "estimateAt": "Estimated turn: {time}",
       "viewerPosition": "You are #{position} in line.",
       "drawerDescription": "Queue for the {sector} sector.",
