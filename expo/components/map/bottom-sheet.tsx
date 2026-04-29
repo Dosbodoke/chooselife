@@ -2,12 +2,16 @@ import BottomSheet, {
   useBottomSheetScrollableCreator,
 } from '@gorhom/bottom-sheet';
 import { LegendList } from '@legendapp/list';
+import { useMapStore } from '~/store/map-store';
 import * as Haptics from 'expo-haptics';
-import React, { useCallback, useDeferredValue, useEffect } from 'react';
+import React, {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+} from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { type Highline, useHighline } from '~/hooks/use-highline';
-import { useMapStore } from '~/store/map-store';
+import { useHighline, type Highline } from '~/hooks/use-highline';
 
 import { HighlineCard } from '../highline/highline-card';
 import ExploreHeader from './explore-header';
@@ -23,15 +27,19 @@ type NearbyHighlineItem = {
   distanceFromUserMeters: number | null;
 };
 
-const ListingsBottomSheet: React.FC = () => {
+type ListingsBottomSheetProps = {
+  isVisible: boolean;
+};
+
+const ListingsBottomSheet: React.FC<ListingsBottomSheetProps> = ({
+  isVisible,
+}) => {
   const { top } = useSafeAreaInsets();
   const bottomSheetHandlerHeight = useMapStore(
     (state) => state.bottomSheetHandlerHeight,
   );
   const searchQuery = useMapStore((state) => state.searchQuery);
   const activeCategory = useMapStore((state) => state.activeCategory);
-  const hasFocusedMarker = useMapStore((state) => state.hasFocusedMarker);
-  const highlightedMarker = useMapStore((state) => state.highlightedMarker);
   const browseOrigin = useMapStore((state) => state.camera.center);
   const userLocation = useMapStore((state) => state.userLocation);
 
@@ -66,10 +74,7 @@ const ListingsBottomSheet: React.FC = () => {
   const nearbyHighlines = React.useMemo<NearbyHighlineItem[]>(() => {
     const [originLongitude, originLatitude] = deferredSortOrigin;
 
-    if (
-      !Number.isFinite(originLongitude) ||
-      !Number.isFinite(originLatitude)
-    ) {
+    if (!Number.isFinite(originLongitude) || !Number.isFinite(originLatitude)) {
       return highlines.map((highline) => ({
         highline,
         distanceFromUserMeters: null,
@@ -112,7 +117,12 @@ const ListingsBottomSheet: React.FC = () => {
       highline,
       distanceFromUserMeters,
     }));
-  }, [deferredSortOrigin, highlines, highlinesWithBrowseCoordinate, userLocation]);
+  }, [
+    deferredSortOrigin,
+    highlines,
+    highlinesWithBrowseCoordinate,
+    userLocation,
+  ]);
 
   const snapPoints = React.useMemo(() => {
     return [bottomSheetHandlerHeight || '35%', '100%'];
@@ -120,22 +130,21 @@ const ListingsBottomSheet: React.FC = () => {
 
   const onShowMap = () => bottomSheetRef.current?.collapse();
 
-  const setExpandBottomSheet = useMapStore((state) => state.setExpandBottomSheet);
+  const setExpandBottomSheet = useMapStore(
+    (state) => state.setExpandBottomSheet,
+  );
+
   useEffect(() => {
-    if (highlightedMarker) {
-      bottomSheetRef.current?.close();
-      setExpandBottomSheet(null);
+    if (!isVisible) {
       return;
     }
 
-    bottomSheetRef.current?.collapse();
     setExpandBottomSheet(() => bottomSheetRef.current?.expand());
-    return () => setExpandBottomSheet(null);
-  }, [highlightedMarker, setExpandBottomSheet]);
 
-  useEffect(() => {
-    if (hasFocusedMarker) bottomSheetRef.current?.collapse();
-  }, [hasFocusedMarker]);
+    return () => {
+      setExpandBottomSheet(null);
+    };
+  }, [isVisible, setExpandBottomSheet]);
 
   const renderItem = useCallback(
     ({ item }: { item: NearbyHighlineItem }) => (
@@ -177,6 +186,7 @@ const ListingsBottomSheet: React.FC = () => {
           renderItem={renderItem}
           keyExtractor={(item: NearbyHighlineItem) => item.highline.id}
           contentContainerStyle={{ paddingHorizontal: 16 }}
+          style={{ flex: 1 }}
           renderScrollComponent={BottomSheetScrollView}
           keyboardShouldPersistTaps="always"
           recycleItems

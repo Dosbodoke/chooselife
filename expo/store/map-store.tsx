@@ -29,7 +29,6 @@ type State = {
   // Search/filter state
   searchQuery: string;
   activeCategory: HighlineCategory | null;
-  hasFocusedMarker: boolean;
 };
 
 type Actions = {
@@ -46,7 +45,6 @@ type Actions = {
   setExpandBottomSheet: (fn: (() => void) | null) => void;
   setSearchQuery: (query: string) => void;
   setActiveCategory: (category: HighlineCategory | null) => void;
-  setHasFocusedMarker: (value: boolean) => void;
 };
 
 export const useMapStore = create<State & Actions>((set) => ({
@@ -62,7 +60,6 @@ export const useMapStore = create<State & Actions>((set) => ({
   expandBottomSheet: null,
   searchQuery: '',
   activeCategory: null,
-  hasFocusedMarker: false,
   setCamera: (state: Mapbox.MapState) => {
     set(() => {
       const { sw, ne } = state.properties.bounds;
@@ -109,11 +106,6 @@ export const useMapStore = create<State & Actions>((set) => ({
   setActiveCategory: (category: HighlineCategory | null) => {
     set(() => ({
       activeCategory: category,
-    }));
-  },
-  setHasFocusedMarker: (value: boolean) => {
-    set(() => ({
-      hasFocusedMarker: value,
     }));
   },
 }));
