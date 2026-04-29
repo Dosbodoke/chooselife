@@ -1,4 +1,4 @@
-import { useMapStore } from '~/store/map-store'; // ← import your store
+import { useMapStore } from '~/store/map-store';
 import { Tabs } from 'expo-router';
 import {
   EarthIcon,
