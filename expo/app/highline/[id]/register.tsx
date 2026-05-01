@@ -8,7 +8,7 @@ import { Image as ExpoImage } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { shareAsync } from 'expo-sharing';
 import i18next from 'i18next';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Controller, FieldErrors, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Keyboard, Platform, View } from 'react-native';
@@ -234,13 +234,23 @@ export default function RegisterWalk() {
     console.log({ errors });
   }
 
-  const [watchCadenas, watchFullLines] = form.watch(['cadenas', 'full_lines']);
-  useEffect(() => {
+  const syncDistanceFromPasses = ({
+    cadenas = form.getValues('cadenas'),
+    fullLines = form.getValues('full_lines'),
+  }: {
+    cadenas?: number;
+    fullLines?: number;
+  }) => {
     if (!highline) return;
-    const totalLeaps = watchCadenas + watchFullLines * 2;
+
+    const totalLeaps = cadenas + fullLines * 2;
     const totalDistance = highline.length * totalLeaps;
-    if (totalDistance) form.setValue('distance', totalDistance);
-  }, [watchCadenas, watchFullLines, highline?.length, form]);
+
+    form.setValue('distance', totalDistance, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
 
   const formData = form.getValues();
 
@@ -305,7 +315,13 @@ export default function RegisterWalk() {
                   {t('app.highline.register.fields.cadenas.description')}
                 </Text>
               </View>
-              <NumberPicker value={field.value} onChange={field.onChange} />
+              <NumberPicker
+                value={field.value}
+                onChange={(cadenas) => {
+                  field.onChange(cadenas);
+                  syncDistanceFromPasses({ cadenas });
+                }}
+              />
             </View>
           )}
         />
@@ -323,7 +339,13 @@ export default function RegisterWalk() {
                   {t('app.highline.register.fields.full_lines.description')}
                 </Text>
               </View>
-              <NumberPicker value={field.value} onChange={field.onChange} />
+              <NumberPicker
+                value={field.value}
+                onChange={(fullLines) => {
+                  field.onChange(fullLines);
+                  syncDistanceFromPasses({ fullLines });
+                }}
+              />
             </View>
           )}
         />
