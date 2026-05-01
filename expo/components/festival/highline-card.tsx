@@ -1,4 +1,4 @@
-import type { FestivalHighlineQueueCard } from '@chooselife/ui';
+import type { FestivalHighlineScheduleCard } from '@chooselife/ui';
 import {
   ChevronRightIcon,
   MegaphoneIcon,
@@ -26,10 +26,18 @@ const StatPill: React.FC<{
 );
 
 export const FestivalHighlineCardView: React.FC<{
-  card: FestivalHighlineQueueCard;
+  card: FestivalHighlineScheduleCard;
+  festivalTimeZone: string;
   onPress: () => void;
-}> = ({ card, onPress }) => {
+}> = ({ card, festivalTimeZone, onPress }) => {
   const { t } = useTranslation();
+  const featuredLabel = card.featuredSlot
+    ? new Intl.DateTimeFormat(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: festivalTimeZone,
+      }).format(new Date(card.featuredSlot.startAt))
+    : null;
 
   return (
     <Pressable
@@ -81,29 +89,26 @@ export const FestivalHighlineCardView: React.FC<{
 
       <View className="gap-4 bg-white p-4">
         <View className="gap-2">
-          <View className="flex-row justify-between">
-            <View className="flex flex-row gap-2 items-center">
-              <Icon as={UsersIcon} className="size-3 text-black" />
-              <Text className="font-semibold uppercase tracking-[1px] text-slate-500">
-                {t('app.(festival).highlines.queueCount', {
-                  count: card.queueSummary.waitingCount,
-                })}
+          <View className="flex flex-row gap-2 items-center">
+            <Icon as={UsersIcon} className="size-3 text-black" />
+            <Text className="font-semibold uppercase tracking-[1px] text-slate-500">
+              {t('app.(festival).highlines.availableCount', {
+                count: card.availableCount,
+              })}
+            </Text>
+          </View>
+
+          {card.featuredSlot?.booking ? (
+            <View className="max-w-[56%] flex-row items-center gap-1.5">
+              <Icon as={MegaphoneIcon} className="size-3 text-green-500" />
+              <Text className="font-semibold text-green-500" numberOfLines={1}>
+                {card.featuredSlot.isCurrent
+                  ? t('app.(festival).highlines.currentLabel')
+                  : featuredLabel}
+                : {card.featuredSlot.booking.participant.primaryText}
               </Text>
             </View>
-
-            {card.queueSummary.calledEntry ? (
-              <View className="max-w-[56%] flex-row items-center gap-1.5">
-                <Icon as={MegaphoneIcon} className="size-3 text-green-500" />
-                <Text
-                  className="font-semibold text-green-500"
-                  numberOfLines={1}
-                >
-                  {t('app.(festival).highlines.currentLabel')}:{' '}
-                  {card.queueSummary.calledEntry.display_name}
-                </Text>
-              </View>
-            ) : null}
-          </View>
+          ) : null}
         </View>
 
         <Button
@@ -111,7 +116,7 @@ export const FestivalHighlineCardView: React.FC<{
           onPress={onPress}
         >
           <Text className="font-semibold text-white">
-            {t('app.(festival).highlines.openQueueButton')}
+            {t('app.(festival).highlines.openScheduleButton')}
           </Text>
           <Icon as={ChevronRightIcon} className="size-4 text-white" />
         </Button>

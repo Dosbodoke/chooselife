@@ -3,5 +3,5 @@ export * from './feature/organization';
 export * from './feature/flags';
 export * from './feature/calendar';
 export * from './feature/webbing';
-export * from './feature/queue';
+export * from './feature/festival';
 export * from './constants';

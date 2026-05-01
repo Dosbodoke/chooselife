@@ -1,6 +1,6 @@
 "use client";
 
-import { SupabaseProvider, useFestivalQueue } from "@chooselife/ui";
+import { SupabaseProvider, useFestivalSchedule } from "@chooselife/ui";
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -25,11 +25,11 @@ export function FestivalTabs({ festivalSlug, userId }: Props) {
 
 function FestivalTabsContent({ festivalSlug }: Props) {
   const t = useTranslations("festival");
-  const queueQuery = useFestivalQueue({
+  const scheduleQuery = useFestivalSchedule({
     festivalSlug,
   });
 
-  const data = queueQuery.data;
+  const data = scheduleQuery.data;
 
   if (!data) {
     return (
@@ -51,10 +51,10 @@ function FestivalTabsContent({ festivalSlug }: Props) {
       </TabsContent>
 
       <TabsContent className="mt-4 space-y-8" value="highlines">
-        {queueQuery.isFetching ? (
+        {scheduleQuery.isFetching ? (
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            {t("queue.loading")}
+            {t("schedule.loading")}
           </div>
         ) : null}
 
@@ -62,7 +62,7 @@ function FestivalTabsContent({ festivalSlug }: Props) {
           <section key={group.sector?.id ?? `ungrouped-${index}`} className="space-y-4">
             <div className="space-y-1">
               <h2 className="text-2xl font-bold">
-                {group.sector?.name ?? t("queue.defaultSector")}
+                {group.sector?.name ?? t("schedule.defaultSector")}
               </h2>
               {group.sector?.description ? (
                 <p className="max-w-2xl text-sm text-muted-foreground">
@@ -77,8 +77,8 @@ function FestivalTabsContent({ festivalSlug }: Props) {
                   key={card.highline.id}
                   card={card}
                   festivalSlug={festivalSlug}
+                  festivalTimeZone={data.festival.timezone}
                   viewerCanManage={data.viewer.canManage}
-                  viewerDefaultName={data.viewer.displayName}
                   viewerUserId={data.viewer.userId}
                 />
               ))}

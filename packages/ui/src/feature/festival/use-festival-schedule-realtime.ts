@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { useSupabase } from "../../supabase-provider";
 
-export function useFestivalQueueRealtime(
+export function useFestivalScheduleRealtime(
   festivalId: string | undefined,
   queryKey: readonly unknown[],
 ) {
@@ -16,13 +16,25 @@ export function useFestivalQueueRealtime(
     if (!festivalId) return;
 
     const channel = supabase
-      .channel(`festival-queue:${festivalId}`)
+      .channel(`festival-schedule:${festivalId}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "festival_queue_entry",
+          table: "festival_schedule_slot",
+          filter: `festival_id=eq.${festivalId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "festival_schedule_booking",
           filter: `festival_id=eq.${festivalId}`,
         },
         () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import type { FestivalHighlineQueueCard } from "@chooselife/ui";
+import type { FestivalHighlineScheduleCard } from "@chooselife/ui";
 import {
   ChevronRightIcon,
   MegaphoneIcon,
@@ -8,19 +8,19 @@ import {
   MoveVerticalIcon,
   UsersIcon,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
 import HighlineImage from "@/components/HighlineImage";
 import { Button } from "@/components/ui/button";
 
-import { FestivalQueueDrawer } from "./queue-sheet";
+import { FestivalScheduleDrawer } from "./schedule-drawer";
 
 interface Props {
-  card: FestivalHighlineQueueCard;
+  card: FestivalHighlineScheduleCard;
   festivalSlug: string;
+  festivalTimeZone: string;
   viewerCanManage: boolean;
-  viewerDefaultName?: string | null;
   viewerUserId?: string;
 }
 
@@ -42,15 +42,22 @@ function StatPill({
 export function FestivalHighlineCard({
   card,
   festivalSlug,
+  festivalTimeZone,
   viewerCanManage,
-  viewerDefaultName,
   viewerUserId,
 }: Props) {
-  const t = useTranslations("festival.queue");
+  const t = useTranslations("festival.schedule");
+  const locale = useLocale();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const isAuthenticated = !!viewerUserId;
-  const queueDisplayName = viewerDefaultName?.trim() ?? "";
+  const featuredLabel = card.featuredSlot
+    ? new Intl.DateTimeFormat(locale, {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: festivalTimeZone,
+      }).format(new Date(card.featuredSlot.startAt))
+    : null;
 
   return (
     <>
@@ -95,17 +102,18 @@ export function FestivalHighlineCard({
             <div className="flex min-w-0 items-center gap-2">
               <UsersIcon className="h-3 w-3 shrink-0 text-black" />
               <p className="truncate text-sm font-semibold uppercase tracking-[1px] text-slate-500">
-                {t("waitingCountLabel", {
-                  count: card.queueSummary.waitingCount,
+                {t("availableCountLabel", {
+                  count: card.availableCount,
                 })}
               </p>
             </div>
 
-            {card.queueSummary.calledEntry ? (
+            {card.featuredSlot?.booking ? (
               <div className="flex max-w-[56%] items-center gap-1.5">
                 <MegaphoneIcon className="h-3 w-3 shrink-0 text-green-500" />
                 <p className="truncate text-sm font-semibold text-green-500">
-                  {t("current")}: {card.queueSummary.calledEntry.display_name}
+                  {card.featuredSlot.isCurrent ? t("current") : featuredLabel}:{" "}
+                  {card.featuredSlot.booking.participant.primaryText}
                 </p>
               </div>
             ) : null}
@@ -119,19 +127,19 @@ export function FestivalHighlineCard({
               setIsDrawerOpen(true);
             }}
           >
-            <span className="font-semibold">{t("openQueue")}</span>
+            <span className="font-semibold">{t("openSchedule")}</span>
             <ChevronRightIcon className="h-4 w-4" />
           </Button>
         </div>
       </article>
 
-      <FestivalQueueDrawer
+      <FestivalScheduleDrawer
         canManage={viewerCanManage}
         card={isDrawerOpen ? card : null}
         festivalSlug={festivalSlug}
+        festivalTimeZone={festivalTimeZone}
         isAuthenticated={isAuthenticated}
         open={isDrawerOpen}
-        queueDisplayName={queueDisplayName}
         onOpenChange={setIsDrawerOpen}
       />
     </>

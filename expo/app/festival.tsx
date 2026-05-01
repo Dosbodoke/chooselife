@@ -1,6 +1,6 @@
 import {
-  useFestivalQueue,
-  type FestivalHighlineQueueCard,
+  useFestivalSchedule,
+  type FestivalHighlineScheduleCard,
 } from '@chooselife/ui';
 import { Stack } from 'expo-router';
 import React from 'react';
@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { FestivalHighlineCardView } from '~/components/festival/highline-card';
-import { FestivalQueueSheet } from '~/components/festival/queue-sheet';
+import { FestivalScheduleSheet } from '~/components/festival/schedule-sheet';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { Text } from '~/components/ui/text';
 
@@ -21,7 +21,7 @@ const FESTIVAL_SLUG = 'chooselife-2026';
 
 export default function FestivalScreen() {
   const { t } = useTranslation();
-  const query = useFestivalQueue({ festivalSlug: FESTIVAL_SLUG });
+  const query = useFestivalSchedule({ festivalSlug: FESTIVAL_SLUG });
   const [selectedHighlineId, setSelectedHighlineId] = React.useState<
     string | null
   >(null);
@@ -31,7 +31,7 @@ export default function FestivalScreen() {
     [query.data?.sectors],
   );
 
-  const selectedCard = React.useMemo<FestivalHighlineQueueCard | null>(
+  const selectedCard = React.useMemo<FestivalHighlineScheduleCard | null>(
     () => cards.find((card) => card.highline.id === selectedHighlineId) ?? null,
     [cards, selectedHighlineId],
   );
@@ -86,6 +86,7 @@ export default function FestivalScreen() {
                       <FestivalHighlineCardView
                         key={card.highline.id}
                         card={card}
+                        festivalTimeZone={query.data?.festival.timezone ?? 'America/Sao_Paulo'}
                         onPress={() => setSelectedHighlineId(card.highline.id)}
                       />
                     ))}
@@ -102,12 +103,12 @@ export default function FestivalScreen() {
           )}
         </ScrollView>
 
-        <FestivalQueueSheet
+        <FestivalScheduleSheet
           canManage={query.data?.viewer.canManage ?? false}
           card={selectedCard}
           festivalSlug={FESTIVAL_SLUG}
+          festivalTimeZone={query.data?.festival.timezone ?? 'America/Sao_Paulo'}
           onDismiss={() => setSelectedHighlineId(null)}
-          viewerDisplayName={query.data?.viewer.displayName}
         />
       </SafeAreaOfflineView>
     </>
