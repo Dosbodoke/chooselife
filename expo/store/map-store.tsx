@@ -25,7 +25,6 @@ type State = {
   highlightedMarker: Highline | null;
   clusteredMarkers: Highline[];
   bottomSheetHandlerHeight: number;
-  expandBottomSheet: (() => void) | null;
   // Search/filter state
   searchQuery: string;
   activeCategory: HighlineCategory | null;
@@ -42,7 +41,6 @@ type Actions = {
   setBottomSheeHandlerHeight: (height: number) => void;
   setHighlightedMarker: (marker: Highline | null) => void;
   setClusteredMarkers: (markers: Highline[]) => void;
-  setExpandBottomSheet: (fn: (() => void) | null) => void;
   setSearchQuery: (query: string) => void;
   setActiveCategory: (category: HighlineCategory | null) => void;
 };
@@ -57,7 +55,6 @@ export const useMapStore = create<State & Actions>((set) => ({
   highlightedMarker: null,
   clusteredMarkers: [],
   bottomSheetHandlerHeight: 0,
-  expandBottomSheet: null,
   searchQuery: '',
   activeCategory: null,
   setCamera: (state: Mapbox.MapState) => {
@@ -91,11 +88,6 @@ export const useMapStore = create<State & Actions>((set) => ({
   setClusteredMarkers: (markers: Highline[]) => {
     set(() => ({
       clusteredMarkers: markers,
-    }));
-  },
-  setExpandBottomSheet: (fn: (() => void) | null) => {
-    set(() => ({
-      expandBottomSheet: fn,
     }));
   },
   setSearchQuery: (query: string) => {

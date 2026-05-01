@@ -241,7 +241,7 @@ export default function ExploreMap() {
       />
 
       <Activity mode={isSheetAvailable ? 'visible' : 'hidden'}>
-        <ListingsBottomSheet isVisible={isSheetAvailable} />
+        <ListingsBottomSheet />
       </Activity>
 
       {isMapCardVisible ? (

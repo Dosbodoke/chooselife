@@ -4,11 +4,7 @@ import BottomSheet, {
 import { LegendList } from '@legendapp/list';
 import { useMapStore } from '~/store/map-store';
 import * as Haptics from 'expo-haptics';
-import React, {
-  useCallback,
-  useDeferredValue,
-  useEffect,
-} from 'react';
+import React, { useCallback, useDeferredValue } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useHighline, type Highline } from '~/hooks/use-highline';
@@ -27,13 +23,7 @@ type NearbyHighlineItem = {
   distanceFromUserMeters: number | null;
 };
 
-type ListingsBottomSheetProps = {
-  isVisible: boolean;
-};
-
-const ListingsBottomSheet: React.FC<ListingsBottomSheetProps> = ({
-  isVisible,
-}) => {
+const ListingsBottomSheet: React.FC = () => {
   const { top } = useSafeAreaInsets();
   const bottomSheetHandlerHeight = useMapStore(
     (state) => state.bottomSheetHandlerHeight,
@@ -129,22 +119,6 @@ const ListingsBottomSheet: React.FC<ListingsBottomSheetProps> = ({
   }, [bottomSheetHandlerHeight]);
 
   const onShowMap = () => bottomSheetRef.current?.collapse();
-
-  const setExpandBottomSheet = useMapStore(
-    (state) => state.setExpandBottomSheet,
-  );
-
-  useEffect(() => {
-    if (!isVisible) {
-      return;
-    }
-
-    setExpandBottomSheet(() => bottomSheetRef.current?.expand());
-
-    return () => {
-      setExpandBottomSheet(null);
-    };
-  }, [isVisible, setExpandBottomSheet]);
 
   const renderItem = useCallback(
     ({ item }: { item: NearbyHighlineItem }) => (
