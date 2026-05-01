@@ -1,11 +1,10 @@
 import { HeartIcon } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
   useAnimatedStyle,
-  useSharedValue,
+  useDerivedValue,
   withSpring,
 } from 'react-native-reanimated';
 
@@ -20,15 +19,8 @@ export const FavoriteHighline: React.FC<{
   className?: string;
   hearthClassName?: string; // Classname for unfilled hearth
 }> = ({ isFavorite, id, className, hearthClassName }) => {
-  const [favorite, setFavorite] = useState(isFavorite);
-  const liked = useSharedValue(isFavorite ? 1 : 0);
-
-  useEffect(() => {
-    setFavorite(isFavorite);
-    liked.value = isFavorite ? 1 : 0;
-  }, [isFavorite]);
-
-  const { mutateAsync } = useToggleFavoriteMutation();
+  const { mutateAsync, isPending } = useToggleFavoriteMutation();
+  const liked = useDerivedValue(() => withSpring(isFavorite ? 1 : 0));
 
   const outlineStyle = useAnimatedStyle(() => {
     return {
@@ -51,25 +43,10 @@ export const FavoriteHighline: React.FC<{
   });
 
   const handlePress = async () => {
-    const nextFavorite = !favorite;
-    const nextValue = nextFavorite ? 1 : 0;
-
-    // Perform optimistic updates before any async gaps
-    setFavorite(nextFavorite);
-    liked.value = withSpring(nextValue);
+    if (isPending) return;
 
     try {
-      await mutateAsync(
-        { id, isFavorite: favorite },
-        {
-          onError: (_error, variables) => {
-            // Revert local state if mutation fails.
-            const revertValue = variables.isFavorite ? 1 : 0;
-            setFavorite(variables.isFavorite);
-            liked.value = withSpring(revertValue);
-          },
-        },
-      );
+      await mutateAsync({ id, isFavorite });
     } catch (e) {
       console.error('Failed to toggle favorite status:', e);
     }
@@ -78,6 +55,7 @@ export const FavoriteHighline: React.FC<{
   return (
     <Pressable
       className={cn('flex p-2 rounded-full bg-black/60', className)}
+      disabled={isPending}
       onPress={handlePress}
     >
       <Animated.View
