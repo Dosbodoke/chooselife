@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
@@ -20,6 +20,7 @@ import { useAuth, type LoginMethod, type OAuthMethod } from '~/context/auth';
 import { AppleIcon } from '~/lib/icons/Apple';
 import ChooselifeIcon from '~/lib/icons/chooselife-icon';
 import { GoogleIcon } from '~/lib/icons/Google';
+import { useMountEffect } from '~/hooks/use-mount-effect';
 import { cn } from '~/lib/utils';
 
 import { Button, buttonTextVariants } from '~/components/ui/button';
@@ -329,7 +330,7 @@ const AnimatedAuthButton: React.FC<{
 const GreenDot: React.FC<{ pulse?: boolean }> = ({ pulse }) => {
   const progress = useSharedValue(0);
 
-  useEffect(() => {
+  useMountEffect(() => {
     progress.value = withRepeat(
       withTiming(1, {
         duration: 1000,
@@ -338,7 +339,7 @@ const GreenDot: React.FC<{ pulse?: boolean }> = ({ pulse }) => {
       -1,
       false,
     );
-  }, [progress]);
+  });
 
   const pulseStyle = useAnimatedStyle(() => {
     const scale = interpolate(progress.value, [0, 1], [1, 2]);
