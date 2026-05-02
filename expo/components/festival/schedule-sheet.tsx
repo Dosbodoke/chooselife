@@ -22,44 +22,14 @@ import {
   View,
   type LayoutChangeEvent,
 } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { useAuth } from '~/context/auth';
 import { useMountEffect } from '~/hooks/use-mount-effect';
 
+import { ScheduleChipEdgeFade } from '~/components/festival/schedule-chip-edge-fade';
 import { Button } from '~/components/ui/button';
 import { Text } from '~/components/ui/text';
 import { UserPicker } from '~/components/user-picker';
-
-const EdgeFade: React.FC<{
-  direction: 'left' | 'right';
-}> = ({ direction }) => (
-  <View
-    className={`pointer-events-none absolute bottom-0 top-0 w-6 ${
-      direction === 'left' ? 'left-0' : 'right-0'
-    }`}
-  >
-    <Svg height="100%" width="100%">
-      <Defs>
-        <LinearGradient
-          id={`chip-edge-fade-${direction}`}
-          x1={direction === 'left' ? '0%' : '100%'}
-          y1="0%"
-          x2={direction === 'left' ? '100%' : '0%'}
-          y2="0%"
-        >
-          <Stop offset="0%" stopColor="#ffffff" stopOpacity={1} />
-          <Stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
-        </LinearGradient>
-      </Defs>
-      <Rect
-        fill={`url(#chip-edge-fade-${direction})`}
-        height="100%"
-        width="100%"
-      />
-    </Svg>
-  </View>
-);
 
 function formatDayLabel(dateKey: string, timeZone: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -538,8 +508,8 @@ export const FestivalScheduleSheet: React.FC<{
                   ))}
                 </View>
               </ScrollView>
-              <EdgeFade direction="left" />
-              <EdgeFade direction="right" />
+              <ScheduleChipEdgeFade direction="left" />
+              <ScheduleChipEdgeFade direction="right" />
             </View>
           </View>
 
