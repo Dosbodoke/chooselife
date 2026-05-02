@@ -4,6 +4,8 @@ import {
   type FestivalHighlineScheduleCard,
   type FestivalScheduleSlotView,
 } from '@chooselife/ui';
+import { useIsFocused } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -23,6 +25,7 @@ import {
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { useAuth } from '~/context/auth';
+import { useMountEffect } from '~/hooks/use-mount-effect';
 
 import { Button } from '~/components/ui/button';
 import { Text } from '~/components/ui/text';
@@ -77,6 +80,22 @@ function formatSlotTimeRange(slot: FestivalScheduleSlotView, timeZone: string) {
   return `${formatter.format(new Date(slot.startAt))} - ${formatter.format(
     new Date(slot.endAt),
   )}`;
+}
+
+function buildFestivalScheduleRedirect({
+  dayKey,
+  highlineId,
+}: {
+  dayKey: string | null;
+  highlineId: string;
+}) {
+  const params = new URLSearchParams({ highline: highlineId });
+
+  if (dayKey) {
+    params.set('day', dayKey);
+  }
+
+  return `/festival?${params.toString()}`;
 }
 
 const SlotRow: React.FC<{
@@ -245,8 +264,20 @@ export const FestivalScheduleSheet: React.FC<{
   festivalSlug: string;
   festivalTimeZone: string;
   onDismiss: () => void;
-}> = ({ card, canManage, festivalSlug, festivalTimeZone, onDismiss }) => {
+  onSelectDayKey: (dayKey: string) => void;
+  selectedDayKey: string | null;
+}> = ({
+  card,
+  canManage,
+  festivalSlug,
+  festivalTimeZone,
+  onDismiss,
+  onSelectDayKey,
+  selectedDayKey,
+}) => {
   const { t } = useTranslation();
+  const isFocused = useIsFocused();
+  const router = useRouter();
   const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
   const dayChipsScrollRef = React.useRef<ScrollView>(null);
   const dayChipLayoutsRef = React.useRef<
@@ -255,9 +286,6 @@ export const FestivalScheduleSheet: React.FC<{
   const { profile } = useAuth();
   const isAuthenticated = !!profile?.id;
   const selectedHighlineId = card?.highline.id ?? null;
-  const [selectedDayKey, setSelectedDayKey] = React.useState<string | null>(
-    null,
-  );
   const [staffSlotId, setStaffSlotId] = React.useState<string | null>(null);
   const [selectedUsernames, setSelectedUsernames] = React.useState<string[]>(
     [],
@@ -269,26 +297,32 @@ export const FestivalScheduleSheet: React.FC<{
   const cancelMutation = useCancelFestivalScheduleBooking({ festivalSlug });
 
   React.useEffect(() => {
-    if (selectedHighlineId) {
+    if (selectedHighlineId && isFocused) {
       bottomSheetModalRef.current?.present();
       return;
     }
 
     bottomSheetModalRef.current?.dismiss();
-  }, [selectedHighlineId]);
+  }, [isFocused, selectedHighlineId]);
+
+  useMountEffect(function dismissSheetOnUnmount() {
+    return () => {
+      bottomSheetModalRef.current?.dismiss();
+    };
+  });
 
   React.useEffect(() => {
-    setSelectedDayKey(card?.defaultDayKey ?? null);
     setStaffSlotId(null);
     setSelectedUsernames([]);
     setSelectedUserIds([]);
     setGuestDisplayName('');
-  }, [card?.defaultDayKey, card?.highline.id]);
+  }, [card?.highline.id]);
 
   const selectedDay =
     card?.days.find((day) => day.dateKey === selectedDayKey) ??
     card?.defaultDay ??
     null;
+  const visibleDayKey = selectedDay?.dateKey ?? null;
 
   const scrollSelectedDayChipIntoView = React.useCallback(
     (dayKey: string | null) => {
@@ -309,20 +343,20 @@ export const FestivalScheduleSheet: React.FC<{
     if (!selectedHighlineId) return;
 
     const timeout = setTimeout(() => {
-      scrollSelectedDayChipIntoView(selectedDayKey);
+      scrollSelectedDayChipIntoView(visibleDayKey);
     }, 0);
 
     return () => clearTimeout(timeout);
-  }, [scrollSelectedDayChipIntoView, selectedDayKey, selectedHighlineId]);
+  }, [scrollSelectedDayChipIntoView, selectedHighlineId, visibleDayKey]);
 
   const handleDayChipLayout = React.useCallback(
     (dayKey: string, event: LayoutChangeEvent) => {
       dayChipLayoutsRef.current[dayKey] = event.nativeEvent.layout;
-      if (dayKey === selectedDayKey) {
+      if (dayKey === visibleDayKey) {
         scrollSelectedDayChipIntoView(dayKey);
       }
     },
-    [scrollSelectedDayChipIntoView, selectedDayKey],
+    [scrollSelectedDayChipIntoView, visibleDayKey],
   );
 
   const renderBackdrop = React.useCallback(
@@ -436,6 +470,20 @@ export const FestivalScheduleSheet: React.FC<{
     t,
   ]);
 
+  const handleLoginPress = React.useCallback(() => {
+    if (!card) return;
+
+    router.push({
+      pathname: '/(modals)/login',
+      params: {
+        redirect_to: buildFestivalScheduleRedirect({
+          highlineId: card.highline.id,
+          dayKey: selectedDay?.dateKey ?? card.defaultDayKey,
+        }),
+      },
+    });
+  }, [card, router, selectedDay?.dateKey]);
+
   return (
     <BottomSheetModal
       ref={bottomSheetModalRef}
@@ -446,7 +494,13 @@ export const FestivalScheduleSheet: React.FC<{
       android_keyboardInputMode="adjustResize"
       snapPoints={['86%']}
       handleIndicatorStyle={{ backgroundColor: '#94a3b8' }}
-      onDismiss={onDismiss}
+      onDismiss={() => {
+        if (!isFocused && selectedHighlineId) {
+          return;
+        }
+
+        onDismiss();
+      }}
     >
       {card ? (
         <View className="flex-1">
@@ -469,7 +523,7 @@ export const FestivalScheduleSheet: React.FC<{
                       onLayout={(event) =>
                         handleDayChipLayout(day.dateKey, event)
                       }
-                      onPress={() => setSelectedDayKey(day.dateKey)}
+                      onPress={() => onSelectDayKey(day.dateKey)}
                     >
                       <Text
                         className={`font-semibold ${
@@ -500,10 +554,18 @@ export const FestivalScheduleSheet: React.FC<{
           >
             <View className="gap-4">
               {!isAuthenticated ? (
-                <View className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4">
+                <View className="gap-3 rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4">
                   <Text className="text-sm leading-6 text-amber-950">
                     {t('app.(festival).highlines.authRequired')}
                   </Text>
+                  <Button
+                    className="self-start rounded-xl bg-[#101b2b]"
+                    onPress={handleLoginPress}
+                  >
+                    <Text className="font-semibold text-white">
+                      {t('app.(modals).login.EmailSection.loginButton')}
+                    </Text>
+                  </Button>
                 </View>
               ) : null}
 

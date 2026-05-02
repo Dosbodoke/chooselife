@@ -2,7 +2,7 @@ import {
   useFestivalSchedule,
   type FestivalHighlineScheduleCard,
 } from '@chooselife/ui';
-import { Stack } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -21,10 +21,19 @@ const FESTIVAL_SLUG = 'chooselife-2026';
 
 export default function FestivalScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const { day: rawSelectedDayKey, highline: rawSelectedHighlineId } =
+    useLocalSearchParams<{
+      day?: string | string[];
+      highline?: string | string[];
+    }>();
   const query = useFestivalSchedule({ festivalSlug: FESTIVAL_SLUG });
-  const [selectedHighlineId, setSelectedHighlineId] = React.useState<
-    string | null
-  >(null);
+  const selectedHighlineId = Array.isArray(rawSelectedHighlineId)
+    ? (rawSelectedHighlineId[0] ?? null)
+    : (rawSelectedHighlineId ?? null);
+  const selectedDayKey = Array.isArray(rawSelectedDayKey)
+    ? (rawSelectedDayKey[0] ?? null)
+    : (rawSelectedDayKey ?? null);
 
   const cards = React.useMemo(
     () => query.data?.sectors.flatMap((sector) => sector.cards) ?? [],
@@ -34,6 +43,35 @@ export default function FestivalScreen() {
   const selectedCard = React.useMemo<FestivalHighlineScheduleCard | null>(
     () => cards.find((card) => card.highline.id === selectedHighlineId) ?? null,
     [cards, selectedHighlineId],
+  );
+
+  const handleOpenSchedule = React.useCallback(
+    (card: FestivalHighlineScheduleCard) => {
+      router.setParams({
+        highline: card.highline.id,
+        day: card.defaultDayKey,
+      });
+    },
+    [router],
+  );
+
+  const handleDismissSchedule = React.useCallback(() => {
+    router.setParams({
+      highline: undefined,
+      day: undefined,
+    });
+  }, [router]);
+
+  const handleSelectDayKey = React.useCallback(
+    (dayKey: string) => {
+      if (!selectedHighlineId) return;
+
+      router.setParams({
+        highline: selectedHighlineId,
+        day: dayKey,
+      });
+    },
+    [router, selectedHighlineId],
   );
 
   const title = query.data?.festival.name;
@@ -87,7 +125,7 @@ export default function FestivalScreen() {
                         key={card.highline.id}
                         card={card}
                         festivalTimeZone={query.data?.festival.timezone ?? 'America/Sao_Paulo'}
-                        onPress={() => setSelectedHighlineId(card.highline.id)}
+                        onPress={() => handleOpenSchedule(card)}
                       />
                     ))}
                   </View>
@@ -108,7 +146,9 @@ export default function FestivalScreen() {
           card={selectedCard}
           festivalSlug={FESTIVAL_SLUG}
           festivalTimeZone={query.data?.festival.timezone ?? 'America/Sao_Paulo'}
-          onDismiss={() => setSelectedHighlineId(null)}
+          onDismiss={handleDismissSchedule}
+          onSelectDayKey={handleSelectDayKey}
+          selectedDayKey={selectedDayKey}
         />
       </SafeAreaOfflineView>
     </>
