@@ -4,53 +4,26 @@ import {
   type FestivalHighlineScheduleCard,
   type FestivalScheduleSlotView,
 } from '@chooselife/ui';
-import { useIsFocused } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
   BottomSheetScrollView,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
+import { useIsFocused } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-  type LayoutChangeEvent,
-} from 'react-native';
+import { Alert, TextInput, View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
 import { useMountEffect } from '~/hooks/use-mount-effect';
 
-import { ScheduleChipEdgeFade } from '~/components/festival/schedule-chip-edge-fade';
+import { FestivalScheduleDayChips } from '~/components/festival/festival-schedule-day-chips';
+import { FestivalScheduleSlotRow } from '~/components/festival/festival-schedule-slot-row';
 import { Button } from '~/components/ui/button';
 import { Text } from '~/components/ui/text';
 import { UserPicker } from '~/components/user-picker';
-
-function formatDayLabel(dateKey: string, timeZone: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short',
-    timeZone,
-  }).format(new Date(`${dateKey}T12:00:00.000Z`));
-}
-
-function formatSlotTimeRange(slot: FestivalScheduleSlotView, timeZone: string) {
-  const formatter = new Intl.DateTimeFormat(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone,
-  });
-
-  return `${formatter.format(new Date(slot.startAt))} - ${formatter.format(
-    new Date(slot.endAt),
-  )}`;
-}
 
 function buildFestivalScheduleRedirect({
   dayKey,
@@ -67,167 +40,6 @@ function buildFestivalScheduleRedirect({
 
   return `/festival?${params.toString()}`;
 }
-
-const SlotRow: React.FC<{
-  canManage: boolean;
-  festivalTimeZone: string;
-  isAuthenticated: boolean;
-  onCancelBooking: (slot: FestivalScheduleSlotView) => void;
-  onSelfBook: (slotId: string) => void;
-  onStaffBook: (slotId: string) => void;
-  slot: FestivalScheduleSlotView;
-}> = ({
-  canManage,
-  festivalTimeZone,
-  isAuthenticated,
-  onCancelBooking,
-  onSelfBook,
-  onStaffBook,
-  slot,
-}) => {
-  const { t } = useTranslation();
-  const isPastSlot =
-    !slot.isCurrent && new Date(slot.endAt).getTime() <= Date.now();
-  const title = slot.booking?.participant.primaryText ?? null;
-  const subtitle =
-    slot.state === 'blocked'
-      ? slot.blockReason
-      : (slot.booking?.participant.secondaryText ?? null);
-  const disabledSelfBookingLabel =
-    slot.selfBookingBlockedReason === 'overlap'
-      ? t('app.(festival).highlines.claimSlotBlockedOverlap')
-      : slot.selfBookingBlockedReason === 'limit'
-        ? t('app.(festival).highlines.claimSlotBlockedLimit')
-        : null;
-  const isFreeSlot = slot.state === 'available';
-
-  return (
-    <View
-      className={`gap-3 rounded-2xl border px-4 py-4 ${
-        slot.isCurrent
-          ? 'border-emerald-200 bg-emerald-50'
-          : isPastSlot
-            ? 'border-dashed border-slate-300 bg-slate-50'
-            : isFreeSlot
-              ? 'border-emerald-300 bg-emerald-50/50'
-              : slot.state === 'blocked'
-                ? 'border-amber-200 bg-amber-50'
-                : 'border-slate-200 bg-white'
-      }`}
-    >
-      <View className="flex-row items-start justify-between gap-4">
-        <View className="flex-1 gap-1">
-          <Text
-            className={`text-sm font-semibold uppercase tracking-[1px] ${
-              isPastSlot ? 'text-slate-400' : 'text-slate-500'
-            }`}
-          >
-            {formatSlotTimeRange(slot, festivalTimeZone)}
-          </Text>
-          {title ? (
-            <Text
-              className={`text-base font-semibold ${
-                isPastSlot ? 'text-slate-500' : 'text-slate-900'
-              }`}
-            >
-              {title}
-            </Text>
-          ) : null}
-          {subtitle ? (
-            <Text
-              className={`text-sm ${
-                isPastSlot ? 'text-slate-400' : 'text-slate-500'
-              }`}
-            >
-              {subtitle}
-            </Text>
-          ) : null}
-        </View>
-
-        <View
-          className={`rounded-full px-2 py-1 ${
-            isPastSlot
-              ? 'bg-slate-200'
-              : isFreeSlot
-                ? 'bg-emerald-100'
-                : 'bg-slate-100'
-          }`}
-        >
-          <Text
-            className={`text-[11px] font-semibold uppercase tracking-[0.8px] ${
-              isPastSlot
-                ? 'text-slate-400'
-                : isFreeSlot
-                  ? 'text-emerald-700'
-                  : 'text-slate-500'
-            }`}
-          >
-            {slot.isCurrent
-              ? t('app.(festival).highlines.currentLabel')
-              : slot.state === 'available'
-                ? t('app.(festival).highlines.availableState')
-                : slot.state === 'booked'
-                  ? t('app.(festival).highlines.bookedState')
-                  : slot.state === 'completed'
-                    ? t('app.(festival).highlines.completedLabel')
-                    : slot.state === 'blocked'
-                      ? t('app.(festival).highlines.blockedTitle')
-                      : t('app.(festival).highlines.expiredLabel')}
-          </Text>
-        </View>
-      </View>
-
-      {slot.state === 'available' && isAuthenticated ? (
-        <View className="flex-row flex-wrap gap-2">
-          {slot.canSelfBook ? (
-            <Button
-              className="rounded-xl bg-[#101b2b]"
-              onPress={() => onSelfBook(slot.id)}
-            >
-              <Text className="font-semibold text-white">
-                {t('app.(festival).highlines.claimSlotButton')}
-              </Text>
-            </Button>
-          ) : disabledSelfBookingLabel ? (
-            <View className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-              <Text className="text-sm font-semibold text-red-700 text-center">
-                {disabledSelfBookingLabel}
-              </Text>
-            </View>
-          ) : null}
-
-          {canManage ? (
-            <Button variant="secondary" onPress={() => onStaffBook(slot.id)}>
-              <Text className="font-semibold text-slate-900">
-                {t('app.(festival).highlines.bookForSomeoneButton')}
-              </Text>
-            </Button>
-          ) : null}
-        </View>
-      ) : null}
-
-      {slot.booking &&
-      (slot.booking.isViewer || canManage) &&
-      slot.state === 'booked' ? (
-        <Button
-          variant={slot.booking.isViewer ? 'destructive' : 'outline'}
-          onPress={() => onCancelBooking(slot)}
-        >
-          <Text
-            className={`font-semibold ${
-              slot.booking.isViewer ? 'text-white' : 'text-slate-900'
-            }`}
-          >
-            {slot.booking.isViewer
-              ? t('app.(festival).highlines.cancelOwnBookingButton')
-              : t('app.(festival).highlines.cancelBookingButton')}
-          </Text>
-        </Button>
-      ) : null}
-    </View>
-  );
-};
-
 export const FestivalScheduleSheet: React.FC<{
   card: FestivalHighlineScheduleCard | null;
   canManage: boolean;
@@ -249,10 +61,6 @@ export const FestivalScheduleSheet: React.FC<{
   const isFocused = useIsFocused();
   const router = useRouter();
   const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
-  const dayChipsScrollRef = React.useRef<ScrollView>(null);
-  const dayChipLayoutsRef = React.useRef<
-    Record<string, { width: number; x: number }>
-  >({});
   const { profile } = useAuth();
   const isAuthenticated = !!profile?.id;
   const selectedHighlineId = card?.highline.id ?? null;
@@ -292,42 +100,6 @@ export const FestivalScheduleSheet: React.FC<{
     card?.days.find((day) => day.dateKey === selectedDayKey) ??
     card?.defaultDay ??
     null;
-  const visibleDayKey = selectedDay?.dateKey ?? null;
-
-  const scrollSelectedDayChipIntoView = React.useCallback(
-    (dayKey: string | null) => {
-      if (!dayKey) return;
-
-      const layout = dayChipLayoutsRef.current[dayKey];
-      if (!layout) return;
-
-      dayChipsScrollRef.current?.scrollTo({
-        x: Math.max(layout.x - 20, 0),
-        animated: false,
-      });
-    },
-    [],
-  );
-
-  React.useEffect(() => {
-    if (!selectedHighlineId) return;
-
-    const timeout = setTimeout(() => {
-      scrollSelectedDayChipIntoView(visibleDayKey);
-    }, 0);
-
-    return () => clearTimeout(timeout);
-  }, [scrollSelectedDayChipIntoView, selectedHighlineId, visibleDayKey]);
-
-  const handleDayChipLayout = React.useCallback(
-    (dayKey: string, event: LayoutChangeEvent) => {
-      dayChipLayoutsRef.current[dayKey] = event.nativeEvent.layout;
-      if (dayKey === visibleDayKey) {
-        scrollSelectedDayChipIntoView(dayKey);
-      }
-    },
-    [scrollSelectedDayChipIntoView, visibleDayKey],
-  );
 
   const renderBackdrop = React.useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -475,42 +247,12 @@ export const FestivalScheduleSheet: React.FC<{
       {card ? (
         <View className="flex-1">
           <View className="border-b border-slate-200 bg-white px-5 pb-4 pt-2">
-            <View className="-mx-5 relative">
-              <ScrollView
-                ref={dayChipsScrollRef}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-              >
-                <View className="flex-row gap-2 px-5">
-                  {card.days.map((day) => (
-                    <Pressable
-                      key={day.dateKey}
-                      className={`rounded-full px-3 py-2 ${
-                        selectedDay?.dateKey === day.dateKey
-                          ? 'bg-[#101b2b]'
-                          : 'bg-slate-100'
-                      }`}
-                      onLayout={(event) =>
-                        handleDayChipLayout(day.dateKey, event)
-                      }
-                      onPress={() => onSelectDayKey(day.dateKey)}
-                    >
-                      <Text
-                        className={`font-semibold ${
-                          selectedDay?.dateKey === day.dateKey
-                            ? 'text-white'
-                            : 'text-slate-600'
-                        }`}
-                      >
-                        {formatDayLabel(day.dateKey, festivalTimeZone)}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </ScrollView>
-              <ScheduleChipEdgeFade direction="left" />
-              <ScheduleChipEdgeFade direction="right" />
-            </View>
+            <FestivalScheduleDayChips
+              days={card.days}
+              festivalTimeZone={festivalTimeZone}
+              onSelectDayKey={onSelectDayKey}
+              selectedDayKey={selectedDay?.dateKey ?? null}
+            />
           </View>
 
           <BottomSheetScrollView
@@ -542,7 +284,7 @@ export const FestivalScheduleSheet: React.FC<{
               {selectedDay?.slots.length ? (
                 <View className="gap-3">
                   {selectedDay.slots.map((slot) => (
-                    <SlotRow
+                    <FestivalScheduleSlotRow
                       key={slot.id}
                       canManage={canManage}
                       festivalTimeZone={festivalTimeZone}
