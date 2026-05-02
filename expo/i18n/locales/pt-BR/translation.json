@@ -402,12 +402,13 @@
         "subtitle": "Conte-nos mais sobre você.",
         "inputPlaceholderName": "Seu nome",
         "birthdayLabel": "Data de Nascimento:",
-        "selectDate": "Selecione a data",
         "descriptionPlaceholder": "Nos conte algo sobre você"
       },
       "errors": {
         "usernameValidation": "O nome de usuário deve ter pelo menos 3 caracteres.",
         "nameRequired": "Preencha o seu nome.",
+        "birthdayRequired": "Preencha sua data de nascimento.",
+        "birthdayValidation": "Digite uma data válida.",
         "usernameTaken": "Nome de usuário já escolhido, tente outro.",
         "saveProfile": "Erro ao salvar o perfil. Tente novamente.",
         "usernameCheckError": "Erro ao verificar disponibilidade. Tente novamente."

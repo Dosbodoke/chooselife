@@ -24,6 +24,7 @@ import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
+import { date18YearsAgo } from '~/utils';
 import { Tables } from '~/utils/database.types';
 
 import {
@@ -280,7 +281,7 @@ const EditProfileButton: React.FC = () => {
       name: profile?.name ?? '',
       profilePicture: profile?.profile_picture || undefined,
       description: profile?.description ?? '',
-      birthday: profile?.birthday ?? '',
+      birthday: profile?.birthday ?? date18YearsAgo(),
     },
   });
 

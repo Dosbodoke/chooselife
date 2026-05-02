@@ -1,3 +1,4 @@
+import DateTimePicker from '@expo/ui/datetimepicker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import i18next from 'i18next';
@@ -17,7 +18,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import DatePicker from 'react-native-date-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
   FadeInDown,
@@ -513,15 +513,21 @@ const DateForm: React.FC<{
               control={form.control}
               name="rigDate"
               render={({ field: { value, onChange } }) => (
-                <DatePicker
-                  mode="date"
-                  locale={i18next.language}
-                  date={value}
-                  minimumDate={new Date()}
-                  onDateChange={(date) => onChange(date)}
-                  timeZoneOffsetInMinutes={0}
-                  theme={colorScheme}
-                />
+                <View className="overflow-hidden py-2">
+                  <DateTimePicker
+                    value={value}
+                    onValueChange={(_, selectedDate) => onChange(selectedDate)}
+                    mode="date"
+                    display="spinner"
+                    presentation="inline"
+                    locale={i18next.language === 'en' ? 'en_US' : 'pt_BR'}
+                    minimumDate={new Date()}
+                    themeVariant={colorScheme}
+                    timeZoneName={
+                      Intl.DateTimeFormat().resolvedOptions().timeZone
+                    }
+                  />
+                </View>
               )}
             />
           )}

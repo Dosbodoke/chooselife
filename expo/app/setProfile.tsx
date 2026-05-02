@@ -15,13 +15,13 @@ import Animated, {
   FadeOut,
   FadeOutLeft,
 } from 'react-native-reanimated';
-import { SafeAreaView } from '~/components/styled';
 import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
 import { type Profile } from '~/hooks/use-profile';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
+import { date18YearsAgo } from '~/utils';
 
 import {
   ProfileInfoForm,
@@ -29,10 +29,8 @@ import {
   type ProfileInfoSchema,
 } from '~/components/edit-profile-info';
 import { LanguageSwitcher } from '~/components/language-switcher';
-import {
-  OnboardHeader,
-  OnboardNavigator,
-} from '~/components/onboard';
+import { OnboardHeader, OnboardNavigator } from '~/components/onboard';
+import { SafeAreaView } from '~/components/styled';
 import { Text } from '~/components/ui/text';
 
 const profileSchema = profileInfoSchema.extend({
@@ -59,7 +57,7 @@ export default function SetProfile() {
       name: profile?.name || '',
       profilePicture: profile?.profile_picture || undefined,
       description: profile?.description || '',
-      birthday: profile?.birthday || '',
+      birthday: profile?.birthday || date18YearsAgo(),
     },
   });
 
@@ -291,9 +289,7 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
                 exiting={FadeOut}
                 className="mb-4"
               >
-                <Text className="text-red-500 text-left">
-                  {error.message}
-                </Text>
+                <Text className="text-red-500 text-left">{error.message}</Text>
               </Animated.View>
             )}
           </View>

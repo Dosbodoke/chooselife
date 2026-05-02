@@ -248,9 +248,6 @@ importers:
       react-native-clusterer:
         specifier: ^5.0.2
         version: 5.0.2(react-native-nitro-modules@0.35.2(react-native@0.83.6(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5))(react-native@0.83.6(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5)
-      react-native-date-picker:
-        specifier: 5.0.13
-        version: 5.0.13(react-native@0.83.6(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5)
       react-native-fast-squircle:
         specifier: ^1.1.2
         version: 1.1.2(react-native@0.83.6(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5)
@@ -7581,12 +7578,6 @@ packages:
       react-native: '*'
       react-native-nitro-modules: ^0.31.5
 
-  react-native-date-picker@5.0.13:
-    resolution: {integrity: sha512-qCLUODZVsJetO5zuoXjw1D39K527XWqBG8sOfhWdHyPzf13h8RXR1/RSKd1N0fdRDi5GdyizYmB0lPAK12/hbw==}
-    peerDependencies:
-      react: '>= 17.0.1'
-      react-native: '>= 0.64.3'
-
   react-native-fast-squircle@1.1.2:
     resolution: {integrity: sha512-TsRRH2u4GwBeGtngIigrl/JqhGr531Q56W9l7z24JHiV8c4e1YPkhnyNLu3HT66ydiIwsIcy+To40aqxe6wCiw==}
     peerDependencies:
@@ -8563,6 +8554,7 @@ packages:
 
   uuid@7.0.3:
     resolution: {integrity: sha512-DPSke0pXhTZgoF/d+WSt2QaKMCFSfx7QegxEWT+JOuHF5aWrKEn0G+ztjuJg/gG8/ItK+rbPCD/yNv8yyih6Cg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   v8-to-istanbul@9.3.0:
@@ -17167,11 +17159,6 @@ snapshots:
       react: 19.2.5
       react-native: 0.83.6(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.5)
       react-native-nitro-modules: 0.35.2(react-native@0.83.6(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5)
-
-  react-native-date-picker@5.0.13(react-native@0.83.6(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5):
-    dependencies:
-      react: 19.2.5
-      react-native: 0.83.6(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.5)
 
   react-native-fast-squircle@1.1.2(react-native@0.83.6(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5):
     dependencies:

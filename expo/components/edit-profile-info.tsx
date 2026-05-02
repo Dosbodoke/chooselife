@@ -1,70 +1,124 @@
+import DateTimePicker from '@expo/ui/datetimepicker';
 import i18next from 'i18next';
 import React from 'react';
 import { Controller, UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
-import DatePicker from 'react-native-date-picker';
+import { StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { z } from 'zod';
 
 import { useI18n } from '~/context/i18n';
 import { cn } from '~/lib/utils';
-import { date18YearsAgo } from '~/utils';
 
 import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
 
 import { AvatarUploader, SupabaseAvatar } from './supabase-avatar';
 
+function isIsoBirthday(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function isCalendarDate(year: number, month: number, day: number) {
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+function isFutureDate(year: number, month: number, day: number) {
+  const today = new Date();
+
+  return (
+    Date.UTC(year, month - 1, day) >
+    Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+  );
+}
+
+function padDatePart(value: number) {
+  return String(value).padStart(2, '0');
+}
+
+function formatDateForStorage(date: Date) {
+  return `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(
+    date.getDate(),
+  )}`;
+}
+
+function dateFromIso(value: string) {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day, 12);
+}
+
+function getDefaultBirthdayDate() {
+  const today = new Date();
+  return new Date(
+    today.getFullYear() - 18,
+    today.getMonth(),
+    today.getDate(),
+    12,
+  );
+}
+
+function isValidBirthdayValue(value?: string) {
+  if (!value) return true;
+  if (!isIsoBirthday(value)) return false;
+
+  const [year, month, day] = value.split('-').map(Number);
+  return isCalendarDate(year, month, day) && !isFutureDate(year, month, day);
+}
+
 export const profileInfoSchema = z.object({
   name: z.string().min(1, i18next.t('app.setProfile.errors.nameRequired')),
   profilePicture: z.string().optional(),
   description: z.string().optional(),
-  birthday: z.string().optional(),
+  birthday: z
+    .string()
+    .min(1, i18next.t('app.setProfile.errors.birthdayRequired'))
+    .refine((value) => isValidBirthdayValue(value), {
+      message: i18next.t('app.setProfile.errors.birthdayValidation'),
+    }),
 });
 export type ProfileInfoSchema = z.infer<typeof profileInfoSchema>;
 
-// Custom DateInput component for better UX
-const DateInput: React.FC<{
+const BirthdayInput: React.FC<{
   value?: string;
-  onPress: () => void;
-  placeholder: string;
+  onChange: (value: string) => void;
   label: string;
   error?: string;
-  optional?: boolean;
-}> = ({ value, onPress, placeholder, label, error, optional }) => {
-  const { t } = useTranslation();
+  layout?: 'onboarding' | 'sheet';
+}> = ({ value, onChange, label, error, layout = 'onboarding' }) => {
   const { locale } = useI18n();
-  const displayValue = value ? new Date(value).toLocaleDateString(locale) : '';
+  const isSheetLayout = layout === 'sheet';
+  const pickerDate =
+    value && isIsoBirthday(value)
+      ? dateFromIso(value)
+      : getDefaultBirthdayDate();
+  const pickerLocale = locale === 'en' ? 'en_US' : 'pt_BR';
+  const timeZoneName = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   return (
     <View className="w-full gap-2">
-      <View className="flex-row items-center gap-1">
-        <Text className="text-sm font-medium text-foreground">{label}</Text>
-        {optional && (
-          <Text className="text-sm text-muted-foreground">
-            {t('common.optional')}
-          </Text>
-        )}
-      </View>
+      <Text className="text-sm font-medium text-foreground">{label}</Text>
 
-      <Pressable
-        onPress={onPress}
-        className={cn(
-          'border rounded-md px-3 py-3 bg-background min-h-11 justify-center',
-          error ? 'border-red-500' : 'border-border',
-          'active:bg-muted/50', // Visual feedback on press
-        )}
-      >
-        <Text
-          className={cn(
-            'text-base',
-            displayValue ? 'text-foreground' : 'text-muted-foreground',
-          )}
-        >
-          {displayValue || placeholder}
-        </Text>
-      </Pressable>
+      <View className={cn('overflow-hidden', isSheetLayout ? 'py-1' : 'py-2')}>
+        <DateTimePicker
+          value={pickerDate}
+          onValueChange={(_, selectedDate) => {
+            onChange(formatDateForStorage(selectedDate));
+          }}
+          mode="date"
+          display="spinner"
+          presentation="inline"
+          maximumDate={new Date()}
+          locale={pickerLocale}
+          timeZoneName={timeZoneName}
+          style={{ width: '100%' }}
+        />
+      </View>
 
       {error && (
         <Animated.View entering={FadeIn} exiting={FadeOut}>
@@ -80,15 +134,7 @@ export const ProfileInfoForm: React.FC<{
   layout?: 'onboarding' | 'sheet';
 }> = ({ form, layout = 'onboarding' }) => {
   const { t } = useTranslation();
-  const [showDatePicker, setShowDatePicker] = React.useState(false);
   const isSheetLayout = layout === 'sheet';
-
-  const handleDateChange = (date: Date) => {
-    setShowDatePicker(false);
-    if (date) {
-      form.setValue('birthday', date.toISOString().split('T')[0]); // YYYY-MM-DD format
-    }
-  };
 
   return (
     <View className="w-full gap-4 items-start">
@@ -146,33 +192,14 @@ export const ProfileInfoForm: React.FC<{
       <Controller
         control={form.control}
         name="birthday"
-        render={({ field: { value }, fieldState: { error } }) => (
-          <>
-            <DateInput
-              value={value}
-              onPress={() => setShowDatePicker(true)}
-              label={t('app.setProfile.ProfileInfoForm.birthdayLabel')}
-              placeholder={t('app.setProfile.ProfileInfoForm.selectDate')}
-              error={error?.message}
-              optional
-            />
-            <DatePicker
-              modal
-              open={showDatePicker}
-              mode="date"
-              locale="pt-BR"
-              date={value ? new Date(value) : new Date(date18YearsAgo())}
-              maximumDate={new Date()}
-              onConfirm={(date) => {
-                setShowDatePicker(false);
-                handleDateChange(date);
-              }}
-              onCancel={() => {
-                setShowDatePicker(false);
-              }}
-              timeZoneOffsetInMinutes={0} // https://github.com/henninghall/react-native-date-picker/issues/841
-            />
-          </>
+        render={({ field: { value, onChange }, fieldState: { error } }) => (
+          <BirthdayInput
+            value={value}
+            onChange={onChange}
+            label={t('app.setProfile.ProfileInfoForm.birthdayLabel')}
+            error={error?.message}
+            layout={layout}
+          />
         )}
       />
 

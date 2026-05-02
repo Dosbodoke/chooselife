@@ -402,12 +402,13 @@
         "subtitle": "Tell us more about yourself.",
         "inputPlaceholderName": "Your name",
         "birthdayLabel": "Date of Birth:",
-        "selectDate": "Select date",
         "descriptionPlaceholder": "Tell us something about yourself"
       },
       "errors": {
         "usernameValidation": "Username must be at least 3 characters.",
         "nameRequired": "Please enter your name.",
+        "birthdayRequired": "Please enter your date of birth.",
+        "birthdayValidation": "Enter a valid date.",
         "usernameTaken": "Username already taken, try another.",
         "saveProfile": "Error saving profile. Please try again.",
         "usernameCheckError": "Error checking username availability. Please try again."
