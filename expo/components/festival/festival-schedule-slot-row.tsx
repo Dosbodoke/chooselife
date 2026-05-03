@@ -94,7 +94,7 @@ const cancelButtonTextVariants = cva('font-semibold', {
   variants: {
     tone: {
       viewer: 'text-white',
-      staff: 'text-slate-900',
+      staff: 'text-red-600',
     },
   },
   defaultVariants: {
@@ -217,14 +217,16 @@ export const FestivalScheduleSlotRow: React.FC<
   const textTone = pastSlot ? 'muted' : 'default';
   const isViewerBooking = !!slot.booking?.isViewer;
 
-  let cancelButtonVariant: 'destructive' | 'outline' = 'outline';
+  let cancelButtonVariant: 'destructive' | 'secondary' = 'secondary';
   let cancelButtonTextTone: 'viewer' | 'staff' = 'staff';
   let cancelButtonLabel = t('app.(festival).highlines.cancelBookingButton');
+  let cancelButtonClassName = 'rounded-xl bg-red-50';
 
   if (isViewerBooking) {
     cancelButtonVariant = 'destructive';
     cancelButtonTextTone = 'viewer';
     cancelButtonLabel = t('app.(festival).highlines.cancelOwnBookingButton');
+    cancelButtonClassName = 'rounded-xl';
   }
 
   return (
@@ -292,6 +294,7 @@ export const FestivalScheduleSlotRow: React.FC<
       (slot.booking.isViewer || canManage) &&
       slot.state === 'booked' ? (
         <Button
+          className={cancelButtonClassName}
           variant={cancelButtonVariant}
           onPress={() => onCancelBooking(slot)}
         >
