@@ -254,14 +254,16 @@ export const FestivalScheduleSlotRow: React.FC<
       </View>
 
       {slot.state === 'available' && isAuthenticated ? (
-        <View className="flex-row flex-wrap gap-2">
+        <View className="gap-2">
           {slot.canSelfBook ? (
             <Button
-              className="rounded-xl bg-[#101b2b]"
+              className="flex-1 rounded-xl bg-[#101b2b]"
               onPress={() => onSelfBook(slot.id)}
             >
               <Text className="font-semibold text-white">
-                {t('app.(festival).highlines.claimSlotButton')}
+                {canManage
+                  ? t('app.(festival).highlines.claimSlotForMeButton')
+                  : t('app.(festival).highlines.claimSlotButton')}
               </Text>
             </Button>
           ) : disabledSelfBookingLabel ? (
@@ -273,7 +275,11 @@ export const FestivalScheduleSlotRow: React.FC<
           ) : null}
 
           {canManage ? (
-            <Button variant="secondary" onPress={() => onStaffBook(slot.id)}>
+            <Button
+              className="flex-1 rounded-xl"
+              variant="secondary"
+              onPress={() => onStaffBook(slot.id)}
+            >
               <Text className="font-semibold text-slate-900">
                 {t('app.(festival).highlines.bookForSomeoneButton')}
               </Text>
