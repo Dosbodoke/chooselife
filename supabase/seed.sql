@@ -1,6 +1,28 @@
 -- Local development seed for festival schedule testing.
 -- This file is applied after all migrations during `supabase db reset`.
 
+-- Create the local organization used by festival schedule testing.
+INSERT INTO public.organizations (
+  id,
+  name,
+  slug,
+  monthly_price_amount,
+  annual_price_amount
+)
+VALUES (
+  '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1'::uuid,
+  'SL.A.C',
+  'slac',
+  3500,
+  36000
+)
+ON CONFLICT (id) DO UPDATE
+SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  monthly_price_amount = EXCLUDED.monthly_price_amount,
+  annual_price_amount = EXCLUDED.annual_price_amount;
+
 -- Create a few sectors with stable ids so highlines can reference them.
 INSERT INTO public.sector (id, name, description)
 VALUES
