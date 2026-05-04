@@ -329,7 +329,10 @@ export function buildFestivalScheduleCards(args: {
         const nextBookingOpensAt =
           existingMeta.bookingOpensAt === null
             ? scheduleWindow.scheduling_opens_at
-            : existingMeta.bookingOpensAt;
+            : new Date(scheduleWindow.scheduling_opens_at).getTime()
+                < new Date(existingMeta.bookingOpensAt).getTime()
+              ? scheduleWindow.scheduling_opens_at
+              : existingMeta.bookingOpensAt;
         const nextLatestWindowEndAt =
           existingMeta.latestWindowEndAt === null
           || new Date(scheduleWindow.window_end_at).getTime()
