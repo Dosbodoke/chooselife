@@ -669,22 +669,26 @@ BEGIN
     booking.created_at,
     booking.completed_at,
     booking.status,
-    CASE
-      WHEN booking.profile_id IS NOT NULL THEN COALESCE(
-        NULLIF(btrim(profile.name), ''),
-        NULLIF(btrim(profile.username), ''),
-        'Participant'
-      )
-      ELSE COALESCE(NULLIF(btrim(booking.display_name), ''), 'Guest')
-    END AS participant_display_name,
-    CASE
-      WHEN booking.profile_id IS NOT NULL
-        AND NULLIF(btrim(profile.name), '') IS NOT NULL
-        AND NULLIF(btrim(profile.username), '') IS NOT NULL
-        THEN profile.username
-      ELSE NULL
-    END AS participant_secondary_text,
-    booking.profile_id = actor_profile_id AS is_viewer
+    (
+      CASE
+        WHEN booking.profile_id IS NOT NULL THEN COALESCE(
+          NULLIF(btrim(profile.name::text), ''),
+          NULLIF(btrim(profile.username::text), ''),
+          'Participant'
+        )
+        ELSE COALESCE(NULLIF(btrim(booking.display_name::text), ''), 'Guest')
+      END
+    )::text AS participant_display_name,
+    (
+      CASE
+        WHEN booking.profile_id IS NOT NULL
+          AND NULLIF(btrim(profile.name::text), '') IS NOT NULL
+          AND NULLIF(btrim(profile.username::text), '') IS NOT NULL
+          THEN profile.username::text
+        ELSE NULL
+      END
+    )::text AS participant_secondary_text,
+    (booking.profile_id = actor_profile_id)::boolean AS is_viewer
   FROM public.festival_schedule_booking AS booking
   LEFT JOIN public.profiles AS profile
     ON profile.id = booking.profile_id
