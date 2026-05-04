@@ -26,8 +26,8 @@ VALUES (
   'chooselife-2026',
   'Festival Chooselife',
   'The biggest Highline festival in Brazil',
-  (date_trunc('day', now() AT TIME ZONE 'utc') AT TIME ZONE 'utc') - interval '2 days',
-  (date_trunc('day', now() AT TIME ZONE 'utc') AT TIME ZONE 'utc') + interval '2 days',
+  (date_trunc('day', now() AT TIME ZONE 'America/Sao_Paulo') AT TIME ZONE 'America/Sao_Paulo') - interval '2 days',
+  (date_trunc('day', now() AT TIME ZONE 'America/Sao_Paulo') AT TIME ZONE 'America/Sao_Paulo') + interval '2 days',
   'America/Sao_Paulo',
   true
 )
