@@ -3,7 +3,6 @@ import type {
   FestivalHighline,
   FestivalHighlineLink,
   FestivalHighlineScheduleCard,
-  FestivalParticipantDisplay,
   FestivalScheduleBookingBlockedReason,
   FestivalScheduleBookingRecord,
   FestivalScheduleBookingView,
