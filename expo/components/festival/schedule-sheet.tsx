@@ -16,7 +16,9 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, View } from 'react-native';
 
+import { useOnlineStatus } from '~/context/react-query';
 import { useAuth } from '~/context/auth';
+import { useI18n } from '~/context/i18n';
 import { useMountEffect } from '~/hooks/use-mount-effect';
 
 import { FestivalScheduleDayChips } from '~/components/festival/festival-schedule-day-chips';
@@ -40,6 +42,20 @@ function buildFestivalScheduleRedirect({
 
   return `/festival?${params.toString()}`;
 }
+
+function formatBookingOpensAt(
+  dateTime: string,
+  locale: string,
+  timeZone: string,
+) {
+  return new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone,
+  }).format(new Date(dateTime));
+}
 export const FestivalScheduleSheet: React.FC<{
   card: FestivalHighlineScheduleCard | null;
   canManage: boolean;
@@ -61,7 +77,9 @@ export const FestivalScheduleSheet: React.FC<{
   const isFocused = useIsFocused();
   const router = useRouter();
   const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
+  const isOnline = useOnlineStatus();
   const { profile } = useAuth();
+  const { locale } = useI18n();
   const isAuthenticated = !!profile?.id;
   const selectedHighlineId = card?.highline.id ?? null;
   const [staffSlotId, setStaffSlotId] = React.useState<string | null>(null);
@@ -92,6 +110,13 @@ export const FestivalScheduleSheet: React.FC<{
     card?.days.find((day) => day.dateKey === selectedDayKey) ??
     card?.defaultDay ??
     null;
+  const bookingOpensAtLabel = selectedDay?.bookingOpensAt
+    ? formatBookingOpensAt(
+        selectedDay.bookingOpensAt,
+        locale,
+        festivalTimeZone,
+      )
+    : null;
   const staffSlot =
     card?.days
       .flatMap((day) => day.slots)
@@ -115,8 +140,20 @@ export const FestivalScheduleSheet: React.FC<{
     );
   }, [t]);
 
+  const showOfflineWriteAlert = React.useCallback(() => {
+    Alert.alert(
+      t('app.(festival).highlines.offlineActionTitle'),
+      t('app.(festival).highlines.offlineActionMessage'),
+    );
+  }, [t]);
+
   const handleSelfBook = React.useCallback(
     async (slotId: string) => {
+      if (!isOnline) {
+        showOfflineWriteAlert();
+        return;
+      }
+
       const result = await bookMutation.mutateAsync({ slotId });
       if (!result.success) {
         if (result.error === 'festival_schedule_booking_overlap') {
@@ -135,15 +172,38 @@ export const FestivalScheduleSheet: React.FC<{
           return;
         }
 
+        if (result.error === 'festival_schedule_booking_not_open_yet') {
+          Alert.alert(
+            t('app.(festival).highlines.errorTitle'),
+            bookingOpensAtLabel
+              ? t('app.(festival).highlines.scheduleNotOpenError', {
+                  dateTime: bookingOpensAtLabel,
+                })
+              : t('app.(festival).highlines.genericError'),
+          );
+          return;
+        }
+
         showGenericError();
       }
     },
-    [bookMutation, showGenericError, t],
+    [
+      bookMutation,
+      bookingOpensAtLabel,
+      isOnline,
+      showGenericError,
+      showOfflineWriteAlert,
+      t,
+    ],
   );
 
   const handleCancelBooking = React.useCallback(
     async (slot: FestivalScheduleSlotView) => {
       if (!slot.booking) return;
+      if (!isOnline) {
+        showOfflineWriteAlert();
+        return;
+      }
 
       const result = await cancelMutation.mutateAsync({
         bookingId: slot.booking.id,
@@ -156,7 +216,7 @@ export const FestivalScheduleSheet: React.FC<{
         showGenericError();
       }
     },
-    [cancelMutation, showGenericError],
+    [cancelMutation, isOnline, showGenericError, showOfflineWriteAlert],
   );
 
   const handleConfirmStaffBooking = React.useCallback(
@@ -171,6 +231,11 @@ export const FestivalScheduleSheet: React.FC<{
       profileId?: string | null;
       slotId: string;
     }) => {
+      if (!isOnline) {
+        showOfflineWriteAlert();
+        return false;
+      }
+
       const result = await bookMutation.mutateAsync({
         slotId,
         profileId,
@@ -186,7 +251,7 @@ export const FestivalScheduleSheet: React.FC<{
       setStaffSlotId(null);
       return true;
     },
-    [bookMutation, showGenericError],
+    [bookMutation, isOnline, showGenericError, showOfflineWriteAlert],
   );
 
   const handleLoginPress = React.useCallback(() => {
@@ -243,6 +308,19 @@ export const FestivalScheduleSheet: React.FC<{
               }}
             >
               <View className="gap-4">
+                {!selectedDay?.isBookingOpen && bookingOpensAtLabel ? (
+                  <View className="gap-2 rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4">
+                    <Text className="text-sm font-semibold text-amber-950">
+                      {t('app.(festival).highlines.bookingOpensAtTitle')}
+                    </Text>
+                    <Text className="text-sm leading-6 text-amber-900">
+                      {t('app.(festival).highlines.bookingOpensAtMessage', {
+                        dateTime: bookingOpensAtLabel,
+                      })}
+                    </Text>
+                  </View>
+                ) : null}
+
                 {!isAuthenticated ? (
                   <View className="gap-3 rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4">
                     <Text className="text-sm leading-6 text-amber-950">
@@ -259,6 +337,17 @@ export const FestivalScheduleSheet: React.FC<{
                   </View>
                 ) : null}
 
+                {!isOnline ? (
+                  <View className="gap-2 rounded-[24px] border border-blue-200 bg-blue-50 px-4 py-4">
+                    <Text className="text-sm font-semibold text-blue-950">
+                      {t('app.(festival).highlines.offlineReadOnlyTitle')}
+                    </Text>
+                    <Text className="text-sm leading-6 text-blue-900">
+                      {t('app.(festival).highlines.offlineReadOnlyMessage')}
+                    </Text>
+                  </View>
+                ) : null}
+
                 {selectedDay?.slots.length ? (
                   <View className="gap-3">
                     {selectedDay.slots.map((slot) => (
@@ -267,6 +356,7 @@ export const FestivalScheduleSheet: React.FC<{
                         canManage={canManage}
                         festivalTimeZone={festivalTimeZone}
                         isAuthenticated={isAuthenticated}
+                        isOnline={isOnline}
                         onCancelBooking={handleCancelBooking}
                         onSelfBook={handleSelfBook}
                         onStaffBook={setStaffSlotId}
@@ -294,7 +384,7 @@ export const FestivalScheduleSheet: React.FC<{
         onDismiss={() => {
           setStaffSlotId(null);
         }}
-        slot={canManage ? staffSlot : null}
+        slot={canManage && isOnline ? staffSlot : null}
       />
     </>
   );

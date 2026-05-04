@@ -10,6 +10,8 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
 
+import { useI18n } from '~/context/i18n';
+
 import { HighlineImage } from '~/components/highline/highline-image';
 import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
@@ -25,18 +27,36 @@ const StatPill: React.FC<{
   </View>
 );
 
+function formatBookingOpensAt(
+  dateTime: string,
+  locale: string,
+  timeZone: string,
+) {
+  return new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone,
+  }).format(new Date(dateTime));
+}
+
 export const FestivalHighlineCardView: React.FC<{
   card: FestivalHighlineScheduleCard;
   festivalTimeZone: string;
   onPress: () => void;
 }> = ({ card, festivalTimeZone, onPress }) => {
   const { t } = useTranslation();
+  const { locale } = useI18n();
   const featuredLabel = card.featuredSlot
-    ? new Intl.DateTimeFormat(undefined, {
+    ? new Intl.DateTimeFormat(locale, {
         hour: '2-digit',
         minute: '2-digit',
         timeZone: festivalTimeZone,
       }).format(new Date(card.featuredSlot.startAt))
+    : null;
+  const bookingOpensAtLabel = card.bookingOpensAt
+    ? formatBookingOpensAt(card.bookingOpensAt, locale, festivalTimeZone)
     : null;
 
   return (
@@ -91,12 +111,28 @@ export const FestivalHighlineCardView: React.FC<{
         <View className="gap-2">
           <View className="flex flex-row gap-2 items-center">
             <Icon as={UsersIcon} className="size-3 text-black" />
-            <Text className="font-semibold uppercase tracking-[1px] text-slate-500">
-              {t('app.(festival).highlines.availableCount', {
-                count: card.availableCount,
-              })}
+            <Text
+              className={`font-semibold uppercase tracking-[1px] ${
+                card.isBookingOpen ? 'text-slate-500' : 'text-amber-700'
+              }`}
+            >
+              {card.isBookingOpen
+                ? t('app.(festival).highlines.availableCount', {
+                    count: card.availableCount,
+                  })
+                : t('app.(festival).highlines.preOpenAvailableCount', {
+                    count: card.preOpenAvailableCount,
+                  })}
             </Text>
           </View>
+
+          {!card.isBookingOpen && bookingOpensAtLabel ? (
+            <Text className="text-sm font-medium text-amber-700">
+              {t('app.(festival).highlines.bookingOpensAtSummary', {
+                dateTime: bookingOpensAtLabel,
+              })}
+            </Text>
+          ) : null}
 
           {card.featuredSlot?.booking ? (
             <View className="max-w-[56%] flex-row items-center gap-1.5">

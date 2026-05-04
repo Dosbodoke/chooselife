@@ -1,9 +1,12 @@
-import NetInfo from '@react-native-community/netinfo';
+import { useNetInfo } from '@react-native-community/netinfo';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { onlineManager, QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import AsyncStorage from 'expo-sqlite/kv-store';
 import React from 'react';
+
+// Flip this to true in development to simulate the app being offline.
+export const FORCE_OFFLINE = __DEV__ && false;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,16 +23,20 @@ const persister = createAsyncStoragePersister({
   throttleTime: 3000,
 });
 
+export function useOnlineStatus() {
+  const { isConnected } = useNetInfo();
+
+  return FORCE_OFFLINE ? false : isConnected !== false;
+}
+
 export const ReactQueryProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  // Listen for connectivity changes.
+  const isOnline = useOnlineStatus();
+
   React.useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      onlineManager.setOnline(!!state.isConnected);
-    });
-    return unsubscribe;
-  }, []);
+    onlineManager.setOnline(isOnline);
+  }, [isOnline]);
 
   return (
     <PersistQueryClientProvider

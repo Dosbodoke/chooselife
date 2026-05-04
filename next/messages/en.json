@@ -247,6 +247,7 @@
       "ranking": "Ranking"
     },
     "schedule": {
+      "scheduleTitle": "Schedule",
       "loading": "Refreshing schedule...",
       "defaultSector": "Festival highlines",
       "openSchedule": "Open schedule",

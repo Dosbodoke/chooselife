@@ -1,9 +1,10 @@
-import { useNetInfo } from '@react-native-community/netinfo';
 import { WifiOffIcon } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { useOnlineStatus } from '~/context/react-query';
 
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
@@ -15,9 +16,9 @@ export const SafeAreaOfflineView: React.FC<{
 }> = ({ children, className, edges = ['top', 'left', 'right'] }) => {
   const { t } = useTranslation();
   const { top, bottom, left, right } = useSafeAreaInsets();
-  const { isConnected } = useNetInfo();
+  const isOnline = useOnlineStatus();
 
-  if (isConnected === false) {
+  if (!isOnline) {
     return (
       <Animated.View
         entering={FadeInUp}
@@ -59,9 +60,9 @@ export const SafeAreaOfflineView: React.FC<{
 export const OfflineBanner: React.FC = () => {
   const { t } = useTranslation();
   const { top } = useSafeAreaInsets();
-  const { isConnected } = useNetInfo();
+  const isOnline = useOnlineStatus();
 
-  if (isConnected) return null;
+  if (isOnline) return null;
 
   return (
     <Animated.View

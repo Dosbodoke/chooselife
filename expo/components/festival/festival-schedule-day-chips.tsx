@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 
 import { cn } from '~/lib/utils';
+import { useI18n } from '~/context/i18n';
 
 import { ScheduleChipEdgeFade } from '~/components/festival/schedule-chip-edge-fade';
 import { Text } from '~/components/ui/text';
@@ -44,8 +45,8 @@ type FestivalScheduleDayChipsProps = {
   selectedDayKey: string | null;
 };
 
-function formatDayLabel(dateKey: string, timeZone: string) {
-  return new Intl.DateTimeFormat(undefined, {
+function formatDayLabel(dateKey: string, locale: string, timeZone: string) {
+  return new Intl.DateTimeFormat(locale, {
     weekday: 'short',
     day: '2-digit',
     month: 'short',
@@ -59,6 +60,7 @@ export function FestivalScheduleDayChips({
   onSelectDayKey,
   selectedDayKey,
 }: FestivalScheduleDayChipsProps) {
+  const { locale } = useI18n();
   const scrollViewRef = React.useRef<ScrollView>(null);
   const dayChipLayoutsRef = React.useRef<
     Record<string, { width: number; x: number }>
@@ -119,7 +121,7 @@ export function FestivalScheduleDayChips({
                 <Text
                   className={cn(dayChipTextVariants({ active: isSelected }))}
                 >
-                  {formatDayLabel(day.dateKey, festivalTimeZone)}
+                  {formatDayLabel(day.dateKey, locale, festivalTimeZone)}
                 </Text>
               </Pressable>
             );

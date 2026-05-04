@@ -394,6 +394,7 @@ export type Database = {
           festival_id: string
           highline_id: string
           id: string
+          scheduling_opens_at: string
           window_end_at: string
           window_start_at: string
         }
@@ -402,6 +403,7 @@ export type Database = {
           festival_id: string
           highline_id: string
           id?: string
+          scheduling_opens_at: string
           window_end_at: string
           window_start_at: string
         }
@@ -410,6 +412,7 @@ export type Database = {
           festival_id?: string
           highline_id?: string
           id?: string
+          scheduling_opens_at?: string
           window_end_at?: string
           window_start_at?: string
         }
@@ -1141,12 +1144,35 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      enqueue_festival_schedule_open_notifications: {
+        Args: never
+        Returns: number
+      }
+      enqueue_festival_schedule_reminder_notifications: {
+        Args: never
+        Returns: number
+      }
       get_crossing_time: {
         Args: { highline_id: string; page_number: number; page_size: number }
         Returns: {
           crossing_time: number
           instagram: string
           profile_picture: string
+        }[]
+      }
+      get_festival_schedule_bookings: {
+        Args: { target_festival_id: string }
+        Returns: {
+          completed_at: string
+          created_at: string
+          festival_id: string
+          highline_id: string
+          id: string
+          is_viewer: boolean
+          participant_display_name: string
+          participant_secondary_text: string
+          slot_id: string
+          status: Database["public"]["Enums"]["festival_schedule_booking_status_enum"]
         }[]
       }
       get_highline: {

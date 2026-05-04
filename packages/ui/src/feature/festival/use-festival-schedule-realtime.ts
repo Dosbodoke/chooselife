@@ -22,6 +22,18 @@ export function useFestivalScheduleRealtime(
         {
           event: "*",
           schema: "public",
+          table: "festival_schedule_window",
+          filter: `festival_id=eq.${festivalId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
           table: "festival_schedule_slot",
           filter: `festival_id=eq.${festivalId}`,
         },

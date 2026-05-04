@@ -69,9 +69,9 @@ function SlotRow({
       ? slot.blockReason
       : slot.booking?.participant.secondaryText ?? null;
   const disabledSelfBookingLabel =
-    slot.selfBookingBlockedReason === "overlap"
+    slot.bookingBlockedReason === "overlap"
       ? t("claimSlotBlockedOverlap")
-      : slot.selfBookingBlockedReason === "limit"
+      : slot.bookingBlockedReason === "limit"
       ? t("claimSlotBlockedLimit")
       : null;
   const isFreeSlot = slot.state === "available";
@@ -149,7 +149,7 @@ function SlotRow({
 
       {slot.state === "available" && isAuthenticated ? (
         <div className="flex flex-wrap gap-2">
-          {slot.canSelfBook ? (
+          {slot.bookingBlockedReason === null ? (
             <Button
               type="button"
               className="rounded-xl bg-[#101b2b] text-white hover:bg-[#101b2b]/95"

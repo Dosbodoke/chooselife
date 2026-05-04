@@ -12,6 +12,8 @@ import {
   View,
 } from 'react-native';
 
+import { useOnlineStatus } from '~/context/react-query';
+
 import { FestivalHighlineCardView } from '~/components/festival/highline-card';
 import { FestivalScheduleSheet } from '~/components/festival/schedule-sheet';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
@@ -22,12 +24,14 @@ const FESTIVAL_SLUG = 'chooselife-2026';
 export default function FestivalScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const isOnline = useOnlineStatus();
   const { day: rawSelectedDayKey, highline: rawSelectedHighlineId } =
     useLocalSearchParams<{
       day?: string | string[];
       highline?: string | string[];
     }>();
   const query = useFestivalSchedule({ festivalSlug: FESTIVAL_SLUG });
+  const isOffline = !isOnline;
   const selectedHighlineId = Array.isArray(rawSelectedHighlineId)
     ? (rawSelectedHighlineId[0] ?? null)
     : (rawSelectedHighlineId ?? null);
@@ -96,7 +100,7 @@ export default function FestivalScreen() {
             />
           }
         >
-          {query.isPending ? (
+          {query.isPending && !query.data ? (
             <View className="items-center gap-4 rounded-[28px] bg-white px-6 py-12">
               <ActivityIndicator size="large" color="#0f172a" />
               <Text className="text-base text-slate-500">
@@ -131,6 +135,14 @@ export default function FestivalScreen() {
                   </View>
                 </View>
               ))}
+            </View>
+          ) : query.error ? (
+            <View className="rounded-[28px] bg-white px-6 py-12">
+              <Text className="text-center text-base leading-7 text-slate-500">
+                {isOffline
+                  ? t('app.(festival).highlines.offlineCacheEmpty')
+                  : t('app.(festival).highlines.genericError')}
+              </Text>
             </View>
           ) : (
             <View className="rounded-[28px] bg-white px-6 py-12">

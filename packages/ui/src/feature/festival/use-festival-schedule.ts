@@ -28,6 +28,7 @@ export function useFestivalSchedule({
         supabase,
         userId,
       }),
+    gcTime: Infinity,
     initialData,
   });
 

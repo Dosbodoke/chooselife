@@ -5,6 +5,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
+import { useI18n } from '~/context/i18n';
 import { cn } from '~/lib/utils';
 
 import { Button } from '~/components/ui/button';
@@ -106,14 +107,19 @@ type FestivalScheduleSlotRowProps = {
   canManage: boolean;
   festivalTimeZone: string;
   isAuthenticated: boolean;
+  isOnline: boolean;
   onCancelBooking: (slot: FestivalScheduleSlotView) => void;
   onSelfBook: (slotId: string) => void;
   onStaffBook: (slotId: string) => void;
   slot: FestivalScheduleSlotView;
 };
 
-function formatSlotTimeRange(slot: FestivalScheduleSlotView, timeZone: string) {
-  const formatter = new Intl.DateTimeFormat(undefined, {
+function formatSlotTimeRange(
+  slot: FestivalScheduleSlotView,
+  locale: string,
+  timeZone: string,
+) {
+  const formatter = new Intl.DateTimeFormat(locale, {
     hour: '2-digit',
     minute: '2-digit',
     timeZone,
@@ -182,7 +188,7 @@ function getDisabledSelfBookingLabel(
   slot: FestivalScheduleSlotView,
   t: TFunction,
 ) {
-  switch (slot.selfBookingBlockedReason) {
+  switch (slot.bookingBlockedReason) {
     case 'overlap':
       return t('app.(festival).highlines.claimSlotBlockedOverlap');
     case 'limit':
@@ -198,12 +204,14 @@ export const FestivalScheduleSlotRow: React.FC<
   canManage,
   festivalTimeZone,
   isAuthenticated,
+  isOnline,
   onCancelBooking,
   onSelfBook,
   onStaffBook,
   slot,
 }) => {
   const { t } = useTranslation();
+  const { locale } = useI18n();
   const pastSlot = isPastSlot(slot);
   const title = slot.booking?.participant.primaryText ?? null;
   const subtitle =
@@ -234,7 +242,7 @@ export const FestivalScheduleSlotRow: React.FC<
       <View className="flex-row items-start justify-between gap-4">
         <View className="flex-1 gap-1">
           <Text className={cn(slotTimeVariants({ tone: textTone }))}>
-            {formatSlotTimeRange(slot, festivalTimeZone)}
+            {formatSlotTimeRange(slot, locale, festivalTimeZone)}
           </Text>
           {title ? (
             <Text className={cn(slotTitleVariants({ tone: textTone }))}>
@@ -255,9 +263,9 @@ export const FestivalScheduleSlotRow: React.FC<
         </View>
       </View>
 
-      {slot.state === 'available' && isAuthenticated ? (
+      {slot.state === 'available' && isAuthenticated && isOnline ? (
         <View className="gap-2">
-          {slot.canSelfBook ? (
+          {slot.bookingBlockedReason === null ? (
             <Button
               className="flex-1 rounded-xl bg-[#101b2b]"
               onPress={() => onSelfBook(slot.id)}
@@ -292,6 +300,7 @@ export const FestivalScheduleSlotRow: React.FC<
 
       {slot.booking &&
       (slot.booking.isViewer || canManage) &&
+      isOnline &&
       slot.state === 'booked' ? (
         <Button
           className={cancelButtonClassName}

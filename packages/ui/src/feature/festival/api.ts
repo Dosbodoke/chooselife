@@ -22,6 +22,8 @@ type Sector = Pick<Tables<"sector">, "id" | "name" | "description">;
 type Profile = Pick<Tables<"profiles">, "id" | "name" | "username">;
 
 const FESTIVAL_SCHEDULE_MUTATION_ERROR = "festival_schedule_mutation_failed";
+const FESTIVAL_SCHEDULE_BOOKING_NOT_OPEN_ERROR =
+  "festival_schedule_booking_not_open_yet";
 const FESTIVAL_SCHEDULE_BOOKING_OVERLAP_ERROR =
   "festival_schedule_booking_overlap";
 const FESTIVAL_SCHEDULE_BOOKING_LIMIT_ERROR =
@@ -36,6 +38,10 @@ function mapFestivalScheduleBookingError(message: string | undefined) {
 
   if (message.includes("two active schedule bookings")) {
     return FESTIVAL_SCHEDULE_BOOKING_LIMIT_ERROR;
+  }
+
+  if (message.includes("not open yet")) {
+    return FESTIVAL_SCHEDULE_BOOKING_NOT_OPEN_ERROR;
   }
 
   return FESTIVAL_SCHEDULE_MUTATION_ERROR;
@@ -129,19 +135,9 @@ export async function getFestivalSchedulePageData(args: {
 }): Promise<FestivalSchedulePageData> {
   const festival = await requireFestivalBySlug(args.supabase, args.festivalSlug);
 
-  const { error: reconcileError } = await args.supabase.rpc(
-    "reconcile_festival_schedule",
-    {
-      festival_slug: args.festivalSlug,
-    },
-  );
-
-  if (reconcileError) {
-    throw new Error(reconcileError.message);
-  }
-
   const [
     { data: highlineLinks, error: linksError },
+    { data: windows, error: windowsError },
     { data: slots, error: slotsError },
     { data: bookings, error: bookingsError },
     { profile, viewer },
@@ -152,16 +148,18 @@ export async function getFestivalSchedulePageData(args: {
       .eq("festival_id", festival.id)
       .order("sort_order", { ascending: true }),
     args.supabase
+      .from("festival_schedule_window")
+      .select("*")
+      .eq("festival_id", festival.id)
+      .order("window_start_at", { ascending: true }),
+    args.supabase
       .from("festival_schedule_slot")
       .select("*")
       .eq("festival_id", festival.id)
       .order("start_at", { ascending: true }),
-    args.supabase
-      .from("festival_schedule_booking")
-      .select("*")
-      .eq("festival_id", festival.id)
-      .in("status", ["booked", "completed"])
-      .order("created_at", { ascending: false }),
+    args.supabase.rpc("get_festival_schedule_bookings", {
+      target_festival_id: festival.id,
+    }),
     loadViewerState({
       festivalId: festival.id,
       supabase: args.supabase,
@@ -175,6 +173,10 @@ export async function getFestivalSchedulePageData(args: {
 
   if (slotsError) {
     throw new Error(slotsError.message);
+  }
+
+  if (windowsError) {
+    throw new Error(windowsError.message);
   }
 
   if (bookingsError) {
@@ -227,26 +229,6 @@ export async function getFestivalSchedulePageData(args: {
     throw new Error(sectorsError.message);
   }
 
-  const registeredProfileIds = Array.from(
-    new Set(
-      (bookings ?? [])
-        .map((booking) => booking.profile_id)
-        .filter((profileId): profileId is string => !!profileId),
-    ),
-  );
-
-  const { data: bookingProfiles, error: bookingProfilesError } =
-    registeredProfileIds.length > 0
-      ? await args.supabase
-          .from("profiles")
-          .select("id, name, username")
-          .in("id", registeredProfileIds)
-      : { data: [] as FestivalProfile[], error: null };
-
-  if (bookingProfilesError) {
-    throw new Error(bookingProfilesError.message);
-  }
-
   const cards = buildFestivalScheduleCards({
     highlines: highlines ?? [],
     links: (highlineLinks ?? []).map(
@@ -258,12 +240,9 @@ export async function getFestivalSchedulePageData(args: {
       }),
     ),
     sectors: sectors ?? [],
+    windows: windows ?? [],
     slots: slots ?? [],
     bookings: bookings ?? [],
-    profiles: [
-      ...(profile ? [profile as FestivalProfile] : []),
-      ...((bookingProfiles ?? []) as FestivalProfile[]),
-    ],
     timeZone: festival.timezone,
     viewer,
   });

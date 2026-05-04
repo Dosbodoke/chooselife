@@ -145,12 +145,14 @@ WITH festival_target AS (
 INSERT INTO public.festival_schedule_window (
   festival_id,
   highline_id,
+  scheduling_opens_at,
   window_start_at,
   window_end_at
 )
 SELECT
   festival.id,
   config.highline_id,
+  ((festival.local_start_date + config.day_offset) + time '08:30') AT TIME ZONE festival.timezone,
   ((festival.local_start_date + config.day_offset) + time '09:00') AT TIME ZONE festival.timezone,
   ((festival.local_start_date + config.day_offset) + time '18:00') AT TIME ZONE festival.timezone
 FROM festival_target AS festival
@@ -170,6 +172,7 @@ INNER JOIN (
   ON TRUE
 ON CONFLICT (festival_id, highline_id, window_start_at) DO UPDATE
 SET
+  scheduling_opens_at = EXCLUDED.scheduling_opens_at,
   window_end_at = EXCLUDED.window_end_at;
 
 -- Create a completed guest booking on the first festival day for history.

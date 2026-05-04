@@ -48,10 +48,16 @@ CREATE TABLE public.festival_schedule_window (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   festival_id UUID NOT NULL REFERENCES public.festival(id) ON DELETE CASCADE,
   highline_id UUID NOT NULL REFERENCES public.highline(id) ON DELETE CASCADE,
+  scheduling_opens_at TIMESTAMPTZ NOT NULL,
   window_start_at TIMESTAMPTZ NOT NULL,
   window_end_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   CHECK (window_end_at > window_start_at),
+  CHECK (scheduling_opens_at < window_end_at),
+  CHECK (
+    extract(second FROM scheduling_opens_at) = 0
+    AND extract(minute FROM scheduling_opens_at) IN (0, 30)
+  ),
   FOREIGN KEY (festival_id, highline_id)
     REFERENCES public.festival_highline(festival_id, highline_id)
     ON DELETE CASCADE
@@ -119,6 +125,9 @@ CREATE INDEX festival_schedule_window_lookup_idx
 CREATE UNIQUE INDEX festival_schedule_window_unique_idx
   ON public.festival_schedule_window (festival_id, highline_id, window_start_at);
 
+CREATE INDEX festival_schedule_window_opens_at_idx
+  ON public.festival_schedule_window (scheduling_opens_at);
+
 CREATE INDEX festival_schedule_slot_lookup_idx
   ON public.festival_schedule_slot (festival_id, highline_id, start_at);
 
@@ -174,11 +183,19 @@ FOR SELECT
 TO anon, authenticated
 USING (true);
 
-CREATE POLICY "Visible festival schedule bookings are viewable by everyone."
+CREATE POLICY "Festival booking reads"
 ON public.festival_schedule_booking
 FOR SELECT
-TO anon, authenticated
-USING (status IN ('booked', 'completed'));
+TO authenticated
+USING (
+  profile_id = auth.uid()
+  OR EXISTS (
+    SELECT 1
+    FROM public.festival_staff AS festival_staff
+    WHERE festival_staff.festival_id = festival_schedule_booking.festival_id
+      AND festival_staff.profile_id = auth.uid()
+  )
+);
 
 CREATE OR REPLACE FUNCTION public.normalize_festival_instagram_username(value TEXT)
 RETURNS TEXT
@@ -313,6 +330,7 @@ BEGIN
   DELETE FROM public.festival_schedule_slot AS slot
   WHERE slot.window_id = target_window_id
     AND slot.start_at >= timezone('utc'::text, now())
+    AND slot.status <> 'blocked'
     AND NOT EXISTS (
       SELECT 1
       FROM public.festival_schedule_booking AS booking
@@ -447,8 +465,10 @@ DECLARE
   actor_profile_id UUID := auth.uid();
   actor_is_staff BOOLEAN := false;
   slot_row public.festival_schedule_slot;
+  window_row public.festival_schedule_window;
   resolved_profile_id UUID := target_profile_id;
   normalized_instagram_username TEXT := public.normalize_festival_instagram_username(target_instagram_username);
+  participant_lock_key TEXT;
   active_booking_count INTEGER := 0;
   created_booking public.festival_schedule_booking;
 BEGIN
@@ -476,6 +496,16 @@ BEGIN
 
   actor_is_staff := public.is_festival_staff(slot_row.festival_id, actor_profile_id);
 
+  SELECT schedule_window.*
+  INTO window_row
+  FROM public.festival_schedule_window AS schedule_window
+  WHERE schedule_window.id = slot_row.window_id
+  LIMIT 1;
+
+  IF window_row.id IS NULL THEN
+    RAISE EXCEPTION 'Schedule window not found';
+  END IF;
+
   IF resolved_profile_id IS NULL AND normalized_instagram_username IS NULL THEN
     resolved_profile_id := actor_profile_id;
   END IF;
@@ -502,6 +532,11 @@ BEGIN
     RAISE EXCEPTION 'Schedule slot has already ended';
   END IF;
 
+  IF NOT actor_is_staff
+    AND window_row.scheduling_opens_at > timezone('utc'::text, now()) THEN
+    RAISE EXCEPTION 'Schedule booking is not open yet';
+  END IF;
+
   IF resolved_profile_id IS NULL THEN
     IF normalized_instagram_username IS NULL THEN
       RAISE EXCEPTION 'Instagram username is required for guest bookings';
@@ -511,6 +546,16 @@ BEGIN
       RAISE EXCEPTION 'Display name is required for guest bookings';
     END IF;
   END IF;
+
+  participant_lock_key := COALESCE(
+    resolved_profile_id::text,
+    normalized_instagram_username
+  );
+
+  PERFORM pg_advisory_xact_lock(
+    hashtext(slot_row.festival_id::text),
+    hashtext(participant_lock_key)
+  );
 
   IF resolved_profile_id IS NOT NULL THEN
     SELECT COUNT(*)
@@ -593,6 +638,61 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.get_festival_schedule_bookings(
+  target_festival_id UUID
+)
+RETURNS TABLE (
+  id UUID,
+  slot_id UUID,
+  festival_id UUID,
+  highline_id UUID,
+  created_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  status public.festival_schedule_booking_status_enum,
+  participant_display_name TEXT,
+  participant_secondary_text TEXT,
+  is_viewer BOOLEAN
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  actor_profile_id UUID := auth.uid();
+BEGIN
+  RETURN QUERY
+  SELECT
+    booking.id,
+    booking.slot_id,
+    booking.festival_id,
+    booking.highline_id,
+    booking.created_at,
+    booking.completed_at,
+    booking.status,
+    CASE
+      WHEN booking.profile_id IS NOT NULL THEN COALESCE(
+        NULLIF(btrim(profile.name), ''),
+        NULLIF(btrim(profile.username), ''),
+        'Participant'
+      )
+      ELSE COALESCE(NULLIF(btrim(booking.display_name), ''), 'Guest')
+    END AS participant_display_name,
+    CASE
+      WHEN booking.profile_id IS NOT NULL
+        AND NULLIF(btrim(profile.name), '') IS NOT NULL
+        AND NULLIF(btrim(profile.username), '') IS NOT NULL
+        THEN profile.username
+      ELSE NULL
+    END AS participant_secondary_text,
+    booking.profile_id = actor_profile_id AS is_viewer
+  FROM public.festival_schedule_booking AS booking
+  LEFT JOIN public.profiles AS profile
+    ON profile.id = booking.profile_id
+  WHERE booking.festival_id = target_festival_id
+    AND booking.status IN ('booked', 'completed');
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.cancel_festival_schedule_booking(
   target_booking_id UUID,
   cancellation_reason_input TEXT
@@ -606,7 +706,6 @@ DECLARE
   actor_profile_id UUID := auth.uid();
   actor_is_staff BOOLEAN := false;
   booking_row public.festival_schedule_booking;
-  slot_row public.festival_schedule_slot;
   updated_booking public.festival_schedule_booking;
 BEGIN
   IF actor_profile_id IS NULL THEN
@@ -634,12 +733,6 @@ BEGIN
   IF booking_row.status <> 'booked' THEN
     RAISE EXCEPTION 'Only active bookings can be cancelled';
   END IF;
-
-  SELECT slot.*
-  INTO slot_row
-  FROM public.festival_schedule_slot AS slot
-  WHERE slot.id = booking_row.slot_id
-  LIMIT 1;
 
   actor_is_staff := public.is_festival_staff(booking_row.festival_id, actor_profile_id);
 
@@ -671,9 +764,229 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.reconcile_festival_schedule(TEXT) TO anon, authenticated;
+CREATE OR REPLACE FUNCTION public.enqueue_festival_schedule_open_notifications()
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  inserted_count INTEGER := 0;
+BEGIN
+  WITH recent_openings AS (
+    SELECT
+      festival.id AS festival_id,
+      festival.slug AS festival_slug,
+      festival.name AS festival_name,
+      festival.timezone AS festival_timezone,
+      schedule_window.scheduling_opens_at,
+      COUNT(DISTINCT (schedule_window.window_start_at AT TIME ZONE festival.timezone)::date)
+        AS opened_day_count,
+      MIN((schedule_window.window_start_at AT TIME ZONE festival.timezone)::date)
+        AS opened_day
+    FROM public.festival_schedule_window AS schedule_window
+    INNER JOIN public.festival AS festival
+      ON festival.id = schedule_window.festival_id
+    WHERE schedule_window.scheduling_opens_at <= timezone('utc'::text, now())
+      AND schedule_window.scheduling_opens_at >
+        timezone('utc'::text, now()) - interval '60 minutes'
+      AND EXISTS (
+        SELECT 1
+        FROM public.festival_schedule_slot AS slot
+        WHERE slot.window_id = schedule_window.id
+          AND slot.end_at > timezone('utc'::text, now())
+      )
+    GROUP BY
+      festival.id,
+      festival.slug,
+      festival.name,
+      festival.timezone,
+      schedule_window.scheduling_opens_at
+  ),
+  inserted_rows AS (
+    INSERT INTO public.notifications (
+      user_id,
+      title,
+      body,
+      data
+    )
+    SELECT
+      NULL,
+      jsonb_build_object(
+        'pt',
+        CASE
+          WHEN opening.opened_day_count = 1 THEN 'Programacao liberada'
+          ELSE 'Reservas abertas'
+        END,
+        'en',
+        CASE
+          WHEN opening.opened_day_count = 1 THEN 'Schedule is open'
+          ELSE 'Booking is open'
+        END
+      ),
+      jsonb_build_object(
+        'pt',
+        CASE
+          WHEN opening.opened_day_count = 1 THEN format(
+            'As reservas de %s no festival %s ja estao abertas.',
+            to_char(opening.opened_day, 'DD/MM'),
+            opening.festival_name
+          )
+          ELSE format(
+            'As reservas da programacao do festival %s ja estao abertas.',
+            opening.festival_name
+          )
+        END,
+        'en',
+        CASE
+          WHEN opening.opened_day_count = 1 THEN format(
+            'Booking for %s at %s is now open.',
+            to_char(opening.opened_day, 'Mon DD'),
+            opening.festival_name
+          )
+          ELSE format(
+            'Festival booking for %s is now open.',
+            opening.festival_name
+          )
+        END
+      ),
+      jsonb_build_object(
+        'type', 'festival_schedule_open',
+        'festival_slug', opening.festival_slug,
+        'opens_at',
+          to_char(
+            opening.scheduling_opens_at AT TIME ZONE 'UTC',
+            'YYYY-MM-DD"T"HH24:MI:SS"Z"'
+          ),
+        'url', '/festival'
+      )
+    FROM recent_openings AS opening
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM public.notifications AS notification
+      WHERE notification.user_id IS NULL
+        AND notification.data->>'type' = 'festival_schedule_open'
+        AND notification.data->>'festival_slug' = opening.festival_slug
+        AND notification.data->>'opens_at' = to_char(
+          opening.scheduling_opens_at AT TIME ZONE 'UTC',
+          'YYYY-MM-DD"T"HH24:MI:SS"Z"'
+        )
+    )
+    RETURNING 1
+  )
+  SELECT COUNT(*)
+  INTO inserted_count
+  FROM inserted_rows;
+
+  RETURN inserted_count;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.enqueue_festival_schedule_reminder_notifications()
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  inserted_count INTEGER := 0;
+BEGIN
+  WITH reminder_candidates AS (
+    SELECT
+      booking.id AS booking_id,
+      booking.profile_id,
+      slot.id AS slot_id,
+      slot.highline_id,
+      slot.start_at,
+      festival.slug AS festival_slug,
+      festival.timezone AS festival_timezone,
+      highline.name AS highline_name,
+      slot.start_at - interval '30 minutes' AS remind_at,
+      to_char(
+        (slot.start_at AT TIME ZONE festival.timezone)::date,
+        'YYYY-MM-DD'
+      ) AS day_key
+    FROM public.festival_schedule_booking AS booking
+    INNER JOIN public.festival_schedule_slot AS slot
+      ON slot.id = booking.slot_id
+    INNER JOIN public.festival AS festival
+      ON festival.id = booking.festival_id
+    INNER JOIN public.highline AS highline
+      ON highline.id = booking.highline_id
+    WHERE booking.status = 'booked'
+      AND booking.profile_id IS NOT NULL
+      AND slot.start_at > timezone('utc'::text, now())
+      AND slot.start_at - interval '30 minutes' <= timezone('utc'::text, now())
+      AND slot.start_at - interval '30 minutes' >
+        timezone('utc'::text, now()) - interval '5 minutes'
+  ),
+  inserted_rows AS (
+    INSERT INTO public.notifications (
+      user_id,
+      title,
+      body,
+      data
+    )
+    SELECT
+      reminder.profile_id,
+      jsonb_build_object(
+        'pt', 'Seu horario esta chegando',
+        'en', 'Your schedule is near'
+      ),
+      jsonb_build_object(
+        'pt',
+        format(
+          'Seu horario na highline %s comeca as %s.',
+          reminder.highline_name,
+          to_char(reminder.start_at AT TIME ZONE reminder.festival_timezone, 'HH24:MI')
+        ),
+        'en',
+        format(
+          'Your slot on %s starts at %s.',
+          reminder.highline_name,
+          to_char(reminder.start_at AT TIME ZONE reminder.festival_timezone, 'HH24:MI')
+        )
+      ),
+      jsonb_build_object(
+        'type', 'festival_schedule_reminder',
+        'booking_id', reminder.booking_id,
+        'slot_id', reminder.slot_id,
+        'remind_at',
+          to_char(
+            reminder.remind_at AT TIME ZONE 'UTC',
+            'YYYY-MM-DD"T"HH24:MI:SS"Z"'
+          ),
+        'url',
+          format(
+            '/festival?highline=%s&day=%s',
+            reminder.highline_id,
+            reminder.day_key
+          )
+      )
+    FROM reminder_candidates AS reminder
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM public.notifications AS notification
+      WHERE notification.data->>'type' = 'festival_schedule_reminder'
+        AND notification.data->>'booking_id' = reminder.booking_id::text
+        AND notification.data->>'remind_at' = to_char(
+          reminder.remind_at AT TIME ZONE 'UTC',
+          'YYYY-MM-DD"T"HH24:MI:SS"Z"'
+        )
+    )
+    RETURNING 1
+  )
+  SELECT COUNT(*)
+  INTO inserted_count
+  FROM inserted_rows;
+
+  RETURN inserted_count;
+END;
+$$;
+
 GRANT EXECUTE ON FUNCTION public.book_festival_schedule_slot(UUID, UUID, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.cancel_festival_schedule_booking(UUID, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_festival_schedule_bookings(UUID) TO anon, authenticated;
 
 CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA "extensions";
 GRANT USAGE ON SCHEMA cron TO postgres;
@@ -687,7 +1000,25 @@ SELECT cron.schedule(
   $$
 );
 
+SELECT cron.schedule(
+  'festival-schedule-open-notifications-every-30-minutes',
+  '*/30 * * * *',
+  $$
+  SELECT public.enqueue_festival_schedule_open_notifications();
+  $$
+);
+
+SELECT cron.schedule(
+  'festival-schedule-reminder-notifications-every-minute',
+  '* * * * *',
+  $$
+  SELECT public.enqueue_festival_schedule_reminder_notifications();
+  $$
+);
+
+ALTER TABLE public.festival_schedule_window REPLICA IDENTITY FULL;
 ALTER TABLE public.festival_schedule_slot REPLICA IDENTITY FULL;
 ALTER TABLE public.festival_schedule_booking REPLICA IDENTITY FULL;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.festival_schedule_window;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.festival_schedule_slot;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.festival_schedule_booking;

@@ -247,6 +247,7 @@
       "ranking": "Ranking"
     },
     "schedule": {
+      "scheduleTitle": "Programação",
       "loading": "Atualizando a programação...",
       "defaultSector": "Highlines do festival",
       "openSchedule": "Abrir programação",

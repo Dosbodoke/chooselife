@@ -4,15 +4,15 @@ import type {
   FestivalHighlineLink,
   FestivalHighlineScheduleCard,
   FestivalParticipantDisplay,
-  FestivalProfile,
+  FestivalScheduleBookingBlockedReason,
   FestivalScheduleBookingRecord,
   FestivalScheduleBookingView,
   FestivalScheduleDay,
-  FestivalSchedulePageData,
   FestivalScheduleSectorGroup,
   FestivalScheduleSlotRecord,
   FestivalScheduleSlotState,
   FestivalScheduleSlotView,
+  FestivalScheduleWindowRecord,
   FestivalSector,
   FestivalViewerState,
 } from "./types";
@@ -20,6 +20,15 @@ import type {
 type ViewerActiveBookingWindow = FestivalScheduleBookingRecord & {
   start_at: string;
   end_at: string;
+};
+
+type DayWindowMeta = {
+  bookingOpensAt: string | null;
+  latestWindowEndAt: string | null;
+};
+
+type DerivedFestivalScheduleDay = FestivalScheduleDay & {
+  latestWindowEndAt: string | null;
 };
 
 function formatFestivalDayKey(date: Date, timeZone: string) {
@@ -37,60 +46,68 @@ function formatFestivalDayKey(date: Date, timeZone: string) {
   return `${year}-${month}-${day}`;
 }
 
-function formatParticipantDisplay(profile: FestivalProfile): FestivalParticipantDisplay {
-  const username = profile.username?.trim();
-  const displayName = profile.name?.trim();
-
-  if (username && displayName) {
-    return {
-      primaryText: displayName,
-      secondaryText: username,
-    };
-  }
-
+function toBookingView(args: {
+  booking: FestivalScheduleBookingRecord;
+}): FestivalScheduleBookingView {
+  const { booking } = args;
   return {
-    primaryText: displayName || username || "Unknown participant",
-    secondaryText: displayName && !username ? null : undefined,
+    id: booking.id,
+    status: booking.status,
+    participant: {
+      primaryText: booking.participant_display_name,
+      secondaryText: booking.participant_secondary_text,
+    },
+    isViewer: booking.is_viewer,
   };
 }
 
-function toBookingView(args: {
-  booking: FestivalScheduleBookingRecord;
-  profile: FestivalProfile | null;
+function getViewerBookingBlockedReason(args: {
+  isWindowOpen: boolean;
+  now: Date;
+  slot: FestivalScheduleSlotRecord;
+  state: FestivalScheduleSlotState;
+  viewerActiveBookings: ViewerActiveBookingWindow[];
   viewerId?: string;
-}): FestivalScheduleBookingView {
-  const { booking, profile, viewerId } = args;
+}): FestivalScheduleBookingBlockedReason | null {
+  const { isWindowOpen, now, slot, state, viewerActiveBookings, viewerId } = args;
 
-  if (booking.profile_id && profile) {
-    return {
-      id: booking.id,
-      profileId: booking.profile_id,
-      status: booking.status,
-      participant: formatParticipantDisplay(profile),
-      isViewer: booking.profile_id === viewerId,
-    };
+  if (state !== "available") return null;
+  if (new Date(slot.end_at).getTime() <= now.getTime()) return null;
+
+  if (!isWindowOpen) {
+    return "window_not_open";
   }
 
-  return {
-    id: booking.id,
-    profileId: booking.profile_id,
-    instagramUsername: booking.instagram_username,
-    displayName: booking.display_name,
-    status: booking.status,
-    participant: {
-      primaryText: booking.display_name ?? booking.instagram_username ?? "Guest",
-      secondaryText: null,
-    },
-    isViewer: false,
-  };
+  if (!viewerId) {
+    return null;
+  }
+
+  if (viewerActiveBookings.length >= 2) {
+    return "limit";
+  }
+
+  if (
+    viewerActiveBookings.some((booking) => {
+      if (booking.slot_id === slot.id) return false;
+
+      return (
+        new Date(booking.start_at).getTime() < new Date(slot.end_at).getTime()
+        && new Date(booking.end_at).getTime() > new Date(slot.start_at).getTime()
+      );
+    })
+  ) {
+    return "overlap";
+  }
+
+  return null;
 }
 
 function buildSlotView(args: {
   slot: FestivalScheduleSlotRecord;
   activeBooking: FestivalScheduleBookingRecord | null;
   completedBooking: FestivalScheduleBookingRecord | null;
-  profileById: Map<string, FestivalProfile>;
   now: Date;
+  isWindowOpen: boolean;
   viewerActiveBookings: ViewerActiveBookingWindow[];
   viewerId?: string;
 }): FestivalScheduleSlotView {
@@ -98,61 +115,49 @@ function buildSlotView(args: {
     slot,
     activeBooking,
     completedBooking,
-    profileById,
     now,
+    isWindowOpen,
     viewerActiveBookings,
     viewerId,
   } = args;
 
   let state: FestivalScheduleSlotState;
   let booking: FestivalScheduleBookingView | null = null;
+  const slotEnded = new Date(slot.end_at).getTime() <= now.getTime();
 
   if (activeBooking) {
-    state = "booked";
-    booking = toBookingView({
-      booking: activeBooking,
-      profile: activeBooking.profile_id
-        ? profileById.get(activeBooking.profile_id) ?? null
-        : null,
-      viewerId,
-    });
+    if (slot.status === "blocked") {
+      state = "blocked";
+    } else if (slotEnded) {
+      state = "completed";
+      booking = toBookingView({ booking: activeBooking });
+    } else {
+      state = "booked";
+      booking = toBookingView({ booking: activeBooking });
+    }
   } else if (completedBooking) {
     state = "completed";
-    booking = toBookingView({
-      booking: completedBooking,
-      profile: completedBooking.profile_id
-        ? profileById.get(completedBooking.profile_id) ?? null
-        : null,
-      viewerId,
-    });
+    booking = toBookingView({ booking: completedBooking });
   } else if (slot.status === "blocked") {
     state = "blocked";
-  } else if (slot.status === "expired" || new Date(slot.end_at).getTime() <= now.getTime()) {
+  } else if (slot.status === "expired" || slotEnded) {
     state = "expired";
   } else {
     state = "available";
   }
 
   const isClaimable =
-    state === "available" && new Date(slot.end_at).getTime() > now.getTime();
-  let selfBookingBlockedReason: FestivalScheduleSlotView["selfBookingBlockedReason"] = null;
-
-  if (isClaimable && viewerId) {
-    if (viewerActiveBookings.length >= 2) {
-      selfBookingBlockedReason = "limit";
-    } else if (
-      viewerActiveBookings.some((booking) => {
-        if (booking.slot_id === slot.id) return false;
-
-        return (
-          new Date(booking.start_at).getTime() < new Date(slot.end_at).getTime()
-          && new Date(booking.end_at).getTime() > new Date(slot.start_at).getTime()
-        );
-      })
-    ) {
-      selfBookingBlockedReason = "overlap";
-    }
-  }
+    state === "available"
+    && !slotEnded
+    && isWindowOpen;
+  const bookingBlockedReason = getViewerBookingBlockedReason({
+    isWindowOpen,
+    now,
+    slot,
+    state,
+    viewerActiveBookings,
+    viewerId,
+  });
 
   return {
     id: slot.id,
@@ -163,12 +168,11 @@ function buildSlotView(args: {
     blockReason: slot.block_reason,
     booking,
     isCurrent:
-      state === "booked" &&
-      new Date(slot.start_at).getTime() <= now.getTime() &&
-      new Date(slot.end_at).getTime() > now.getTime(),
+      state === "booked"
+      && new Date(slot.start_at).getTime() <= now.getTime()
+      && new Date(slot.end_at).getTime() > now.getTime(),
     isClaimable,
-    canSelfBook: isClaimable && !selfBookingBlockedReason,
-    selfBookingBlockedReason,
+    bookingBlockedReason,
   };
 }
 
@@ -185,17 +189,30 @@ function pickFeaturedSlot(slots: FestivalScheduleSlotView[]): FestivalFeaturedSl
 }
 
 function pickDefaultDay(args: {
-  days: FestivalScheduleDay[];
+  days: DerivedFestivalScheduleDay[];
   currentDayKey: string;
-}): FestivalScheduleDay | null {
-  const { days, currentDayKey } = args;
+  now: Date;
+}): DerivedFestivalScheduleDay | null {
+  const { days, currentDayKey, now } = args;
   if (days.length === 0) return null;
 
   const today = days.find((day) => day.dateKey === currentDayKey) ?? null;
-  if (today) return today;
+  if (today) {
+    const dayCloseAt = today.latestWindowEndAt
+      ? new Date(today.latestWindowEndAt).getTime()
+      : null;
 
-  const nowKey = currentDayKey;
-  const upcoming = days.find((day) => day.dateKey > nowKey) ?? null;
+    if (dayCloseAt === null || now.getTime() < dayCloseAt) {
+      return today;
+    }
+
+    const nextFutureDay = days.find((day) => day.dateKey > currentDayKey) ?? null;
+    if (nextFutureDay) {
+      return nextFutureDay;
+    }
+  }
+
+  const upcoming = days.find((day) => day.dateKey > currentDayKey) ?? null;
   if (upcoming) return upcoming;
 
   return days[days.length - 1] ?? null;
@@ -205,9 +222,9 @@ export function buildFestivalScheduleCards(args: {
   highlines: FestivalHighline[];
   links: FestivalHighlineLink[];
   sectors: Pick<FestivalSector, "id" | "name" | "description">[];
+  windows: FestivalScheduleWindowRecord[];
   slots: FestivalScheduleSlotRecord[];
   bookings: FestivalScheduleBookingRecord[];
-  profiles: FestivalProfile[];
   timeZone: string;
   viewer: FestivalViewerState;
   referenceTime?: Date;
@@ -216,10 +233,10 @@ export function buildFestivalScheduleCards(args: {
   const currentDayKey = formatFestivalDayKey(now, args.timeZone);
   const highlineById = new Map(args.highlines.map((highline) => [highline.id, highline]));
   const sectorById = new Map(args.sectors.map((sector) => [sector.id, sector]));
-  const profileById = new Map(args.profiles.map((profile) => [profile.id, profile]));
   const slotsByHighline = new Map<string, FestivalScheduleSlotRecord[]>();
   const bookingsBySlot = new Map<string, FestivalScheduleBookingRecord[]>();
   const slotById = new Map(args.slots.map((slot) => [slot.id, slot]));
+  const windowById = new Map(args.windows.map((window) => [window.id, window]));
 
   for (const slot of args.slots) {
     const entries = slotsByHighline.get(slot.highline_id) ?? [];
@@ -235,9 +252,9 @@ export function buildFestivalScheduleCards(args: {
 
   const viewerActiveBookings: ViewerActiveBookingWindow[] = args.viewer.userId
     ? args.bookings
-        .filter(
+      .filter(
           (booking) =>
-            booking.status === "booked" && booking.profile_id === args.viewer.userId,
+            booking.status === "booked" && booking.is_viewer,
         )
         .map((booking) => {
           const slot = slotById.get(booking.slot_id);
@@ -266,8 +283,12 @@ export function buildFestivalScheduleCards(args: {
       );
 
       const dayMap = new Map<string, FestivalScheduleSlotView[]>();
+      const dayMetaByKey = new Map<string, DayWindowMeta>();
 
       for (const slot of rawSlots) {
+        const scheduleWindow = windowById.get(slot.window_id);
+        if (!scheduleWindow) continue;
+
         const slotBookings = (bookingsBySlot.get(slot.id) ?? []).sort((a, b) => {
           const aTime = new Date(a.completed_at ?? a.created_at).getTime();
           const bTime = new Date(b.completed_at ?? b.created_at).getTime();
@@ -279,40 +300,89 @@ export function buildFestivalScheduleCards(args: {
         const completedBooking =
           slotBookings.find((booking) => booking.status === "completed") ?? null;
         const dayKey = formatFestivalDayKey(new Date(slot.start_at), args.timeZone);
+        const isWindowOpen =
+          new Date(scheduleWindow.scheduling_opens_at).getTime() <= now.getTime();
         const view = buildSlotView({
           slot,
           activeBooking,
           completedBooking,
-          profileById,
           now,
+          isWindowOpen,
           viewerActiveBookings,
           viewerId: args.viewer.userId,
         });
         const entries = dayMap.get(dayKey) ?? [];
         entries.push(view);
         dayMap.set(dayKey, entries);
+
+        const existingMeta = dayMetaByKey.get(dayKey);
+        if (!existingMeta) {
+          dayMetaByKey.set(dayKey, {
+            bookingOpensAt: scheduleWindow.scheduling_opens_at,
+            latestWindowEndAt: scheduleWindow.window_end_at,
+          });
+          continue;
+        }
+
+        const nextBookingOpensAt =
+          existingMeta.bookingOpensAt === null
+            ? scheduleWindow.scheduling_opens_at
+            : existingMeta.bookingOpensAt;
+        const nextLatestWindowEndAt =
+          existingMeta.latestWindowEndAt === null
+          || new Date(scheduleWindow.window_end_at).getTime()
+            > new Date(existingMeta.latestWindowEndAt).getTime()
+            ? scheduleWindow.window_end_at
+            : existingMeta.latestWindowEndAt;
+
+        dayMetaByKey.set(dayKey, {
+          bookingOpensAt: nextBookingOpensAt,
+          latestWindowEndAt: nextLatestWindowEndAt,
+        });
       }
 
-      const days = Array.from(dayMap.entries())
-        .map(([dateKey, slots]): FestivalScheduleDay => {
+      const derivedDays: DerivedFestivalScheduleDay[] = Array.from(dayMap.entries())
+        .map(([dateKey, slots]) => {
           const orderedSlots = slots.sort(
             (a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime(),
           );
+          const dayMeta = dayMetaByKey.get(dateKey);
+          const bookingOpensAt = dayMeta?.bookingOpensAt ?? null;
+          const latestWindowEndAt = dayMeta?.latestWindowEndAt ?? null;
+          const isBookingOpen =
+            bookingOpensAt === null
+            || new Date(bookingOpensAt).getTime() <= now.getTime();
 
           return {
             dateKey,
             slots: orderedSlots,
             availableCount: orderedSlots.filter((slot) => slot.isClaimable).length,
+            preOpenAvailableCount: orderedSlots.filter(
+              (slot) =>
+                slot.state === "available"
+                && new Date(slot.endAt).getTime() > now.getTime()
+                && slot.bookingBlockedReason === "window_not_open",
+            ).length,
+            bookingOpensAt,
+            isBookingOpen,
             featuredSlot: pickFeaturedSlot(orderedSlots),
             isCurrentDay: dateKey === currentDayKey,
+            latestWindowEndAt,
           };
         })
         .sort((a, b) => a.dateKey.localeCompare(b.dateKey));
 
-      const defaultDay = pickDefaultDay({ days, currentDayKey });
+      const defaultDay = pickDefaultDay({
+        days: derivedDays,
+        currentDayKey,
+        now,
+      });
       const sector = highline.sector_id
         ? sectorById.get(highline.sector_id) ?? null
         : null;
+      const days: FestivalScheduleDay[] = derivedDays.map(
+        ({ latestWindowEndAt: _latestWindowEndAt, ...day }) => day,
+      );
 
       return {
         highline,
@@ -321,8 +391,13 @@ export function buildFestivalScheduleCards(args: {
         days,
         dayKeys: days.map((day) => day.dateKey),
         defaultDayKey: defaultDay?.dateKey ?? null,
-        defaultDay,
+        defaultDay: defaultDay
+          ? (({ latestWindowEndAt: _latestWindowEndAt, ...day }) => day)(defaultDay)
+          : null,
         availableCount: defaultDay?.availableCount ?? 0,
+        preOpenAvailableCount: defaultDay?.preOpenAvailableCount ?? 0,
+        bookingOpensAt: defaultDay?.bookingOpensAt ?? null,
+        isBookingOpen: defaultDay?.isBookingOpen ?? false,
         featuredSlot: defaultDay?.featuredSlot ?? null,
       } satisfies FestivalHighlineScheduleCard;
     })

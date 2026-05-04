@@ -1,12 +1,7 @@
-import { useEvents } from '@chooselife/ui/';
+import { useEvents } from '@chooselife/ui';
 import HighlineWalkImage from '~/assets/images/highline-walk.webp';
 import { Link, useRouter } from 'expo-router';
-import {
-  BookIcon,
-  CalendarIcon,
-  PencilRulerIcon,
-  UsersIcon,
-} from 'lucide-react-native';
+import { BookIcon, CalendarIcon, PencilRulerIcon } from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, TouchableOpacity, View } from 'react-native';

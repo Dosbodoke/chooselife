@@ -4,7 +4,10 @@ export type FestivalHighline =
   Database["public"]["Functions"]["get_highline"]["Returns"][number];
 export type Festival = Tables<"festival">;
 export type FestivalScheduleSlotRecord = Tables<"festival_schedule_slot">;
-export type FestivalScheduleBookingRecord = Tables<"festival_schedule_booking">;
+export type FestivalScheduleBookingRecord =
+  Database["public"]["Functions"]["get_festival_schedule_bookings"]["Returns"][number];
+export type FestivalScheduleBookingMutationRecord =
+  Tables<"festival_schedule_booking">;
 export type FestivalScheduleWindowRecord = Tables<"festival_schedule_window">;
 export type FestivalSector = Tables<"sector">;
 export type FestivalProfile = Pick<Tables<"profiles">, "id" | "name" | "username">;
@@ -16,6 +19,11 @@ export type FestivalScheduleSlotState =
   | "completed"
   | "expired";
 
+export type FestivalScheduleBookingBlockedReason =
+  | "window_not_open"
+  | "overlap"
+  | "limit";
+
 export interface FestivalParticipantDisplay {
   primaryText: string;
   secondaryText?: string | null;
@@ -23,9 +31,6 @@ export interface FestivalParticipantDisplay {
 
 export interface FestivalScheduleBookingView {
   id: string;
-  profileId?: string | null;
-  instagramUsername?: string | null;
-  displayName?: string | null;
   participant: FestivalParticipantDisplay;
   isViewer: boolean;
   status: FestivalScheduleBookingRecord["status"];
@@ -41,8 +46,7 @@ export interface FestivalScheduleSlotView {
   booking?: FestivalScheduleBookingView | null;
   isCurrent: boolean;
   isClaimable: boolean;
-  canSelfBook: boolean;
-  selfBookingBlockedReason?: "overlap" | "limit" | null;
+  bookingBlockedReason?: FestivalScheduleBookingBlockedReason | null;
 }
 
 export type FestivalFeaturedSlot = FestivalScheduleSlotView;
@@ -51,6 +55,9 @@ export interface FestivalScheduleDay {
   dateKey: string;
   slots: FestivalScheduleSlotView[];
   availableCount: number;
+  preOpenAvailableCount: number;
+  bookingOpensAt: string | null;
+  isBookingOpen: boolean;
   featuredSlot: FestivalFeaturedSlot | null;
   isCurrentDay: boolean;
 }
@@ -71,6 +78,9 @@ export interface FestivalHighlineScheduleCard {
   defaultDayKey: string | null;
   defaultDay: FestivalScheduleDay | null;
   availableCount: number;
+  preOpenAvailableCount: number;
+  bookingOpensAt: string | null;
+  isBookingOpen: boolean;
   featuredSlot: FestivalFeaturedSlot | null;
 }
 
@@ -115,10 +125,10 @@ export interface FestivalScheduleMutationResult {
 
 export interface BookFestivalScheduleSlotResult
   extends FestivalScheduleMutationResult {
-  booking?: FestivalScheduleBookingRecord;
+  booking?: FestivalScheduleBookingMutationRecord;
 }
 
 export interface CancelFestivalScheduleBookingResult
   extends FestivalScheduleMutationResult {
-  booking?: FestivalScheduleBookingRecord;
+  booking?: FestivalScheduleBookingMutationRecord;
 }

@@ -15,6 +15,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, TouchableOpacity, View } from 'react-native';
 
+import { useI18n } from '~/context/i18n';
 import { useDebounceValue } from '~/hooks/use-debounce-value';
 import { supabase } from '~/lib/supabase';
 
@@ -40,8 +41,12 @@ type StaffBookingSelection =
       username: string;
     };
 
-function formatSlotTimeRange(slot: FestivalScheduleSlotView, timeZone: string) {
-  const formatter = new Intl.DateTimeFormat(undefined, {
+function formatSlotTimeRange(
+  slot: FestivalScheduleSlotView,
+  locale: string,
+  timeZone: string,
+) {
+  const formatter = new Intl.DateTimeFormat(locale, {
     hour: '2-digit',
     minute: '2-digit',
     timeZone,
@@ -149,6 +154,7 @@ export const StaffBookingSheet: React.FC<{
   slot,
 }) => {
   const { t } = useTranslation();
+  const { locale } = useI18n();
   const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
   const [search, setSearch] = React.useState('');
   const [selection, setSelection] =
@@ -306,7 +312,7 @@ export const StaffBookingSheet: React.FC<{
                 {t('app.(festival).highlines.staffSheetTitle')}
               </Text>
               <Text className="text-sm font-semibold uppercase tracking-[1px] text-slate-500">
-                {formatSlotTimeRange(slot, festivalTimeZone)}
+                {formatSlotTimeRange(slot, locale, festivalTimeZone)}
               </Text>
               <Text className="text-sm leading-6 text-slate-500">
                 {t('app.(festival).highlines.staffHelperText')}
