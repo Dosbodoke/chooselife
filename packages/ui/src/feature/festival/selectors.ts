@@ -176,14 +176,17 @@ function buildSlotView(args: {
   };
 }
 
-function pickFeaturedSlot(slots: FestivalScheduleSlotView[]): FestivalFeaturedSlot | null {
+function pickFeaturedSlot(
+  slots: FestivalScheduleSlotView[],
+  now: Date,
+): FestivalFeaturedSlot | null {
   const current = slots.find((slot) => slot.isCurrent) ?? null;
   if (current) return current;
 
   return (
     slots.find(
       (slot) =>
-        slot.state === "booked" && new Date(slot.endAt).getTime() > Date.now(),
+        slot.state === "booked" && new Date(slot.endAt).getTime() > now.getTime(),
     ) ?? null
   );
 }
@@ -365,7 +368,7 @@ export function buildFestivalScheduleCards(args: {
             ).length,
             bookingOpensAt,
             isBookingOpen,
-            featuredSlot: pickFeaturedSlot(orderedSlots),
+            featuredSlot: pickFeaturedSlot(orderedSlots, now),
             isCurrentDay: dateKey === currentDayKey,
             latestWindowEndAt,
           };
