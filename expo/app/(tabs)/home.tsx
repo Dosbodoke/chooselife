@@ -20,10 +20,7 @@ import { cn } from '~/lib/utils';
 import { _layoutAnimation } from '~/utils/constants';
 
 import { EventCard, EventCardSkeleton } from '~/components/event-card';
-import {
-  OfflineBanner,
-  SafeAreaOfflineView,
-} from '~/components/offline-banner';
+import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { Card, CardContent } from '~/components/ui/card';
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
@@ -54,8 +51,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaOfflineView edges={['left', 'right']}>
-      <StatusBar style={statusBarStyle} />
-      {!isOnline ? <OfflineBanner /> : null}
+      <StatusBar style={isOnline ? statusBarStyle : 'dark'} />
       <ScrollView onScroll={handleScroll} scrollEventThrottle={16}>
         <Widget
           items={[

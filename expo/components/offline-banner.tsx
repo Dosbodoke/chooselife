@@ -24,14 +24,19 @@ export const SafeAreaOfflineView: React.FC<{
         entering={FadeInUp}
         exiting={FadeOutUp}
         style={{
-          ...(edges?.includes('top') && { paddingTop: top }),
           ...(edges?.includes('bottom') && { paddingBottom: bottom }),
           ...(edges?.includes('left') && { paddingLeft: left }),
           ...(edges?.includes('right') && { paddingRight: right }),
         }}
         className={className}
       >
-        <View className="w-full py-2 bg-red-100 flex-row items-center justify-center gap-2">
+        <View
+          className="w-full py-2 bg-red-100 flex-row items-center justify-center gap-2"
+          style={{
+            // Extend the banner under the translucent status bar while offline.
+            paddingTop: top,
+          }}
+        >
           <Icon as={WifiOffIcon} className="size-5 text-red-500" />
           <Text className="text-red-500 flex-shrink">
             {t('components.offlineBannerMessage')}
