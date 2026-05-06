@@ -38,7 +38,6 @@ export default function FestivalScreen() {
 
   const query = useFestivalSchedule({ festivalSlug: FESTIVAL_SLUG });
 
-  const isOffline = !isOnline;
   const selectedHighlineId = getSingleSearchParam(rawSelectedHighlineId);
   const selectedDayKey = getSingleSearchParam(rawSelectedDayKey);
   const festivalTimeZone = getFestivalTimeZone(query.data);
@@ -118,7 +117,7 @@ export default function FestivalScreen() {
         >
           <FestivalContent
             query={query}
-            isOffline={isOffline}
+            isOffline={!isOnline}
             festivalTimeZone={festivalTimeZone}
             onOpenSchedule={handleOpenSchedule}
           />

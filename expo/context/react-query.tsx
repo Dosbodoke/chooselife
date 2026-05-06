@@ -6,7 +6,7 @@ import AsyncStorage from 'expo-sqlite/kv-store';
 import React from 'react';
 
 // Flip this to true in development to simulate the app being offline.
-export const FORCE_OFFLINE = __DEV__ && true;
+export const FORCE_OFFLINE = __DEV__ && false;
 
 const queryClient = new QueryClient({
   defaultOptions: {
