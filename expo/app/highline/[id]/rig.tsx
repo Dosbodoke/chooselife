@@ -486,6 +486,11 @@ const DateForm: React.FC<{
   const { form } = useRiggingForm();
   const { theme } = useUniwind();
   const colorScheme = theme as 'light' | 'dark';
+  const minimumRigDate = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  }, []);
 
   return (
     <>
@@ -518,10 +523,10 @@ const DateForm: React.FC<{
                     value={value}
                     onValueChange={(_, selectedDate) => onChange(selectedDate)}
                     mode="date"
-                    display="spinner"
+                    display={Platform.OS === 'android' ? 'default' : 'spinner'}
                     presentation="inline"
                     locale={i18next.language === 'pt' ? 'pt_BR' : 'en_US'}
-                    minimumDate={new Date()}
+                    minimumDate={minimumRigDate}
                     themeVariant={colorScheme}
                     timeZoneName={
                       Intl.DateTimeFormat().resolvedOptions().timeZone

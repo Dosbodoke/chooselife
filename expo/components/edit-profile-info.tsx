@@ -3,7 +3,7 @@ import i18next from 'i18next';
 import React from 'react';
 import { Controller, type Path, type UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Platform, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { z } from 'zod';
 
@@ -43,13 +43,20 @@ function padDatePart(value: number) {
 }
 
 function formatDateForStorage(date: Date) {
-  return `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(
-    date.getDate(),
-  )}`;
+  const year =
+    Platform.OS === 'android' ? date.getUTCFullYear() : date.getFullYear();
+  const month =
+    Platform.OS === 'android' ? date.getUTCMonth() + 1 : date.getMonth() + 1;
+  const day = Platform.OS === 'android' ? date.getUTCDate() : date.getDate();
+
+  return `${year}-${padDatePart(month)}-${padDatePart(day)}`;
 }
 
 function dateFromIso(value: string) {
   const [year, month, day] = value.split('-').map(Number);
+  if (Platform.OS === 'android') {
+    return new Date(Date.UTC(year, month - 1, day));
+  }
   return new Date(year, month - 1, day, 12);
 }
 
@@ -134,7 +141,7 @@ const BirthdayInput: React.FC<{
             onChange(formatDateForStorage(selectedDate));
           }}
           mode="date"
-          display="spinner"
+          display={Platform.OS === 'android' ? 'default' : 'spinner'}
           presentation="inline"
           maximumDate={new Date()}
           locale={locale === 'pt' ? 'pt_BR' : 'en_US'}

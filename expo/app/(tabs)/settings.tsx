@@ -4,6 +4,7 @@ import {
   BottomSheetFooter,
   type BottomSheetFooterProps,
   BottomSheetModal,
+  BottomSheetScrollView,
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,7 +22,7 @@ import {
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
@@ -242,6 +243,7 @@ const EditProfileButton: React.FC = () => {
   const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
   const snapPoints = React.useMemo(() => ['80%'], []);
   const { bottom } = useSafeAreaInsets();
+  const footerBottomInset = Platform.OS === 'ios' ? bottom : 0;
 
   const mutation = useMutation({
     mutationFn: async (data: OptionalProfileInfoSchema) => {
@@ -306,8 +308,11 @@ const EditProfileButton: React.FC = () => {
 
   const renderFooter = React.useCallback(
     (props: BottomSheetFooterProps) => (
-      <BottomSheetFooter {...props} bottomInset={bottom}>
-        <View className="px-4 pt-3 pb-4 bg-white border-t border-gray-100">
+      <BottomSheetFooter {...props} bottomInset={footerBottomInset}>
+        <View
+          className="px-4 pt-3 bg-white border-t border-gray-100"
+          style={{ paddingBottom: footerBottomInset + 16 }}
+        >
           <Button
             className="w-full"
             onPress={form.handleSubmit((data) => mutation.mutate(data))}
@@ -318,7 +323,7 @@ const EditProfileButton: React.FC = () => {
         </View>
       </BottomSheetFooter>
     ),
-    [bottom, form, mutation, t],
+    [footerBottomInset, form, mutation, t],
   );
 
   return (
@@ -347,9 +352,13 @@ const EditProfileButton: React.FC = () => {
           },
         }}
       >
-        <BottomSheetView className="flex-1 p-4 pb-28 bg-white">
+        <BottomSheetScrollView
+          className="flex-1 bg-white"
+          contentContainerClassName="p-4 pb-28"
+          keyboardShouldPersistTaps="handled"
+        >
           <ProfileInfoForm form={form} layout="sheet" />
-        </BottomSheetView>
+        </BottomSheetScrollView>
       </BottomSheetModal>
     </>
   );
