@@ -819,7 +819,7 @@ BEGIN
       jsonb_build_object(
         'pt',
         CASE
-          WHEN opening.opened_day_count = 1 THEN 'Programacao liberada'
+          WHEN opening.opened_day_count = 1 THEN 'Programação liberada'
           ELSE 'Reservas abertas'
         END,
         'en',
@@ -832,12 +832,12 @@ BEGIN
         'pt',
         CASE
           WHEN opening.opened_day_count = 1 THEN format(
-            'As reservas de %s no festival %s ja estao abertas.',
+            'As reservas de %s no festival %s já estão abertas.',
             to_char(opening.opened_day, 'DD/MM'),
             opening.festival_name
           )
           ELSE format(
-            'As reservas da programacao do festival %s ja estao abertas.',
+            'As reservas da programação do festival %s já estão abertas.',
             opening.festival_name
           )
         END,
