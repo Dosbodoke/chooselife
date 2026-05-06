@@ -513,7 +513,7 @@ const DateForm: React.FC<{
               control={form.control}
               name="rigDate"
               render={({ field: { value, onChange } }) => (
-                <View className="overflow-hidden py-2">
+                <View className="w-full overflow-hidden py-2">
                   <DateTimePicker
                     value={value}
                     onValueChange={(_, selectedDate) => onChange(selectedDate)}
@@ -526,6 +526,7 @@ const DateForm: React.FC<{
                     timeZoneName={
                       Intl.DateTimeFormat().resolvedOptions().timeZone
                     }
+                    style={{ width: '100%' }}
                   />
                 </View>
               )}
