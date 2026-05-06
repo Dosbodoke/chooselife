@@ -185,8 +185,8 @@
       },
       "home": {
         "banner": {
-          "title": "Choose Life",
-          "description": "O APP feito para Highliners"
+          "title": "Festival Chooselife",
+          "description": "Clique para ver os Highlines do festival e agendar seu rolê"
         },
         "quickActions": {
           "setupSimulator": "Simulador de Setup",
