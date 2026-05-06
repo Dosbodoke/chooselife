@@ -520,7 +520,7 @@ const DateForm: React.FC<{
                     mode="date"
                     display="spinner"
                     presentation="inline"
-                    locale={i18next.language === 'en' ? 'en_US' : 'pt_BR'}
+                    locale={i18next.language === 'pt' ? 'pt_BR' : 'en_US'}
                     minimumDate={new Date()}
                     themeVariant={colorScheme}
                     timeZoneName={

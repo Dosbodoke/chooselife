@@ -1,11 +1,7 @@
 import DateTimePicker from '@expo/ui/datetimepicker';
 import i18next from 'i18next';
 import React from 'react';
-import {
-  Controller,
-  type Path,
-  type UseFormReturn,
-} from 'react-hook-form';
+import { Controller, type Path, type UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
@@ -126,8 +122,6 @@ const BirthdayInput: React.FC<{
     value && isIsoBirthday(value)
       ? dateFromIso(value)
       : getDefaultBirthdayDate();
-  const pickerLocale = locale === 'en' ? 'en_US' : 'pt_BR';
-  const timeZoneName = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   return (
     <View className="w-full gap-2">
@@ -143,8 +137,8 @@ const BirthdayInput: React.FC<{
           display="spinner"
           presentation="inline"
           maximumDate={new Date()}
-          locale={pickerLocale}
-          timeZoneName={timeZoneName}
+          locale={locale === 'pt' ? 'pt_BR' : 'en_US'}
+          timeZoneName={Intl.DateTimeFormat().resolvedOptions().timeZone}
           style={{ width: '100%' }}
         />
       </View>
