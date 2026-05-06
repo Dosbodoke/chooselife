@@ -267,7 +267,7 @@ export const FestivalScheduleSlotRow: React.FC<
         <View className="gap-2">
           {slot.bookingBlockedReason === null ? (
             <Button
-              className="flex-1 rounded-xl bg-[#101b2b]"
+              className="w-full rounded-xl bg-[#101b2b]"
               onPress={() => onSelfBook(slot.id)}
             >
               <Text className="font-semibold text-white">
@@ -286,7 +286,7 @@ export const FestivalScheduleSlotRow: React.FC<
 
           {canManage ? (
             <Button
-              className="flex-1 rounded-xl"
+              className="w-full rounded-xl"
               variant="secondary"
               onPress={() => onStaffBook(slot.id)}
             >
