@@ -6,6 +6,7 @@ import {
 } from '@gorhom/bottom-sheet';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import Constants from 'expo-constants';
 import { Link, useRouter } from 'expo-router';
 import {
   ChevronRightIcon,
@@ -19,8 +20,6 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
-
-import Constants from 'expo-constants';
 
 import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
@@ -195,11 +194,7 @@ const ChangeLanguage: React.FC<{ isLast?: boolean }> = ({ isLast }) => {
   const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
 
   const openModal = () => {
-    bottomSheetModalRef.current?.present({
-      velocity: 200,
-      stiffness: 200,
-      damping: 80,
-    });
+    bottomSheetModalRef.current?.present();
   };
 
   const renderBackdrop = React.useCallback(
@@ -225,23 +220,9 @@ const ChangeLanguage: React.FC<{ isLast?: boolean }> = ({ isLast }) => {
       <BottomSheetModal
         ref={bottomSheetModalRef}
         backdropComponent={renderBackdrop}
-        handleComponent={null}
-        detached={true}
-        bottomInset={46}
         enablePanDownToClose={true}
-        style={{
-          marginHorizontal: 24,
-          elevation: 4,
-          shadowColor: '#000',
-          shadowOpacity: 0.3,
-          shadowRadius: 4,
-          shadowOffset: {
-            width: 1,
-            height: 1,
-          },
-        }}
       >
-        <BottomSheetView className="p-4 items-center gap-4 bg-white rounded-3xl">
+        <BottomSheetView className="items-center bg-white pb-12">
           <LanguageSwitcher
             onSwitch={() => bottomSheetModalRef.current?.dismiss()}
           />
@@ -304,11 +285,7 @@ const EditProfileButton: React.FC = () => {
   });
 
   const openModal = () => {
-    bottomSheetModalRef.current?.present({
-      velocity: 200,
-      stiffness: 200,
-      damping: 80,
-    });
+    bottomSheetModalRef.current?.present();
   };
 
   const renderBackdrop = React.useCallback(
