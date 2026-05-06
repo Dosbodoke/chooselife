@@ -29,10 +29,18 @@ export type LoginMethod = OAuthMethod | 'email';
 type PostAuthNavigation =
   | {
       key: string;
+      shouldClearPendingRedirect: boolean;
       type: 'back';
     }
   | {
       key: string;
+      shouldClearPendingRedirect: boolean;
+      type: 'dismissTo';
+      href: string;
+    }
+  | {
+      key: string;
+      shouldClearPendingRedirect: boolean;
       type: 'replace';
       href: string;
     };
@@ -91,9 +99,10 @@ export function AuthProvider(props: React.PropsWithChildren) {
     'back' | string | null
   >(null);
   const {
-    query: { data: profile },
+    query: profileQuery,
     invalidateProfile,
   } = useProfile(session?.user.id || null);
+  const profile = profileQuery.data ?? null;
 
   const saveLoginMethod = useCallback(async (method: LoginMethod) => {
     try {
@@ -416,14 +425,24 @@ export function AuthProvider(props: React.PropsWithChildren) {
   });
 
   const postAuthNavigation = useMemo<PostAuthNavigation | null>(() => {
-    if (!profile) return null;
+    if (!session?.user.id) {
+      return null;
+    }
 
-    // If username is not settled, redirect to onboarding.
-    if (!profile.username) {
+    if (profileQuery.isPending || !profileQuery.isFetched) {
+      return null;
+    }
+
+    if (profileQuery.isError) {
+      return null;
+    }
+
+    if (!profile || !profile.username) {
       return {
-        key: `setProfile:${profile.id}`,
+        key: `setProfile:${profile?.id ?? session.user.id}`,
         type: 'replace',
         href: '/setProfile',
+        shouldClearPendingRedirect: false,
       };
     }
 
@@ -433,9 +452,10 @@ export function AuthProvider(props: React.PropsWithChildren) {
 
     if (pendingRedirect !== 'back') {
       return {
-        key: `replace:${pendingRedirect}`,
-        type: 'replace',
+        key: `dismissTo:${pendingRedirect}`,
+        type: 'dismissTo',
         href: decodeURIComponent(pendingRedirect),
+        shouldClearPendingRedirect: true,
       };
     }
 
@@ -443,6 +463,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
       return {
         key: 'back',
         type: 'back',
+        shouldClearPendingRedirect: true,
       };
     }
 
@@ -450,8 +471,9 @@ export function AuthProvider(props: React.PropsWithChildren) {
       key: 'tabs',
       type: 'replace',
       href: '/(tabs)',
+      shouldClearPendingRedirect: true,
     };
-  }, [pendingRedirect, profile, router]);
+  }, [pendingRedirect, profile, profileQuery, router, session?.user.id]);
 
   const clearPendingRedirect = useCallback(() => {
     setPendingRedirect(null);
@@ -489,7 +511,11 @@ export function AuthProvider(props: React.PropsWithChildren) {
         <PostAuthRedirect
           key={postAuthNavigation.key}
           navigation={postAuthNavigation}
-          onComplete={clearPendingRedirect}
+          onComplete={
+            postAuthNavigation.shouldClearPendingRedirect
+              ? clearPendingRedirect
+              : undefined
+          }
         />
       ) : null}
       {props.children}
@@ -502,7 +528,7 @@ function PostAuthRedirect({
   onComplete,
 }: {
   navigation: PostAuthNavigation;
-  onComplete: () => void;
+  onComplete?: () => void;
 }) {
   const router = useRouter();
 
@@ -513,10 +539,17 @@ function PostAuthRedirect({
         return;
       }
 
+      if (navigation.type === 'dismissTo') {
+        // Dismiss back to an existing route when possible so auth/profile
+        // screens do not leave duplicate festival entries in the stack.
+        router.dismissTo(navigation.href);
+        return;
+      }
+
       // @ts-expect-error redirect_to search parameter
       router.replace(navigation.href);
     } finally {
-      onComplete();
+      onComplete?.();
     }
   });
 

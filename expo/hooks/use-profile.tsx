@@ -16,12 +16,12 @@ export const useProfile = (id: string | null) => {
   const query = useQuery({
     queryKey: profileQueryKeyFactory.id(id as string),
     queryFn: async () => {
-      if (!id) return;
+      if (!id) return null;
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         throw new Error(error.message);

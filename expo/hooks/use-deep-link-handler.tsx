@@ -1,9 +1,36 @@
 import * as Linking from 'expo-linking';
+import type { QueryParams } from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 
 // A list of all locales your app supports, coming from next-intl
 const SUPPORTED_LOCALES = ['en', 'pt', 'es'];
+
+function buildQueryString(queryParams: QueryParams | null | undefined) {
+  if (!queryParams) {
+    return '';
+  }
+
+  const searchParams = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(queryParams)) {
+    if (value == null) {
+      continue;
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        searchParams.append(key, item);
+      }
+      continue;
+    }
+
+    searchParams.set(key, value);
+  }
+
+  const queryString = searchParams.toString();
+  return queryString ? `?${queryString}` : '';
+}
 
 export function useDeepLinkHandler() {
   const router = useRouter();
@@ -39,7 +66,9 @@ export function useDeepLinkHandler() {
     }
 
     // Reconstruct the path without the locale
-    const finalPath = `/${pathSegments.join('/')}`;
+    const finalPath = `/${pathSegments.join('/')}${buildQueryString(
+      parsed.queryParams,
+    )}`;
     // @ts-expect-error - Dynamic routes need a type override
     router.navigate(finalPath);
   };

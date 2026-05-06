@@ -4,9 +4,11 @@
       {
         "appID": "6FF7DMX58R.com.bodok.chooselife",
         "paths": [
+          "/festival",
           "/highline/*",
           "/profile/*",
           "/news/*",
+          "/*/festival",
           "/*/highline/*",
           "/*/profile/*",
           "/*/news/*"

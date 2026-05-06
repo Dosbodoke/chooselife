@@ -1,41 +1,77 @@
-import HighlineWalkImage from '~/assets/images/highline-walk.webp';
-import { Link } from 'expo-router';
-import {
-  BookIcon,
-  CalendarIcon,
-  PencilRulerIcon,
-  UsersIcon,
-} from 'lucide-react-native';
+import { useEvents } from '@chooselife/ui';
+import ChooselifeBannerImage from '~/assets/images/festival-chooselife-promo.png';
+import SlackBannerImage from '~/assets/images/slack-promo.png';
+import { Link, useRouter } from 'expo-router';
+import { StatusBar, StatusBarStyle } from 'expo-status-bar';
+import { BookIcon, CalendarIcon, PencilRulerIcon } from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, TouchableOpacity, View } from 'react-native';
-import Animated, { LinearTransition } from 'react-native-reanimated';
+import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Animated from 'react-native-reanimated';
 
-import { useEvents } from '@chooselife/ui/';
+import { useOnlineStatus } from '~/context/react-query';
 import { cn } from '~/lib/utils';
+import { _layoutAnimation } from '~/utils/constants';
 
 import { EventCard, EventCardSkeleton } from '~/components/event-card';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { Card, CardContent } from '~/components/ui/card';
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
-import { Widget } from '~/components/widget';
+import { Widget, WIDGET_HERO_BASE_HEIGHT } from '~/components/widget';
 
-const DAMPING = 80;
-export const _layoutAnimation = LinearTransition.springify().damping(DAMPING);
+const STATUS_BAR_SWITCH_OFFSET = WIDGET_HERO_BASE_HEIGHT - 48;
 
 export default function HomeScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const isOnline = useOnlineStatus();
+  const [statusBarStyle, setStatusBarStyle] =
+    React.useState<StatusBarStyle>('light');
+
+  const handleScroll = React.useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const nextStyle: StatusBarStyle =
+        event.nativeEvent.contentOffset.y >= STATUS_BAR_SWITCH_OFFSET
+          ? 'dark'
+          : 'light';
+
+      setStatusBarStyle((currentStyle) =>
+        currentStyle === nextStyle ? currentStyle : nextStyle,
+      );
+    },
+    [],
+  );
+
   return (
-    <SafeAreaOfflineView>
-      <ScrollView contentContainerClassName="pt-8">
+    <SafeAreaOfflineView edges={['left', 'right']}>
+      <StatusBar style={isOnline ? statusBarStyle : 'dark'} />
+      <ScrollView onScroll={handleScroll} scrollEventThrottle={16}>
         <Widget
           items={[
             {
               id: 'chooselife',
               title: t('app.(tabs).home.banner.title'),
               subtitle: t('app.(tabs).home.banner.description'),
-              background: HighlineWalkImage,
+              background: ChooselifeBannerImage,
+              onPress: () => {
+                router.push('/festival');
+              },
+            },
+            {
+              id: 'slack',
+              title: 'SLACK',
+              subtitle: 'Conheça a associação',
+              background: SlackBannerImage,
+              onPress: () => {
+                router.push('/organizations');
+              },
             },
           ]}
         />

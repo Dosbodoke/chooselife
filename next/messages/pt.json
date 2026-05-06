@@ -241,7 +241,43 @@
   },
   "festival": {
     "cardSubTitle": "Acompanhe o ranking do festival em tempo real",
-    "pageSubTitle": "O maior festival de Highline do Brasil"
+    "pageSubTitle": "O maior festival de Highline do Brasil",
+    "tabs": {
+      "highlines": "Highlines",
+      "ranking": "Ranking"
+    },
+    "schedule": {
+      "scheduleTitle": "Programação",
+      "loading": "Atualizando a programação...",
+      "defaultSector": "Highlines do festival",
+      "openSchedule": "Abrir programação",
+      "current": "Na vez",
+      "availableCountLabel": "{count, plural, one {# vaga disponível} other {# vagas disponíveis}}",
+      "authRequired": "Você precisa estar logado para reservar um horário.",
+      "emptySchedule": "Não há horários disponíveis para este dia.",
+      "availableTitle": "Horário disponível",
+      "blockedTitle": "Bloqueado",
+      "availableState": "Disponível",
+      "bookedState": "Reservado",
+      "completedLabel": "Concluído",
+      "expiredLabel": "Encerrado",
+      "claimSlotButton": "Reservar horário",
+      "claimSlotBlockedOverlap": "Você já tem um horário nessa janela",
+      "claimSlotBlockedLimit": "Você já tem 2 horários ativos",
+      "bookForSomeoneButton": "Reservar para alguém",
+      "cancelOwnBookingButton": "Cancelar minha reserva",
+      "cancelBookingButton": "Cancelar reserva",
+      "staffBookingTitle": "Reservar este horário para outra pessoa",
+      "staffPickerPlaceholder": "Busque por @usuário ou Instagram",
+      "guestNamePlaceholder": "Nome de exibição do convidado",
+      "confirmStaffBookingButton": "Confirmar reserva",
+      "cancelStaffBookingButton": "Cancelar",
+      "missingStaffSelection": "Selecione um participante primeiro.",
+      "missingGuestName": "O nome de exibição do convidado é obrigatório.",
+      "scheduleOverlapError": "Você já tem um horário durante essa janela.",
+      "scheduleLimitError": "Você já tem 2 horários ativos neste festival.",
+      "genericError": "Algo deu errado ao atualizar a programação."
+    }
   },
   "privacyPolicy": {
     "title": "Política de Privacidade",

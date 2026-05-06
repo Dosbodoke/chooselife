@@ -9,6 +9,24 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      app_config: {
+        Row: {
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       entry: {
         Row: {
           cadenas: number | null
@@ -130,6 +148,324 @@ export type Database = {
           },
           {
             foreignKeyName: "favorite_highline_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      festival: {
+        Row: {
+          created_at: string
+          end_at: string
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          start_at: string
+          subtitle: string | null
+          timezone: string
+        }
+        Insert: {
+          created_at?: string
+          end_at: string
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          start_at: string
+          subtitle?: string | null
+          timezone?: string
+        }
+        Update: {
+          created_at?: string
+          end_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          start_at?: string
+          subtitle?: string | null
+          timezone?: string
+        }
+        Relationships: []
+      }
+      festival_highline: {
+        Row: {
+          created_at: string
+          festival_id: string
+          highline_id: string
+          slot_duration_minutes: number
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          festival_id: string
+          highline_id: string
+          slot_duration_minutes?: number
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          festival_id?: string
+          highline_id?: string
+          slot_duration_minutes?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "festival_highline_festival_id_fkey"
+            columns: ["festival_id"]
+            isOneToOne: false
+            referencedRelation: "festival"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "festival_highline_highline_id_fkey"
+            columns: ["highline_id"]
+            isOneToOne: false
+            referencedRelation: "highline"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      festival_schedule_booking: {
+        Row: {
+          cancellation_reason: string | null
+          cancellation_source:
+            | Database["public"]["Enums"]["festival_schedule_booking_cancellation_source_enum"]
+            | null
+          cancelled_at: string | null
+          cancelled_by_profile_id: string | null
+          completed_at: string | null
+          created_at: string
+          display_name: string | null
+          festival_id: string
+          highline_id: string
+          id: string
+          instagram_username: string | null
+          profile_id: string | null
+          slot_id: string
+          status: Database["public"]["Enums"]["festival_schedule_booking_status_enum"]
+        }
+        Insert: {
+          cancellation_reason?: string | null
+          cancellation_source?:
+            | Database["public"]["Enums"]["festival_schedule_booking_cancellation_source_enum"]
+            | null
+          cancelled_at?: string | null
+          cancelled_by_profile_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          display_name?: string | null
+          festival_id: string
+          highline_id: string
+          id?: string
+          instagram_username?: string | null
+          profile_id?: string | null
+          slot_id: string
+          status?: Database["public"]["Enums"]["festival_schedule_booking_status_enum"]
+        }
+        Update: {
+          cancellation_reason?: string | null
+          cancellation_source?:
+            | Database["public"]["Enums"]["festival_schedule_booking_cancellation_source_enum"]
+            | null
+          cancelled_at?: string | null
+          cancelled_by_profile_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          display_name?: string | null
+          festival_id?: string
+          highline_id?: string
+          id?: string
+          instagram_username?: string | null
+          profile_id?: string | null
+          slot_id?: string
+          status?: Database["public"]["Enums"]["festival_schedule_booking_status_enum"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "festival_schedule_booking_cancelled_by_profile_id_fkey"
+            columns: ["cancelled_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "festival_schedule_booking_festival_id_fkey"
+            columns: ["festival_id"]
+            isOneToOne: false
+            referencedRelation: "festival"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "festival_schedule_booking_highline_id_fkey"
+            columns: ["highline_id"]
+            isOneToOne: false
+            referencedRelation: "highline"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "festival_schedule_booking_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "festival_schedule_booking_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "festival_schedule_slot"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      festival_schedule_slot: {
+        Row: {
+          block_reason: string | null
+          created_at: string
+          end_at: string
+          festival_id: string
+          highline_id: string
+          id: string
+          start_at: string
+          status: Database["public"]["Enums"]["festival_schedule_slot_status_enum"]
+          window_id: string
+        }
+        Insert: {
+          block_reason?: string | null
+          created_at?: string
+          end_at: string
+          festival_id: string
+          highline_id: string
+          id?: string
+          start_at: string
+          status?: Database["public"]["Enums"]["festival_schedule_slot_status_enum"]
+          window_id: string
+        }
+        Update: {
+          block_reason?: string | null
+          created_at?: string
+          end_at?: string
+          festival_id?: string
+          highline_id?: string
+          id?: string
+          start_at?: string
+          status?: Database["public"]["Enums"]["festival_schedule_slot_status_enum"]
+          window_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "festival_schedule_slot_festival_id_fkey"
+            columns: ["festival_id"]
+            isOneToOne: false
+            referencedRelation: "festival"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "festival_schedule_slot_festival_id_highline_id_fkey"
+            columns: ["festival_id", "highline_id"]
+            isOneToOne: false
+            referencedRelation: "festival_highline"
+            referencedColumns: ["festival_id", "highline_id"]
+          },
+          {
+            foreignKeyName: "festival_schedule_slot_highline_id_fkey"
+            columns: ["highline_id"]
+            isOneToOne: false
+            referencedRelation: "highline"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "festival_schedule_slot_window_id_fkey"
+            columns: ["window_id"]
+            isOneToOne: false
+            referencedRelation: "festival_schedule_window"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      festival_schedule_window: {
+        Row: {
+          created_at: string
+          festival_id: string
+          highline_id: string
+          id: string
+          scheduling_opens_at: string
+          window_end_at: string
+          window_start_at: string
+        }
+        Insert: {
+          created_at?: string
+          festival_id: string
+          highline_id: string
+          id?: string
+          scheduling_opens_at: string
+          window_end_at: string
+          window_start_at: string
+        }
+        Update: {
+          created_at?: string
+          festival_id?: string
+          highline_id?: string
+          id?: string
+          scheduling_opens_at?: string
+          window_end_at?: string
+          window_start_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "festival_schedule_window_festival_id_fkey"
+            columns: ["festival_id"]
+            isOneToOne: false
+            referencedRelation: "festival"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "festival_schedule_window_festival_id_highline_id_fkey"
+            columns: ["festival_id", "highline_id"]
+            isOneToOne: false
+            referencedRelation: "festival_highline"
+            referencedColumns: ["festival_id", "highline_id"]
+          },
+          {
+            foreignKeyName: "festival_schedule_window_highline_id_fkey"
+            columns: ["highline_id"]
+            isOneToOne: false
+            referencedRelation: "highline"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      festival_staff: {
+        Row: {
+          created_at: string
+          festival_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          festival_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          festival_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "festival_staff_festival_id_fkey"
+            columns: ["festival_id"]
+            isOneToOne: false
+            referencedRelation: "festival"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "festival_staff_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -749,12 +1085,94 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      book_festival_schedule_slot: {
+        Args: {
+          target_display_name?: string
+          target_instagram_username?: string
+          target_profile_id?: string
+          target_slot_id: string
+        }
+        Returns: {
+          cancellation_reason: string | null
+          cancellation_source:
+            | Database["public"]["Enums"]["festival_schedule_booking_cancellation_source_enum"]
+            | null
+          cancelled_at: string | null
+          cancelled_by_profile_id: string | null
+          completed_at: string | null
+          created_at: string
+          display_name: string | null
+          festival_id: string
+          highline_id: string
+          id: string
+          instagram_username: string | null
+          profile_id: string | null
+          slot_id: string
+          status: Database["public"]["Enums"]["festival_schedule_booking_status_enum"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "festival_schedule_booking"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      cancel_festival_schedule_booking: {
+        Args: { cancellation_reason_input: string; target_booking_id: string }
+        Returns: {
+          cancellation_reason: string | null
+          cancellation_source:
+            | Database["public"]["Enums"]["festival_schedule_booking_cancellation_source_enum"]
+            | null
+          cancelled_at: string | null
+          cancelled_by_profile_id: string | null
+          completed_at: string | null
+          created_at: string
+          display_name: string | null
+          festival_id: string
+          highline_id: string
+          id: string
+          instagram_username: string | null
+          profile_id: string | null
+          slot_id: string
+          status: Database["public"]["Enums"]["festival_schedule_booking_status_enum"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "festival_schedule_booking"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      enqueue_festival_schedule_open_notifications: {
+        Args: never
+        Returns: number
+      }
+      enqueue_festival_schedule_reminder_notifications: {
+        Args: never
+        Returns: number
+      }
       get_crossing_time: {
         Args: { highline_id: string; page_number: number; page_size: number }
         Returns: {
           crossing_time: number
           instagram: string
           profile_picture: string
+        }[]
+      }
+      get_festival_schedule_bookings: {
+        Args: { target_festival_id: string }
+        Returns: {
+          completed_at: string
+          created_at: string
+          festival_id: string
+          highline_id: string
+          id: string
+          is_viewer: boolean
+          participant_display_name: string
+          participant_secondary_text: string
+          slot_id: string
+          status: Database["public"]["Enums"]["festival_schedule_booking_status_enum"]
         }[]
       }
       get_highline: {
@@ -847,6 +1265,14 @@ export type Database = {
           name: string
         }[]
       }
+      is_festival_staff: {
+        Args: { target_festival_id: string; target_profile_id: string }
+        Returns: boolean
+      }
+      normalize_festival_instagram_username: {
+        Args: { value: string }
+        Returns: string
+      }
       profile_stats: {
         Args: { username: string }
         Returns: {
@@ -855,9 +1281,30 @@ export type Database = {
           total_full_lines: number
         }[]
       }
+      reconcile_festival_schedule: {
+        Args: { festival_slug?: string }
+        Returns: undefined
+      }
+      reconcile_festival_schedule_by_id: {
+        Args: { target_festival_id?: string }
+        Returns: undefined
+      }
+      regenerate_festival_schedule_window: {
+        Args: { target_window_id: string }
+        Returns: number
+      }
       validate_locale_keys: { Args: { json_data: Json }; Returns: boolean }
     }
     Enums: {
+      festival_schedule_booking_cancellation_source_enum:
+        | "user"
+        | "staff"
+        | "slot_blocked"
+      festival_schedule_booking_status_enum:
+        | "booked"
+        | "cancelled"
+        | "completed"
+      festival_schedule_slot_status_enum: "available" | "blocked" | "expired"
       language: "en" | "pt"
       material_enum: "nylon" | "dyneema" | "polyester"
       organization_role_enum: "admin" | "member"
@@ -1594,6 +2041,17 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      festival_schedule_booking_cancellation_source_enum: [
+        "user",
+        "staff",
+        "slot_blocked",
+      ],
+      festival_schedule_booking_status_enum: [
+        "booked",
+        "cancelled",
+        "completed",
+      ],
+      festival_schedule_slot_status_enum: ["available", "blocked", "expired"],
       language: ["en", "pt"],
       material_enum: ["nylon", "dyneema", "polyester"],
       organization_role_enum: ["admin", "member"],
