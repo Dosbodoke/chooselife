@@ -6,7 +6,7 @@ import type {
   AbacatePayCharge,
   CreateAbacatePayChargePayload,
 } from "../_shared/edge-functions.types.ts";
-import type { Database } from "../../../packages/database/index.ts";
+import type { Database } from "../_shared/database.types.ts";
 
 // Helper function to handle CORS preflight requests
 function handleCors(req: Request): Response | null {
