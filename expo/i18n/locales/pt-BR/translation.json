@@ -60,7 +60,7 @@
         "offlineActionTitle": "Ação indisponível offline",
         "offlineActionMessage": "Conecte-se à internet para reservar ou cancelar horários do festival.",
         "offlineCacheEmpty": "Você está offline e esta programação ainda não foi carregada neste aparelho.",
-        "errorTitle": "Erro na fila",
+        "errorTitle": "Erro na programação",
         "genericError": "Algo deu errado ao atualizar a programação."
       },
       "index": {
