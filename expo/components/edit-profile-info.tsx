@@ -1,7 +1,11 @@
 import DateTimePicker from '@expo/ui/datetimepicker';
 import i18next from 'i18next';
 import React from 'react';
-import { Controller, UseFormReturn } from 'react-hook-form';
+import {
+  Controller,
+  type Path,
+  type UseFormReturn,
+} from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
@@ -71,17 +75,42 @@ function isValidBirthdayValue(value?: string) {
   return isCalendarDate(year, month, day) && !isFutureDate(year, month, day);
 }
 
-export const profileInfoSchema = z.object({
+const birthdayRequiredMessage = i18next.t(
+  'app.setProfile.errors.birthdayRequired',
+);
+const birthdayValidationMessage = i18next.t(
+  'app.setProfile.errors.birthdayValidation',
+);
+
+const optionalBirthdaySchema = z
+  .string()
+  .optional()
+  .refine((value) => !value || isValidBirthdayValue(value), {
+    message: birthdayValidationMessage,
+  });
+
+export const optionalProfileInfoSchema = z.object({
   name: z.string().min(1, i18next.t('app.setProfile.errors.nameRequired')),
   profilePicture: z.string().optional(),
   description: z.string().optional(),
+  birthday: optionalBirthdaySchema,
+});
+
+export const profileInfoSchema = optionalProfileInfoSchema.extend({
   birthday: z
-    .string()
-    .min(1, i18next.t('app.setProfile.errors.birthdayRequired'))
+    .string({
+      required_error: birthdayRequiredMessage,
+      invalid_type_error: birthdayRequiredMessage,
+    })
+    .min(1, birthdayRequiredMessage)
     .refine((value) => isValidBirthdayValue(value), {
-      message: i18next.t('app.setProfile.errors.birthdayValidation'),
+      message: birthdayValidationMessage,
     }),
 });
+
+export type OptionalProfileInfoSchema = z.infer<
+  typeof optionalProfileInfoSchema
+>;
 export type ProfileInfoSchema = z.infer<typeof profileInfoSchema>;
 
 const BirthdayInput: React.FC<{
@@ -129,10 +158,17 @@ const BirthdayInput: React.FC<{
   );
 };
 
-export const ProfileInfoForm: React.FC<{
-  form: UseFormReturn<ProfileInfoSchema>;
+type ProfileInfoFormValues = OptionalProfileInfoSchema;
+
+type ProfileInfoFormProps<TFormValues extends ProfileInfoFormValues> = {
+  form: UseFormReturn<TFormValues>;
   layout?: 'onboarding' | 'sheet';
-}> = ({ form, layout = 'onboarding' }) => {
+};
+
+export function ProfileInfoForm<TFormValues extends ProfileInfoFormValues>({
+  form,
+  layout = 'onboarding',
+}: ProfileInfoFormProps<TFormValues>) {
   const { t } = useTranslation();
   const isSheetLayout = layout === 'sheet';
 
@@ -140,7 +176,7 @@ export const ProfileInfoForm: React.FC<{
     <View className="w-full gap-4 items-start">
       <Controller
         control={form.control}
-        name="profilePicture"
+        name={'profilePicture' as Path<TFormValues>}
         render={({ field: { value, onChange } }) => (
           <View className="w-full flex-row items-center gap-4">
             <View
@@ -161,7 +197,7 @@ export const ProfileInfoForm: React.FC<{
 
       <Controller
         control={form.control}
-        name="name"
+        name={'name' as Path<TFormValues>}
         render={({ field: { onChange, value }, fieldState: { error } }) => (
           <View className="w-full items-start">
             <TextInput
@@ -191,7 +227,7 @@ export const ProfileInfoForm: React.FC<{
 
       <Controller
         control={form.control}
-        name="birthday"
+        name={'birthday' as Path<TFormValues>}
         render={({ field: { value, onChange }, fieldState: { error } }) => (
           <BirthdayInput
             value={value}
@@ -205,7 +241,7 @@ export const ProfileInfoForm: React.FC<{
 
       <Controller
         control={form.control}
-        name="description"
+        name={'description' as Path<TFormValues>}
         render={({ field: { onChange, value }, fieldState: { error } }) => (
           <Textarea
             value={value}
@@ -222,4 +258,4 @@ export const ProfileInfoForm: React.FC<{
       />
     </View>
   );
-};
+}

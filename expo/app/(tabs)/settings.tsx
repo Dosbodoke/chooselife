@@ -1,6 +1,8 @@
 import {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
+  BottomSheetFooter,
+  type BottomSheetFooterProps,
   BottomSheetModal,
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
@@ -20,17 +22,17 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
-import { date18YearsAgo } from '~/utils';
 import { Tables } from '~/utils/database.types';
 
 import {
+  optionalProfileInfoSchema,
   ProfileInfoForm,
-  profileInfoSchema,
-  type ProfileInfoSchema,
+  type OptionalProfileInfoSchema,
 } from '~/components/edit-profile-info';
 import { LanguageSwitcher } from '~/components/language-switcher';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
@@ -238,9 +240,11 @@ const EditProfileButton: React.FC = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
+  const snapPoints = React.useMemo(() => ['80%'], []);
+  const { bottom } = useSafeAreaInsets();
 
   const mutation = useMutation({
-    mutationFn: async (data: ProfileInfoSchema) => {
+    mutationFn: async (data: OptionalProfileInfoSchema) => {
       if (!profile) throw Error('No profile to update');
       const { data: profileData, error: upsertError } = await supabase
         .from('profiles')
@@ -248,7 +252,7 @@ const EditProfileButton: React.FC = () => {
           name: data.name,
           profile_picture: data.profilePicture,
           description: data.description,
-          birthday: data.birthday,
+          birthday: data.birthday ?? null,
         })
         .eq('id', profile.id)
         .select()
@@ -274,14 +278,14 @@ const EditProfileButton: React.FC = () => {
     },
   });
 
-  const form = useForm<ProfileInfoSchema>({
-    resolver: zodResolver(profileInfoSchema),
+  const form = useForm<OptionalProfileInfoSchema>({
+    resolver: zodResolver(optionalProfileInfoSchema),
     mode: 'onChange',
     defaultValues: {
       name: profile?.name ?? '',
       profilePicture: profile?.profile_picture || undefined,
       description: profile?.description ?? '',
-      birthday: profile?.birthday ?? date18YearsAgo(),
+      birthday: profile?.birthday ?? undefined,
     },
   });
 
@@ -300,6 +304,23 @@ const EditProfileButton: React.FC = () => {
     [],
   );
 
+  const renderFooter = React.useCallback(
+    (props: BottomSheetFooterProps) => (
+      <BottomSheetFooter {...props} bottomInset={bottom}>
+        <View className="px-4 pt-3 pb-4 bg-white border-t border-gray-100">
+          <Button
+            className="w-full"
+            onPress={form.handleSubmit((data) => mutation.mutate(data))}
+            disabled={!form.formState.isDirty || mutation.isPending}
+          >
+            <Text>{t('app.(tabs).settings.editProfile.submitLabel')}</Text>
+          </Button>
+        </View>
+      </BottomSheetFooter>
+    ),
+    [bottom, form, mutation, t],
+  );
+
   return (
     <>
       <SettingsItem
@@ -312,6 +333,9 @@ const EditProfileButton: React.FC = () => {
         ref={bottomSheetModalRef}
         backdropComponent={renderBackdrop}
         enablePanDownToClose={true}
+        enableDynamicSizing={false}
+        footerComponent={renderFooter}
+        snapPoints={snapPoints}
         style={{
           elevation: 4,
           shadowColor: '#000',
@@ -323,15 +347,8 @@ const EditProfileButton: React.FC = () => {
           },
         }}
       >
-        <BottomSheetView className="p-4 gap-4 bg-white">
+        <BottomSheetView className="flex-1 p-4 pb-28 bg-white">
           <ProfileInfoForm form={form} layout="sheet" />
-          <Button
-            className="w-full"
-            onPress={form.handleSubmit((data) => mutation.mutate(data))}
-            disabled={!form.formState.isDirty || mutation.isPending}
-          >
-            <Text>{t('app.(tabs).settings.editProfile.submitLabel')}</Text>
-          </Button>
         </BottomSheetView>
       </BottomSheetModal>
     </>

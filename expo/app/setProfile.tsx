@@ -21,7 +21,6 @@ import { useAuth } from '~/context/auth';
 import { type Profile } from '~/hooks/use-profile';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
-import { date18YearsAgo } from '~/utils';
 
 import {
   ProfileInfoForm,
@@ -57,7 +56,7 @@ export default function SetProfile() {
       name: profile?.name || '',
       profilePicture: profile?.profile_picture || undefined,
       description: profile?.description || '',
-      birthday: profile?.birthday || date18YearsAgo(),
+      birthday: profile?.birthday ?? undefined,
     },
   });
 
@@ -72,7 +71,7 @@ export default function SetProfile() {
           name: data.name,
           profile_picture: data.profilePicture,
           description: data.description,
-          birthday: data.birthday || null,
+          birthday: data.birthday ?? null,
         })
         .select()
         .single();
