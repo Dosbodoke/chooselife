@@ -993,10 +993,6 @@ GRANT EXECUTE ON FUNCTION public.book_festival_schedule_slot(UUID, UUID, TEXT, T
 GRANT EXECUTE ON FUNCTION public.cancel_festival_schedule_booking(UUID, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_festival_schedule_bookings(UUID) TO anon, authenticated;
 
-CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA "extensions";
-GRANT USAGE ON SCHEMA cron TO postgres;
-GRANT ALL ON ALL TABLES IN SCHEMA cron TO postgres;
-
 SELECT cron.schedule(
   'festival-schedule-reconcile-every-minute',
   '* * * * *',
