@@ -128,12 +128,26 @@ async function loadViewerState(args: {
   };
 }
 
+async function reconcileFestivalScheduleForRead(
+  supabase: TypedSupabaseClient,
+  festivalId: string,
+) {
+  const { error } = await supabase.rpc("reconcile_festival_schedule_by_id", {
+    target_festival_id: festivalId,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 export async function getFestivalSchedulePageData(args: {
   festivalSlug: string;
   supabase: TypedSupabaseClient;
   userId?: string;
 }): Promise<FestivalSchedulePageData> {
   const festival = await requireFestivalBySlug(args.supabase, args.festivalSlug);
+  await reconcileFestivalScheduleForRead(args.supabase, festival.id);
 
   const [
     { data: highlineLinks, error: linksError },

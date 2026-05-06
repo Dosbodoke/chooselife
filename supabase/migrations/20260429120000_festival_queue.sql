@@ -988,6 +988,7 @@ BEGIN
 END;
 $$;
 
+GRANT EXECUTE ON FUNCTION public.reconcile_festival_schedule_by_id(UUID) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.book_festival_schedule_slot(UUID, UUID, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.cancel_festival_schedule_booking(UUID, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_festival_schedule_bookings(UUID) TO anon, authenticated;
