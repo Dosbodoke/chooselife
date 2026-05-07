@@ -9,13 +9,14 @@ import * as WebBrowser from 'expo-web-browser';
 import React, {
   useCallback,
   useContext,
-  useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
+import { useMountEffect } from '~/hooks/use-mount-effect';
 import { useProfile, type Profile } from '~/hooks/use-profile';
 import { supabase } from '~/lib/supabase';
 
@@ -25,6 +26,24 @@ type AuthMethodResponse = Promise<
 
 export type OAuthMethod = 'apple' | 'google';
 export type LoginMethod = OAuthMethod | 'email';
+type PostAuthNavigation =
+  | {
+      key: string;
+      shouldClearPendingRedirect: boolean;
+      type: 'back';
+    }
+  | {
+      key: string;
+      shouldClearPendingRedirect: boolean;
+      type: 'dismissTo';
+      href: string;
+    }
+  | {
+      key: string;
+      shouldClearPendingRedirect: boolean;
+      type: 'replace';
+      href: string;
+    };
 
 interface AuthContextValue {
   login: ({
@@ -70,6 +89,7 @@ const AuthContext = React.createContext<AuthContextValue | undefined>(
 export function AuthProvider(props: React.PropsWithChildren) {
   const { t } = useTranslation();
   const router = useRouter();
+  const handledAuthUrlRef = useRef<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [lastLoginMethod, setLastLoginMethod] = useState<LoginMethod | null>(
@@ -79,9 +99,10 @@ export function AuthProvider(props: React.PropsWithChildren) {
     'back' | string | null
   >(null);
   const {
-    query: { data: profile },
+    query: profileQuery,
     invalidateProfile,
   } = useProfile(session?.user.id || null);
+  const profile = profileQuery.data ?? null;
 
   const saveLoginMethod = useCallback(async (method: LoginMethod) => {
     try {
@@ -344,8 +365,8 @@ export function AuthProvider(props: React.PropsWithChildren) {
     [t, saveLoginMethod],
   );
 
-  useEffect(function setupSession() {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+  useMountEffect(function setupSession() {
+    void supabase.auth.getSession().then(({ data: { session } }) => {
       setSessionLoading(false);
       setSession(session);
     });
@@ -360,10 +381,10 @@ export function AuthProvider(props: React.PropsWithChildren) {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  });
 
-  useEffect(function loadLastLoginMethod() {
-    const loadLastLoginMethod = async () => {
+  useMountEffect(function loadLastLoginMethod() {
+    const loadStoredLoginMethod = async () => {
       try {
         const method = (await AsyncStorage.getItem(
           'lastLoginMethod',
@@ -374,51 +395,89 @@ export function AuthProvider(props: React.PropsWithChildren) {
       }
     };
 
-    loadLastLoginMethod();
+    void loadStoredLoginMethod();
+  });
+
+  const handleAuthUrl = useCallback(async (url: string | null) => {
+    if (!url || handledAuthUrlRef.current === url) {
+      return;
+    }
+
+    handledAuthUrlRef.current = url;
+
+    try {
+      await createSessionFromUrl(url);
+    } catch (error) {
+      console.error('Failed to create session from URL:', error);
+    }
   }, []);
 
-  // Handle linking into app from email app
-  const url = Linking.useURL();
-  useEffect(() => {
-    if (url) {
-      createSessionFromUrl(url);
+  useMountEffect(function syncAuthUrl() {
+    void Linking.getInitialURL().then(handleAuthUrl);
+
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      void handleAuthUrl(url);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  });
+
+  const postAuthNavigation = useMemo<PostAuthNavigation | null>(() => {
+    if (!session?.user.id) {
+      return null;
     }
-  }, [url]);
 
-  useEffect(
-    function redirectAfterProfileLoad() {
-      if (!profile) return;
+    if (profileQuery.isPending || !profileQuery.isFetched) {
+      return null;
+    }
 
-      // If username is not settled, redirect to onboarding
-      if (!profile?.username) {
-        router.replace('/setProfile');
-        return;
-      }
+    if (profileQuery.isError) {
+      return null;
+    }
 
-      try {
-        if (pendingRedirect && pendingRedirect !== 'back') {
-          const decodedRedirect = decodeURIComponent(pendingRedirect);
-          // @ts-expect-error redirect_to search parameter
-          router.replace(decodedRedirect);
-          return;
-        }
+    if (!profile || !profile.username) {
+      return {
+        key: `setProfile:${profile?.id ?? session.user.id}`,
+        type: 'replace',
+        href: '/setProfile',
+        shouldClearPendingRedirect: false,
+      };
+    }
 
-        if (pendingRedirect && router.canGoBack()) {
-          router.back();
-          return;
-        }
+    if (!pendingRedirect) {
+      return null;
+    }
 
-        if (pendingRedirect) {
-          router.replace('/(tabs)');
-          return;
-        }
-      } finally {
-        // Clean the state
-        setPendingRedirect(null);
-      }
-    },
-    [profile, pendingRedirect, router],
-  );
+    if (pendingRedirect !== 'back') {
+      return {
+        key: `dismissTo:${pendingRedirect}`,
+        type: 'dismissTo',
+        href: decodeURIComponent(pendingRedirect),
+        shouldClearPendingRedirect: true,
+      };
+    }
+
+    if (router.canGoBack()) {
+      return {
+        key: 'back',
+        type: 'back',
+        shouldClearPendingRedirect: true,
+      };
+    }
+
+    return {
+      key: 'tabs',
+      type: 'replace',
+      href: '/(tabs)',
+      shouldClearPendingRedirect: true,
+    };
+  }, [pendingRedirect, profile, profileQuery, router, session?.user.id]);
+
+  const clearPendingRedirect = useCallback(() => {
+    setPendingRedirect(null);
+  }, []);
 
   // Memoize context value to prevent unnecessary rerenders
   const contextValue = useMemo(
@@ -448,9 +507,53 @@ export function AuthProvider(props: React.PropsWithChildren) {
 
   return (
     <AuthContext.Provider value={contextValue}>
+      {postAuthNavigation ? (
+        <PostAuthRedirect
+          key={postAuthNavigation.key}
+          navigation={postAuthNavigation}
+          onComplete={
+            postAuthNavigation.shouldClearPendingRedirect
+              ? clearPendingRedirect
+              : undefined
+          }
+        />
+      ) : null}
       {props.children}
     </AuthContext.Provider>
   );
+}
+
+function PostAuthRedirect({
+  navigation,
+  onComplete,
+}: {
+  navigation: PostAuthNavigation;
+  onComplete?: () => void;
+}) {
+  const router = useRouter();
+
+  useMountEffect(() => {
+    try {
+      if (navigation.type === 'back') {
+        router.back();
+        return;
+      }
+
+      if (navigation.type === 'dismissTo') {
+        // Dismiss back to an existing route when possible so auth/profile
+        // screens do not leave duplicate festival entries in the stack.
+        router.dismissTo(navigation.href);
+        return;
+      }
+
+      // @ts-expect-error redirect_to search parameter
+      router.replace(navigation.href);
+    } finally {
+      onComplete?.();
+    }
+  });
+
+  return null;
 }
 
 export const useAuth = () => {

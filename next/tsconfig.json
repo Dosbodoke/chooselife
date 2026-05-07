@@ -22,7 +22,8 @@
     "paths": {
       "@/*": ["./*"],
       "@chooselife/database": ["../packages/database"],
-      "@chooselife/ui": ["../packages/ui/src"]
+      "@chooselife/ui": ["../packages/ui/src"],
+      "@chooselife/ui/*": ["../packages/ui/src/*"]
     }
   },
   "include": [

@@ -241,7 +241,43 @@
   },
   "festival": {
     "cardSubTitle": "Follow the festival ranking in real time",
-    "pageSubTitle": "The biggest Highline festival in Brazil"
+    "pageSubTitle": "The biggest Highline festival in Brazil",
+    "tabs": {
+      "highlines": "Highlines",
+      "ranking": "Ranking"
+    },
+    "schedule": {
+      "scheduleTitle": "Schedule",
+      "loading": "Refreshing schedule...",
+      "defaultSector": "Festival highlines",
+      "openSchedule": "Open schedule",
+      "current": "Current",
+      "availableCountLabel": "{count, plural, one {# available slot} other {# available slots}}",
+      "authRequired": "You need to be signed in to claim a schedule slot.",
+      "emptySchedule": "No slots are available for this day.",
+      "availableTitle": "Available slot",
+      "blockedTitle": "Blocked",
+      "availableState": "Available",
+      "bookedState": "Booked",
+      "completedLabel": "Completed",
+      "expiredLabel": "Expired",
+      "claimSlotButton": "Claim slot",
+      "claimSlotBlockedOverlap": "You already have a schedule during this time window.",
+      "claimSlotBlockedLimit": "You already have 2 active schedules",
+      "bookForSomeoneButton": "Book for someone",
+      "cancelOwnBookingButton": "Cancel my booking",
+      "cancelBookingButton": "Cancel booking",
+      "staffBookingTitle": "Book this slot for someone else",
+      "staffPickerPlaceholder": "Search by @username or Instagram",
+      "guestNamePlaceholder": "Guest display name",
+      "confirmStaffBookingButton": "Confirm booking",
+      "cancelStaffBookingButton": "Cancel",
+      "missingStaffSelection": "Select a participant first.",
+      "missingGuestName": "Guest display name is required.",
+      "scheduleOverlapError": "You already have a schedule during this time window.",
+      "scheduleLimitError": "You already have 2 active schedules in this festival.",
+      "genericError": "Something went wrong while updating the schedule."
+    }
   },
   "privacyPolicy": {
     "title": "Privacy Policy",

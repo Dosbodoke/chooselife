@@ -1,11 +1,14 @@
 import {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
+  BottomSheetFooter,
+  BottomSheetFooterProps,
   BottomSheetModal,
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import Constants from 'expo-constants';
 import { Link, useRouter } from 'expo-router';
 import {
   ChevronRightIcon,
@@ -18,9 +21,14 @@ import {
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
-
-import Constants from 'expo-constants';
+import {
+  Alert,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
@@ -195,11 +203,7 @@ const ChangeLanguage: React.FC<{ isLast?: boolean }> = ({ isLast }) => {
   const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
 
   const openModal = () => {
-    bottomSheetModalRef.current?.present({
-      velocity: 200,
-      stiffness: 200,
-      damping: 80,
-    });
+    bottomSheetModalRef.current?.present();
   };
 
   const renderBackdrop = React.useCallback(
@@ -225,23 +229,9 @@ const ChangeLanguage: React.FC<{ isLast?: boolean }> = ({ isLast }) => {
       <BottomSheetModal
         ref={bottomSheetModalRef}
         backdropComponent={renderBackdrop}
-        handleComponent={null}
-        detached={true}
-        bottomInset={46}
         enablePanDownToClose={true}
-        style={{
-          marginHorizontal: 24,
-          elevation: 4,
-          shadowColor: '#000',
-          shadowOpacity: 0.3,
-          shadowRadius: 4,
-          shadowOffset: {
-            width: 1,
-            height: 1,
-          },
-        }}
       >
-        <BottomSheetView className="p-4 items-center gap-4 bg-white rounded-3xl">
+        <BottomSheetView className="items-center bg-white pb-12">
           <LanguageSwitcher
             onSwitch={() => bottomSheetModalRef.current?.dismiss()}
           />
@@ -256,6 +246,10 @@ const EditProfileButton: React.FC = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
+
+  const snapPoints = React.useMemo(() => ['80%'], []);
+  const { bottom } = useSafeAreaInsets();
+  const footerBottomInset = Platform.OS === 'ios' ? bottom : 0;
 
   const mutation = useMutation({
     mutationFn: async (data: ProfileInfoSchema) => {
@@ -304,11 +298,7 @@ const EditProfileButton: React.FC = () => {
   });
 
   const openModal = () => {
-    bottomSheetModalRef.current?.present({
-      velocity: 200,
-      stiffness: 200,
-      damping: 80,
-    });
+    bottomSheetModalRef.current?.present();
   };
 
   const renderBackdrop = React.useCallback(
@@ -320,6 +310,26 @@ const EditProfileButton: React.FC = () => {
       />
     ),
     [],
+  );
+
+  const renderFooter = React.useCallback(
+    (props: BottomSheetFooterProps) => (
+      <BottomSheetFooter {...props}>
+        <View
+          className="px-4 pt-3 bg-white border-t border-gray-100"
+          style={{ paddingBottom: footerBottomInset + 16 }}
+        >
+          <Button
+            className="w-full"
+            onPress={form.handleSubmit((data) => mutation.mutate(data))}
+            disabled={!form.formState.isDirty || mutation.isPending}
+          >
+            <Text>{t('app.(tabs).settings.editProfile.submitLabel')}</Text>
+          </Button>
+        </View>
+      </BottomSheetFooter>
+    ),
+    [footerBottomInset, form, mutation, t],
   );
 
   return (
@@ -334,6 +344,9 @@ const EditProfileButton: React.FC = () => {
         ref={bottomSheetModalRef}
         backdropComponent={renderBackdrop}
         enablePanDownToClose={true}
+        enableDynamicSizing={false}
+        footerComponent={renderFooter}
+        snapPoints={snapPoints}
         style={{
           elevation: 4,
           shadowColor: '#000',
@@ -347,13 +360,6 @@ const EditProfileButton: React.FC = () => {
       >
         <BottomSheetView className="p-4 gap-4 bg-white">
           <ProfileInfoForm form={form} layout="sheet" />
-          <Button
-            className="w-full"
-            onPress={form.handleSubmit((data) => mutation.mutate(data))}
-            disabled={!form.formState.isDirty || mutation.isPending}
-          >
-            <Text>{t('app.(tabs).settings.editProfile.submitLabel')}</Text>
-          </Button>
         </BottomSheetView>
       </BottomSheetModal>
     </>

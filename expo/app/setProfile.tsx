@@ -274,10 +274,14 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
                 autoCapitalize="none"
                 returnKeyType="done"
                 allowFontScaling={false}
-                style={{ fontSize: 32 }}
+                style={{
+                  fontSize: 32,
+                  lineHeight: 38,
+                  paddingVertical: 4,
+                }}
                 className={cn(
                   error?.message ? 'border-red-500' : 'border-muted-foreground',
-                  'text-foreground border-b-hairline min-w-0 flex-1',
+                  'text-foreground border-b-hairline min-w-0 flex-1 pb-2',
                 )}
               />
             </View>

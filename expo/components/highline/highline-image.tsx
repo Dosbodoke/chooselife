@@ -24,10 +24,6 @@ export const HighlineImage: React.FC<{
   const [loaded, setLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
-  // Removed the useEffect for resetting state on coverImageId change,
-  // as onLoadStart will handle it more dynamically.
-  // Removed the useEffect for the 5-second timeout.
-
   if (!coverImageId || hasError) {
     return (
       <View

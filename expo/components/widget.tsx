@@ -1,20 +1,28 @@
 import { Image as ExpoImage, ImageSource } from 'expo-image';
 import { ArrowRightIcon } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { Dimensions, Pressable, Text, View } from 'react-native';
+import {
+  Dimensions,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  Text,
+  View,
+} from 'react-native';
 import Animated, {
   interpolate,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '~/components/ui/icon';
 
 const { width: screenWidth } = Dimensions.get('window');
-const CARD_WIDTH = screenWidth - 16;
-const CARD_SPACING = 16;
+const CARD_WIDTH = screenWidth;
+export const WIDGET_HERO_BASE_HEIGHT = 320;
+const CONTENT_HORIZONTAL_PADDING = 16;
 
 interface WidgetItem {
   id: string;
@@ -29,29 +37,43 @@ interface WidgetProps {
   items: WidgetItem[];
 }
 
+// Number of copies to repeat for infinite scroll (odd number recommended)
+const REPEAT_COUNT = 5;
+
 export function Widget({ items }: WidgetProps) {
+  const { top } = useSafeAreaInsets();
   const scrollViewRef = useRef<Animated.ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollX = useSharedValue(0);
-  const pressedScale = useSharedValue(1);
+  const heroHeight = WIDGET_HERO_BASE_HEIGHT + top;
 
-  // Triple items for infinite scroll
-  const infiniteItems = [...items, ...items, ...items];
-  const middleIndex = items.length;
+  // Build infinite array (REPEAT_COUNT copies of original items)
+  const infiniteItems = Array(REPEAT_COUNT).fill(items).flat();
+  const totalItems = infiniteItems.length;
+  const originalLength = items.length;
+  // Start at the middle set (so we have enough room in both directions)
+  const middleStartIndex = Math.floor(REPEAT_COUNT / 2) * originalLength;
+  // Reset thresholds: when we are within the first or last original-length chunk, jump back
+  const resetThresholdLow = originalLength;
+  const resetThresholdHigh = totalItems - originalLength;
 
   useEffect(() => {
-    // Start in the middle for infinite effect
+    // Initialize scroll position to the middle set without animation
     const timer = setTimeout(() => {
       scrollViewRef.current?.scrollTo({
-        x: middleIndex * (CARD_WIDTH + CARD_SPACING),
+        x: middleStartIndex * CARD_WIDTH,
         animated: false,
       });
-    }, 100);
+    }, 50);
     return () => clearTimeout(timer);
-  }, [middleIndex]);
+  }, [middleStartIndex]);
 
-  const updateCurrentIndex = (index: number) => {
-    setCurrentIndex(index % items.length);
+  const updateCurrentIndex = (offsetX: number) => {
+    const rawIndex = Math.round(offsetX / CARD_WIDTH);
+    // Convert to real index within original items
+    const realIndex =
+      ((rawIndex % originalLength) + originalLength) % originalLength;
+    setCurrentIndex(realIndex);
   };
 
   const scrollHandler = useAnimatedScrollHandler({
@@ -60,86 +82,64 @@ export function Widget({ items }: WidgetProps) {
     },
   });
 
-  const onMomentumScrollEnd = (event: any) => {
+  const onMomentumScrollEnd = (
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
     const offsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(offsetX / (CARD_WIDTH + CARD_SPACING));
+    const rawIndex = Math.round(offsetX / CARD_WIDTH);
+    updateCurrentIndex(offsetX);
 
-    // Reset position for infinite scroll
-    if (index <= 0) {
-      const timer = setTimeout(() => {
-        scrollViewRef.current?.scrollTo({
-          x: (items.length * 2 - 1) * (CARD_WIDTH + CARD_SPACING),
-          animated: false,
-        });
-      }, 50);
-      updateCurrentIndex(items.length - 1);
-    } else if (index >= infiniteItems.length - 1) {
-      const timer = setTimeout(() => {
-        scrollViewRef.current?.scrollTo({
-          x: items.length * (CARD_WIDTH + CARD_SPACING),
-          animated: false,
-        });
-      }, 50);
-      updateCurrentIndex(0);
-    } else {
-      updateCurrentIndex(index);
+    // Reset scroll position if we are near the boundaries
+    if (rawIndex <= resetThresholdLow) {
+      // Jump forward to the middle set + low threshold
+      const newOffset = (middleStartIndex + resetThresholdLow) * CARD_WIDTH;
+      scrollViewRef.current?.scrollTo({ x: newOffset, animated: false });
+    } else if (rawIndex >= resetThresholdHigh) {
+      // Jump backward to the middle set - (totalItems - resetThresholdHigh)
+      const newOffset =
+        (middleStartIndex - (totalItems - resetThresholdHigh)) * CARD_WIDTH;
+      scrollViewRef.current?.scrollTo({ x: newOffset, animated: false });
     }
   };
 
-  const scrollToIndex = (targetIndex: number) => {
-    const currentScrollIndex = Math.round(
-      scrollX.value / (CARD_WIDTH + CARD_SPACING),
-    );
-    const currentRealIndex = currentScrollIndex % items.length;
+  const scrollToIndex = (targetRealIndex: number) => {
+    if (targetRealIndex === currentIndex) return;
 
-    let scrollIndex = currentScrollIndex;
-
-    if (targetIndex !== currentRealIndex) {
-      // Find the closest path to target
-      const diff = targetIndex - currentRealIndex;
-      if (Math.abs(diff) <= items.length / 2) {
-        scrollIndex = currentScrollIndex + diff;
-      } else {
-        scrollIndex =
-          currentScrollIndex +
-          (diff > 0 ? diff - items.length : diff + items.length);
+    const currentScrollIndex = Math.round(scrollX.value / CARD_WIDTH);
+    // Find the closest occurrence of targetRealIndex in the infinite array
+    // We search within a reasonable range around currentScrollIndex
+    let closestIndex = -1;
+    let minDistance = Infinity;
+    for (let i = -originalLength; i <= originalLength; i++) {
+      const candidate = currentScrollIndex + i;
+      if (candidate >= 0 && candidate < totalItems) {
+        if (
+          ((candidate % originalLength) + originalLength) % originalLength ===
+          targetRealIndex
+        ) {
+          const distance = Math.abs(candidate - currentScrollIndex);
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestIndex = candidate;
+          }
+        }
       }
-
+    }
+    if (closestIndex !== -1) {
       scrollViewRef.current?.scrollTo({
-        x: scrollIndex * (CARD_WIDTH + CARD_SPACING),
+        x: closestIndex * CARD_WIDTH,
         animated: true,
       });
     }
   };
 
   const renderItem = (item: WidgetItem, index: number) => {
-    const animatedStyle = useAnimatedStyle(() => {
-      const inputRange = [
-        (index - 1) * (CARD_WIDTH + CARD_SPACING),
-        index * (CARD_WIDTH + CARD_SPACING),
-        (index + 1) * (CARD_WIDTH + CARD_SPACING),
-      ];
-
-      return {
-        transform: [
-          {
-            scale: interpolate(
-              scrollX.value,
-              inputRange,
-              [0.85, 1, 0.85],
-              'clamp',
-            ),
-          },
-        ],
-        opacity: interpolate(scrollX.value, inputRange, [0.3, 1, 0.3], 'clamp'),
-      };
-    });
-
+    // Parallax shift for background image (kept for visual effect)
     const backgroundAnimatedStyle = useAnimatedStyle(() => {
       const inputRange = [
-        (index - 1) * (CARD_WIDTH + CARD_SPACING),
-        index * (CARD_WIDTH + CARD_SPACING),
-        (index + 1) * (CARD_WIDTH + CARD_SPACING),
+        (index - 1) * CARD_WIDTH,
+        index * CARD_WIDTH,
+        (index + 1) * CARD_WIDTH,
       ];
 
       return {
@@ -148,7 +148,7 @@ export function Widget({ items }: WidgetProps) {
             translateX: interpolate(
               scrollX.value,
               inputRange,
-              [-10, 0, 10],
+              [-24, 0, 24],
               'clamp',
             ),
           },
@@ -156,45 +156,20 @@ export function Widget({ items }: WidgetProps) {
       };
     });
 
-    // Animation for press feedback
-    const pressAnimatedStyle = useAnimatedStyle(() => {
-      return {
-        transform: [{ scale: pressedScale.value }],
-      };
-    });
-
-    const handlePressIn = () => {
-      'worklets';
-      pressedScale.value = withSpring(0.95, { damping: 120 });
-    };
-
-    const handlePressOut = () => {
-      'worklets';
-      pressedScale.value = withSpring(1, { damping: 120 });
-    };
-
     return (
       <Animated.View
         key={`${item.id}-${index}`}
-        className="h-full justify-center items-center"
-        style={[
-          animatedStyle,
-          {
-            width: CARD_WIDTH,
-            marginRight: index < infiniteItems.length - 1 ? CARD_SPACING : 0,
-          },
-        ]}
+        className="justify-center items-center"
+        style={{
+          width: CARD_WIDTH,
+          height: heroHeight,
+        }}
       >
-        <Animated.View style={pressAnimatedStyle} className="flex-1 w-full">
+        <Animated.View className="flex-1 w-full">
           <Pressable
             onPress={item.onPress}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            className="flex-1 w-full rounded-[20px] overflow-hidden shadow-2xl border-[0.5px] border-white/10"
+            className="flex-1 w-full overflow-hidden bg-black"
           >
-            {/* Subtle animated border to indicate interactivity */}
-            <View className="absolute inset-0 rounded-[20px] border-2 border-white/20 opacity-60" />
-
             <Animated.View
               className="absolute inset-0"
               style={backgroundAnimatedStyle}
@@ -209,23 +184,30 @@ export function Widget({ items }: WidgetProps) {
                   flex: 1,
                   width: '100%',
                   height: '100%',
-                  borderRadius: 20,
                 }}
                 contentFit="cover"
                 cachePolicy="disk"
               />
             </Animated.View>
 
-            {/* Gradient overlay for better text readability */}
-            <View className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent rounded-[20px]" />
+            <View className="absolute inset-0 bg-black/20" />
+            <View className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent" />
+            <View className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
 
-            <View className="flex-1 p-6 justify-end z-10">
+            <View
+              className="absolute inset-x-0 bottom-0 z-10"
+              style={{
+                paddingHorizontal: CONTENT_HORIZONTAL_PADDING,
+                paddingTop: top + 16,
+                paddingBottom: 24,
+              }}
+            >
               {item.content || (
-                <View className="bg-black/30 backdrop-blur-md rounded-2xl p-4 border border-white/20">
+                <View className="bg-black/35 backdrop-blur-md rounded-[28px] p-5 border border-white/15">
                   <View className="flex-row items-start justify-between mb-2">
                     <View className="flex-1">
                       <Text
-                        className="text-3xl font-black text-white mb-2 leading-tight tracking-tight"
+                        className="text-2xl font-black text-white mb-2 leading-tight tracking-tight"
                         style={{
                           textShadowColor: 'rgba(0, 0, 0, 0.8)',
                           textShadowOffset: { width: 0, height: 2 },
@@ -249,7 +231,7 @@ export function Widget({ items }: WidgetProps) {
                     </View>
 
                     {item.onPress ? (
-                      <View className="bg-white/20 rounded-full p-2 ml-3">
+                      <View className="bg-white/15 rounded-full p-3 ml-3">
                         <Icon
                           as={ArrowRightIcon}
                           size={20}
@@ -262,8 +244,7 @@ export function Widget({ items }: WidgetProps) {
               )}
             </View>
 
-            {/* Subtle shine effect overlay */}
-            <View className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent rounded-[20px] pointer-events-none" />
+            <View className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
           </Pressable>
         </Animated.View>
       </Animated.View>
@@ -271,18 +252,21 @@ export function Widget({ items }: WidgetProps) {
   };
 
   const renderDots = () => (
-    <View className="flex-row items-center justify-center h-2 gap-1 mt-4">
-      {items.map((_, index) => {
+    <View className="flex-row items-center justify-center gap-1">
+      {items.map((_, idx) => {
         const animatedDotStyle = useAnimatedStyle(() => {
-          // Calculate current index based on scroll position
-          const currentScrollIndex =
-            scrollX.value / (CARD_WIDTH + CARD_SPACING);
+          // Get current real index from scroll position
+          const currentScrollIndex = scrollX.value / CARD_WIDTH;
           const currentRealIndex =
-            ((currentScrollIndex % items.length) + items.length) % items.length;
+            ((Math.round(currentScrollIndex) % originalLength) +
+              originalLength) %
+            originalLength;
 
-          // Distance from current position
-          const distance = Math.abs(index - currentRealIndex);
-          const adjustedDistance = Math.min(distance, items.length - distance);
+          const distance = Math.abs(idx - currentRealIndex);
+          const adjustedDistance = Math.min(
+            distance,
+            originalLength - distance,
+          );
 
           return {
             transform: [
@@ -290,20 +274,20 @@ export function Widget({ items }: WidgetProps) {
                 scale: interpolate(
                   adjustedDistance,
                   [0, 1],
-                  [1.4, 0.8],
+                  [1.25, 0.85],
                   'clamp',
                 ),
               },
             ],
-            opacity: interpolate(adjustedDistance, [0, 1], [1, 0.4], 'clamp'),
-            backgroundColor: '#000',
+            opacity: interpolate(adjustedDistance, [0, 1], [1, 0.55], 'clamp'),
+            backgroundColor: '#fff',
           };
         });
 
         return (
           <Pressable
-            key={index}
-            onPress={() => scrollToIndex(index)}
+            key={idx}
+            onPress={() => scrollToIndex(idx)}
             className="p-1.5"
           >
             <Animated.View
@@ -317,31 +301,32 @@ export function Widget({ items }: WidgetProps) {
   );
 
   return (
-    <View className="h-[240px] bg-transparent">
+    <View style={{ height: heroHeight }} className="bg-transparent">
       <View className="flex-1 bg-transparent">
         <View className="flex-1 bg-transparent relative">
           <Animated.ScrollView
             ref={scrollViewRef}
-            horizontal={true}
+            horizontal
             showsHorizontalScrollIndicator={false}
-            pagingEnabled={true}
+            pagingEnabled
             decelerationRate="fast"
-            snapToInterval={CARD_WIDTH + CARD_SPACING}
+            snapToInterval={CARD_WIDTH}
             snapToAlignment="start"
             style={{ backgroundColor: 'transparent' }}
-            contentContainerStyle={{
-              paddingHorizontal: 8,
-              backgroundColor: 'transparent',
-            }}
+            contentContainerStyle={{ backgroundColor: 'transparent' }}
             onScroll={scrollHandler}
             onMomentumScrollEnd={onMomentumScrollEnd}
             scrollEventThrottle={16}
           >
             {infiniteItems.map((item, index) => renderItem(item, index))}
           </Animated.ScrollView>
-        </View>
 
-        {renderDots()}
+          <View className="absolute inset-x-0 bottom-6 items-center">
+            <View className="bg-black/25 rounded-full px-3 py-2">
+              {renderDots()}
+            </View>
+          </View>
+        </View>
       </View>
     </View>
   );
