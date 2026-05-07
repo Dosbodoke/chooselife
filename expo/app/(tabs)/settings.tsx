@@ -1,6 +1,8 @@
 import {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
+  BottomSheetFooter,
+  BottomSheetFooterProps,
   BottomSheetModal,
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
@@ -19,7 +21,14 @@ import {
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
@@ -238,6 +247,10 @@ const EditProfileButton: React.FC = () => {
   const queryClient = useQueryClient();
   const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
 
+  const snapPoints = React.useMemo(() => ['80%'], []);
+  const { bottom } = useSafeAreaInsets();
+  const footerBottomInset = Platform.OS === 'ios' ? bottom : 0;
+
   const mutation = useMutation({
     mutationFn: async (data: ProfileInfoSchema) => {
       if (!profile) throw Error('No profile to update');
@@ -299,6 +312,26 @@ const EditProfileButton: React.FC = () => {
     [],
   );
 
+  const renderFooter = React.useCallback(
+    (props: BottomSheetFooterProps) => (
+      <BottomSheetFooter {...props}>
+        <View
+          className="px-4 pt-3 bg-white border-t border-gray-100"
+          style={{ paddingBottom: footerBottomInset + 16 }}
+        >
+          <Button
+            className="w-full"
+            onPress={form.handleSubmit((data) => mutation.mutate(data))}
+            disabled={!form.formState.isDirty || mutation.isPending}
+          >
+            <Text>{t('app.(tabs).settings.editProfile.submitLabel')}</Text>
+          </Button>
+        </View>
+      </BottomSheetFooter>
+    ),
+    [footerBottomInset, form, mutation, t],
+  );
+
   return (
     <>
       <SettingsItem
@@ -311,6 +344,9 @@ const EditProfileButton: React.FC = () => {
         ref={bottomSheetModalRef}
         backdropComponent={renderBackdrop}
         enablePanDownToClose={true}
+        enableDynamicSizing={false}
+        footerComponent={renderFooter}
+        snapPoints={snapPoints}
         style={{
           elevation: 4,
           shadowColor: '#000',
@@ -324,13 +360,6 @@ const EditProfileButton: React.FC = () => {
       >
         <BottomSheetView className="p-4 gap-4 bg-white">
           <ProfileInfoForm form={form} layout="sheet" />
-          <Button
-            className="w-full"
-            onPress={form.handleSubmit((data) => mutation.mutate(data))}
-            disabled={!form.formState.isDirty || mutation.isPending}
-          >
-            <Text>{t('app.(tabs).settings.editProfile.submitLabel')}</Text>
-          </Button>
         </BottomSheetView>
       </BottomSheetModal>
     </>
