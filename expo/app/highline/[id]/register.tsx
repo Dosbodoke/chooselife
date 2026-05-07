@@ -61,7 +61,7 @@ const formSchema = z.object({
         'app.highline.register.fields.distance.errors.invalid_type',
       ),
     })
-    .positive(
+    .nonnegative(
       i18next.t('app.highline.register.fields.distance.errors.positive'),
     ),
   time: z
@@ -253,6 +253,7 @@ export default function RegisterWalk() {
   };
 
   const formData = form.getValues();
+  const footerBottomInset = Platform.OS === 'ios' ? insets.bottom : 0;
 
   if (formMutation.isSuccess) {
     return <SuccessCard offline={false} data={formData} />;
@@ -263,230 +264,247 @@ export default function RegisterWalk() {
   }
 
   return (
-    <KeyboardAwareScrollView
-      contentContainerClassName="gap-4 p-4"
-      contentContainerStyle={{
-        flexGrow: 1,
-        paddingBottom: 32 + insets.bottom + insets.top,
-      }}
-      keyboardShouldPersistTaps="handled"
-      removeClippedSubviews={false}
-    >
-      <BottomSheetModalProvider>
-        <Controller
-          control={form.control}
-          name="username"
-          render={({ field, fieldState }) => (
-            <View className="gap-2">
-              <View>
-                <Label nativeID="username">
-                  {t('app.highline.register.fields.instagram.label')}
-                </Label>
-                <Text variant="muted">
-                  {t('app.highline.register.fields.instagram.description')}
-                </Text>
-              </View>
-              <Input
-                placeholder="@choosen"
-                aria-labelledby="username"
-                className={fieldState.error && 'border-destructive'}
-                onChangeText={field.onChange}
-                value={field.value}
-              />
-              {fieldState.error ? (
-                <Text variant="small" className="text-destructive">
-                  {fieldState.error.message}
-                </Text>
-              ) : null}
-            </View>
-          )}
-        />
+    <BottomSheetModalProvider>
+      <View className="flex-1 bg-background">
+        <View className="items-center px-4 pt-3 pb-2">
+          <View className="h-1.5 w-10 rounded-full bg-gray-300" />
+        </View>
 
-        <Controller
-          control={form.control}
-          name="cadenas"
-          render={({ field }) => (
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <Label nativeID="entry-cadenas">
-                  {t('app.highline.register.fields.cadenas.label')}
-                </Label>
-                <Text variant="muted">
-                  {t('app.highline.register.fields.cadenas.description')}
-                </Text>
-              </View>
-              <NumberPicker
-                value={field.value}
-                onChange={(cadenas) => {
-                  field.onChange(cadenas);
-                  syncDistanceFromPasses({ cadenas });
-                }}
-              />
-            </View>
-          )}
-        />
-
-        <Controller
-          control={form.control}
-          name="full_lines"
-          render={({ field }) => (
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <Label nativeID="entry-full_lines">
-                  {t('app.highline.register.fields.full_lines.label')}
-                </Label>
-                <Text variant="muted">
-                  {t('app.highline.register.fields.full_lines.description')}
-                </Text>
-              </View>
-              <NumberPicker
-                value={field.value}
-                onChange={(fullLines) => {
-                  field.onChange(fullLines);
-                  syncDistanceFromPasses({ fullLines });
-                }}
-              />
-            </View>
-          )}
-        />
-
-        <Controller
-          control={form.control}
-          name="distance"
-          render={({ field, fieldState }) => (
-            <View className="gap-2">
-              <View>
-                <Label nativeID="entry-distance">
-                  {t('app.highline.register.fields.distance.label')}
-                </Label>
-                <Text variant="muted">
-                  {t('app.highline.register.fields.distance.description')}
-                </Text>
-              </View>
-              <Input
-                aria-labelledby="entry-distance"
-                keyboardType="number-pad"
-                returnKeyType="done"
-                className={fieldState.error && 'border-destructive'}
-                onChangeText={(text) => field.onChange(+text || 0)}
-                value={field.value?.toString()}
-              />
-              {fieldState.error ? (
-                <Text variant="small" className="text-destructive">
-                  {fieldState.error.message}
-                </Text>
-              ) : null}
-            </View>
-          )}
-        />
-
-        <Controller
-          control={form.control}
-          name="time"
-          render={({ field, fieldState }) => (
-            <View className="gap-2">
-              <View>
-                <Label nativeID="entry-time">
-                  {t('app.highline.register.fields.time.label')}{' '}
-                  <Text variant="muted">{t('common.optional')}</Text>
-                </Label>
-                <Text variant="muted">
-                  {t('app.highline.register.fields.time.description')}
-                </Text>
-              </View>
-              <Input
-                placeholder={t('app.highline.register.fields.time.placeholder')}
-                aria-labelledby="entry-time"
-                keyboardType="numbers-and-punctuation"
-                className={fieldState.error && 'border-destructive'}
-                onChangeText={field.onChange}
-                value={field.value}
-              />
-              {fieldState.error ? (
-                <Text variant="small" className="text-destructive">
-                  {fieldState.error.message}
-                </Text>
-              ) : null}
-            </View>
-          )}
-        />
-
-        <Controller
-          control={form.control}
-          name="witness"
-          render={({ field, fieldState }) => (
-            <View className="gap-2">
-              <View>
-                <Label nativeID="entry-witness">
-                  {t('app.highline.register.fields.witness.label')}{' '}
-                  <Text variant="muted">{t('common.optional')}</Text>
-                </Label>
-                <Text variant="muted">
-                  {t('app.highline.register.fields.witness.description')}
-                </Text>
-              </View>
-              <UserPicker
-                defaultValue={field.value}
-                onValueChange={field.onChange}
-                placeholder={t(
-                  'app.highline.register.fields.witness.placeholder',
-                )}
-                canPickNonUser
-              />
-              {fieldState.error ? (
-                <Text variant="small" className="text-destructive">
-                  {fieldState.error.message}
-                </Text>
-              ) : null}
-            </View>
-          )}
-        />
-
-        <Controller
-          control={form.control}
-          name="comment"
-          render={({ field, fieldState }) => (
-            <View className="gap-2">
-              <Label nativeID="entry-comment">
-                {t('app.highline.register.fields.comment.label')}{' '}
-                <Text variant="muted">{t('common.optional')}</Text>
-              </Label>
-              <Textarea
-                keyboardType="default"
-                returnKeyType="done"
-                placeholder={t(
-                  'app.highline.register.fields.comment.placeholder',
-                )}
-                aria-labelledby="entry-comment"
-                className={fieldState.error && 'border-destructive'}
-                onChangeText={field.onChange}
-                value={field.value}
-                submitBehavior="blurAndSubmit"
-                onSubmitEditing={() => {
-                  Keyboard.dismiss();
-                }}
-              />
-              {fieldState.error ? (
-                <Text variant="small" className="text-destructive">
-                  {fieldState.error.message}
-                </Text>
-              ) : null}
-            </View>
-          )}
-        />
-
-        <Button
-          onPress={form.handleSubmit(onValid, onInvalid)}
-          disabled={formMutation.isPending}
+        <KeyboardAwareScrollView
+          contentContainerClassName="px-4 pb-6"
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingTop: 8,
+          }}
+          keyboardShouldPersistTaps="handled"
+          removeClippedSubviews={false}
         >
-          <Text>
-            {formMutation.isPending
-              ? t('app.highline.register.buttons.submit.loading')
-              : t('app.highline.register.buttons.submit.default')}
-          </Text>
-        </Button>
-      </BottomSheetModalProvider>
-    </KeyboardAwareScrollView>
+          <View className="gap-4">
+            <Controller
+              control={form.control}
+              name="username"
+              render={({ field, fieldState }) => (
+                <View className="gap-2">
+                  <View>
+                    <Label nativeID="username">
+                      {t('app.highline.register.fields.instagram.label')}
+                    </Label>
+                    <Text variant="muted">
+                      {t('app.highline.register.fields.instagram.description')}
+                    </Text>
+                  </View>
+                  <Input
+                    placeholder="@choosen"
+                    aria-labelledby="username"
+                    className={fieldState.error && 'border-destructive'}
+                    onChangeText={field.onChange}
+                    value={field.value}
+                  />
+                  {fieldState.error ? (
+                    <Text variant="small" className="text-destructive">
+                      {fieldState.error.message}
+                    </Text>
+                  ) : null}
+                </View>
+              )}
+            />
+
+            <Controller
+              control={form.control}
+              name="cadenas"
+              render={({ field }) => (
+                <View className="flex-row gap-3">
+                  <View className="flex-1">
+                    <Label nativeID="entry-cadenas">
+                      {t('app.highline.register.fields.cadenas.label')}
+                    </Label>
+                    <Text variant="muted">
+                      {t('app.highline.register.fields.cadenas.description')}
+                    </Text>
+                  </View>
+                  <NumberPicker
+                    value={field.value}
+                    onChange={(cadenas) => {
+                      field.onChange(cadenas);
+                      syncDistanceFromPasses({ cadenas });
+                    }}
+                  />
+                </View>
+              )}
+            />
+
+            <Controller
+              control={form.control}
+              name="full_lines"
+              render={({ field }) => (
+                <View className="flex-row gap-3">
+                  <View className="flex-1">
+                    <Label nativeID="entry-full_lines">
+                      {t('app.highline.register.fields.full_lines.label')}
+                    </Label>
+                    <Text variant="muted">
+                      {t('app.highline.register.fields.full_lines.description')}
+                    </Text>
+                  </View>
+                  <NumberPicker
+                    value={field.value}
+                    onChange={(fullLines) => {
+                      field.onChange(fullLines);
+                      syncDistanceFromPasses({ fullLines });
+                    }}
+                  />
+                </View>
+              )}
+            />
+
+            <Controller
+              control={form.control}
+              name="distance"
+              render={({ field, fieldState }) => (
+                <View className="gap-2">
+                  <View>
+                    <Label nativeID="entry-distance">
+                      {t('app.highline.register.fields.distance.label')}
+                    </Label>
+                    <Text variant="muted">
+                      {t('app.highline.register.fields.distance.description')}
+                    </Text>
+                  </View>
+                  <Input
+                    aria-labelledby="entry-distance"
+                    keyboardType="number-pad"
+                    returnKeyType="done"
+                    className={fieldState.error && 'border-destructive'}
+                    onChangeText={(text) => field.onChange(+text || 0)}
+                    value={field.value?.toString()}
+                  />
+                  {fieldState.error ? (
+                    <Text variant="small" className="text-destructive">
+                      {fieldState.error.message}
+                    </Text>
+                  ) : null}
+                </View>
+              )}
+            />
+
+            <Controller
+              control={form.control}
+              name="time"
+              render={({ field, fieldState }) => (
+                <View className="gap-2">
+                  <View>
+                    <Label nativeID="entry-time">
+                      {t('app.highline.register.fields.time.label')}{' '}
+                      <Text variant="muted">{t('common.optional')}</Text>
+                    </Label>
+                    <Text variant="muted">
+                      {t('app.highline.register.fields.time.description')}
+                    </Text>
+                  </View>
+                  <Input
+                    placeholder={t(
+                      'app.highline.register.fields.time.placeholder',
+                    )}
+                    aria-labelledby="entry-time"
+                    keyboardType="numbers-and-punctuation"
+                    className={fieldState.error && 'border-destructive'}
+                    onChangeText={field.onChange}
+                    value={field.value}
+                  />
+                  {fieldState.error ? (
+                    <Text variant="small" className="text-destructive">
+                      {fieldState.error.message}
+                    </Text>
+                  ) : null}
+                </View>
+              )}
+            />
+
+            <Controller
+              control={form.control}
+              name="witness"
+              render={({ field, fieldState }) => (
+                <View className="gap-2">
+                  <View>
+                    <Label nativeID="entry-witness">
+                      {t('app.highline.register.fields.witness.label')}{' '}
+                      <Text variant="muted">{t('common.optional')}</Text>
+                    </Label>
+                    <Text variant="muted">
+                      {t('app.highline.register.fields.witness.description')}
+                    </Text>
+                  </View>
+                  <UserPicker
+                    defaultValue={field.value}
+                    onValueChange={field.onChange}
+                    placeholder={t(
+                      'app.highline.register.fields.witness.placeholder',
+                    )}
+                    canPickNonUser
+                  />
+                  {fieldState.error ? (
+                    <Text variant="small" className="text-destructive">
+                      {fieldState.error.message}
+                    </Text>
+                  ) : null}
+                </View>
+              )}
+            />
+
+            <Controller
+              control={form.control}
+              name="comment"
+              render={({ field, fieldState }) => (
+                <View className="gap-2">
+                  <Label nativeID="entry-comment">
+                    {t('app.highline.register.fields.comment.label')}{' '}
+                    <Text variant="muted">{t('common.optional')}</Text>
+                  </Label>
+                  <Textarea
+                    keyboardType="default"
+                    returnKeyType="default"
+                    placeholder={t(
+                      'app.highline.register.fields.comment.placeholder',
+                    )}
+                    aria-labelledby="entry-comment"
+                    className={fieldState.error && 'border-destructive'}
+                    onChangeText={field.onChange}
+                    value={field.value}
+                    // Keep Enter as newline for multiline text instead of submitting.
+                    submitBehavior="newline"
+                    onSubmitEditing={() => {
+                      Keyboard.dismiss();
+                    }}
+                  />
+                  {fieldState.error ? (
+                    <Text variant="small" className="text-destructive">
+                      {fieldState.error.message}
+                    </Text>
+                  ) : null}
+                </View>
+              )}
+            />
+          </View>
+        </KeyboardAwareScrollView>
+
+        <View
+          className="border-t border-gray-100 bg-white px-4 pt-3"
+          style={{ paddingBottom: footerBottomInset + 16 }}
+        >
+          <Button
+            className="w-full"
+            onPress={form.handleSubmit(onValid, onInvalid)}
+            disabled={formMutation.isPending}
+          >
+            <Text>
+              {formMutation.isPending
+                ? t('app.highline.register.buttons.submit.loading')
+                : t('app.highline.register.buttons.submit.default')}
+            </Text>
+          </Button>
+        </View>
+      </View>
+    </BottomSheetModalProvider>
   );
 }
 
@@ -523,13 +541,6 @@ const SuccessCard: React.FC<SuccessCardProps> = ({ offline, data }) => {
     }
   };
 
-  const mainType =
-    data.cadenas > 0
-      ? t('app.highline.register.success.mainType.cadena')
-      : data.full_lines > 0
-        ? t('app.highline.register.success.mainType.fullLine')
-        : t('app.highline.register.success.mainType.walk');
-
   return (
     <View className="flex-1 bg-background">
       {/* Shareable Content */}
@@ -546,9 +557,9 @@ const SuccessCard: React.FC<SuccessCardProps> = ({ offline, data }) => {
 
         <View
           className="flex-1 justify-center px-6"
-          style={{ 
+          style={{
             paddingTop: insets.top,
-            paddingBottom: insets.bottom + 120 // Space for bottom buttons
+            paddingBottom: insets.bottom + 120, // Space for bottom buttons
           }}
         >
           <View className="overflow-hidden rounded-3xl border border-white/20">
@@ -560,11 +571,6 @@ const SuccessCard: React.FC<SuccessCardProps> = ({ offline, data }) => {
                 <View className="items-center gap-2">
                   <Text className="text-white font-bold text-3xl tracking-wider text-center">
                     {t('app.highline.register.success.title') || 'NICE SEND!'}
-                  </Text>
-                  <Text className="text-white/90 text-sm font-medium uppercase tracking-widest text-center">
-                    {t('app.highline.register.success.recorded_label', {
-                      type: mainType,
-                    })}
                   </Text>
                 </View>
 

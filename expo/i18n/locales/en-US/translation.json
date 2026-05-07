@@ -238,12 +238,6 @@
           "message": "Your session has been recorded and will be used to calculate your statistics.",
           "offlineMessage": "Since you are offline, the next time you get an internet connection your walk will be saved",
           "button": "View Highline",
-          "mainType": {
-            "cadena": "Cadena",
-            "fullLine": "Full Line",
-            "walk": "Walk"
-          },
-          "recorded_label": "{{type}} Recorded",
           "distance_label": "Distance",
           "time_label": "Time",
           "count_label": "Count",
