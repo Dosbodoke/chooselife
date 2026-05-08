@@ -1,5 +1,8 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
+const googleServicesFile =
+  process.env.GOOGLE_SERVICES_JSON ?? './credentials/google-services.json';
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'ChooseLife',
@@ -29,7 +32,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: 'com.bodok.chooselife',
-    googleServicesFile: './credentials/google-services.json',
+    googleServicesFile,
     intentFilters: [
       {
         action: 'VIEW',
