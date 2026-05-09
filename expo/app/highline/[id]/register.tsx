@@ -492,7 +492,7 @@ export default function RegisterWalk() {
           style={{ paddingBottom: footerBottomInset + 16 }}
         >
           <Button
-            className="w-full"
+            className="w-full rounded-3xl"
             onPress={form.handleSubmit(onValid, onInvalid)}
             disabled={formMutation.isPending}
           >

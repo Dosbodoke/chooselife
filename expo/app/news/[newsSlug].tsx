@@ -139,14 +139,6 @@ export default function NewsDetail() {
     );
   }
 
-  if (isError || !news) {
-    return (
-      <View className="flex-1 justify-center items-center bg-white">
-        <Text className="text-red-500">Erro ao carregar a discussão.</Text>
-      </View>
-    );
-  }
-
   const handleAddComment = () => {
     if (!commentText.trim()) return;
 
@@ -156,6 +148,19 @@ export default function NewsDetail() {
       },
     });
   };
+
+  const handleLinkPress = (url: string) => {
+    // @ts-expect-error - We don't have type safety for markdown link presses
+    router.push(url);
+  };
+
+  if (isError || !news) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white">
+        <Text className="text-red-500">Erro ao carregar a discussão.</Text>
+      </View>
+    );
+  }
 
   return (
     <>
@@ -196,7 +201,7 @@ export default function NewsDetail() {
             </Text>
 
             <View className="mb-6">
-              <Markdown markdown={news.content} />
+              <Markdown markdown={news.content} onLinkPress={handleLinkPress} />
             </View>
             <View className="border-t border-gray-200 pt-4">
               <Text className="text-lg font-bold mb-4 text-black">
