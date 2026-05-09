@@ -3,6 +3,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useMapStore } from '~/store/map-store';
 import React, { useCallback, useMemo } from 'react';
 import { Pressable, View } from 'react-native';
+import SuperclusterClass, {
+  isClusterFeature,
+  type Supercluster,
+} from 'react-native-clusterer';
 import Animated, {
   interpolate,
   interpolateColor,
@@ -10,10 +14,6 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import SuperclusterClass, {
-  isClusterFeature,
-  type Supercluster,
-} from 'react-native-clusterer';
 
 import { useAuth } from '~/context/auth';
 import { highlineKeyFactory, type Highline } from '~/hooks/use-highline';
@@ -38,9 +38,9 @@ const statusColor: Record<RigStatuses, string> = {
 };
 
 const lineStatusColor: Record<RigStatuses, string> = {
-  planned: '#ffd54f', // Amber 300
-  rigged: '#22C55E',  // Green 500
-  unrigged: '#f44336', // Red 500
+  planned: '#ffd54f',
+  rigged: '#22C55E',
+  unrigged: '#f44336',
 };
 
 const AnchorMarker: React.FC<{
@@ -65,12 +65,13 @@ const LengthLabel: React.FC<{ distance: number; isHighlighted: boolean }> = ({
   isHighlighted,
 }) => (
   <View
+    pointerEvents="none"
     style={{ opacity: isHighlighted ? 1 : 0.7 }}
     className="bg-black/60 rounded-md px-2 py-1"
   >
-    <Text className="text-white font-semibold text-xs">{`${Math.round(
-      distance,
-    )}m`}</Text>
+    <Text className="text-white font-semibold text-xs">
+      {`${Math.round(distance)}m`}
+    </Text>
   </View>
 );
 
@@ -80,13 +81,16 @@ const AnimatedCluster: React.FC<{
   onPress: () => void;
 }> = ({ pointCount, size, onPress }) => {
   const animation = useSharedValue(0);
+
   const animatedStyle = useAnimatedStyle(() => {
     const backgroundColor = interpolateColor(
       animation.value,
       [0, 1],
       ['#FFFFFF', '#93C5FD'],
     );
+
     const scale = interpolate(animation.value, [0, 1], [1, 0.9]);
+
     return {
       backgroundColor,
       transform: [{ scale }],
@@ -97,7 +101,8 @@ const AnimatedCluster: React.FC<{
     animation.value = withSpring(1, {}, () => {
       animation.value = withSpring(0);
     });
-    if (onPress) onPress();
+
+    onPress();
   };
 
   return (
@@ -140,11 +145,13 @@ export const Markers: React.FC<{
 }> = ({ cameraRef, highlines, updateMarkers }) => {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
+
   const camera = useMapStore((state) => state.camera);
   const highlightedMarker = useMapStore((state) => state.highlightedMarker);
 
   const points = useMemo<Supercluster.PointFeature<PointProperties>[]>(() => {
     if (!highlines) return [];
+
     return highlines.map((h) => ({
       type: 'Feature',
       properties: {
@@ -171,16 +178,76 @@ export const Markers: React.FC<{
     return supercluster.getClusters(camera.bounds, Math.floor(camera.zoom));
   }, [supercluster, camera.bounds, camera.zoom]);
 
+  /**
+   * These are the highlines whose Anchor A is actually visible as an individual
+   * marker at the current zoom/bounds.
+   *
+   * If a highline is inside a cluster, it will NOT be in this set.
+   * That means its distance label, line and Anchor B should not render.
+   */
+  const visibleAnchorAHighlineIds = useMemo(() => {
+    const ids = new Set<string>();
+
+    clusters.forEach((point) => {
+      if (!isClusterFeature(point)) {
+        ids.add(point.properties.highID);
+      }
+    });
+
+    return ids;
+  }, [clusters]);
+
+  /**
+   * Distance labels, lines and Anchor B markers are low-priority details.
+   * They should only render when:
+   *
+   * 1. The highline's Anchor A is visible individually; or
+   * 2. The highline is currently highlighted.
+   */
+  const detailHighlines = useMemo(() => {
+    if (highlightedMarker) {
+      const highlightedFromList = highlines?.find(
+        (highline) => highline.id === highlightedMarker.id,
+      );
+
+      return highlightedFromList ? [highlightedFromList] : [highlightedMarker];
+    }
+
+    if (!highlines) return [];
+
+    return highlines.filter((highline) =>
+      visibleAnchorAHighlineIds.has(highline.id),
+    );
+  }, [highlines, highlightedMarker, visibleAnchorAHighlineIds]);
+
+  /**
+   * When a highlighted highline is still inside a cluster during the camera
+   * transition, clusters are hidden and the normal Anchor A loop won't render it.
+   * This fallback guarantees the selected highline still has its Anchor A.
+   */
+  const forcedHighlightedAnchorA = useMemo(() => {
+    if (!highlightedMarker) return null;
+
+    if (visibleAnchorAHighlineIds.has(highlightedMarker.id)) {
+      return null;
+    }
+
+    return highlightedMarker;
+  }, [highlightedMarker, visibleAnchorAHighlineIds]);
+
   const handleClusterPress = useCallback(
     (cluster_id: number): void => {
       const expansionZoom =
         supercluster.getClusterExpansionZoom(cluster_id) || 20;
+
       const clampedZoom = Math.min(expansionZoom, 17);
+
       const cluster = clusters.find(
-        (c) =>
-          isClusterFeature(c) && c.properties.cluster_id === cluster_id,
+        (c) => isClusterFeature(c) && c.properties.cluster_id === cluster_id,
       );
+
       if (!cluster) return;
+
       const [lng, lat] = cluster.geometry.coordinates;
 
       const zoomDifference = clampedZoom - camera.zoom;
@@ -188,20 +255,28 @@ export const Markers: React.FC<{
 
       if (shouldHighlightCards) {
         const leaves = supercluster.getLeaves(cluster_id, Infinity);
+
         const highlinesData =
           queryClient.getQueryData<Highline[]>(
             highlineKeyFactory.list(profile?.id),
           ) || [];
+
         const highlinesFromLeaves: Highline[] = [];
-        leaves.forEach((l) => {
+
+        leaves.forEach((leaf) => {
           const highline = highlinesData.find(
-            (high) => high.id === l.properties.highID,
+            (high) => high.id === leaf.properties.highID,
           );
-          if (highline) highlinesFromLeaves.push(highline);
+
+          if (highline) {
+            highlinesFromLeaves.push(highline);
+          }
         });
+
         if (highlinesFromLeaves.length > 0) {
           updateMarkers(highlinesFromLeaves, highlinesFromLeaves[0]);
         }
+
         return;
       }
 
@@ -230,6 +305,7 @@ export const Markers: React.FC<{
           highlineKeyFactory.list(profile?.id),
         ) || []
       ).find((high) => high.id === highID);
+
       if (highline) {
         updateMarkers([highline], highline);
       }
@@ -239,58 +315,19 @@ export const Markers: React.FC<{
 
   return (
     <>
-      {/* Loop 1: Render Anchor A's and Clusters */}
-      {clusters.map((point) => {
-        const [longitude, latitude] = point.geometry.coordinates;
-        if (typeof longitude !== 'number' || typeof latitude !== 'number') {
-          return null;
-        }
+      {/* 
+        Low-priority details first.
 
-        if (isClusterFeature(point)) {
-          // Hide clusters when individual markers are selected
-          if (highlightedMarker) {
-            return null;
-          }
-          const size = Math.max(
-            (point.properties.point_count * 40) / (points.length || 1),
-            MIN_CLUSTER_SIZE,
-          );
-          return (
-            <ClusteredMarker
-              key={`cluster-${point.properties.cluster_id}`}
-              size={size}
-              coordinate={[longitude, latitude]}
-              pointCount={point.properties.point_count}
-              onPress={() => handleClusterPress(point.properties.cluster_id)}
-            />
-          );
-        }
-
-        const isHighlighted =
-          highlightedMarker?.id === point.properties.highID;
-        return (
-          <MapboxGL.MarkerView
-            key={`marker-A-${point.properties.highID}`}
-            id={`marker-A-${point.properties.highID}`}
-            coordinate={[longitude, latitude]}
-          >
-            <Pressable
-              onPress={() => handleMarkerSelect(point.properties.highID)}
-            >
-              <AnchorMarker
-                label="A"
-                isHighlighted={isHighlighted}
-                status={point.properties.status}
-              />
-            </Pressable>
-          </MapboxGL.MarkerView>
-        );
-      })}
-
-      {/* Loop 2: Render Polylines, Anchor B's, and Length Labels */}
-      {highlines?.map((highline) => {
-        // Filter visibility when a marker/cluster is highlighted
-        if (highlightedMarker && highlightedMarker.id !== highline.id) {
+        Distance labels should never win visually over clusters or Anchor A.
+        They are only rendered for visible individual highlines or highlighted one.
+      */}
+      {detailHighlines.map((highline) => {
+        if (
+          typeof highline.anchor_a_lat !== 'number' ||
+          typeof highline.anchor_a_long !== 'number' ||
+          typeof highline.anchor_b_lat !== 'number' ||
+          typeof highline.anchor_b_long !== 'number'
+        ) {
           return null;
         }
 
@@ -307,33 +344,6 @@ export const Markers: React.FC<{
 
         return (
           <React.Fragment key={`details-${highline.id}`}>
-            <MapboxGL.MarkerView
-              key={`marker-A-${highline.id}`}
-              id={`marker-A-${highline.id}`}
-              coordinate={[highline.anchor_a_long, highline.anchor_a_lat]}
-            >
-              <Pressable onPress={() => handleMarkerSelect(highline.id)}>
-                <AnchorMarker
-                  label="A"
-                  isHighlighted={isHighlighted}
-                  status={highline.status as RigStatuses}
-                />
-              </Pressable>
-            </MapboxGL.MarkerView>
-
-            <MapboxGL.MarkerView
-              id={`marker-B-${highline.id}`}
-              coordinate={[highline.anchor_b_long, highline.anchor_b_lat]}
-            >
-              <Pressable onPress={() => handleMarkerSelect(highline.id)}>
-                <AnchorMarker
-                  label="B"
-                  isHighlighted={isHighlighted}
-                  status={highline.status as RigStatuses}
-                />
-              </Pressable>
-            </MapboxGL.MarkerView>
-
             <MapboxGL.ShapeSource
               id={`line-${highline.id}`}
               shape={{
@@ -372,9 +382,105 @@ export const Markers: React.FC<{
             >
               <LengthLabel distance={distance} isHighlighted={isHighlighted} />
             </MapboxGL.MarkerView>
+
+            <MapboxGL.MarkerView
+              id={`marker-B-${highline.id}`}
+              coordinate={[highline.anchor_b_long, highline.anchor_b_lat]}
+            >
+              <Pressable onPress={() => handleMarkerSelect(highline.id)}>
+                <AnchorMarker
+                  label="B"
+                  isHighlighted={isHighlighted}
+                  status={highline.status as RigStatuses}
+                />
+              </Pressable>
+            </MapboxGL.MarkerView>
           </React.Fragment>
         );
       })}
+
+      {/* 
+  High-priority markers second.
+
+  When a highline is highlighted, only its own Anchor A should render.
+  All other Anchor A markers must be hidden.
+*/}
+      {clusters.map((point) => {
+        const [longitude, latitude] = point.geometry.coordinates;
+
+        if (typeof longitude !== 'number' || typeof latitude !== 'number') {
+          return null;
+        }
+
+        if (isClusterFeature(point)) {
+          if (highlightedMarker) {
+            return null;
+          }
+
+          const size = Math.max(
+            (point.properties.point_count * 40) / (points.length || 1),
+            MIN_CLUSTER_SIZE,
+          );
+
+          return (
+            <ClusteredMarker
+              key={`cluster-${point.properties.cluster_id}`}
+              size={size}
+              coordinate={[longitude, latitude]}
+              pointCount={point.properties.point_count}
+              onPress={() => handleClusterPress(point.properties.cluster_id)}
+            />
+          );
+        }
+
+        if (
+          highlightedMarker &&
+          highlightedMarker.id !== point.properties.highID
+        ) {
+          return null;
+        }
+
+        const isHighlighted = highlightedMarker?.id === point.properties.highID;
+
+        return (
+          <MapboxGL.MarkerView
+            key={`marker-A-${point.properties.highID}`}
+            id={`marker-A-${point.properties.highID}`}
+            coordinate={[longitude, latitude]}
+          >
+            <Pressable
+              onPress={() => handleMarkerSelect(point.properties.highID)}
+            >
+              <AnchorMarker
+                label="A"
+                isHighlighted={isHighlighted}
+                status={point.properties.status}
+              />
+            </Pressable>
+          </MapboxGL.MarkerView>
+        );
+      })}
+
+      {forcedHighlightedAnchorA ? (
+        <MapboxGL.MarkerView
+          key={`marker-A-highlighted-${forcedHighlightedAnchorA.id}`}
+          id={`marker-A-highlighted-${forcedHighlightedAnchorA.id}`}
+          coordinate={[
+            forcedHighlightedAnchorA.anchor_a_long,
+            forcedHighlightedAnchorA.anchor_a_lat,
+          ]}
+        >
+          <Pressable
+            onPress={() => handleMarkerSelect(forcedHighlightedAnchorA.id)}
+          >
+            <AnchorMarker
+              label="A"
+              isHighlighted
+              status={forcedHighlightedAnchorA.status as RigStatuses}
+            />
+          </Pressable>
+        </MapboxGL.MarkerView>
+      ) : null}
     </>
   );
 };
