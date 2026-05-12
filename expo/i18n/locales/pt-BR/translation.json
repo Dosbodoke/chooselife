@@ -207,7 +207,7 @@
         "delete": {
           "label": "Deletar Conta",
           "alertLabel": "Deletar sua Conta",
-          "alertDescription": "Isto irá remover permanentemente todos os seus dados. Esta ação não pode ser desfeita.",
+          "alertDescription": "Isto irá excluir permanentemente sua conta e seus dados pessoais dos sistemas ativos. Cópias de backup e logs do sistema são removidos ou anonimizados em até 30 dias, salvo quando formos legalmente obrigados a mantê-los por mais tempo. Esta ação não pode ser desfeita.",
           "alertCancel": "Cancelar",
           "alertConfirm": "Deletar Conta",
           "alertError": "Não foi possível deletar a conta. Por favor, tente novamente."

@@ -288,6 +288,12 @@
       "p2": "We only retain collected information for as long as necessary to provide you with your requested service. What data we store, we'll protect within commercially acceptable means to prevent loss and theft, as well as unauthorized access, disclosure, copying, use or modification.",
       "p3": "We don't share any personally identifying information publicly or with third-parties, except when required to by law."
     },
+    "dataRetentionDeletion": {
+      "title": "Data Retention and Deletion",
+      "p1": "We retain your account information, profile details, highline activity, uploaded content, and app usage data for as long as your account is active or as long as needed to provide the ChooseLife service, maintain safety and integrity, comply with legal obligations, resolve disputes, and enforce our terms.",
+      "p2": "You can request deletion of your account directly in the mobile app by opening Profile, going to Settings, and tapping Delete Account. After you confirm, we delete your account and associated personal information from active systems. Some records may be retained only when required by law, for security, fraud prevention, accounting, dispute resolution, or backup recovery purposes.",
+      "p3": "Backup copies and system logs are removed or anonymized within 30 days unless we are legally required to keep them longer. If you cannot access the app, contact us and we will help process your deletion request."
+    },
     "cookies": {
       "title": "Use of Cookies",
       "p1": "We use cookies to improve your experience on our site. Specifically, we use cookies for authentication purposes with Supabase, our backend provider. These cookies are essential for the website's functionality and to keep you logged in during your session.",

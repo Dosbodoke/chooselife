@@ -29,6 +29,13 @@ export default async function PrivacyPolicyPage() {
           <p>{t("collectionUse.p2")}</p>
           <p>{t("collectionUse.p3")}</p>
 
+          <h2 className="mt-6 text-xl font-semibold">
+            {t("dataRetentionDeletion.title")}
+          </h2>
+          <p>{t("dataRetentionDeletion.p1")}</p>
+          <p>{t("dataRetentionDeletion.p2")}</p>
+          <p>{t("dataRetentionDeletion.p3")}</p>
+
           <h2 className="mt-6 text-xl font-semibold">{t("cookies.title")}</h2>
           <p>{t("cookies.p1")}</p>
           <p>{t("cookies.p2")}</p>

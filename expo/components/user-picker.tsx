@@ -8,13 +8,7 @@ import {
 } from '@gorhom/bottom-sheet';
 import { useQuery } from '@tanstack/react-query';
 import { BadgeCheckIcon, SearchIcon, XIcon } from 'lucide-react-native';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Image,
@@ -61,16 +55,33 @@ interface UserPickerProps {
   className?: string;
 }
 
+type VerifiedProfile = Tables<'profiles'> & {
+  username: string;
+};
+
+const hasUsername = (
+  profile: Tables<'profiles'>,
+): profile is VerifiedProfile => {
+  return typeof profile.username === 'string' && profile.username.length > 0;
+};
+
+const getUserPickerValue = (options: UserOption[]) => {
+  const usernames = options.map((value) => value.username);
+  const userIds = options.map((value) => value.id || '').filter(Boolean);
+
+  return {
+    usernames,
+    userIds,
+  };
+};
+
 const Badge: React.FC<{
   children: React.ReactNode;
   onRemove?: () => void;
   variant?: 'default' | 'selected';
 }> = ({ children, onRemove, variant = 'default' }) => {
   const handlePress = useCallback(() => {
-    if (onRemove) {
-      // Immediate action without waiting for animation
-      onRemove();
-    }
+    onRemove?.();
   }, [onRemove]);
 
   return (
@@ -86,6 +97,7 @@ const Badge: React.FC<{
       exiting={FadeOutDown.damping(DAMPING).stiffness(STIFFNESS).springify()}
     >
       {children}
+
       {onRemove && (
         <Pressable hitSlop={18} onPress={handlePress}>
           <Icon as={XIcon} className="size-4 text-red-400" strokeWidth={3} />
@@ -95,7 +107,6 @@ const Badge: React.FC<{
   );
 };
 
-// Selection Summary Component
 const SelectionSummary: React.FC<{
   selectedCount: number;
   minSelection: number;
@@ -104,11 +115,16 @@ const SelectionSummary: React.FC<{
   const getSelectionText = (): string => {
     if (minSelection > 0 && maxSelection) {
       return `(${selectedCount}/${minSelection}-${maxSelection})`;
-    } else if (minSelection > 0) {
+    }
+
+    if (minSelection > 0) {
       return `(${selectedCount}/${minSelection}+)`;
-    } else if (maxSelection) {
+    }
+
+    if (maxSelection) {
       return `(${selectedCount}/${maxSelection})`;
     }
+
     return selectedCount > 0 ? `(${selectedCount})` : '';
   };
 
@@ -119,9 +135,8 @@ const SelectionSummary: React.FC<{
   ) : null;
 };
 
-// Verified User Component
 const VerifiedUser: React.FC<{
-  profile: Tables<'profiles'>;
+  profile: VerifiedProfile;
   canSelectMore: boolean;
   toggleOption: (option: {
     username: string;
@@ -129,40 +144,30 @@ const VerifiedUser: React.FC<{
     id?: string;
   }) => void;
 }> = ({ profile, canSelectMore, toggleOption }) => {
-  if (!profile.username) return null;
-
   const username = profile.username;
   const isDisabled = !canSelectMore;
 
-  const opacity = useSharedValue(1);
   const scale = useSharedValue(1);
 
-  // Use useEffect to update opacity when isDisabled changes
-  useEffect(() => {
-    opacity.value = withTiming(isDisabled ? 0.5 : 1, { duration: 150 });
-  }, [isDisabled, opacity]);
-
   const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
+    opacity: withTiming(isDisabled ? 0.5 : 1, { duration: 150 }),
     transform: [{ scale: scale.value }],
   }));
 
   const handlePress = useCallback(() => {
-    if (!isDisabled) {
-      // Faster animation and immediate action
-      scale.value = withTiming(0.95, { duration: 50 }, (finished) => {
-        if (finished) {
-          scale.value = withTiming(1, { duration: 50 });
-        }
-      });
+    if (isDisabled) return;
 
-      // Execute action immediately
-      toggleOption({
-        username,
-        verified: true,
-        id: profile.id,
-      });
-    }
+    scale.value = withTiming(0.95, { duration: 50 }, (finished) => {
+      if (finished) {
+        scale.value = withTiming(1, { duration: 50 });
+      }
+    });
+
+    toggleOption({
+      username,
+      verified: true,
+      id: profile.id,
+    });
   }, [isDisabled, scale, toggleOption, username, profile.id]);
 
   return (
@@ -177,7 +182,6 @@ const VerifiedUser: React.FC<{
           <Image
             source={{ uri: profile.profile_picture }}
             className="w-6 h-6 rounded-full mr-3"
-            // defaultSource={require('./placeholder.png')} // Add a placeholder image
           />
         )}
 
@@ -185,6 +189,7 @@ const VerifiedUser: React.FC<{
           <Text className="text-sm font-medium text-gray-900" numberOfLines={1}>
             {profile.name}
           </Text>
+
           <Text className="text-sm text-gray-500">{username}</Text>
         </View>
 
@@ -194,7 +199,6 @@ const VerifiedUser: React.FC<{
   );
 };
 
-// Unverified User Component
 const UnverifiedUser: React.FC<{
   normalizedSearch: string;
   toggleOption: (option: {
@@ -210,14 +214,12 @@ const UnverifiedUser: React.FC<{
   }));
 
   const handlePress = useCallback(() => {
-    // Faster animation and immediate action
     scale.value = withTiming(0.95, { duration: 50 }, (finished) => {
       if (finished) {
         scale.value = withTiming(1, { duration: 50 });
       }
     });
 
-    // Execute action immediately
     toggleOption({
       username: normalizedSearch,
       verified: false,
@@ -232,6 +234,7 @@ const UnverifiedUser: React.FC<{
       exiting={FadeOutUp.damping(DAMPING).stiffness(STIFFNESS)}
     >
       <Text className="text-sm font-medium text-gray-500 mb-2">Instagram</Text>
+
       <Animated.View style={animatedStyle}>
         <TouchableOpacity
           onPress={handlePress}
@@ -245,7 +248,6 @@ const UnverifiedUser: React.FC<{
   );
 };
 
-// Main UserPicker Component
 export const UserPicker: React.FC<UserPickerProps> = ({
   defaultValue = [],
   onValueChange,
@@ -258,33 +260,11 @@ export const UserPicker: React.FC<UserPickerProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  // Use ref instead of state for controlling the modal
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const onValueChangeRef = useRef(onValueChange);
-  onValueChangeRef.current = onValueChange;
 
   const snapPoints = useMemo(() => ['80%'], []);
 
   const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounceValue(search);
-  const normalizedSearch = useMemo(
-    () => (!search || search.startsWith('@') ? search : `@${search}`),
-    [search],
-  );
-
-  const { data: profiles, isPending } = useQuery({
-    queryKey: ['profiles', { username: debouncedSearch }],
-    queryFn: async () => {
-      const query = supabase.from('profiles').select('*').neq('name', null);
-      if (debouncedSearch) {
-        query.ilike('username', `%${debouncedSearch}%`);
-      } else {
-        query.limit(5);
-      }
-      const response = await query;
-      return response.data;
-    },
-  });
 
   const [selectedOptions, setSelectedOptions] = useState<UserOption[]>(() => {
     return defaultValue.map((username) => ({
@@ -294,68 +274,114 @@ export const UserPicker: React.FC<UserPickerProps> = ({
     }));
   });
 
-  const unselectedProfiles = React.useMemo(() => {
+  const debouncedSearch = useDebounceValue(search);
+
+  const normalizedSearch = useMemo(
+    () => (!search || search.startsWith('@') ? search : `@${search}`),
+    [search],
+  );
+
+  const { data: profiles, isPending } = useQuery({
+    queryKey: ['profiles', { username: debouncedSearch }],
+    queryFn: async () => {
+      const query = supabase.from('profiles').select('*').neq('name', null);
+
+      if (debouncedSearch) {
+        query.ilike('username', `%${debouncedSearch}%`);
+      } else {
+        query.limit(5);
+      }
+
+      const response = await query;
+
+      return response.data ?? [];
+    },
+  });
+
+  const unselectedProfiles = useMemo(() => {
     if (!profiles) return [];
 
     const selectedUsernames = new Set(
       selectedOptions.map((option) => option.username),
     );
 
-    return profiles.filter(
-      (profile) => profile.username && !selectedUsernames.has(profile.username),
-    );
+    return profiles
+      .filter(hasUsername)
+      .filter((profile) => !selectedUsernames.has(profile.username));
   }, [profiles, selectedOptions]);
 
   const canSelectMore = useMemo(() => {
     if (!maxSelection) return true;
+
     return selectedOptions.length < maxSelection;
   }, [selectedOptions.length, maxSelection]);
 
-  const toggleOption = useCallback(
-    (option: { username: string; verified: boolean; id?: string }) => {
-      setSelectedOptions((prev) => {
-        const idx = prev.findIndex(
-          (value) => value.username === option.username,
-        );
-        if (idx === -1) {
-          if (!maxSelection || prev.length < maxSelection) {
-            setSearch('');
-            return [...prev, option];
-          }
-          return prev;
-        } else {
-          return prev.filter((v) => v.username !== option.username);
-        }
-      });
+  const alreadyHasNormalizedSearch = useMemo(() => {
+    return [...(profiles ?? []), ...selectedOptions].some(
+      (value) => value.username === normalizedSearch,
+    );
+  }, [profiles, selectedOptions, normalizedSearch]);
+
+  const commitSelectedOptions = useCallback(
+    (nextOptions: UserOption[]) => {
+      setSelectedOptions(nextOptions);
+
+      const { usernames, userIds } = getUserPickerValue(nextOptions);
+
+      onValueChange(usernames, userIds);
     },
-    [maxSelection],
+    [onValueChange],
   );
 
-  const removeOption = useCallback((option: UserOption) => {
-    setSelectedOptions((prev) =>
-      prev.filter((item) => item.username !== option.username),
-    );
-  }, []);
+  const toggleOption = useCallback(
+    (option: { username: string; verified: boolean; id?: string }) => {
+      const optionIndex = selectedOptions.findIndex(
+        (value) => value.username === option.username,
+      );
 
-  useEffect(() => {
-    const usernames = selectedOptions.map((value) => value.username);
-    const userIds = selectedOptions
-      .map((value) => value.id || '')
-      .filter(Boolean);
+      if (optionIndex === -1) {
+        if (maxSelection && selectedOptions.length >= maxSelection) {
+          return;
+        }
 
-    onValueChangeRef.current(usernames, userIds);
-  }, [selectedOptions]);
+        const nextOptions = [...selectedOptions, option];
+
+        setSearch('');
+        commitSelectedOptions(nextOptions);
+
+        return;
+      }
+
+      const nextOptions = selectedOptions.filter(
+        (value) => value.username !== option.username,
+      );
+
+      commitSelectedOptions(nextOptions);
+    },
+    [commitSelectedOptions, maxSelection, selectedOptions],
+  );
+
+  const removeOption = useCallback(
+    (option: UserOption) => {
+      const nextOptions = selectedOptions.filter(
+        (item) => item.username !== option.username,
+      );
+
+      commitSelectedOptions(nextOptions);
+    },
+    [commitSelectedOptions, selectedOptions],
+  );
 
   const handleClearAll = useCallback(() => {
-    setSelectedOptions([]);
     setSearch('');
-  }, []);
+    commitSelectedOptions([]);
+  }, [commitSelectedOptions]);
 
   const handlePresentModalPress = useCallback(() => {
     bottomSheetModalRef.current?.present();
   }, []);
 
-  const renderBackdrop = React.useCallback(
+  const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
       <BottomSheetBackdrop
         {...props}
@@ -366,13 +392,12 @@ export const UserPicker: React.FC<UserPickerProps> = ({
     [],
   );
 
-  const handleSearchChange = React.useCallback((text: string) => {
+  const handleSearchChange = useCallback((text: string) => {
     setSearch(text);
   }, []);
 
   return (
     <>
-      {/* Trigger Button */}
       <TouchableOpacity
         onPress={handlePresentModalPress}
         disabled={disabled}
@@ -399,12 +424,14 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                           className="size-4 text-blue-500"
                         />
                       )}
+
                       <Text className="text-sm">{value.username}</Text>
                     </View>
                   </Badge>
                 ))}
               </View>
             </ScrollView>
+
             <SelectionSummary
               selectedCount={selectedOptions.length}
               minSelection={minSelection}
@@ -414,6 +441,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
         ) : (
           <View className="flex-1 flex-row items-center justify-between">
             <Text className="text-sm text-gray-500">{placeholder}</Text>
+
             <SelectionSummary
               selectedCount={selectedOptions.length}
               minSelection={minSelection}
@@ -423,7 +451,6 @@ export const UserPicker: React.FC<UserPickerProps> = ({
         )}
       </TouchableOpacity>
 
-      {/* Bottom Sheet */}
       <BottomSheetModal
         ref={bottomSheetModalRef}
         backdropComponent={renderBackdrop}
@@ -433,19 +460,17 @@ export const UserPicker: React.FC<UserPickerProps> = ({
         enableDynamicSizing={false}
       >
         <BottomSheetView className="flex-1 px-4">
-          {/* Header */}
           <View className="mb-4">
             <Text className="text-lg font-semibold text-center mb-4">
               {t('components.user-picker.header')}
             </Text>
 
-            {/* Search Input */}
             <View className="flex-row items-center bg-white rounded-lg border border-gray-300 px-3">
               <Icon as={SearchIcon} size={20} className="text-primary" />
 
               <BottomSheetTextInput
                 placeholder={t('components.user-picker.searchPlaceholder')}
-                defaultValue={search}
+                value={search}
                 onChangeText={handleSearchChange}
                 className="flex-1 p-4"
                 autoCapitalize="none"
@@ -454,7 +479,6 @@ export const UserPicker: React.FC<UserPickerProps> = ({
             </View>
           </View>
 
-          {/* Selected Users Section */}
           {selectedOptions.length > 0 && (
             <Animated.View
               entering={FadeInUp.damping(DAMPING).stiffness(STIFFNESS)}
@@ -469,12 +493,14 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                     maxSelection={maxSelection}
                   />
                 </Text>
+
                 <TouchableOpacity onPress={handleClearAll}>
                   <Text className="text-red-500 text-sm">
                     {t('components.user-picker.clearAll')}
                   </Text>
                 </TouchableOpacity>
               </View>
+
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View className="flex-row gap-3">
                   {selectedOptions.map((value) => (
@@ -490,37 +516,35 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                             className="size-4 text-blue-500 mr-1"
                           />
                         )}
+
                         <Text className="text-sm">{value.username}</Text>
                       </View>
                     </Badge>
                   ))}
                 </View>
               </ScrollView>
+
               <View className="h-px bg-gray-200 my-4" />
             </Animated.View>
           )}
 
-          {/* Users List */}
           <BottomSheetScrollView layout={_layoutAnimation} className="flex-1">
-            {/* Unverified Users */}
             {canPickNonUser &&
               canSelectMore &&
               search.length > 0 &&
-              ![...(profiles || []), ...selectedOptions].find(
-                (v) => v.username === normalizedSearch,
-              ) && (
+              !alreadyHasNormalizedSearch && (
                 <UnverifiedUser
                   normalizedSearch={normalizedSearch}
                   toggleOption={toggleOption}
                 />
               )}
 
-            {/* Verified Users */}
-            {unselectedProfiles && unselectedProfiles.length > 0 && (
+            {unselectedProfiles.length > 0 && (
               <Animated.View layout={_layoutAnimation} className="gap-4 mb-2">
                 <Text className="text-sm font-medium text-gray-500 mb-2">
                   {t('components.user-picker.verifiedUsers')}
                 </Text>
+
                 {unselectedProfiles.map((profile) => (
                   <VerifiedUser
                     key={profile.id}
@@ -532,7 +556,6 @@ export const UserPicker: React.FC<UserPickerProps> = ({
               </Animated.View>
             )}
 
-            {/* Loading State */}
             {isPending && (
               <View className="gap-2">
                 {[...Array(5)].map((_, index) => (
