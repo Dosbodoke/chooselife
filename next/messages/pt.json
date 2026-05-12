@@ -288,6 +288,12 @@
       "p2": "Apenas retemos as informações coletadas pelo tempo necessário para fornecer o serviço solicitado. Quando armazenamos dados, protegemos dentro de meios comercialmente aceitáveis para evitar perdas e roubos, bem como acesso, divulgação, cópia, uso ou modificação não autorizados.",
       "p3": "Não compartilhamos informações de identificação pessoal publicamente ou com terceiros, exceto quando exigido por lei."
     },
+    "dataRetentionDeletion": {
+      "title": "Retenção e Exclusão de Dados",
+      "p1": "Mantemos as informações da sua conta, dados de perfil, atividades de highline, conteúdos enviados e dados de uso do app enquanto sua conta estiver ativa ou pelo tempo necessário para fornecer o serviço ChooseLife, manter a segurança e a integridade, cumprir obrigações legais, resolver disputas e aplicar nossos termos.",
+      "p2": "Você pode solicitar a exclusão da sua conta diretamente no aplicativo móvel abrindo Perfil, acessando Configurações e tocando em Deletar Conta. Após a confirmação, excluímos sua conta e as informações pessoais associadas dos sistemas ativos. Alguns registros podem ser mantidos apenas quando exigido por lei, por segurança, prevenção de fraude, contabilidade, resolução de disputas ou recuperação de backup.",
+      "p3": "Cópias de backup e logs do sistema são removidos ou anonimizados em até 30 dias, salvo quando formos legalmente obrigados a mantê-los por mais tempo. Se você não conseguir acessar o aplicativo, entre em contato conosco para processarmos sua solicitação de exclusão."
+    },
     "cookies": {
       "title": "Uso de Cookies",
       "p1": "Utilizamos cookies para melhorar a sua experiência em nosso site. Especificamente, usamos cookies para fins de autenticação com o Supabase, nosso provedor de backend. Estes cookies são essenciais para o funcionamento do site e para manter você conectado durante a sua sessão.",

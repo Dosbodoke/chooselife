@@ -207,7 +207,7 @@
         "delete": {
           "label": "Delete Account",
           "alertLabel": "Delete your account",
-          "alertDescription": "This will permanently remove all your data. This action cannot be undone.",
+          "alertDescription": "This will permanently delete your account and personal data from active systems. Backup copies and system logs are removed or anonymized within 30 days unless we are legally required to keep them longer. This action cannot be undone.",
           "alertCancel": "Cancel",
           "alertConfirm": "Delete Account",
           "alertError": "Could not delete account. Please try again."
