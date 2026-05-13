@@ -31,29 +31,38 @@ import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 
+const normalizeProfileUsernameParam = (value: string) => {
+  const normalized = value.trim().replace(/^@+/, '').toLowerCase();
+
+  return `@${normalized}`;
+};
+
 export default function Profile() {
   const { t } = useTranslation();
   const router = useRouter();
   const { bottom } = useSafeAreaInsets();
   const { username } = useLocalSearchParams<{ username: string }>();
+  const normalizedUsername = username
+    ? normalizeProfileUsernameParam(username)
+    : undefined;
 
   const { data: profile, isPending: profilePending } = useQuery({
-    queryKey: ['profile', username],
+    queryKey: ['profile', normalizedUsername],
     queryFn: async () => {
-      if (!username)
+      if (!normalizedUsername)
         throw new Error(t('app.profile.[username].errors.noUsernameError'));
       const { data } = await supabase
         .from('profiles')
         .select('*')
-        .eq('username', username)
+        .eq('username', normalizedUsername)
         .single();
       return data;
     },
-    enabled: !!username,
+    enabled: !!normalizedUsername,
   });
 
   const { data: stats } = useQuery({
-    queryKey: ['profile', username, 'stats'],
+    queryKey: ['profile', normalizedUsername, 'stats'],
     queryFn: async () => {
       if (!profile)
         throw new Error(t('app.profile.[username].errors.profileNotExist'));
@@ -77,7 +86,7 @@ export default function Profile() {
   }
 
   if (!profile) {
-    return <UserNotFound username={username ?? ''} />;
+    return <UserNotFound username={normalizedUsername ?? ''} />;
   }
 
   return (
@@ -96,7 +105,9 @@ export default function Profile() {
           className="p-2 flex-row items-center rounded-full "
         >
           <Icon as={ChevronLeftIcon} className="text-primary size-6" />
-          <Text className="text-primary font-semibold text-xl">{username}</Text>
+          <Text className="text-primary font-semibold text-xl">
+            {profile.username}
+          </Text>
         </TouchableOpacity>
         <SupabaseProvider supabase={supabase} userId={profile.id}>
           <UserHeader profile={profile} />
@@ -106,7 +117,7 @@ export default function Profile() {
           total_distance_walked={stats?.total_distance_walked || 0}
           total_full_lines={stats?.total_full_lines || 0}
         />
-        <LastWalks username={username} />
+        <LastWalks username={profile.username ?? normalizedUsername ?? ''} />
       </KeyboardAwareScrollView>
     </SafeAreaOfflineView>
   );

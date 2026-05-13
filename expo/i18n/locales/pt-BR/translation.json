@@ -400,7 +400,7 @@
         "descriptionPlaceholder": "Nos conte algo sobre você"
       },
       "errors": {
-        "usernameValidation": "O nome de usuário deve ter pelo menos 3 caracteres.",
+        "usernameValidation": "Use de 3 a 30 letras minúsculas, números, pontos ou underscores. O ponto não pode ficar no início, no fim ou repetido.",
         "nameRequired": "Preencha o seu nome.",
         "usernameTaken": "Nome de usuário já escolhido, tente outro.",
         "saveProfile": "Erro ao salvar o perfil. Tente novamente.",
