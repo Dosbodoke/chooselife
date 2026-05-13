@@ -15,7 +15,6 @@ import Animated, {
   FadeOut,
   FadeOutLeft,
 } from 'react-native-reanimated';
-import { SafeAreaView } from '~/components/styled';
 import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
@@ -29,17 +28,24 @@ import {
   type ProfileInfoSchema,
 } from '~/components/edit-profile-info';
 import { LanguageSwitcher } from '~/components/language-switcher';
-import {
-  OnboardHeader,
-  OnboardNavigator,
-} from '~/components/onboard';
+import { OnboardHeader, OnboardNavigator } from '~/components/onboard';
+import { SafeAreaView } from '~/components/styled';
 import { Text } from '~/components/ui/text';
+
+const usernameRegex = /^(?!\.)(?!.*\.\.)(?!.*\.$)[a-z0-9._]{3,30}$/;
+
+const normalizeUsernameInput = (value: string) =>
+  value.trim().replace(/^@+/, '').toLowerCase();
+
+const toStoredUsername = (value: string) => `@${normalizeUsernameInput(value)}`;
 
 const profileSchema = profileInfoSchema.extend({
   username: z
     .string()
-    .trim()
-    .min(3, i18next.t('app.setProfile.errors.usernameValidation')),
+    .transform(normalizeUsernameInput)
+    .refine((value) => usernameRegex.test(value), {
+      message: i18next.t('app.setProfile.errors.usernameValidation'),
+    }),
 });
 type ProfileFormData = z.infer<typeof profileSchema>;
 
@@ -70,7 +76,7 @@ export default function SetProfile() {
         .from('profiles')
         .upsert({
           id: session.user.id,
-          username: `@${data.username}`,
+          username: toStoredUsername(data.username),
           name: data.name,
           profile_picture: data.profilePicture,
           description: data.description,
@@ -113,24 +119,19 @@ export default function SetProfile() {
       const valid = await form.trigger('username');
       if (!valid) return false;
 
-      const username = form.getValues('username');
+      const username = toStoredUsername(form.getValues('username'));
       const { data, error } = await supabase
         .from('profiles')
         .select('username')
-        .eq('username', `@${username.trim()}`)
-        .single();
+        .eq('username', username)
+        .maybeSingle();
 
       if (error) {
-        // No row for username, it's free
-        if (error.code === 'PGRST116') {
-          form.setError('username', {
-            message: t('app.setProfile.errors.usernameCheckError'),
-          });
-          return true;
-        } else {
-          console.error('Error checking username:', error);
-          return false;
-        }
+        console.error('Error checking username:', error);
+        form.setError('username', {
+          message: t('app.setProfile.errors.usernameCheckError'),
+        });
+        return false;
       }
 
       if (data) {
@@ -141,6 +142,7 @@ export default function SetProfile() {
         return false;
       }
 
+      form.clearErrors('username');
       return true;
     } finally {
       setIsValidating(false);
@@ -269,9 +271,10 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
               </Text>
               <TextInput
                 value={value}
-                onChangeText={(text) => onChange(text.trim())}
+                onChangeText={(text) => onChange(normalizeUsernameInput(text))}
                 placeholder={t('app.setProfile.UsernameForm.inputPlaceholder')}
                 autoCapitalize="none"
+                autoCorrect={false}
                 returnKeyType="done"
                 allowFontScaling={false}
                 style={{
@@ -291,9 +294,7 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
                 exiting={FadeOut}
                 className="mb-4"
               >
-                <Text className="text-red-500 text-left">
-                  {error.message}
-                </Text>
+                <Text className="text-red-500 text-left">{error.message}</Text>
               </Animated.View>
             )}
           </View>
