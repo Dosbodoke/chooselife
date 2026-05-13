@@ -9,39 +9,6 @@ AS $$
   END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.sanitize_legacy_profile_username(value TEXT)
-RETURNS TEXT
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  WITH cleaned AS (
-    SELECT regexp_replace(
-      regexp_replace(
-        regexp_replace(lower(btrim(value)), '^@+', ''),
-        '\s+',
-        '',
-        'g'
-      ),
-      '[^a-z0-9._]',
-      '',
-      'g'
-    ) AS username
-  ),
-  collapsed AS (
-    SELECT btrim(regexp_replace(username, '\.{2,}', '.', 'g'), '.') AS username
-    FROM cleaned
-  ),
-  truncated AS (
-    SELECT btrim(left(username, 30), '.') AS username
-    FROM collapsed
-  )
-  SELECT CASE
-    WHEN value IS NULL THEN NULL
-    WHEN length(username) < 3 THEN NULL
-    ELSE '@' || username
-  END
-  FROM truncated;
-$$;
 
 CREATE OR REPLACE FUNCTION public.profile_username_disambiguated(
   normalized_username TEXT,
@@ -59,35 +26,6 @@ AS $$
   SELECT '@' || btrim(left(username, 30 - length(suffix)), '.') || suffix
   FROM parts;
 $$;
-
-WITH normalized_profiles AS (
-  SELECT
-    id,
-    public.sanitize_legacy_profile_username(username::TEXT) AS normalized_username
-  FROM public.profiles
-  WHERE username IS NOT NULL
-),
-ranked_profiles AS (
-  SELECT
-    id,
-    normalized_username,
-    row_number() OVER (
-      PARTITION BY normalized_username
-      ORDER BY id
-    ) AS username_rank
-  FROM normalized_profiles
-)
-UPDATE public.profiles AS profile
-SET username = CASE
-  WHEN ranked.normalized_username IS NULL THEN NULL
-  WHEN ranked.username_rank = 1 THEN ranked.normalized_username
-  ELSE public.profile_username_disambiguated(
-    ranked.normalized_username,
-    profile.id
-  )
-END
-FROM ranked_profiles AS ranked
-WHERE profile.id = ranked.id;
 
 ALTER TABLE public.profiles
 DROP CONSTRAINT IF EXISTS profiles_username_key;
