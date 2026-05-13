@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  formatUsernameForDisplay,
+  normalizeUsernameInput,
+} from "@chooselife/ui";
 import { useQuery } from "@tanstack/react-query";
 import { cva, type VariantProps } from "class-variance-authority";
 import { BadgeCheckIcon, XIcon } from "lucide-react";
@@ -49,11 +53,12 @@ const userPickerVariants = cva(
     defaultVariants: {
       variant: "default",
     },
-  }
+  },
 );
 
 interface UserPickerProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof userPickerVariants> {
   asChild?: boolean;
   defaultValue?: string[];
@@ -86,11 +91,11 @@ export const UserPicker: React.FC<UserPickerProps> = ({
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
 
   const [search, setSearch] = React.useState("");
-  const debouncedSearch = useDebounceValue(search);
   const normalizedSearch = React.useMemo(
-    () => (!search || search.startsWith("@") ? search : `@${search}`),
-    [search]
+    () => normalizeUsernameInput(search),
+    [search],
   );
+  const debouncedSearch = useDebounceValue(normalizedSearch);
 
   const { data: profiles, isPending } = useQuery({
     queryKey: ["profiles", { username: debouncedSearch }],
@@ -110,22 +115,22 @@ export const UserPicker: React.FC<UserPickerProps> = ({
   const [selectedOptions, setSelectedOptions] = React.useState<UserOption[]>(
     () => {
       return defaultValue.map((username) => ({
-        username,
+        username: normalizeUsernameInput(username),
         verified: false,
         id: undefined,
       }));
-    }
+    },
   );
 
   const unselectedProfiles = React.useMemo(() => {
     if (!profiles) return [];
 
     const selectedUsernames = new Set(
-      selectedOptions.map((option) => option.username)
+      selectedOptions.map((option) => option.username),
     );
 
     return profiles.filter(
-      (profile) => profile.username && !selectedUsernames.has(profile.username)
+      (profile) => profile.username && !selectedUsernames.has(profile.username),
     );
   }, [profiles, selectedOptions]);
 
@@ -141,7 +146,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
   }) => {
     const isSelected =
       selectedOptions.findIndex(
-        (value) => value.username === option.username
+        (value) => value.username === option.username,
       ) !== -1;
 
     if (!isSelected && canSelectMore) {
@@ -154,14 +159,14 @@ export const UserPicker: React.FC<UserPickerProps> = ({
 
     if (isSelected) {
       setSelectedOptions((prev) =>
-        prev.filter((v) => v.username !== option.username)
+        prev.filter((v) => v.username !== option.username),
       );
     }
   };
 
   const removeOption = React.useCallback((option: UserOption) => {
     setSelectedOptions((prev) =>
-      prev.filter((item) => item.username !== option.username)
+      prev.filter((item) => item.username !== option.username),
     );
   }, []);
 
@@ -199,7 +204,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                     {value.verified && (
                       <BadgeCheckIcon className="ml-1 h-3 w-3 text-blue-500" />
                     )}
-                    {value.username}
+                    {formatUsernameForDisplay(value.username)}
                   </Badge>
                 ))}
               </div>
@@ -264,13 +269,13 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                       key={`selected-${value.username}`}
                       className={cn(
                         userPickerVariants({ variant, className }),
-                        "cursor-pointer"
+                        "cursor-pointer",
                       )}
                     >
                       {value.verified && (
                         <BadgeCheckIcon className="ml-1 h-3 w-3 text-blue-500" />
                       )}
-                      {value.username}
+                      {formatUsernameForDisplay(value.username)}
                       <XIcon
                         className="mr-1 h-3 w-3 cursor-pointer text-red-500"
                         onClick={(event) => {
@@ -291,10 +296,10 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                 {/* Instagram Users (Unverified) */}
                 {canPicknNonUser &&
                 canSelectMore &&
-                search.length &&
+                normalizedSearch.length > 0 &&
                 // Check if the user is not selected and is not a valid profile
                 ![...(profiles || []), ...selectedOptions].find(
-                  (v) => v.username === normalizedSearch
+                  (v) => v.username === normalizedSearch,
                 ) ? (
                   <UnverifiedUser
                     normalizedSearch={normalizedSearch}
@@ -359,7 +364,7 @@ const VerifiedUser: React.FC<{
       key={`verified-${username}`}
       className={cn(
         "flex cursor-pointer items-center space-x-3 rounded-md p-2 hover:bg-muted",
-        isDisabled && "cursor-not-allowed opacity-50"
+        isDisabled && "cursor-not-allowed opacity-50",
       )}
       onClick={() => {
         if (canSelectMore) {
@@ -384,7 +389,9 @@ const VerifiedUser: React.FC<{
         <span className="line-clamp-1 text-ellipsis text-sm">
           {profile.name}
         </span>
-        <span className="text-xs text-muted-foreground">{username}</span>
+        <span className="text-xs text-muted-foreground">
+          {formatUsernameForDisplay(username)}
+        </span>
       </div>
       <BadgeCheckIcon className="h-4 w-4 text-blue-500" />
     </div>
@@ -434,7 +441,7 @@ const UnverifiedUser: React.FC<{
           });
         }}
       >
-        <span>{normalizedSearch}</span>
+        <span>{formatUsernameForDisplay(normalizedSearch)}</span>
       </div>
     </div>
   );

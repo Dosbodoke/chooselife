@@ -400,7 +400,7 @@
         "descriptionPlaceholder": "Tell us something about yourself"
       },
       "errors": {
-        "usernameValidation": "Username must be at least 3 characters.",
+        "usernameValidation": "Use 3-30 lowercase letters, numbers, dots, or underscores. Dots cannot be first, last, or repeated.",
         "nameRequired": "Please enter your name.",
         "usernameTaken": "Username already taken, try another.",
         "saveProfile": "Error saving profile. Please try again.",

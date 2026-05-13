@@ -1,3 +1,8 @@
+import {
+  formatUsernameForDisplay,
+  normalizeUsernameInput,
+} from "@chooselife/ui";
+
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
@@ -6,15 +11,17 @@ interface Props {
   className?: string;
 }
 export const UsernameLink = ({ username, className }: Props) => {
+  const normalizedUsername = normalizeUsernameInput(username);
+
   return (
     <Link
-      href={`/profile/${username.replace("@", "")}`}
+      href={`/profile/${normalizedUsername}`}
       className={cn(
         "truncate font-medium text-blue-700 dark:text-blue-500",
-        className
+        className,
       )}
     >
-      {username}
+      {formatUsernameForDisplay(normalizedUsername)}
     </Link>
   );
 };

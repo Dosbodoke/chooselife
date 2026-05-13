@@ -1,3 +1,7 @@
+import {
+  formatUsernameForDisplay,
+  normalizeUsernameInput,
+} from '@chooselife/ui';
 import { cva } from 'class-variance-authority';
 import { Link } from 'expo-router';
 import { CrownIcon } from 'lucide-react-native';
@@ -42,12 +46,13 @@ const RankingPosition = ({ position }: { position: number }) => (
 const Podium = ({ username, value, position, profilePicture }: PodiumProps) => {
   const variant: PodiumVariant =
     position === 1 ? 'gold' : position === 2 ? 'silver' : 'bronze';
+  const normalizedUsername = normalizeUsernameInput(username);
 
   return (
     <Link
       href={{
         pathname: '/profile/[username]',
-        params: { username: username },
+        params: { username: normalizedUsername },
       }}
       push
       asChild
@@ -69,7 +74,7 @@ const Podium = ({ username, value, position, profilePicture }: PodiumProps) => {
               </View>
               <View className="flex flex-col items-center gap-0.5">
                 <Text className="text-xs font-normal text-neutral-800 dark:text-neutral-50">
-                  {username}
+                  {formatUsernameForDisplay(normalizedUsername)}
                 </Text>
                 <Text
                   className={cn('text-xs', podiumVariants({ text: variant }))}
@@ -100,29 +105,33 @@ const LeaderboardRow = ({
   value,
   position,
   profilePicture,
-}: PodiumProps) => (
-  <View className="flex-row py-3 items-center gap-2">
-    <RankingPosition position={position} />
-    <View className="relative overflow-hidden size-12">
-      <SupabaseAvatar URL={profilePicture} />
+}: PodiumProps) => {
+  const normalizedUsername = normalizeUsernameInput(username);
+
+  return (
+    <View className="flex-row py-3 items-center gap-2">
+      <RankingPosition position={position} />
+      <View className="relative overflow-hidden size-12">
+        <SupabaseAvatar URL={profilePicture} />
+      </View>
+      <Link
+        href={{
+          pathname: '/profile/[username]',
+          params: { username: normalizedUsername },
+        }}
+        push
+        asChild
+      >
+        <TouchableOpacity className="flex-1 min-w-0">
+          <Text className="font-medium text-blue-700 dark:text-blue-500">
+            {formatUsernameForDisplay(normalizedUsername)}
+          </Text>
+        </TouchableOpacity>
+      </Link>
+      <Text className="text-base font-medium">{value}</Text>
     </View>
-    <Link
-      href={{
-        pathname: '/profile/[username]',
-        params: { username: username },
-      }}
-      push
-      asChild
-    >
-      <TouchableOpacity className="flex-1 min-w-0">
-        <Text className="font-medium text-blue-700 dark:text-blue-500">
-          {username}
-        </Text>
-      </TouchableOpacity>
-    </Link>
-    <Text className="text-base font-medium">{value}</Text>
-  </View>
-);
+  );
+};
 
 interface LeaderboardProps {
   entries: Array<{

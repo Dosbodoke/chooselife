@@ -1,6 +1,8 @@
-import type {
-  BookFestivalScheduleSlotInput,
-  FestivalScheduleSlotView,
+import {
+  formatUsernameForDisplay,
+  normalizeUsernameInput,
+  type BookFestivalScheduleSlotInput,
+  type FestivalScheduleSlotView,
 } from '@chooselife/ui';
 import {
   BottomSheetBackdrop,
@@ -57,12 +59,6 @@ function formatSlotTimeRange(
   )}`;
 }
 
-function normalizeSearchValue(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return '';
-  return trimmed.startsWith('@') ? trimmed : `@${trimmed}`;
-}
-
 const ProfileRow: React.FC<{
   profile: ProfileOption;
   onPress: () => void;
@@ -89,7 +85,9 @@ const ProfileRow: React.FC<{
       <Text className="font-semibold text-slate-900">
         {profile.name ?? profile.username}
       </Text>
-      <Text className="text-sm text-slate-500">{profile.username}</Text>
+      <Text className="text-sm text-slate-500">
+        {formatUsernameForDisplay(profile.username)}
+      </Text>
     </View>
 
     <Icon as={BadgeCheckIcon} className="size-5 text-blue-500" />
@@ -120,13 +118,13 @@ const SelectedParticipantCard: React.FC<{
   const title =
     selection.type === 'profile'
       ? (selection.profile.name ?? selection.profile.username)
-      : guestDisplayName.trim() || selection.username;
+      : guestDisplayName.trim() || formatUsernameForDisplay(selection.username);
 
   const subtitle =
     selection.type === 'profile'
-      ? selection.profile.username
+      ? formatUsernameForDisplay(selection.profile.username)
       : guestDisplayName.trim()
-        ? selection.username
+        ? formatUsernameForDisplay(selection.username)
         : guestBadgeLabel;
 
   return (
@@ -160,9 +158,8 @@ export const StaffBookingSheet: React.FC<{
   const [selection, setSelection] =
     React.useState<StaffBookingSelection | null>(null);
   const [guestDisplayName, setGuestDisplayName] = React.useState('');
-  const debouncedSearch = useDebounceValue(search);
   const normalizedSearch = React.useMemo(
-    () => normalizeSearchValue(search),
+    () => normalizeUsernameInput(search),
     [search],
   );
 
@@ -182,17 +179,22 @@ export const StaffBookingSheet: React.FC<{
     bottomSheetModalRef.current?.dismiss();
   }, [resetState, slot]);
 
+  const debouncedNormalizedSearch = useDebounceValue(normalizedSearch);
+
   const { data: profiles, isPending } = useQuery({
     enabled: !!slot && !selection,
-    queryKey: ['staff-booking-profiles', { username: debouncedSearch }],
+    queryKey: [
+      'staff-booking-profiles',
+      { username: debouncedNormalizedSearch },
+    ],
     queryFn: async () => {
       const query = supabase
         .from('profiles')
         .select('id, name, username, profile_picture')
         .neq('name', null);
 
-      if (debouncedSearch) {
-        query.ilike('username', `%${debouncedSearch}%`);
+      if (debouncedNormalizedSearch) {
+        query.ilike('username', `%${debouncedNormalizedSearch}%`);
       } else {
         query.limit(5);
       }
@@ -210,14 +212,12 @@ export const StaffBookingSheet: React.FC<{
   });
 
   const hasExactProfileMatch = React.useMemo(() => {
-    const normalizedSearchValue = normalizedSearch.toLowerCase();
-
-    if (!normalizedSearchValue) {
+    if (!normalizedSearch) {
       return false;
     }
 
     return (profiles ?? []).some(
-      (profile) => profile.username.toLowerCase() === normalizedSearchValue,
+      (profile) => profile.username === normalizedSearch,
     );
   }, [normalizedSearch, profiles]);
 
@@ -370,7 +370,7 @@ export const StaffBookingSheet: React.FC<{
                   />
                 </View>
 
-                {!debouncedSearch ? (
+                {!debouncedNormalizedSearch ? (
                   <Text className="text-xs font-semibold uppercase tracking-[1px] text-slate-500">
                     {t('app.(festival).highlines.staffSuggestionsLabel')}
                   </Text>
@@ -391,7 +391,7 @@ export const StaffBookingSheet: React.FC<{
                       subtitle={t(
                         'app.(festival).highlines.staffGuestResultSubtitle',
                       )}
-                      username={normalizedSearch}
+                      username={formatUsernameForDisplay(normalizedSearch)}
                     />
                   ) : null}
 

@@ -190,11 +190,12 @@
     "fields": {
       "username": {
         "label": "Username",
-        "placeholder": "Your unique @username",
+        "placeholder": "Your unique username",
         "errors": {
           "alreadyExits": "This username already exists",
+          "invalid": "Use 3-30 lowercase letters, numbers, dots, or underscores. Dots cannot be first, last, or repeated.",
           "startWith@": "Username must start with a @",
-          "minLength": "Username should have at least 2 characters"
+          "minLength": "Username should have at least 3 characters"
         }
       },
       "displayName": {

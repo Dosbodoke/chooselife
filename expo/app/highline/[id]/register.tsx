@@ -1,3 +1,4 @@
+import { formatUsernameForDisplay } from '@chooselife/ui';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNetInfo } from '@react-native-community/netinfo';
@@ -92,7 +93,7 @@ export default function RegisterWalk() {
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: profile?.username || '',
+      username: formatUsernameForDisplay(profile?.username),
       cadenas: 0,
       full_lines: 0,
       distance: 0,

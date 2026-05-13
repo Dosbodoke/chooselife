@@ -1,5 +1,6 @@
 "use client";
 
+import { isValidUsername, normalizeUsernameInput } from "@chooselife/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InfoCircledIcon } from "@radix-ui/react-icons";
 import type { User } from "@supabase/supabase-js";
@@ -33,10 +34,8 @@ import { supabaseBrowser } from "@/utils/supabase/client";
 const formSchema = z.object({
   username: z
     .string()
-    .min(3, "minLength")
-    .refine((val) => val.startsWith("@"), {
-      message: "startWith@",
-    }),
+    .transform(normalizeUsernameInput)
+    .refine(isValidUsername, "invalid"),
   displayName: z.string().min(3, "minLength"),
 });
 
@@ -86,7 +85,7 @@ export default function UsernameDialog() {
       });
       await supabase.auth.refreshSession();
       setUser(userData);
-      router.push(`/profile/${data.username.replace("@", "")}`);
+      router.push(`/profile/${data.username}`);
     }
   }
 
@@ -98,7 +97,7 @@ export default function UsernameDialog() {
       setUser(session?.user || null);
       form.setValue(
         "displayName",
-        session?.user.user_metadata["full_name"] || ""
+        session?.user.user_metadata["full_name"] || "",
       );
     }
     getUser();
@@ -132,13 +131,18 @@ export default function UsernameDialog() {
                     <Input
                       placeholder={t("fields.username.placeholder")}
                       {...field}
+                      onChange={(event) =>
+                        field.onChange(
+                          normalizeUsernameInput(event.target.value),
+                        )
+                      }
                     />
                   </FormControl>
                   <FormMessage
                     translatedMessage={
                       form.formState.errors.username?.message
                         ? t(
-                            `fields.username.errors.${form.formState.errors.username.message}`
+                            `fields.username.errors.${form.formState.errors.username.message}`,
                           )
                         : undefined
                     }
@@ -162,7 +166,7 @@ export default function UsernameDialog() {
                     translatedMessage={
                       form.formState.errors.displayName?.message
                         ? t(
-                            `fields.displayName.errors.${form.formState.errors.displayName.message}`
+                            `fields.displayName.errors.${form.formState.errors.displayName.message}`,
                           )
                         : undefined
                     }

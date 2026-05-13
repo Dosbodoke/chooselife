@@ -1,4 +1,9 @@
-import { SupabaseProvider, useIsMember } from '@chooselife/ui';
+import {
+  formatUsernameForDisplay,
+  normalizeUsernameInput,
+  SupabaseProvider,
+  useIsMember,
+} from '@chooselife/ui';
 import { FlashList } from '@shopify/flash-list';
 import { QueryData } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
@@ -36,24 +41,25 @@ export default function Profile() {
   const router = useRouter();
   const { bottom } = useSafeAreaInsets();
   const { username } = useLocalSearchParams<{ username: string }>();
+  const normalizedUsername = username ? normalizeUsernameInput(username) : '';
 
   const { data: profile, isPending: profilePending } = useQuery({
-    queryKey: ['profile', username],
+    queryKey: ['profile', normalizedUsername],
     queryFn: async () => {
-      if (!username)
+      if (!normalizedUsername)
         throw new Error(t('app.profile.[username].errors.noUsernameError'));
       const { data } = await supabase
         .from('profiles')
         .select('*')
-        .eq('username', username)
+        .eq('username', normalizedUsername)
         .single();
       return data;
     },
-    enabled: !!username,
+    enabled: !!normalizedUsername,
   });
 
   const { data: stats } = useQuery({
-    queryKey: ['profile', username, 'stats'],
+    queryKey: ['profile', normalizedUsername, 'stats'],
     queryFn: async () => {
       if (!profile)
         throw new Error(t('app.profile.[username].errors.profileNotExist'));
@@ -77,7 +83,7 @@ export default function Profile() {
   }
 
   if (!profile) {
-    return <UserNotFound username={username ?? ''} />;
+    return <UserNotFound username={normalizedUsername} />;
   }
 
   return (
@@ -96,7 +102,9 @@ export default function Profile() {
           className="p-2 flex-row items-center rounded-full "
         >
           <Icon as={ChevronLeftIcon} className="text-primary size-6" />
-          <Text className="text-primary font-semibold text-xl">{username}</Text>
+          <Text className="text-primary font-semibold text-xl">
+            {formatUsernameForDisplay(normalizedUsername)}
+          </Text>
         </TouchableOpacity>
         <SupabaseProvider supabase={supabase} userId={profile.id}>
           <UserHeader profile={profile} />
@@ -106,7 +114,7 @@ export default function Profile() {
           total_distance_walked={stats?.total_distance_walked || 0}
           total_full_lines={stats?.total_full_lines || 0}
         />
-        <LastWalks username={username} />
+        <LastWalks username={normalizedUsername} />
       </KeyboardAwareScrollView>
     </SafeAreaOfflineView>
   );
@@ -257,7 +265,9 @@ const UserNotFound: React.FC<{ username: string }> = ({ username }) => {
     <SafeAreaOfflineView className="flex-1">
       <View className="flex items-center justify-center h-full gap-4">
         <Text variant="h2" className="text-center">
-          {t('app.profile.[username].UserNotFound.title', { username })}
+          {t('app.profile.[username].UserNotFound.title', {
+            username: formatUsernameForDisplay(username),
+          })}
         </Text>
         <Button
           onPress={() => {
@@ -285,7 +295,7 @@ const LastWalks: React.FC<{ username: string }> = ({ username }) => {
     queryKey: ['profile', username, 'walks'],
     queryFn: async () => {
       const { data } = await entryWithHighlineQuery
-        .eq('instagram', username)
+        .in('instagram', [username, formatUsernameForDisplay(username)])
         .order('created_at', { ascending: false })
         .limit(5);
       return data;

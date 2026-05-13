@@ -1,3 +1,4 @@
+import { formatUsernameForDisplay } from '@chooselife/ui';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -211,7 +212,7 @@ const WebbingOwner: React.FC<{ webbingID: number }> = ({ webbingID }) => {
         }}
       >
         <Text className="text-blue-500" numberOfLines={1}>
-          {owner.username}
+          {formatUsernameForDisplay(owner.username)}
         </Text>
       </Link>
     </View>

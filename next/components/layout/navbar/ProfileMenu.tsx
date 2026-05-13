@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  formatUsernameForDisplay,
+  normalizeUsernameInput,
+} from "@chooselife/ui";
 import { AvatarIcon, ExitIcon } from "@radix-ui/react-icons";
 import { User } from "@supabase/supabase-js";
 import { useTranslations } from "next-intl";
@@ -22,7 +26,7 @@ export default function ProfileMenu({ user }: { user: User }) {
   const t = useTranslations("profileMenu");
   const router = useRouter();
 
-  const username: string = user.user_metadata["username"] || "";
+  const username = normalizeUsernameInput(user.user_metadata["username"] || "");
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -39,7 +43,9 @@ export default function ProfileMenu({ user }: { user: User }) {
       <DropdownMenuContent className="w-56" align="end">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{username}</p>
+            <p className="text-sm font-medium leading-none">
+              {formatUsernameForDisplay(username)}
+            </p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>
@@ -48,9 +54,7 @@ export default function ProfileMenu({ user }: { user: User }) {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href={`/profile/${username.replace("@", "")}`}>
-              {t("myProfile")}
-            </Link>
+            <Link href={`/profile/${username}`}>{t("myProfile")}</Link>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={signOut}>
             {t("signOut")} <ExitIcon className="ml-auto" />

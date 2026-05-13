@@ -1,3 +1,4 @@
+import { formatUsernameForDisplay } from "@chooselife/ui";
 import { ChevronRightIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -25,10 +26,9 @@ import FormattedDate from "./FormattedDate";
 import { WalkActivityCard } from "./WalkActivityCalendar";
 
 export const dynamic = "force-dynamic";
-type Entry =
-  | Database["public"]["Tables"]["entry"]["Row"] & {
-      highline: Database["public"]["Tables"]["highline"]["Row"] | null;
-    };
+type Entry = Database["public"]["Tables"]["entry"]["Row"] & {
+  highline: Database["public"]["Tables"]["highline"]["Row"] | null;
+};
 
 interface Props {
   username: string;
@@ -44,7 +44,7 @@ export default async function LastWalks({ username }: Props) {
       `*,
       highline (*)`
     )
-    .eq("instagram", `@${username}`)
+    .in("instagram", [username, formatUsernameForDisplay(username)])
     .order("created_at", { ascending: false });
 
   if (!entries) return null;

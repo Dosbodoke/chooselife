@@ -1,3 +1,7 @@
+import {
+  formatUsernameForDisplay,
+  normalizeUsernameInput,
+} from "@chooselife/ui";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
@@ -20,12 +24,15 @@ type Props = {
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { locale, username } = await props.params;
+  const normalizedUsername = normalizeUsernameInput(username);
   const t = await getTranslations({
     locale,
     namespace: "profileMetadata",
   });
   return {
-    title: t("title", { username: `@${username}` }),
+    title: t("title", {
+      username: formatUsernameForDisplay(normalizedUsername),
+    }),
     description: t("description"),
   };
 }
@@ -34,18 +41,14 @@ export default async function Profile(props: Props) {
   const supabase = await createSupabaseClient();
 
   const params = await props.params;
-  const { username } = params;
+  const username = normalizeUsernameInput(params.username);
 
   const result = await Promise.all([
     supabase.auth.getUser(),
-    supabase
-      .from("profiles")
-      .select("*")
-      .eq("username", `@${username}`)
-      .single(),
+    supabase.from("profiles").select("*").eq("username", username).single(),
     supabase
       .rpc("profile_stats", {
-        username: `@${username}`,
+        username,
       })
       .single(),
   ]);

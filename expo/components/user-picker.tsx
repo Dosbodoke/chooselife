@@ -1,4 +1,8 @@
 import {
+  formatUsernameForDisplay,
+  normalizeUsernameInput,
+} from '@chooselife/ui';
+import {
   BottomSheetBackdrop,
   BottomSheetModal,
   BottomSheetScrollView,
@@ -190,7 +194,9 @@ const VerifiedUser: React.FC<{
             {profile.name}
           </Text>
 
-          <Text className="text-sm text-gray-500">{username}</Text>
+          <Text className="text-sm text-gray-500">
+            {formatUsernameForDisplay(username)}
+          </Text>
         </View>
 
         <Icon as={BadgeCheckIcon} className="size-6 text-blue-500" />
@@ -241,7 +247,9 @@ const UnverifiedUser: React.FC<{
           className="flex-row items-center p-4 rounded-lg bg-white gap-3 border border-muted-foreground"
           activeOpacity={0.7}
         >
-          <Text className="text-sm text-gray-900">{normalizedSearch}</Text>
+          <Text className="text-sm text-gray-900">
+            {formatUsernameForDisplay(normalizedSearch)}
+          </Text>
         </TouchableOpacity>
       </Animated.View>
     </Animated.View>
@@ -268,18 +276,18 @@ export const UserPicker: React.FC<UserPickerProps> = ({
 
   const [selectedOptions, setSelectedOptions] = useState<UserOption[]>(() => {
     return defaultValue.map((username) => ({
-      username,
+      username: normalizeUsernameInput(username),
       verified: false,
       id: undefined,
     }));
   });
 
-  const debouncedSearch = useDebounceValue(search);
-
   const normalizedSearch = useMemo(
-    () => (!search || search.startsWith('@') ? search : `@${search}`),
+    () => normalizeUsernameInput(search),
     [search],
   );
+
+  const debouncedSearch = useDebounceValue(normalizedSearch);
 
   const { data: profiles, isPending } = useQuery({
     queryKey: ['profiles', { username: debouncedSearch }],
@@ -425,7 +433,9 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                         />
                       )}
 
-                      <Text className="text-sm">{value.username}</Text>
+                      <Text className="text-sm">
+                        {formatUsernameForDisplay(value.username)}
+                      </Text>
                     </View>
                   </Badge>
                 ))}
@@ -517,7 +527,9 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                           />
                         )}
 
-                        <Text className="text-sm">{value.username}</Text>
+                        <Text className="text-sm">
+                          {formatUsernameForDisplay(value.username)}
+                        </Text>
                       </View>
                     </Badge>
                   ))}
@@ -531,7 +543,7 @@ export const UserPicker: React.FC<UserPickerProps> = ({
           <BottomSheetScrollView layout={_layoutAnimation} className="flex-1">
             {canPickNonUser &&
               canSelectMore &&
-              search.length > 0 &&
+              normalizedSearch.length > 0 &&
               !alreadyHasNormalizedSearch && (
                 <UnverifiedUser
                   normalizedSearch={normalizedSearch}

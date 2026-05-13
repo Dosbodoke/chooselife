@@ -4,44 +4,11 @@ LANGUAGE sql
 IMMUTABLE
 AS $$
   SELECT CASE
-    WHEN NULLIF(btrim(value), '') IS NULL THEN NULL
-    ELSE lower(
-      CASE
-        WHEN left(btrim(value), 1) = '@' THEN btrim(value)
-        ELSE '@' || btrim(value)
-      END
-    )
+    WHEN NULLIF(regexp_replace(btrim(value), '^@+', ''), '') IS NULL THEN NULL    ELSE '@' || lower(regexp_replace(btrim(value), '^@+', ''))
   END;
 $$;
 
-WITH ranked_profiles AS (
-  SELECT
-    id,
-    row_number() OVER (
-      PARTITION BY public.normalize_profile_username_value(username::text)
-      ORDER BY
-        (profile_picture IS NOT NULL) DESC,
-        (name IS NOT NULL) DESC,
-        (birthday IS NOT NULL) DESC,
-        (description IS NOT NULL) DESC,
-        (username::text = public.normalize_profile_username_value(username::text)) DESC,
-        id
-    ) AS duplicate_rank
-  FROM public.profiles
-  WHERE public.normalize_profile_username_value(username::text) IS NOT NULL
-)
-UPDATE public.profiles AS profile
-SET username = NULL
-FROM ranked_profiles AS ranked
-WHERE profile.id = ranked.id
-  AND ranked.duplicate_rank > 1;
-
-UPDATE public.profiles
-SET username = public.normalize_profile_username_value(username::text)
-WHERE username IS NOT NULL
-  AND username::text IS DISTINCT FROM public.normalize_profile_username_value(username::text);
-
-CREATE OR REPLACE FUNCTION public.set_normalized_profile_username()
+CREATE OR REPLACE FUNCTION public.normalize_profile_username()
 RETURNS trigger
 LANGUAGE plpgsql
 SET search_path = ''
@@ -53,18 +20,163 @@ END;
 $$;
 
 DROP TRIGGER IF EXISTS normalize_profiles_username ON public.profiles;
+DROP TRIGGER IF EXISTS normalize_profile_username_before_write ON public.profiles;
 
-CREATE TRIGGER normalize_profiles_username
+CREATE TRIGGER normalize_profile_username_before_write
 BEFORE INSERT OR UPDATE OF username ON public.profiles
 FOR EACH ROW
-EXECUTE FUNCTION public.set_normalized_profile_username();
+EXECUTE FUNCTION public.normalize_profile_username();
 
 ALTER TABLE public.profiles
   DROP CONSTRAINT IF EXISTS profiles_username_normalized_check;
 
-ALTER TABLE public.profiles
-  ADD CONSTRAINT profiles_username_normalized_check
-  CHECK (
-    username IS NULL
-    OR username IS NOT DISTINCT FROM public.normalize_profile_username_value(username::text)
-  );
+DROP INDEX IF EXISTS public.profiles_username_normalized_unique_idx;
+DROP INDEX IF EXISTS public.profiles_username_unique_ci;
+
+CREATE OR REPLACE FUNCTION public.profile_stats(username TEXT)
+RETURNS TABLE(
+  total_distance_walked NUMERIC,
+  total_cadenas INTEGER,
+  total_full_lines INTEGER
+)
+LANGUAGE sql
+AS $$
+  SELECT
+    sum(distance_walked) AS total_distance_walked,
+    sum(cadenas)::integer AS total_cadenas,
+    sum(full_lines)::integer AS total_full_lines
+  FROM public.entry
+  WHERE public.normalize_profile_username_value(instagram) =
+    public.normalize_profile_username_value(username);
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_crossing_time(
+  highline_id UUID,
+  page_number INTEGER,
+  page_size INTEGER
+)
+RETURNS TABLE(
+  instagram TEXT,
+  crossing_time INTEGER,
+  profile_picture TEXT
+)
+LANGUAGE sql
+AS $$
+  SELECT
+    e.instagram,
+    e.crossing_time,
+    COALESCE(p.profile_picture, '') AS profile_picture
+  FROM public.entry AS e
+  LEFT JOIN public.profiles AS p
+    ON public.normalize_profile_username_value(e.instagram) =
+      public.normalize_profile_username_value(p.username::text)
+  WHERE e.highline_id = get_crossing_time.highline_id
+  ORDER BY e.crossing_time ASC
+  OFFSET (get_crossing_time.page_number - 1) * get_crossing_time.page_size
+  LIMIT get_crossing_time.page_size;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_total_cadenas(
+  highline_ids UUID[],
+  page_number INTEGER,
+  page_size INTEGER,
+  start_date TIMESTAMPTZ DEFAULT NULL,
+  end_date TIMESTAMPTZ DEFAULT NULL
+)
+RETURNS TABLE(
+  instagram TEXT,
+  total_cadenas INTEGER,
+  profile_picture TEXT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    e.instagram,
+    SUM(e.cadenas)::integer AS total_cadenas,
+    COALESCE(p.profile_picture, '') AS profile_picture
+  FROM public.entry AS e
+  LEFT JOIN public.profiles AS p
+    ON public.normalize_profile_username_value(e.instagram) =
+      public.normalize_profile_username_value(p.username::text)
+  WHERE e.highline_id = ANY(get_total_cadenas.highline_ids)
+    AND (e.created_at >= COALESCE(start_date, '1970-01-01'::timestamp) OR start_date IS NULL)
+    AND (e.created_at <= COALESCE(end_date, now()) OR end_date IS NULL)
+  GROUP BY e.instagram, p.profile_picture
+  HAVING SUM(e.cadenas) > 0
+  ORDER BY total_cadenas DESC
+  OFFSET (get_total_cadenas.page_number - 1) * get_total_cadenas.page_size
+  LIMIT get_total_cadenas.page_size;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_total_full_lines(
+  highline_ids UUID[],
+  page_number INTEGER,
+  page_size INTEGER,
+  start_date TIMESTAMPTZ DEFAULT NULL,
+  end_date TIMESTAMPTZ DEFAULT NULL
+)
+RETURNS TABLE(
+  instagram TEXT,
+  total_full_lines INTEGER,
+  profile_picture TEXT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    e.instagram,
+    SUM(e.full_lines)::integer AS total_full_lines,
+    COALESCE(p.profile_picture, '') AS profile_picture
+  FROM public.entry AS e
+  LEFT JOIN public.profiles AS p
+    ON public.normalize_profile_username_value(e.instagram) =
+      public.normalize_profile_username_value(p.username::text)
+  WHERE e.highline_id = ANY(get_total_full_lines.highline_ids)
+    AND (e.created_at >= COALESCE(start_date, '1970-01-01'::timestamp) OR start_date IS NULL)
+    AND (e.created_at <= COALESCE(end_date, now()) OR end_date IS NULL)
+  GROUP BY e.instagram, p.profile_picture
+  HAVING SUM(e.full_lines) > 0
+  ORDER BY total_full_lines DESC
+  OFFSET (get_total_full_lines.page_number - 1) * get_total_full_lines.page_size
+  LIMIT get_total_full_lines.page_size;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_total_walked(
+  highline_ids UUID[],
+  page_number INTEGER,
+  page_size INTEGER,
+  start_date TIMESTAMPTZ DEFAULT NULL,
+  end_date TIMESTAMPTZ DEFAULT NULL
+)
+RETURNS TABLE(
+  instagram TEXT,
+  total_distance_walked INTEGER,
+  profile_picture TEXT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    e.instagram,
+    SUM(e.distance_walked)::integer AS total_distance_walked,
+    COALESCE(p.profile_picture, '') AS profile_picture
+  FROM public.entry AS e
+  LEFT JOIN public.profiles AS p
+    ON public.normalize_profile_username_value(e.instagram) =
+      public.normalize_profile_username_value(p.username::text)
+  WHERE e.highline_id = ANY(get_total_walked.highline_ids)
+    AND (e.created_at >= COALESCE(start_date, '1970-01-01'::timestamp) OR start_date IS NULL)
+    AND (e.created_at <= COALESCE(end_date, now()) OR end_date IS NULL)
+    AND e.distance_walked IS NOT NULL
+  GROUP BY e.instagram, p.profile_picture
+  ORDER BY total_distance_walked DESC
+  OFFSET (get_total_walked.page_number - 1) * get_total_walked.page_size
+  LIMIT get_total_walked.page_size;
+END;
+$$;

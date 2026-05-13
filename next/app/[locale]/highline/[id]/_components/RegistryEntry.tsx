@@ -1,5 +1,6 @@
 "use client";
 
+import { formatUsernameForDisplay } from "@chooselife/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -58,7 +59,7 @@ const formSchema = z.object({
         value === undefined ||
         value === "" ||
         /^([0-9]|[0-5][0-9]):[0-5][0-9]$/.test(value),
-      "Inválido, use o formato mm:ss"
+      "Inválido, use o formato mm:ss",
     ),
   witness: z.string().array(),
   comment: z.string(),
@@ -99,7 +100,7 @@ export const RegistryEntry = ({ highlineId, highlineDistance }: Props) => {
       } = await supabase.auth.getSession();
       entryForm.setValue(
         "instagram",
-        session?.user.user_metadata["username"] || ""
+        formatUsernameForDisplay(session?.user.user_metadata["username"]),
       );
     }
     setUsername();

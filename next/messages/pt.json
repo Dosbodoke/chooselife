@@ -190,11 +190,12 @@
     "fields": {
       "username": {
         "label": "Nome de usuário",
-        "placeholder": "Seu @usuário único",
+        "placeholder": "Seu usuário único",
         "errors": {
           "alreadyExits": "Este nome de usuário já existe",
+          "invalid": "Use 3-30 letras minúsculas, números, pontos ou underscores. Pontos não podem ficar no começo, no fim ou repetidos.",
           "startWith@": "Nome de usuário deve começar com @",
-          "minLength": "Nome de usuário deve ter pelo menos 2 caracteres"
+          "minLength": "Nome de usuário deve ter pelo menos 3 caracteres"
         }
       },
       "displayName": {

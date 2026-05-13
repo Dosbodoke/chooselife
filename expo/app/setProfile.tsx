@@ -1,3 +1,4 @@
+import { isValidUsername, normalizeUsernameInput } from '@chooselife/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PostgrestError } from '@supabase/supabase-js';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -32,18 +33,13 @@ import { OnboardHeader, OnboardNavigator } from '~/components/onboard';
 import { SafeAreaView } from '~/components/styled';
 import { Text } from '~/components/ui/text';
 
-const normalizeUsernameInput = (username: string) =>
-  username.trim().replace(/^@+/, '').toLowerCase();
-
-const formatProfileUsername = (username: string) =>
-  `@${normalizeUsernameInput(username)}`;
-
 const profileSchema = profileInfoSchema.extend({
   username: z
     .string()
     .transform(normalizeUsernameInput)
-    .pipe(
-      z.string().min(3, i18next.t('app.setProfile.errors.usernameValidation')),
+    .refine(
+      isValidUsername,
+      i18next.t('app.setProfile.errors.usernameValidation'),
     ),
 });
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -75,7 +71,7 @@ export default function SetProfile() {
         .from('profiles')
         .upsert({
           id: session.user.id,
-          username: formatProfileUsername(data.username),
+          username: data.username,
           name: data.name,
           profile_picture: data.profilePicture,
           description: data.description,
@@ -119,7 +115,7 @@ export default function SetProfile() {
       if (!valid) return false;
       if (!session) return false;
 
-      const username = formatProfileUsername(form.getValues('username'));
+      const username = normalizeUsernameInput(form.getValues('username'));
       const { data, error } = await supabase
         .from('profiles')
         .select('username')
@@ -270,7 +266,7 @@ const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
                 @
               </Text>
               <TextInput
-                value={value}
+                value={value.replace(/^@/, '')}
                 onChangeText={(text) => onChange(normalizeUsernameInput(text))}
                 placeholder={t('app.setProfile.UsernameForm.inputPlaceholder')}
                 autoCapitalize="none"

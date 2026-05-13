@@ -1,3 +1,7 @@
+import {
+  formatUsernameForDisplay,
+  normalizeUsernameInput,
+} from "@chooselife/ui";
 import { cva } from "class-variance-authority";
 import { CrownIcon } from "lucide-react";
 import Image from "next/image";
@@ -69,10 +73,11 @@ const ProfilePicture = ({
 const Podium = ({ username, value, position, profilePicture }: PodiumProps) => {
   const variant =
     position === 1 ? "gold" : position === 2 ? "silver" : "bronze";
+  const normalizedUsername = normalizeUsernameInput(username);
 
   return (
     <Link
-      href={`/profile/${username.replace("@", "")}`}
+      href={`/profile/${normalizedUsername}`}
       className={`w-1/3 ${username ? "cursor-pointer" : "pointer-events-none"}`}
     >
       <div className="flex flex-col items-center md:min-w-[12rem]">
@@ -82,7 +87,7 @@ const Podium = ({ username, value, position, profilePicture }: PodiumProps) => {
               "flex w-[96%] flex-col items-center gap-3 bg-gradient-to-t to-80% py-4",
               podiumVariants({
                 gradient: variant,
-              })
+              }),
             )}
           >
             <div className="flex flex-col items-center gap-1">
@@ -90,7 +95,7 @@ const Podium = ({ username, value, position, profilePicture }: PodiumProps) => {
                 <CrownIcon
                   className={cn(
                     "text-2xl md:text-4xl",
-                    podiumVariants({ text: variant })
+                    podiumVariants({ text: variant }),
                   )}
                 />
               </div>
@@ -98,13 +103,13 @@ const Podium = ({ username, value, position, profilePicture }: PodiumProps) => {
             </div>
             <div className="flex w-full flex-col items-center gap-0.5 md:gap-0">
               <span className="xs:text-sm max-w-[calc(100%-1rem)] overflow-hidden text-ellipsis whitespace-nowrap text-xs font-normal text-neutral-800 dark:text-neutral-50 md:text-lg">
-                {username}
+                {formatUsernameForDisplay(normalizedUsername)}
               </span>
               <div className="flex flex-col items-center gap-1">
                 <span
                   className={cn(
                     "text-xs md:text-base",
-                    podiumVariants({ text: variant })
+                    podiumVariants({ text: variant }),
                   )}
                 >
                   <span className="whitespace-nowrap">{value}</span>
@@ -118,7 +123,7 @@ const Podium = ({ username, value, position, profilePicture }: PodiumProps) => {
             "xs:rounded-b-md flex w-full items-start justify-center bg-neutral-100 dark:bg-neutral-900/75",
             podiumVariants({
               size: variant === "gold" ? "large" : "small",
-            })
+            }),
           )}
         >
           <RankingPosition position={position} />
@@ -194,7 +199,7 @@ export const Leaderboard = ({ entries }: LeaderboardProps) => {
                 value={entry.value}
                 profilePicture={entry.profilePicture}
               />
-            ) : null
+            ) : null,
           )}
       </ul>
     </>
