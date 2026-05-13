@@ -42,13 +42,15 @@ export default function Profile() {
   const router = useRouter();
   const { bottom } = useSafeAreaInsets();
   const { username } = useLocalSearchParams<{ username: string }>();
+  const normalizedUsername = username
+    ? normalizeProfileUsernameParam(username)
+    : undefined;
 
   const { data: profile, isPending: profilePending } = useQuery({
-    queryKey: ['profile', username],
+    queryKey: ['profile', normalizedUsername],
     queryFn: async () => {
-      if (!username)
+      if (!normalizedUsername)
         throw new Error(t('app.profile.[username].errors.noUsernameError'));
-      const normalizedUsername = normalizeProfileUsernameParam(username);
       const { data } = await supabase
         .from('profiles')
         .select('*')
@@ -56,11 +58,11 @@ export default function Profile() {
         .single();
       return data;
     },
-    enabled: !!username,
+    enabled: !!normalizedUsername,
   });
 
   const { data: stats } = useQuery({
-    queryKey: ['profile', username, 'stats'],
+    queryKey: ['profile', normalizedUsername, 'stats'],
     queryFn: async () => {
       if (!profile)
         throw new Error(t('app.profile.[username].errors.profileNotExist'));
@@ -84,7 +86,7 @@ export default function Profile() {
   }
 
   if (!profile) {
-    return <UserNotFound username={username ?? ''} />;
+    return <UserNotFound username={normalizedUsername ?? ''} />;
   }
 
   return (
@@ -115,7 +117,7 @@ export default function Profile() {
           total_distance_walked={stats?.total_distance_walked || 0}
           total_full_lines={stats?.total_full_lines || 0}
         />
-        <LastWalks username={profile.username ?? username} />
+        <LastWalks username={profile.username ?? normalizedUsername ?? ''} />
       </KeyboardAwareScrollView>
     </SafeAreaOfflineView>
   );
