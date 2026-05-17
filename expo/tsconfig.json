@@ -2,7 +2,9 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
+    "types": ["jest", "react", "react-native"],
     "paths": {
       "~/*": ["*"],
       "@packages/database/*": ["../packages/database/*"],
