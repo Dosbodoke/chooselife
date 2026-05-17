@@ -5,6 +5,11 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { PortalHost } from '@rn-primitives/portal';
 import Mapbox from '@rnmapbox/maps';
 import * as Sentry from '@sentry/react-native';
+import {
+  StoreUpdateModal,
+  UpdatePrompt,
+  UpdateProvider,
+} from '~/features/updates';
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import type { Theme } from 'expo-router/react-navigation';
 import * as SplashScreen from 'expo-splash-screen';
@@ -18,8 +23,8 @@ import { AuthProvider, useAuth } from '~/context/auth';
 import { I18nProvider } from '~/context/i18n';
 import { NotificationProvider } from '~/context/notifications';
 import { ReactQueryProvider } from '~/context/react-query';
-import { UpdateProvider, UpdatePrompt, StoreUpdateModal } from '~/features/updates';
 import { useDeepLinkHandler } from '~/hooks/use-deep-link-handler';
+import { useMountEffect } from '~/hooks/use-mount-effect';
 import { supabase } from '~/lib/supabase';
 import { setAndroidNavigationBar } from '~/utils/android-navigation-bar';
 import { NAV_THEME } from '~/utils/constants';
@@ -82,9 +87,9 @@ function SupabaseWrapper({ children }: { children: React.ReactNode }) {
 export default Sentry.wrap(function RootLayout() {
   useDeepLinkHandler();
 
-  React.useEffect(() => {
+  useMountEffect(() => {
     setAndroidNavigationBar('light');
-  }, []);
+  });
 
   return (
     <I18nProvider>
