@@ -4,3 +4,4 @@ node_modules/
 .expo/
 .vercel/
 .DS_Store
+supabase/.temp/
