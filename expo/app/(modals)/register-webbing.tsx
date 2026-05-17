@@ -378,7 +378,7 @@ const SelectModel: React.FC<{ control: Control<RegisterWebbingFormData> }> = ({
           <GestureDetector gesture={composedGesture}>
             <Animated.View
               style={[
-                StyleSheet.absoluteFillObject,
+                StyleSheet.absoluteFill,
                 { backgroundColor: 'black' },
                 animatedStyle,
               ]}

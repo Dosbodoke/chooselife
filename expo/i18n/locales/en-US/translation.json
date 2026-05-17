@@ -389,7 +389,7 @@
       "UsernameForm": {
         "title": "Choose Your Username",
         "subtitle": "This is how you will be identified.",
-        "inputPlaceholder": "Your username"
+        "inputPlaceholder": "username"
       },
       "ProfileInfoForm": {
         "title": "Your Profile",

@@ -2,11 +2,11 @@ import '~/global.css';
 
 import { SupabaseProvider } from '@chooselife/ui';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { DefaultTheme, Theme, ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import Mapbox from '@rnmapbox/maps';
 import * as Sentry from '@sentry/react-native';
-import { Stack } from 'expo-router';
+import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import type { Theme } from 'expo-router/react-navigation';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';

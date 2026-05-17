@@ -35,11 +35,7 @@ export const RigModal: React.FC<{ highlineID: string; setupID?: string }> = ({
 
   React.useEffect(() => {
     if (setupID) {
-      bottomSheetModalRef.current?.present({
-        velocity: 200,
-        stiffness: 200,
-        damping: 80,
-      });
+      bottomSheetModalRef.current?.present();
     } else {
       bottomSheetModalRef.current?.close();
     }

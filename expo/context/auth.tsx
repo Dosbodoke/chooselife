@@ -3,7 +3,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as Linking from 'expo-linking';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import AsyncStorage from 'expo-sqlite/kv-store';
 import * as WebBrowser from 'expo-web-browser';
 import React, {
@@ -36,13 +36,13 @@ type PostAuthNavigation =
       key: string;
       shouldClearPendingRedirect: boolean;
       type: 'dismissTo';
-      href: string;
+      href: Href;
     }
   | {
       key: string;
       shouldClearPendingRedirect: boolean;
       type: 'replace';
-      href: string;
+      href: Href;
     };
 
 interface AuthContextValue {
@@ -454,7 +454,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
       return {
         key: `dismissTo:${pendingRedirect}`,
         type: 'dismissTo',
-        href: decodeURIComponent(pendingRedirect),
+        href: decodeURIComponent(pendingRedirect) as Href,
         shouldClearPendingRedirect: true,
       };
     }
@@ -546,7 +546,6 @@ function PostAuthRedirect({
         return;
       }
 
-      // @ts-expect-error redirect_to search parameter
       router.replace(navigation.href);
     } finally {
       onComplete?.();
