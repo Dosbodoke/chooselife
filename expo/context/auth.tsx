@@ -1,12 +1,12 @@
 import { AuthError, type Session } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as Linking from 'expo-linking';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import AsyncStorage from 'expo-sqlite/kv-store';
 import * as WebBrowser from 'expo-web-browser';
-import { useQueryClient } from '@tanstack/react-query';
 import React, {
   useCallback,
   useContext,
@@ -37,14 +37,14 @@ type PostAuthNavigation =
       key: string;
       shouldClearPendingRedirect: boolean;
       type: 'dismissTo';
-      href: string;
+      href: Href;
     }
   | {
       key: string;
       shouldClearPendingRedirect: boolean;
       type: 'replace';
-    href: string;
-  };
+      href: Href;
+    };
 
 function removeStaleAuthQueries(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -61,8 +61,7 @@ function removeStaleAuthQueries(
       const scopedKeyUserId =
         root === 'highlines'
           ? query.queryKey[1]
-          : root === 'highline' &&
-              (type === 'detail' || type === 'favorite')
+          : root === 'highline' && (type === 'detail' || type === 'favorite')
             ? keyScope
             : root === 'festival' && type === 'viewer'
               ? keyScope
@@ -132,24 +131,26 @@ export function AuthProvider(props: React.PropsWithChildren) {
   const [pendingRedirect, setPendingRedirect] = useState<
     'back' | string | null
   >(null);
-  const {
-    query: profileQuery,
-    invalidateProfile,
-  } = useProfile(session?.user.id || null);
+  const { query: profileQuery, invalidateProfile } = useProfile(
+    session?.user.id || null,
+  );
   const profile = profileQuery.data ?? null;
 
-  const handleSessionChange = useCallback((nextSession: Session | null) => {
-    const currentUserId = nextSession?.user.id ?? null;
-    const previousUserId = previousUserIdRef.current;
-    previousUserIdRef.current = currentUserId;
+  const handleSessionChange = useCallback(
+    (nextSession: Session | null) => {
+      const currentUserId = nextSession?.user.id ?? null;
+      const previousUserId = previousUserIdRef.current;
+      previousUserIdRef.current = currentUserId;
 
-    if (previousUserId === undefined || previousUserId !== currentUserId) {
-      removeStaleAuthQueries(queryClient, currentUserId);
-    }
+      if (previousUserId === undefined || previousUserId !== currentUserId) {
+        removeStaleAuthQueries(queryClient, currentUserId);
+      }
 
-    setSession(nextSession);
-    setSessionLoading(false);
-  }, [queryClient]);
+      setSession(nextSession);
+      setSessionLoading(false);
+    },
+    [queryClient],
+  );
 
   const saveLoginMethod = useCallback(async (method: LoginMethod) => {
     try {
@@ -503,7 +504,7 @@ export function AuthProvider(props: React.PropsWithChildren) {
       return {
         key: `dismissTo:${pendingRedirect}`,
         type: 'dismissTo',
-        href: decodeURIComponent(pendingRedirect),
+        href: decodeURIComponent(pendingRedirect) as Href,
         shouldClearPendingRedirect: true,
       };
     }
@@ -591,12 +592,10 @@ function PostAuthRedirect({
       if (navigation.type === 'dismissTo') {
         // Dismiss back to an existing route when possible so auth/profile
         // screens do not leave duplicate festival entries in the stack.
-        // @ts-expect-error redirect_to search parameter
         router.dismissTo(navigation.href);
         return;
       }
 
-      // @ts-expect-error redirect_to search parameter
       router.replace(navigation.href);
     } finally {
       onComplete?.();

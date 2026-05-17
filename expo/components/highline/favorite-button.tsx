@@ -60,7 +60,7 @@ export const FavoriteHighline: React.FC<{
     >
       <Animated.View
         className="items-center justify-center"
-        style={[StyleSheet.absoluteFillObject, outlineStyle]}
+        style={[StyleSheet.absoluteFill, outlineStyle]}
       >
         <Icon
           as={HeartIcon}

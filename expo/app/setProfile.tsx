@@ -1,3 +1,4 @@
+import { Host, TextInput, useNativeState } from '@expo/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PostgrestError } from '@supabase/supabase-js';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -5,9 +6,9 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import i18next from 'i18next';
 import React, { useState } from 'react';
-import { Controller, useForm, UseFormReturn } from 'react-hook-form';
+import { useController, useForm, UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { TextInput, View } from 'react-native';
+import { View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
   FadeIn,
@@ -150,33 +151,9 @@ export default function SetProfile() {
   };
 
   const steps = [
-    <View key="LanguageSwitcher" className="gap-4">
-      <View>
-        <Text variant="h3" className="text-left">
-          {t('app.setProfile.LanguageStep.title')}
-        </Text>
-        <Text variant="muted" className="text-left">
-          {t('app.setProfile.LanguageStep.subtitle')}
-        </Text>
-      </View>
-      <LanguageSwitcher />
-    </View>,
-    <UsernameForm key="username" form={form} />,
-    <View key="profileInfo" className="gap-4">
-      <View>
-        <Text variant="h3" className="text-left">
-          {t('app.setProfile.ProfileInfoForm.title')}
-        </Text>
-        <Text variant="muted" className="text-left">
-          {t('app.setProfile.ProfileInfoForm.subtitle')}
-        </Text>
-      </View>
-      <ProfileInfoForm
-        // @ts-expect-error Info form doesn't have username
-        form={form as UseFormReturn<ProfileInfoSchema>}
-        layout="onboarding"
-      />
-    </View>,
+    <LanguageStep key="language" />,
+    <UsernameStep key="username" form={form} />,
+    <ProfileInfoStep key="profileInfo" form={form} />,
   ];
 
   const handleNextStep = async (newStep: number) => {
@@ -246,60 +223,127 @@ export default function SetProfile() {
   );
 }
 
-const UsernameForm = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
+const StepHeader = ({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle: string;
+}) => (
+  <View>
+    <Text variant="h3" className="text-left">
+      {title}
+    </Text>
+    <Text variant="muted" className="text-left">
+      {subtitle}
+    </Text>
+  </View>
+);
+
+const LanguageStep = () => {
   const { t } = useTranslation();
 
   return (
     <View className="gap-4">
-      <View>
-        <Text variant="h3" className="text-left">
-          {t('app.setProfile.UsernameForm.title')}
-        </Text>
-        <Text variant="muted" className="text-left">
-          {t('app.setProfile.UsernameForm.subtitle')}
-        </Text>
-      </View>
-
-      <Controller
-        control={form.control}
-        name="username"
-        render={({ field: { onChange, value }, fieldState: { error } }) => (
-          <View className="gap-2">
-            <View className="flex-row items-center justify-start gap-2 my-4">
-              <Text className="text-muted-foreground font-semibold text-4xl">
-                @
-              </Text>
-              <TextInput
-                value={value}
-                onChangeText={(text) => onChange(normalizeUsernameInput(text))}
-                placeholder={t('app.setProfile.UsernameForm.inputPlaceholder')}
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="done"
-                allowFontScaling={false}
-                style={{
-                  fontSize: 32,
-                  lineHeight: 38,
-                  paddingVertical: 4,
-                }}
-                className={cn(
-                  error?.message ? 'border-red-500' : 'border-muted-foreground',
-                  'text-foreground border-b-hairline min-w-0 flex-1 pb-2',
-                )}
-              />
-            </View>
-            {error && (
-              <Animated.View
-                entering={FadeIn}
-                exiting={FadeOut}
-                className="mb-4"
-              >
-                <Text className="text-red-500 text-left">{error.message}</Text>
-              </Animated.View>
-            )}
-          </View>
-        )}
+      <StepHeader
+        title={t('app.setProfile.LanguageStep.title')}
+        subtitle={t('app.setProfile.LanguageStep.subtitle')}
       />
+      <LanguageSwitcher />
+    </View>
+  );
+};
+
+const UsernameStep = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
+  const { t } = useTranslation();
+
+  return (
+    <View className="gap-4">
+      <StepHeader
+        title={t('app.setProfile.UsernameForm.title')}
+        subtitle={t('app.setProfile.UsernameForm.subtitle')}
+      />
+
+      <UsernameInput form={form} />
+    </View>
+  );
+};
+
+const ProfileInfoStep = ({
+  form,
+}: {
+  form: UseFormReturn<ProfileFormData>;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <View className="gap-4">
+      <StepHeader
+        title={t('app.setProfile.ProfileInfoForm.title')}
+        subtitle={t('app.setProfile.ProfileInfoForm.subtitle')}
+      />
+      <ProfileInfoForm
+        // @ts-expect-error Info form doesn't have username
+        form={form as UseFormReturn<ProfileInfoSchema>}
+        layout="onboarding"
+      />
+    </View>
+  );
+};
+
+const UsernameInput = ({ form }: { form: UseFormReturn<ProfileFormData> }) => {
+  const { t } = useTranslation();
+  const {
+    field: { value, onChange, onBlur },
+    fieldState: { error },
+  } = useController({
+    control: form.control,
+    name: 'username',
+  });
+  const inputValue = useNativeState(value ?? '');
+
+  return (
+    <View className="gap-2">
+      <View className="flex-row items-center justify-start gap-2 my-4">
+        <Text className="text-muted-foreground font-semibold text-4xl">@</Text>
+        <View
+          className={cn(
+            error?.message ? 'border-red-500' : 'border-muted-foreground',
+            'min-w-0 flex-1 border-b-hairline',
+          )}
+        >
+          <Host matchContents={{ vertical: true }}>
+            <TextInput
+              value={inputValue}
+              onChangeText={(text) => {
+                const normalizedValue = normalizeUsernameInput(text);
+                inputValue.value = normalizedValue;
+                onChange(normalizedValue);
+              }}
+              onBlur={onBlur}
+              placeholder={t('app.setProfile.UsernameForm.inputPlaceholder')}
+              placeholderTextColor="#6b7280"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+              style={{
+                paddingBottom: 8,
+                paddingTop: 4,
+              }}
+              textStyle={{
+                fontSize: 32,
+                fontWeight: '400',
+                lineHeight: 38,
+              }}
+            />
+          </Host>
+        </View>
+      </View>
+      {error && (
+        <Animated.View entering={FadeIn} exiting={FadeOut} className="mb-4">
+          <Text className="text-red-500 text-left">{error.message}</Text>
+        </Animated.View>
+      )}
     </View>
   );
 };
