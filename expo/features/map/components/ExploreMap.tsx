@@ -207,7 +207,7 @@ export default function ExploreMap() {
           maxZoomLevel={20}
           centerCoordinate={[DEFAULT_LONGITUDE, DEFAULT_LATITUDE]}
         />
-        <Mapbox.UserLocation showsUserHeadingIndicator />
+        <Mapbox.LocationPuck puckBearingEnabled puckBearing="heading" />
 
         <ChooselifeTrails />
 

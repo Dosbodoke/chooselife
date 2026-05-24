@@ -1,4 +1,14 @@
 import {
+  getMaterialColor,
+  getMaterialIconColor,
+  getRecommendedLifetimeDays,
+  getStrengthClassColor,
+  getWeaveColor,
+  STRENGTH_CLASS_OPTIONS,
+  useRegisterWebbing,
+  type RegisterWebbingFormData,
+} from '@chooselife/ui';
+import {
   BottomSheetBackdropProps,
   BottomSheetModal,
   BottomSheetModalProvider,
@@ -8,6 +18,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import {
+  AlertTriangleIcon,
   ChevronDownIcon,
   PackagePlusIcon,
   TorusIcon,
@@ -16,25 +27,27 @@ import React, { useCallback, useId, useMemo, useRef } from 'react';
 import {
   Control,
   Controller,
-  FieldErrors,
   useController,
   UseFormReturn,
   useWatch,
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
 import {
-  Gesture,
-  GestureDetector,
-} from 'react-native-gesture-handler';
+  ActivityIndicator,
+  Dimensions,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
   interpolate,
   useAnimatedStyle,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { SafeAreaView } from '~/components/styled';
 
+import { useAuth } from '~/context/auth';
 import RegisterWebbingIllustration from '~/lib/icons/register-webbing';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
@@ -42,6 +55,14 @@ import { Tables } from '~/utils/database.types';
 import { requestReview } from '~/utils/request-review';
 
 import { OnboardHeader, OnboardNavigator } from '~/components/onboard';
+import { SafeAreaView } from '~/components/styled';
+import {
+  Alert,
+  AlertContent,
+  AlertDescription,
+  AlertIcon,
+  AlertTitle,
+} from '~/components/ui/alert';
 import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
 import { Input } from '~/components/ui/input';
@@ -51,31 +72,80 @@ import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
 import { WebbingInput } from '~/components/webbing-input';
 
-import {
-  STRENGTH_CLASS_OPTIONS,
-  getRecommendedLifetimeDays,
-  getWeaveColor,
-  getMaterialColor,
-  getMaterialIconColor,
-  getStrengthClassColor,
-  useRegisterWebbing,
-  type RegisterWebbingFormData,
-} from '@chooselife/ui';
-
 export default function RegisterWebbing() {
   const { t } = useTranslation();
   const router = useRouter();
-  
+  const { session, sessionLoading, isLoginPending } = useAuth();
+  const handleLogin = useCallback(() => {
+    router.push('/(modals)/login');
+  }, [router]);
+
   const { form, handleSubmit, isLoading } = useRegisterWebbing({
     onSuccess: () => {
       requestReview();
       router.back();
     },
   });
+  const submitError = form.formState.errors.root?.message;
 
-  const onError = (e: FieldErrors<RegisterWebbingFormData>) => {
-    console.log({ e });
-  };
+  if (sessionLoading || !session?.user.id) {
+    return (
+      <BottomSheetModalProvider>
+        <SafeAreaView className="flex-1">
+          <View className="flex-1 px-6 pt-3 pb-8 gap-6">
+            <OnboardHeader total={1} selectedIndex={0} onBack={router.back} />
+
+            <View className="h-52">
+              <RegisterWebbingIllustration className="w-full h-full" />
+            </View>
+
+            <View>
+              <Text variant="h3" className="text-left">
+                {t('app.(modals).register-webbing.title')}
+              </Text>
+              <Text variant="muted" className="text-left">
+                {t('app.(modals).register-webbing.description')}
+              </Text>
+            </View>
+
+            {sessionLoading ? (
+              <View className="items-center py-8">
+                <ActivityIndicator />
+              </View>
+            ) : (
+              <>
+                <Alert variant="warning">
+                  <AlertIcon icon={AlertTriangleIcon} />
+                  <AlertContent>
+                    <AlertTitle>
+                      {t('app.(modals).register-webbing.authRequired.title')}
+                    </AlertTitle>
+                    <AlertDescription>
+                      {t(
+                        'app.(modals).register-webbing.authRequired.description',
+                      )}
+                    </AlertDescription>
+                  </AlertContent>
+                </Alert>
+
+                <View className="flex-grow" />
+
+                <Button
+                  className="w-full rounded-full"
+                  disabled={isLoginPending}
+                  onPress={handleLogin}
+                >
+                  <Text>
+                    {t('app.(modals).register-webbing.authRequired.action')}
+                  </Text>
+                </Button>
+              </>
+            )}
+          </View>
+        </SafeAreaView>
+      </BottomSheetModalProvider>
+    );
+  }
 
   return (
     <BottomSheetModalProvider>
@@ -87,13 +157,24 @@ export default function RegisterWebbing() {
           <OnboardHeader total={1} selectedIndex={0} onBack={router.back} />
           <PrefillForm form={form} />
 
-          <View className="flex-grow">{/* Spacer to push paginator down */}</View>
+          {submitError ? (
+            <Alert variant="destructive">
+              <AlertIcon icon={AlertTriangleIcon} />
+              <AlertContent>
+                <AlertDescription>{submitError}</AlertDescription>
+              </AlertContent>
+            </Alert>
+          ) : null}
+
+          <View className="flex-grow">
+            {/* Spacer to push paginator down */}
+          </View>
 
           <OnboardNavigator
             total={1}
             selectedIndex={0}
             onIndexChange={() => {}} // There is only one step
-            onFinish={form.handleSubmit(handleSubmit, onError)}
+            onFinish={handleSubmit}
             goBack={router.back}
             isLoading={isLoading}
             finishLabel={t('app.(modals).register-webbing.finishLabel')}
@@ -129,7 +210,9 @@ const PrefillForm: React.FC<{
 
   // Get selected model's strength class
   const selectedModel = models?.find((m) => m.id.toString() === modelID);
-  const modelStrengthClass = (selectedModel as { strength_class?: string } | undefined)?.strength_class ?? null;
+  const modelStrengthClass =
+    (selectedModel as { strength_class?: string } | undefined)
+      ?.strength_class ?? null;
 
   return (
     <View className="gap-6">
@@ -156,8 +239,8 @@ const PrefillForm: React.FC<{
         error={form.formState.errors.length?.message ?? null}
       />
       <SelectModel control={form.control} />
-      <StrengthClassSelector 
-        control={form.control} 
+      <StrengthClassSelector
+        control={form.control}
         modelStrengthClass={modelStrengthClass}
       />
 
@@ -218,8 +301,6 @@ const PrefillForm: React.FC<{
   );
 };
 
-
-
 // Strength class selector component
 const StrengthClassSelector: React.FC<{
   control: Control<RegisterWebbingFormData>;
@@ -231,7 +312,9 @@ const StrengthClassSelector: React.FC<{
   // Use model's strength class when available, otherwise use form field value
   const hasModel = !!modelStrengthClass;
   const displayValue = hasModel ? modelStrengthClass : field.value;
-  const recommendedDays = getRecommendedLifetimeDays((displayValue as 'A+' | 'A' | 'B' | 'C') ?? null);
+  const recommendedDays = getRecommendedLifetimeDays(
+    (displayValue as 'A+' | 'A' | 'B' | 'C') ?? null,
+  );
 
   return (
     <View className="gap-2">
@@ -244,7 +327,7 @@ const StrengthClassSelector: React.FC<{
           </>
         )}
       </Label>
-      
+
       {/* Strength class buttons */}
       <View className="flex-row gap-2">
         {STRENGTH_CLASS_OPTIONS.map((option) => {
@@ -355,42 +438,39 @@ const SelectModel: React.FC<{ control: Control<RegisterWebbingFormData> }> = ({
   }, []);
 
   // Custom backdrop that blocks all touch gestures from propagating to parent modal
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => {
-      const CustomBackdrop = () => {
-        const animatedStyle = useAnimatedStyle(() => ({
-          opacity: interpolate(props.animatedIndex.value, [-1, 0], [0, 0.5]),
-        }));
+  const renderBackdrop = useCallback((props: BottomSheetBackdropProps) => {
+    const CustomBackdrop = () => {
+      const animatedStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(props.animatedIndex.value, [-1, 0], [0, 0.5]),
+      }));
 
-        // Pan gesture that captures swipes but does nothing - prevents propagation
-        const panGesture = Gesture.Pan();
+      // Pan gesture that captures swipes but does nothing - prevents propagation
+      const panGesture = Gesture.Pan();
 
-        // Tap gesture to close the modal
-        const closeModal = () => bottomSheetModalRef.current?.close();
-        const tapGesture = Gesture.Tap().onEnd(() => {
-          scheduleOnRN(closeModal);
-        });
+      // Tap gesture to close the modal
+      const closeModal = () => bottomSheetModalRef.current?.close();
+      const tapGesture = Gesture.Tap().onEnd(() => {
+        scheduleOnRN(closeModal);
+      });
 
-        // Compose gestures - pan takes priority to block swipes
-        const composedGesture = Gesture.Race(panGesture, tapGesture);
+      // Compose gestures - pan takes priority to block swipes
+      const composedGesture = Gesture.Race(panGesture, tapGesture);
 
-        return (
-          <GestureDetector gesture={composedGesture}>
-            <Animated.View
-              style={[
-                StyleSheet.absoluteFill,
-                { backgroundColor: 'black' },
-                animatedStyle,
-              ]}
-            />
-          </GestureDetector>
-        );
-      };
+      return (
+        <GestureDetector gesture={composedGesture}>
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: 'black' },
+              animatedStyle,
+            ]}
+          />
+        </GestureDetector>
+      );
+    };
 
-      return <CustomBackdrop />;
-    },
-    [],
-  );
+    return <CustomBackdrop />;
+  }, []);
 
   const renderWebbingImage = useCallback(
     (model: Tables<'webbing_model'>, size: 'sm' | 'lg') => {
