@@ -35,11 +35,7 @@ export const RigModal: React.FC<{ highlineID: string; setupID?: string }> = ({
 
   React.useEffect(() => {
     if (setupID) {
-      bottomSheetModalRef.current?.present({
-        velocity: 200,
-        stiffness: 200,
-        damping: 80,
-      });
+      bottomSheetModalRef.current?.present();
     } else {
       bottomSheetModalRef.current?.close();
     }
@@ -66,21 +62,13 @@ export const RigModal: React.FC<{ highlineID: string; setupID?: string }> = ({
           router.setParams({ setupID: '' });
         }
       }}
-      detached={true}
-      bottomInset={46}
-      style={{
-        marginHorizontal: 24,
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        shadowOffset: {
-          width: 1,
-          height: 1,
-        },
+      enablePanDownToClose
+      backgroundStyle={{
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
       }}
     >
-      <BottomSheetView className="p-4 items-center gap-4">
+      <BottomSheetView className="items-center gap-4 overflow-hidden rounded-t-[28px] bg-white p-4 pb-12">
         <SheetBody
           highlineID={highlineID}
           setupID={setupID}
