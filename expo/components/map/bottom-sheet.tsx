@@ -5,6 +5,7 @@ import { LegendList } from '@legendapp/list';
 import { useMapStore } from '~/store/map-store';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useDeferredValue } from 'react';
+import { useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useHighline, type Highline } from '~/hooks/use-highline';
@@ -24,6 +25,7 @@ type NearbyHighlineItem = {
 };
 
 const ListingsBottomSheet: React.FC = () => {
+  const { height: windowHeight } = useWindowDimensions();
   const { top } = useSafeAreaInsets();
   const bottomSheetHandlerHeight = useMapStore(
     (state) => state.bottomSheetHandlerHeight,
@@ -117,6 +119,7 @@ const ListingsBottomSheet: React.FC = () => {
   const snapPoints = React.useMemo(() => {
     return [bottomSheetHandlerHeight || '35%', '100%'];
   }, [bottomSheetHandlerHeight]);
+  const listHeight = Math.max(windowHeight - top - bottomSheetHandlerHeight, 1);
 
   const onShowMap = () => bottomSheetRef.current?.collapse();
 
@@ -154,18 +157,20 @@ const ListingsBottomSheet: React.FC = () => {
       }}
       containerStyle={{ marginTop: top }}
     >
-      {nearbyHighlines.length > 0 ? (
-        <LegendList
-          data={nearbyHighlines}
-          renderItem={renderItem}
-          keyExtractor={(item: NearbyHighlineItem) => item.highline.id}
-          contentContainerStyle={{ paddingHorizontal: 16 }}
-          style={{ flex: 1 }}
-          renderScrollComponent={BottomSheetScrollView}
-          keyboardShouldPersistTaps="always"
-          recycleItems
-        />
-      ) : null}
+      <View style={{ flex: 1, minHeight: 1 }}>
+        {nearbyHighlines.length > 0 ? (
+          <LegendList
+            data={nearbyHighlines}
+            renderItem={renderItem}
+            keyExtractor={(item: NearbyHighlineItem) => item.highline.id}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
+            style={{ flex: 1, height: listHeight, minHeight: 1 }}
+            renderScrollComponent={BottomSheetScrollView}
+            keyboardShouldPersistTaps="always"
+            recycleItems
+          />
+        ) : null}
+      </View>
       <MapToggle onPress={onShowMap} />
     </BottomSheet>
   );
