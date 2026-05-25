@@ -1,4 +1,6 @@
 import {
+  buildFestivalScheduleRedirect,
+  formatBookingOpensAt,
   useBookFestivalScheduleSlot,
   useCancelFestivalScheduleBooking,
   type FestivalHighlineScheduleCard,
@@ -26,36 +28,6 @@ import { FestivalScheduleSlotRow } from '~/components/festival/festival-schedule
 import { StaffBookingSheet } from '~/components/festival/staff-booking-sheet';
 import { Button } from '~/components/ui/button';
 import { Text } from '~/components/ui/text';
-
-function buildFestivalScheduleRedirect({
-  dayKey,
-  highlineId,
-}: {
-  dayKey: string | null;
-  highlineId: string;
-}) {
-  const params = new URLSearchParams({ highline: highlineId });
-
-  if (dayKey) {
-    params.set('day', dayKey);
-  }
-
-  return `/festival?${params.toString()}`;
-}
-
-function formatBookingOpensAt(
-  dateTime: string,
-  locale: string,
-  timeZone: string,
-) {
-  return new Intl.DateTimeFormat(locale, {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone,
-  }).format(new Date(dateTime));
-}
 
 const BookingOpensAtAlert: React.FC<{
   dateTime: string;
@@ -130,21 +102,27 @@ const EmptyScheduleState: React.FC = () => {
 
 const ScheduleSlotsList: React.FC<{
   canManage: boolean;
+  cancelingSlotId: string | null;
   festivalTimeZone: string;
   isAuthenticated: boolean;
+  isScheduleMutating: boolean;
   isOnline: boolean;
   onCancelBooking: (slot: FestivalScheduleSlotView) => void;
   onSelfBook: (slotId: string) => void;
   onStaffBook: (slotId: string | null) => void;
+  selfBookingSlotId: string | null;
   slots: FestivalScheduleSlotView[];
 }> = ({
   canManage,
+  cancelingSlotId,
   festivalTimeZone,
   isAuthenticated,
+  isScheduleMutating,
   isOnline,
   onCancelBooking,
   onSelfBook,
   onStaffBook,
+  selfBookingSlotId,
   slots,
 }) => {
   if (!slots.length) {
@@ -157,12 +135,15 @@ const ScheduleSlotsList: React.FC<{
         <FestivalScheduleSlotRow
           key={slot.id}
           canManage={canManage}
+          cancelingSlotId={cancelingSlotId}
           festivalTimeZone={festivalTimeZone}
           isAuthenticated={isAuthenticated}
+          isScheduleMutating={isScheduleMutating}
           isOnline={isOnline}
           onCancelBooking={onCancelBooking}
           onSelfBook={onSelfBook}
           onStaffBook={onStaffBook}
+          selfBookingSlotId={selfBookingSlotId}
           slot={slot}
         />
       ))}
@@ -173,28 +154,34 @@ const ScheduleSlotsList: React.FC<{
 const FestivalScheduleContent: React.FC<{
   bookingOpensAtLabel: string | null;
   canManage: boolean;
+  cancelingSlotId: string | null;
   card: FestivalHighlineScheduleCard;
   festivalTimeZone: string;
   isAuthenticated: boolean;
+  isScheduleMutating: boolean;
   isOnline: boolean;
   onCancelBooking: (slot: FestivalScheduleSlotView) => void;
   onLoginPress: () => void;
   onSelectDayKey: (dayKey: string) => void;
   onSelfBook: (slotId: string) => void;
   onStaffBook: (slotId: string | null) => void;
+  selfBookingSlotId: string | null;
   selectedDay: FestivalHighlineScheduleCard['days'][number] | null;
 }> = ({
   bookingOpensAtLabel,
   canManage,
+  cancelingSlotId,
   card,
   festivalTimeZone,
   isAuthenticated,
+  isScheduleMutating,
   isOnline,
   onCancelBooking,
   onLoginPress,
   onSelectDayKey,
   onSelfBook,
   onStaffBook,
+  selfBookingSlotId,
   selectedDay,
 }) => {
   const shouldShowBookingOpensAtAlert =
@@ -233,12 +220,15 @@ const FestivalScheduleContent: React.FC<{
 
           <ScheduleSlotsList
             canManage={canManage}
+            cancelingSlotId={cancelingSlotId}
             festivalTimeZone={festivalTimeZone}
             isAuthenticated={isAuthenticated}
+            isScheduleMutating={isScheduleMutating}
             isOnline={isOnline}
             onCancelBooking={onCancelBooking}
             onSelfBook={onSelfBook}
             onStaffBook={onStaffBook}
+            selfBookingSlotId={selfBookingSlotId}
             slots={selectedDay?.slots ?? []}
           />
         </View>
@@ -276,9 +266,16 @@ export const FestivalScheduleSheet: React.FC<{
   const selectedHighlineId = card?.highline.id ?? null;
 
   const [staffSlotId, setStaffSlotId] = React.useState<string | null>(null);
+  const [selfBookingSlotId, setSelfBookingSlotId] = React.useState<
+    string | null
+  >(null);
+  const [cancelingSlotId, setCancelingSlotId] = React.useState<string | null>(
+    null,
+  );
 
   const bookMutation = useBookFestivalScheduleSlot({ festivalSlug });
   const cancelMutation = useCancelFestivalScheduleBooking({ festivalSlug });
+  const isScheduleMutating = bookMutation.isPending || cancelMutation.isPending;
 
   const selectedDay =
     card?.days.find((day) => day.dateKey === selectedDayKey) ??
@@ -375,41 +372,73 @@ export const FestivalScheduleSheet: React.FC<{
 
   const handleSelfBook = React.useCallback(
     async (slotId: string) => {
+      if (isScheduleMutating) {
+        return;
+      }
+
       if (!isOnline) {
         showOfflineWriteAlert();
         return;
       }
 
-      const result = await bookMutation.mutateAsync({ slotId });
+      setSelfBookingSlotId(slotId);
 
-      if (!result.success) {
-        showBookingError(result.error);
+      try {
+        const result = await bookMutation.mutateAsync({ slotId });
+
+        if (!result.success) {
+          showBookingError(result.error);
+        }
+      } finally {
+        setSelfBookingSlotId(null);
       }
     },
-    [bookMutation, isOnline, showBookingError, showOfflineWriteAlert],
+    [
+      bookMutation,
+      isOnline,
+      isScheduleMutating,
+      showBookingError,
+      showOfflineWriteAlert,
+    ],
   );
 
   const handleCancelBooking = React.useCallback(
     async (slot: FestivalScheduleSlotView) => {
       if (!slot.booking) return;
 
+      if (isScheduleMutating) {
+        return;
+      }
+
       if (!isOnline) {
         showOfflineWriteAlert();
         return;
       }
 
-      const result = await cancelMutation.mutateAsync({
-        bookingId: slot.booking.id,
-        reason: slot.booking.isViewer
-          ? 'Cancelled by user'
-          : 'Cancelled by staff',
-      });
+      setCancelingSlotId(slot.id);
 
-      if (!result.success) {
-        showGenericError();
+      try {
+        const result = await cancelMutation.mutateAsync({
+          bookingId: slot.booking.id,
+          reason: slot.booking.isViewer
+            ? 'Cancelled by user'
+            : 'Cancelled by staff',
+        });
+
+        if (!result.success) {
+          showGenericError();
+        }
+      } finally {
+        setCancelingSlotId(null);
       }
     },
-    [cancelMutation, isOnline, showGenericError, showOfflineWriteAlert],
+    [
+      cancelMutation,
+      isOnline,
+      isScheduleMutating,
+      showGenericError,
+      showOfflineWriteAlert,
+    ],
   );
 
   const handleConfirmStaffBooking = React.useCallback(
@@ -424,6 +453,10 @@ export const FestivalScheduleSheet: React.FC<{
       profileId?: string | null;
       slotId: string;
     }) => {
+      if (isScheduleMutating) {
+        return false;
+      }
+
       if (!isOnline) {
         showOfflineWriteAlert();
         return false;
@@ -444,7 +477,13 @@ export const FestivalScheduleSheet: React.FC<{
       setStaffSlotId(null);
       return true;
     },
-    [bookMutation, isOnline, showGenericError, showOfflineWriteAlert],
+    [
+      bookMutation,
+      isOnline,
+      isScheduleMutating,
+      showGenericError,
+      showOfflineWriteAlert,
+    ],
   );
 
   const handleLoginPress = React.useCallback(() => {
@@ -484,15 +523,18 @@ export const FestivalScheduleSheet: React.FC<{
           <FestivalScheduleContent
             bookingOpensAtLabel={bookingOpensAtLabel}
             canManage={canManage}
+            cancelingSlotId={cancelingSlotId}
             card={card}
             festivalTimeZone={festivalTimeZone}
             isAuthenticated={isAuthenticated}
+            isScheduleMutating={isScheduleMutating}
             isOnline={isOnline}
             onCancelBooking={handleCancelBooking}
             onLoginPress={handleLoginPress}
             onSelectDayKey={onSelectDayKey}
             onSelfBook={handleSelfBook}
             onStaffBook={setStaffSlotId}
+            selfBookingSlotId={selfBookingSlotId}
             selectedDay={selectedDay}
           />
         ) : null}

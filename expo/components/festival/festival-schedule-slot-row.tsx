@@ -3,7 +3,7 @@ import { cva } from 'class-variance-authority';
 import type { TFunction } from 'i18next';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { useI18n } from '~/context/i18n';
 import { cn } from '~/lib/utils';
@@ -105,12 +105,15 @@ const cancelButtonTextVariants = cva('font-semibold', {
 
 type FestivalScheduleSlotRowProps = {
   canManage: boolean;
+  cancelingSlotId: string | null;
   festivalTimeZone: string;
   isAuthenticated: boolean;
+  isScheduleMutating: boolean;
   isOnline: boolean;
   onCancelBooking: (slot: FestivalScheduleSlotView) => void;
   onSelfBook: (slotId: string) => void;
   onStaffBook: (slotId: string) => void;
+  selfBookingSlotId: string | null;
   slot: FestivalScheduleSlotView;
 };
 
@@ -202,12 +205,15 @@ export const FestivalScheduleSlotRow: React.FC<
   FestivalScheduleSlotRowProps
 > = ({
   canManage,
+  cancelingSlotId,
   festivalTimeZone,
   isAuthenticated,
+  isScheduleMutating,
   isOnline,
   onCancelBooking,
   onSelfBook,
   onStaffBook,
+  selfBookingSlotId,
   slot,
 }) => {
   const { t } = useTranslation();
@@ -224,6 +230,8 @@ export const FestivalScheduleSlotRow: React.FC<
   const badgeTone = getSlotBadgeTone(slot);
   const textTone = pastSlot ? 'muted' : 'default';
   const isViewerBooking = !!slot.booking?.isViewer;
+  const isSelfBooking = selfBookingSlotId === slot.id;
+  const isCanceling = cancelingSlotId === slot.id;
 
   let cancelButtonVariant: 'destructive' | 'secondary' = 'secondary';
   let cancelButtonTextTone: 'viewer' | 'staff' = 'staff';
@@ -268,12 +276,18 @@ export const FestivalScheduleSlotRow: React.FC<
           {slot.bookingBlockedReason === null ? (
             <Button
               className="w-full rounded-xl bg-[#101b2b]"
+              disabled={isScheduleMutating}
               onPress={() => onSelfBook(slot.id)}
             >
+              {isSelfBooking ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : null}
               <Text className="font-semibold text-white">
-                {canManage
-                  ? t('app.(festival).highlines.claimSlotForMeButton')
-                  : t('app.(festival).highlines.claimSlotButton')}
+                {isSelfBooking
+                  ? t('app.(festival).highlines.claimSlotLoadingButton')
+                  : canManage
+                    ? t('app.(festival).highlines.claimSlotForMeButton')
+                    : t('app.(festival).highlines.claimSlotButton')}
               </Text>
             </Button>
           ) : disabledSelfBookingLabel ? (
@@ -287,6 +301,7 @@ export const FestivalScheduleSlotRow: React.FC<
           {canManage ? (
             <Button
               className="w-full rounded-xl"
+              disabled={isScheduleMutating}
               variant="secondary"
               onPress={() => onStaffBook(slot.id)}
             >
@@ -304,15 +319,24 @@ export const FestivalScheduleSlotRow: React.FC<
       slot.state === 'booked' ? (
         <Button
           className={cancelButtonClassName}
+          disabled={isScheduleMutating}
           variant={cancelButtonVariant}
           onPress={() => onCancelBooking(slot)}
         >
+          {isCanceling ? (
+            <ActivityIndicator
+              color={isViewerBooking ? '#fff' : '#dc2626'}
+              size="small"
+            />
+          ) : null}
           <Text
             className={cn(
               cancelButtonTextVariants({ tone: cancelButtonTextTone }),
             )}
           >
-            {cancelButtonLabel}
+            {isCanceling
+              ? t('app.(festival).highlines.cancelBookingLoadingButton')
+              : cancelButtonLabel}
           </Text>
         </Button>
       ) : null}
