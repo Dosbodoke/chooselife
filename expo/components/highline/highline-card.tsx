@@ -23,11 +23,15 @@ interface HighlineCardProps {
   onPress?: () => void;
   isFocused?: boolean;
   distanceFromUserMeters?: number | null;
+  showFavorite?: boolean;
+  showStatus?: boolean;
 }
 
 interface CardContentProps {
   item: Highline;
   distanceFromUserMeters?: number | null;
+  showFavorite: boolean;
+  showStatus: boolean;
 }
 
 const StatusChip: React.FC<{ status: RigStatuses }> = ({ status }) => {
@@ -113,6 +117,8 @@ const StatsPills: React.FC<{
 const CardContent: React.FC<CardContentProps> = ({
   item,
   distanceFromUserMeters,
+  showFavorite,
+  showStatus,
 }) => {
   return (
     <>
@@ -135,15 +141,22 @@ const CardContent: React.FC<CardContentProps> = ({
 
       {/* Content */}
       <View className="flex-1 p-4 justify-between">
-        {/* Top Row */}
-        <View className="flex-row justify-between items-start">
-          <StatusChip status={item.status as RigStatuses} />
-          <FavoriteHighline
-            isFavorite={item.is_favorite}
-            id={item.id}
-            className="bg-black/60"
-          />
-        </View>
+        {showStatus || showFavorite ? (
+          <View className="flex-row justify-between items-start">
+            {showStatus ? (
+              <StatusChip status={item.status as RigStatuses} />
+            ) : (
+              <View />
+            )}
+            {showFavorite ? (
+              <FavoriteHighline
+                isFavorite={item.is_favorite}
+                id={item.id}
+                className="bg-black/60"
+              />
+            ) : null}
+          </View>
+        ) : null}
 
         {/* Bottom Content */}
         <View className="gap-1.5">
@@ -175,6 +188,8 @@ export const HighlineCard: React.FC<HighlineCardProps> = ({
   onPress,
   isFocused,
   distanceFromUserMeters,
+  showFavorite = true,
+  showStatus = true,
 }) => {
   const content = (
     <ReanimatedSquircleView
@@ -190,6 +205,8 @@ export const HighlineCard: React.FC<HighlineCardProps> = ({
       <CardContent
         item={item}
         distanceFromUserMeters={distanceFromUserMeters}
+        showFavorite={showFavorite}
+        showStatus={showStatus}
       />
     </ReanimatedSquircleView>
   );

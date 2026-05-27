@@ -200,13 +200,14 @@ To publish an OTA update:
 
 ```bash
 # Publish to the production channel
-eas update --branch production
+eas update --branch production --environment production
 
 # Or for a specific message
-eas update --branch production --message "Fix crash on profile screen"
+eas update --branch production --environment production --message "Fix crash on profile screen"
 ```
 
 > **Note:** OTA updates can only change JavaScript/assets. Native code changes (new libraries, permission changes, etc.) require a new store build.
+> With `runtimeVersion.policy = "appVersion"`, the update only reaches installed apps with the same `version` value from `app.config.ts`.
 
 ### Store Builds
 

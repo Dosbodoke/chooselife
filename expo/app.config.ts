@@ -145,6 +145,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   updates: {
     url: 'https://u.expo.dev/6767d806-09e4-4095-ba1f-10805e3d0c5f',
+    checkAutomatically: 'ON_ERROR_RECOVERY',
   },
   runtimeVersion: {
     policy: 'appVersion',
