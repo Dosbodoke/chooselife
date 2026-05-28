@@ -819,7 +819,7 @@ BEGIN
       jsonb_build_object(
         'pt',
         CASE
-          WHEN opening.opened_day_count = 1 THEN 'Programação liberada'
+          WHEN opening.opened_day_count = 1 THEN 'Agentamento aberto'
           ELSE 'Reservas abertas'
         END,
         'en',
@@ -934,13 +934,13 @@ BEGIN
     SELECT
       reminder.profile_id,
       jsonb_build_object(
-        'pt', 'Seu horario esta chegando',
+        'pt', 'Seu horário está chegando.',
         'en', 'Your schedule is near'
       ),
       jsonb_build_object(
         'pt',
         format(
-          'Seu horario na highline %s comeca as %s.',
+          'Seu horário no highline %s começa às %s.',
           reminder.highline_name,
           to_char(reminder.start_at AT TIME ZONE reminder.festival_timezone, 'HH24:MI')
         ),
