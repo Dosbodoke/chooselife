@@ -819,7 +819,7 @@ BEGIN
       jsonb_build_object(
         'pt',
         CASE
-          WHEN opening.opened_day_count = 1 THEN 'Agentamento aberto'
+          WHEN opening.opened_day_count = 1 THEN 'Agendamento aberto'
           ELSE 'Reservas abertas'
         END,
         'en',
