@@ -23,6 +23,10 @@ import { useI18n } from '~/context/i18n';
 import { useOnlineStatus } from '~/context/react-query';
 import { useMountEffect } from '~/hooks/use-mount-effect';
 
+import {
+  cancelFestivalBookingReminder,
+  scheduleFestivalBookingCardSlotReminder,
+} from '~/components/festival/festival-booking-reminders';
 import { FestivalScheduleDayChips } from '~/components/festival/festival-schedule-day-chips';
 import { FestivalScheduleSlotRow } from '~/components/festival/festival-schedule-slot-row';
 import { StaffBookingSheet } from '~/components/festival/staff-booking-sheet';
@@ -254,16 +258,53 @@ export const FestivalScheduleSheet: React.FC<{
   onSelectDayKey,
   selectedDayKey,
 }) => {
-  const { t } = useTranslation();
   const isFocused = useIsFocused();
+  const selectedHighlineId = card?.highline.id ?? null;
+
+  if (!card || !selectedHighlineId || !isFocused) {
+    return null;
+  }
+
+  return (
+    <FestivalScheduleSheetModal
+      key={selectedHighlineId}
+      card={card}
+      canManage={canManage}
+      festivalSlug={festivalSlug}
+      festivalTimeZone={festivalTimeZone}
+      onDismiss={onDismiss}
+      onSelectDayKey={onSelectDayKey}
+      selectedDayKey={selectedDayKey}
+    />
+  );
+};
+
+const FestivalScheduleSheetModal: React.FC<{
+  card: FestivalHighlineScheduleCard;
+  canManage: boolean;
+  festivalSlug: string;
+  festivalTimeZone: string;
+  onDismiss: () => void;
+  onSelectDayKey: (dayKey: string) => void;
+  selectedDayKey: string | null;
+}> = ({
+  card,
+  canManage,
+  festivalSlug,
+  festivalTimeZone,
+  onDismiss,
+  onSelectDayKey,
+  selectedDayKey,
+}) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
+  const isUnmountingRef = React.useRef(false);
   const isOnline = useOnlineStatus();
   const { profile } = useAuth();
   const { locale } = useI18n();
 
   const isAuthenticated = !!profile?.id;
-  const selectedHighlineId = card?.highline.id ?? null;
 
   const [staffSlotId, setStaffSlotId] = React.useState<string | null>(null);
   const [selfBookingSlotId, setSelfBookingSlotId] = React.useState<
@@ -278,8 +319,8 @@ export const FestivalScheduleSheet: React.FC<{
   const isScheduleMutating = bookMutation.isPending || cancelMutation.isPending;
 
   const selectedDay =
-    card?.days.find((day) => day.dateKey === selectedDayKey) ??
-    card?.defaultDay ??
+    card.days.find((day) => day.dateKey === selectedDayKey) ??
+    card.defaultDay ??
     null;
 
   const bookingOpensAtLabel = selectedDay?.bookingOpensAt
@@ -287,28 +328,18 @@ export const FestivalScheduleSheet: React.FC<{
     : null;
 
   const staffSlot =
-    card?.days
+    card.days
       .flatMap((day) => day.slots)
       .find((slot) => slot.id === staffSlotId) ?? null;
 
-  React.useEffect(() => {
-    if (selectedHighlineId && isFocused) {
-      bottomSheetModalRef.current?.present();
-      return;
-    }
+  useMountEffect(function presentSheetOnMount() {
+    bottomSheetModalRef.current?.present();
 
-    bottomSheetModalRef.current?.dismiss();
-  }, [isFocused, selectedHighlineId]);
-
-  useMountEffect(function dismissSheetOnUnmount() {
     return () => {
+      isUnmountingRef.current = true;
       bottomSheetModalRef.current?.dismiss();
     };
   });
-
-  React.useEffect(() => {
-    setStaffSlotId(null);
-  }, [card?.highline.id]);
 
   const renderBackdrop = React.useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -388,6 +419,16 @@ export const FestivalScheduleSheet: React.FC<{
 
         if (!result.success) {
           showBookingError(result.error);
+        } else if (card) {
+          await scheduleFestivalBookingCardSlotReminder({
+            bookingId: result.booking?.id,
+            card,
+            dayKey: selectedDay?.dateKey ?? card.defaultDayKey,
+            festivalTimeZone,
+            locale,
+            slotId,
+            t,
+          });
         }
       } finally {
         setSelfBookingSlotId(null);
@@ -395,10 +436,15 @@ export const FestivalScheduleSheet: React.FC<{
     },
     [
       bookMutation,
+      card,
+      festivalTimeZone,
       isOnline,
       isScheduleMutating,
+      locale,
+      selectedDay?.dateKey,
       showBookingError,
       showOfflineWriteAlert,
+      t,
     ],
   );
 
@@ -427,6 +473,8 @@ export const FestivalScheduleSheet: React.FC<{
 
         if (!result.success) {
           showGenericError();
+        } else {
+          await cancelFestivalBookingReminder(slot.booking.id);
         }
       } finally {
         setCancelingSlotId(null);
@@ -512,32 +560,30 @@ export const FestivalScheduleSheet: React.FC<{
         snapPoints={['86%']}
         handleIndicatorStyle={{ backgroundColor: '#94a3b8' }}
         onDismiss={() => {
-          if (!isFocused && selectedHighlineId) {
+          if (isUnmountingRef.current) {
             return;
           }
 
           onDismiss();
         }}
       >
-        {card ? (
-          <FestivalScheduleContent
-            bookingOpensAtLabel={bookingOpensAtLabel}
-            canManage={canManage}
-            cancelingSlotId={cancelingSlotId}
-            card={card}
-            festivalTimeZone={festivalTimeZone}
-            isAuthenticated={isAuthenticated}
-            isScheduleMutating={isScheduleMutating}
-            isOnline={isOnline}
-            onCancelBooking={handleCancelBooking}
-            onLoginPress={handleLoginPress}
-            onSelectDayKey={onSelectDayKey}
-            onSelfBook={handleSelfBook}
-            onStaffBook={setStaffSlotId}
-            selfBookingSlotId={selfBookingSlotId}
-            selectedDay={selectedDay}
-          />
-        ) : null}
+        <FestivalScheduleContent
+          bookingOpensAtLabel={bookingOpensAtLabel}
+          canManage={canManage}
+          cancelingSlotId={cancelingSlotId}
+          card={card}
+          festivalTimeZone={festivalTimeZone}
+          isAuthenticated={isAuthenticated}
+          isScheduleMutating={isScheduleMutating}
+          isOnline={isOnline}
+          onCancelBooking={handleCancelBooking}
+          onLoginPress={handleLoginPress}
+          onSelectDayKey={onSelectDayKey}
+          onSelfBook={handleSelfBook}
+          onStaffBook={setStaffSlotId}
+          selfBookingSlotId={selfBookingSlotId}
+          selectedDay={selectedDay}
+        />
       </BottomSheetModal>
 
       <StaffBookingSheet

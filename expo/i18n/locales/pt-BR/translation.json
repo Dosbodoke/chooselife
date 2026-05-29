@@ -55,6 +55,8 @@
         "previewNowWalking": "Agora: {{name}}",
         "previewViewSchedule": "Ver horários",
         "previewViewDetails": "Ver detalhes",
+        "localReminderTitle": "Seu horário está chegando.",
+        "localReminderBody": "Seu horário no highline {{highline}} começa às {{time}}.",
         "missingDisplayName": "Ainda não encontramos um nome de exibição para a sua conta. Atualize seu perfil e tente novamente.",
         "emptySchedule": "Não há horários disponíveis para este dia.",
         "availableTitle": "Horário disponível",

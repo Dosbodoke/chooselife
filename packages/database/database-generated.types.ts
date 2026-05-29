@@ -1148,10 +1148,6 @@ export type Database = {
         Args: never
         Returns: number
       }
-      enqueue_festival_schedule_reminder_notifications: {
-        Args: never
-        Returns: number
-      }
       get_crossing_time: {
         Args: { highline_id: string; page_number: number; page_size: number }
         Returns: {
@@ -2069,4 +2065,3 @@ export const Constants = {
     },
   },
 } as const
-

@@ -55,6 +55,8 @@
         "previewNowWalking": "Now: {{name}}",
         "previewViewSchedule": "View slots",
         "previewViewDetails": "View details",
+        "localReminderTitle": "Your schedule is near",
+        "localReminderBody": "Your slot on {{highline}} starts at {{time}}.",
         "missingDisplayName": "We couldn't find a display name for your account yet. Update your profile and try again.",
         "emptySchedule": "No slots are available for this day.",
         "availableTitle": "Available slot",

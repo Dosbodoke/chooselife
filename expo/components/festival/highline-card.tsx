@@ -154,11 +154,9 @@ function getFestivalSchedulePreview({
 function FestivalSchedulePreview({
   card,
   festivalTimeZone,
-  onPress,
 }: {
   card: FestivalHighlineScheduleCard;
   festivalTimeZone: string;
-  onPress: () => void;
 }) {
   const { t } = useTranslation();
   const { locale } = useI18n();
@@ -218,16 +216,12 @@ function FestivalSchedulePreview({
         ) : null}
       </View>
 
-      <Pressable
-        className="self-start flex-row items-center gap-1 rounded-full bg-[#101b2b] px-3.5 py-2"
-        hitSlop={8}
-        onPress={onPress}
-      >
+      <View className="self-start flex-row items-center gap-1 rounded-full bg-[#101b2b] px-3.5 py-2">
         <Text className="text-sm font-semibold text-white">
           {preview.actionLabel}
         </Text>
         <Icon as={ChevronRightIcon} className="size-3.5 text-white" />
-      </Pressable>
+      </View>
     </View>
   );
 }
@@ -238,11 +232,10 @@ export const FestivalHighlineCardView: React.FC<{
   onPress: () => void;
 }> = ({ card, festivalTimeZone, onPress }) => {
   return (
-    <View className="gap-3">
+    <Pressable className="gap-3" onPress={onPress}>
       <HighlineCard
         item={card.highline as Highline}
         className="mb-0 h-48"
-        onPress={onPress}
         showFavorite={false}
         showStatus={false}
       />
@@ -250,9 +243,8 @@ export const FestivalHighlineCardView: React.FC<{
       <FestivalSchedulePreview
         card={card}
         festivalTimeZone={festivalTimeZone}
-        onPress={onPress}
       />
-    </View>
+    </Pressable>
   );
 };
 
