@@ -11,6 +11,7 @@ import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { useOnlineStatus } from '~/context/react-query';
 import { useShare } from '~/hooks/use-share';
 
+import { FestivalSyncStatus } from '~/components/festival/festival-sync-status';
 import {
   FestivalEmptyState,
   FestivalErrorState,
@@ -192,14 +193,14 @@ function FestivalContent({
     dayKey?: string | null,
   ) => void;
 }) {
-  if (query.isPending && !query.data) {
-    return <FestivalLoadingState />;
-  }
+  let content: React.ReactNode;
 
-  if (query.data?.sectors.length) {
+  if (query.isPending && !query.data) {
+    content = <FestivalLoadingState />;
+  } else if (query.data?.sectors.length) {
     const viewerBookings = getViewerFestivalBookings(query.data.sectors);
 
-    return (
+    content = (
       <View className="gap-8">
         <ViewerScheduleSummary
           bookings={viewerBookings}
@@ -216,11 +217,22 @@ function FestivalContent({
         />
       </View>
     );
+  } else if (query.error) {
+    content = <FestivalErrorState isOffline={isOffline} />;
+  } else {
+    content = <FestivalEmptyState />;
   }
 
-  if (query.error) {
-    return <FestivalErrorState isOffline={isOffline} />;
-  }
+  return (
+    <View className="gap-4">
+      <FestivalSyncStatus
+        isFetching={query.isFetching}
+        isOffline={isOffline}
+        timeZone={festivalTimeZone}
+        updatedAt={query.dataUpdatedAt}
+      />
 
-  return <FestivalEmptyState />;
+      {content}
+    </View>
+  );
 }
