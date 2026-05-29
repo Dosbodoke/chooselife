@@ -2,7 +2,6 @@ import {
   formatBookingDayLabel,
   formatBookingOpensAt,
   getSectorKey,
-  getSectorName,
   type FestivalHighlineScheduleCard,
   type FestivalScheduleSectorGroup,
   type FestivalScheduleSlotView,
@@ -308,13 +307,13 @@ function FestivalSectorDescription({
 }
 
 function FestivalSectorHeader({ group }: { group: FestivalSectorGroup }) {
-  const { t } = useTranslation();
-
   return (
     <View className="gap-1">
-      <Text className="text-2xl font-bold text-slate-950">
-        {getSectorName(group, t('app.(festival).highlines.sectorFallback'))}
-      </Text>
+      {group.sector?.name ? (
+        <Text className="text-2xl font-bold text-slate-950">
+          {group.sector.name}
+        </Text>
+      ) : null}
 
       <FestivalSectorDescription description={group.sector?.description} />
     </View>

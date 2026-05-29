@@ -14,7 +14,6 @@
       "highlines": {
         "loading": "Carregando highlines do festival...",
         "empty": "Ainda não há highlines do festival disponíveis.",
-        "sectorFallback": "Festival",
         "openScheduleButton": "Ver programação",
         "syncChecking": "Verificando atualizações da programação...",
         "syncLastUpdated": "Atualizado por último {{dateTime}}",

@@ -14,7 +14,6 @@
       "highlines": {
         "loading": "Loading festival highlines...",
         "empty": "No festival highlines are available yet.",
-        "sectorFallback": "Festival",
         "openScheduleButton": "See schedule",
         "syncChecking": "Checking for schedule updates...",
         "syncLastUpdated": "Update last at {{dateTime}}",
