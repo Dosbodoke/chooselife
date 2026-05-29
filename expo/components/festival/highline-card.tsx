@@ -3,11 +3,9 @@ import {
   formatBookingOpensAt,
   getSectorKey,
   getSectorName,
-  getViewerFestivalBookings,
   type FestivalHighlineScheduleCard,
   type FestivalScheduleSectorGroup,
   type FestivalScheduleSlotView,
-  type useFestivalSchedule,
   type ViewerFestivalBooking,
 } from '@chooselife/ui';
 import { useRouter } from 'expo-router';
@@ -35,10 +33,10 @@ import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 
-type FestivalScheduleQuery = ReturnType<typeof useFestivalSchedule>;
 type FestivalSectorGroup = FestivalScheduleSectorGroup;
 
 const CARD_GAP = 16;
+const CONTENT_SIDE_PADDING = 16;
 const CARD_SIDE_PEEK = 48;
 const MAX_CARD_WIDTH = 340;
 
@@ -258,11 +256,11 @@ export const FestivalHighlineCardView: React.FC<{
   );
 };
 
-function FestivalLoadingState() {
+export function FestivalLoadingState() {
   const { t } = useTranslation();
 
   return (
-    <View className="items-center gap-4 rounded-[28px] bg-white px-6 py-12">
+    <View className="mx-4 items-center gap-4 rounded-[28px] bg-white px-6 py-12">
       <ActivityIndicator size="large" color="#0f172a" />
       <Text className="text-base text-slate-500">
         {t('app.(festival).highlines.loading')}
@@ -271,11 +269,11 @@ function FestivalLoadingState() {
   );
 }
 
-function FestivalEmptyState() {
+export function FestivalEmptyState() {
   const { t } = useTranslation();
 
   return (
-    <View className="rounded-[28px] bg-white px-6 py-12">
+    <View className="mx-4 rounded-[28px] bg-white px-6 py-12">
       <Text className="text-center text-base leading-7 text-slate-500">
         {t('app.(festival).highlines.empty')}
       </Text>
@@ -283,7 +281,7 @@ function FestivalEmptyState() {
   );
 }
 
-function FestivalErrorState({ isOffline }: { isOffline: boolean }) {
+export function FestivalErrorState({ isOffline }: { isOffline: boolean }) {
   const { t } = useTranslation();
 
   const message = React.useMemo(() => {
@@ -295,7 +293,7 @@ function FestivalErrorState({ isOffline }: { isOffline: boolean }) {
   }, [isOffline, t]);
 
   return (
-    <View className="rounded-[28px] bg-white px-6 py-12">
+    <View className="mx-4 rounded-[28px] bg-white px-6 py-12">
       <Text className="text-center text-base leading-7 text-slate-500">
         {message}
       </Text>
@@ -355,7 +353,9 @@ function FestivalHighlineCardList({
       scrollEnabled={cards.length > 1}
       contentContainerStyle={{
         gap: CARD_GAP,
-        paddingRight: cards.length > 1 ? CARD_SIDE_PEEK / 2 : 0,
+        paddingLeft: CONTENT_SIDE_PADDING,
+        paddingRight:
+          CONTENT_SIDE_PADDING + (cards.length > 1 ? CARD_SIDE_PEEK / 2 : 0),
       }}
     >
       {cards.map((card) => (
@@ -382,7 +382,9 @@ function FestivalSector({
 }) {
   return (
     <View className="gap-4">
-      <FestivalSectorHeader group={group} />
+      <View className="px-4">
+        <FestivalSectorHeader group={group} />
+      </View>
 
       <FestivalHighlineCardList
         cards={group.cards}
@@ -393,7 +395,7 @@ function FestivalSector({
   );
 }
 
-function FestivalSectorList({
+export function FestivalSectorList({
   sectors,
   festivalTimeZone,
   onOpenSchedule,
@@ -416,7 +418,7 @@ function FestivalSectorList({
   );
 }
 
-function ViewerScheduleSummary({
+export function ViewerScheduleSummary({
   bookings,
   festivalTimeZone,
   hasAccount,
@@ -467,7 +469,7 @@ function ViewerScheduleSummary({
   }, [router]);
 
   return (
-    <View className="gap-4 rounded-[28px] border border-slate-200 bg-white p-4">
+    <View className="mx-4 gap-4 rounded-[28px] border border-slate-200 bg-white p-4">
       <View className="gap-2">
         <View className="flex-row items-center gap-2">
           <View className="rounded-full bg-emerald-100 p-2">
@@ -544,51 +546,4 @@ function ViewerScheduleSummary({
       </View>
     </View>
   );
-}
-
-export function FestivalContent({
-  query,
-  isOffline,
-  festivalTimeZone,
-  onOpenSchedule,
-}: {
-  query: FestivalScheduleQuery;
-  isOffline: boolean;
-  festivalTimeZone: string;
-  onOpenSchedule: (
-    card: FestivalHighlineScheduleCard,
-    dayKey?: string | null,
-  ) => void;
-}) {
-  if (query.isPending && !query.data) {
-    return <FestivalLoadingState />;
-  }
-
-  if (query.data?.sectors.length) {
-    const viewerBookings = getViewerFestivalBookings(query.data.sectors);
-
-    return (
-      <View className="gap-8">
-        <ViewerScheduleSummary
-          bookings={viewerBookings}
-          festivalTimeZone={festivalTimeZone}
-          hasAccount={!!query.data.viewer.userId}
-          isOffline={isOffline}
-          onOpenSchedule={onOpenSchedule}
-        />
-
-        <FestivalSectorList
-          sectors={query.data.sectors}
-          festivalTimeZone={festivalTimeZone}
-          onOpenSchedule={onOpenSchedule}
-        />
-      </View>
-    );
-  }
-
-  if (query.error) {
-    return <FestivalErrorState isOffline={isOffline} />;
-  }
-
-  return <FestivalEmptyState />;
 }

@@ -1,16 +1,23 @@
 import {
+  getViewerFestivalBookings,
   useFestivalSchedule,
   type FestivalHighlineScheduleCard,
 } from '@chooselife/ui';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Share as ShareIcon } from 'lucide-react-native';
 import React from 'react';
-import { Pressable, RefreshControl, ScrollView } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
 import { useOnlineStatus } from '~/context/react-query';
 import { useShare } from '~/hooks/use-share';
 
-import { FestivalContent } from '~/components/festival/highline-card';
+import {
+  FestivalEmptyState,
+  FestivalErrorState,
+  FestivalLoadingState,
+  FestivalSectorList,
+  ViewerScheduleSummary,
+} from '~/components/festival/highline-card';
 import { FestivalScheduleSheet } from '~/components/festival/schedule-sheet';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { Icon } from '~/components/ui/icon';
@@ -123,7 +130,7 @@ export default function FestivalScreen() {
       >
         <ScrollView
           className="flex-1"
-          contentContainerClassName="gap-8 px-4 pb-10 pt-6"
+          contentContainerClassName="gap-8 pb-10 pt-6"
           refreshControl={
             <RefreshControl
               onRefresh={() => {
@@ -169,4 +176,51 @@ function getFestivalTimeZone(data?: FestivalScheduleQuery['data']) {
   }
 
   return DEFAULT_FESTIVAL_TIME_ZONE;
+}
+
+function FestivalContent({
+  query,
+  isOffline,
+  festivalTimeZone,
+  onOpenSchedule,
+}: {
+  query: FestivalScheduleQuery;
+  isOffline: boolean;
+  festivalTimeZone: string;
+  onOpenSchedule: (
+    card: FestivalHighlineScheduleCard,
+    dayKey?: string | null,
+  ) => void;
+}) {
+  if (query.isPending && !query.data) {
+    return <FestivalLoadingState />;
+  }
+
+  if (query.data?.sectors.length) {
+    const viewerBookings = getViewerFestivalBookings(query.data.sectors);
+
+    return (
+      <View className="gap-8">
+        <ViewerScheduleSummary
+          bookings={viewerBookings}
+          festivalTimeZone={festivalTimeZone}
+          hasAccount={!!query.data.viewer.userId}
+          isOffline={isOffline}
+          onOpenSchedule={onOpenSchedule}
+        />
+
+        <FestivalSectorList
+          sectors={query.data.sectors}
+          festivalTimeZone={festivalTimeZone}
+          onOpenSchedule={onOpenSchedule}
+        />
+      </View>
+    );
+  }
+
+  if (query.error) {
+    return <FestivalErrorState isOffline={isOffline} />;
+  }
+
+  return <FestivalEmptyState />;
 }
