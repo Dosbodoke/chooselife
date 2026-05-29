@@ -235,7 +235,6 @@ export const FestivalHighlineCardView: React.FC<{
       <HighlineCard
         item={card.highline as Highline}
         className="mb-0 h-48"
-        showFavorite={false}
         showStatus={false}
       />
 
