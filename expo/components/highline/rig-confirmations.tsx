@@ -37,15 +37,15 @@ function updateHighlineStatusCache({
   status: Highline['status'];
 }) {
   queryClient.setQueriesData<Highline | null>(
-    { queryKey: ['highline', highlineID, 'detail'] },
+    { queryKey: highlineKeyFactory.detailPrefix(highlineID) },
     (oldData) => (oldData ? { ...oldData, status } : oldData),
   );
   queryClient.setQueriesData<Highline>(
-    { queryKey: highlineKeyFactory.favorite(highlineID) },
+    { queryKey: highlineKeyFactory.favoritePrefix(highlineID) },
     (oldData) => (oldData ? { ...oldData, status } : oldData),
   );
   queryClient.setQueriesData<Highline[]>(
-    { queryKey: ['highlines'] },
+    { queryKey: highlineKeyFactory.listPrefix() },
     (oldData) =>
       oldData?.map((highline) =>
         highline.id === highlineID ? { ...highline, status } : highline,
@@ -61,12 +61,14 @@ function invalidateHighlineStatusQueries({
   queryClient: QueryClient;
 }) {
   void queryClient.invalidateQueries({
-    queryKey: ['highline', highlineID, 'detail'],
+    queryKey: highlineKeyFactory.detailPrefix(highlineID),
   });
   void queryClient.invalidateQueries({
-    queryKey: highlineKeyFactory.favorite(highlineID),
+    queryKey: highlineKeyFactory.favoritePrefix(highlineID),
   });
-  void queryClient.invalidateQueries({ queryKey: ['highlines'] });
+  void queryClient.invalidateQueries({
+    queryKey: highlineKeyFactory.listPrefix(),
+  });
 }
 
 export const RigModal: React.FC<{ highlineID: string; setupID?: string }> = ({

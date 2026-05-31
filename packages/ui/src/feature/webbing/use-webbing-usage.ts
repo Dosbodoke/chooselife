@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 
-import { useSupabase } from '../../supabase-provider';
-import { buildWebbingUsage } from './lifetime-utils';
-import type { WebbingUsage } from './types';
+import { useSupabase } from "../../supabase-provider";
+import { buildWebbingUsage } from "./lifetime-utils";
+import type { WebbingUsage } from "./types";
 
 /**
  * Response type from get_webbing_usage_days RPC
@@ -24,15 +24,27 @@ export const DEFAULT_WEBBING_USAGE: WebbingUsage = {
   rigCount: 0,
   recommendedLifetimeDays: null,
   percentageUsed: 0,
-  status: 'good',
+  status: "good",
 };
 
 /**
  * Query key factory for webbing usage
  */
 export const webbingUsageKeyFactory = {
-  all: () => ['webbing-usage'] as const,
-  byId: (webbingId: number) => ['webbing-usage', webbingId] as const,
+  all: () => ["webbing-usage"] as const,
+  byId: (
+    webbingId: number,
+    recommendedLifetimeDays: number | null,
+    userId?: string,
+  ) =>
+    [
+      ...webbingUsageKeyFactory.all(),
+      {
+        recommendedLifetimeDays,
+        viewerId: userId ?? null,
+        webbingId,
+      },
+    ] as const,
 };
 
 /**
@@ -44,25 +56,31 @@ export function useWebbingUsage(
   webbingId: number | undefined,
   recommendedLifetimeDays: number | null = null,
 ) {
-  const { supabase } = useSupabase();
+  const { supabase, userId } = useSupabase();
 
   const query = useQuery({
-    queryKey: webbingUsageKeyFactory.byId(webbingId ?? 0),
+    queryKey: webbingUsageKeyFactory.byId(
+      webbingId ?? 0,
+      recommendedLifetimeDays,
+      userId,
+    ),
     enabled: !!webbingId,
     placeholderData: DEFAULT_WEBBING_USAGE,
     queryFn: async (): Promise<WebbingUsage> => {
       if (!webbingId) {
-        throw new Error('Webbing ID is required');
+        throw new Error("Webbing ID is required");
       }
 
       // Cast to unknown to bypass type checking until DB types are regenerated
-      const { data, error } = await (supabase.rpc as unknown as (
-        fn: string,
-        params: { webbing_id_param: number },
-      ) => Promise<{ data: WebbingUsageRpcResponse[] | null; error: Error | null }>)(
-        'get_webbing_usage_days',
-        { webbing_id_param: webbingId },
-      );
+      const { data, error } = await (
+        supabase.rpc as unknown as (
+          fn: string,
+          params: { webbing_id_param: number },
+        ) => Promise<{
+          data: WebbingUsageRpcResponse[] | null;
+          error: Error | null;
+        }>
+      )("get_webbing_usage_days", { webbing_id_param: webbingId });
 
       if (error) {
         throw error;
@@ -84,4 +102,3 @@ export function useWebbingUsage(
     data: query.data ?? DEFAULT_WEBBING_USAGE,
   };
 }
-

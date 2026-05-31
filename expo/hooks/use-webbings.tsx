@@ -32,8 +32,19 @@ export type WebbingWithUsage = SingleWebbingWithModel & {
 };
 
 export const useWebbingsKeyFactory = {
-  webbings: () => ['webbings'] as const,
-  webbing: (id: number) => [...useWebbingsKeyFactory.webbings(), id] as const,
+  all: () => ['webbings'] as const,
+  list: (userId?: string) =>
+    [
+      ...useWebbingsKeyFactory.all(),
+      'list',
+      { viewerId: userId ?? null },
+    ] as const,
+  detail: (id: number, userId?: string) =>
+    [
+      ...useWebbingsKeyFactory.all(),
+      'detail',
+      { id, viewerId: userId ?? null },
+    ] as const,
 };
 
 // Helper function to compute 'isUsed' and transform a single webbing object
@@ -60,7 +71,7 @@ export const useUserWebbings = () => {
   const { profile } = useAuth();
 
   return useQuery<WebbingWithUsage[]>({
-    queryKey: useWebbingsKeyFactory.webbings(),
+    queryKey: useWebbingsKeyFactory.list(profile?.id),
     queryFn: async (): Promise<WebbingWithUsage[]> => {
       if (!profile?.id) {
         return [];
@@ -88,13 +99,14 @@ export const useUserWebbings = () => {
 };
 
 export const useWebbing = (id: number) => {
+  const { profile } = useAuth();
   const queryClient = useQueryClient();
 
   return useQuery<WebbingWithUsage | null>({
-    queryKey: useWebbingsKeyFactory.webbing(id),
+    queryKey: useWebbingsKeyFactory.detail(id, profile?.id),
     queryFn: async (): Promise<WebbingWithUsage | null> => {
       const cachedWebbings = queryClient.getQueryData<WebbingWithUsage[]>(
-        useWebbingsKeyFactory.webbings(),
+        useWebbingsKeyFactory.list(profile?.id),
       );
       if (cachedWebbings) {
         const foundInCache = cachedWebbings.find((w) => w.id === id);
@@ -117,7 +129,7 @@ export const useWebbing = (id: number) => {
     },
     initialData: () => {
       const cachedWebbings = queryClient.getQueryData<WebbingWithUsage[]>(
-        useWebbingsKeyFactory.webbings(),
+        useWebbingsKeyFactory.list(profile?.id),
       );
       return cachedWebbings?.find((w) => w.id === id);
     },

@@ -19,10 +19,7 @@ import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
 import { useHighline } from '~/hooks/use-highline';
-import {
-  leaderboardKeys,
-  type TLeaderboardType,
-} from '~/hooks/use-leaderboard';
+import { leaderboardKeys } from '~/hooks/use-leaderboard';
 import { supabase } from '~/lib/supabase';
 import { transformTimeStringToSeconds } from '~/utils';
 import { requestReview } from '~/utils/request-review';
@@ -126,97 +123,17 @@ export default function RegisterWalk() {
 
       return response.data;
     },
-    onMutate: async (variables) => {
-      await Promise.all([
-        queryClient.cancelQueries({
-          queryKey: leaderboardKeys.list({
-            type: 'cadenas',
-            highlinesID: [id],
-          }),
-        }),
-        queryClient.cancelQueries({
-          queryKey: leaderboardKeys.list({
-            type: 'distance',
-            highlinesID: [id],
-          }),
-        }),
-        queryClient.cancelQueries({
-          queryKey: leaderboardKeys.list({
-            type: 'fullLine',
-            highlinesID: [id],
-          }),
-        }),
-        queryClient.cancelQueries({
-          queryKey: leaderboardKeys.list({
-            type: 'speedline',
-            highlinesID: [id],
-          }),
-        }),
-      ]);
-
-      const previousData = {
-        cadenas: queryClient.getQueryData(
-          leaderboardKeys.list({ type: 'cadenas', highlinesID: [id] }),
-        ),
-        distance: queryClient.getQueryData(
-          leaderboardKeys.list({ type: 'distance', highlinesID: [id] }),
-        ),
-        fullLine: queryClient.getQueryData(
-          leaderboardKeys.list({ type: 'fullLine', highlinesID: [id] }),
-        ),
-        speedline: queryClient.getQueryData(
-          leaderboardKeys.list({ type: 'speedline', highlinesID: [id] }),
-        ),
-      };
-
-      const optimisticEntry = {
-        ...variables,
-        id: `temp-${Date.now()}`,
-      };
-
-      return { previousData, optimisticEntry };
+    onMutate: async () => {
+      await queryClient.cancelQueries({
+        queryKey: leaderboardKeys.all(),
+      });
     },
-    onError: (err, variables, context) => {
-      if (context?.previousData) {
-        const { previousData } = context;
-        Object.entries(previousData).forEach(([type, data]) => {
-          if (data) {
-            queryClient.setQueryData(
-              leaderboardKeys.list({
-                type: type as TLeaderboardType,
-                highlinesID: [id],
-              }),
-              data,
-            );
-          }
-        });
-      }
+    onError: (err) => {
       console.error('Error submitting entry:', err);
     },
     onSuccess: async () => {
       queryClient.invalidateQueries({
-        queryKey: leaderboardKeys.list({
-          type: 'cadenas',
-          highlinesID: [id],
-        }),
-      });
-      queryClient.invalidateQueries({
-        queryKey: leaderboardKeys.list({
-          type: 'distance',
-          highlinesID: [id],
-        }),
-      });
-      queryClient.invalidateQueries({
-        queryKey: leaderboardKeys.list({
-          type: 'fullLine',
-          highlinesID: [id],
-        }),
-      });
-      queryClient.invalidateQueries({
-        queryKey: leaderboardKeys.list({
-          type: 'speedline',
-          highlinesID: [id],
-        }),
+        queryKey: leaderboardKeys.all(),
       });
 
       await requestReview();

@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-
 import {
   parseOpenMeteoResponse,
   type OpenMeteoResponse,
@@ -10,7 +9,7 @@ const OPEN_METEO_BASE_URL = 'https://api.open-meteo.com/v1/forecast';
 
 export const weatherKeyFactory = {
   current: (lat: number, lng: number) =>
-    ['weather', 'current', lat.toFixed(2), lng.toFixed(2)] as const,
+    ['weather', 'current', { latitude: lat, longitude: lng }] as const,
 };
 
 interface UseWeatherParams {
@@ -52,7 +51,11 @@ async function fetchCurrentWeather(
  * Hook to fetch current weather data for a specific location
  * Uses Open-Meteo free API (no API key required)
  */
-export function useWeather({ latitude, longitude, enabled = true }: UseWeatherParams) {
+export function useWeather({
+  latitude,
+  longitude,
+  enabled = true,
+}: UseWeatherParams) {
   return useQuery<WeatherData>({
     queryKey: weatherKeyFactory.current(latitude, longitude),
     queryFn: () => fetchCurrentWeather(latitude, longitude),

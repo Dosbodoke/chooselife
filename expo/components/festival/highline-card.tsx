@@ -55,6 +55,23 @@ function formatBookingTimeRange(
   )}`;
 }
 
+function formatWindowTimeRange(
+  startAt: string,
+  endAt: string,
+  locale: string,
+  timeZone: string,
+) {
+  const formatter = new Intl.DateTimeFormat(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone,
+  });
+
+  return `${formatter.format(new Date(startAt))} - ${formatter.format(
+    new Date(endAt),
+  )}`;
+}
+
 type FestivalSchedulePreview = {
   actionLabel: string;
   detail: string | null;
@@ -83,6 +100,27 @@ function getFestivalSchedulePreview({
       eyebrow: t('app.(festival).highlines.previewNoScheduleLabel'),
       tone: 'empty',
       title: t('app.(festival).highlines.previewNoScheduleTitle'),
+    };
+  }
+
+  if (
+    day.slots.length === 0 &&
+    day.windowStartAt !== null &&
+    day.windowEndAt !== null
+  ) {
+    return {
+      actionLabel: t('app.(festival).highlines.previewViewDetails'),
+      detail: t('app.(festival).highlines.previewNoBookingSlotsDetail'),
+      eyebrow: t('app.(festival).highlines.previewNoScheduleLabel'),
+      tone: 'empty',
+      title: t('app.(festival).highlines.previewOpenHoursTitle', {
+        timeRange: formatWindowTimeRange(
+          day.windowStartAt,
+          day.windowEndAt,
+          locale,
+          festivalTimeZone,
+        ),
+      }),
     };
   }
 

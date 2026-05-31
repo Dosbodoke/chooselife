@@ -420,7 +420,7 @@ const FestivalScheduleSheetModal: React.FC<{
         if (!result.success) {
           showBookingError(result.error);
         } else if (card) {
-          await scheduleFestivalBookingCardSlotReminder({
+          void scheduleFestivalBookingCardSlotReminder({
             bookingId: result.booking?.id,
             card,
             dayKey: selectedDay?.dateKey ?? card.defaultDayKey,
@@ -428,8 +428,12 @@ const FestivalScheduleSheetModal: React.FC<{
             locale,
             slotId,
             t,
+          }).catch((error) => {
+            console.error('Failed to schedule festival reminder:', error);
           });
         }
+      } catch {
+        showGenericError();
       } finally {
         setSelfBookingSlotId(null);
       }
@@ -476,6 +480,8 @@ const FestivalScheduleSheetModal: React.FC<{
         } else {
           await cancelFestivalBookingReminder(slot.booking.id);
         }
+      } catch {
+        showGenericError();
       } finally {
         setCancelingSlotId(null);
       }
@@ -510,20 +516,25 @@ const FestivalScheduleSheetModal: React.FC<{
         return false;
       }
 
-      const result = await bookMutation.mutateAsync({
-        slotId,
-        profileId,
-        instagramUsername,
-        displayName,
-      });
+      try {
+        const result = await bookMutation.mutateAsync({
+          slotId,
+          profileId,
+          instagramUsername,
+          displayName,
+        });
 
-      if (!result.success) {
+        if (!result.success) {
+          showGenericError();
+          return false;
+        }
+
+        setStaffSlotId(null);
+        return true;
+      } catch {
         showGenericError();
         return false;
       }
-
-      setStaffSlotId(null);
-      return true;
     },
     [
       bookMutation,

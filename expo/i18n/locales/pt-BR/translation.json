@@ -51,6 +51,8 @@
         "previewUpcomingDetail": "Agenda prevista para {{day}}.",
         "previewNoScheduleTitle": "Sem horários publicados",
         "previewNoScheduleDetail": "Confira a programação para mais detalhes.",
+        "previewOpenHoursTitle": "Aberto das {{timeRange}}",
+        "previewNoBookingSlotsDetail": "Este highline não utiliza reserva de horários.",
         "previewNowWalking": "Agora: {{name}}",
         "previewViewSchedule": "Ver horários",
         "previewViewDetails": "Ver detalhes",

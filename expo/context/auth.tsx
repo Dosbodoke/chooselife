@@ -16,6 +16,7 @@ import React, {
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
+import { removeInactiveViewerQueries } from '~/context/react-query';
 import { useMountEffect } from '~/hooks/use-mount-effect';
 import { useProfile, type Profile } from '~/hooks/use-profile';
 import { supabase } from '~/lib/supabase';
@@ -98,11 +99,18 @@ export function AuthProvider(props: React.PropsWithChildren) {
   const [pendingRedirect, setPendingRedirect] = useState<
     'back' | string | null
   >(null);
-  const {
-    query: profileQuery,
-    invalidateProfile,
-  } = useProfile(session?.user.id || null);
+  const { query: profileQuery, invalidateProfile } = useProfile(
+    session?.user.id || null,
+  );
   const profile = profileQuery.data ?? null;
+
+  React.useEffect(() => {
+    if (sessionLoading) {
+      return;
+    }
+
+    void removeInactiveViewerQueries(session?.user.id ?? null);
+  }, [session?.user.id, sessionLoading]);
 
   const saveLoginMethod = useCallback(async (method: LoginMethod) => {
     try {
@@ -542,6 +550,7 @@ function PostAuthRedirect({
       if (navigation.type === 'dismissTo') {
         // Dismiss back to an existing route when possible so auth/profile
         // screens do not leave duplicate festival entries in the stack.
+        // @ts-expect-error redirect_to search parameter
         router.dismissTo(navigation.href);
         return;
       }

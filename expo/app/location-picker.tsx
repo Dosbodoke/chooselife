@@ -1,4 +1,5 @@
 import Mapbox from '@rnmapbox/maps';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMapStore } from '~/store/map-store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { Position } from 'geojson';
@@ -6,7 +7,6 @@ import { MapPinIcon } from 'lucide-react-native';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { highlineKeyFactory } from '~/hooks/use-highline';
 import { supabase } from '~/lib/supabase';
@@ -17,7 +17,10 @@ import {
 } from '~/utils/constants';
 
 import { PickerControls } from '~/components/map/picker-button';
-import { haversineDistance, positionToPostGISPoint } from '~/components/map/utils';
+import {
+  haversineDistance,
+  positionToPostGISPoint,
+} from '~/components/map/utils';
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 
@@ -27,7 +30,9 @@ const LocationPickerScreen: React.FC = () => {
   const queryClient = useQueryClient();
 
   // Check if we're editing an existing highline
-  const { editHighlineId } = useLocalSearchParams<{ editHighlineId?: string }>();
+  const { editHighlineId } = useLocalSearchParams<{
+    editHighlineId?: string;
+  }>();
 
   // State to store the two picked locations
   const [anchorA, setAnchorA] = useState<Position | null>(null);
@@ -36,10 +41,21 @@ const LocationPickerScreen: React.FC = () => {
 
   // Mutation to update existing highline location
   const updateLocationMutation = useMutation({
-    mutationFn: async ({ anchorA, anchorB }: { anchorA: Position; anchorB: Position }) => {
+    mutationFn: async ({
+      anchorA,
+      anchorB,
+    }: {
+      anchorA: Position;
+      anchorB: Position;
+    }) => {
       if (!editHighlineId) throw new Error('No highline ID provided');
 
-      const length = haversineDistance(anchorA[1], anchorA[0], anchorB[1], anchorB[0]);
+      const length = haversineDistance(
+        anchorA[1],
+        anchorA[0],
+        anchorB[1],
+        anchorB[0],
+      );
 
       const { error } = await supabase
         .from('highline')
@@ -53,8 +69,12 @@ const LocationPickerScreen: React.FC = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: highlineKeyFactory.list() });
-      queryClient.invalidateQueries({ queryKey: highlineKeyFactory.detail(editHighlineId!) });
+      queryClient.invalidateQueries({
+        queryKey: highlineKeyFactory.listPrefix(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: highlineKeyFactory.detailPrefix(editHighlineId!),
+      });
       router.back();
     },
   });

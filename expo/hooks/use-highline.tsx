@@ -41,9 +41,14 @@ export type UseHighlineSingleResult = {
 
 export const highlineKeyFactory = {
   detail: (id: string, userId?: string) =>
-    ['highline', id, 'detail', userId] as const,
-  favorite: (id: string) => ['highline', id, 'favorite'] as const,
-  list: (userId?: string) => ['highlines', userId] as const,
+    ['highline', id, 'detail', { viewerId: userId ?? null }] as const,
+  detailPrefix: (id: string) => ['highline', id, 'detail'] as const,
+  favorite: (id: string, userId?: string) =>
+    ['highline', id, 'favorite', { viewerId: userId ?? null }] as const,
+  favoritePrefix: (id: string) => ['highline', id, 'favorite'] as const,
+  list: (userId?: string) =>
+    ['highlines', { viewerId: userId ?? null }] as const,
+  listPrefix: () => ['highlines'] as const,
 };
 
 // Function overloads
@@ -67,7 +72,7 @@ export function useHighline(
 
     // Create separate queries for favorite and non-favorite items
     const detailKey = highlineKeyFactory.detail(id, session?.user?.id);
-    const favoriteKey = highlineKeyFactory.favorite(id);
+    const favoriteKey = highlineKeyFactory.favorite(id, session?.user?.id);
 
     const {
       data: highline,
@@ -136,7 +141,7 @@ export function useHighline(
       results.forEach((highline) => {
         if (highline.is_favorite) {
           queryClient.setQueryData(
-            highlineKeyFactory.favorite(highline.id),
+            highlineKeyFactory.favorite(highline.id, session?.user?.id),
             highline,
           );
         }
@@ -240,18 +245,18 @@ export function useToggleFavoriteMutation() {
     onMutate: async ({ id, isFavorite }) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: highlineKeyFactory.detail(id),
+        queryKey: highlineKeyFactory.detail(id, session?.user.id),
       });
       await queryClient.cancelQueries({
-        queryKey: highlineKeyFactory.favorite(id),
+        queryKey: highlineKeyFactory.favorite(id, session?.user.id),
       });
 
       // Snapshot previous cache states.
       const previousRegular = queryClient.getQueryData<Highline>(
-        highlineKeyFactory.detail(id),
+        highlineKeyFactory.detail(id, session?.user.id),
       );
       const previousFavorite = queryClient.getQueryData<Highline>(
-        highlineKeyFactory.favorite(id),
+        highlineKeyFactory.favorite(id, session?.user.id),
       );
 
       // Optimistically update the highline's favorite status.
@@ -259,21 +264,24 @@ export function useToggleFavoriteMutation() {
         ...(previousRegular || previousFavorite),
         is_favorite: !isFavorite,
       };
-      queryClient.setQueryData(highlineKeyFactory.detail(id), updatedHighline);
+      queryClient.setQueryData(
+        highlineKeyFactory.detail(id, session?.user.id),
+        updatedHighline,
+      );
       if (!isFavorite) {
         queryClient.setQueryData(
-          highlineKeyFactory.favorite(id),
+          highlineKeyFactory.favorite(id, session?.user.id),
           updatedHighline,
         );
       } else {
         queryClient.removeQueries({
-          queryKey: highlineKeyFactory.favorite(id),
+          queryKey: highlineKeyFactory.favorite(id, session?.user.id),
         });
       }
 
       // Also update the highline in the list cache.
-      queryClient.setQueriesData<Highline[]>(
-        { queryKey: highlineKeyFactory.list() },
+      queryClient.setQueryData<Highline[]>(
+        highlineKeyFactory.list(session?.user.id),
         (old) => {
           if (!old) return old;
           return old.map((highline) =>
@@ -295,17 +303,17 @@ export function useToggleFavoriteMutation() {
       if (context) {
         // Roll back optimistic update on error.
         queryClient.setQueryData(
-          highlineKeyFactory.detail(variables.id),
+          highlineKeyFactory.detail(variables.id, session?.user.id),
           context.previousRegular,
         );
         if (context.previousFavorite) {
           queryClient.setQueryData(
-            highlineKeyFactory.favorite(variables.id),
+            highlineKeyFactory.favorite(variables.id, session?.user.id),
             context.previousFavorite,
           );
         }
-        queryClient.setQueriesData<Highline[]>(
-          { queryKey: highlineKeyFactory.list() },
+        queryClient.setQueryData<Highline[]>(
+          highlineKeyFactory.list(session?.user.id),
           (old) => {
             if (!old) return old;
             return old.map((highline) =>
@@ -320,12 +328,14 @@ export function useToggleFavoriteMutation() {
     onSettled: (_data, _error, variables) => {
       // Always invalidate queries to ensure fresh data.
       queryClient.invalidateQueries({
-        queryKey: highlineKeyFactory.detail(variables.id),
+        queryKey: highlineKeyFactory.detail(variables.id, session?.user.id),
       });
       queryClient.invalidateQueries({
-        queryKey: highlineKeyFactory.favorite(variables.id),
+        queryKey: highlineKeyFactory.favorite(variables.id, session?.user.id),
       });
-      queryClient.invalidateQueries({ queryKey: highlineKeyFactory.list() });
+      queryClient.invalidateQueries({
+        queryKey: highlineKeyFactory.list(session?.user.id),
+      });
     },
   });
 }

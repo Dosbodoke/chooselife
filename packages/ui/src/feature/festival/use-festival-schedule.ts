@@ -18,7 +18,7 @@ export function useFestivalSchedule({
   initialData,
 }: UseFestivalScheduleOptions) {
   const { supabase, userId } = useSupabase();
-  const queryKey = festivalKeys.bySlug(festivalSlug);
+  const queryKey = festivalKeys.bySlug(festivalSlug, userId);
 
   const query = useQuery({
     queryKey,

@@ -5,15 +5,32 @@ export const queryKeys = {
   subscription: {
     all: ['subscription'] as const,
     byOrgUser: (organizationId: string, userId: string) =>
-      [...queryKeys.subscription.all, organizationId, userId] as const,
+      [
+        ...queryKeys.subscription.all,
+        { organizationId, viewerId: userId },
+      ] as const,
   },
   organizations: {
     all: ['organizations'] as const,
     bySlug: (slug: string) => [...queryKeys.organizations.all, slug] as const,
-    isMember: (organizationId: string | undefined, userId: string | undefined) =>
-      [...queryKeys.organizations.all, 'isMember', organizationId, userId] as const,
+    isMember: (
+      organizationSlug: string | undefined,
+      userId: string | undefined,
+    ) =>
+      [
+        ...queryKeys.organizations.all,
+        'isMember',
+        {
+          organizationSlug: organizationSlug ?? null,
+          viewerId: userId ?? null,
+        },
+      ] as const,
     members: (slug: string, userId: string) =>
-      [...queryKeys.organizations.bySlug(slug), 'members', userId] as const,
+      [
+        ...queryKeys.organizations.bySlug(slug),
+        'members',
+        { viewerId: userId },
+      ] as const,
     memberCount: (slug: string) =>
       [...queryKeys.organizations.bySlug(slug), 'memberCount'] as const,
   },

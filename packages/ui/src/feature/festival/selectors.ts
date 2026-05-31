@@ -23,12 +23,11 @@ type ViewerActiveBookingWindow = FestivalScheduleBookingRecord & {
 
 type DayWindowMeta = {
   bookingOpensAt: string | null;
+  earliestWindowStartAt: string | null;
   latestWindowEndAt: string | null;
 };
 
-type DerivedFestivalScheduleDay = FestivalScheduleDay & {
-  latestWindowEndAt: string | null;
-};
+type DerivedFestivalScheduleDay = FestivalScheduleDay;
 
 function formatFestivalDayKey(date: Date, timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -200,8 +199,8 @@ function pickDefaultDay(args: {
 
   const today = days.find((day) => day.dateKey === currentDayKey) ?? null;
   if (today) {
-    const dayCloseAt = today.latestWindowEndAt
-      ? new Date(today.latestWindowEndAt).getTime()
+    const dayCloseAt = today.windowEndAt
+      ? new Date(today.windowEndAt).getTime()
       : null;
 
     if (dayCloseAt === null || now.getTime() < dayCloseAt) {
@@ -236,6 +235,7 @@ export function buildFestivalScheduleCards(args: {
   const highlineById = new Map(args.highlines.map((highline) => [highline.id, highline]));
   const sectorById = new Map(args.sectors.map((sector) => [sector.id, sector]));
   const slotsByHighline = new Map<string, FestivalScheduleSlotRecord[]>();
+  const windowsByHighline = new Map<string, FestivalScheduleWindowRecord[]>();
   const bookingsBySlot = new Map<string, FestivalScheduleBookingRecord[]>();
   const slotById = new Map(args.slots.map((slot) => [slot.id, slot]));
   const windowById = new Map(args.windows.map((window) => [window.id, window]));
@@ -244,6 +244,12 @@ export function buildFestivalScheduleCards(args: {
     const entries = slotsByHighline.get(slot.highline_id) ?? [];
     entries.push(slot);
     slotsByHighline.set(slot.highline_id, entries);
+  }
+
+  for (const window of args.windows) {
+    const entries = windowsByHighline.get(window.highline_id) ?? [];
+    entries.push(window);
+    windowsByHighline.set(window.highline_id, entries);
   }
 
   for (const booking of args.bookings) {
@@ -287,6 +293,15 @@ export function buildFestivalScheduleCards(args: {
       const dayMap = new Map<string, FestivalScheduleSlotView[]>();
       const dayMetaByKey = new Map<string, DayWindowMeta>();
 
+      for (const scheduleWindow of windowsByHighline.get(highline.id) ?? []) {
+        const dayKey = formatFestivalDayKey(
+          new Date(scheduleWindow.window_start_at),
+          args.timeZone,
+        );
+        dayMap.set(dayKey, dayMap.get(dayKey) ?? []);
+        mergeDayWindowMeta(dayMetaByKey, dayKey, scheduleWindow);
+      }
+
       for (const slot of rawSlots) {
         const scheduleWindow = windowById.get(slot.window_id);
         if (!scheduleWindow) continue;
@@ -317,33 +332,7 @@ export function buildFestivalScheduleCards(args: {
         entries.push(view);
         dayMap.set(dayKey, entries);
 
-        const existingMeta = dayMetaByKey.get(dayKey);
-        if (!existingMeta) {
-          dayMetaByKey.set(dayKey, {
-            bookingOpensAt: scheduleWindow.scheduling_opens_at,
-            latestWindowEndAt: scheduleWindow.window_end_at,
-          });
-          continue;
-        }
-
-        const nextBookingOpensAt =
-          existingMeta.bookingOpensAt === null
-            ? scheduleWindow.scheduling_opens_at
-            : new Date(scheduleWindow.scheduling_opens_at).getTime()
-                < new Date(existingMeta.bookingOpensAt).getTime()
-              ? scheduleWindow.scheduling_opens_at
-              : existingMeta.bookingOpensAt;
-        const nextLatestWindowEndAt =
-          existingMeta.latestWindowEndAt === null
-          || new Date(scheduleWindow.window_end_at).getTime()
-            > new Date(existingMeta.latestWindowEndAt).getTime()
-            ? scheduleWindow.window_end_at
-            : existingMeta.latestWindowEndAt;
-
-        dayMetaByKey.set(dayKey, {
-          bookingOpensAt: nextBookingOpensAt,
-          latestWindowEndAt: nextLatestWindowEndAt,
-        });
+        mergeDayWindowMeta(dayMetaByKey, dayKey, scheduleWindow);
       }
 
       const derivedDays: DerivedFestivalScheduleDay[] = Array.from(dayMap.entries())
@@ -361,6 +350,8 @@ export function buildFestivalScheduleCards(args: {
           return {
             dateKey,
             slots: orderedSlots,
+            windowStartAt: dayMeta?.earliestWindowStartAt ?? null,
+            windowEndAt: latestWindowEndAt,
             availableCount: orderedSlots.filter((slot) => slot.isClaimable).length,
             preOpenAvailableCount: orderedSlots.filter(
               (slot) =>
@@ -385,9 +376,7 @@ export function buildFestivalScheduleCards(args: {
       const sector = highline.sector_id
         ? sectorById.get(highline.sector_id) ?? null
         : null;
-      const days: FestivalScheduleDay[] = derivedDays.map(
-        ({ latestWindowEndAt: _latestWindowEndAt, ...day }) => day,
-      );
+      const days: FestivalScheduleDay[] = derivedDays;
 
       return {
         highline,
@@ -397,7 +386,7 @@ export function buildFestivalScheduleCards(args: {
         dayKeys: days.map((day) => day.dateKey),
         defaultDayKey: defaultDay?.dateKey ?? null,
         defaultDay: defaultDay
-          ? (({ latestWindowEndAt: _latestWindowEndAt, ...day }) => day)(defaultDay)
+          ? defaultDay
           : null,
         availableCount: defaultDay?.availableCount ?? 0,
         preOpenAvailableCount: defaultDay?.preOpenAvailableCount ?? 0,
@@ -408,6 +397,43 @@ export function buildFestivalScheduleCards(args: {
     })
     .filter((card): card is FestivalHighlineScheduleCard => card !== null)
     .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+function mergeDayWindowMeta(
+  dayMetaByKey: Map<string, DayWindowMeta>,
+  dayKey: string,
+  scheduleWindow: FestivalScheduleWindowRecord,
+) {
+  const existingMeta = dayMetaByKey.get(dayKey);
+  if (!existingMeta) {
+    dayMetaByKey.set(dayKey, {
+      bookingOpensAt: scheduleWindow.scheduling_opens_at,
+      earliestWindowStartAt: scheduleWindow.window_start_at,
+      latestWindowEndAt: scheduleWindow.window_end_at,
+    });
+    return;
+  }
+
+  dayMetaByKey.set(dayKey, {
+    bookingOpensAt:
+      existingMeta.bookingOpensAt === null
+      || new Date(scheduleWindow.scheduling_opens_at).getTime()
+        < new Date(existingMeta.bookingOpensAt).getTime()
+        ? scheduleWindow.scheduling_opens_at
+        : existingMeta.bookingOpensAt,
+    earliestWindowStartAt:
+      existingMeta.earliestWindowStartAt === null
+      || new Date(scheduleWindow.window_start_at).getTime()
+        < new Date(existingMeta.earliestWindowStartAt).getTime()
+        ? scheduleWindow.window_start_at
+        : existingMeta.earliestWindowStartAt,
+    latestWindowEndAt:
+      existingMeta.latestWindowEndAt === null
+      || new Date(scheduleWindow.window_end_at).getTime()
+        > new Date(existingMeta.latestWindowEndAt).getTime()
+        ? scheduleWindow.window_end_at
+        : existingMeta.latestWindowEndAt,
+  });
 }
 
 export function groupFestivalCardsBySector(

@@ -1,16 +1,20 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 
-import { useSupabase } from '../../supabase-provider';
-import type { WebbingRigHistory } from './types';
+import { useSupabase } from "../../supabase-provider";
+import type { WebbingRigHistory } from "./types";
 
 /**
  * Query key factory for webbing history
  */
 export const webbingHistoryKeyFactory = {
-  all: () => ['webbing-history'] as const,
-  byId: (webbingId: number) => ['webbing-history', webbingId] as const,
+  all: () => ["webbing-history"] as const,
+  byId: (webbingId: number, userId?: string) =>
+    [
+      ...webbingHistoryKeyFactory.all(),
+      { webbingId, viewerId: userId ?? null },
+    ] as const,
 };
 
 /**
@@ -31,19 +35,19 @@ function calculateDurationDays(
  * Returns all rigs where this webbing was used, with highline info
  */
 export function useWebbingHistory(webbingId: number | undefined) {
-  const { supabase } = useSupabase();
+  const { supabase, userId } = useSupabase();
 
   const query = useQuery({
-    queryKey: webbingHistoryKeyFactory.byId(webbingId ?? 0),
+    queryKey: webbingHistoryKeyFactory.byId(webbingId ?? 0, userId),
     enabled: !!webbingId,
     queryFn: async (): Promise<WebbingRigHistory[]> => {
       if (!webbingId) {
-        throw new Error('Webbing ID is required');
+        throw new Error("Webbing ID is required");
       }
 
       // Fetch rig_setup_webbing with rig_setup and highline info
       const { data, error } = await supabase
-        .from('rig_setup_webbing')
+        .from("rig_setup_webbing")
         .select(
           `
           id,
@@ -62,8 +66,8 @@ export function useWebbingHistory(webbingId: number | undefined) {
           )
         `,
         )
-        .eq('webbing_id', webbingId)
-        .order('setup_id', { ascending: false });
+        .eq("webbing_id", webbingId)
+        .order("setup_id", { ascending: false });
 
       if (error) {
         throw error;
@@ -83,10 +87,13 @@ export function useWebbingHistory(webbingId: number | undefined) {
         return {
           setupId: setup.id,
           highlineId: setup.highline_id,
-          highlineName: setup.highline?.name ?? 'Unknown',
+          highlineName: setup.highline?.name ?? "Unknown",
           rigDate: setup.rig_date,
           unriggedAt: setup.unrigged_at,
-          durationDays: calculateDurationDays(setup.rig_date, setup.unrigged_at),
+          durationDays: calculateDurationDays(
+            setup.rig_date,
+            setup.unrigged_at,
+          ),
           webbingType: row.webbing_type,
         };
       });

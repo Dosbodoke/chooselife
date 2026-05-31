@@ -3,10 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useSupabase } from "../../supabase-provider";
-import {
-  bookFestivalScheduleSlot,
-  cancelFestivalScheduleBooking,
-} from "./api";
+import { bookFestivalScheduleSlot, cancelFestivalScheduleBooking } from "./api";
 import { festivalKeys } from "./keys";
 import type {
   BookFestivalScheduleSlotInput,
@@ -25,7 +22,7 @@ export function useBookFestivalScheduleSlot(
   options: MutationHookOptions<BookFestivalScheduleSlotResult>,
 ) {
   const queryClient = useQueryClient();
-  const { supabase } = useSupabase();
+  const { supabase, userId } = useSupabase();
 
   return useMutation({
     mutationFn: (input: BookFestivalScheduleSlotInput) =>
@@ -33,7 +30,7 @@ export function useBookFestivalScheduleSlot(
     onSuccess: async (result) => {
       if (result.success) {
         await queryClient.invalidateQueries({
-          queryKey: festivalKeys.bySlug(options.festivalSlug),
+          queryKey: festivalKeys.bySlug(options.festivalSlug, userId),
         });
       }
 
@@ -46,7 +43,7 @@ export function useCancelFestivalScheduleBooking(
   options: MutationHookOptions<CancelFestivalScheduleBookingResult>,
 ) {
   const queryClient = useQueryClient();
-  const { supabase } = useSupabase();
+  const { supabase, userId } = useSupabase();
 
   return useMutation({
     mutationFn: (input: CancelFestivalScheduleBookingInput) =>
@@ -54,7 +51,7 @@ export function useCancelFestivalScheduleBooking(
     onSuccess: async (result) => {
       if (result.success) {
         await queryClient.invalidateQueries({
-          queryKey: festivalKeys.bySlug(options.festivalSlug),
+          queryKey: festivalKeys.bySlug(options.festivalSlug, userId),
         });
       }
 

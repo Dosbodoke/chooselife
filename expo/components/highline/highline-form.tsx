@@ -20,8 +20,8 @@ import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
 import { Highline, highlineKeyFactory } from '~/hooks/use-highline';
+import { deleteFromR2, getR2PublicUrl, uploadToR2 } from '~/lib/r2';
 import { supabase } from '~/lib/supabase';
-import { getR2PublicUrl, uploadToR2, deleteFromR2 } from '~/lib/r2';
 import { cn } from '~/lib/utils';
 import { ACCEPTED_IMAGE_TYPES, MAX_FILE_SIZE } from '~/utils/constants';
 import { requestReview } from '~/utils/request-review';
@@ -133,9 +133,11 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
     { previousHighlines: Highline[] | undefined }
   >({
     onMutate: async (form) => {
-      await queryClient.cancelQueries({ queryKey: highlineKeyFactory.list() });
+      await queryClient.cancelQueries({
+        queryKey: highlineKeyFactory.list(profile?.id),
+      });
       const previousHighlines = queryClient.getQueryData<Highline[]>(
-        highlineKeyFactory.list(),
+        highlineKeyFactory.list(profile?.id),
       );
 
       const isUpdate = !!highline;
@@ -156,14 +158,16 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
         sector_id: highline ? highline.sector_id : 0,
       };
 
-      queryClient.setQueryData<Highline[]>(highlineKeyFactory.list(), (old) =>
-        isUpdate
-          ? old?.map((h) =>
-              h.id === optimisticHighline.id ? optimisticHighline : h,
-            )
-          : old
-            ? [...old, optimisticHighline]
-            : [optimisticHighline],
+      queryClient.setQueryData<Highline[]>(
+        highlineKeyFactory.list(profile?.id),
+        (old) =>
+          isUpdate
+            ? old?.map((h) =>
+                h.id === optimisticHighline.id ? optimisticHighline : h,
+              )
+            : old
+              ? [...old, optimisticHighline]
+              : [optimisticHighline],
       );
 
       return { previousHighlines };
@@ -243,13 +247,13 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
       setNewHighlineUUID(newHighlineID);
 
       queryClient.invalidateQueries({
-        queryKey: highlineKeyFactory.list(profile?.id),
+        queryKey: highlineKeyFactory.listPrefix(),
       });
       queryClient.invalidateQueries({
-        queryKey: highlineKeyFactory.detail(newHighlineID, profile?.id),
+        queryKey: highlineKeyFactory.detailPrefix(newHighlineID),
       });
       queryClient.invalidateQueries({
-        queryKey: highlineKeyFactory.favorite(newHighlineID),
+        queryKey: highlineKeyFactory.favoritePrefix(newHighlineID),
       });
 
       await requestReview();
@@ -257,7 +261,7 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
     onError: (_, _newHighlineID, context) => {
       if (context?.previousHighlines) {
         queryClient.setQueryData(
-          highlineKeyFactory.list(),
+          highlineKeyFactory.list(profile?.id),
           context.previousHighlines,
         );
       }

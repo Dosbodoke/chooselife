@@ -54,6 +54,8 @@ export type FestivalFeaturedSlot = FestivalScheduleSlotView;
 export interface FestivalScheduleDay {
   dateKey: string;
   slots: FestivalScheduleSlotView[];
+  windowStartAt: string | null;
+  windowEndAt: string | null;
   availableCount: number;
   preOpenAvailableCount: number;
   bookingOpensAt: string | null;

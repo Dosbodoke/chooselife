@@ -51,6 +51,8 @@
         "previewUpcomingDetail": "Schedule planned for {{day}}.",
         "previewNoScheduleTitle": "No slots published",
         "previewNoScheduleDetail": "Open the schedule for more details.",
+        "previewOpenHoursTitle": "Open {{timeRange}}",
+        "previewNoBookingSlotsDetail": "This highline does not use booking slots.",
         "previewNowWalking": "Now: {{name}}",
         "previewViewSchedule": "View slots",
         "previewViewDetails": "View details",

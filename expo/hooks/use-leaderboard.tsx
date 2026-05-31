@@ -28,12 +28,15 @@ const PAGE_SIZE = 5;
 
 // Query key factory
 export const leaderboardKeys = {
-  list: (params: {
-    type: TLeaderboardType;
-    highlinesID: string[];
-    startDate?: string;
-    endDate?: string;
-  }) => ['leaderboard', params] as const,
+  all: () => ['leaderboard'] as const,
+  list: <TFunc extends LeaderboardFunctions>({
+    params,
+    rpcFunction,
+    type,
+  }: Pick<
+    UseLeaderboardQueryProps<TFunc>,
+    'params' | 'rpcFunction' | 'type'
+  >) => [...leaderboardKeys.all(), { params, rpcFunction, type }] as const,
 };
 
 export function useLeaderboardQuery<TFunc extends LeaderboardFunctions>({
@@ -53,14 +56,6 @@ export function useLeaderboardQuery<TFunc extends LeaderboardFunctions>({
     return data as unknown as Functions[TFunc]['Returns'];
   }
 
-  // Safely ex111tract start_date and end_date if they exist in params
-  const startDate =
-    'start_date' in params
-      ? (params.start_date as string | undefined)
-      : undefined;
-  const endDate =
-    'end_date' in params ? (params.end_date as string | undefined) : undefined;
-
   // Array of highline id's
   let highlinesID: string[] = [];
   if ('highline_ids' in params) {
@@ -71,10 +66,9 @@ export function useLeaderboardQuery<TFunc extends LeaderboardFunctions>({
   }
 
   const queryKey = leaderboardKeys.list({
+    rpcFunction,
     type,
-    highlinesID,
-    startDate: startDate,
-    endDate: endDate,
+    params,
   });
 
   return useInfiniteQuery({
