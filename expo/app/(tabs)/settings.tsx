@@ -31,6 +31,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
+import { useOnlineStatus } from '~/context/react-query';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 import { Tables } from '~/utils/database.types';
@@ -51,6 +52,7 @@ import { Text } from '~/components/ui/text';
 export default function SettingsPage() {
   const { t } = useTranslation();
   const { profile, logout, isLoginPending } = useAuth();
+  const isOnline = useOnlineStatus();
 
   if (profile && profile.username) {
     return (
@@ -115,15 +117,27 @@ export default function SettingsPage() {
 
   return (
     <SafeAreaOfflineView className="flex-1 bg-gray-100">
-      <View className="p-4 gap-4 flex justify-end h-full">
+      <View className="flex-1 justify-end gap-4 p-4">
         <View className="bg-white rounded-xl overflow-hidden">
           <ChangeLanguage isLast />
         </View>
-        <Link href={`/login?redirect_to=settings`} asChild>
-          <Button disabled={isLoginPending} className="w-full bg-primary">
+        <Link
+          href={`/login?redirect_to=settings`}
+          asChild
+          disabled={!isOnline || isLoginPending}
+        >
+          <Button
+            disabled={!isOnline || isLoginPending}
+            className="w-full bg-primary"
+          >
             <Text>{t('app.(tabs).settings.logIn')}</Text>
           </Button>
         </Link>
+        {!isOnline ? (
+          <Text className="text-center text-sm text-muted-foreground">
+            {t('app.(tabs).settings.offlineLoginMessage')}
+          </Text>
+        ) : null}
         <Text className="text-center text-muted-foreground text-xs mt-4">
           Version {Constants.expoConfig?.version ?? ''}
         </Text>

@@ -5,6 +5,7 @@ import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useOnlineStatus } from '~/context/react-query';
+import { shouldRenderOfflineBanner } from '~/features/festival/offline-policy';
 
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
@@ -13,12 +14,18 @@ export const SafeAreaOfflineView: React.FC<{
   children: React.ReactNode;
   className?: string;
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
-}> = ({ children, className, edges = ['top', 'left', 'right'] }) => {
+  offlineBannerCoversStatusBar?: boolean;
+}> = ({
+  children,
+  className,
+  edges = ['top', 'left', 'right'],
+  offlineBannerCoversStatusBar = true,
+}) => {
   const { t } = useTranslation();
   const { top, bottom, left, right } = useSafeAreaInsets();
   const isOnline = useOnlineStatus();
 
-  if (!isOnline) {
+  if (shouldRenderOfflineBanner(isOnline)) {
     return (
       <Animated.View
         entering={FadeInUp}
@@ -34,7 +41,7 @@ export const SafeAreaOfflineView: React.FC<{
           className="w-full py-2 bg-red-100 flex-row items-center justify-center gap-2"
           style={{
             // Extend the banner under the translucent status bar while offline.
-            paddingTop: top,
+            ...(offlineBannerCoversStatusBar && { paddingTop: top }),
           }}
         >
           <Icon as={WifiOffIcon} className="size-5 text-red-500" />
@@ -67,7 +74,7 @@ export const OfflineBanner: React.FC = () => {
   const { top } = useSafeAreaInsets();
   const isOnline = useOnlineStatus();
 
-  if (isOnline) return null;
+  if (!shouldRenderOfflineBanner(isOnline)) return null;
 
   return (
     <Animated.View

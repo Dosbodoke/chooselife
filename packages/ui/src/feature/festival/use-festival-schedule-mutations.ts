@@ -25,7 +25,7 @@ export function useBookFestivalScheduleSlot(
   options: MutationHookOptions<BookFestivalScheduleSlotResult>,
 ) {
   const queryClient = useQueryClient();
-  const { supabase } = useSupabase();
+  const { supabase, userId } = useSupabase();
 
   return useMutation({
     mutationFn: (input: BookFestivalScheduleSlotInput) =>
@@ -33,12 +33,17 @@ export function useBookFestivalScheduleSlot(
     onSuccess: async (result) => {
       if (result.success) {
         await queryClient.invalidateQueries({
-          queryKey: festivalKeys.bySlug(options.festivalSlug),
+          queryKey: festivalKeys.bySlug(options.festivalSlug, userId),
         });
       }
 
       options.onSuccess?.(result);
     },
+    meta: {
+      persistOfflineMutation: false,
+    },
+    networkMode: "always",
+    retry: false,
   });
 }
 
@@ -46,7 +51,7 @@ export function useCancelFestivalScheduleBooking(
   options: MutationHookOptions<CancelFestivalScheduleBookingResult>,
 ) {
   const queryClient = useQueryClient();
-  const { supabase } = useSupabase();
+  const { supabase, userId } = useSupabase();
 
   return useMutation({
     mutationFn: (input: CancelFestivalScheduleBookingInput) =>
@@ -54,11 +59,16 @@ export function useCancelFestivalScheduleBooking(
     onSuccess: async (result) => {
       if (result.success) {
         await queryClient.invalidateQueries({
-          queryKey: festivalKeys.bySlug(options.festivalSlug),
+          queryKey: festivalKeys.bySlug(options.festivalSlug, userId),
         });
       }
 
       options.onSuccess?.(result);
     },
+    meta: {
+      persistOfflineMutation: false,
+    },
+    networkMode: "always",
+    retry: false,
   });
 }

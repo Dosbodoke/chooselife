@@ -32,7 +32,7 @@
         "currentLabel": "Andando",
         "availableCount": "{{count}} disponíveis",
         "preOpenAvailableCount": "{{count}} abrem em breve",
-        "authRequired": "Você precisa estar logado para reservar um horário.",
+        "authRequired": "Você precisa ter uma conta para reservar um horário.",
         "bookingOpensAtTitle": "Reservas ainda não abriram",
         "bookingOpensAtMessage": "As reservas deste dia abrem em {{dateTime}}.",
         "bookingOpensAtSummary": "Reservas abrem em {{dateTime}}",
@@ -95,6 +95,16 @@
         "offlineActionTitle": "Ação indisponível offline",
         "offlineActionMessage": "Conecte-se à internet para reservar ou cancelar horários do festival.",
         "offlineCacheEmpty": "Você está offline e esta programação ainda não foi carregada neste aparelho.",
+        "bookingSuccessTitle": "Horário reservado",
+        "bookingSuccessMessage": "Sua reserva no highline {{highline}} foi confirmada.",
+        "cancellationSuccessTitle": "Reserva cancelada",
+        "cancellationSuccessMessage": "Sua reserva no highline {{highline}} foi cancelada.",
+        "staffBookingSuccessTitle": "Horário reservado",
+        "staffBookingSuccessMessage": "A reserva de {{participant}} no highline {{highline}} foi confirmada.",
+        "staffCancellationSuccessTitle": "Reserva cancelada",
+        "staffCancellationSuccessMessage": "A reserva de {{participant}} no highline {{highline}} foi cancelada.",
+        "connectivityErrorTitle": "Não foi possível acessar o servidor",
+        "connectivityErrorMessage": "Sua programação não foi alterada. Verifique sua conexão e tente novamente.",
         "errorTitle": "Erro na programação",
         "genericError": "Algo deu errado ao atualizar a programação."
       },
@@ -248,6 +258,7 @@
           "alertError": "Não foi possível deletar a conta. Por favor, tente novamente."
         },
         "logIn": "Entrar na conta",
+        "offlineLoginMessage": "Conecte-se à internet para entrar na sua conta.",
         "editProfile": {
           "triggerLabel": "Informações pessoais",
           "submitLabel": "Salvar"

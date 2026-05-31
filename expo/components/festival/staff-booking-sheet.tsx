@@ -41,6 +41,10 @@ type StaffBookingSelection =
       username: string;
     };
 
+export type StaffBookingConfirmationInput = BookFestivalScheduleSlotInput & {
+  participantLabel: string;
+};
+
 function formatSlotTimeRange(
   slot: FestivalScheduleSlotView,
   locale: string,
@@ -143,7 +147,7 @@ const SelectedParticipantCard: React.FC<{
 export const StaffBookingSheet: React.FC<{
   festivalTimeZone: string;
   isSubmitting: boolean;
-  onConfirmBooking: (input: BookFestivalScheduleSlotInput) => Promise<boolean>;
+  onConfirmBooking: (input: StaffBookingConfirmationInput) => Promise<boolean>;
   onDismiss: () => void;
   slot: FestivalScheduleSlotView | null;
 }> = ({
@@ -273,6 +277,10 @@ export const StaffBookingSheet: React.FC<{
       profileId: selection.type === 'profile' ? selection.profile.id : null,
       instagramUsername: selection.type === 'guest' ? selection.username : null,
       displayName: selection.type === 'guest' ? guestDisplayName.trim() : null,
+      participantLabel:
+        selection.type === 'profile'
+          ? (selection.profile.name ?? selection.profile.username)
+          : guestDisplayName.trim(),
     });
 
     if (success) {

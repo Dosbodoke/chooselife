@@ -30,6 +30,9 @@ export const useProfile = (id: string | null) => {
     },
     // Only run this query if a id exists.
     enabled: !!id,
+    meta: {
+      authScope: id ?? undefined,
+    },
     staleTime: 24 * 60 * 60 * 1000, // 1 day
   });
 

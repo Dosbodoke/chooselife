@@ -6,6 +6,7 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import AsyncStorage from 'expo-sqlite/kv-store';
 import * as WebBrowser from 'expo-web-browser';
+import { useQueryClient } from '@tanstack/react-query';
 import React, {
   useCallback,
   useContext,
@@ -42,8 +43,39 @@ type PostAuthNavigation =
       key: string;
       shouldClearPendingRedirect: boolean;
       type: 'replace';
-      href: string;
-    };
+    href: string;
+  };
+
+function removeStaleAuthQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  currentUserId: string | null,
+) {
+  queryClient.removeQueries({
+    predicate: (query) => {
+      const authScope = query.meta?.authScope;
+      if (typeof authScope === 'string') {
+        return authScope !== currentUserId;
+      }
+
+      const [root, , type, keyScope] = query.queryKey;
+      const scopedKeyUserId =
+        root === 'highlines'
+          ? query.queryKey[1]
+          : root === 'highline' &&
+              (type === 'detail' || type === 'favorite')
+            ? keyScope
+            : root === 'festival' && type === 'viewer'
+              ? keyScope
+              : undefined;
+
+      return (
+        typeof scopedKeyUserId === 'string' &&
+        scopedKeyUserId !== 'public' &&
+        scopedKeyUserId !== currentUserId
+      );
+    },
+  });
+}
 
 interface AuthContextValue {
   login: ({
@@ -89,7 +121,9 @@ const AuthContext = React.createContext<AuthContextValue | undefined>(
 export function AuthProvider(props: React.PropsWithChildren) {
   const { t } = useTranslation();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const handledAuthUrlRef = useRef<string | null>(null);
+  const previousUserIdRef = useRef<string | null | undefined>(undefined);
   const [session, setSession] = useState<Session | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [lastLoginMethod, setLastLoginMethod] = useState<LoginMethod | null>(
@@ -103,6 +137,19 @@ export function AuthProvider(props: React.PropsWithChildren) {
     invalidateProfile,
   } = useProfile(session?.user.id || null);
   const profile = profileQuery.data ?? null;
+
+  const handleSessionChange = useCallback((nextSession: Session | null) => {
+    const currentUserId = nextSession?.user.id ?? null;
+    const previousUserId = previousUserIdRef.current;
+    previousUserIdRef.current = currentUserId;
+
+    if (previousUserId === undefined || previousUserId !== currentUserId) {
+      removeStaleAuthQueries(queryClient, currentUserId);
+    }
+
+    setSession(nextSession);
+    setSessionLoading(false);
+  }, [queryClient]);
 
   const saveLoginMethod = useCallback(async (method: LoginMethod) => {
     try {
@@ -314,6 +361,9 @@ export function AuthProvider(props: React.PropsWithChildren) {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
+          queryParams: {
+            prompt: 'select_account',
+          },
           redirectTo: baseRedirectTo,
           skipBrowserRedirect: true,
         },
@@ -367,14 +417,13 @@ export function AuthProvider(props: React.PropsWithChildren) {
 
   useMountEffect(function setupSession() {
     void supabase.auth.getSession().then(({ data: { session } }) => {
-      setSessionLoading(false);
-      setSession(session);
+      handleSessionChange(session);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+      handleSessionChange(session);
     });
 
     // Cleanup subscription
@@ -542,6 +591,7 @@ function PostAuthRedirect({
       if (navigation.type === 'dismissTo') {
         // Dismiss back to an existing route when possible so auth/profile
         // screens do not leave duplicate festival entries in the stack.
+        // @ts-expect-error redirect_to search parameter
         router.dismissTo(navigation.href);
         return;
       }

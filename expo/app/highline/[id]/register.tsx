@@ -15,6 +15,7 @@ import { ActivityIndicator, Keyboard, Platform, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
+import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
@@ -23,8 +24,12 @@ import {
   leaderboardKeys,
   type TLeaderboardType,
 } from '~/hooks/use-leaderboard';
-import { supabase } from '~/lib/supabase';
-import { transformTimeStringToSeconds } from '~/utils';
+import {
+  invalidateHighlineWalkLeaderboards,
+  registerHighlineWalk,
+  registerHighlineWalkMutationKey,
+  type RegisterHighlineWalkVariables,
+} from '~/features/highline/register-walk';
 import { requestReview } from '~/utils/request-review';
 
 import SuccessAnimation from '~/components/animations/success-animation';
@@ -103,28 +108,10 @@ export default function RegisterWalk() {
   });
 
   const formMutation = useMutation({
-    mutationFn: async (formData: FormSchema) => {
-      if (!id) throw new Error('No highline ID provided');
-
-      const response = await supabase.from('entry').insert({
-        highline_id: id,
-        instagram: formData.username.trim(),
-        cadenas: formData.cadenas,
-        full_lines: formData.full_lines,
-        distance_walked: formData.distance,
-        crossing_time: formData.time
-          ? transformTimeStringToSeconds(formData.time)
-          : null,
-        comment: formData.comment,
-        witness: formData.witness,
-        is_highliner: true,
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      return response.data;
+    mutationKey: registerHighlineWalkMutationKey,
+    mutationFn: registerHighlineWalk,
+    meta: {
+      persistOfflineMutation: true,
     },
     onMutate: async (variables) => {
       await Promise.all([
@@ -193,32 +180,8 @@ export default function RegisterWalk() {
       }
       console.error('Error submitting entry:', err);
     },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({
-        queryKey: leaderboardKeys.list({
-          type: 'cadenas',
-          highlinesID: [id],
-        }),
-      });
-      queryClient.invalidateQueries({
-        queryKey: leaderboardKeys.list({
-          type: 'distance',
-          highlinesID: [id],
-        }),
-      });
-      queryClient.invalidateQueries({
-        queryKey: leaderboardKeys.list({
-          type: 'fullLine',
-          highlinesID: [id],
-        }),
-      });
-      queryClient.invalidateQueries({
-        queryKey: leaderboardKeys.list({
-          type: 'speedline',
-          highlinesID: [id],
-        }),
-      });
-
+    onSuccess: async (_data, variables) => {
+      invalidateHighlineWalkLeaderboards(queryClient, variables.highlineId);
       await requestReview();
     },
     networkMode: 'offlineFirst',
@@ -227,7 +190,15 @@ export default function RegisterWalk() {
   });
 
   function onValid(data: FormSchema) {
-    formMutation.mutate(data);
+    if (!id) {
+      return;
+    }
+
+    formMutation.mutate({
+      entryId: uuidv4(),
+      highlineId: id,
+      formData: data,
+    } satisfies RegisterHighlineWalkVariables);
   }
 
   function onInvalid(errors: FieldErrors<FormSchema>) {

@@ -21,6 +21,12 @@ import { Alert, View } from 'react-native';
 import { useAuth } from '~/context/auth';
 import { useI18n } from '~/context/i18n';
 import { useOnlineStatus } from '~/context/react-query';
+import { canMutateFestivalSchedule } from '~/features/festival/offline-policy';
+import {
+  getFestivalScheduleAlert,
+  getFestivalScheduleErrorAlertKind,
+  type FestivalScheduleAlertKind,
+} from '~/features/festival/schedule-alerts';
 import { useMountEffect } from '~/hooks/use-mount-effect';
 
 import {
@@ -29,7 +35,10 @@ import {
 } from '~/components/festival/festival-booking-reminders';
 import { FestivalScheduleDayChips } from '~/components/festival/festival-schedule-day-chips';
 import { FestivalScheduleSlotRow } from '~/components/festival/festival-schedule-slot-row';
-import { StaffBookingSheet } from '~/components/festival/staff-booking-sheet';
+import {
+  StaffBookingSheet,
+  type StaffBookingConfirmationInput,
+} from '~/components/festival/staff-booking-sheet';
 import { Button } from '~/components/ui/button';
 import { Text } from '~/components/ui/text';
 
@@ -352,53 +361,26 @@ const FestivalScheduleSheetModal: React.FC<{
     [],
   );
 
-  const showGenericError = React.useCallback(() => {
-    Alert.alert(
-      t('app.(festival).highlines.errorTitle'),
-      t('app.(festival).highlines.genericError'),
-    );
-  }, [t]);
+  const showScheduleAlert = React.useCallback(
+    (kind: FestivalScheduleAlertKind, participantLabel?: string) => {
+      const alert = getFestivalScheduleAlert({
+        bookingOpensAtLabel,
+        highlineName: card.highline.name,
+        kind,
+        participantLabel,
+        t,
+      });
 
-  const showOfflineWriteAlert = React.useCallback(() => {
-    Alert.alert(
-      t('app.(festival).highlines.offlineActionTitle'),
-      t('app.(festival).highlines.offlineActionMessage'),
-    );
-  }, [t]);
+      Alert.alert(alert.title, alert.message);
+    },
+    [bookingOpensAtLabel, card.highline.name, t],
+  );
 
   const showBookingError = React.useCallback(
     (error?: string) => {
-      if (error === 'festival_schedule_booking_overlap') {
-        Alert.alert(
-          t('app.(festival).highlines.errorTitle'),
-          t('app.(festival).highlines.scheduleOverlapError'),
-        );
-        return;
-      }
-
-      if (error === 'festival_schedule_booking_limit') {
-        Alert.alert(
-          t('app.(festival).highlines.errorTitle'),
-          t('app.(festival).highlines.scheduleLimitError'),
-        );
-        return;
-      }
-
-      if (error === 'festival_schedule_booking_not_open_yet') {
-        Alert.alert(
-          t('app.(festival).highlines.errorTitle'),
-          bookingOpensAtLabel
-            ? t('app.(festival).highlines.scheduleNotOpenError', {
-                dateTime: bookingOpensAtLabel,
-              })
-            : t('app.(festival).highlines.genericError'),
-        );
-        return;
-      }
-
-      showGenericError();
+      showScheduleAlert(getFestivalScheduleErrorAlertKind(error));
     },
-    [bookingOpensAtLabel, showGenericError, t],
+    [showScheduleAlert],
   );
 
   const handleSelfBook = React.useCallback(
@@ -407,8 +389,8 @@ const FestivalScheduleSheetModal: React.FC<{
         return;
       }
 
-      if (!isOnline) {
-        showOfflineWriteAlert();
+      if (!canMutateFestivalSchedule({ action: 'book', isOnline })) {
+        showScheduleAlert('offline-write');
         return;
       }
 
@@ -428,7 +410,10 @@ const FestivalScheduleSheetModal: React.FC<{
             locale,
             slotId,
             t,
+          }).catch((error) => {
+            console.error('Failed to schedule festival reminder:', error);
           });
+          showScheduleAlert('booking-success');
         }
       } finally {
         setSelfBookingSlotId(null);
@@ -443,7 +428,7 @@ const FestivalScheduleSheetModal: React.FC<{
       locale,
       selectedDay?.dateKey,
       showBookingError,
-      showOfflineWriteAlert,
+      showScheduleAlert,
       t,
     ],
   );
@@ -456,8 +441,8 @@ const FestivalScheduleSheetModal: React.FC<{
         return;
       }
 
-      if (!isOnline) {
-        showOfflineWriteAlert();
+      if (!canMutateFestivalSchedule({ action: 'cancel', isOnline })) {
+        showScheduleAlert('offline-write');
         return;
       }
 
@@ -472,9 +457,15 @@ const FestivalScheduleSheetModal: React.FC<{
         });
 
         if (!result.success) {
-          showGenericError();
+          showBookingError(result.error);
         } else {
           await cancelFestivalBookingReminder(slot.booking.id);
+          showScheduleAlert(
+            slot.booking.isViewer
+              ? 'cancellation-success'
+              : 'staff-cancellation-success',
+            slot.booking.participant.primaryText,
+          );
         }
       } finally {
         setCancelingSlotId(null);
@@ -484,8 +475,8 @@ const FestivalScheduleSheetModal: React.FC<{
       cancelMutation,
       isOnline,
       isScheduleMutating,
-      showGenericError,
-      showOfflineWriteAlert,
+      showBookingError,
+      showScheduleAlert,
     ],
   );
 
@@ -493,20 +484,16 @@ const FestivalScheduleSheetModal: React.FC<{
     async ({
       displayName,
       instagramUsername,
+      participantLabel,
       profileId,
       slotId,
-    }: {
-      displayName?: string | null;
-      instagramUsername?: string | null;
-      profileId?: string | null;
-      slotId: string;
-    }) => {
+    }: StaffBookingConfirmationInput) => {
       if (isScheduleMutating) {
         return false;
       }
 
-      if (!isOnline) {
-        showOfflineWriteAlert();
+      if (!canMutateFestivalSchedule({ action: 'staff-book', isOnline })) {
+        showScheduleAlert('offline-write');
         return false;
       }
 
@@ -518,19 +505,20 @@ const FestivalScheduleSheetModal: React.FC<{
       });
 
       if (!result.success) {
-        showGenericError();
+        showBookingError(result.error);
         return false;
       }
 
       setStaffSlotId(null);
+      showScheduleAlert('staff-booking-success', participantLabel);
       return true;
     },
     [
       bookMutation,
       isOnline,
       isScheduleMutating,
-      showGenericError,
-      showOfflineWriteAlert,
+      showBookingError,
+      showScheduleAlert,
     ],
   );
 

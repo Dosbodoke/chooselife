@@ -22,6 +22,8 @@ type Sector = Pick<Tables<"sector">, "id" | "name" | "description">;
 type Profile = Pick<Tables<"profiles">, "id" | "name" | "username">;
 
 const FESTIVAL_SCHEDULE_MUTATION_ERROR = "festival_schedule_mutation_failed";
+const FESTIVAL_SCHEDULE_CONNECTIVITY_ERROR =
+  "festival_schedule_connectivity_failed";
 const FESTIVAL_SCHEDULE_BOOKING_NOT_OPEN_ERROR =
   "festival_schedule_booking_not_open_yet";
 const FESTIVAL_SCHEDULE_BOOKING_OVERLAP_ERROR =
@@ -31,6 +33,14 @@ const FESTIVAL_SCHEDULE_BOOKING_LIMIT_ERROR =
 
 function mapFestivalScheduleBookingError(message: string | undefined) {
   if (!message) return FESTIVAL_SCHEDULE_MUTATION_ERROR;
+
+  if (
+    /failed to fetch|network request failed|networkerror|load failed/i.test(
+      message,
+    )
+  ) {
+    return FESTIVAL_SCHEDULE_CONNECTIVITY_ERROR;
+  }
 
   if (message.includes("concurrent schedule booking")) {
     return FESTIVAL_SCHEDULE_BOOKING_OVERLAP_ERROR;
@@ -45,6 +55,58 @@ function mapFestivalScheduleBookingError(message: string | undefined) {
   }
 
   return FESTIVAL_SCHEDULE_MUTATION_ERROR;
+}
+
+export function sanitizeFestivalScheduleForOffline(
+  data: FestivalSchedulePageData,
+): FestivalSchedulePageData {
+  const sanitizeSlot = (
+    slot: FestivalSchedulePageData["sectors"][number]["cards"][number]["days"][number]["slots"][number],
+  ) => ({
+    ...slot,
+    booking: slot.booking
+      ? {
+          ...slot.booking,
+          isViewer: false,
+        }
+      : slot.booking,
+    bookingBlockedReason: null,
+  });
+  const sanitizeDay = (
+    day: FestivalSchedulePageData["sectors"][number]["cards"][number]["days"][number],
+  ) => ({
+    ...day,
+    featuredSlot: day.featuredSlot ? sanitizeSlot(day.featuredSlot) : null,
+    slots: day.slots.map(sanitizeSlot),
+  });
+
+  return {
+    ...data,
+    sectors: data.sectors.map((sector) => ({
+      ...sector,
+      cards: sector.cards.map((card) => {
+        const days = card.days.map(sanitizeDay);
+        const defaultDay =
+          days.find((day) => day.dateKey === card.defaultDayKey) ?? null;
+
+        return {
+          ...card,
+          highline: {
+            ...card.highline,
+            is_favorite: false,
+          },
+          days,
+          defaultDay,
+          featuredSlot: card.featuredSlot
+            ? sanitizeSlot(card.featuredSlot)
+            : null,
+        };
+      }),
+    })),
+    viewer: {
+      canManage: false,
+    },
+  };
 }
 
 async function requireFestivalBySlug(
@@ -336,7 +398,9 @@ export async function cancelFestivalScheduleBooking(args: {
     console.warn("cancelFestivalScheduleBooking failed");
     return {
       success: false,
-      error: FESTIVAL_SCHEDULE_MUTATION_ERROR,
+      error: mapFestivalScheduleBookingError(
+        error instanceof Error ? error.message : undefined,
+      ),
     };
   }
 }

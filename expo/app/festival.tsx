@@ -129,6 +129,7 @@ export default function FestivalScreen() {
       <SafeAreaOfflineView
         className="flex-1 bg-gray-100"
         edges={['left', 'right']}
+        offlineBannerCoversStatusBar={false}
       >
         <ScrollView
           className="flex-1"
