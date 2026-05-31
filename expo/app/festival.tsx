@@ -1,34 +1,33 @@
 import {
+  getViewerFestivalBookings,
   useFestivalSchedule,
   type FestivalHighlineScheduleCard,
 } from '@chooselife/ui';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Share as ShareIcon } from 'lucide-react-native';
 import React from 'react';
-import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  View,
-} from 'react-native';
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
 import { useOnlineStatus } from '~/context/react-query';
 import { useShare } from '~/hooks/use-share';
 
-import { FestivalHighlineCardView } from '~/components/festival/highline-card';
+import { FestivalBookingReminderSync } from '~/components/festival/festival-booking-reminder-sync';
+import { FestivalSyncStatus } from '~/components/festival/festival-sync-status';
+import {
+  FestivalEmptyState,
+  FestivalErrorState,
+  FestivalLoadingState,
+  FestivalSectorList,
+  ViewerScheduleSummary,
+} from '~/components/festival/highline-card';
 import { FestivalScheduleSheet } from '~/components/festival/schedule-sheet';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { Icon } from '~/components/ui/icon';
-import { Text } from '~/components/ui/text';
 
 const FESTIVAL_SLUG = 'chooselife-2026';
 const DEFAULT_FESTIVAL_TIME_ZONE = 'America/Sao_Paulo';
 
 type FestivalScheduleQuery = ReturnType<typeof useFestivalSchedule>;
-type FestivalScheduleData = NonNullable<FestivalScheduleQuery['data']>;
-type FestivalSectorGroup = FestivalScheduleData['sectors'][number];
 
 export default function FestivalScreen() {
   const router = useRouter();
@@ -70,10 +69,10 @@ export default function FestivalScreen() {
     }, [cards, selectedHighlineId]);
 
   const handleOpenSchedule = React.useCallback(
-    (card: FestivalHighlineScheduleCard) => {
+    (card: FestivalHighlineScheduleCard, dayKey = card.defaultDayKey) => {
       router.setParams({
         highline: card.highline.id,
-        day: card.defaultDayKey,
+        day: dayKey,
       });
     },
     [router],
@@ -133,7 +132,7 @@ export default function FestivalScreen() {
       >
         <ScrollView
           className="flex-1"
-          contentContainerClassName="gap-8 px-4 pb-10 pt-6"
+          contentContainerClassName="gap-8 pb-10 pt-6"
           refreshControl={
             <RefreshControl
               onRefresh={() => {
@@ -181,159 +180,6 @@ function getFestivalTimeZone(data?: FestivalScheduleQuery['data']) {
   return DEFAULT_FESTIVAL_TIME_ZONE;
 }
 
-function getSectorKey(group: FestivalSectorGroup) {
-  if (group.sector?.id) {
-    return group.sector.id;
-  }
-
-  return 'festival';
-}
-
-function getSectorName(group: FestivalSectorGroup, fallbackLabel: string) {
-  if (group.sector?.name) {
-    return group.sector.name;
-  }
-
-  return fallbackLabel;
-}
-
-function LoadingState() {
-  const { t } = useTranslation();
-
-  return (
-    <View className="items-center gap-4 rounded-[28px] bg-white px-6 py-12">
-      <ActivityIndicator size="large" color="#0f172a" />
-      <Text className="text-base text-slate-500">
-        {t('app.(festival).highlines.loading')}
-      </Text>
-    </View>
-  );
-}
-
-function EmptyState() {
-  const { t } = useTranslation();
-
-  return (
-    <View className="rounded-[28px] bg-white px-6 py-12">
-      <Text className="text-center text-base leading-7 text-slate-500">
-        {t('app.(festival).highlines.empty')}
-      </Text>
-    </View>
-  );
-}
-
-function ErrorState({ isOffline }: { isOffline: boolean }) {
-  const { t } = useTranslation();
-
-  const message = React.useMemo(() => {
-    if (isOffline) {
-      return t('app.(festival).highlines.offlineCacheEmpty');
-    }
-
-    return t('app.(festival).highlines.genericError');
-  }, [isOffline, t]);
-
-  return (
-    <View className="rounded-[28px] bg-white px-6 py-12">
-      <Text className="text-center text-base leading-7 text-slate-500">
-        {message}
-      </Text>
-    </View>
-  );
-}
-
-function SectorDescription({ description }: { description?: string | null }) {
-  if (!description) {
-    return null;
-  }
-
-  return (
-    <Text className="text-sm leading-6 text-slate-500">{description}</Text>
-  );
-}
-
-function SectorHeader({ group }: { group: FestivalSectorGroup }) {
-  const { t } = useTranslation();
-
-  return (
-    <View className="gap-1">
-      <Text className="text-2xl font-bold text-slate-950">
-        {getSectorName(group, t('app.(festival).highlines.sectorFallback'))}
-      </Text>
-
-      <SectorDescription description={group.sector?.description} />
-    </View>
-  );
-}
-
-function FestivalHighlineCardList({
-  cards,
-  festivalTimeZone,
-  onOpenSchedule,
-}: {
-  cards: FestivalHighlineScheduleCard[];
-  festivalTimeZone: string;
-  onOpenSchedule: (card: FestivalHighlineScheduleCard) => void;
-}) {
-  return (
-    <View className="gap-5">
-      {cards.map((card) => (
-        <FestivalHighlineCardView
-          key={card.highline.id}
-          card={card}
-          festivalTimeZone={festivalTimeZone}
-          onPress={() => onOpenSchedule(card)}
-        />
-      ))}
-    </View>
-  );
-}
-
-function FestivalSector({
-  group,
-  festivalTimeZone,
-  onOpenSchedule,
-}: {
-  group: FestivalSectorGroup;
-  festivalTimeZone: string;
-  onOpenSchedule: (card: FestivalHighlineScheduleCard) => void;
-}) {
-  return (
-    <View className="gap-4">
-      <SectorHeader group={group} />
-
-      <FestivalHighlineCardList
-        cards={group.cards}
-        festivalTimeZone={festivalTimeZone}
-        onOpenSchedule={onOpenSchedule}
-      />
-    </View>
-  );
-}
-
-function FestivalSectorList({
-  sectors,
-  festivalTimeZone,
-  onOpenSchedule,
-}: {
-  sectors: FestivalSectorGroup[];
-  festivalTimeZone: string;
-  onOpenSchedule: (card: FestivalHighlineScheduleCard) => void;
-}) {
-  return (
-    <View className="gap-8">
-      {sectors.map((group) => (
-        <FestivalSector
-          key={getSectorKey(group)}
-          group={group}
-          festivalTimeZone={festivalTimeZone}
-          onOpenSchedule={onOpenSchedule}
-        />
-      ))}
-    </View>
-  );
-}
-
 function FestivalContent({
   query,
   isOffline,
@@ -343,25 +189,61 @@ function FestivalContent({
   query: FestivalScheduleQuery;
   isOffline: boolean;
   festivalTimeZone: string;
-  onOpenSchedule: (card: FestivalHighlineScheduleCard) => void;
+  onOpenSchedule: (
+    card: FestivalHighlineScheduleCard,
+    dayKey?: string | null,
+  ) => void;
 }) {
+  let content: React.ReactNode;
+  const viewerBookings = React.useMemo(() => {
+    if (!query.data?.sectors.length) {
+      return [];
+    }
+
+    return getViewerFestivalBookings(query.data.sectors);
+  }, [query.data?.sectors]);
+
   if (query.isPending && !query.data) {
-    return <LoadingState />;
-  }
+    content = <FestivalLoadingState />;
+  } else if (query.data?.sectors.length) {
+    content = (
+      <View className="gap-8">
+        <FestivalBookingReminderSync
+          bookings={viewerBookings}
+          festivalTimeZone={festivalTimeZone}
+        />
 
-  if (query.data?.sectors.length) {
-    return (
-      <FestivalSectorList
-        sectors={query.data.sectors}
-        festivalTimeZone={festivalTimeZone}
-        onOpenSchedule={onOpenSchedule}
-      />
+        <ViewerScheduleSummary
+          bookings={viewerBookings}
+          festivalTimeZone={festivalTimeZone}
+          hasAccount={!!query.data.viewer.userId}
+          isOffline={isOffline}
+          onOpenSchedule={onOpenSchedule}
+        />
+
+        <FestivalSectorList
+          sectors={query.data.sectors}
+          festivalTimeZone={festivalTimeZone}
+          onOpenSchedule={onOpenSchedule}
+        />
+      </View>
     );
+  } else if (query.error) {
+    content = <FestivalErrorState isOffline={isOffline} />;
+  } else {
+    content = <FestivalEmptyState />;
   }
 
-  if (query.error) {
-    return <ErrorState isOffline={isOffline} />;
-  }
+  return (
+    <View className="gap-4">
+      <FestivalSyncStatus
+        isFetching={query.isFetching}
+        isOffline={isOffline}
+        timeZone={festivalTimeZone}
+        updatedAt={query.dataUpdatedAt}
+      />
 
-  return <EmptyState />;
+      {content}
+    </View>
+  );
 }

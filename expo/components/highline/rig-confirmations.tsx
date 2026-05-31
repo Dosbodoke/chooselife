@@ -4,12 +4,17 @@ import {
   BottomSheetView,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query';
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
+import { highlineKeyFactory, type Highline } from '~/hooks/use-highline';
 import {
   rigSetupKeyFactory,
   Setup,
@@ -21,6 +26,48 @@ import { supabase } from '~/lib/supabase';
 import { Button } from '~/components/ui/button';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
+
+function updateHighlineStatusCache({
+  highlineID,
+  queryClient,
+  status,
+}: {
+  highlineID: string;
+  queryClient: QueryClient;
+  status: Highline['status'];
+}) {
+  queryClient.setQueriesData<Highline | null>(
+    { queryKey: ['highline', highlineID, 'detail'] },
+    (oldData) => (oldData ? { ...oldData, status } : oldData),
+  );
+  queryClient.setQueriesData<Highline>(
+    { queryKey: highlineKeyFactory.favorite(highlineID) },
+    (oldData) => (oldData ? { ...oldData, status } : oldData),
+  );
+  queryClient.setQueriesData<Highline[]>(
+    { queryKey: ['highlines'] },
+    (oldData) =>
+      oldData?.map((highline) =>
+        highline.id === highlineID ? { ...highline, status } : highline,
+      ) ?? oldData,
+  );
+}
+
+function invalidateHighlineStatusQueries({
+  highlineID,
+  queryClient,
+}: {
+  highlineID: string;
+  queryClient: QueryClient;
+}) {
+  void queryClient.invalidateQueries({
+    queryKey: ['highline', highlineID, 'detail'],
+  });
+  void queryClient.invalidateQueries({
+    queryKey: highlineKeyFactory.favorite(highlineID),
+  });
+  void queryClient.invalidateQueries({ queryKey: ['highlines'] });
+}
 
 export const RigModal: React.FC<{ highlineID: string; setupID?: string }> = ({
   highlineID,
@@ -35,11 +82,7 @@ export const RigModal: React.FC<{ highlineID: string; setupID?: string }> = ({
 
   React.useEffect(() => {
     if (setupID) {
-      bottomSheetModalRef.current?.present({
-        velocity: 200,
-        stiffness: 200,
-        damping: 80,
-      });
+      bottomSheetModalRef.current?.present();
     } else {
       bottomSheetModalRef.current?.close();
     }
@@ -66,21 +109,13 @@ export const RigModal: React.FC<{ highlineID: string; setupID?: string }> = ({
           router.setParams({ setupID: '' });
         }
       }}
-      detached={true}
-      bottomInset={46}
-      style={{
-        marginHorizontal: 24,
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        shadowOffset: {
-          width: 1,
-          height: 1,
-        },
+      enablePanDownToClose
+      backgroundStyle={{
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
       }}
     >
-      <BottomSheetView className="p-4 items-center gap-4">
+      <BottomSheetView className="items-center gap-4 overflow-hidden rounded-t-[28px] bg-white p-4 pb-12">
         <SheetBody
           highlineID={highlineID}
           setupID={setupID}
@@ -163,6 +198,24 @@ const UnrigSetup: React.FC<UnrigSetupProps> = ({ setup, closeModal }) => {
           return { ...oldData, ...response };
         },
       );
+      updateHighlineStatusCache({
+        highlineID: response.highline_id,
+        queryClient,
+        status: 'unrigged',
+      });
+      void queryClient.invalidateQueries({
+        queryKey: rigSetupKeyFactory.all({ highlineID: response.highline_id }),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: rigSetupKeyFactory.single({
+          highlineID: response.highline_id,
+          rigSetupID: response.id.toString(),
+        }),
+      });
+      invalidateHighlineStatusQueries({
+        highlineID: response.highline_id,
+        queryClient,
+      });
       closeModal();
     },
     onError: (error) => {
@@ -250,6 +303,24 @@ const ConfirmDate: React.FC<ConfirmDateProps> = ({ setup, closeModal }) => {
           return { ...oldData, ...response };
         },
       );
+      updateHighlineStatusCache({
+        highlineID: response.highline_id,
+        queryClient,
+        status: 'rigged',
+      });
+      void queryClient.invalidateQueries({
+        queryKey: rigSetupKeyFactory.all({ highlineID: response.highline_id }),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: rigSetupKeyFactory.single({
+          highlineID: response.highline_id,
+          rigSetupID: response.id.toString(),
+        }),
+      });
+      invalidateHighlineStatusQueries({
+        highlineID: response.highline_id,
+        queryClient,
+      });
       closeModal();
     },
     onError: (error) => {

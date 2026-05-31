@@ -429,10 +429,16 @@ export function groupFestivalCardsBySector(
     });
   }
 
-  return Array.from(groups.values()).map((group) => ({
-    ...group,
-    cards: group.cards.sort((a, b) => a.sortOrder - b.sortOrder),
-  }));
+  return Array.from(groups.values())
+    .sort((a, b) => {
+      if (!a.sector && b.sector) return -1;
+      if (a.sector && !b.sector) return 1;
+      return 0;
+    })
+    .map((group) => ({
+      ...group,
+      cards: group.cards.sort((a, b) => a.sortOrder - b.sortOrder),
+    }));
 }
 
 export { formatFestivalDayKey };

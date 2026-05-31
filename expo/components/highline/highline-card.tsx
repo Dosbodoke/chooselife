@@ -23,11 +23,14 @@ interface HighlineCardProps {
   onPress?: () => void;
   isFocused?: boolean;
   distanceFromUserMeters?: number | null;
+  showFavorite?: boolean;
+  showStatus?: boolean;
 }
 
 interface CardContentProps {
   item: Highline;
   distanceFromUserMeters?: number | null;
+  showStatus: boolean;
 }
 
 const StatusChip: React.FC<{ status: RigStatuses }> = ({ status }) => {
@@ -113,6 +116,7 @@ const StatsPills: React.FC<{
 const CardContent: React.FC<CardContentProps> = ({
   item,
   distanceFromUserMeters,
+  showStatus,
 }) => {
   return (
     <>
@@ -135,9 +139,12 @@ const CardContent: React.FC<CardContentProps> = ({
 
       {/* Content */}
       <View className="flex-1 p-4 justify-between">
-        {/* Top Row */}
         <View className="flex-row justify-between items-start">
-          <StatusChip status={item.status as RigStatuses} />
+          {showStatus ? (
+            <StatusChip status={item.status as RigStatuses} />
+          ) : (
+            <View />
+          )}
           <FavoriteHighline
             isFavorite={item.is_favorite}
             id={item.id}
@@ -175,6 +182,7 @@ export const HighlineCard: React.FC<HighlineCardProps> = ({
   onPress,
   isFocused,
   distanceFromUserMeters,
+  showStatus = true,
 }) => {
   const content = (
     <ReanimatedSquircleView
@@ -190,6 +198,7 @@ export const HighlineCard: React.FC<HighlineCardProps> = ({
       <CardContent
         item={item}
         distanceFromUserMeters={distanceFromUserMeters}
+        showStatus={showStatus}
       />
     </ReanimatedSquircleView>
   );
