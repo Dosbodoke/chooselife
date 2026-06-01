@@ -51,7 +51,7 @@ function parseFestivalScheduleBookingCooldownEndsAt(value: unknown) {
   throw new Error("Festival schedule booking cooldown is malformed");
 }
 
-// TODO: We should return typed errors from the RPCs instead of relying on string matching here, see @supabase/migrations/20260531164931_increase_festival_schedule_booking_limit.sql
+// TODO: We should return typed errors from the RPCs instead of relying on string matching here, see supabase/migrations/20260531172104_configure_festival_schedule_booking_limit.sql
 function mapFestivalScheduleBookingError(message: string | undefined) {
   if (!message) return FESTIVAL_SCHEDULE_MUTATION_ERROR;
 
