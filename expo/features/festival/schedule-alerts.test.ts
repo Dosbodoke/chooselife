@@ -21,14 +21,26 @@ describe('festival schedule alerts', () => {
   });
 
   it('uses the offline write copy when an offline mutation is blocked', () => {
-    expect(getFestivalScheduleAlert({ kind: 'offline-write', t })).toEqual({
+    expect(
+      getFestivalScheduleAlert({ bookingLimit: 2, kind: 'offline-write', t }),
+    ).toEqual({
       title: 'app.(festival).highlines.offlineActionTitle',
       message: 'app.(festival).highlines.offlineActionMessage',
     });
   });
 
+  it('includes the runtime booking limit in limit errors', () => {
+    getFestivalScheduleAlert({ bookingLimit: 2, kind: 'limit-error', t });
+
+    expect(t).toHaveBeenCalledWith(
+      'app.(festival).highlines.scheduleLimitError',
+      { count: 2 },
+    );
+  });
+
   it('includes the highline when a viewer confirms a booking', () => {
     getFestivalScheduleAlert({
+      bookingLimit: 2,
       highlineName: 'Gringo Boingo',
       kind: 'booking-success',
       t,
@@ -42,6 +54,7 @@ describe('festival schedule alerts', () => {
 
   it('includes the highline when a viewer cancels a booking', () => {
     getFestivalScheduleAlert({
+      bookingLimit: 2,
       highlineName: 'Gringo Boingo',
       kind: 'cancellation-success',
       t,
@@ -55,6 +68,7 @@ describe('festival schedule alerts', () => {
 
   it('includes the participant and highline when staff confirms a booking', () => {
     getFestivalScheduleAlert({
+      bookingLimit: 2,
       highlineName: 'Gringo Boingo',
       kind: 'staff-booking-success',
       participantLabel: 'Ana',
@@ -69,6 +83,7 @@ describe('festival schedule alerts', () => {
 
   it('includes the participant and highline when staff cancels a booking', () => {
     getFestivalScheduleAlert({
+      bookingLimit: 2,
       highlineName: 'Gringo Boingo',
       kind: 'staff-cancellation-success',
       participantLabel: 'Ana',

@@ -75,6 +75,7 @@ function FestivalTabsContent({ festivalSlug }: Props) {
               {group.cards.map((card) => (
                 <FestivalHighlineCard
                   key={card.highline.id}
+                  bookingLimit={data.bookingLimit}
                   card={card}
                   festivalSlug={festivalSlug}
                   festivalTimeZone={data.festival.timezone}

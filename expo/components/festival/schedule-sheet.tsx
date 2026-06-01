@@ -114,6 +114,7 @@ const EmptyScheduleState: React.FC = () => {
 };
 
 const ScheduleSlotsList: React.FC<{
+  bookingLimit: number | null;
   canManage: boolean;
   cancelingSlotId: string | null;
   festivalTimeZone: string;
@@ -126,6 +127,7 @@ const ScheduleSlotsList: React.FC<{
   selfBookingSlotId: string | null;
   slots: FestivalScheduleSlotView[];
 }> = ({
+  bookingLimit,
   canManage,
   cancelingSlotId,
   festivalTimeZone,
@@ -147,6 +149,7 @@ const ScheduleSlotsList: React.FC<{
       {slots.map((slot) => (
         <FestivalScheduleSlotRow
           key={slot.id}
+          bookingLimit={bookingLimit}
           canManage={canManage}
           cancelingSlotId={cancelingSlotId}
           festivalTimeZone={festivalTimeZone}
@@ -165,6 +168,7 @@ const ScheduleSlotsList: React.FC<{
 };
 
 const FestivalScheduleContent: React.FC<{
+  bookingLimit: number | null;
   bookingOpensAtLabel: string | null;
   canManage: boolean;
   cancelingSlotId: string | null;
@@ -181,6 +185,7 @@ const FestivalScheduleContent: React.FC<{
   selfBookingSlotId: string | null;
   selectedDay: FestivalHighlineScheduleCard['days'][number] | null;
 }> = ({
+  bookingLimit,
   bookingOpensAtLabel,
   canManage,
   cancelingSlotId,
@@ -232,6 +237,7 @@ const FestivalScheduleContent: React.FC<{
           {!isOnline ? <OfflineReadOnlyAlert /> : null}
 
           <ScheduleSlotsList
+            bookingLimit={bookingLimit}
             canManage={canManage}
             cancelingSlotId={cancelingSlotId}
             festivalTimeZone={festivalTimeZone}
@@ -251,6 +257,7 @@ const FestivalScheduleContent: React.FC<{
 };
 
 export const FestivalScheduleSheet: React.FC<{
+  bookingLimit: number | null;
   card: FestivalHighlineScheduleCard | null;
   canManage: boolean;
   festivalSlug: string;
@@ -259,6 +266,7 @@ export const FestivalScheduleSheet: React.FC<{
   onSelectDayKey: (dayKey: string) => void;
   selectedDayKey: string | null;
 }> = ({
+  bookingLimit,
   card,
   canManage,
   festivalSlug,
@@ -277,6 +285,7 @@ export const FestivalScheduleSheet: React.FC<{
   return (
     <FestivalScheduleSheetModal
       key={selectedHighlineId}
+      bookingLimit={bookingLimit}
       card={card}
       canManage={canManage}
       festivalSlug={festivalSlug}
@@ -289,6 +298,7 @@ export const FestivalScheduleSheet: React.FC<{
 };
 
 const FestivalScheduleSheetModal: React.FC<{
+  bookingLimit: number | null;
   card: FestivalHighlineScheduleCard;
   canManage: boolean;
   festivalSlug: string;
@@ -297,6 +307,7 @@ const FestivalScheduleSheetModal: React.FC<{
   onSelectDayKey: (dayKey: string) => void;
   selectedDayKey: string | null;
 }> = ({
+  bookingLimit,
   card,
   canManage,
   festivalSlug,
@@ -365,6 +376,7 @@ const FestivalScheduleSheetModal: React.FC<{
     (kind: FestivalScheduleAlertKind, participantLabel?: string) => {
       const alert = getFestivalScheduleAlert({
         bookingOpensAtLabel,
+        bookingLimit,
         highlineName: card.highline.name,
         kind,
         participantLabel,
@@ -373,7 +385,7 @@ const FestivalScheduleSheetModal: React.FC<{
 
       Alert.alert(alert.title, alert.message);
     },
-    [bookingOpensAtLabel, card.highline.name, t],
+    [bookingLimit, bookingOpensAtLabel, card.highline.name, t],
   );
 
   const showBookingError = React.useCallback(
@@ -556,6 +568,7 @@ const FestivalScheduleSheetModal: React.FC<{
         }}
       >
         <FestivalScheduleContent
+          bookingLimit={bookingLimit}
           bookingOpensAtLabel={bookingOpensAtLabel}
           canManage={canManage}
           cancelingSlotId={cancelingSlotId}

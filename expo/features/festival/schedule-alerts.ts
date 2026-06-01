@@ -14,12 +14,14 @@ export type FestivalScheduleAlertKind =
 
 export function getFestivalScheduleAlert({
   bookingOpensAtLabel,
+  bookingLimit,
   highlineName,
   kind,
   participantLabel,
   t,
 }: {
   bookingOpensAtLabel?: string | null;
+  bookingLimit: number | null;
   highlineName?: string;
   kind: FestivalScheduleAlertKind;
   participantLabel?: string;
@@ -48,7 +50,11 @@ export function getFestivalScheduleAlert({
     case 'limit-error':
       return {
         title: t('app.(festival).highlines.errorTitle'),
-        message: t('app.(festival).highlines.scheduleLimitError'),
+        message: bookingLimit
+          ? t('app.(festival).highlines.scheduleLimitError', {
+              count: bookingLimit,
+            })
+          : t('app.(festival).highlines.genericError'),
       };
     case 'not-open-error':
       return {

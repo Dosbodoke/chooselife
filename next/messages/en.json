@@ -263,7 +263,7 @@
       "expiredLabel": "Expired",
       "claimSlotButton": "Claim slot",
       "claimSlotBlockedOverlap": "You already have a schedule during this time window.",
-      "claimSlotBlockedLimit": "You already have 2 active schedules",
+      "claimSlotBlockedLimit": "You already have {count} active schedules",
       "bookForSomeoneButton": "Book for someone",
       "cancelOwnBookingButton": "Cancel my booking",
       "cancelBookingButton": "Cancel booking",
@@ -275,7 +275,7 @@
       "missingStaffSelection": "Select a participant first.",
       "missingGuestName": "Guest display name is required.",
       "scheduleOverlapError": "You already have a schedule during this time window.",
-      "scheduleLimitError": "You already have 2 active schedules in this festival.",
+      "scheduleLimitError": "You already have {count} active schedules in this festival.",
       "genericError": "Something went wrong while updating the schedule."
     }
   },

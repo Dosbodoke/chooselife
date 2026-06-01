@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { FestivalScheduleDrawer } from "./schedule-drawer";
 
 interface Props {
+  bookingLimit: number;
   card: FestivalHighlineScheduleCard;
   festivalSlug: string;
   festivalTimeZone: string;
@@ -40,6 +41,7 @@ function StatPill({
 }
 
 export function FestivalHighlineCard({
+  bookingLimit,
   card,
   festivalSlug,
   festivalTimeZone,
@@ -134,6 +136,7 @@ export function FestivalHighlineCard({
       </article>
 
       <FestivalScheduleDrawer
+        bookingLimit={bookingLimit}
         canManage={viewerCanManage}
         card={isDrawerOpen ? card : null}
         festivalSlug={festivalSlug}

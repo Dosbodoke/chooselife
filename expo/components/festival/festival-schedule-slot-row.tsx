@@ -104,6 +104,7 @@ const cancelButtonTextVariants = cva('font-semibold', {
 });
 
 type FestivalScheduleSlotRowProps = {
+  bookingLimit: number | null;
   canManage: boolean;
   cancelingSlotId: string | null;
   festivalTimeZone: string;
@@ -188,6 +189,7 @@ function getSlotBadgeTone(slot: FestivalScheduleSlotView) {
 }
 
 function getDisabledSelfBookingLabel(
+  bookingLimit: number | null,
   slot: FestivalScheduleSlotView,
   t: TFunction,
 ) {
@@ -195,7 +197,11 @@ function getDisabledSelfBookingLabel(
     case 'overlap':
       return t('app.(festival).highlines.claimSlotBlockedOverlap');
     case 'limit':
-      return t('app.(festival).highlines.claimSlotBlockedLimit');
+      if (!bookingLimit) return null;
+
+      return t('app.(festival).highlines.claimSlotBlockedLimit', {
+        count: bookingLimit,
+      });
     default:
       return null;
   }
@@ -204,6 +210,7 @@ function getDisabledSelfBookingLabel(
 export const FestivalScheduleSlotRow: React.FC<
   FestivalScheduleSlotRowProps
 > = ({
+  bookingLimit,
   canManage,
   cancelingSlotId,
   festivalTimeZone,
@@ -224,7 +231,11 @@ export const FestivalScheduleSlotRow: React.FC<
     slot.state === 'blocked'
       ? slot.blockReason
       : (slot.booking?.participant.secondaryText ?? null);
-  const disabledSelfBookingLabel = getDisabledSelfBookingLabel(slot, t);
+  const disabledSelfBookingLabel = getDisabledSelfBookingLabel(
+    bookingLimit,
+    slot,
+    t,
+  );
   const slotStatusLabel = getSlotStatusLabel(slot, t);
   const rowTone = getSlotRowTone(slot);
   const badgeTone = getSlotBadgeTone(slot);

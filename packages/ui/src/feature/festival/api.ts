@@ -31,6 +31,15 @@ const FESTIVAL_SCHEDULE_BOOKING_OVERLAP_ERROR =
 const FESTIVAL_SCHEDULE_BOOKING_LIMIT_ERROR =
   "festival_schedule_booking_limit";
 
+function parseFestivalScheduleBookingLimit(value: unknown) {
+  if (typeof value === "number" && Number.isInteger(value) && value > 0) {
+    return value;
+  }
+
+  throw new Error("Festival schedule booking limit is not configured");
+}
+
+// TODO: We should return typed errors from the RPCs instead of relying on string matching here, see @supabase/migrations/20260531164931_increase_festival_schedule_booking_limit.sql
 function mapFestivalScheduleBookingError(message: string | undefined) {
   if (!message) return FESTIVAL_SCHEDULE_MUTATION_ERROR;
 
@@ -46,7 +55,7 @@ function mapFestivalScheduleBookingError(message: string | undefined) {
     return FESTIVAL_SCHEDULE_BOOKING_OVERLAP_ERROR;
   }
 
-  if (message.includes("two active schedule bookings")) {
+  if (message.includes("active schedule bookings")) {
     return FESTIVAL_SCHEDULE_BOOKING_LIMIT_ERROR;
   }
 
@@ -216,6 +225,7 @@ export async function getFestivalSchedulePageData(args: {
     { data: windows, error: windowsError },
     { data: slots, error: slotsError },
     { data: bookings, error: bookingsError },
+    { data: bookingLimitConfig, error: bookingLimitError },
     { profile, viewer },
   ] = await Promise.all([
     args.supabase
@@ -236,6 +246,11 @@ export async function getFestivalSchedulePageData(args: {
     args.supabase.rpc("get_festival_schedule_bookings", {
       target_festival_id: festival.id,
     }),
+    args.supabase
+      .from("app_config")
+      .select("value")
+      .eq("key", "festival_schedule_booking_limit")
+      .maybeSingle(),
     loadViewerState({
       festivalId: festival.id,
       supabase: args.supabase,
@@ -258,6 +273,14 @@ export async function getFestivalSchedulePageData(args: {
   if (bookingsError) {
     throw new Error(bookingsError.message);
   }
+
+  if (bookingLimitError) {
+    throw new Error(bookingLimitError.message);
+  }
+
+  const bookingLimit = parseFestivalScheduleBookingLimit(
+    bookingLimitConfig?.value,
+  );
 
   const highlineIds = (highlineLinks ?? []).map((link) => link.highline_id);
   const rpcArgs: Database["public"]["Functions"]["get_highline"]["Args"] = {
@@ -306,6 +329,7 @@ export async function getFestivalSchedulePageData(args: {
   }
 
   const cards = buildFestivalScheduleCards({
+    bookingLimit,
     highlines: highlines ?? [],
     links: (highlineLinks ?? []).map(
       (link): FestivalHighlineLink => ({
@@ -324,6 +348,7 @@ export async function getFestivalSchedulePageData(args: {
   });
 
   return {
+    bookingLimit,
     festival: {
       id: festival.id,
       slug: festival.slug,

@@ -90,6 +90,7 @@ export interface FestivalScheduleSectorGroup {
 }
 
 export interface FestivalSchedulePageData {
+  bookingLimit: number;
   festival: Pick<
     Festival,
     "id" | "slug" | "name" | "subtitle" | "start_at" | "end_at" | "timezone"

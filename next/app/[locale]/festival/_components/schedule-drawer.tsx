@@ -42,6 +42,7 @@ function formatSlotTimeRange(
 }
 
 function SlotRow({
+  bookingLimit,
   canManage,
   festivalTimeZone,
   isAuthenticated,
@@ -51,6 +52,7 @@ function SlotRow({
   onStaffBook,
   slot,
 }: {
+  bookingLimit: number;
   canManage: boolean;
   festivalTimeZone: string;
   isAuthenticated: boolean;
@@ -72,7 +74,7 @@ function SlotRow({
     slot.bookingBlockedReason === "overlap"
       ? t("claimSlotBlockedOverlap")
       : slot.bookingBlockedReason === "limit"
-      ? t("claimSlotBlockedLimit")
+      ? t("claimSlotBlockedLimit", { count: bookingLimit })
       : null;
   const isFreeSlot = slot.state === "available";
 
@@ -193,6 +195,7 @@ function SlotRow({
 }
 
 export function FestivalScheduleDrawer({
+  bookingLimit,
   card,
   canManage,
   festivalSlug,
@@ -201,6 +204,7 @@ export function FestivalScheduleDrawer({
   open,
   onOpenChange,
 }: {
+  bookingLimit: number;
   card: FestivalHighlineScheduleCard | null;
   canManage: boolean;
   festivalSlug: string;
@@ -293,14 +297,18 @@ export function FestivalScheduleDrawer({
         }
 
         if (result.error === "festival_schedule_booking_limit") {
-          showLocalError(t("scheduleLimitError"));
+          showLocalError(
+            t("scheduleLimitError", {
+              count: bookingLimit,
+            })
+          );
           return;
         }
 
         showGenericError();
       }
     },
-    [bookMutation, showGenericError, showLocalError, t]
+    [bookingLimit, bookMutation, showGenericError, showLocalError, t]
   );
 
   const handleCancelBooking = React.useCallback(
@@ -418,6 +426,7 @@ export function FestivalScheduleDrawer({
                     {selectedDay.slots.map((slot) => (
                       <SlotRow
                         key={slot.id}
+                        bookingLimit={bookingLimit}
                         canManage={canManage}
                         festivalTimeZone={festivalTimeZone}
                         isAuthenticated={isAuthenticated}

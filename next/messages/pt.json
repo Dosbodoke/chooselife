@@ -263,7 +263,7 @@
       "expiredLabel": "Encerrado",
       "claimSlotButton": "Reservar horário",
       "claimSlotBlockedOverlap": "Você já tem um horário nessa janela",
-      "claimSlotBlockedLimit": "Você já tem 2 horários ativos",
+      "claimSlotBlockedLimit": "Você já tem {count} horários ativos",
       "bookForSomeoneButton": "Reservar para alguém",
       "cancelOwnBookingButton": "Cancelar minha reserva",
       "cancelBookingButton": "Cancelar reserva",
@@ -275,7 +275,7 @@
       "missingStaffSelection": "Selecione um participante primeiro.",
       "missingGuestName": "O nome de exibição do convidado é obrigatório.",
       "scheduleOverlapError": "Você já tem um horário durante essa janela.",
-      "scheduleLimitError": "Você já tem 2 horários ativos neste festival.",
+      "scheduleLimitError": "Você já tem {count} horários ativos neste festival.",
       "genericError": "Algo deu errado ao atualizar a programação."
     }
   },

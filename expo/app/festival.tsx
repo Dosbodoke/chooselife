@@ -152,6 +152,7 @@ export default function FestivalScreen() {
         </ScrollView>
 
         <FestivalScheduleSheet
+          bookingLimit={query.data?.bookingLimit ?? null}
           canManage={query.data?.viewer.canManage || false}
           card={selectedCard}
           festivalSlug={FESTIVAL_SLUG}
@@ -215,6 +216,7 @@ function FestivalContent({
         />
 
         <ViewerScheduleSummary
+          bookingLimit={query.data.bookingLimit}
           bookings={viewerBookings}
           festivalTimeZone={festivalTimeZone}
           hasAccount={!!query.data.viewer.userId}

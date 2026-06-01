@@ -409,12 +409,14 @@ export function FestivalSectorList({
 }
 
 export function ViewerScheduleSummary({
+  bookingLimit,
   bookings,
   festivalTimeZone,
   hasAccount,
   isOffline,
   onOpenSchedule,
 }: {
+  bookingLimit?: number | null;
   bookings: ViewerFestivalBooking[];
   festivalTimeZone: string;
   hasAccount: boolean;
@@ -447,10 +449,17 @@ export function ViewerScheduleSummary({
       : emptyStateKey === 'guest'
         ? 'app.(festival).highlines.viewerScheduleGuestPlaceholderTitle'
         : 'app.(festival).highlines.viewerSchedulePlaceholderTitle';
-  const summarySlots = Array.from({ length: 2 }, (_, index) => ({
-    booking: bookings[index] ?? null,
-    key: bookings[index]?.slot.id ?? `placeholder-${index}`,
-  }));
+  const summarySlots = Array.from(
+    {
+      length: bookingLimit
+        ? Math.max(bookingLimit, bookings.length)
+        : bookings.length,
+    },
+    (_, index) => ({
+      booking: bookings[index] ?? null,
+      key: bookings[index]?.slot.id ?? `placeholder-${index}`,
+    }),
+  );
   const shouldShowEmptyCta =
     emptyStateKey !== 'default' && bookings.length < summarySlots.length;
 
@@ -471,7 +480,7 @@ export function ViewerScheduleSummary({
         </View>
 
         <Text className="text-sm leading-5 text-slate-500">
-          {t(descriptionKey)}
+          {t(descriptionKey, { count: bookingLimit })}
         </Text>
       </View>
 
