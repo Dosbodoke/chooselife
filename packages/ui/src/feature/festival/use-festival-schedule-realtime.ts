@@ -15,6 +15,16 @@ export function useFestivalScheduleRealtime(
   useEffect(() => {
     if (!festivalId) return;
 
+    let invalidateTimeout: ReturnType<typeof setTimeout> | undefined;
+    const invalidateSchedule = () => {
+      if (invalidateTimeout) return;
+
+      invalidateTimeout = setTimeout(() => {
+        invalidateTimeout = undefined;
+        void queryClient.invalidateQueries({ queryKey });
+      }, 1_000);
+    };
+
     const channel = supabase
       .channel(`festival-schedule:${festivalId}`)
       .on(
@@ -25,9 +35,7 @@ export function useFestivalScheduleRealtime(
           table: "festival_schedule_window",
           filter: `festival_id=eq.${festivalId}`,
         },
-        () => {
-          queryClient.invalidateQueries({ queryKey });
-        },
+        invalidateSchedule,
       )
       .on(
         "postgres_changes",
@@ -37,25 +45,28 @@ export function useFestivalScheduleRealtime(
           table: "festival_schedule_slot",
           filter: `festival_id=eq.${festivalId}`,
         },
-        () => {
-          queryClient.invalidateQueries({ queryKey });
-        },
+        invalidateSchedule,
       )
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "festival_schedule_booking",
+          table: "festival_schedule_revision",
           filter: `festival_id=eq.${festivalId}`,
         },
-        () => {
-          queryClient.invalidateQueries({ queryKey });
-        },
+        invalidateSchedule,
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.warn(`Festival schedule Realtime subscription ${status}`);
+        }
+      });
 
     return () => {
+      if (invalidateTimeout) {
+        clearTimeout(invalidateTimeout);
+      }
       void supabase.removeChannel(channel);
     };
   }, [festivalId, queryClient, queryKey, supabase]);

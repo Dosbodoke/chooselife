@@ -232,6 +232,7 @@ export type Database = {
       }
       festival_schedule_booking: {
         Row: {
+          booking_source: string
           cancellation_reason: string | null
           cancellation_source:
             | Database["public"]["Enums"]["festival_schedule_booking_cancellation_source_enum"]
@@ -250,6 +251,7 @@ export type Database = {
           status: Database["public"]["Enums"]["festival_schedule_booking_status_enum"]
         }
         Insert: {
+          booking_source?: string
           cancellation_reason?: string | null
           cancellation_source?:
             | Database["public"]["Enums"]["festival_schedule_booking_cancellation_source_enum"]
@@ -268,6 +270,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["festival_schedule_booking_status_enum"]
         }
         Update: {
+          booking_source?: string
           cancellation_reason?: string | null
           cancellation_source?:
             | Database["public"]["Enums"]["festival_schedule_booking_cancellation_source_enum"]
@@ -319,6 +322,29 @@ export type Database = {
             columns: ["slot_id"]
             isOneToOne: false
             referencedRelation: "festival_schedule_slot"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      festival_schedule_revision: {
+        Row: {
+          festival_id: string
+          updated_at: string
+        }
+        Insert: {
+          festival_id: string
+          updated_at?: string
+        }
+        Update: {
+          festival_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "festival_schedule_revision_festival_id_fkey"
+            columns: ["festival_id"]
+            isOneToOne: true
+            referencedRelation: "festival"
             referencedColumns: ["id"]
           },
         ]
@@ -1093,6 +1119,7 @@ export type Database = {
           target_slot_id: string
         }
         Returns: {
+          booking_source: string
           cancellation_reason: string | null
           cancellation_source:
             | Database["public"]["Enums"]["festival_schedule_booking_cancellation_source_enum"]
@@ -1120,6 +1147,7 @@ export type Database = {
       cancel_festival_schedule_booking: {
         Args: { cancellation_reason_input: string; target_booking_id: string }
         Returns: {
+          booking_source: string
           cancellation_reason: string | null
           cancellation_source:
             | Database["public"]["Enums"]["festival_schedule_booking_cancellation_source_enum"]
@@ -1170,6 +1198,18 @@ export type Database = {
           slot_id: string
           status: Database["public"]["Enums"]["festival_schedule_booking_status_enum"]
         }[]
+      }
+      get_festival_schedule_booking_cooldown_ends_at: {
+        Args: { target_festival_id: string }
+        Returns: string | null
+      }
+      get_festival_schedule_booking_cooldown_seconds: {
+        Args: never
+        Returns: number
+      }
+      get_festival_schedule_booking_limit: {
+        Args: never
+        Returns: number
       }
       get_highline: {
         Args: {

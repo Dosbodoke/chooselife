@@ -31,11 +31,9 @@ export function useBookFestivalScheduleSlot(
     mutationFn: (input: BookFestivalScheduleSlotInput) =>
       bookFestivalScheduleSlot({ input, supabase }),
     onSuccess: async (result) => {
-      if (result.success) {
-        await queryClient.invalidateQueries({
-          queryKey: festivalKeys.bySlug(options.festivalSlug, userId),
-        });
-      }
+      await queryClient.invalidateQueries({
+        queryKey: festivalKeys.bySlug(options.festivalSlug, userId),
+      });
 
       options.onSuccess?.(result);
     },
@@ -57,11 +55,9 @@ export function useCancelFestivalScheduleBooking(
     mutationFn: (input: CancelFestivalScheduleBookingInput) =>
       cancelFestivalScheduleBooking({ input, supabase }),
     onSuccess: async (result) => {
-      if (result.success) {
-        await queryClient.invalidateQueries({
-          queryKey: festivalKeys.bySlug(options.festivalSlug, userId),
-        });
-      }
+      await queryClient.invalidateQueries({
+        queryKey: festivalKeys.bySlug(options.festivalSlug, userId),
+      });
 
       options.onSuccess?.(result);
     },

@@ -90,6 +90,7 @@ export interface FestivalScheduleSectorGroup {
 }
 
 export interface FestivalSchedulePageData {
+  bookingCooldownEndsAt?: string | null;
   bookingLimit: number;
   festival: Pick<
     Festival,

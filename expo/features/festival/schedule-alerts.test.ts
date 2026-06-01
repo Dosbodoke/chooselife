@@ -20,6 +20,12 @@ describe('festival schedule alerts', () => {
     ).toBe('connectivity-error');
   });
 
+  it('maps cooldown failures to the cooldown-specific alert', () => {
+    expect(
+      getFestivalScheduleErrorAlertKind('festival_schedule_booking_cooldown'),
+    ).toBe('cooldown-error');
+  });
+
   it('uses the offline write copy when an offline mutation is blocked', () => {
     expect(
       getFestivalScheduleAlert({ bookingLimit: 2, kind: 'offline-write', t }),

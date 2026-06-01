@@ -114,6 +114,8 @@ type FestivalScheduleSlotRowProps = {
   onCancelBooking: (slot: FestivalScheduleSlotView) => void;
   onSelfBook: (slotId: string) => void;
   onStaffBook: (slotId: string) => void;
+  selfBookingCooldownLabel: string;
+  selfBookingCooldownRemainingSeconds: number;
   selfBookingSlotId: string | null;
   slot: FestivalScheduleSlotView;
 };
@@ -190,9 +192,17 @@ function getSlotBadgeTone(slot: FestivalScheduleSlotView) {
 
 function getDisabledSelfBookingLabel(
   bookingLimit: number | null,
+  selfBookingCooldownLabel: string,
+  selfBookingCooldownRemainingSeconds: number,
   slot: FestivalScheduleSlotView,
   t: TFunction,
 ) {
+  if (selfBookingCooldownRemainingSeconds > 0) {
+    return t('app.(festival).highlines.claimSlotBlockedCooldown', {
+      countdown: selfBookingCooldownLabel,
+    });
+  }
+
   switch (slot.bookingBlockedReason) {
     case 'overlap':
       return t('app.(festival).highlines.claimSlotBlockedOverlap');
@@ -220,6 +230,8 @@ export const FestivalScheduleSlotRow: React.FC<
   onCancelBooking,
   onSelfBook,
   onStaffBook,
+  selfBookingCooldownLabel,
+  selfBookingCooldownRemainingSeconds,
   selfBookingSlotId,
   slot,
 }) => {
@@ -233,6 +245,8 @@ export const FestivalScheduleSlotRow: React.FC<
       : (slot.booking?.participant.secondaryText ?? null);
   const disabledSelfBookingLabel = getDisabledSelfBookingLabel(
     bookingLimit,
+    selfBookingCooldownLabel,
+    selfBookingCooldownRemainingSeconds,
     slot,
     t,
   );
@@ -284,7 +298,8 @@ export const FestivalScheduleSlotRow: React.FC<
 
       {slot.state === 'available' && isAuthenticated && isOnline ? (
         <View className="gap-2">
-          {slot.bookingBlockedReason === null ? (
+          {slot.bookingBlockedReason === null &&
+          selfBookingCooldownRemainingSeconds === 0 ? (
             <Button
               className="w-full rounded-xl bg-[#101b2b]"
               disabled={isScheduleMutating}

@@ -152,6 +152,7 @@ export default function FestivalScreen() {
         </ScrollView>
 
         <FestivalScheduleSheet
+          bookingCooldownEndsAt={query.data?.bookingCooldownEndsAt}
           bookingLimit={query.data?.bookingLimit ?? null}
           canManage={query.data?.viewer.canManage || false}
           card={selectedCard}

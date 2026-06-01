@@ -30,6 +30,8 @@ const FESTIVAL_SCHEDULE_BOOKING_OVERLAP_ERROR =
   "festival_schedule_booking_overlap";
 const FESTIVAL_SCHEDULE_BOOKING_LIMIT_ERROR =
   "festival_schedule_booking_limit";
+const FESTIVAL_SCHEDULE_BOOKING_COOLDOWN_ERROR =
+  "festival_schedule_booking_cooldown";
 
 function parseFestivalScheduleBookingLimit(value: unknown) {
   if (typeof value === "number" && Number.isInteger(value) && value > 0) {
@@ -37,6 +39,16 @@ function parseFestivalScheduleBookingLimit(value: unknown) {
   }
 
   throw new Error("Festival schedule booking limit is not configured");
+}
+
+function parseFestivalScheduleBookingCooldownEndsAt(value: unknown) {
+  if (value === null || value === undefined) return null;
+
+  if (typeof value === "string" && !Number.isNaN(new Date(value).getTime())) {
+    return value;
+  }
+
+  throw new Error("Festival schedule booking cooldown is malformed");
 }
 
 // TODO: We should return typed errors from the RPCs instead of relying on string matching here, see @supabase/migrations/20260531164931_increase_festival_schedule_booking_limit.sql
@@ -57,6 +69,10 @@ function mapFestivalScheduleBookingError(message: string | undefined) {
 
   if (message.includes("active schedule bookings")) {
     return FESTIVAL_SCHEDULE_BOOKING_LIMIT_ERROR;
+  }
+
+  if (message.includes("booking cooldown is active")) {
+    return FESTIVAL_SCHEDULE_BOOKING_COOLDOWN_ERROR;
   }
 
   if (message.includes("not open yet")) {
@@ -91,6 +107,7 @@ export function sanitizeFestivalScheduleForOffline(
 
   return {
     ...data,
+    bookingCooldownEndsAt: null,
     sectors: data.sectors.map((sector) => ({
       ...sector,
       cards: sector.cards.map((card) => {
@@ -226,6 +243,7 @@ export async function getFestivalSchedulePageData(args: {
     { data: slots, error: slotsError },
     { data: bookings, error: bookingsError },
     { data: bookingLimitConfig, error: bookingLimitError },
+    { data: bookingCooldownEndsAt, error: bookingCooldownError },
     { profile, viewer },
   ] = await Promise.all([
     args.supabase
@@ -251,6 +269,11 @@ export async function getFestivalSchedulePageData(args: {
       .select("value")
       .eq("key", "festival_schedule_booking_limit")
       .maybeSingle(),
+    args.userId
+      ? args.supabase.rpc("get_festival_schedule_booking_cooldown_ends_at", {
+          target_festival_id: festival.id,
+        })
+      : Promise.resolve({ data: null, error: null }),
     loadViewerState({
       festivalId: festival.id,
       supabase: args.supabase,
@@ -278,9 +301,15 @@ export async function getFestivalSchedulePageData(args: {
     throw new Error(bookingLimitError.message);
   }
 
+  if (bookingCooldownError) {
+    throw new Error(bookingCooldownError.message);
+  }
+
   const bookingLimit = parseFestivalScheduleBookingLimit(
     bookingLimitConfig?.value,
   );
+  const parsedBookingCooldownEndsAt =
+    parseFestivalScheduleBookingCooldownEndsAt(bookingCooldownEndsAt);
 
   const highlineIds = (highlineLinks ?? []).map((link) => link.highline_id);
   const rpcArgs: Database["public"]["Functions"]["get_highline"]["Args"] = {
@@ -348,6 +377,7 @@ export async function getFestivalSchedulePageData(args: {
   });
 
   return {
+    bookingCooldownEndsAt: parsedBookingCooldownEndsAt,
     bookingLimit,
     festival: {
       id: festival.id,
