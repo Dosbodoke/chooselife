@@ -3,6 +3,7 @@ import {
   formatBookingOpensAt,
   useBookFestivalScheduleSlot,
   useCancelFestivalScheduleBooking,
+  useFestivalScheduleBookingCooldown,
   type FestivalHighlineScheduleCard,
   type FestivalScheduleSlotView,
 } from '@chooselife/ui';
@@ -101,6 +102,24 @@ const OfflineReadOnlyAlert: React.FC = () => {
   );
 };
 
+const BookingCooldownAlert: React.FC<{
+  countdown: string;
+}> = ({ countdown }) => {
+  const { t } = useTranslation();
+
+  return (
+    <View className="gap-2 rounded-[24px] border border-blue-200 bg-blue-50 px-4 py-4">
+      <Text className="text-sm font-semibold text-blue-950">
+        {t('app.(festival).highlines.bookingCooldownTitle')}
+      </Text>
+
+      <Text className="text-sm leading-6 text-blue-900">
+        {t('app.(festival).highlines.bookingCooldownMessage', { countdown })}
+      </Text>
+    </View>
+  );
+};
+
 const EmptyScheduleState: React.FC = () => {
   const { t } = useTranslation();
 
@@ -114,6 +133,7 @@ const EmptyScheduleState: React.FC = () => {
 };
 
 const ScheduleSlotsList: React.FC<{
+  bookingLimit: number | null;
   canManage: boolean;
   cancelingSlotId: string | null;
   festivalTimeZone: string;
@@ -123,9 +143,12 @@ const ScheduleSlotsList: React.FC<{
   onCancelBooking: (slot: FestivalScheduleSlotView) => void;
   onSelfBook: (slotId: string) => void;
   onStaffBook: (slotId: string | null) => void;
+  selfBookingCooldownLabel: string;
+  selfBookingCooldownRemainingSeconds: number;
   selfBookingSlotId: string | null;
   slots: FestivalScheduleSlotView[];
 }> = ({
+  bookingLimit,
   canManage,
   cancelingSlotId,
   festivalTimeZone,
@@ -135,6 +158,8 @@ const ScheduleSlotsList: React.FC<{
   onCancelBooking,
   onSelfBook,
   onStaffBook,
+  selfBookingCooldownLabel,
+  selfBookingCooldownRemainingSeconds,
   selfBookingSlotId,
   slots,
 }) => {
@@ -147,6 +172,7 @@ const ScheduleSlotsList: React.FC<{
       {slots.map((slot) => (
         <FestivalScheduleSlotRow
           key={slot.id}
+          bookingLimit={bookingLimit}
           canManage={canManage}
           cancelingSlotId={cancelingSlotId}
           festivalTimeZone={festivalTimeZone}
@@ -156,6 +182,10 @@ const ScheduleSlotsList: React.FC<{
           onCancelBooking={onCancelBooking}
           onSelfBook={onSelfBook}
           onStaffBook={onStaffBook}
+          selfBookingCooldownLabel={selfBookingCooldownLabel}
+          selfBookingCooldownRemainingSeconds={
+            selfBookingCooldownRemainingSeconds
+          }
           selfBookingSlotId={selfBookingSlotId}
           slot={slot}
         />
@@ -165,6 +195,7 @@ const ScheduleSlotsList: React.FC<{
 };
 
 const FestivalScheduleContent: React.FC<{
+  bookingLimit: number | null;
   bookingOpensAtLabel: string | null;
   canManage: boolean;
   cancelingSlotId: string | null;
@@ -178,9 +209,12 @@ const FestivalScheduleContent: React.FC<{
   onSelectDayKey: (dayKey: string) => void;
   onSelfBook: (slotId: string) => void;
   onStaffBook: (slotId: string | null) => void;
+  selfBookingCooldownLabel: string;
+  selfBookingCooldownRemainingSeconds: number;
   selfBookingSlotId: string | null;
   selectedDay: FestivalHighlineScheduleCard['days'][number] | null;
 }> = ({
+  bookingLimit,
   bookingOpensAtLabel,
   canManage,
   cancelingSlotId,
@@ -194,6 +228,8 @@ const FestivalScheduleContent: React.FC<{
   onSelectDayKey,
   onSelfBook,
   onStaffBook,
+  selfBookingCooldownLabel,
+  selfBookingCooldownRemainingSeconds,
   selfBookingSlotId,
   selectedDay,
 }) => {
@@ -231,7 +267,15 @@ const FestivalScheduleContent: React.FC<{
 
           {!isOnline ? <OfflineReadOnlyAlert /> : null}
 
+          {isAuthenticated &&
+          isOnline &&
+          !canManage &&
+          selfBookingCooldownRemainingSeconds > 0 ? (
+            <BookingCooldownAlert countdown={selfBookingCooldownLabel} />
+          ) : null}
+
           <ScheduleSlotsList
+            bookingLimit={bookingLimit}
             canManage={canManage}
             cancelingSlotId={cancelingSlotId}
             festivalTimeZone={festivalTimeZone}
@@ -241,6 +285,10 @@ const FestivalScheduleContent: React.FC<{
             onCancelBooking={onCancelBooking}
             onSelfBook={onSelfBook}
             onStaffBook={onStaffBook}
+            selfBookingCooldownLabel={selfBookingCooldownLabel}
+            selfBookingCooldownRemainingSeconds={
+              selfBookingCooldownRemainingSeconds
+            }
             selfBookingSlotId={selfBookingSlotId}
             slots={selectedDay?.slots ?? []}
           />
@@ -251,6 +299,8 @@ const FestivalScheduleContent: React.FC<{
 };
 
 export const FestivalScheduleSheet: React.FC<{
+  bookingCooldownEndsAt?: string | null;
+  bookingLimit: number | null;
   card: FestivalHighlineScheduleCard | null;
   canManage: boolean;
   festivalSlug: string;
@@ -259,6 +309,8 @@ export const FestivalScheduleSheet: React.FC<{
   onSelectDayKey: (dayKey: string) => void;
   selectedDayKey: string | null;
 }> = ({
+  bookingCooldownEndsAt,
+  bookingLimit,
   card,
   canManage,
   festivalSlug,
@@ -277,6 +329,8 @@ export const FestivalScheduleSheet: React.FC<{
   return (
     <FestivalScheduleSheetModal
       key={selectedHighlineId}
+      bookingCooldownEndsAt={bookingCooldownEndsAt}
+      bookingLimit={bookingLimit}
       card={card}
       canManage={canManage}
       festivalSlug={festivalSlug}
@@ -289,6 +343,8 @@ export const FestivalScheduleSheet: React.FC<{
 };
 
 const FestivalScheduleSheetModal: React.FC<{
+  bookingCooldownEndsAt?: string | null;
+  bookingLimit: number | null;
   card: FestivalHighlineScheduleCard;
   canManage: boolean;
   festivalSlug: string;
@@ -297,6 +353,8 @@ const FestivalScheduleSheetModal: React.FC<{
   onSelectDayKey: (dayKey: string) => void;
   selectedDayKey: string | null;
 }> = ({
+  bookingCooldownEndsAt,
+  bookingLimit,
   card,
   canManage,
   festivalSlug,
@@ -314,6 +372,12 @@ const FestivalScheduleSheetModal: React.FC<{
   const { locale } = useI18n();
 
   const isAuthenticated = !!profile?.id;
+  const bookingCooldown = useFestivalScheduleBookingCooldown(
+    bookingCooldownEndsAt,
+  );
+  const selfBookingCooldownRemainingSeconds = canManage
+    ? 0
+    : bookingCooldown.remainingSeconds;
 
   const [staffSlotId, setStaffSlotId] = React.useState<string | null>(null);
   const [selfBookingSlotId, setSelfBookingSlotId] = React.useState<
@@ -365,6 +429,7 @@ const FestivalScheduleSheetModal: React.FC<{
     (kind: FestivalScheduleAlertKind, participantLabel?: string) => {
       const alert = getFestivalScheduleAlert({
         bookingOpensAtLabel,
+        bookingLimit,
         highlineName: card.highline.name,
         kind,
         participantLabel,
@@ -373,7 +438,7 @@ const FestivalScheduleSheetModal: React.FC<{
 
       Alert.alert(alert.title, alert.message);
     },
-    [bookingOpensAtLabel, card.highline.name, t],
+    [bookingLimit, bookingOpensAtLabel, card.highline.name, t],
   );
 
   const showBookingError = React.useCallback(
@@ -556,6 +621,7 @@ const FestivalScheduleSheetModal: React.FC<{
         }}
       >
         <FestivalScheduleContent
+          bookingLimit={bookingLimit}
           bookingOpensAtLabel={bookingOpensAtLabel}
           canManage={canManage}
           cancelingSlotId={cancelingSlotId}
@@ -569,6 +635,10 @@ const FestivalScheduleSheetModal: React.FC<{
           onSelectDayKey={onSelectDayKey}
           onSelfBook={handleSelfBook}
           onStaffBook={setStaffSlotId}
+          selfBookingCooldownLabel={bookingCooldown.label}
+          selfBookingCooldownRemainingSeconds={
+            selfBookingCooldownRemainingSeconds
+          }
           selfBookingSlotId={selfBookingSlotId}
           selectedDay={selectedDay}
         />

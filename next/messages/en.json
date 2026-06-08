@@ -263,7 +263,10 @@
       "expiredLabel": "Expired",
       "claimSlotButton": "Claim slot",
       "claimSlotBlockedOverlap": "You already have a schedule during this time window.",
-      "claimSlotBlockedLimit": "You already have 2 active schedules",
+      "claimSlotBlockedLimit": "You already have {count} active schedules",
+      "claimSlotBlockedCooldown": "Wait {countdown} before claiming another slot",
+      "bookingCooldownTitle": "Wait before claiming another slot",
+      "bookingCooldownMessage": "Your next booking will be available in {countdown}. This gives other participants a chance to choose a slot.",
       "bookForSomeoneButton": "Book for someone",
       "cancelOwnBookingButton": "Cancel my booking",
       "cancelBookingButton": "Cancel booking",
@@ -275,7 +278,8 @@
       "missingStaffSelection": "Select a participant first.",
       "missingGuestName": "Guest display name is required.",
       "scheduleOverlapError": "You already have a schedule during this time window.",
-      "scheduleLimitError": "You already have 2 active schedules in this festival.",
+      "scheduleLimitError": "You already have {count} active schedules in this festival.",
+      "scheduleCooldownError": "You need to wait before claiming another slot. The schedule was refreshed with your countdown.",
       "genericError": "Something went wrong while updating the schedule."
     }
   },

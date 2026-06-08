@@ -4,6 +4,7 @@ export type FestivalScheduleAlertKind =
   | 'booking-success'
   | 'cancellation-success'
   | 'connectivity-error'
+  | 'cooldown-error'
   | 'generic-error'
   | 'limit-error'
   | 'not-open-error'
@@ -14,12 +15,14 @@ export type FestivalScheduleAlertKind =
 
 export function getFestivalScheduleAlert({
   bookingOpensAtLabel,
+  bookingLimit,
   highlineName,
   kind,
   participantLabel,
   t,
 }: {
   bookingOpensAtLabel?: string | null;
+  bookingLimit: number | null;
   highlineName?: string;
   kind: FestivalScheduleAlertKind;
   participantLabel?: string;
@@ -45,10 +48,19 @@ export function getFestivalScheduleAlert({
         title: t('app.(festival).highlines.connectivityErrorTitle'),
         message: t('app.(festival).highlines.connectivityErrorMessage'),
       };
+    case 'cooldown-error':
+      return {
+        title: t('app.(festival).highlines.errorTitle'),
+        message: t('app.(festival).highlines.scheduleCooldownError'),
+      };
     case 'limit-error':
       return {
         title: t('app.(festival).highlines.errorTitle'),
-        message: t('app.(festival).highlines.scheduleLimitError'),
+        message: bookingLimit
+          ? t('app.(festival).highlines.scheduleLimitError', {
+              count: bookingLimit,
+            })
+          : t('app.(festival).highlines.genericError'),
       };
     case 'not-open-error':
       return {
@@ -99,6 +111,8 @@ export function getFestivalScheduleErrorAlertKind(error?: string) {
       return 'connectivity-error';
     case 'festival_schedule_booking_overlap':
       return 'overlap-error';
+    case 'festival_schedule_booking_cooldown':
+      return 'cooldown-error';
     case 'festival_schedule_booking_limit':
       return 'limit-error';
     case 'festival_schedule_booking_not_open_yet':

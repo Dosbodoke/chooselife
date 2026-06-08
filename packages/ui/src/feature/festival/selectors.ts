@@ -62,13 +62,22 @@ function toBookingView(args: {
 
 function getViewerBookingBlockedReason(args: {
   isWindowOpen: boolean;
+  bookingLimit: number;
   now: Date;
   slot: FestivalScheduleSlotRecord;
   state: FestivalScheduleSlotState;
   viewerActiveBookings: ViewerActiveBookingWindow[];
   viewerId?: string;
 }): FestivalScheduleBookingBlockedReason | null {
-  const { isWindowOpen, now, slot, state, viewerActiveBookings, viewerId } = args;
+  const {
+    bookingLimit,
+    isWindowOpen,
+    now,
+    slot,
+    state,
+    viewerActiveBookings,
+    viewerId,
+  } = args;
 
   if (state !== "available") return null;
   if (new Date(slot.end_at).getTime() <= now.getTime()) return null;
@@ -81,7 +90,7 @@ function getViewerBookingBlockedReason(args: {
     return null;
   }
 
-  if (viewerActiveBookings.length >= 2) {
+  if (viewerActiveBookings.length >= bookingLimit) {
     return "limit";
   }
 
@@ -104,6 +113,7 @@ function getViewerBookingBlockedReason(args: {
 function buildSlotView(args: {
   slot: FestivalScheduleSlotRecord;
   activeBooking: FestivalScheduleBookingRecord | null;
+  bookingLimit: number;
   completedBooking: FestivalScheduleBookingRecord | null;
   now: Date;
   isWindowOpen: boolean;
@@ -113,6 +123,7 @@ function buildSlotView(args: {
   const {
     slot,
     activeBooking,
+    bookingLimit,
     completedBooking,
     now,
     isWindowOpen,
@@ -150,6 +161,7 @@ function buildSlotView(args: {
     && !slotEnded
     && isWindowOpen;
   const bookingBlockedReason = getViewerBookingBlockedReason({
+    bookingLimit,
     isWindowOpen,
     now,
     slot,
@@ -221,6 +233,7 @@ function pickDefaultDay(args: {
 }
 
 export function buildFestivalScheduleCards(args: {
+  bookingLimit: number;
   highlines: FestivalHighline[];
   links: FestivalHighlineLink[];
   sectors: Pick<FestivalSector, "id" | "name" | "description">[];
@@ -307,6 +320,7 @@ export function buildFestivalScheduleCards(args: {
         const view = buildSlotView({
           slot,
           activeBooking,
+          bookingLimit: args.bookingLimit,
           completedBooking,
           now,
           isWindowOpen,

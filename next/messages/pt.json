@@ -263,7 +263,10 @@
       "expiredLabel": "Encerrado",
       "claimSlotButton": "Reservar horário",
       "claimSlotBlockedOverlap": "Você já tem um horário nessa janela",
-      "claimSlotBlockedLimit": "Você já tem 2 horários ativos",
+      "claimSlotBlockedLimit": "Você já tem {count} horários ativos",
+      "claimSlotBlockedCooldown": "Aguarde {countdown} para reservar outro horário",
+      "bookingCooldownTitle": "Aguarde antes de reservar outro horário",
+      "bookingCooldownMessage": "Sua próxima reserva estará disponível em {countdown}. Assim, outras pessoas também têm a chance de escolher um horário.",
       "bookForSomeoneButton": "Reservar para alguém",
       "cancelOwnBookingButton": "Cancelar minha reserva",
       "cancelBookingButton": "Cancelar reserva",
@@ -275,7 +278,8 @@
       "missingStaffSelection": "Selecione um participante primeiro.",
       "missingGuestName": "O nome de exibição do convidado é obrigatório.",
       "scheduleOverlapError": "Você já tem um horário durante essa janela.",
-      "scheduleLimitError": "Você já tem 2 horários ativos neste festival.",
+      "scheduleLimitError": "Você já tem {count} horários ativos neste festival.",
+      "scheduleCooldownError": "Você precisa aguardar antes de reservar outro horário. A programação foi atualizada com a sua contagem regressiva.",
       "genericError": "Algo deu errado ao atualizar a programação."
     }
   },

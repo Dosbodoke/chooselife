@@ -3,6 +3,7 @@
 import {
   useBookFestivalScheduleSlot,
   useCancelFestivalScheduleBooking,
+  useFestivalScheduleBookingCooldown,
   type FestivalHighlineScheduleCard,
   type FestivalScheduleSlotView,
 } from "@chooselife/ui";
@@ -42,6 +43,7 @@ function formatSlotTimeRange(
 }
 
 function SlotRow({
+  bookingLimit,
   canManage,
   festivalTimeZone,
   isAuthenticated,
@@ -49,8 +51,11 @@ function SlotRow({
   onCancelBooking,
   onSelfBook,
   onStaffBook,
+  selfBookingCooldownLabel,
+  selfBookingCooldownRemainingSeconds,
   slot,
 }: {
+  bookingLimit: number;
   canManage: boolean;
   festivalTimeZone: string;
   isAuthenticated: boolean;
@@ -58,6 +63,8 @@ function SlotRow({
   onCancelBooking: (slot: FestivalScheduleSlotView) => void;
   onSelfBook: (slotId: string) => void;
   onStaffBook: (slotId: string) => void;
+  selfBookingCooldownLabel: string;
+  selfBookingCooldownRemainingSeconds: number;
   slot: FestivalScheduleSlotView;
 }) {
   const t = useTranslations("festival.schedule");
@@ -69,10 +76,12 @@ function SlotRow({
       ? slot.blockReason
       : slot.booking?.participant.secondaryText ?? null;
   const disabledSelfBookingLabel =
-    slot.bookingBlockedReason === "overlap"
+    selfBookingCooldownRemainingSeconds > 0
+      ? t("claimSlotBlockedCooldown", { countdown: selfBookingCooldownLabel })
+      : slot.bookingBlockedReason === "overlap"
       ? t("claimSlotBlockedOverlap")
       : slot.bookingBlockedReason === "limit"
-      ? t("claimSlotBlockedLimit")
+      ? t("claimSlotBlockedLimit", { count: bookingLimit })
       : null;
   const isFreeSlot = slot.state === "available";
 
@@ -149,7 +158,8 @@ function SlotRow({
 
       {slot.state === "available" && isAuthenticated ? (
         <div className="flex flex-wrap gap-2">
-          {slot.bookingBlockedReason === null ? (
+          {slot.bookingBlockedReason === null &&
+          selfBookingCooldownRemainingSeconds === 0 ? (
             <Button
               type="button"
               className="rounded-xl bg-[#101b2b] text-white hover:bg-[#101b2b]/95"
@@ -193,6 +203,8 @@ function SlotRow({
 }
 
 export function FestivalScheduleDrawer({
+  bookingCooldownEndsAt,
+  bookingLimit,
   card,
   canManage,
   festivalSlug,
@@ -201,6 +213,8 @@ export function FestivalScheduleDrawer({
   open,
   onOpenChange,
 }: {
+  bookingCooldownEndsAt?: string | null;
+  bookingLimit: number;
   card: FestivalHighlineScheduleCard | null;
   canManage: boolean;
   festivalSlug: string;
@@ -217,6 +231,12 @@ export function FestivalScheduleDrawer({
   );
   const bookMutation = useBookFestivalScheduleSlot({ festivalSlug });
   const cancelMutation = useCancelFestivalScheduleBooking({ festivalSlug });
+  const bookingCooldown = useFestivalScheduleBookingCooldown(
+    bookingCooldownEndsAt
+  );
+  const selfBookingCooldownRemainingSeconds = canManage
+    ? 0
+    : bookingCooldown.remainingSeconds;
   const [selectedDayKey, setSelectedDayKey] = React.useState<string | null>(
     null
   );
@@ -293,14 +313,23 @@ export function FestivalScheduleDrawer({
         }
 
         if (result.error === "festival_schedule_booking_limit") {
-          showLocalError(t("scheduleLimitError"));
+          showLocalError(
+            t("scheduleLimitError", {
+              count: bookingLimit,
+            })
+          );
+          return;
+        }
+
+        if (result.error === "festival_schedule_booking_cooldown") {
+          showLocalError(t("scheduleCooldownError"));
           return;
         }
 
         showGenericError();
       }
     },
-    [bookMutation, showGenericError, showLocalError, t]
+    [bookingLimit, bookMutation, showGenericError, showLocalError, t]
   );
 
   const handleCancelBooking = React.useCallback(
@@ -413,11 +442,27 @@ export function FestivalScheduleDrawer({
                   </div>
                 ) : null}
 
+                {isAuthenticated &&
+                !canManage &&
+                selfBookingCooldownRemainingSeconds > 0 ? (
+                  <div className="space-y-1 rounded-[24px] border border-blue-200 bg-blue-50 px-4 py-4">
+                    <p className="text-sm font-semibold text-blue-950">
+                      {t("bookingCooldownTitle")}
+                    </p>
+                    <p className="text-sm leading-6 text-blue-900">
+                      {t("bookingCooldownMessage", {
+                        countdown: bookingCooldown.label,
+                      })}
+                    </p>
+                  </div>
+                ) : null}
+
                 {selectedDay?.slots.length ? (
                   <div className="space-y-3">
                     {selectedDay.slots.map((slot) => (
                       <SlotRow
                         key={slot.id}
+                        bookingLimit={bookingLimit}
                         canManage={canManage}
                         festivalTimeZone={festivalTimeZone}
                         isAuthenticated={isAuthenticated}
@@ -425,6 +470,10 @@ export function FestivalScheduleDrawer({
                         onCancelBooking={handleCancelBooking}
                         onSelfBook={handleSelfBook}
                         onStaffBook={setStaffSlotId}
+                        selfBookingCooldownLabel={bookingCooldown.label}
+                        selfBookingCooldownRemainingSeconds={
+                          selfBookingCooldownRemainingSeconds
+                        }
                         slot={slot}
                       />
                     ))}
