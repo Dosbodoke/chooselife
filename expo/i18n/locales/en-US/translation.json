@@ -223,6 +223,11 @@
           "lockedHint": "Determined by the selected model",
           "placeholder": "Select strength class"
         },
+        "authRequired": {
+          "title": "Sign in required",
+          "description": "You need to be signed in before registering webbing.",
+          "action": "Log in"
+        },
         "recommendedLifetime": "Recommended lifetime: {{days}} days"
       }
     },
@@ -439,7 +444,7 @@
       "UsernameForm": {
         "title": "Choose Your Username",
         "subtitle": "This is how you will be identified.",
-        "inputPlaceholder": "Your username"
+        "inputPlaceholder": "username"
       },
       "ProfileInfoForm": {
         "title": "Your Profile",

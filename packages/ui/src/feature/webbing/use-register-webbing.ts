@@ -53,7 +53,7 @@ export interface UseRegisterWebbingOptions {
 export interface UseRegisterWebbingReturn {
   form: UseFormReturn<RegisterWebbingFormData>;
   mutation: ReturnType<typeof useMutation<void, Error, RegisterWebbingFormData>>;
-  handleSubmit: () => void;
+  handleSubmit: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -111,7 +111,17 @@ export function useRegisterWebbing(
   });
 
   const onSubmit: SubmitHandler<RegisterWebbingFormData> = async (data) => {
-    await mutation.mutateAsync(data);
+    form.clearErrors('root');
+
+    try {
+      await mutation.mutateAsync(data);
+    } catch (error) {
+      form.setError('root', {
+        type: 'submit',
+        message:
+          error instanceof Error ? error.message : 'Failed to register webbing',
+      });
+    }
   };
 
   return {

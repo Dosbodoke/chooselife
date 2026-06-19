@@ -7,7 +7,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'ChooseLife',
   slug: 'chooselife',
-  version: '1.6.4',
+  version: '1.7.0',
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
@@ -79,6 +79,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     favicon: './assets/icons/favicon.png',
   },
   plugins: [
+    'expo-image',
+    'expo-sharing',
     'expo-apple-authentication',
     'expo-sqlite',
     'expo-router',
