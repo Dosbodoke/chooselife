@@ -1,10 +1,8 @@
-import {
-  assertEquals,
-  assertRejects,
-} from "jsr:@std/assert";
+import { assertEquals, assertRejects } from "jsr:@std/assert";
 import type { SupabaseClient } from "@supabase";
 import {
   createChargeForPayment,
+  createTransparentPixCharge,
   InvalidPaymentStateError,
   PaymentNotFoundError,
   PaymentOwnerMismatchError,
@@ -145,6 +143,79 @@ Deno.test("ignores a forged request-body amount", async () => {
 
   assertEquals(forgedRequestBody.amount, 1);
   assertEquals(providerAmounts, [5000]);
+});
+
+Deno.test("accepts successful provider responses without an explicit error key", async () => {
+  const { client } = createFakeSupabase({
+    id: "payment-1",
+    user_id: "user-1",
+    amount: 5000,
+    status: "pending",
+    abacate_pay_charge_id: null,
+  });
+
+  const charge = await createChargeForPayment({
+    supabaseAdmin: client,
+    paymentId: "payment-1",
+    expectedUserId: "user-1",
+    createPixQrCode: async () => ({
+      data: {
+        id: "charge-1",
+        brCode: "pix-code",
+        brCodeBase64: "pix-code-base64",
+      },
+      success: true,
+    }),
+  });
+
+  assertEquals(charge.id, "charge-1");
+});
+
+Deno.test("creates transparent Pix charges with the documented v2 payload", async () => {
+  const requests: Array<{ input: string | URL | Request; init?: RequestInit }> =
+    [];
+
+  const charge = await createTransparentPixCharge({
+    apiKey: "test-api-key",
+    amount: 5000,
+    description: "Membership",
+    expiresIn: 3600,
+    externalId: "payment-1",
+    fetchFn: async (input, init) => {
+      requests.push({ input, init });
+
+      return new Response(
+        JSON.stringify({
+          data: {
+            id: "charge-1",
+            brCode: "pix-code",
+            brCodeBase64: "pix-code-base64",
+          },
+          success: true,
+        }),
+        { status: 200 },
+      );
+    },
+  });
+
+  assertEquals(charge.data?.id, "charge-1");
+  assertEquals(
+    String(requests[0].input),
+    "https://api.abacatepay.com/v2/transparents/create",
+  );
+  assertEquals(requests[0].init?.method, "POST");
+  assertEquals(
+    JSON.parse(String(requests[0].init?.body)),
+    {
+      method: "PIX",
+      data: {
+        amount: 5000,
+        description: "Membership",
+        expiresIn: 3600,
+        externalId: "payment-1",
+      },
+    },
+  );
 });
 
 Deno.test("rejects missing payment rows", async () => {

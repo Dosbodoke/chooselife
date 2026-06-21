@@ -1,6 +1,5 @@
 {
   "imports": {
-    "@supabase": "jsr:@supabase/supabase-js@2.49.8",
-    "abacatepay-nodejs-sdk": "npm:abacatepay-nodejs-sdk@^1.6.0"
+    "@supabase": "jsr:@supabase/supabase-js@2.49.8"
   }
 }

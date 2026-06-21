@@ -1,4 +1,3 @@
-import AbacatePay from "abacatepay-nodejs-sdk";
 import type { SupabaseClient } from "@supabase";
 import type {
   AbacatePayCharge,
@@ -23,11 +22,13 @@ type PixQrCodeProviderError =
 type PixQrCodeResult =
   | {
     data: AbacatePayCharge;
-    error: null;
+    error?: null;
+    success?: unknown;
   }
   | {
     data?: undefined;
     error: PixQrCodeProviderError;
+    success?: unknown;
   };
 
 type CreatePixQrCode = (params: {
@@ -35,6 +36,7 @@ type CreatePixQrCode = (params: {
   description: string;
   expiresIn: number;
   customer?: CustomerInfo;
+  externalId?: string;
 }) => Promise<PixQrCodeResult>;
 
 export class PaymentNotFoundError extends Error {
@@ -66,14 +68,102 @@ export type CreateChargeForPaymentArgs = {
   createPixQrCode?: CreatePixQrCode;
 };
 
+type FetchFn = typeof fetch;
+
+type TransparentPixChargeResponse = {
+  data?: {
+    id?: unknown;
+    brCode?: unknown;
+    brCodeBase64?: unknown;
+  };
+  error?: unknown;
+  success?: unknown;
+};
+
+function formatProviderError(error: unknown): string {
+  if (typeof error === "string") return error;
+  if (error instanceof Error) return error.message;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
+export async function createTransparentPixCharge({
+  apiKey,
+  amount,
+  description,
+  expiresIn,
+  customer,
+  externalId,
+  fetchFn = fetch,
+}: {
+  apiKey: string;
+  amount: number;
+  description: string;
+  expiresIn: number;
+  customer?: CustomerInfo;
+  externalId?: string;
+  fetchFn?: FetchFn;
+}): Promise<PixQrCodeResult> {
+  const response = await fetchFn(
+    "https://api.abacatepay.com/v2/transparents/create",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        method: "PIX",
+        data: {
+          amount,
+          description,
+          expiresIn,
+          customer,
+          externalId,
+        },
+      }),
+    },
+  );
+
+  const result = await response.json() as TransparentPixChargeResponse;
+
+  if (!response.ok || result.error != null) {
+    return {
+      error: result.error == null
+        ? `Abacate Pay API returned HTTP ${response.status}`
+        : formatProviderError(result.error),
+    };
+  }
+
+  if (
+    typeof result.data?.id !== "string" ||
+    typeof result.data.brCode !== "string" ||
+    typeof result.data.brCodeBase64 !== "string"
+  ) {
+    return { error: "Abacate Pay API response is missing Pix charge data." };
+  }
+
+  return {
+    data: {
+      id: result.data.id,
+      brCode: result.data.brCode,
+      brCodeBase64: result.data.brCodeBase64,
+    },
+    error: null,
+    success: result.success,
+  };
+}
+
 function getDefaultPixQrCodeCreator(): CreatePixQrCode {
   const apiKey = Deno.env.get("ABACATE_PAY_API_KEY");
   if (!apiKey) {
     throw new Error("Missing ABACATE_PAY_API_KEY environment variable.");
   }
 
-  const abacatePay = AbacatePay.default(apiKey);
-  return (params) => abacatePay.pixQrCode.create(params);
+  return (params) => createTransparentPixCharge({ apiKey, ...params });
 }
 
 export async function createChargeForPayment({
@@ -101,7 +191,9 @@ export async function createChargeForPayment({
   }
 
   if (payment.amount <= 0) {
-    throw new InvalidPaymentStateError("Payment amount must be greater than 0.");
+    throw new InvalidPaymentStateError(
+      "Payment amount must be greater than 0.",
+    );
   }
 
   if (payment.status !== "pending") {
@@ -116,13 +208,18 @@ export async function createChargeForPayment({
     amount: payment.amount,
     description: "Inscrição para se tornar associado da SL.A.C",
     expiresIn: 3600,
+    externalId: payment.id,
     customer,
   });
 
-  if (pixCode.error !== null) {
+  if (pixCode.error != null) {
     throw new Error(
-      `Abacate Pay SDK error: ${JSON.stringify(pixCode.error)}`,
+      `Abacate Pay API error: ${formatProviderError(pixCode.error)}`,
     );
+  }
+
+  if (!pixCode.data) {
+    throw new Error("Abacate Pay API response is missing Pix charge data.");
   }
 
   const { data: updatedPayments, error: updateError } = await supabaseAdmin
