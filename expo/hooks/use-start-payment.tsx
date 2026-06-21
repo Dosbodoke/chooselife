@@ -5,17 +5,14 @@ import { queryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 
 const generatePixChargeFn = async ({
-  amount,
   paymentId,
 }: {
-  amount: number;
   paymentId: string;
 }) => {
   const { data, error } = await supabase.functions.invoke(
     'create-abacate-pay-charge',
     {
       body: {
-        amount,
         paymentId,
       },
     },
@@ -31,14 +28,11 @@ export const useStartPayment = () => {
 
   return useMutation({
     mutationFn: async ({
-      amount,
       paymentId,
     }: {
-      amount: number;
       paymentId: string;
     }) => {
       return generatePixChargeFn({
-        amount,
         paymentId,
       });
     },

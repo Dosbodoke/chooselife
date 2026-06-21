@@ -2,11 +2,9 @@ import type { SupabaseClient } from "@supabase";
 import { createSupabaseClient } from "../_shared/supabase-client.ts";
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import type {
-  AbacatePayCharge,
-  CreateAbacatePayChargePayload,
-} from "../_shared/edge-functions.types.ts";
+import type { AbacatePayCharge } from "../_shared/edge-functions.types.ts";
 import type { Database } from "../_shared/database.types.ts";
+import { createChargeForPayment } from "../_shared/abacate-pay-charge.ts";
 
 // Helper function to handle CORS preflight requests
 function handleCors(req: Request): Response | null {
@@ -116,40 +114,6 @@ async function createPayment(
   return paymentData;
 }
 
-async function createCharge(
-  supabaseAdmin: SupabaseClient,
-  { amount, paymentId, customer }: CreateAbacatePayChargePayload,
-): Promise<AbacatePayCharge> {
-  const { data: chargeData, error: chargeError } = await supabaseAdmin
-    .functions.invoke<AbacatePayCharge>(
-      "create-abacate-pay-charge",
-      {
-        body: {
-          amount,
-          paymentId,
-          customer,
-        } satisfies CreateAbacatePayChargePayload,
-      },
-    );
-
-  if (chargeError) {
-    const errorDetails = await chargeError.context?.json();
-    throw new Error(
-      `Failed to create payment charge: ${
-        errorDetails?.error || chargeError.message
-      }`,
-    );
-  }
-
-  if (!chargeData) {
-    throw new Error(
-      "No charge data received from 'create-abacate-pay-charge'",
-    );
-  }
-
-  return chargeData;
-}
-
 type RequestPayload = {
   slug: string;
   plan_type: "monthly" | "annual";
@@ -190,9 +154,10 @@ Deno.serve(async (req) => {
       amount,
     });
 
-    const chargeData = await createCharge(supabaseAdmin, {
-      amount,
+    const chargeData = await createChargeForPayment({
+      supabaseAdmin,
       paymentId: payment.id,
+      expectedUserId: user.id,
       customer: undefined,
     });
 

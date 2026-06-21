@@ -59,7 +59,7 @@ Supabase serves as the project's backend, handling database and authentication.
 
 #### Deploying Edge Functions
 
-Some Edge Functions (like `create-abacate-pay-charge`) require specific configurations (e.g., `--no-verify-jwt`) that are critical for their operation. To ensure all functions are deployed correctly with their required flags, **always use the provided deployment script** instead of running `supabase functions deploy` manually.
+Use the provided deployment script instead of running `supabase functions deploy` manually. It deploys app-invoked functions like `create-abacate-pay-charge` with JWT verification, while intentionally deploying the external `abacate-pay-webhook` without JWT verification so provider callbacks can reach it.
 
 - **Deploy all functions:**
   ```bash

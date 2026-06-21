@@ -7,13 +7,12 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}Starting deployment of Supabase Edge Functions...${NC}"
 
-# 1. Deploy create-abacate-pay-charge with --no-verify-jwt
-# This function requires the JWT verification to be skipped.
-echo -e "${GREEN}Deploying create-abacate-pay-charge (with --no-verify-jwt)...${NC}"
-npx supabase functions deploy create-abacate-pay-charge --no-verify-jwt
+# 1. Deploy create-abacate-pay-charge with JWT verification.
+echo -e "${GREEN}Deploying create-abacate-pay-charge...${NC}"
+npx supabase functions deploy create-abacate-pay-charge
 
 # 2. Deploy abacate-pay-webhook
-# This function is configured with verify_jwt = false in config.toml, but explicit deployment is safe.
+# This external provider webhook intentionally skips JWT verification.
 echo -e "${GREEN}Deploying abacate-pay-webhook...${NC}"
 npx supabase functions deploy abacate-pay-webhook --no-verify-jwt
 

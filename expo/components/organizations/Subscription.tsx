@@ -417,7 +417,6 @@ export const Subscription = ({
             amount={pendingPayment.amount}
             onPayPress={() =>
               startPaymentMutation.mutate({
-                amount: pendingPayment.amount,
                 paymentId: pendingPayment.id,
               })
             }
@@ -572,7 +571,6 @@ export const Subscription = ({
                         onPress={() => {
                           historySheetRef.current?.close();
                           startPaymentMutation.mutate({
-                            amount: item.amount,
                             paymentId: item.id,
                           });
                         }}
