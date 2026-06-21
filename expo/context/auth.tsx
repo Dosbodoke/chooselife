@@ -95,7 +95,6 @@ interface AuthContextValue {
     email: string;
     password: string;
     confirmPassword: string;
-    confirmPassword: string;
     redirectTo: string | undefined;
   }) => AuthMethodResponse;
   logout: () => AuthMethodResponse;
