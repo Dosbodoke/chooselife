@@ -7,6 +7,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import SlacCabeMaisImage from '~/assets/images/slac-cabe-mais.png';
 import { Image } from 'expo-image';
+import { Link } from 'expo-router';
 import {
   ChevronRightIcon,
   MapPinIcon,
@@ -15,8 +16,6 @@ import {
 } from 'lucide-react-native';
 import React from 'react';
 import {
-  Alert,
-  Linking,
   RefreshControl,
   ScrollView,
   TouchableOpacity,
@@ -40,8 +39,6 @@ import { Text } from '~/components/ui/text';
 
 // TODO: When more orgs were to be implemented, it should be created the /organizations/[slug] route
 const ORG_SLUG = 'slac' as const;
-const MEMBERSHIP_FORM_URL =
-  'https://docs.google.com/forms/d/e/1FAIpQLSfkuXeriOAahUraV5UwLT88Huo-CVt33Yif_XyeWbBCquGOqw/viewform?usp=publish-editor';
 
 export default function OrganizationDetailsPageWrapper() {
   const { session } = useAuth();
@@ -76,14 +73,6 @@ function OrganizationDetailsPage() {
       }),
     ]);
     setRefreshing(false);
-  };
-
-  const handleOpenMembershipForm = async () => {
-    try {
-      await Linking.openURL(MEMBERSHIP_FORM_URL);
-    } catch {
-      Alert.alert('Erro', 'Não foi possível abrir o formulário.');
-    }
   };
 
   if (isLoading) {
@@ -179,12 +168,11 @@ function OrganizationDetailsPage() {
               </Text>
             </View>
 
-            <Button
-              className="w-full bg-white active:bg-gray-100"
-              onPress={handleOpenMembershipForm}
-            >
-              <Text className="text-black font-bold">Seja Membro</Text>
-            </Button>
+            <Link href={`/organizations/${organization.slug}/member`} asChild>
+              <Button className="w-full bg-white active:bg-gray-100">
+                <Text className="text-black font-bold">Seja Membro</Text>
+              </Button>
+            </Link>
           </View>
         )}
 
