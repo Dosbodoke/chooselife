@@ -3,8 +3,9 @@ import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 import crypto from "node:crypto";
 import { Buffer } from "node:buffer";
 import {
+  mapAbacatePayWebhookPayload,
   processWebhook,
-  type WebhookPayload,
+  type AbacatePayWebhookPayload,
 } from "../_shared/payment-webhook.ts";
 
 const ABACATE_PAY_WEBHOOK_SECRET = Deno.env.get("ABACATE_PAY_WEBHOOK_SECRET")!;
@@ -61,8 +62,11 @@ Deno.serve(async (req) => {
     }
 
     // Parse and process webhook
-    const payload: WebhookPayload = JSON.parse(rawBody);
-    const result = await processWebhook(supabaseAdmin, payload);
+    const payload: AbacatePayWebhookPayload = JSON.parse(rawBody);
+    const result = await processWebhook(
+      supabaseAdmin,
+      mapAbacatePayWebhookPayload(payload),
+    );
 
     return new Response(
       JSON.stringify({ received: true, ...result }),

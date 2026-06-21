@@ -1,4 +1,8 @@
-export type CreateAbacatePayChargePayload = {
+export type PaymentProvider = "abacate_pay";
+
+export type PaymentMethod = "pix";
+
+export type CreatePaymentCheckoutPayload = {
   paymentId: string;
   customer?: {
     name: string;
@@ -8,10 +12,15 @@ export type CreateAbacatePayChargePayload = {
   };
 };
 
-export type AbacatePayCharge = {
+export type PaymentCheckoutSession = {
   brCode: string;
   brCodeBase64: string;
-  id: string;
+  method: PaymentMethod;
+  paymentId: string;
+  provider: PaymentProvider;
+  providerPaymentId: string;
 };
 
-export type StartSubscriptionResponse = AbacatePayCharge;
+export type CreateAbacatePayChargePayload = CreatePaymentCheckoutPayload;
+export type AbacatePayCharge = PaymentCheckoutSession;
+export type StartSubscriptionResponse = PaymentCheckoutSession;

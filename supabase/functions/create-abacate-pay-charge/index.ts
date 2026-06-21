@@ -1,7 +1,7 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import type {
-  AbacatePayCharge,
-  CreateAbacatePayChargePayload,
+  CreatePaymentCheckoutPayload,
+  PaymentCheckoutSession,
 } from "../_shared/edge-functions.types.ts";
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 import { createSupabaseClient } from "../_shared/supabase-client.ts";
@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "User not authenticated." }, 401);
     }
 
-    const { paymentId, customer }: CreateAbacatePayChargePayload = await req
+    const { paymentId, customer }: CreatePaymentCheckoutPayload = await req
       .json();
     if (paymentId === undefined) {
       throw new Error("paymentId is required.");
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
       JSON.stringify(
         {
           ...chargeData,
-        } satisfies AbacatePayCharge,
+        } satisfies PaymentCheckoutSession,
       ),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

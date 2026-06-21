@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase";
 import { createSupabaseClient } from "../_shared/supabase-client.ts";
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import type { AbacatePayCharge } from "../_shared/edge-functions.types.ts";
+import type { PaymentCheckoutSession } from "../_shared/edge-functions.types.ts";
 import type { Database } from "../_shared/database.types.ts";
 import { createChargeForPayment } from "../_shared/abacate-pay-charge.ts";
 
@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
     });
 
     return new Response(
-      JSON.stringify(chargeData satisfies AbacatePayCharge),
+      JSON.stringify(chargeData satisfies PaymentCheckoutSession),
       {
         headers: {
           "Content-Type": "application/json",

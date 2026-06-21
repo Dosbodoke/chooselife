@@ -755,6 +755,8 @@ export type Database = {
           id: string
           organization_id: string
           paid_at: string | null
+          payment_provider: string | null
+          provider_payment_id: string | null
           status: Database["public"]["Enums"]["payment_status_enum"]
           subscription_id: string
           user_id: string
@@ -766,6 +768,8 @@ export type Database = {
           id?: string
           organization_id: string
           paid_at?: string | null
+          payment_provider?: string | null
+          provider_payment_id?: string | null
           status?: Database["public"]["Enums"]["payment_status_enum"]
           subscription_id: string
           user_id: string
@@ -777,6 +781,8 @@ export type Database = {
           id?: string
           organization_id?: string
           paid_at?: string | null
+          payment_provider?: string | null
+          provider_payment_id?: string | null
           status?: Database["public"]["Enums"]["payment_status_enum"]
           subscription_id?: string
           user_id?: string

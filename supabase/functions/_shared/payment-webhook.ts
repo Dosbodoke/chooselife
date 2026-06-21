@@ -3,7 +3,7 @@ import type { Tables } from "./database.types.ts";
 
 type PaymentStatus = Tables<"payments">["status"];
 
-export interface WebhookPayload {
+export interface AbacatePayWebhookPayload {
   id: string;
   event: string;
   devMode: boolean;
@@ -21,6 +21,15 @@ export interface WebhookPayload {
     };
   };
 }
+
+export type PaymentProviderEvent = {
+  provider: "abacate_pay";
+  providerPaymentId: string;
+  paymentAmount: number;
+  chargeAmount: number;
+  isPaid: boolean;
+  rawEvent: string;
+};
 
 export type Payment = Pick<
   Tables<"payments">,
@@ -43,22 +52,22 @@ type ProcessWebhookDependencies = {
   processSuccessfulPayment?: typeof processSuccessfulPayment;
 };
 
-/**
- * Fetches payment record by charge ID.
- */
 export async function fetchPayment(
   supabase: SupabaseClient,
-  chargeId: string,
+  event: Pick<PaymentProviderEvent, "provider" | "providerPaymentId">,
 ): Promise<Payment | null> {
   const { data, error } = await supabase
     .from("payments")
     .select("id, subscription_id, user_id, organization_id, amount, status")
-    .eq("abacate_pay_charge_id", chargeId)
+    .eq("payment_provider", event.provider)
+    .eq("provider_payment_id", event.providerPaymentId)
     .single();
 
   if (error) {
     if (error.code === "PGRST116") {
-      console.warn(`Payment not found for abacate_pay_charge_id: ${chargeId}`);
+      console.warn(
+        `Payment not found for ${event.provider}:${event.providerPaymentId}`,
+      );
       return null;
     }
     throw error;
@@ -203,12 +212,25 @@ export async function processSuccessfulPayment(
   );
 }
 
+export function mapAbacatePayWebhookPayload(
+  payload: AbacatePayWebhookPayload,
+): PaymentProviderEvent {
+  return {
+    provider: "abacate_pay",
+    providerPaymentId: payload.data.pixQrCode.id,
+    paymentAmount: payload.data.payment.amount,
+    chargeAmount: payload.data.pixQrCode.amount,
+    isPaid: payload.event === "billing.paid",
+    rawEvent: payload.event,
+  };
+}
+
 function providerAmountMatchesPayment(
-  payload: WebhookPayload,
+  event: PaymentProviderEvent,
   payment: Payment,
 ): boolean {
-  return payload.data.payment.amount === payment.amount &&
-    payload.data.pixQrCode.amount === payment.amount;
+  return event.paymentAmount === payment.amount &&
+    event.chargeAmount === payment.amount;
 }
 
 /**
@@ -216,10 +238,10 @@ function providerAmountMatchesPayment(
  */
 export async function processWebhook(
   supabase: SupabaseClient,
-  payload: WebhookPayload,
+  event: PaymentProviderEvent,
   dependencies: ProcessWebhookDependencies = {},
 ): Promise<{ processed: boolean; message?: string }> {
-  console.log("Processing webhook event:", payload);
+  console.log("Processing payment provider event:", event);
 
   const fetchPaymentFn = dependencies.fetchPayment ?? fetchPayment;
   const markSucceededFn = dependencies.markPaymentSucceededIfPending ??
@@ -229,8 +251,7 @@ export async function processWebhook(
   const processSuccessfulPaymentFn = dependencies.processSuccessfulPayment ??
     processSuccessfulPayment;
 
-  const pixQrCodeId = payload.data.pixQrCode.id;
-  const payment = await fetchPaymentFn(supabase, pixQrCodeId);
+  const payment = await fetchPaymentFn(supabase, event);
   if (!payment) {
     return {
       processed: false,
@@ -246,12 +267,12 @@ export async function processWebhook(
     return { processed: true, message: "Payment already failed." };
   }
 
-  if (payload.event !== "billing.paid") {
+  if (!event.isPaid) {
     await markFailedFn(supabase, payment.id);
     return { processed: true };
   }
 
-  if (!providerAmountMatchesPayment(payload, payment)) {
+  if (!providerAmountMatchesPayment(event, payment)) {
     await markFailedFn(supabase, payment.id);
     return {
       processed: true,

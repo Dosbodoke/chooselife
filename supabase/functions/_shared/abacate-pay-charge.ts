@@ -1,15 +1,23 @@
 import type { SupabaseClient } from "@supabase";
 import type {
-  AbacatePayCharge,
-  CreateAbacatePayChargePayload,
+  CreatePaymentCheckoutPayload,
+  PaymentCheckoutSession,
 } from "./edge-functions.types.ts";
 import type { Tables } from "./database.types.ts";
 
-type CustomerInfo = NonNullable<CreateAbacatePayChargePayload["customer"]>;
+const ABACATE_PAY_PROVIDER = "abacate_pay" as const;
+
+type CustomerInfo = NonNullable<CreatePaymentCheckoutPayload["customer"]>;
 
 type Payment = Pick<
   Tables<"payments">,
-  "id" | "user_id" | "amount" | "status" | "abacate_pay_charge_id"
+  | "id"
+  | "user_id"
+  | "amount"
+  | "status"
+  | "payment_provider"
+  | "provider_payment_id"
+  | "abacate_pay_charge_id"
 >;
 
 type PixQrCodeProviderError =
@@ -21,7 +29,11 @@ type PixQrCodeProviderError =
 
 type PixQrCodeResult =
   | {
-    data: AbacatePayCharge;
+    data: {
+      id: string;
+      brCode: string;
+      brCodeBase64: string;
+    };
     error?: null;
     success?: unknown;
   }
@@ -172,10 +184,12 @@ export async function createChargeForPayment({
   expectedUserId,
   customer,
   createPixQrCode = getDefaultPixQrCodeCreator(),
-}: CreateChargeForPaymentArgs): Promise<AbacatePayCharge> {
+}: CreateChargeForPaymentArgs): Promise<PaymentCheckoutSession> {
   const { data: payment, error: paymentError } = await supabaseAdmin
     .from("payments")
-    .select("id, user_id, amount, status, abacate_pay_charge_id")
+    .select(
+      "id, user_id, amount, status, payment_provider, provider_payment_id, abacate_pay_charge_id",
+    )
     .eq("id", paymentId)
     .single<Payment>();
 
@@ -198,6 +212,10 @@ export async function createChargeForPayment({
 
   if (payment.status !== "pending") {
     throw new InvalidPaymentStateError("Payment is not pending.");
+  }
+
+  if (payment.provider_payment_id || payment.abacate_pay_charge_id) {
+    throw new InvalidPaymentStateError("Payment already has a provider charge.");
   }
 
   if (expectedUserId && payment.user_id !== expectedUserId) {
@@ -224,7 +242,11 @@ export async function createChargeForPayment({
 
   const { data: updatedPayments, error: updateError } = await supabaseAdmin
     .from("payments")
-    .update({ abacate_pay_charge_id: pixCode.data.id })
+    .update({
+      payment_provider: ABACATE_PAY_PROVIDER,
+      provider_payment_id: pixCode.data.id,
+      abacate_pay_charge_id: pixCode.data.id,
+    })
     .eq("id", payment.id)
     .eq("status", "pending")
     .select("id");
@@ -241,5 +263,12 @@ export async function createChargeForPayment({
     );
   }
 
-  return pixCode.data;
+  return {
+    method: "pix",
+    paymentId: payment.id,
+    provider: ABACATE_PAY_PROVIDER,
+    providerPaymentId: pixCode.data.id,
+    brCode: pixCode.data.brCode,
+    brCodeBase64: pixCode.data.brCodeBase64,
+  };
 }
