@@ -44,7 +44,7 @@ export const useStartPayment = () => {
         params: {
           pixCopyPaste: data.brCode,
           qrCodeImage: data.brCodeBase64,
-          chargeId: data.id,
+          paymentId: data.paymentId,
           paymentContext: 'subscription_renewal',
         },
       });

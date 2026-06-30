@@ -6,6 +6,7 @@ import type {
 import type { Tables } from "./database.types.ts";
 
 const ABACATE_PAY_PROVIDER = "abacate_pay" as const;
+const PROVIDER_CHARGE_RESERVATION_PREFIX = "pending-abacate-pay-charge:";
 
 type CustomerInfo = NonNullable<CreatePaymentCheckoutPayload["customer"]>;
 
@@ -178,6 +179,10 @@ function getDefaultPixQrCodeCreator(): CreatePixQrCode {
   return (params) => createTransparentPixCharge({ apiKey, ...params });
 }
 
+function getProviderChargeReservationId(paymentId: string): string {
+  return `${PROVIDER_CHARGE_RESERVATION_PREFIX}${paymentId}`;
+}
+
 export async function createChargeForPayment({
   supabaseAdmin,
   paymentId,
@@ -215,29 +220,77 @@ export async function createChargeForPayment({
   }
 
   if (payment.provider_payment_id || payment.abacate_pay_charge_id) {
-    throw new InvalidPaymentStateError("Payment already has a provider charge.");
+    throw new InvalidPaymentStateError(
+      "Payment already has a provider charge.",
+    );
   }
 
   if (expectedUserId && payment.user_id !== expectedUserId) {
     throw new PaymentOwnerMismatchError();
   }
 
-  const pixCode = await createPixQrCode({
-    amount: payment.amount,
-    description: "Inscrição para se tornar associado da SL.A.C",
-    expiresIn: 3600,
-    externalId: payment.id,
-    customer,
-  });
+  const providerChargeReservationId = getProviderChargeReservationId(
+    payment.id,
+  );
 
-  if (pixCode.error != null) {
+  const { data: reservedPayments, error: reservationError } =
+    await supabaseAdmin
+      .from("payments")
+      .update({
+        payment_provider: ABACATE_PAY_PROVIDER,
+        provider_payment_id: providerChargeReservationId,
+        abacate_pay_charge_id: providerChargeReservationId,
+      })
+      .eq("id", payment.id)
+      .eq("status", "pending")
+      .is("provider_payment_id", null)
+      .is("abacate_pay_charge_id", null)
+      .select("id");
+
+  if (reservationError) {
     throw new Error(
-      `Abacate Pay API error: ${formatProviderError(pixCode.error)}`,
+      `Failed to reserve payment for provider charge: ${reservationError.message}`,
     );
   }
 
-  if (!pixCode.data) {
-    throw new Error("Abacate Pay API response is missing Pix charge data.");
+  if ((reservedPayments ?? []).length !== 1) {
+    throw new InvalidPaymentStateError(
+      "Payment already has a provider charge.",
+    );
+  }
+
+  let pixCode: PixQrCodeResult;
+  try {
+    pixCode = await createPixQrCode({
+      amount: payment.amount,
+      description: "Inscrição para se tornar associado da SL.A.C",
+      expiresIn: 3600,
+      externalId: payment.id,
+      customer,
+    });
+
+    if (pixCode.error != null) {
+      throw new Error(
+        `Abacate Pay API error: ${formatProviderError(pixCode.error)}`,
+      );
+    }
+
+    if (!pixCode.data) {
+      throw new Error("Abacate Pay API response is missing Pix charge data.");
+    }
+  } catch (error) {
+    await supabaseAdmin
+      .from("payments")
+      .update({
+        payment_provider: null,
+        provider_payment_id: null,
+        abacate_pay_charge_id: null,
+      })
+      .eq("id", payment.id)
+      .eq("status", "pending")
+      .eq("provider_payment_id", providerChargeReservationId)
+      .eq("abacate_pay_charge_id", providerChargeReservationId);
+    throw error;
   }
 
   const { data: updatedPayments, error: updateError } = await supabaseAdmin
@@ -249,6 +302,8 @@ export async function createChargeForPayment({
     })
     .eq("id", payment.id)
     .eq("status", "pending")
+    .eq("provider_payment_id", providerChargeReservationId)
+    .eq("abacate_pay_charge_id", providerChargeReservationId)
     .select("id");
 
   if (updateError) {
@@ -259,7 +314,7 @@ export async function createChargeForPayment({
 
   if ((updatedPayments ?? []).length !== 1) {
     throw new InvalidPaymentStateError(
-      "Payment is no longer pending.",
+      "Payment provider charge reservation was lost.",
     );
   }
 

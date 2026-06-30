@@ -6,14 +6,22 @@ type PaymentStatus = Tables<"payments">["status"];
 export interface AbacatePayWebhookPayload {
   id: string;
   event: string;
+  apiVersion?: number;
   devMode: boolean;
   data: {
-    payment: {
+    transparent?: {
+      id: string;
+      amount: number;
+      paidAmount: number;
+      status: string;
+      externalId?: string;
+    };
+    payment?: {
       amount: number;
       fee: number;
       method: string;
     };
-    pixQrCode: {
+    pixQrCode?: {
       id: string;
       amount: number;
       kind: string;
@@ -41,15 +49,10 @@ export type Payment = Pick<
   | "status"
 >;
 
-interface Subscription {
-  current_period_end: string;
-}
-
 type ProcessWebhookDependencies = {
   fetchPayment?: typeof fetchPayment;
   markPaymentSucceededIfPending?: typeof markPaymentSucceededIfPending;
   markPaymentFailedIfPending?: typeof markPaymentFailedIfPending;
-  processSuccessfulPayment?: typeof processSuccessfulPayment;
 };
 
 export async function fetchPayment(
@@ -106,123 +109,22 @@ export async function markPaymentFailedIfPending(
   return (data ?? []).length === 1;
 }
 
-/**
- * Calculates the new subscription period end date.
- */
-export function calculateNewPeriodEnd(currentPeriodEnd: string): Date {
-  const now = new Date();
-  const currentEnd = new Date(currentPeriodEnd);
-  const startDate = currentEnd > now ? currentEnd : now;
-
-  startDate.setMonth(startDate.getMonth() + 1);
-  return startDate;
-}
-
-/**
- * Fetches subscription by ID.
- */
-export async function fetchSubscription(
-  supabase: SupabaseClient,
-  subscriptionId: string,
-): Promise<Subscription | null> {
-  const { data, error } = await supabase
-    .from("subscriptions")
-    .select("current_period_end")
-    .eq("id", subscriptionId)
-    .single();
-
-  if (error) {
-    console.error(
-      `Failed to fetch subscription ${subscriptionId}:`,
-      error,
-    );
-    return null;
-  }
-
-  return data;
-}
-
-/**
- * Activates subscription and extends the period.
- */
-export async function activateSubscription(
-  supabase: SupabaseClient,
-  subscriptionId: string,
-): Promise<void> {
-  const subscription = await fetchSubscription(supabase, subscriptionId);
-
-  if (!subscription) {
-    console.error(
-      `Cannot activate subscription ${subscriptionId}. Manual intervention may be required.`,
-    );
-    return;
-  }
-
-  const newPeriodEnd = calculateNewPeriodEnd(subscription.current_period_end);
-
-  const { error } = await supabase
-    .from("subscriptions")
-    .update({
-      status: "active",
-      current_period_end: newPeriodEnd.toISOString(),
-    })
-    .eq("id", subscriptionId);
-
-  if (error) {
-    console.error("Error activating subscription:", error);
-  }
-}
-
-/**
- * Adds user to organization as a member.
- */
-export async function addUserToOrganization(
-  supabase: SupabaseClient,
-  organizationId: string,
-  userId: string,
-): Promise<void> {
-  const { error } = await supabase
-    .from("organization_members")
-    .upsert({
-      organization_id: organizationId,
-      user_id: userId,
-      role: "member",
-    });
-
-  if (error) {
-    console.error("Error inserting into organization_members:", error);
-  }
-}
-
-/**
- * Processes successful payment by activating subscription and adding user to org.
- */
-export async function processSuccessfulPayment(
-  supabase: SupabaseClient,
-  payment: Payment,
-): Promise<void> {
-  if (payment.subscription_id) {
-    await activateSubscription(supabase, payment.subscription_id);
-  }
-
-  await addUserToOrganization(
-    supabase,
-    payment.organization_id,
-    payment.user_id,
-  );
-}
-
 export function mapAbacatePayWebhookPayload(
   payload: AbacatePayWebhookPayload,
 ): PaymentProviderEvent {
-  return {
-    provider: "abacate_pay",
-    providerPaymentId: payload.data.pixQrCode.id,
-    paymentAmount: payload.data.payment.amount,
-    chargeAmount: payload.data.pixQrCode.amount,
-    isPaid: payload.event === "billing.paid",
-    rawEvent: payload.event,
-  };
+  if (payload.data.transparent) {
+    return {
+      provider: "abacate_pay",
+      providerPaymentId: payload.data.transparent.id,
+      paymentAmount: payload.data.transparent.paidAmount,
+      chargeAmount: payload.data.transparent.amount,
+      isPaid: payload.event === "transparent.completed" &&
+        payload.data.transparent.status === "PAID",
+      rawEvent: payload.event,
+    };
+  }
+
+  throw new Error("Unsupported Abacate Pay webhook payload.");
 }
 
 function providerAmountMatchesPayment(
@@ -248,8 +150,6 @@ export async function processWebhook(
     markPaymentSucceededIfPending;
   const markFailedFn = dependencies.markPaymentFailedIfPending ??
     markPaymentFailedIfPending;
-  const processSuccessfulPaymentFn = dependencies.processSuccessfulPayment ??
-    processSuccessfulPayment;
 
   const payment = await fetchPaymentFn(supabase, event);
   if (!payment) {
@@ -287,8 +187,6 @@ export async function processWebhook(
       message: "Payment was already settled.",
     };
   }
-
-  await processSuccessfulPaymentFn(supabase, payment);
 
   return { processed: true };
 }

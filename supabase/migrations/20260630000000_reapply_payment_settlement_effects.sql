@@ -13,10 +13,6 @@ create unique index if not exists payments_provider_payment_id_unique
 on public.payments (payment_provider, provider_payment_id)
 where provider_payment_id is not null;
 
-comment on column public.payments.payment_provider is 'Payment provider that created the external payment reference. Null for manual payments.';
-comment on column public.payments.provider_payment_id is 'Provider-owned payment reference. Null for manual payments.';
-comment on column public.payments.abacate_pay_charge_id is 'Deprecated legacy Abacate Pay charge ID. Use payment_provider and provider_payment_id instead.';
-
 create or replace function public.apply_succeeded_payment_effects()
 returns trigger
 language plpgsql

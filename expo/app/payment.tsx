@@ -24,11 +24,11 @@ import { Icon } from '~/components/ui/icon';
 
 export default function PaymentScreen() {
   const router = useRouter();
-  const { qrCodeImage, pixCopyPaste, chargeId, paymentContext, slug } =
+  const { qrCodeImage, pixCopyPaste, paymentId, paymentContext, slug } =
     useLocalSearchParams<{
       qrCodeImage: string;
       pixCopyPaste: string;
-      chargeId: string;
+      paymentId: string;
       paymentContext: 'new_member' | 'subscription_renewal';
       slug?: string;
     }>();
@@ -47,17 +47,17 @@ export default function PaymentScreen() {
   };
 
   React.useEffect(() => {
-    if (!chargeId) return;
+    if (!paymentId) return;
 
     const channel = supabase
-      .channel(`payment-status:${chargeId}`)
+      .channel(`payment-status:${paymentId}`)
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
           table: 'payments',
-          filter: `abacate_pay_charge_id=eq.${chargeId}`,
+          filter: `id=eq.${paymentId}`,
         },
         (payload) => {
           if (payload.new.status === 'succeeded') {
@@ -90,7 +90,7 @@ export default function PaymentScreen() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [chargeId, router, queryClient, slug, profile?.id, paymentContext]);
+  }, [paymentId, router, queryClient, slug, profile?.id, paymentContext]);
 
   if (paymentStatus === 'SUCCESS') {
     return (

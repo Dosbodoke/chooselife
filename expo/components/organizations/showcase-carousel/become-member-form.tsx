@@ -98,7 +98,7 @@ export function BecomeMemberForm({
       return {
         pixCopyPaste: charge.brCode,
         qrCodeImage: charge.brCodeBase64,
-        chargeId: charge.id,
+        paymentId: charge.paymentId,
       };
     },
     onSuccess: (data) => {
@@ -107,7 +107,7 @@ export function BecomeMemberForm({
         params: {
           qrCodeImage: data.qrCodeImage,
           pixCopyPaste: data.pixCopyPaste,
-          chargeId: data.chargeId,
+          paymentId: data.paymentId,
           paymentContext: 'new_member',
           slug: org.slug,
         },
