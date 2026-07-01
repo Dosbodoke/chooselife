@@ -4,7 +4,7 @@ import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import type { PaymentCheckoutSession } from "../_shared/edge-functions.types.ts";
 import type { Database } from "../_shared/database.types.ts";
-import { createChargeForPayment } from "../_shared/abacate-pay-charge.ts";
+import { createCheckoutForPayment } from "../_shared/stripe-checkout.ts";
 
 // Helper function to handle CORS preflight requests
 function handleCors(req: Request): Response | null {
@@ -154,15 +154,15 @@ Deno.serve(async (req) => {
       amount,
     });
 
-    const chargeData = await createChargeForPayment({
+    const checkoutData = await createCheckoutForPayment({
       supabaseAdmin,
       paymentId: payment.id,
       expectedUserId: user.id,
-      customer: undefined,
+      customerEmail: user.email,
     });
 
     return new Response(
-      JSON.stringify(chargeData satisfies PaymentCheckoutSession),
+      JSON.stringify(checkoutData satisfies PaymentCheckoutSession),
       {
         headers: {
           "Content-Type": "application/json",

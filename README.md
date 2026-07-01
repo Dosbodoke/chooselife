@@ -59,12 +59,23 @@ Supabase serves as the project's backend, handling database and authentication.
 
 #### Deploying Edge Functions
 
-Use the provided deployment script instead of running `supabase functions deploy` manually. It deploys app-invoked functions like `create-abacate-pay-charge` with JWT verification, while intentionally deploying the external `abacate-pay-webhook` without JWT verification so provider callbacks can reach it.
+Use the provided deployment script instead of running `supabase functions deploy` manually. It deploys app-invoked functions like `create-payment-checkout` with JWT verification, while intentionally deploying the external `stripe-webhook` without JWT verification so provider callbacks can reach it.
 
 - **Deploy all functions:**
   ```bash
   npm run deploy:functions
   ```
+
+- **Stripe secrets required on each Supabase project:**
+  ```bash
+  npx supabase secrets set STRIPE_SECRET_KEY=<sk_test_or_live_...>
+  npx supabase secrets set STRIPE_WEBHOOK_SECRET=<whsec_...>
+  ```
+
+- **Stripe webhook endpoint:**
+  `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`
+
+  Configure it in Stripe for `checkout.session.completed` and `checkout.session.expired` events.
 
 #### Cron Jobs Secrets
 

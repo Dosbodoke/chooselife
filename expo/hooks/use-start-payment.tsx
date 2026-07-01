@@ -1,16 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { PaymentCheckoutSession } from '@packages/database/functions.types';
 import { useRouter } from 'expo-router';
 
 import { queryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 
-const generatePixChargeFn = async ({
+const createPaymentCheckoutFn = async ({
   paymentId,
 }: {
   paymentId: string;
 }) => {
-  const { data, error } = await supabase.functions.invoke(
-    'create-abacate-pay-charge',
+  const { data, error } = await supabase.functions.invoke<PaymentCheckoutSession>(
+    'create-payment-checkout',
     {
       body: {
         paymentId,
@@ -19,6 +20,7 @@ const generatePixChargeFn = async ({
   );
 
   if (error) throw error;
+  if (!data) throw new Error('Invalid response from create-payment-checkout');
   return data;
 };
 
@@ -32,7 +34,7 @@ export const useStartPayment = () => {
     }: {
       paymentId: string;
     }) => {
-      return generatePixChargeFn({
+      return createPaymentCheckoutFn({
         paymentId,
       });
     },
@@ -42,8 +44,9 @@ export const useStartPayment = () => {
       router.push({
         pathname: '/payment',
         params: {
-          pixCopyPaste: data.brCode,
-          qrCodeImage: data.brCodeBase64,
+          checkoutUrl: 'checkoutUrl' in data ? data.checkoutUrl : undefined,
+          pixCopyPaste: 'brCode' in data ? data.brCode : undefined,
+          qrCodeImage: 'brCodeBase64' in data ? data.brCodeBase64 : undefined,
           paymentId: data.paymentId,
           paymentContext: 'subscription_renewal',
         },

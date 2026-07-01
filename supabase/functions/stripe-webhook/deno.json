@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "@supabase": "jsr:@supabase/supabase-js@2.49.8"
+  }
+}

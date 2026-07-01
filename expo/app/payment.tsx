@@ -7,11 +7,13 @@ import {
   CheckCircle2Icon,
   CheckIcon,
   CopyIcon,
+  CreditCardIcon,
+  ExternalLinkIcon,
   HandCoinsIcon,
   XIcon,
 } from 'lucide-react-native';
 import React from 'react';
-import { Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -24,12 +26,13 @@ import { Icon } from '~/components/ui/icon';
 
 export default function PaymentScreen() {
   const router = useRouter();
-  const { qrCodeImage, pixCopyPaste, paymentId, paymentContext, slug } =
+  const { checkoutUrl, qrCodeImage, pixCopyPaste, paymentId, paymentContext, slug } =
     useLocalSearchParams<{
+      checkoutUrl?: string;
       qrCodeImage: string;
       pixCopyPaste: string;
       paymentId: string;
-      paymentContext: 'new_member' | 'subscription_renewal';
+      paymentContext?: 'new_member' | 'subscription_renewal';
       slug?: string;
     }>();
   const queryClient = useQueryClient();
@@ -37,6 +40,7 @@ export default function PaymentScreen() {
   const [paymentStatus, setPaymentStatus] = React.useState<
     'PENDING' | 'SUCCESS' | 'FAILED'
   >('PENDING');
+  const didOpenCheckout = React.useRef(false);
 
   const handleClose = () => {
     if (router.canGoBack()) {
@@ -92,6 +96,23 @@ export default function PaymentScreen() {
     };
   }, [paymentId, router, queryClient, slug, profile?.id, paymentContext]);
 
+  const openCheckout = React.useCallback(async () => {
+    if (!checkoutUrl) return;
+
+    try {
+      await Linking.openURL(checkoutUrl);
+    } catch (error) {
+      console.error('Error opening Stripe Checkout:', error);
+      setPaymentStatus('FAILED');
+    }
+  }, [checkoutUrl]);
+
+  React.useEffect(() => {
+    if (!checkoutUrl || didOpenCheckout.current) return;
+    didOpenCheckout.current = true;
+    void openCheckout();
+  }, [checkoutUrl, openCheckout]);
+
   if (paymentStatus === 'SUCCESS') {
     return (
       <BgBlob>
@@ -135,7 +156,7 @@ export default function PaymentScreen() {
     );
   }
 
-  if (!qrCodeImage || !pixCopyPaste) {
+  if (!checkoutUrl && (!qrCodeImage || !pixCopyPaste)) {
     return (
       <BgBlob>
         <CloseButton onClose={handleClose} />
@@ -158,13 +179,19 @@ export default function PaymentScreen() {
             entering={FadeInDown.delay(300).duration(300)}
             className="bg-emerald-500/20 backdrop-blur-xl rounded-full p-4 mb-4 border-2 border-emerald-400/30"
           >
-            <Icon as={HandCoinsIcon} size={32} className="text-emerald-500" />
+            <Icon
+              as={checkoutUrl ? CreditCardIcon : HandCoinsIcon}
+              size={32}
+              className="text-emerald-500"
+            />
           </Animated.View>
           <Animated.Text
             entering={FadeInDown.delay(400).duration(300)}
             className="text-3xl font-bold text-white text-center mb-2"
           >
-            {paymentContext === 'subscription_renewal'
+            {checkoutUrl
+              ? 'Concluir pagamento'
+              : paymentContext === 'subscription_renewal'
               ? 'Pague sua mensalidade'
               : 'Finalize seu cadastro'}
           </Animated.Text>
@@ -172,31 +199,56 @@ export default function PaymentScreen() {
             entering={FadeInDown.delay(500).duration(300)}
             className="text-white text-center text-xl leading-6"
           >
-            {paymentContext === 'subscription_renewal'
+            {checkoutUrl
+              ? 'Finalize o pagamento no Stripe. Esta tela será atualizada automaticamente.'
+              : paymentContext === 'subscription_renewal'
               ? 'Realize o pagamento para ficar em dia com a Associação'
               : 'Realize o pagamento para se tornar membro oficial'}
           </Animated.Text>
         </View>
 
-        {/* QR Code */}
-        <Animated.View
-          entering={FadeInDown.delay(700).duration(500)}
-          className="items-center mb-8"
-        >
-          <View className="bg-white p-6 rounded-3xl shadow-2xl">
-            <ExpoImage
-              source={{ uri: qrCodeImage }}
-              style={{ width: 220, height: 220 }}
-            />
-          </View>
-        </Animated.View>
+        {checkoutUrl ? (
+          <Animated.View
+            entering={FadeInDown.delay(700).duration(500)}
+            className="items-center mb-8 px-6 gap-5"
+          >
+            <TouchableOpacity
+              onPress={openCheckout}
+              activeOpacity={0.85}
+              className="h-14 min-h-14 rounded-full bg-white px-6 flex-row items-center justify-center gap-2"
+            >
+              <Text className="text-black text-base font-bold text-center">
+                Abrir pagamento
+              </Text>
+              <Icon as={ExternalLinkIcon} size={18} color="#000000" />
+            </TouchableOpacity>
+            <Text className="text-white/70 text-center text-sm leading-5">
+              Aguardando confirmação do Stripe.
+            </Text>
+          </Animated.View>
+        ) : (
+          <>
+            {/* QR Code */}
+            <Animated.View
+              entering={FadeInDown.delay(700).duration(500)}
+              className="items-center mb-8"
+            >
+              <View className="bg-white p-6 rounded-3xl shadow-2xl">
+                <ExpoImage
+                  source={{ uri: qrCodeImage }}
+                  style={{ width: 220, height: 220 }}
+                />
+              </View>
+            </Animated.View>
 
-        <Animated.View
-          entering={FadeIn.delay(900).duration(300)}
-          className="items-center mb-6 px-4"
-        >
-          <CopyCode code={pixCopyPaste} />
-        </Animated.View>
+            <Animated.View
+              entering={FadeIn.delay(900).duration(300)}
+              className="items-center mb-6 px-4"
+            >
+              <CopyCode code={pixCopyPaste} />
+            </Animated.View>
+          </>
+        )}
       </View>
     </BgBlob>
   );

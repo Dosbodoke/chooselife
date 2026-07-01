@@ -96,8 +96,9 @@ export function BecomeMemberForm({
       }
 
       return {
-        pixCopyPaste: charge.brCode,
-        qrCodeImage: charge.brCodeBase64,
+        checkoutUrl: 'checkoutUrl' in charge ? charge.checkoutUrl : undefined,
+        pixCopyPaste: 'brCode' in charge ? charge.brCode : undefined,
+        qrCodeImage: 'brCodeBase64' in charge ? charge.brCodeBase64 : undefined,
         paymentId: charge.paymentId,
       };
     },
@@ -107,6 +108,7 @@ export function BecomeMemberForm({
         params: {
           qrCodeImage: data.qrCodeImage,
           pixCopyPaste: data.pixCopyPaste,
+          checkoutUrl: data.checkoutUrl,
           paymentId: data.paymentId,
           paymentContext: 'new_member',
           slug: org.slug,

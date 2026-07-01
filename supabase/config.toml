@@ -277,27 +277,27 @@ entrypoint = "./functions/user-self-deletion/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/user-self-deletion/*.html" ]
 
-[functions.create-abacate-pay-charge]
+[functions.create-payment-checkout]
 enabled = true
 verify_jwt = true
-import_map = "./functions/create-abacate-pay-charge/deno.json"
+import_map = "./functions/create-payment-checkout/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/create-abacate-pay-charge/index.ts"
+entrypoint = "./functions/create-payment-checkout/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/create-abacate-pay-charge/*.html" ]
+# static_files = [ "./functions/create-payment-checkout/*.html" ]
 
-[functions.abacate-pay-webhook]
+[functions.stripe-webhook]
 enabled = true
 verify_jwt = false
-import_map = "./functions/abacate-pay-webhook/deno.json"
+import_map = "./functions/stripe-webhook/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/abacate-pay-webhook/index.ts"
+entrypoint = "./functions/stripe-webhook/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/abacate-pay-webhook/*.html" ]
+# static_files = [ "./functions/stripe-webhook/*.html" ]
 
 [functions.start-subscription]
 enabled = true

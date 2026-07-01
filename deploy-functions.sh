@@ -7,14 +7,14 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}Starting deployment of Supabase Edge Functions...${NC}"
 
-# 1. Deploy create-abacate-pay-charge with JWT verification.
-echo -e "${GREEN}Deploying create-abacate-pay-charge...${NC}"
-npx supabase functions deploy create-abacate-pay-charge
+# 1. Deploy create-payment-checkout with JWT verification.
+echo -e "${GREEN}Deploying create-payment-checkout...${NC}"
+npx supabase functions deploy create-payment-checkout
 
-# 2. Deploy abacate-pay-webhook
+# 2. Deploy stripe-webhook
 # This external provider webhook intentionally skips JWT verification.
-echo -e "${GREEN}Deploying abacate-pay-webhook...${NC}"
-npx supabase functions deploy abacate-pay-webhook --no-verify-jwt
+echo -e "${GREEN}Deploying stripe-webhook...${NC}"
+npx supabase functions deploy stripe-webhook --no-verify-jwt
 
 # 3. Deploy other functions (Standard deployment)
 echo -e "${GREEN}Deploying generate-renewal-payments...${NC}"
