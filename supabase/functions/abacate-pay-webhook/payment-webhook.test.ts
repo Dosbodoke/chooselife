@@ -78,6 +78,32 @@ Deno.test("maps Abacate Pay webhook payload to a provider payment event", () => 
   });
 });
 
+Deno.test("maps paid transparent payloads without paidAmount using amount", () => {
+  const payload = {
+    id: "webhook-1",
+    event: "transparent.completed",
+    apiVersion: 2,
+    devMode: true,
+    data: {
+      transparent: {
+        id: "charge-1",
+        externalId: "payment-1",
+        amount: 10000,
+        status: "PAID",
+      },
+    },
+  } as unknown as AbacatePayWebhookPayload;
+
+  assertEquals(mapAbacatePayWebhookPayload(payload), {
+    provider: "abacate_pay",
+    providerPaymentId: "charge-1",
+    paymentAmount: 10000,
+    chargeAmount: 10000,
+    isPaid: true,
+    rawEvent: "transparent.completed",
+  });
+});
+
 Deno.test("maps non-paid transparent payloads as unpaid events", () => {
   assertEquals(
     mapAbacatePayWebhookPayload(

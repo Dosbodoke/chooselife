@@ -12,7 +12,7 @@ export interface AbacatePayWebhookPayload {
     transparent?: {
       id: string;
       amount: number;
-      paidAmount: number;
+      paidAmount?: number;
       status: string;
       externalId?: string;
     };
@@ -113,13 +113,15 @@ export function mapAbacatePayWebhookPayload(
   payload: AbacatePayWebhookPayload,
 ): PaymentProviderEvent {
   if (payload.data.transparent) {
+    const transparent = payload.data.transparent;
+
     return {
       provider: "abacate_pay",
-      providerPaymentId: payload.data.transparent.id,
-      paymentAmount: payload.data.transparent.paidAmount,
-      chargeAmount: payload.data.transparent.amount,
+      providerPaymentId: transparent.id,
+      paymentAmount: transparent.paidAmount ?? transparent.amount,
+      chargeAmount: transparent.amount,
       isPaid: payload.event === "transparent.completed" &&
-        payload.data.transparent.status === "PAID",
+        transparent.status === "PAID",
       rawEvent: payload.event,
     };
   }
