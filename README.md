@@ -71,11 +71,10 @@ Use the provided deployment script instead of running `supabase functions deploy
 Configure the fixed PIX details in the Expo environment used to build the app:
 
 ```bash
-EXPO_PUBLIC_MEMBERSHIP_PIX_QR_CODE_IMAGE=<https-or-data-uri-for-fixed-qr-code>
 EXPO_PUBLIC_MEMBERSHIP_PIX_COPY_PASTE=<fixed-pix-copy-and-paste-code>
 ```
 
-At least one of these values must be present for the payment screen to show payment instructions. The QR code is intentionally fixed and is not generated per payment request.
+This value must be present for the payment screen to show payment instructions. The QR code is generated locally from this fixed copy-paste code and is not generated per payment request.
 
 #### Optional Gateway Configuration
 

@@ -1,7 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { Image as ExpoImage } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   CheckCircle2Icon,
@@ -11,16 +10,14 @@ import {
   XIcon,
 } from 'lucide-react-native';
 import React from 'react';
+import QRCode from 'react-qr-code';
 import { Pressable, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
 import { queryKeys } from '~/lib/query-keys';
-import {
-  MANUAL_PAYMENT_PIX_COPY_PASTE,
-  MANUAL_PAYMENT_PIX_QR_CODE_IMAGE,
-} from '~/lib/manual-payment';
+import { MANUAL_PAYMENT_PIX_COPY_PASTE } from '~/lib/manual-payment';
 import { supabase } from '~/lib/supabase';
 
 import { BgBlob } from '~/components/bg-blog';
@@ -43,9 +40,7 @@ export default function PaymentScreen() {
   const formattedAmount = Number.isFinite(amountInCents)
     ? `R$ ${(amountInCents / 100).toFixed(2)}`
     : null;
-  const hasManualPixInstructions = Boolean(
-    MANUAL_PAYMENT_PIX_QR_CODE_IMAGE || MANUAL_PAYMENT_PIX_COPY_PASTE,
-  );
+  const hasManualPixInstructions = Boolean(MANUAL_PAYMENT_PIX_COPY_PASTE);
 
   const handleClose = () => {
     if (router.canGoBack()) {
@@ -196,28 +191,25 @@ export default function PaymentScreen() {
 
         <>
           {/* QR Code */}
-          {MANUAL_PAYMENT_PIX_QR_CODE_IMAGE ? (
-            <Animated.View
-              entering={FadeInDown.delay(700).duration(500)}
-              className="items-center mb-8"
-            >
-              <View className="bg-white p-6 rounded-3xl shadow-2xl">
-                <ExpoImage
-                  source={{ uri: MANUAL_PAYMENT_PIX_QR_CODE_IMAGE }}
-                  style={{ width: 220, height: 220 }}
-                />
-              </View>
-            </Animated.View>
-          ) : null}
+          <Animated.View
+            entering={FadeInDown.delay(700).duration(500)}
+            className="items-center mb-8"
+          >
+            <View className="bg-white p-6 rounded-3xl shadow-2xl">
+              <QRCode
+                value={MANUAL_PAYMENT_PIX_COPY_PASTE}
+                size={220}
+                level="M"
+              />
+            </View>
+          </Animated.View>
 
-          {MANUAL_PAYMENT_PIX_COPY_PASTE ? (
-            <Animated.View
-              entering={FadeIn.delay(900).duration(300)}
-              className="items-center mb-6 px-4"
-            >
-              <CopyCode code={MANUAL_PAYMENT_PIX_COPY_PASTE} />
-            </Animated.View>
-          ) : null}
+          <Animated.View
+            entering={FadeIn.delay(900).duration(300)}
+            className="items-center mb-6 px-4"
+          >
+            <CopyCode code={MANUAL_PAYMENT_PIX_COPY_PASTE} />
+          </Animated.View>
 
           <Animated.View
             entering={FadeIn.delay(1000).duration(300)}
