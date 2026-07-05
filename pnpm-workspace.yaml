@@ -2,3 +2,13 @@ packages:
   - 'next'
   - 'expo'
   - 'packages/*'
+packageManager: pnpm
+nodeLinker: hoisted
+allowBuilds:
+  '@parcel/watcher': true
+  '@sentry/cli': true
+  '@shopify/react-native-skia': true
+  '@swc/core': true
+  sharp: true
+  supabase: true
+  unrs-resolver: true
