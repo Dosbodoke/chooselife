@@ -79,6 +79,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     favicon: './assets/icons/favicon.png',
   },
   plugins: [
+    'expo-status-bar',
     'expo-image',
     'expo-sharing',
     'expo-apple-authentication',
