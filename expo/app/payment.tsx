@@ -7,18 +7,20 @@ import {
   CheckCircle2Icon,
   CheckIcon,
   CopyIcon,
-  CreditCardIcon,
-  ExternalLinkIcon,
   HandCoinsIcon,
   XIcon,
 } from 'lucide-react-native';
 import React from 'react';
-import { Linking, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
 import { queryKeys } from '~/lib/query-keys';
+import {
+  MANUAL_PAYMENT_PIX_COPY_PASTE,
+  MANUAL_PAYMENT_PIX_QR_CODE_IMAGE,
+} from '~/lib/manual-payment';
 import { supabase } from '~/lib/supabase';
 
 import { BgBlob } from '~/components/bg-blog';
@@ -26,21 +28,24 @@ import { Icon } from '~/components/ui/icon';
 
 export default function PaymentScreen() {
   const router = useRouter();
-  const { checkoutUrl, qrCodeImage, pixCopyPaste, paymentId, paymentContext, slug } =
-    useLocalSearchParams<{
-      checkoutUrl?: string;
-      qrCodeImage: string;
-      pixCopyPaste: string;
-      paymentId: string;
-      paymentContext?: 'new_member' | 'subscription_renewal';
-      slug?: string;
-    }>();
+  const { amount, paymentId, paymentContext, slug } = useLocalSearchParams<{
+    amount?: string;
+    paymentId: string;
+    paymentContext?: 'new_member' | 'subscription_renewal';
+    slug?: string;
+  }>();
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const [paymentStatus, setPaymentStatus] = React.useState<
     'PENDING' | 'SUCCESS' | 'FAILED'
   >('PENDING');
-  const didOpenCheckout = React.useRef(false);
+  const amountInCents = Number(amount);
+  const formattedAmount = Number.isFinite(amountInCents)
+    ? `R$ ${(amountInCents / 100).toFixed(2)}`
+    : null;
+  const hasManualPixInstructions = Boolean(
+    MANUAL_PAYMENT_PIX_QR_CODE_IMAGE || MANUAL_PAYMENT_PIX_COPY_PASTE,
+  );
 
   const handleClose = () => {
     if (router.canGoBack()) {
@@ -96,23 +101,6 @@ export default function PaymentScreen() {
     };
   }, [paymentId, router, queryClient, slug, profile?.id, paymentContext]);
 
-  const openCheckout = React.useCallback(async () => {
-    if (!checkoutUrl) return;
-
-    try {
-      await Linking.openURL(checkoutUrl);
-    } catch (error) {
-      console.error('Error opening Stripe Checkout:', error);
-      setPaymentStatus('FAILED');
-    }
-  }, [checkoutUrl]);
-
-  React.useEffect(() => {
-    if (!checkoutUrl || didOpenCheckout.current) return;
-    didOpenCheckout.current = true;
-    void openCheckout();
-  }, [checkoutUrl, openCheckout]);
-
   if (paymentStatus === 'SUCCESS') {
     return (
       <BgBlob>
@@ -156,13 +144,16 @@ export default function PaymentScreen() {
     );
   }
 
-  if (!checkoutUrl && (!qrCodeImage || !pixCopyPaste)) {
+  if (!paymentId || !hasManualPixInstructions) {
     return (
       <BgBlob>
         <CloseButton onClose={handleClose} />
-        <View className="flex-1 justify-center items-center">
-          <Text className="text-white">
-            Error: Missing payment information.
+        <View className="flex-1 justify-center items-center px-6 gap-3">
+          <Text className="text-white text-2xl font-bold text-center">
+            Pagamento indisponível
+          </Text>
+          <Text className="text-white/80 text-center leading-6">
+            O PIX da associação ainda não foi configurado no aplicativo.
           </Text>
         </View>
       </BgBlob>
@@ -180,7 +171,7 @@ export default function PaymentScreen() {
             className="bg-emerald-500/20 backdrop-blur-xl rounded-full p-4 mb-4 border-2 border-emerald-400/30"
           >
             <Icon
-              as={checkoutUrl ? CreditCardIcon : HandCoinsIcon}
+              as={HandCoinsIcon}
               size={32}
               className="text-emerald-500"
             />
@@ -189,9 +180,7 @@ export default function PaymentScreen() {
             entering={FadeInDown.delay(400).duration(300)}
             className="text-3xl font-bold text-white text-center mb-2"
           >
-            {checkoutUrl
-              ? 'Concluir pagamento'
-              : paymentContext === 'subscription_renewal'
+            {paymentContext === 'subscription_renewal'
               ? 'Pague sua mensalidade'
               : 'Finalize seu cadastro'}
           </Animated.Text>
@@ -199,56 +188,55 @@ export default function PaymentScreen() {
             entering={FadeInDown.delay(500).duration(300)}
             className="text-white text-center text-xl leading-6"
           >
-            {checkoutUrl
-              ? 'Finalize o pagamento no Stripe. Esta tela será atualizada automaticamente.'
-              : paymentContext === 'subscription_renewal'
+            {paymentContext === 'subscription_renewal'
               ? 'Realize o pagamento para ficar em dia com a Associação'
               : 'Realize o pagamento para se tornar membro oficial'}
           </Animated.Text>
         </View>
 
-        {checkoutUrl ? (
-          <Animated.View
-            entering={FadeInDown.delay(700).duration(500)}
-            className="items-center mb-8 px-6 gap-5"
-          >
-            <TouchableOpacity
-              onPress={openCheckout}
-              activeOpacity={0.85}
-              className="h-14 min-h-14 rounded-full bg-white px-6 flex-row items-center justify-center gap-2"
-            >
-              <Text className="text-black text-base font-bold text-center">
-                Abrir pagamento
-              </Text>
-              <Icon as={ExternalLinkIcon} size={18} color="#000000" />
-            </TouchableOpacity>
-            <Text className="text-white/70 text-center text-sm leading-5">
-              Aguardando confirmação do Stripe.
-            </Text>
-          </Animated.View>
-        ) : (
-          <>
-            {/* QR Code */}
+        <>
+          {/* QR Code */}
+          {MANUAL_PAYMENT_PIX_QR_CODE_IMAGE ? (
             <Animated.View
               entering={FadeInDown.delay(700).duration(500)}
               className="items-center mb-8"
             >
               <View className="bg-white p-6 rounded-3xl shadow-2xl">
                 <ExpoImage
-                  source={{ uri: qrCodeImage }}
+                  source={{ uri: MANUAL_PAYMENT_PIX_QR_CODE_IMAGE }}
                   style={{ width: 220, height: 220 }}
                 />
               </View>
             </Animated.View>
+          ) : null}
 
+          {MANUAL_PAYMENT_PIX_COPY_PASTE ? (
             <Animated.View
               entering={FadeIn.delay(900).duration(300)}
               className="items-center mb-6 px-4"
             >
-              <CopyCode code={pixCopyPaste} />
+              <CopyCode code={MANUAL_PAYMENT_PIX_COPY_PASTE} />
             </Animated.View>
-          </>
-        )}
+          ) : null}
+
+          <Animated.View
+            entering={FadeIn.delay(1000).duration(300)}
+            className="mx-6 rounded-2xl border border-white/15 bg-white/10 px-5 py-4 gap-2"
+          >
+            {formattedAmount ? (
+              <Text className="text-white text-center text-lg font-bold">
+                Valor: {formattedAmount}
+              </Text>
+            ) : null}
+            <Text className="text-white/80 text-center text-sm leading-5">
+              Após pagar, a confirmação será feita manualmente pela associação.
+              Esta tela atualiza quando o pagamento for aprovado.
+            </Text>
+            <Text className="text-white/50 text-center text-xs leading-4">
+              Solicitação: {paymentId}
+            </Text>
+          </Animated.View>
+        </>
       </View>
     </BgBlob>
   );

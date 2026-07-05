@@ -59,14 +59,30 @@ Supabase serves as the project's backend, handling database and authentication.
 
 #### Deploying Edge Functions
 
-Use the provided deployment script instead of running `supabase functions deploy` manually. It deploys app-invoked functions like `create-payment-checkout` with JWT verification, while intentionally deploying the external `stripe-webhook` without JWT verification so provider callbacks can reach it.
+Use the provided deployment script instead of running `supabase functions deploy` manually. The current app membership flow does not require a payment gateway: `start-subscription` creates the local pending payment, the app shows the configured static PIX QR code, and admins manually settle payments after confirming the transfer.
 
 - **Deploy all functions:**
   ```bash
   npm run deploy:functions
   ```
 
-- **Stripe secrets required on each Supabase project:**
+#### Manual PIX Configuration
+
+Configure the fixed PIX details in the Expo environment used to build the app:
+
+```bash
+EXPO_PUBLIC_MEMBERSHIP_PIX_QR_CODE_IMAGE=<https-or-data-uri-for-fixed-qr-code>
+EXPO_PUBLIC_MEMBERSHIP_PIX_COPY_PASTE=<fixed-pix-copy-and-paste-code>
+```
+
+At least one of these values must be present for the payment screen to show payment instructions. The QR code is intentionally fixed and is not generated per payment request.
+
+#### Optional Gateway Configuration
+
+Gateway functions are still present for a future Stripe approval, but the mobile app no longer calls them for membership signup or renewal.
+
+If Stripe is enabled later, set these secrets on each Supabase project:
+
   ```bash
   npx supabase secrets set STRIPE_SECRET_KEY=<sk_test_or_live_...>
   npx supabase secrets set STRIPE_WEBHOOK_SECRET=<whsec_...>
@@ -76,6 +92,24 @@ Use the provided deployment script instead of running `supabase functions deploy
   `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`
 
   Configure it in Stripe for `checkout.session.completed` and `checkout.session.expired` events.
+
+#### Manually Settling a Payment
+
+Use the database helper instead of editing `payments.status` directly. It marks the
+local payment as succeeded and applies subscription/membership effects exactly
+once, even if the payment is checked again later.
+
+```sql
+select *
+from public.mark_payment_succeeded_manually(
+  '<payment-id>'::uuid,
+  timezone('utc'::text, now())
+);
+```
+
+Check `applied_effects_now` in the result. `true` means this call activated the
+subscription/membership; `false` means the payment was already settled or could
+not apply effects, so inspect `settlement_applied_at` and the subscription row.
 
 #### Cron Jobs Secrets
 

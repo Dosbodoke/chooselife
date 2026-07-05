@@ -21,6 +21,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { useAuth } from '~/context/auth';
 import { getR2PublicUrl } from '~/lib/r2';
+import { getManualPaymentRouteParams } from '~/lib/manual-payment';
 import { supabase } from '~/lib/supabase';
 import { formatCurrency } from '~/utils';
 import { _layoutAnimation } from '~/utils/constants';
@@ -96,23 +97,19 @@ export function BecomeMemberForm({
       }
 
       return {
-        checkoutUrl: 'checkoutUrl' in charge ? charge.checkoutUrl : undefined,
-        pixCopyPaste: 'brCode' in charge ? charge.brCode : undefined,
-        qrCodeImage: 'brCodeBase64' in charge ? charge.brCodeBase64 : undefined,
+        amount: 'amount' in charge ? charge.amount : undefined,
         paymentId: charge.paymentId,
       };
     },
     onSuccess: (data) => {
       router.push({
         pathname: '/payment',
-        params: {
-          qrCodeImage: data.qrCodeImage,
-          pixCopyPaste: data.pixCopyPaste,
-          checkoutUrl: data.checkoutUrl,
+        params: getManualPaymentRouteParams({
+          amount: data.amount,
           paymentId: data.paymentId,
           paymentContext: 'new_member',
           slug: org.slug,
-        },
+        }),
       });
     },
     onError: (error) => {

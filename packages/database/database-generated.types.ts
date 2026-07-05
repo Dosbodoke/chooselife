@@ -757,6 +757,7 @@ export type Database = {
           paid_at: string | null
           payment_provider: string | null
           provider_payment_id: string | null
+          settlement_applied_at: string | null
           status: Database["public"]["Enums"]["payment_status_enum"]
           subscription_id: string
           user_id: string
@@ -770,6 +771,7 @@ export type Database = {
           paid_at?: string | null
           payment_provider?: string | null
           provider_payment_id?: string | null
+          settlement_applied_at?: string | null
           status?: Database["public"]["Enums"]["payment_status_enum"]
           subscription_id: string
           user_id: string
@@ -783,6 +785,7 @@ export type Database = {
           paid_at?: string | null
           payment_provider?: string | null
           provider_payment_id?: string | null
+          settlement_applied_at?: string | null
           status?: Database["public"]["Enums"]["payment_status_enum"]
           subscription_id?: string
           user_id?: string
@@ -1117,6 +1120,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_payment_settlement_effects: {
+        Args: { p_payment_id: string }
+        Returns: boolean
+      }
       book_festival_schedule_slot: {
         Args: {
           target_display_name?: string
@@ -1216,6 +1223,17 @@ export type Database = {
       get_festival_schedule_booking_limit: {
         Args: never
         Returns: number
+      }
+      mark_payment_succeeded_manually: {
+        Args: { p_paid_at?: string; p_payment_id: string }
+        Returns: {
+          applied_effects_now: boolean
+          paid_at: string
+          payment_id: string
+          previous_status: Database["public"]["Enums"]["payment_status_enum"]
+          settlement_applied_at: string | null
+          status: Database["public"]["Enums"]["payment_status_enum"]
+        }[]
       }
       get_highline: {
         Args: {

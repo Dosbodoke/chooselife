@@ -1,6 +1,6 @@
-export type PaymentProvider = "abacate_pay" | "stripe";
+export type PaymentProvider = "abacate_pay" | "manual" | "stripe";
 
-export type PaymentMethod = "hosted_checkout" | "pix";
+export type PaymentMethod = "hosted_checkout" | "manual_pix" | "pix";
 
 export type CreatePaymentCheckoutPayload = {
   paymentId: string;
@@ -30,7 +30,15 @@ export type HostedPaymentCheckoutSession = PaymentCheckoutSessionBase & {
   method: "hosted_checkout";
 };
 
+export type ManualPixPaymentSession = {
+  amount: number;
+  method: "manual_pix";
+  paymentId: string;
+  provider: "manual";
+};
+
 export type PaymentCheckoutSession =
+  | ManualPixPaymentSession
   | PixPaymentCheckoutSession
   | HostedPaymentCheckoutSession;
 

@@ -1,27 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { PaymentCheckoutSession } from '@packages/database/functions.types';
 import { useRouter } from 'expo-router';
 
 import { queryKeys } from '~/lib/query-keys';
-import { supabase } from '~/lib/supabase';
+import { getManualPaymentRouteParams } from '~/lib/manual-payment';
 
-const createPaymentCheckoutFn = async ({
-  paymentId,
-}: {
+type StartPaymentInput = {
+  amount?: number;
   paymentId: string;
-}) => {
-  const { data, error } = await supabase.functions.invoke<PaymentCheckoutSession>(
-    'create-payment-checkout',
-    {
-      body: {
-        paymentId,
-      },
-    },
-  );
-
-  if (error) throw error;
-  if (!data) throw new Error('Invalid response from create-payment-checkout');
-  return data;
 };
 
 export const useStartPayment = () => {
@@ -29,27 +14,17 @@ export const useStartPayment = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      paymentId,
-    }: {
-      paymentId: string;
-    }) => {
-      return createPaymentCheckoutFn({
-        paymentId,
-      });
-    },
-    onSuccess: (data) => {
+    mutationFn: async (payment: StartPaymentInput) => payment,
+    onSuccess: (payment) => {
       // Invalidate queries to refetch subscription data
       queryClient.invalidateQueries({ queryKey: queryKeys.subscription.all });
       router.push({
         pathname: '/payment',
-        params: {
-          checkoutUrl: 'checkoutUrl' in data ? data.checkoutUrl : undefined,
-          pixCopyPaste: 'brCode' in data ? data.brCode : undefined,
-          qrCodeImage: 'brCodeBase64' in data ? data.brCodeBase64 : undefined,
-          paymentId: data.paymentId,
+        params: getManualPaymentRouteParams({
+          amount: payment.amount,
+          paymentId: payment.paymentId,
           paymentContext: 'subscription_renewal',
-        },
+        }),
       });
     },
     onError: (error) => {

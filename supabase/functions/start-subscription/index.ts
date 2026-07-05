@@ -4,7 +4,6 @@ import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import type { PaymentCheckoutSession } from "../_shared/edge-functions.types.ts";
 import type { Database } from "../_shared/database.types.ts";
-import { createCheckoutForPayment } from "../_shared/stripe-checkout.ts";
 
 // Helper function to handle CORS preflight requests
 function handleCors(req: Request): Response | null {
@@ -16,15 +15,13 @@ function handleCors(req: Request): Response | null {
 
 type User = {
   id: string;
-  email: string;
 };
 
 async function getUser(supabase: SupabaseClient): Promise<User> {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error) throw error;
   if (!user) throw new Error("User not authenticated");
-  if (!user.email) throw new Error("User email is missing");
-  return { id: user.id, email: user.email };
+  return { id: user.id };
 }
 
 type Organization = Pick<
@@ -154,15 +151,15 @@ Deno.serve(async (req) => {
       amount,
     });
 
-    const checkoutData = await createCheckoutForPayment({
-      supabaseAdmin,
+    const checkoutData: PaymentCheckoutSession = {
+      amount,
+      method: "manual_pix",
       paymentId: payment.id,
-      expectedUserId: user.id,
-      customerEmail: user.email,
-    });
+      provider: "manual",
+    };
 
     return new Response(
-      JSON.stringify(checkoutData satisfies PaymentCheckoutSession),
+      JSON.stringify(checkoutData),
       {
         headers: {
           "Content-Type": "application/json",
