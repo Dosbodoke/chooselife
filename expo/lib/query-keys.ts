@@ -4,7 +4,7 @@ export const queryKeys = {
   },
   subscription: {
     all: ['subscription'] as const,
-    byOrgUser: (organizationId: string, userId: string) =>
+    byOrgUser: (organizationId: string, userId: string | undefined) =>
       [...queryKeys.subscription.all, organizationId, userId] as const,
   },
   organizations: {

@@ -7,7 +7,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import SlacCabeMaisImage from '~/assets/images/slac-cabe-mais.png';
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import {
   ChevronRightIcon,
   MapPinIcon,
@@ -51,6 +51,7 @@ export default function OrganizationDetailsPageWrapper() {
 }
 
 function OrganizationDetailsPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { session } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
@@ -73,6 +74,23 @@ function OrganizationDetailsPage() {
       }),
     ]);
     setRefreshing(false);
+  };
+
+  const handleBecomeMemberPress = () => {
+    const memberPath = `/organizations/${organization?.slug ?? ORG_SLUG}/member`;
+
+    if (!session?.user) {
+      router.push({
+        pathname: '/(modals)/login',
+        params: { redirect_to: memberPath },
+      });
+      return;
+    }
+
+    router.push({
+      pathname: '/organizations/[slug]/member',
+      params: { slug: organization?.slug ?? ORG_SLUG },
+    });
   };
 
   if (isLoading) {
@@ -168,11 +186,12 @@ function OrganizationDetailsPage() {
               </Text>
             </View>
 
-            <Link href={`/organizations/${organization.slug}/member`} asChild>
-              <Button className="w-full bg-white active:bg-gray-100">
-                <Text className="text-black font-bold">Seja Membro</Text>
-              </Button>
-            </Link>
+            <Button
+              onPress={handleBecomeMemberPress}
+              className="w-full bg-white active:bg-gray-100"
+            >
+              <Text className="text-black font-bold">Seja Membro</Text>
+            </Button>
           </View>
         )}
 

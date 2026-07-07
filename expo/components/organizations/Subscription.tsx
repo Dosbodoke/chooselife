@@ -289,6 +289,7 @@ export const Subscription = ({
   organization: Tables<'organizations'>;
 }) => {
   const { profile } = useAuth();
+  const profileId = profile?.id;
   const startPaymentMutation = useStartPayment();
 
   // Bottom Sheet configs
@@ -296,9 +297,15 @@ export const Subscription = ({
   const historySnapPoints = ['30%', '90%'];
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: queryKeys.subscription.byOrgUser(organization.id, profile!.id),
-    queryFn: () => fetchSubscriptionData(organization.id, profile!.id),
-    enabled: !!organization.id && !!profile?.id,
+    queryKey: queryKeys.subscription.byOrgUser(organization.id, profileId),
+    queryFn: () => {
+      if (!profileId) {
+        return Promise.resolve({ subscription: null, payments: [] });
+      }
+
+      return fetchSubscriptionData(organization.id, profileId);
+    },
+    enabled: !!organization.id && !!profileId,
   });
 
   const handleOpenHistory = () => {
@@ -325,7 +332,7 @@ export const Subscription = ({
     return diffDays;
   };
 
-  if (isLoading) {
+  if (!profileId || isLoading) {
     return <SubscriptionSkeleton />;
   }
 

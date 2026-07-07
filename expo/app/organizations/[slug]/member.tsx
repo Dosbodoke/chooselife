@@ -1,5 +1,5 @@
 import { useOrganization } from '@chooselife/ui';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { XIcon } from 'lucide-react-native';
 import React from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
@@ -7,10 +7,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Carousel } from '~/components/organizations/showcase-carousel';
 import { Icon } from '~/components/ui/icon';
+import { useAuth } from '~/context/auth';
 
 export default function MemberShowcaseScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { session, sessionLoading } = useAuth();
   const { slug } = useLocalSearchParams<{ slug: string }>();
 
   const {
@@ -32,6 +34,25 @@ export default function MemberShowcaseScreen() {
       <View className="flex-1 justify-center items-center">
         <ActivityIndicator />
       </View>
+    );
+  }
+
+  if (sessionLoading) {
+    return (
+      <View className="flex-1 justify-center items-center">
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  if (!session?.user) {
+    return (
+      <Redirect
+        href={{
+          pathname: '/(modals)/login',
+          params: { redirect_to: `/organizations/${slug}/member` },
+        }}
+      />
     );
   }
 

@@ -133,7 +133,10 @@ export function BecomeMemberForm({
     if (!selectedPlan) return;
 
     if (!session?.user) {
-      router.push(`/(modals)/login?redirect_to=/organizations`);
+      router.push({
+        pathname: '/(modals)/login',
+        params: { redirect_to: `/organizations/${org.slug}/member` },
+      });
       return;
     }
 
