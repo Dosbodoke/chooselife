@@ -111,6 +111,50 @@ async function createPayment(
   return paymentData;
 }
 
+async function findPendingManualPayment(
+  supabaseAdmin: SupabaseClient,
+  { organization_id, user_id, subscription_id, amount }: {
+    organization_id: string;
+    user_id: string;
+    subscription_id: string;
+    amount: number;
+  },
+): Promise<{ id: string; amount: number } | null> {
+  const { data: paymentData, error: paymentError } = await supabaseAdmin
+    .from("payments")
+    .select("id, amount")
+    .eq("organization_id", organization_id)
+    .eq("user_id", user_id)
+    .eq("subscription_id", subscription_id)
+    .eq("amount", amount)
+    .eq("status", "pending")
+    .is("payment_provider", null)
+    .is("provider_payment_id", null)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (paymentError) throw paymentError;
+
+  return paymentData;
+}
+
+async function findOrCreatePayment(
+  supabaseAdmin: SupabaseClient,
+  params: {
+    organization_id: string;
+    user_id: string;
+    subscription_id: string;
+    amount: number;
+  },
+): Promise<{ id: string; amount: number }> {
+  const existingPayment = await findPendingManualPayment(supabaseAdmin, params);
+  if (existingPayment) return existingPayment;
+
+  const newPayment = await createPayment(supabaseAdmin, params);
+  return { id: newPayment.id, amount: params.amount };
+}
+
 type RequestPayload = {
   slug: string;
   plan_type: "monthly" | "annual";
@@ -144,7 +188,7 @@ Deno.serve(async (req) => {
       plan_type,
     });
 
-    const payment = await createPayment(supabaseAdmin, {
+    const payment = await findOrCreatePayment(supabaseAdmin, {
       organization_id: organization.id,
       user_id: user.id,
       subscription_id: subscription.id,
@@ -152,7 +196,7 @@ Deno.serve(async (req) => {
     });
 
     const checkoutData: PaymentCheckoutSession = {
-      amount,
+      amount: payment.amount,
       method: "manual_pix",
       paymentId: payment.id,
       provider: "manual",
