@@ -16,10 +16,7 @@ import Animated, {
   Easing,
   FadeIn,
   FadeInDown,
-  SlideInLeft,
-  SlideInRight,
-  SlideOutLeft,
-  SlideOutRight,
+  useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
@@ -192,28 +189,34 @@ function OnboardingWizard({
         ? getFirstIncompleteStep(initialForm)
         : 0,
   );
-  const [direction, setDirection] = React.useState<'back' | 'forward'>(
-    'forward',
-  );
   const [errors, setErrors] = React.useState<FormErrors>({});
   const [applicationId, setApplicationId] = React.useState(application?.id);
   const [submittedApplicationId, setSubmittedApplicationId] = React.useState(
     application?.status === 'submitted' ? application.id : undefined,
   );
-  const [showResumeBanner, setShowResumeBanner] = React.useState(
-    application?.status === 'draft',
-  );
   const [savedVisible, setSavedVisible] = React.useState(false);
   const [cepLoading, setCepLoading] = React.useState(false);
   const [cepFailed, setCepFailed] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [continuing, setContinuing] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
   const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
   const scrollRef = React.useRef<ScrollView>(null);
-  const progress = useSharedValue(1);
+  // Continuous stepper position: step + 1 pills' worth of fill.
+  const progress = useSharedValue(step + 1);
+  // 0 → 1 on every step change; drives the step slide-in deterministically so
+  // an interrupted transition can never leave a residual horizontal offset.
+  const stepTransition = useSharedValue(1);
+  const stepDirection = useSharedValue(1);
+  const stepAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: stepTransition.value,
+    transform: [
+      { translateX: (1 - stepTransition.value) * 32 * stepDirection.value },
+    ],
+  }));
   const stepValid = isStepValid(form, step);
   const applicationQueryKey = queryKeys.membershipApplication.byOrgUser(
     organizationId,
@@ -317,16 +320,6 @@ function OnboardingWizard({
     };
   });
 
-  React.useEffect(() => {
-    if (!showResumeBanner) return;
-
-    const timer = setTimeout(() => {
-      setShowResumeBanner(false);
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [showResumeBanner]);
-
   const saveNow = async (nextForm: MembershipApplicationForm) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     return saveMutation.mutateAsync(nextForm);
@@ -394,27 +387,15 @@ function OnboardingWizard({
     }
   };
 
-  const restart = () => {
-    const next = createInitialForm({
-      acceptedTermsAt: form.accepted_terms_at ?? acceptedTermsAt,
-      application: null,
-      email,
-      profileBirthday,
-      profileName,
-    });
-    setForm(next);
-    setErrors({});
-    setStep(0);
-    setDirection('back');
-    setShowResumeBanner(false);
-    scheduleSave(next);
-  };
-
   const goToStep = (nextStep: number, nextDirection: 'back' | 'forward') => {
-    setDirection(nextDirection);
-    progress.value = 0;
-    progress.value = withTiming(1, {
+    progress.value = withTiming(nextStep + 1, {
       duration: 300,
+      easing: Easing.out(Easing.cubic),
+    });
+    stepDirection.value = nextDirection === 'forward' ? 1 : -1;
+    stepTransition.value = 0;
+    stepTransition.value = withTiming(1, {
+      duration: 250,
       easing: Easing.out(Easing.cubic),
     });
     setStep(nextStep);
@@ -444,6 +425,7 @@ function OnboardingWizard({
 
     let stage: 'payment' | 'save' = 'save';
 
+    setContinuing(true);
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
@@ -478,6 +460,8 @@ function OnboardingWizard({
 
       setErrorMessage(message);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setContinuing(false);
     }
   };
 
@@ -496,11 +480,7 @@ function OnboardingWizard({
         currentStep={step}
         onBack={handleBack}
         onClose={() => router.replace('/(tabs)/organizations')}
-        onDismissResume={() => setShowResumeBanner(false)}
-        onRestartResume={restart}
         progress={progress}
-        savedVisible={savedVisible}
-        showResumeBanner={showResumeBanner}
         subtitle={steps[step].subtitle}
         title={steps[step].title}
         totalSteps={steps.length}
@@ -525,17 +505,8 @@ function OnboardingWizard({
         >
           <Animated.View
             key={`step-${step}`}
-            entering={
-              direction === 'forward'
-                ? SlideInRight.duration(250)
-                : SlideInLeft.duration(250)
-            }
-            exiting={
-              direction === 'forward'
-                ? SlideOutLeft.duration(200)
-                : SlideOutRight.duration(200)
-            }
             className="gap-5"
+            style={stepAnimatedStyle}
           >
             <StepFields
               cepFailed={cepFailed}
@@ -561,12 +532,9 @@ function OnboardingWizard({
       <FooterCta
         disabled={!stepValid}
         label={step === steps.length - 1 ? 'Ir para o pagamento' : 'Continuar'}
-        loading={
-          saveMutation.isPending ||
-          submitMutation.isPending ||
-          startSubscriptionMutation.isPending
-        }
+        loading={continuing}
         onPress={handleContinue}
+        saved={savedVisible && !continuing}
       />
     </View>
   );
@@ -624,7 +592,8 @@ function StepFields({
             error={errors.birth_date}
             keyboardType="number-pad"
             label="Data de nascimento"
-            onChangeText={(value) => setField('birth_date', maskDate(value))}
+            mask={maskDate}
+            onChangeText={(value) => setField('birth_date', value)}
             placeholder="DD/MM/AAAA"
             required
             value={form.birth_date}
@@ -634,9 +603,11 @@ function StepFields({
           2,
           <GlassField
             accessibilityLabel="Local de nascimento"
+            error={errors.birthplace}
             label="Local de nascimento"
             onChangeText={(value) => setField('birthplace', value)}
             placeholder="Cidade e Estado"
+            required
             value={form.birthplace}
           />,
         )}
@@ -644,8 +615,10 @@ function StepFields({
           3,
           <GlassField
             accessibilityLabel="Nacionalidade"
+            error={errors.nationality}
             label="Nacionalidade"
             onChangeText={(value) => setField('nationality', value)}
+            required
             value={form.nationality}
           />,
         )}
@@ -685,7 +658,8 @@ function StepFields({
             error={errors.cpf}
             keyboardType="number-pad"
             label="CPF"
-            onChangeText={(value) => setField('cpf', maskCpf(value))}
+            mask={maskCpf}
+            onChangeText={(value) => setField('cpf', value)}
             required
             value={form.cpf}
           />,
@@ -694,8 +668,10 @@ function StepFields({
           1,
           <GlassField
             accessibilityLabel="RG ou CIN"
+            error={errors.id_document_number}
             label="RG/CIN"
             onChangeText={(value) => setField('id_document_number', value)}
+            required
             value={form.id_document_number}
           />,
         )}
@@ -725,6 +701,7 @@ function StepFields({
             error={errors.postal_code}
             keyboardType="number-pad"
             label="CEP"
+            mask={maskCep}
             onChangeText={onCepChange}
             required
             rightSlot={
@@ -742,9 +719,11 @@ function StepFields({
           1,
           <GlassField
             accessibilityLabel="Endereço"
+            error={errors.address_line}
             label="Endereço"
             onChangeText={(value) => setField('address_line', value)}
             placeholder="Rua, número, bairro"
+            required
             value={form.address_line}
           />,
         )}
@@ -766,9 +745,8 @@ function StepFields({
             autoCapitalize="characters"
             error={errors.state}
             label="UF"
-            onChangeText={(value) =>
-              setField('state', value.slice(0, 2).toUpperCase())
-            }
+            mask={(value) => value.slice(0, 2).toUpperCase()}
+            onChangeText={(value) => setField('state', value)}
             required
             value={form.state}
           />,
@@ -794,7 +772,9 @@ function StepFields({
             error={errors.phone}
             keyboardType="number-pad"
             label="Celular"
-            onChangeText={(value) => setField('phone', maskPhone(value))}
+            mask={maskPhone}
+            onChangeText={(value) => setField('phone', value)}
+            required
             value={form.phone}
           />,
         )}
@@ -949,8 +929,9 @@ function StepFields({
           error={errors.emergency_contact_phone}
           keyboardType="number-pad"
           label="Telefone"
+          mask={maskPhone}
           onChangeText={(value) =>
-            setField('emergency_contact_phone', maskPhone(value))
+            setField('emergency_contact_phone', value)
           }
           required
           value={form.emergency_contact_phone}

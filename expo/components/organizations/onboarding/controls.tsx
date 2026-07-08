@@ -1,6 +1,16 @@
-import { Host, Switch as ExpoSwitch } from '@expo/ui';
+import {
+  Host,
+  Switch as ExpoSwitch,
+  TextInput as NativeTextInput,
+  useNativeState,
+} from '@expo/ui';
 import * as Haptics from 'expo-haptics';
-import { CheckCircle2Icon, ChevronLeftIcon, XIcon } from 'lucide-react-native';
+import {
+  CheckCircle2Icon,
+  CheckIcon,
+  ChevronLeftIcon,
+  XIcon,
+} from 'lucide-react-native';
 import React from 'react';
 import {
   ActivityIndicator,
@@ -27,6 +37,11 @@ type FieldProps = {
   accessibilityLabel: string;
   error?: string;
   label: string;
+  /**
+   * Optional formatter (e.g. maskCpf) applied synchronously to the native
+   * text state on every keystroke, avoiding the controlled-input round trip.
+   */
+  mask?: (value: string) => string;
   multiline?: boolean;
   onBlur?: () => void;
   onChangeText: (value: string) => void;
@@ -39,12 +54,24 @@ type FieldProps = {
   'autoCapitalize' | 'keyboardType' | 'returnKeyType' | 'textContentType'
 >;
 
+const textContentTypeToAutoComplete: Partial<
+  Record<
+    NonNullable<FieldProps['textContentType']>,
+    React.ComponentProps<typeof NativeTextInput>['autoComplete']
+  >
+> = {
+  emailAddress: 'email',
+  name: 'name',
+  telephoneNumber: 'tel',
+};
+
 export function GlassField({
   accessibilityLabel,
   autoCapitalize,
   error,
   keyboardType,
   label,
+  mask,
   multiline,
   onBlur,
   onChangeText,
@@ -56,6 +83,32 @@ export function GlassField({
   value,
 }: FieldProps) {
   const [focused, setFocused] = React.useState(false);
+  // Text lives in native SwiftUI state; React only mirrors it for the form.
+  const text = useNativeState(value);
+  const selection = useNativeState({ end: value.length, start: value.length });
+  const lastEmitted = React.useRef(value);
+
+  // Sync external writes (e.g. CEP autofill) into the native state.
+  React.useEffect(() => {
+    if (value !== lastEmitted.current) {
+      text.value = value;
+      selection.value = { end: value.length, start: value.length };
+      lastEmitted.current = value;
+    }
+  }, [selection, text, value]);
+
+  const handleChangeText = (raw: string) => {
+    const next = mask ? mask(raw) : raw;
+    if (next !== raw) {
+      text.value = next;
+      // Rewriting the text leaves the caret at its old index; snap it to the
+      // end so the next keystroke lands after the inserted mask characters.
+      selection.value = { end: next.length, start: next.length };
+    }
+    lastEmitted.current = next;
+    onChangeText(next);
+  };
+
   const border = error
     ? 'border-red-500'
     : focused
@@ -68,31 +121,41 @@ export function GlassField({
       <View
         className={`bg-zinc-50 rounded-2xl border ${border} px-4 py-3.5`}
       >
-        <Text className={`${labelColor} text-xs font-medium`}>
+        <Text className={`${labelColor} text-xs font-medium mb-1`}>
           {label}
           {required ? <Text className="text-red-600"> *</Text> : null}
         </Text>
         <View className="flex-row items-center gap-3">
-          <TextInput
-            accessibilityLabel={`${accessibilityLabel}${required ? ' obrigatório' : ''}`}
-            autoCapitalize={autoCapitalize}
-            className={`flex-1 text-zinc-950 text-base ${keyboardType === 'number-pad' ? 'tracking-wide' : ''}`}
-            keyboardType={keyboardType}
-            multiline={multiline}
-            onBlur={() => {
-              setFocused(false);
-              onBlur?.();
-            }}
-            onChangeText={onChangeText}
-            onFocus={() => setFocused(true)}
-            placeholder={placeholder}
-            placeholderTextColor="rgba(39,39,42,0.35)"
-            returnKeyType={returnKeyType}
-            style={multiline ? { minHeight: 88 } : undefined}
-            textContentType={textContentType}
-            textAlignVertical={multiline ? 'top' : 'center'}
-            value={value}
-          />
+          <Host style={{ flex: 1, height: multiline ? 88 : 24 }}>
+            <NativeTextInput
+              autoCapitalize={autoCapitalize}
+              autoComplete={
+                textContentType
+                  ? textContentTypeToAutoComplete[textContentType]
+                  : undefined
+              }
+              keyboardType={keyboardType}
+              multiline={multiline}
+              onBlur={() => {
+                setFocused(false);
+                onBlur?.();
+              }}
+              onChangeText={handleChangeText}
+              onFocus={() => setFocused(true)}
+              placeholder={placeholder}
+              placeholderTextColor="rgba(39,39,42,0.35)"
+              returnKeyType={returnKeyType}
+              selection={mask ? selection : undefined}
+              style={{ height: multiline ? 88 : 24 }}
+              testID={`field-${accessibilityLabel.toLowerCase().replace(/\s+/g, '-')}`}
+              textStyle={{
+                color: '#09090B',
+                fontSize: 16,
+                letterSpacing: keyboardType === 'number-pad' ? 0.5 : undefined,
+              }}
+              value={text}
+            />
+          </Host>
           {rightSlot}
         </View>
       </View>
@@ -144,22 +207,20 @@ export function SelectChips<T extends string>({
                 onChange(option.value);
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
-              className={`px-4 py-2.5 rounded-full border ${
-                selected
-                  ? 'bg-blue-50 border-blue-500'
-                  : 'bg-zinc-50 border-zinc-200'
+              className={`px-4 py-2.5 rounded-full ${
+                selected ? 'bg-blue-50' : 'bg-zinc-50'
               } ${columns ? 'items-center' : ''}`}
-              style={
-                columns
-                  ? {
-                      flexBasis: `${100 / columns - 3}%`,
-                    }
-                  : undefined
-              }
+              style={[
+                {
+                  borderColor: selected ? '#3B82F6' : '#E4E4E7',
+                  borderWidth: 1,
+                },
+                columns ? { flexBasis: `${100 / columns - 3}%` } : null,
+              ]}
             >
               <Text
-                className={`text-center ${
-                  selected ? 'text-blue-700 font-semibold' : 'text-zinc-700'
+                className={`text-center font-medium ${
+                  selected ? 'text-blue-700' : 'text-zinc-700'
                 }`}
               >
                 {option.label}
@@ -198,16 +259,37 @@ export function SelectCards<T extends string>({
               onChange(option.value);
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }}
-            className={`bg-zinc-50 rounded-2xl border-2 p-5 ${
-              selected ? 'border-emerald-500' : 'border-zinc-200'
+            className={`rounded-2xl p-5 ${
+              selected ? 'bg-blue-50/60' : 'bg-zinc-50'
             }`}
+            style={{
+              borderColor: selected ? '#2563EB' : '#E4E4E7',
+              borderWidth: 2,
+            }}
           >
-            <Text className="text-zinc-950 text-xl font-bold">
-              {option.title}
-            </Text>
-            <Text className="text-zinc-500 text-sm mt-1 leading-5">
-              {option.description}
-            </Text>
+            <View className="flex-row items-start justify-between gap-3">
+              <View className="flex-1">
+                <Text className="text-zinc-950 text-xl font-bold">
+                  {option.title}
+                </Text>
+                <Text className="text-zinc-500 text-sm mt-1 leading-5">
+                  {option.description}
+                </Text>
+              </View>
+              <View
+                className={`w-6 h-6 rounded-full items-center justify-center ${
+                  selected ? 'bg-blue-600' : 'bg-white'
+                }`}
+                style={{
+                  borderColor: selected ? '#2563EB' : '#D4D4D8',
+                  borderWidth: 2,
+                }}
+              >
+                {selected ? (
+                  <Icon as={CheckIcon} size={14} color="#FFFFFF" />
+                ) : null}
+              </View>
+            </View>
           </TouchableOpacity>
         );
       })}
@@ -304,7 +386,7 @@ export function NativeSwitchRow({
         <Host
           colorScheme="light"
           matchContents
-          seedColor="#10B981"
+          seedColor="#2563EB"
           style={{ minHeight: 44, minWidth: 54 }}
         >
           <ExpoSwitch
@@ -322,48 +404,12 @@ export function NativeSwitchRow({
   );
 }
 
-export function ResumeBanner({
-  onDismiss,
-  onRestart,
-}: {
-  onDismiss: () => void;
-  onRestart: () => void;
-}) {
-  return (
-    <Animated.View
-      entering={FadeIn.duration(200)}
-      exiting={FadeOut.duration(150)}
-      className="mt-3 bg-blue-50 border border-blue-100 rounded-2xl px-3 py-2"
-    >
-      <View className="flex-row items-center gap-3">
-        <Text className="text-zinc-950 text-xs font-semibold flex-1">
-          Continuamos de onde você parou
-        </Text>
-        <Pressable onPress={onRestart} hitSlop={8}>
-          <Text className="text-blue-700 text-xs font-semibold">
-            Recomeçar do zero
-          </Text>
-        </Pressable>
-        <Pressable onPress={onDismiss} hitSlop={8}>
-          <Text className="text-zinc-500 text-xs font-semibold">
-            Dispensar
-          </Text>
-        </Pressable>
-      </View>
-    </Animated.View>
-  );
-}
-
 export function ProgressHeader({
   canGoBack,
   currentStep,
   onBack,
   onClose,
-  onDismissResume,
-  onRestartResume,
   progress,
-  savedVisible,
-  showResumeBanner,
   subtitle,
   title,
   totalSteps,
@@ -372,11 +418,7 @@ export function ProgressHeader({
   currentStep: number;
   onBack: () => void;
   onClose: () => void;
-  onDismissResume: () => void;
-  onRestartResume: () => void;
   progress: SharedValue<number>;
-  savedVisible: boolean;
-  showResumeBanner: boolean;
   subtitle: string;
   title: string;
   totalSteps: number;
@@ -405,31 +447,15 @@ export function ProgressHeader({
         <View className="flex-1 gap-2 px-2">
           <View className="flex-row gap-1.5">
             {Array.from({ length: totalSteps }).map((_, index) => (
-              <ProgressPill
-                key={index}
-                active={index === currentStep}
-                done={index < currentStep}
-                progress={progress}
-              />
+              <ProgressPill key={index} index={index} progress={progress} />
             ))}
           </View>
-          <View className="flex-row justify-center items-center gap-2">
-            <Text
-              className="text-zinc-500 text-xs font-semibold tracking-wide text-center"
-              maxFontSizeMultiplier={1.6}
-            >
-              PASSO {currentStep + 1} DE {totalSteps}
-            </Text>
-            {savedVisible ? (
-              <Animated.Text
-                entering={FadeIn.duration(150)}
-                exiting={FadeOut.duration(150)}
-                className="text-zinc-400 text-xs"
-              >
-                Salvo ✓
-              </Animated.Text>
-            ) : null}
-          </View>
+          <Text
+            className="text-zinc-500 text-xs font-semibold tracking-wide text-center"
+            maxFontSizeMultiplier={1.6}
+          >
+            PASSO {currentStep + 1} DE {totalSteps}
+          </Text>
         </View>
         <Pressable
           onPress={onClose}
@@ -448,38 +474,27 @@ export function ProgressHeader({
         </Text>
         <Text className="text-zinc-500 text-base leading-6">{subtitle}</Text>
       </View>
-      {showResumeBanner ? (
-        <ResumeBanner
-          onDismiss={onDismissResume}
-          onRestart={onRestartResume}
-        />
-      ) : null}
     </View>
   );
 }
 
+// `progress` is a continuous position (currentStep + 1): each pill fills the
+// slice of it between `index` and `index + 1`, so a single timing animation
+// fills exactly one pill going forward and unfills exactly one going back.
 function ProgressPill({
-  active,
-  done,
+  index,
   progress,
 }: {
-  active: boolean;
-  done: boolean;
+  index: number;
   progress: SharedValue<number>;
 }) {
-  const currentStyle = useAnimatedStyle(() => ({
-    width: `${progress.value * 100}%`,
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: `${Math.min(Math.max(progress.value - index, 0), 1) * 100}%`,
   }));
 
   return (
     <View className="h-1 flex-1 rounded-full bg-zinc-200 overflow-hidden">
-      {done ? <View className="h-full w-full bg-emerald-500" /> : null}
-      {active ? (
-        <Animated.View
-          className="h-full bg-emerald-500"
-          style={currentStyle}
-        />
-      ) : null}
+      <Animated.View className="h-full bg-emerald-500" style={animatedStyle} />
     </View>
   );
 }
@@ -489,11 +504,13 @@ export function FooterCta({
   label,
   loading,
   onPress,
+  saved,
 }: {
   disabled?: boolean;
   label: string;
   loading?: boolean;
   onPress: () => void;
+  saved?: boolean;
 }) {
   const insets = useSafeAreaInsets();
 
@@ -506,7 +523,7 @@ export function FooterCta({
     >
       <TouchableOpacity
         activeOpacity={0.85}
-        className={`bg-zinc-950 rounded-full py-4 items-center justify-center ${
+        className={`bg-zinc-950 rounded-full h-14 items-center justify-center ${
           disabled ? 'opacity-50' : ''
         }`}
         disabled={disabled || loading}
@@ -514,6 +531,15 @@ export function FooterCta({
       >
         {loading ? (
           <ActivityIndicator color="#FFFFFF" />
+        ) : saved ? (
+          <Animated.View
+            entering={FadeIn.duration(150)}
+            exiting={FadeOut.duration(150)}
+            className="flex-row items-center gap-2"
+          >
+            <Icon as={CheckIcon} size={18} color="#FFFFFF" />
+            <Text className="text-white text-lg font-bold">Salvo</Text>
+          </Animated.View>
         ) : (
           <Text className="text-white text-lg font-bold">{label}</Text>
         )}

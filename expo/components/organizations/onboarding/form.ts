@@ -324,12 +324,15 @@ export const getStepErrors = (
     if (!displayDateToIso(form.birth_date)) {
       errors.birth_date = 'Informe uma data válida.';
     }
+    requiredText(errors, 'birthplace', form.birthplace);
+    requiredText(errors, 'nationality', form.nationality);
     if (!form.marital_status) errors.marital_status = 'Selecione uma opção.';
     requiredText(errors, 'profession', form.profession);
   }
 
   if (step === 1) {
     if (!isValidCpf(form.cpf)) errors.cpf = 'Informe um CPF válido.';
+    requiredText(errors, 'id_document_number', form.id_document_number);
     requiredText(errors, 'id_document_issuer', form.id_document_issuer);
   }
 
@@ -337,12 +340,13 @@ export const getStepErrors = (
     if (digitsOnly(form.postal_code).length !== 8) {
       errors.postal_code = 'Informe um CEP com 8 dígitos.';
     }
+    requiredText(errors, 'address_line', form.address_line);
     requiredText(errors, 'city', form.city);
     if (form.state.trim().length !== 2) errors.state = 'Informe a UF.';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
       errors.email = 'Informe um e-mail válido.';
     }
-    if (form.phone && ![10, 11].includes(digitsOnly(form.phone).length)) {
+    if (![10, 11].includes(digitsOnly(form.phone).length)) {
       errors.phone = 'Informe um celular com DDD.';
     }
   }
