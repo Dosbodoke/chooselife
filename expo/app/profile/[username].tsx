@@ -90,7 +90,7 @@ export default function Profile() {
   }
 
   return (
-    <SafeAreaOfflineView className="flex-1">
+    <SafeAreaOfflineView className="h-full w-full bg-gray-100">
       <KeyboardAwareScrollView
         contentContainerClassName="px-2 py-4 gap-4"
         automaticallyAdjustContentInsets={false}
