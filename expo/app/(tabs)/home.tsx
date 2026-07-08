@@ -60,7 +60,7 @@ export default function HomeScreen() {
               subtitle: t('app.(tabs).home.banner.description'),
               background: getR2PublicUrl('promo', 'monstros-do-lago-2026.jpg'),
               onPress: () => {
-                router.push('/festival');
+                router.push('/festival/monstros-do-lago-2026');
               },
             },
             {

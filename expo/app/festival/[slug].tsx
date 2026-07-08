@@ -24,7 +24,6 @@ import { FestivalScheduleSheet } from '~/components/festival/schedule-sheet';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { Icon } from '~/components/ui/icon';
 
-const FESTIVAL_SLUG = 'chooselife-2026';
 const DEFAULT_FESTIVAL_TIME_ZONE = 'America/Sao_Paulo';
 
 type FestivalScheduleQuery = ReturnType<typeof useFestivalSchedule>;
@@ -34,13 +33,19 @@ export default function FestivalScreen() {
   const isOnline = useOnlineStatus();
   const { share } = useShare();
 
-  const { day: rawSelectedDayKey, highline: rawSelectedHighlineId } =
-    useLocalSearchParams<{
-      day?: string | string[];
-      highline?: string | string[];
-    }>();
+  const {
+    slug: rawSlug,
+    day: rawSelectedDayKey,
+    highline: rawSelectedHighlineId,
+  } = useLocalSearchParams<{
+    slug: string | string[];
+    day?: string | string[];
+    highline?: string | string[];
+  }>();
 
-  const query = useFestivalSchedule({ festivalSlug: FESTIVAL_SLUG });
+  const festivalSlug = getSingleSearchParam(rawSlug) ?? '';
+
+  const query = useFestivalSchedule({ festivalSlug });
 
   const selectedHighlineId = getSingleSearchParam(rawSelectedHighlineId);
   const selectedDayKey = getSingleSearchParam(rawSelectedDayKey);
@@ -100,13 +105,13 @@ export default function FestivalScreen() {
   );
 
   const handleShareFestival = React.useCallback(async () => {
-    const url = `${process.env.EXPO_PUBLIC_WEB_URL}/festival`;
+    const url = `${process.env.EXPO_PUBLIC_WEB_URL}/festival/${festivalSlug}`;
 
     await share({
       title,
       url,
     });
-  }, [share, title]);
+  }, [share, title, festivalSlug]);
 
   return (
     <>
@@ -156,7 +161,7 @@ export default function FestivalScreen() {
           bookingLimit={query.data?.bookingLimit ?? null}
           canManage={query.data?.viewer.canManage || false}
           card={selectedCard}
-          festivalSlug={FESTIVAL_SLUG}
+          festivalSlug={festivalSlug}
           festivalTimeZone={festivalTimeZone}
           onDismiss={handleDismissSchedule}
           onSelectDayKey={handleSelectDayKey}
