@@ -1,6 +1,4 @@
 import { useEvents } from '@chooselife/ui';
-import ChooselifeBannerImage from '~/assets/images/festival-chooselife-promo.png';
-import SlackBannerImage from '~/assets/images/slack-promo.png';
 import { Link, useRouter } from 'expo-router';
 import { StatusBar, StatusBarStyle } from 'expo-status-bar';
 import { BookIcon, CalendarIcon, PencilRulerIcon } from 'lucide-react-native';
@@ -16,6 +14,7 @@ import {
 import Animated from 'react-native-reanimated';
 
 import { useOnlineStatus } from '~/context/react-query';
+import { getR2PublicUrl } from '~/lib/r2';
 import { cn } from '~/lib/utils';
 import { _layoutAnimation } from '~/utils/constants';
 
@@ -59,7 +58,7 @@ export default function HomeScreen() {
               id: 'chooselife',
               title: t('app.(tabs).home.banner.title'),
               subtitle: t('app.(tabs).home.banner.description'),
-              background: ChooselifeBannerImage,
+              background: getR2PublicUrl('promo', 'monstros-do-lago-2026.jpg'),
               onPress: () => {
                 router.push('/festival');
               },
@@ -68,7 +67,7 @@ export default function HomeScreen() {
               id: 'slack',
               title: 'SLACK',
               subtitle: 'Conheça a associação',
-              background: SlackBannerImage,
+              background: getR2PublicUrl('promo', 'slack-promo.png'),
               onPress: () => {
                 router.push('/organizations');
               },
