@@ -236,17 +236,13 @@ export const createInitialForm = ({
     application?.accepted_terms_at ?? acceptedTermsAt ?? null,
   address_line: application?.address_line ?? '',
   allergies: application?.allergies ?? '',
-  allergies_choice: application ? (application.allergies ? 'yes' : 'no') : null,
+  allergies_choice: application?.allergies ? 'yes' : 'no',
   birth_date: dateToDisplay(application?.birth_date ?? profileBirthday),
   birthplace: application?.birthplace ?? '',
   blood_type: application?.blood_type ?? null,
   city: application?.city ?? '',
   cpf: maskCpf(application?.cpf ?? ''),
-  dietary_choice: application
-    ? application.dietary_restrictions
-      ? 'yes'
-      : 'no'
-    : null,
+  dietary_choice: application?.dietary_restrictions ? 'yes' : 'no',
   dietary_restrictions: application?.dietary_restrictions ?? '',
   email: application?.email ?? email ?? '',
   emergency_contact_name: application?.emergency_contact_name ?? '',
@@ -352,7 +348,6 @@ export const getStepErrors = (
   }
 
   if (step === 3) {
-    if (!form.allergies_choice) errors.allergies_choice = 'Escolha uma opção.';
     if (form.allergies_choice === 'yes') {
       requiredText(
         errors,
@@ -361,7 +356,6 @@ export const getStepErrors = (
         'Descreva as alergias.',
       );
     }
-    if (!form.dietary_choice) errors.dietary_choice = 'Escolha uma opção.';
     if (form.dietary_choice === 'yes') {
       requiredText(
         errors,

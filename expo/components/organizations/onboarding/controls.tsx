@@ -1,3 +1,4 @@
+import { Host, Switch as ExpoSwitch } from '@expo/ui';
 import * as Haptics from 'expo-haptics';
 import { CheckCircle2Icon, ChevronLeftIcon, XIcon } from 'lucide-react-native';
 import React from 'react';
@@ -56,24 +57,26 @@ export function GlassField({
 }: FieldProps) {
   const [focused, setFocused] = React.useState(false);
   const border = error
-    ? 'border-red-400/70'
+    ? 'border-red-500'
     : focused
-      ? 'border-emerald-400/70'
-      : 'border-white/15';
-  const labelColor = focused ? 'text-emerald-300' : 'text-white/60';
+      ? 'border-blue-500'
+      : 'border-zinc-200';
+  const labelColor = focused ? 'text-blue-600' : 'text-zinc-500';
 
   return (
     <View className="gap-1.5">
-      <View className={`bg-white/10 rounded-2xl border ${border} px-4 py-3.5`}>
+      <View
+        className={`bg-zinc-50 rounded-2xl border ${border} px-4 py-3.5`}
+      >
         <Text className={`${labelColor} text-xs font-medium`}>
           {label}
-          {required ? <Text className="text-emerald-300"> *</Text> : null}
+          {required ? <Text className="text-red-600"> *</Text> : null}
         </Text>
         <View className="flex-row items-center gap-3">
           <TextInput
             accessibilityLabel={`${accessibilityLabel}${required ? ' obrigatório' : ''}`}
             autoCapitalize={autoCapitalize}
-            className={`flex-1 text-white text-base ${keyboardType === 'number-pad' ? 'tracking-wide' : ''}`}
+            className={`flex-1 text-zinc-950 text-base ${keyboardType === 'number-pad' ? 'tracking-wide' : ''}`}
             keyboardType={keyboardType}
             multiline={multiline}
             onBlur={() => {
@@ -83,7 +86,7 @@ export function GlassField({
             onChangeText={onChangeText}
             onFocus={() => setFocused(true)}
             placeholder={placeholder}
-            placeholderTextColor="rgba(255,255,255,0.35)"
+            placeholderTextColor="rgba(39,39,42,0.35)"
             returnKeyType={returnKeyType}
             style={multiline ? { minHeight: 88 } : undefined}
             textContentType={textContentType}
@@ -96,7 +99,7 @@ export function GlassField({
       {error ? (
         <Text
           accessibilityLiveRegion="polite"
-          className="text-red-300 text-xs mt-1.5"
+          className="text-red-600 text-xs mt-1.5"
         >
           {error}
         </Text>
@@ -124,9 +127,9 @@ export function SelectChips<T extends string>({
 }) {
   return (
     <View className="gap-3">
-      <Text className="text-white/60 text-xs font-medium">
+      <Text className="text-zinc-500 text-xs font-medium">
         {label}
-        {required ? <Text className="text-emerald-300"> *</Text> : null}
+        {required ? <Text className="text-red-600"> *</Text> : null}
       </Text>
       <View className="flex-row flex-wrap gap-2">
         {options.map((option) => {
@@ -143,8 +146,8 @@ export function SelectChips<T extends string>({
               }}
               className={`px-4 py-2.5 rounded-full border ${
                 selected
-                  ? 'bg-emerald-500/20 border-emerald-400'
-                  : 'bg-white/10 border-white/20'
+                  ? 'bg-blue-50 border-blue-500'
+                  : 'bg-zinc-50 border-zinc-200'
               } ${columns ? 'items-center' : ''}`}
               style={
                 columns
@@ -156,7 +159,7 @@ export function SelectChips<T extends string>({
             >
               <Text
                 className={`text-center ${
-                  selected ? 'text-emerald-300 font-semibold' : 'text-white/80'
+                  selected ? 'text-blue-700 font-semibold' : 'text-zinc-700'
                 }`}
               >
                 {option.label}
@@ -165,7 +168,7 @@ export function SelectChips<T extends string>({
           );
         })}
       </View>
-      {error ? <Text className="text-red-300 text-xs">{error}</Text> : null}
+      {error ? <Text className="text-red-600 text-xs">{error}</Text> : null}
     </View>
   );
 }
@@ -195,18 +198,20 @@ export function SelectCards<T extends string>({
               onChange(option.value);
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }}
-            className={`bg-white/10 rounded-2xl border-2 p-5 ${
-              selected ? 'border-emerald-400' : 'border-white/15'
+            className={`bg-zinc-50 rounded-2xl border-2 p-5 ${
+              selected ? 'border-emerald-500' : 'border-zinc-200'
             }`}
           >
-            <Text className="text-white text-xl font-bold">{option.title}</Text>
-            <Text className="text-white/60 text-sm mt-1 leading-5">
+            <Text className="text-zinc-950 text-xl font-bold">
+              {option.title}
+            </Text>
+            <Text className="text-zinc-500 text-sm mt-1 leading-5">
               {option.description}
             </Text>
           </TouchableOpacity>
         );
       })}
-      {error ? <Text className="text-red-300 text-xs">{error}</Text> : null}
+      {error ? <Text className="text-red-600 text-xs">{error}</Text> : null}
     </View>
   );
 }
@@ -226,17 +231,17 @@ export function YesNoRow({
 }) {
   return (
     <View className="gap-2">
-      <View className="rounded-2xl bg-white/10 border border-white/15 p-4 flex-row justify-between items-center gap-3">
+      <View className="rounded-2xl bg-zinc-50 border border-zinc-200 p-4 flex-row justify-between items-center gap-3">
         <View className="flex-1">
-          <Text className="text-white font-semibold">{label}</Text>
+          <Text className="text-zinc-950 font-semibold">{label}</Text>
           {description ? (
-            <Text className="text-white/55 text-xs mt-1">{description}</Text>
+            <Text className="text-zinc-500 text-xs mt-1">{description}</Text>
           ) : null}
         </View>
         <View
           accessibilityRole="switch"
           accessibilityState={{ checked: Boolean(value) }}
-          className="flex-row bg-white/10 rounded-full p-1"
+          className="flex-row bg-zinc-200 rounded-full p-1"
         >
           {[
             { label: 'Não', value: false },
@@ -257,7 +262,7 @@ export function YesNoRow({
               >
                 <Text
                   className={`text-sm font-semibold ${
-                    selected ? 'text-black' : 'text-white/75'
+                    selected ? 'text-zinc-950' : 'text-zinc-600'
                   }`}
                 >
                   {option.label}
@@ -267,7 +272,52 @@ export function YesNoRow({
           })}
         </View>
       </View>
-      {error ? <Text className="text-red-300 text-xs">{error}</Text> : null}
+      {error ? <Text className="text-red-600 text-xs">{error}</Text> : null}
+    </View>
+  );
+}
+
+export function NativeSwitchRow({
+  description,
+  error,
+  label,
+  onChange,
+  value,
+}: {
+  description?: string;
+  error?: string;
+  label: string;
+  onChange: (value: boolean) => void;
+  value: boolean | null;
+}) {
+  return (
+    <View className="gap-2">
+      <View className="rounded-2xl bg-zinc-50 border border-zinc-200 p-4 flex-row justify-between items-center gap-4">
+        <View className="flex-1">
+          <Text className="text-zinc-950 font-semibold">{label}</Text>
+          {description ? (
+            <Text className="text-zinc-500 text-xs mt-1 leading-4">
+              {description}
+            </Text>
+          ) : null}
+        </View>
+        <Host
+          colorScheme="light"
+          matchContents
+          seedColor="#10B981"
+          style={{ minHeight: 44, minWidth: 54 }}
+        >
+          <ExpoSwitch
+            testID={`switch-${label.toLowerCase().replace(/\s+/g, '-')}`}
+            value={Boolean(value)}
+            onValueChange={(nextValue) => {
+              onChange(nextValue);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+          />
+        </Host>
+      </View>
+      {error ? <Text className="text-red-600 text-xs">{error}</Text> : null}
     </View>
   );
 }
@@ -283,19 +333,21 @@ export function ResumeBanner({
     <Animated.View
       entering={FadeIn.duration(200)}
       exiting={FadeOut.duration(150)}
-      className="bg-emerald-500/15 border border-emerald-400/30 rounded-2xl p-4 gap-2"
+      className="mt-3 bg-blue-50 border border-blue-100 rounded-2xl px-3 py-2"
     >
-      <Text className="text-white font-bold">
-        Continuamos de onde você parou
-      </Text>
-      <View className="flex-row items-center gap-4">
+      <View className="flex-row items-center gap-3">
+        <Text className="text-zinc-950 text-xs font-semibold flex-1">
+          Continuamos de onde você parou
+        </Text>
         <Pressable onPress={onRestart} hitSlop={8}>
-          <Text className="text-emerald-300 font-semibold">
+          <Text className="text-blue-700 text-xs font-semibold">
             Recomeçar do zero
           </Text>
         </Pressable>
         <Pressable onPress={onDismiss} hitSlop={8}>
-          <Text className="text-white/60 font-semibold">Dispensar</Text>
+          <Text className="text-zinc-500 text-xs font-semibold">
+            Dispensar
+          </Text>
         </Pressable>
       </View>
     </Animated.View>
@@ -307,27 +359,35 @@ export function ProgressHeader({
   currentStep,
   onBack,
   onClose,
+  onDismissResume,
+  onRestartResume,
   progress,
   savedVisible,
+  showResumeBanner,
+  subtitle,
+  title,
   totalSteps,
 }: {
   canGoBack: boolean;
   currentStep: number;
   onBack: () => void;
   onClose: () => void;
+  onDismissResume: () => void;
+  onRestartResume: () => void;
   progress: SharedValue<number>;
   savedVisible: boolean;
+  showResumeBanner: boolean;
+  subtitle: string;
+  title: string;
   totalSteps: number;
 }) {
   const insets = useSafeAreaInsets();
 
   return (
     <View
-      className="absolute top-0 left-0 right-0 px-6 pb-6 z-50"
+      className="absolute top-0 left-0 right-0 px-6 pb-4 z-50 bg-white border-b border-zinc-100"
       style={{
-        paddingTop: insets.top + 12,
-        experimental_backgroundImage:
-          'linear-gradient(to bottom, rgba(2, 6, 23, 0.9) 55%, rgba(2, 6, 23, 0) 100%)',
+        paddingTop: Math.max(insets.top - 6, 8),
       }}
     >
       <View className="flex-row items-center">
@@ -335,10 +395,10 @@ export function ProgressHeader({
           {canGoBack ? (
             <Pressable
               onPress={onBack}
-              className="p-2.5 rounded-full bg-white/10"
+              className="p-2.5 rounded-full bg-zinc-100"
               hitSlop={12}
             >
-              <Icon as={ChevronLeftIcon} size={20} color="#FFFFFF" />
+              <Icon as={ChevronLeftIcon} size={20} color="#18181B" />
             </Pressable>
           ) : null}
         </View>
@@ -355,7 +415,7 @@ export function ProgressHeader({
           </View>
           <View className="flex-row justify-center items-center gap-2">
             <Text
-              className="text-white/60 text-xs font-semibold tracking-wide text-center"
+              className="text-zinc-500 text-xs font-semibold tracking-wide text-center"
               maxFontSizeMultiplier={1.6}
             >
               PASSO {currentStep + 1} DE {totalSteps}
@@ -364,7 +424,7 @@ export function ProgressHeader({
               <Animated.Text
                 entering={FadeIn.duration(150)}
                 exiting={FadeOut.duration(150)}
-                className="text-white/40 text-xs"
+                className="text-zinc-400 text-xs"
               >
                 Salvo ✓
               </Animated.Text>
@@ -373,12 +433,27 @@ export function ProgressHeader({
         </View>
         <Pressable
           onPress={onClose}
-          className="p-2.5 rounded-full bg-white/10"
+          className="p-2.5 rounded-full bg-zinc-100"
           hitSlop={12}
         >
-          <Icon as={XIcon} size={20} color="#FFFFFF" />
+          <Icon as={XIcon} size={20} color="#18181B" />
         </Pressable>
       </View>
+      <View className="mt-4 gap-1">
+        <Text
+          accessibilityRole="header"
+          className="text-zinc-950 text-2xl font-bold leading-8"
+        >
+          {title}
+        </Text>
+        <Text className="text-zinc-500 text-base leading-6">{subtitle}</Text>
+      </View>
+      {showResumeBanner ? (
+        <ResumeBanner
+          onDismiss={onDismissResume}
+          onRestart={onRestartResume}
+        />
+      ) : null}
     </View>
   );
 }
@@ -397,10 +472,13 @@ function ProgressPill({
   }));
 
   return (
-    <View className="h-1 flex-1 rounded-full bg-white/15 overflow-hidden">
-      {done ? <View className="h-full w-full bg-emerald-400" /> : null}
+    <View className="h-1 flex-1 rounded-full bg-zinc-200 overflow-hidden">
+      {done ? <View className="h-full w-full bg-emerald-500" /> : null}
       {active ? (
-        <Animated.View className="h-full bg-emerald-400" style={currentStyle} />
+        <Animated.View
+          className="h-full bg-emerald-500"
+          style={currentStyle}
+        />
       ) : null}
     </View>
   );
@@ -421,25 +499,23 @@ export function FooterCta({
 
   return (
     <View
-      className="absolute bottom-0 left-0 right-0 px-6 pt-10"
+      className="absolute bottom-0 left-0 right-0 px-6 pt-4 bg-white border-t border-zinc-100"
       style={{
         paddingBottom: insets.bottom + 16,
-        experimental_backgroundImage:
-          'linear-gradient(to top, rgba(2, 6, 23, 0.95) 55%, rgba(2, 6, 23, 0) 100%)',
       }}
     >
       <TouchableOpacity
         activeOpacity={0.85}
-        className={`bg-white rounded-full py-4 items-center justify-center ${
+        className={`bg-zinc-950 rounded-full py-4 items-center justify-center ${
           disabled ? 'opacity-50' : ''
         }`}
         disabled={disabled || loading}
         onPress={onPress}
       >
         {loading ? (
-          <ActivityIndicator color="#000" />
+          <ActivityIndicator color="#FFFFFF" />
         ) : (
-          <Text className="text-black text-lg font-bold">{label}</Text>
+          <Text className="text-white text-lg font-bold">{label}</Text>
         )}
       </TouchableOpacity>
     </View>
@@ -448,19 +524,19 @@ export function FooterCta({
 
 export function SuccessInterstitial() {
   return (
-    <View className="flex-1 justify-center items-center gap-4 px-6">
+    <View className="flex-1 justify-center items-center gap-4 px-6 bg-white">
       <Animated.View entering={ZoomIn}>
-        <Icon as={CheckCircle2Icon} size={64} color="#10B981" />
+        <Icon as={CheckCircle2Icon} size={64} color="#6D28D9" />
       </Animated.View>
       <Animated.Text
         entering={FadeIn.delay(200)}
-        className="text-white text-2xl font-bold text-center"
+        className="text-zinc-950 text-2xl font-bold text-center"
       >
         Cadastro completo!
       </Animated.Text>
       <Animated.Text
         entering={FadeIn.delay(400)}
-        className="text-white/80 text-lg text-center"
+        className="text-zinc-500 text-lg text-center"
       >
         Agora só falta o pagamento
       </Animated.Text>

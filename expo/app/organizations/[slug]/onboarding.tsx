@@ -38,17 +38,15 @@ import {
 import { queryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 
-import { BgBlob } from '~/components/bg-blog';
 import {
   animatedLayout,
   FooterCta,
   GlassField,
+  NativeSwitchRow,
   ProgressHeader,
-  ResumeBanner,
   SelectCards,
   SelectChips,
   SuccessInterstitial,
-  YesNoRow,
 } from '~/components/organizations/onboarding/controls';
 import {
   bloodTypeOptions,
@@ -100,12 +98,12 @@ export default function OnboardingScreen() {
 
   if (sessionLoading || isLoading || applicationQuery.isLoading) {
     return (
-      <BgBlob>
+      <View className="flex-1 bg-white">
         <View className="flex-1 justify-center items-center gap-3">
-          <ActivityIndicator color="#FFFFFF" />
-          <Text className="text-white/80">Carregando cadastro...</Text>
+          <ActivityIndicator color="#18181B" />
+          <Text className="text-zinc-500">Carregando cadastro...</Text>
         </View>
-      </BgBlob>
+      </View>
     );
   }
 
@@ -124,13 +122,13 @@ export default function OnboardingScreen() {
 
   if (!slug || isError || !organization) {
     return (
-      <BgBlob>
+      <View className="flex-1 bg-white">
         <View className="flex-1 justify-center items-center px-6">
-          <Text className="text-white text-xl font-bold text-center">
+          <Text className="text-zinc-950 text-xl font-bold text-center">
             Associação não encontrada.
           </Text>
         </View>
-      </BgBlob>
+      </View>
     );
   }
 
@@ -319,6 +317,16 @@ function OnboardingWizard({
     };
   });
 
+  React.useEffect(() => {
+    if (!showResumeBanner) return;
+
+    const timer = setTimeout(() => {
+      setShowResumeBanner(false);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [showResumeBanner]);
+
   const saveNow = async (nextForm: MembershipApplicationForm) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     return saveMutation.mutateAsync(nextForm);
@@ -339,14 +347,17 @@ function OnboardingWizard({
         ) => Partial<MembershipApplicationForm>),
     options: { save?: boolean } = { save: true },
   ) => {
-    const resolved = typeof patch === 'function' ? patch(form) : patch;
-    const next = { ...form, ...resolved };
+    setForm((current) => {
+      const resolved = typeof patch === 'function' ? patch(current) : patch;
+      const next = { ...current, ...resolved };
 
-    setForm(next);
-    if (options.save && !getSubmittedApplicationId()) scheduleSave(next);
-    if (Object.keys(errors).length > 0) {
-      setErrors(getStepErrors(next, step));
-    }
+      if (options.save && !getSubmittedApplicationId()) scheduleSave(next);
+      if (Object.keys(errors).length > 0) {
+        setErrors(getStepErrors(next, step));
+      }
+
+      return next;
+    });
   };
 
   const setField = <T extends FormField>(
@@ -472,21 +483,26 @@ function OnboardingWizard({
 
   if (success) {
     return (
-      <BgBlob>
+      <View className="flex-1 bg-white">
         <SuccessInterstitial />
-      </BgBlob>
+      </View>
     );
   }
 
   return (
-    <BgBlob>
+    <View className="flex-1 bg-white">
       <ProgressHeader
         canGoBack={step > 0}
         currentStep={step}
         onBack={handleBack}
         onClose={() => router.replace('/(tabs)/organizations')}
+        onDismissResume={() => setShowResumeBanner(false)}
+        onRestartResume={restart}
         progress={progress}
         savedVisible={savedVisible}
+        showResumeBanner={showResumeBanner}
+        subtitle={steps[step].subtitle}
+        title={steps[step].title}
         totalSteps={steps.length}
       />
       <KeyboardAvoidingView
@@ -498,20 +514,15 @@ function OnboardingWizard({
           className="flex-1"
           contentContainerClassName="px-6 gap-5"
           contentContainerStyle={{
-            paddingBottom: insets.bottom + 120,
-            paddingTop: insets.top + 88,
+            flexGrow: 1,
+            justifyContent: 'flex-end',
+            paddingBottom: insets.bottom + 112,
+            paddingTop: insets.top + 196,
           }}
           keyboardShouldPersistTaps="handled"
           onScrollBeginDrag={Keyboard.dismiss}
           showsVerticalScrollIndicator={false}
         >
-          {showResumeBanner ? (
-            <ResumeBanner
-              onDismiss={() => setShowResumeBanner(false)}
-              onRestart={restart}
-            />
-          ) : null}
-
           <Animated.View
             key={`step-${step}`}
             entering={
@@ -526,20 +537,6 @@ function OnboardingWizard({
             }
             className="gap-5"
           >
-            <View className="gap-2">
-              <Animated.Text
-                entering={FadeInDown.delay(100).duration(300)}
-                className="text-3xl font-bold text-white leading-9"
-              >
-                {steps[step].title}
-              </Animated.Text>
-              <Animated.Text
-                entering={FadeInDown.delay(200).duration(300)}
-                className="text-white/70 text-base leading-6"
-              >
-                {steps[step].subtitle}
-              </Animated.Text>
-            </View>
             <StepFields
               cepFailed={cepFailed}
               cepLoading={cepLoading}
@@ -555,7 +552,7 @@ function OnboardingWizard({
       {errorMessage ? (
         <Animated.Text
           entering={FadeIn.duration(180)}
-          className="absolute left-6 right-6 text-red-300 text-sm text-center"
+          className="absolute left-6 right-6 text-red-600 text-sm text-center"
           style={{ bottom: insets.bottom + 86 }}
         >
           {errorMessage}
@@ -571,7 +568,7 @@ function OnboardingWizard({
         }
         onPress={handleContinue}
       />
-    </BgBlob>
+    </View>
   );
 }
 
@@ -731,13 +728,13 @@ function StepFields({
             onChangeText={onCepChange}
             required
             rightSlot={
-              cepLoading ? <ActivityIndicator color="#FFFFFF" /> : null
+              cepLoading ? <ActivityIndicator color="#6D28D9" /> : null
             }
             value={form.postal_code}
           />,
         )}
         {cepFailed ? (
-          <Text className="text-amber-300 text-xs">
+          <Text className="text-amber-700 text-xs">
             CEP não encontrado — preencha manualmente
           </Text>
         ) : null}
@@ -820,7 +817,7 @@ function StepFields({
         )}
         {wrap(
           1,
-          <YesNoQuestion
+          <SwitchQuestion
             choice={form.allergies_choice}
             description="Alergias a medicamentos, alimentos ou picadas."
             error={errors.allergies_choice}
@@ -845,7 +842,7 @@ function StepFields({
           : null}
         {wrap(
           3,
-          <YesNoQuestion
+          <SwitchQuestion
             choice={form.dietary_choice}
             error={errors.dietary_choice}
             label="Restrição alimentar"
@@ -879,8 +876,8 @@ function StepFields({
         {wrap(
           0,
           <View className="gap-3">
-            <Text className="text-white/60 text-xs font-medium">
-              Nível de highline <Text className="text-emerald-300">*</Text>
+            <Text className="text-zinc-500 text-xs font-medium">
+              Nível de highline <Text className="text-red-600">*</Text>
             </Text>
             <SelectCards
               error={errors.highline_experience}
@@ -892,9 +889,10 @@ function StepFields({
         )}
         {wrap(
           1,
-          <YesNoRow
+          <NativeSwitchRow
             error={errors.has_rescue_course}
             label="Curso de resgate"
+            description="Ative se você já fez um curso de resgate."
             onChange={(value) => setField('has_rescue_course', value)}
             value={form.has_rescue_course}
           />,
@@ -902,8 +900,8 @@ function StepFields({
         {wrap(
           2,
           <View className="gap-3">
-            <Text className="text-white/60 text-xs font-medium">
-              Primeiros socorros <Text className="text-emerald-300">*</Text>
+            <Text className="text-zinc-500 text-xs font-medium">
+              Primeiros socorros <Text className="text-red-600">*</Text>
             </Text>
             <SelectCards
               error={errors.first_aid_course}
@@ -962,7 +960,7 @@ function StepFields({
   );
 }
 
-function YesNoQuestion({
+function SwitchQuestion({
   choice,
   description,
   error,
@@ -976,12 +974,12 @@ function YesNoQuestion({
   onChange: (value: YesNoValue) => void;
 }) {
   return (
-    <YesNoRow
+    <NativeSwitchRow
       description={description}
       error={error}
       label={label}
       onChange={(value) => onChange(value ? 'yes' : 'no')}
-      value={choice === null ? null : choice === 'yes'}
+      value={choice === 'yes'}
     />
   );
 }
