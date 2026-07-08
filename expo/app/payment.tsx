@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -6,22 +6,38 @@ import {
   CheckCircle2Icon,
   CheckIcon,
   CopyIcon,
-  HandCoinsIcon,
   XIcon,
 } from 'lucide-react-native';
 import React from 'react';
 import QRCode from 'react-qr-code';
-import { Pressable, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
+import { useMountEffect } from '~/hooks/use-mount-effect';
 import { queryKeys } from '~/lib/query-keys';
-import { MANUAL_PAYMENT_PIX_COPY_PASTE } from '~/lib/manual-payment';
 import { supabase } from '~/lib/supabase';
 
 import { BgBlob } from '~/components/bg-blog';
 import { Icon } from '~/components/ui/icon';
+
+type PaymentInstructions = {
+  amount: number | null;
+  pix_copy_paste: string | null;
+  status: 'pending' | 'succeeded' | 'failed' | null;
+  user_marked_paid_at: string | null;
+};
+
+const paymentInstructionsQueryKey = (paymentId: string | undefined) =>
+  ['payment-instructions', paymentId] as const;
 
 export default function PaymentScreen() {
   const router = useRouter();
@@ -33,14 +49,50 @@ export default function PaymentScreen() {
   }>();
   const queryClient = useQueryClient();
   const { profile } = useAuth();
+  const insets = useSafeAreaInsets();
   const [paymentStatus, setPaymentStatus] = React.useState<
     'PENDING' | 'SUCCESS' | 'FAILED'
   >('PENDING');
-  const amountInCents = Number(amount);
-  const formattedAmount = Number.isFinite(amountInCents)
+  const routeAmountInCents = Number(amount);
+  const paymentInstructionsQuery = useQuery({
+    queryKey: paymentInstructionsQueryKey(paymentId),
+    queryFn: async (): Promise<PaymentInstructions> => {
+      if (!paymentId) {
+        return {
+          amount: null,
+          pix_copy_paste: null,
+          status: null,
+          user_marked_paid_at: null,
+        };
+      }
+
+      const { data, error } = await supabase.rpc(
+        'get_manual_payment_instructions',
+        { p_payment_id: paymentId },
+      );
+
+      if (error) throw error;
+
+      return (
+        data?.[0] ?? {
+          amount: null,
+          pix_copy_paste: null,
+          status: null,
+          user_marked_paid_at: null,
+        }
+      );
+    },
+    enabled: Boolean(paymentId),
+  });
+  const paymentInstructions = paymentInstructionsQuery.data;
+  const amountInCents =
+    paymentInstructions?.amount ??
+    (Number.isFinite(routeAmountInCents) ? routeAmountInCents : null);
+  const formattedAmount = amountInCents
     ? `R$ ${(amountInCents / 100).toFixed(2)}`
     : null;
-  const hasManualPixInstructions = Boolean(MANUAL_PAYMENT_PIX_COPY_PASTE);
+  const manualPixCopyPaste = paymentInstructions?.pix_copy_paste ?? '';
+  const hasManualPixInstructions = Boolean(manualPixCopyPaste);
 
   const handleClose = () => {
     if (router.canGoBack()) {
@@ -50,51 +102,58 @@ export default function PaymentScreen() {
     }
   };
 
-  React.useEffect(() => {
-    if (!paymentId) return;
+  const userMarkedPaidAt =
+    paymentInstructions?.user_marked_paid_at ?? null;
 
-    const channel = supabase
-      .channel(`payment-status:${paymentId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'payments',
-          filter: `id=eq.${paymentId}`,
-        },
-        (payload) => {
-          if (payload.new.status === 'succeeded') {
-            setPaymentStatus('SUCCESS');
-            queryClient.invalidateQueries({
-              queryKey: queryKeys.subscription.all,
-            });
-            if (slug && profile?.id) {
-              queryClient.invalidateQueries({
-                queryKey: queryKeys.organizations.isMember(slug, profile.id),
-              });
-              queryClient.invalidateQueries({
-                queryKey: queryKeys.organizations.memberCount(slug),
-              });
-            }
-            setTimeout(() => {
-              if (paymentContext === 'new_member') {
-                router.navigate('/(tabs)/organizations');
-              } else {
-                handleClose();
-              }
-            }, 3000);
-          } else if (payload.new.status === 'failed') {
-            setPaymentStatus('FAILED');
-          }
-        },
-      )
-      .subscribe();
+  const markPaidMutation = useMutation({
+    mutationFn: async () => {
+      if (!paymentId) {
+        throw new Error('paymentId is required.');
+      }
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [paymentId, router, queryClient, slug, profile?.id, paymentContext]);
+      const { data, error } = await supabase.rpc(
+        'mark_manual_payment_paid_by_user',
+        { p_payment_id: paymentId },
+      );
+
+      if (error) throw error;
+
+      return {
+        user_marked_paid_at:
+          data?.[0]?.user_marked_paid_at ?? new Date().toISOString(),
+      };
+    },
+    onSuccess: async (data) => {
+      queryClient.setQueryData<PaymentInstructions>(
+        paymentInstructionsQueryKey(paymentId),
+        (current) => ({
+          amount: current?.amount ?? amountInCents,
+          pix_copy_paste: current?.pix_copy_paste ?? null,
+          status: current?.status ?? 'pending',
+          user_marked_paid_at: data.user_marked_paid_at,
+        }),
+      );
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.subscription.all,
+      });
+
+      if (paymentContext === 'new_member') {
+        router.replace('/(tabs)/organizations');
+      } else {
+        handleClose();
+      }
+    },
+    onError: (error) => {
+      console.error('Failed to mark payment as paid by user:', error);
+    },
+  });
+
+  const handleMarkPaid = async () => {
+    if (!paymentId || markPaidMutation.isPending || userMarkedPaidAt) return;
+
+    markPaidMutation.mutate();
+  };
 
   if (paymentStatus === 'SUCCESS') {
     return (
@@ -139,6 +198,18 @@ export default function PaymentScreen() {
     );
   }
 
+  if (paymentInstructionsQuery.isLoading) {
+    return (
+      <BgBlob>
+        <CloseButton onClose={handleClose} />
+        <View className="flex-1 justify-center items-center gap-4">
+          <ActivityIndicator color="#FFFFFF" />
+          <Text className="text-white/80">Carregando pagamento...</Text>
+        </View>
+      </BgBlob>
+    );
+  }
+
   if (!paymentId || !hasManualPixInstructions) {
     return (
       <BgBlob>
@@ -150,6 +221,16 @@ export default function PaymentScreen() {
           <Text className="text-white/80 text-center leading-6">
             O PIX da associação ainda não foi configurado no aplicativo.
           </Text>
+          {paymentInstructionsQuery.isError ? (
+            <Text className="text-white/60 text-center text-sm">
+              Não foi possível carregar os dados do pagamento.
+            </Text>
+          ) : null}
+          {formattedAmount ? (
+            <Text className="text-white/60 text-center text-sm">
+              Valor solicitado: {formattedAmount}
+            </Text>
+          ) : null}
         </View>
       </BgBlob>
     );
@@ -157,23 +238,30 @@ export default function PaymentScreen() {
 
   return (
     <BgBlob>
+      <PaymentStatusSubscription
+        key={`${paymentId}:${slug ?? ''}:${profile?.id ?? ''}:${
+          paymentContext ?? ''
+        }`}
+        paymentContext={paymentContext}
+        paymentId={paymentId}
+        profileId={profile?.id}
+        queryClient={queryClient}
+        slug={slug}
+        onClose={handleClose}
+        onFailed={() => setPaymentStatus('FAILED')}
+        onSucceeded={() => setPaymentStatus('SUCCESS')}
+      />
       <CloseButton onClose={handleClose} />
-      <View className="flex-1 pt-16">
-        {/* Header * */}
-        <View className="items-center mb-8">
-          <Animated.View
-            entering={FadeInDown.delay(300).duration(300)}
-            className="bg-emerald-500/20 backdrop-blur-xl rounded-full p-4 mb-4 border-2 border-emerald-400/30"
-          >
-            <Icon
-              as={HandCoinsIcon}
-              size={32}
-              className="text-emerald-500"
-            />
-          </Animated.View>
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="pt-20"
+        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="items-center mb-6 px-6">
           <Animated.Text
             entering={FadeInDown.delay(400).duration(300)}
-            className="text-3xl font-bold text-white text-center mb-2"
+            className="text-3xl font-bold text-white text-center mb-2 leading-9"
           >
             {paymentContext === 'subscription_renewal'
               ? 'Pague sua mensalidade'
@@ -181,7 +269,7 @@ export default function PaymentScreen() {
           </Animated.Text>
           <Animated.Text
             entering={FadeInDown.delay(500).duration(300)}
-            className="text-white text-center text-xl leading-6"
+            className="text-white/90 text-center text-lg leading-6"
           >
             {paymentContext === 'subscription_renewal'
               ? 'Realize o pagamento para ficar em dia com a Associação'
@@ -190,15 +278,14 @@ export default function PaymentScreen() {
         </View>
 
         <>
-          {/* QR Code */}
           <Animated.View
             entering={FadeInDown.delay(700).duration(500)}
-            className="items-center mb-8"
+            className="items-center mb-5"
           >
-            <View className="bg-white p-6 rounded-3xl shadow-2xl">
+            <View className="bg-white p-5 rounded-3xl shadow-2xl">
               <QRCode
-                value={MANUAL_PAYMENT_PIX_COPY_PASTE}
-                size={220}
+                value={manualPixCopyPaste}
+                size={200}
                 level="M"
               />
             </View>
@@ -206,9 +293,9 @@ export default function PaymentScreen() {
 
           <Animated.View
             entering={FadeIn.delay(900).duration(300)}
-            className="items-center mb-6 px-4"
+            className="items-center mb-5 px-4"
           >
-            <CopyCode code={MANUAL_PAYMENT_PIX_COPY_PASTE} />
+            <CopyCode code={manualPixCopyPaste} />
           </Animated.View>
 
           <Animated.View
@@ -221,18 +308,141 @@ export default function PaymentScreen() {
               </Text>
             ) : null}
             <Text className="text-white/80 text-center text-sm leading-5">
-              Após pagar, a confirmação será feita manualmente pela associação.
-              Esta tela atualiza quando o pagamento for aprovado.
-            </Text>
-            <Text className="text-white/50 text-center text-xs leading-4">
-              Solicitação: {paymentId}
+              Depois de pagar, toque em "Já paguei". A equipe confere o PIX e
+              aprova sua assinatura manualmente.
             </Text>
           </Animated.View>
+
+          <Animated.View
+            entering={FadeIn.delay(1100).duration(300)}
+            className="mx-6 mt-4 gap-3"
+          >
+            <TouchableOpacity
+              onPress={handleMarkPaid}
+              disabled={markPaidMutation.isPending || Boolean(userMarkedPaidAt)}
+              activeOpacity={0.85}
+              className={`rounded-full py-4 items-center justify-center ${
+                userMarkedPaidAt ? 'bg-emerald-500/20' : 'bg-white'
+              }`}
+            >
+              {markPaidMutation.isPending ? (
+                <ActivityIndicator color="#000" />
+              ) : (
+                <View className="flex-row items-center gap-2">
+                  {userMarkedPaidAt ? (
+                    <Icon as={CheckIcon} size={18} color="#34D399" />
+                  ) : null}
+                  <Text
+                    className={`text-lg font-bold ${
+                      userMarkedPaidAt ? 'text-emerald-300' : 'text-black'
+                    }`}
+                  >
+                    {userMarkedPaidAt ? 'Pagamento informado' : 'Já paguei'}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {userMarkedPaidAt ? (
+              <Text className="text-white/70 text-center text-sm leading-5">
+                Recebemos seu aviso. A associação vai conferir o pagamento e
+                aprovar manualmente sua assinatura.
+              </Text>
+            ) : null}
+
+            {markPaidMutation.isError ? (
+              <Text className="text-red-200 text-center text-sm leading-5">
+                Não foi possível avisar a associação agora. Tente novamente.
+              </Text>
+            ) : null}
+          </Animated.View>
         </>
-      </View>
+      </ScrollView>
     </BgBlob>
   );
 }
+
+const PaymentStatusSubscription = ({
+  paymentContext,
+  paymentId,
+  profileId,
+  queryClient,
+  slug,
+  onClose,
+  onFailed,
+  onSucceeded,
+}: {
+  paymentContext?: 'new_member' | 'subscription_renewal';
+  paymentId?: string;
+  profileId?: string;
+  queryClient: ReturnType<typeof useQueryClient>;
+  slug?: string;
+  onClose: () => void;
+  onFailed: () => void;
+  onSucceeded: () => void;
+}) => {
+  const router = useRouter();
+
+  useMountEffect(() => {
+    if (!paymentId) return;
+
+    const channel = supabase
+      .channel(`payment-status:${paymentId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'payments',
+          filter: `id=eq.${paymentId}`,
+        },
+        (payload) => {
+          if (payload.new.status === 'succeeded') {
+            onSucceeded();
+            queryClient.invalidateQueries({
+              queryKey: queryKeys.subscription.all,
+            });
+            if (slug && profileId) {
+              queryClient.invalidateQueries({
+                queryKey: queryKeys.organizations.isMember(slug, profileId),
+              });
+              queryClient.invalidateQueries({
+                queryKey: queryKeys.organizations.memberCount(slug),
+              });
+            }
+            setTimeout(() => {
+              if (paymentContext === 'new_member') {
+                router.navigate('/(tabs)/organizations');
+              } else {
+                onClose();
+              }
+            }, 3000);
+          } else if (payload.new.status === 'failed') {
+            onFailed();
+          }
+
+          if (typeof payload.new.user_marked_paid_at === 'string') {
+            queryClient.setQueryData<PaymentInstructions>(
+              paymentInstructionsQueryKey(paymentId),
+              (current) => ({
+                amount: current?.amount ?? null,
+                pix_copy_paste: current?.pix_copy_paste ?? null,
+                status: current?.status ?? null,
+                user_marked_paid_at: payload.new.user_marked_paid_at,
+              }),
+            );
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  });
+
+  return null;
+};
 
 const CopyCode = ({ code }: { code: string }) => {
   const [copied, setCopied] = React.useState(false);

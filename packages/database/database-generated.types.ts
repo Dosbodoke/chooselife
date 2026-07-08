@@ -723,25 +723,31 @@ export type Database = {
       organizations: {
         Row: {
           annual_price_amount: number | null
+          annual_pix_copy_paste: string | null
           created_at: string
           id: string
           monthly_price_amount: number | null
+          monthly_pix_copy_paste: string | null
           name: string
           slug: string
         }
         Insert: {
           annual_price_amount?: number | null
+          annual_pix_copy_paste?: string | null
           created_at?: string
           id?: string
           monthly_price_amount?: number | null
+          monthly_pix_copy_paste?: string | null
           name: string
           slug: string
         }
         Update: {
           annual_price_amount?: number | null
+          annual_pix_copy_paste?: string | null
           created_at?: string
           id?: string
           monthly_price_amount?: number | null
+          monthly_pix_copy_paste?: string | null
           name?: string
           slug?: string
         }
@@ -760,6 +766,7 @@ export type Database = {
           settlement_applied_at: string | null
           status: Database["public"]["Enums"]["payment_status_enum"]
           subscription_id: string
+          user_marked_paid_at: string | null
           user_id: string
         }
         Insert: {
@@ -774,6 +781,7 @@ export type Database = {
           settlement_applied_at?: string | null
           status?: Database["public"]["Enums"]["payment_status_enum"]
           subscription_id: string
+          user_marked_paid_at?: string | null
           user_id: string
         }
         Update: {
@@ -788,6 +796,7 @@ export type Database = {
           settlement_applied_at?: string | null
           status?: Database["public"]["Enums"]["payment_status_enum"]
           subscription_id?: string
+          user_marked_paid_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1224,6 +1233,16 @@ export type Database = {
         Args: never
         Returns: number
       }
+      get_manual_payment_instructions: {
+        Args: { p_payment_id: string }
+        Returns: {
+          amount: number
+          payment_id: string
+          pix_copy_paste: string | null
+          status: Database["public"]["Enums"]["payment_status_enum"]
+          user_marked_paid_at: string | null
+        }[]
+      }
       mark_payment_succeeded_manually: {
         Args: { p_paid_at?: string; p_payment_id: string }
         Returns: {
@@ -1233,6 +1252,14 @@ export type Database = {
           previous_status: Database["public"]["Enums"]["payment_status_enum"]
           settlement_applied_at: string | null
           status: Database["public"]["Enums"]["payment_status_enum"]
+        }[]
+      }
+      mark_manual_payment_paid_by_user: {
+        Args: { p_payment_id: string }
+        Returns: {
+          payment_id: string
+          status: Database["public"]["Enums"]["payment_status_enum"]
+          user_marked_paid_at: string | null
         }[]
       }
       get_highline: {

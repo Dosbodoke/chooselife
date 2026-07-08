@@ -68,13 +68,28 @@ Use the provided deployment script instead of running `supabase functions deploy
 
 #### Manual PIX Configuration
 
-Configure the fixed PIX details in the Expo environment used to build the app:
+Configure the fixed PIX details on the association record in the database,
+alongside the plan prices:
 
-```bash
-EXPO_PUBLIC_MEMBERSHIP_PIX_COPY_PASTE=<fixed-pix-copy-and-paste-code>
+```sql
+update public.organizations
+set
+  monthly_price_amount = 3500,
+  monthly_pix_copy_paste = '<monthly-fixed-pix-copy-and-paste-code>',
+  annual_price_amount = 36000,
+  annual_pix_copy_paste = '<annual-fixed-pix-copy-and-paste-code>'
+where slug = 'slac';
 ```
 
-This value must be present for the payment screen to show payment instructions. The QR code is generated locally from this fixed copy-paste code and is not generated per payment request.
+The QR code is generated locally from the copy-paste payload returned by
+`get_manual_payment_instructions(payment_id)` for the signed-in owner of the
+manual payment. The payload is fixed per plan and is not generated per payment
+request.
+
+After paying, the user can tap **Já paguei**. This only records
+`payments.user_marked_paid_at` so the team knows the user claims to have paid;
+the payment remains `pending` until an admin manually confirms it with
+`mark_payment_succeeded_manually`.
 
 #### Optional Gateway Configuration
 

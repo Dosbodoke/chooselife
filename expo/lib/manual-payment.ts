@@ -1,6 +1,3 @@
-export const MANUAL_PAYMENT_PIX_COPY_PASTE =
-  process.env.EXPO_PUBLIC_MEMBERSHIP_PIX_COPY_PASTE ?? '';
-
 export function getManualPaymentRouteParams({
   amount,
   paymentId,
