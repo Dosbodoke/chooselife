@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import type { MembershipApplication } from '~/lib/membership-application';
 import { getR2PublicUrl } from '~/lib/r2';
 import { Tables } from '~/utils/database.types';
 
@@ -46,7 +47,13 @@ export const showcaseData: ShowcaseItemData[] = [
 
 const carouselData = [...showcaseData, { type: 'form' }];
 
-export function Carousel({ org }: { org: Tables<'organizations'> }) {
+export function Carousel({
+  membershipApplication,
+  org,
+}: {
+  membershipApplication: MembershipApplication | null;
+  org: Tables<'organizations'>;
+}) {
   const { width, height } = useWindowDimensions();
 
   const animatedRef =
@@ -106,6 +113,7 @@ export function Carousel({ org }: { org: Tables<'organizations'> }) {
                 scrollY={scrollY}
                 itemIndex={index}
                 itemHeight={height}
+                membershipApplication={membershipApplication}
                 org={org}
               />
             )}
