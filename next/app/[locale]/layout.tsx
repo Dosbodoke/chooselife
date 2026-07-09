@@ -83,6 +83,11 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
+// NavBar reads auth cookies on every request. Without this, Next may try to
+// statically render locale shells (via generateStaticParams) and then throw
+// DYNAMIC_SERVER_USAGE at runtime when cookies() is reached.
+export const dynamic = "force-dynamic";
+
 export default async function RootLayout({
   children,
   params,
@@ -95,7 +100,7 @@ export default async function RootLayout({
     notFound();
   }
 
-  // Enable static rendering
+  // Ensure next-intl uses the active locale for this request
   setRequestLocale(locale);
   const messages = await getMessages();
 
