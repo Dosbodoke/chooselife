@@ -154,23 +154,32 @@ export default function PaymentScreen() {
     markPaidMutation.mutate();
   };
 
+  const paymentTitle =
+    paymentContext === 'subscription_renewal'
+      ? 'Pague sua mensalidade'
+      : 'Finalize seu cadastro';
+  const paymentSubtitle =
+    paymentContext === 'subscription_renewal'
+      ? 'Realize o pagamento para ficar em dia com a Associação'
+      : 'Realize o pagamento para se tornar membro oficial';
+
   if (paymentStatus === 'SUCCESS') {
     return (
       <BgBlob>
         <CloseButton onClose={handleClose} />
-        <View className="flex-1 justify-center items-center gap-4">
+        <View className="flex-1 justify-center items-center gap-3 px-6">
           <Animated.View entering={ZoomIn}>
             <Icon as={CheckCircle2Icon} size={64} color="#10B981" />
           </Animated.View>
           <Animated.Text
             entering={FadeIn.delay(200)}
-            className="text-white text-2xl font-bold"
+            className="text-white text-3xl font-bold text-center leading-9"
           >
             Pagamento confirmado!
           </Animated.Text>
           <Animated.Text
             entering={FadeIn.delay(400)}
-            className="text-white/80 text-lg text-center"
+            className="text-white/65 text-[15px] text-center leading-6"
           >
             {paymentContext === 'subscription_renewal'
               ? 'Você está em dia com a Associação!'
@@ -185,13 +194,13 @@ export default function PaymentScreen() {
     return (
       <BgBlob>
         <CloseButton onClose={handleClose} />
-        <View className="flex-1 justify-center items-center gap-4">
-          <Animated.Text className="text-white text-2xl font-bold">
+        <View className="flex-1 justify-center items-center gap-3 px-6">
+          <Text className="text-white text-3xl font-bold text-center leading-9">
             Pagamento falhou
-          </Animated.Text>
+          </Text>
           <Pressable
             onPress={() => router.back()}
-            className="active:opacity-70"
+            className="active:opacity-70 mt-2"
           >
             <Text className="text-white underline">Tentar novamente</Text>
           </Pressable>
@@ -217,19 +226,19 @@ export default function PaymentScreen() {
       <BgBlob>
         <CloseButton onClose={handleClose} />
         <View className="flex-1 justify-center items-center px-6 gap-3">
-          <Text className="text-white text-2xl font-bold text-center">
+          <Text className="text-white text-3xl font-bold text-center leading-9">
             Pagamento indisponível
           </Text>
-          <Text className="text-white/80 text-center leading-6">
+          <Text className="text-white/65 text-[15px] text-center leading-6">
             O PIX da associação ainda não foi configurado no aplicativo.
           </Text>
           {paymentInstructionsQuery.isError ? (
-            <Text className="text-white/60 text-center text-sm">
+            <Text className="text-white/50 text-center text-sm">
               Não foi possível carregar os dados do pagamento.
             </Text>
           ) : null}
           {formattedAmount ? (
-            <Text className="text-white/60 text-center text-sm">
+            <Text className="text-white/50 text-center text-sm">
               Valor solicitado: {formattedAmount}
             </Text>
           ) : null}
@@ -238,6 +247,7 @@ export default function PaymentScreen() {
     );
   }
 
+  // Editorial Vault: title lives only in the content stack; close is ghost chrome.
   return (
     <BgBlob>
       <PaymentStatusSubscription
@@ -256,116 +266,116 @@ export default function PaymentScreen() {
       <CloseButton onClose={handleClose} />
       <ScrollView
         className="flex-1"
-        contentContainerClassName="pt-20"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingBottom: insets.bottom + 32,
+          // Clear the floating X without a header bar competing for hierarchy.
+          paddingTop: insets.top + 56,
+        }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="items-center mb-6 px-6">
+        <View className="items-center px-6 mb-7">
           <Animated.Text
-            entering={FadeInDown.delay(400).duration(300)}
-            className="text-3xl font-bold text-white text-center mb-2 leading-9"
+            accessibilityRole="header"
+            entering={FadeInDown.delay(300).duration(300)}
+            className="text-white text-[32px] font-bold text-center leading-9 mb-2"
           >
-            {paymentContext === 'subscription_renewal'
-              ? 'Pague sua mensalidade'
-              : 'Finalize seu cadastro'}
+            {paymentTitle}
           </Animated.Text>
           <Animated.Text
-            entering={FadeInDown.delay(500).duration(300)}
-            className="text-white/90 text-center text-lg leading-6"
+            entering={FadeInDown.delay(400).duration(300)}
+            className="text-white/65 text-[15px] text-center leading-6"
           >
-            {paymentContext === 'subscription_renewal'
-              ? 'Realize o pagamento para ficar em dia com a Associação'
-              : 'Realize o pagamento para se tornar membro oficial'}
+            {paymentSubtitle}
           </Animated.Text>
         </View>
 
-        <>
-          <Animated.View
-            entering={FadeInDown.delay(700).duration(500)}
-            className="items-center mb-5"
-          >
-            <View className="bg-white p-5 rounded-3xl shadow-2xl">
-              <QRCode
-                value={manualPixCopyPaste}
-                size={200}
-                level="M"
-              />
-            </View>
-          </Animated.View>
+        <Animated.View
+          entering={FadeInDown.delay(550).duration(450)}
+          className="items-center mb-4"
+        >
+          <View className="bg-white p-5 rounded-3xl shadow-2xl">
+            <QRCode value={manualPixCopyPaste} size={220} level="M" />
+          </View>
+        </Animated.View>
 
-          <Animated.View
-            entering={FadeIn.delay(900).duration(300)}
-            className="items-center mb-5 px-4"
-          >
-            <CopyCode code={manualPixCopyPaste} />
-          </Animated.View>
+        <Animated.View
+          entering={FadeIn.delay(700).duration(300)}
+          className="items-center mb-5 px-6"
+        >
+          <CopyCode code={manualPixCopyPaste} />
+        </Animated.View>
 
-          <Animated.View
-            entering={FadeIn.delay(1000).duration(300)}
-            className="mx-6 rounded-2xl border border-white/15 bg-white/10 px-5 py-4 gap-2"
-          >
-            {formattedAmount ? (
-              <Text className="text-white text-center text-lg font-bold">
-                Valor: {formattedAmount}
-              </Text>
-            ) : null}
-            <Text className="text-white/80 text-center text-sm leading-5">
-              Depois de pagar, toque em "Já paguei". A equipe confere o PIX e
-              aprova sua assinatura manualmente.
+        <Animated.View
+          entering={FadeIn.delay(800).duration(300)}
+          className="mx-6 rounded-2xl border border-white/15 bg-white/10 px-5 py-4 gap-1.5 mb-6"
+        >
+          {formattedAmount ? (
+            <Text className="text-white text-center text-3xl font-bold tabular-nums tracking-tight">
+              {formattedAmount}
             </Text>
-          </Animated.View>
+          ) : null}
+          <Text className="text-white/50 text-center text-xs font-medium">
+            {paymentContext === 'subscription_renewal'
+              ? 'Mensalidade'
+              : 'Associação'}
+          </Text>
+          <Text className="text-white/65 text-center text-sm leading-5 mt-1">
+            Depois de pagar, toque em "Já paguei". A equipe confere o PIX e
+            aprova sua assinatura manualmente.
+          </Text>
+        </Animated.View>
 
-          <Animated.View
-            entering={FadeIn.delay(1100).duration(300)}
-            className="mx-6 mt-4 gap-3"
+        <Animated.View
+          entering={FadeIn.delay(900).duration(300)}
+          className="mx-6 gap-3 mt-auto"
+        >
+          <Pressable
+            onPress={handleMarkPaid}
+            disabled={markPaidMutation.isPending || Boolean(userMarkedPaidAt)}
+            className={`rounded-full py-4 items-center justify-center ${
+              userMarkedPaidAt ? 'bg-emerald-500/20' : 'bg-white'
+            }`}
+            style={({ pressed }) => ({
+              opacity:
+                markPaidMutation.isPending || userMarkedPaidAt
+                  ? undefined
+                  : pressed
+                    ? 0.85
+                    : 1,
+            })}
           >
-            <Pressable
-              onPress={handleMarkPaid}
-              disabled={markPaidMutation.isPending || Boolean(userMarkedPaidAt)}
-              className={`rounded-full py-4 items-center justify-center ${
-                userMarkedPaidAt ? 'bg-emerald-500/20' : 'bg-white'
-              }`}
-              style={({ pressed }) => ({
-                opacity:
-                  markPaidMutation.isPending || userMarkedPaidAt
-                    ? undefined
-                    : pressed
-                      ? 0.85
-                      : 1,
-              })}
-            >
-              {markPaidMutation.isPending ? (
-                <ActivityIndicator color="#000" />
-              ) : (
-                <View className="flex-row items-center gap-2">
-                  {userMarkedPaidAt ? (
-                    <Icon as={CheckIcon} size={18} color="#34D399" />
-                  ) : null}
-                  <Text
-                    className={`text-lg font-bold ${
-                      userMarkedPaidAt ? 'text-emerald-300' : 'text-black'
-                    }`}
-                  >
-                    {userMarkedPaidAt ? 'Pagamento informado' : 'Já paguei'}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
+            {markPaidMutation.isPending ? (
+              <ActivityIndicator color="#000" />
+            ) : (
+              <View className="flex-row items-center gap-2">
+                {userMarkedPaidAt ? (
+                  <Icon as={CheckIcon} size={18} color="#34D399" />
+                ) : null}
+                <Text
+                  className={`text-[17px] font-bold ${
+                    userMarkedPaidAt ? 'text-emerald-300' : 'text-black'
+                  }`}
+                >
+                  {userMarkedPaidAt ? 'Pagamento informado' : 'Já paguei'}
+                </Text>
+              </View>
+            )}
+          </Pressable>
 
-            {userMarkedPaidAt ? (
-              <Text className="text-white/70 text-center text-sm leading-5">
-                Recebemos seu aviso. A associação vai conferir o pagamento e
-                aprovar manualmente sua assinatura.
-              </Text>
-            ) : null}
+          {userMarkedPaidAt ? (
+            <Text className="text-white/50 text-center text-sm leading-5">
+              Recebemos seu aviso. A associação vai conferir o pagamento e
+              aprovar manualmente sua assinatura.
+            </Text>
+          ) : null}
 
-            {markPaidMutation.isError ? (
-              <Text className="text-red-200 text-center text-sm leading-5">
-                Não foi possível avisar a associação agora. Tente novamente.
-              </Text>
-            ) : null}
-          </Animated.View>
-        </>
+          {markPaidMutation.isError ? (
+            <Text className="text-red-200 text-center text-sm leading-5">
+              Não foi possível avisar a associação agora. Tente novamente.
+            </Text>
+          ) : null}
+        </Animated.View>
       </ScrollView>
     </BgBlob>
   );
@@ -497,19 +507,19 @@ const CopyCode = ({ code }: { code: string }) => {
   );
 };
 
+/** Dismiss control — never shares a row with the content title. */
 const CloseButton = ({ onClose }: { onClose: () => void }) => {
   const insets = useSafeAreaInsets();
 
   return (
     <Pressable
       onPress={onClose}
-      className="absolute right-6 p-2.5 rounded-full bg-background/80 z-50"
-      style={{
-        top: insets.top + 12,
-      }}
-      hitSlop={12}
+      accessibilityLabel="Fechar"
+      className="absolute right-5 z-50 h-11 w-11 items-center justify-center rounded-full bg-white"
+      style={{ top: insets.top + 8 }}
+      hitSlop={8}
     >
-      <Icon as={XIcon} size={20} className="fill-muted" />
+      <Icon as={XIcon} size={20} color="#18181B" />
     </Pressable>
   );
 };
