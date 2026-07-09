@@ -15,7 +15,7 @@ import DateTimePicker from '@expo/ui/community/datetime-picker';
 import {
   ActivityIndicator,
   Platform,
-  TouchableOpacity,
+  Pressable,
   View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
@@ -445,7 +445,10 @@ const RigTypeOption: React.FC<{
   title: string;
   description: string;
 }> = ({ isSelected, onSelect, icon, title, description }) => (
-  <TouchableOpacity onPress={onSelect} activeOpacity={0.7}>
+  <Pressable
+    onPress={onSelect}
+    style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+  >
     <Card
       className={cn(
         'border-2 transition-colors',
@@ -475,7 +478,7 @@ const RigTypeOption: React.FC<{
         </View>
       </CardContent>
     </Card>
-  </TouchableOpacity>
+  </Pressable>
 );
 
 const DateForm: React.FC<{

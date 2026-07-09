@@ -15,7 +15,6 @@ import {
   Pressable,
   ScrollView,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
@@ -190,9 +189,12 @@ export default function PaymentScreen() {
           <Animated.Text className="text-white text-2xl font-bold">
             Pagamento falhou
           </Animated.Text>
-          <TouchableOpacity onPress={() => router.back()}>
+          <Pressable
+            onPress={() => router.back()}
+            className="active:opacity-70"
+          >
             <Text className="text-white underline">Tentar novamente</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </BgBlob>
     );
@@ -317,13 +319,20 @@ export default function PaymentScreen() {
             entering={FadeIn.delay(1100).duration(300)}
             className="mx-6 mt-4 gap-3"
           >
-            <TouchableOpacity
+            <Pressable
               onPress={handleMarkPaid}
               disabled={markPaidMutation.isPending || Boolean(userMarkedPaidAt)}
-              activeOpacity={0.85}
               className={`rounded-full py-4 items-center justify-center ${
                 userMarkedPaidAt ? 'bg-emerald-500/20' : 'bg-white'
               }`}
+              style={({ pressed }) => ({
+                opacity:
+                  markPaidMutation.isPending || userMarkedPaidAt
+                    ? undefined
+                    : pressed
+                      ? 0.85
+                      : 1,
+              })}
             >
               {markPaidMutation.isPending ? (
                 <ActivityIndicator color="#000" />
@@ -341,7 +350,7 @@ export default function PaymentScreen() {
                   </Text>
                 </View>
               )}
-            </TouchableOpacity>
+            </Pressable>
 
             {userMarkedPaidAt ? (
               <Text className="text-white/70 text-center text-sm leading-5">
@@ -460,12 +469,12 @@ const CopyCode = ({ code }: { code: string }) => {
   };
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={handleCopy}
-      activeOpacity={0.8}
       className={`bg-white/10 backdrop-blur-xl px-6 py-3 rounded-full border ${
         copied ? 'border-emerald-400/50' : 'border-transparent'
       }`}
+      style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
     >
       <View className="flex-row items-center gap-2">
         {copied ? (
@@ -484,7 +493,7 @@ const CopyCode = ({ code }: { code: string }) => {
           </>
         )}
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
