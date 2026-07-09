@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -188,9 +188,10 @@ function useOnboardingWizard({
     defaultValues: initialForm,
     mode: 'onChange',
   });
-  // `watch()` subscribes this component to every field change and always returns
-  // the live form values (not a stale initial snapshot).
-  const currentForm = form.watch();
+  const currentForm = useWatch({
+    control: form.control,
+    defaultValue: initialForm,
+  }) as MembershipApplicationForm;
   const [step, setStep] = React.useState(() =>
     application?.status === 'submitted'
       ? steps.length - 1
@@ -391,12 +392,15 @@ function useOnboardingWizard({
   );
 
   // Subscribe once: Effect Events always read the current callbacks and state.
-  // react-doctor-disable-next-line react-hooks-js/incompatible-library
-  React.useEffect(() => {
-    const subscription = form.watch(handleFormValuesChange);
-
-    return () => subscription.unsubscribe();
-  }, [form]);
+  // `subscribe` is react-hook-form's compiler-safe, non-rendering subscription
+  // API; its legacy `watch(callback)` overload prevents React Compiler output.
+  useMountEffect(() =>
+    form.subscribe({
+      formState: { values: true },
+      callback: ({ values, name }) =>
+        handleFormValuesChange(values, { name }),
+    }),
+  );
 
   const setField = <T extends FormField>(
     field: T,
