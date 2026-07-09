@@ -1,10 +1,9 @@
 "use server";
 
-import { type CookieOptions, createServerClient } from "@supabase/ssr";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
 
 import type { Database } from "@/utils/supabase/database.types";
+import { createSupabaseClient } from "@/utils/supabase/server";
 
 import {
   type NotificationFormData,
@@ -56,25 +55,7 @@ export async function sendNotification(
       };
     }
 
-    // Create Supabase client
-    const cookieStore = await cookies();
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.set({ name, value: "", ...options });
-          },
-        },
-      },
-    );
+    const supabase = await createSupabaseClient();
 
     // Prepare notification data
     const title = {
@@ -120,27 +101,8 @@ export async function sendNotification(
 
 export async function getRecentNotifications() {
   try {
-    // Create Supabase client
-    const cookieStore = await cookies();
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.set({ name, value: "", ...options });
-          },
-        },
-      },
-    );
+    const supabase = await createSupabaseClient();
 
-    // Get recent notifications
     const { data, error } = await supabase
       .from("notifications")
       .select("*")
@@ -152,11 +114,13 @@ export async function getRecentNotifications() {
       return [];
     }
 
-    return (data as Array<
-      Database["public"]["Tables"]["notifications"]["Row"]
-    >) || [];
+    return (
+      (data as Array<
+        Database["public"]["Tables"]["notifications"]["Row"]
+      >) || []
+    );
   } catch (error) {
-    console.error("Server action error:", error);
+    console.error("Error fetching notifications:", error);
     return [];
   }
 }
