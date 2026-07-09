@@ -9,7 +9,7 @@
       "distribution": "internal",
       "channel": "development",
       "environment": "development",
-      "node": "22.14.0",
+      "node": "24.18.0",
       "pnpm": "11.10.0",
       "ios": {
         "simulator": true
@@ -19,14 +19,14 @@
       "distribution": "internal",
       "channel": "preview",
       "environment": "preview",
-      "node": "22.14.0",
+      "node": "24.18.0",
       "pnpm": "11.10.0"
     },
     "production": {
       "autoIncrement": true,
       "channel": "production",
       "environment": "production",
-      "node": "22.14.0",
+      "node": "24.18.0",
       "pnpm": "11.10.0"
     }
   },
