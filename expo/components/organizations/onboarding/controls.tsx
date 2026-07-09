@@ -27,8 +27,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { _layoutAnimation } from '~/utils/constants';
-
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 
@@ -570,5 +568,3 @@ export function SuccessInterstitial() {
     </View>
   );
 }
-
-export const animatedLayout = _layoutAnimation;

@@ -4,12 +4,12 @@ import { ActivityIndicator, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import {
-  animatedLayout,
   GlassField,
   NativeSwitchRow,
   SelectCards,
   SelectChips,
 } from '~/components/organizations/onboarding/controls';
+import { _layoutAnimation } from '~/utils/constants';
 import {
   bloodTypeOptions,
   firstAidOptions,
@@ -44,7 +44,7 @@ function FieldWrap({
   return (
     <Animated.View
       entering={FadeInDown.delay(250 + index * 60).duration(300)}
-      layout={animatedLayout}
+      layout={_layoutAnimation}
     >
       {children}
     </Animated.View>
