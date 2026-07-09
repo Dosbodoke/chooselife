@@ -56,45 +56,42 @@ export default function FestivalScreen() {
   const selectedCard =
     cards.find((item) => item.highline.id === selectedHighlineId) ?? null;
 
-  const handleOpenSchedule = React.useCallback(
-    (card: FestivalHighlineScheduleCard, dayKey?: string | null) => {
-      router.setParams({
-        highline: card.highline.id,
-        day: dayKey ?? card.defaultDayKey,
-      });
-    },
-    [router],
-  );
+  const handleOpenSchedule = (
+    card: FestivalHighlineScheduleCard,
+    dayKey?: string | null,
+  ) => {
+    router.setParams({
+      highline: card.highline.id,
+      day: dayKey ?? card.defaultDayKey,
+    });
+  };
 
-  const handleDismissSchedule = React.useCallback(() => {
+  const handleDismissSchedule = () => {
     router.setParams({
       highline: undefined,
       day: undefined,
     });
-  }, [router]);
+  };
 
-  const handleSelectDayKey = React.useCallback(
-    (dayKey: string) => {
-      if (!selectedHighlineId) {
-        return;
-      }
+  const handleSelectDayKey = (dayKey: string) => {
+    if (!selectedHighlineId) {
+      return;
+    }
 
-      router.setParams({
-        highline: selectedHighlineId,
-        day: dayKey,
-      });
-    },
-    [router, selectedHighlineId],
-  );
+    router.setParams({
+      highline: selectedHighlineId,
+      day: dayKey,
+    });
+  };
 
-  const handleShareFestival = React.useCallback(async () => {
+  const handleShareFestival = async () => {
     const url = `${process.env.EXPO_PUBLIC_WEB_URL}/festival/${festivalSlug}`;
 
     await share({
       title,
       url,
     });
-  }, [share, title, festivalSlug]);
+  };
 
   return (
     <>

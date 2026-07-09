@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import Animated, {
   interpolate,
+  type SharedValue,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
@@ -41,6 +42,191 @@ interface WidgetItem {
 
 interface WidgetProps {
   items: WidgetItem[];
+}
+
+type WidgetSlideProps = {
+  heroHeight: number;
+  index: number;
+  item: WidgetItem;
+  scrollX: SharedValue<number>;
+  topInset: number;
+};
+
+function WidgetSlide({
+  heroHeight,
+  index,
+  item,
+  scrollX,
+  topInset,
+}: WidgetSlideProps) {
+  const backgroundAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        translateX: interpolate(
+          scrollX.value,
+          [
+            (index - 1) * CARD_WIDTH,
+            index * CARD_WIDTH,
+            (index + 1) * CARD_WIDTH,
+          ],
+          [-24, 0, 24],
+          'clamp',
+        ),
+      },
+    ],
+  }));
+
+  return (
+    <Animated.View
+      className="justify-center items-center"
+      style={{ width: CARD_WIDTH, height: heroHeight }}
+    >
+      <Animated.View className="flex-1 w-full">
+        <Pressable
+          onPress={item.onPress}
+          className="flex-1 w-full overflow-hidden bg-black"
+        >
+          <Animated.View
+            className="absolute inset-0"
+            style={backgroundAnimatedStyle}
+          >
+            <ExpoImage
+              source={
+                typeof item.background === 'string'
+                  ? { uri: item.background }
+                  : item.background
+              }
+              style={{ flex: 1, width: '100%', height: '100%' }}
+              contentFit="cover"
+              contentPosition={item.contentPosition ?? 'center'}
+              cachePolicy="disk"
+            />
+          </Animated.View>
+
+          <View className="absolute inset-0 bg-black/20" />
+          <View className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent" />
+          <View className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+
+          <View
+            className="absolute inset-x-0 bottom-0 z-10"
+            style={{
+              paddingHorizontal: CONTENT_HORIZONTAL_PADDING,
+              paddingTop: topInset + 16,
+              paddingBottom: 24,
+            }}
+          >
+            {item.content || <WidgetSlideContent item={item} />}
+          </View>
+
+          <View className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
+        </Pressable>
+      </Animated.View>
+    </Animated.View>
+  );
+}
+
+function WidgetSlideContent({ item }: { item: WidgetItem }) {
+  return (
+    <View className="bg-black/35 backdrop-blur-md rounded-[28px] p-5 border border-white/15">
+      <View className="flex-row items-start justify-between mb-2">
+        <View className="flex-1">
+          <Text
+            className="text-2xl font-black text-white mb-2 leading-tight tracking-tight"
+            style={{
+              textShadowColor: 'rgba(0, 0, 0, 0.8)',
+              textShadowOffset: { width: 0, height: 2 },
+              textShadowRadius: 8,
+            }}
+          >
+            {item.title}
+          </Text>
+          {item.subtitle ? (
+            <Text
+              className="text-lg font-semibold text-white/85 leading-snug mb-3"
+              style={{
+                textShadowColor: 'rgba(0, 0, 0, 0.6)',
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 4,
+              }}
+            >
+              {item.subtitle}
+            </Text>
+          ) : null}
+        </View>
+
+        {item.onPress ? (
+          <View className="bg-white/15 rounded-full p-3 ml-3">
+            <Icon as={ArrowRightIcon} size={20} className="text-white" />
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+type WidgetDotsProps = {
+  itemCount: number;
+  onSelect: (index: number) => void;
+  scrollX: SharedValue<number>;
+};
+
+function WidgetDots({ itemCount, onSelect, scrollX }: WidgetDotsProps) {
+  return (
+    <View className="flex-row items-center justify-center gap-1">
+      {Array.from({ length: itemCount }, (_, index) => (
+        <WidgetDot
+          key={index}
+          index={index}
+          itemCount={itemCount}
+          onPress={() => onSelect(index)}
+          scrollX={scrollX}
+        />
+      ))}
+    </View>
+  );
+}
+
+function WidgetDot({
+  index,
+  itemCount,
+  onPress,
+  scrollX,
+}: {
+  index: number;
+  itemCount: number;
+  onPress: () => void;
+  scrollX: SharedValue<number>;
+}) {
+  const animatedStyle = useAnimatedStyle(() => {
+    const currentIndex = Math.round(scrollX.value / CARD_WIDTH) % itemCount;
+    const normalizedIndex = (currentIndex + itemCount) % itemCount;
+    const distance = Math.abs(index - normalizedIndex);
+    const adjustedDistance = Math.min(distance, itemCount - distance);
+
+    return {
+      transform: [
+        {
+          scale: interpolate(
+            adjustedDistance,
+            [0, 1],
+            [1.25, 0.85],
+            'clamp',
+          ),
+        },
+      ],
+      opacity: interpolate(adjustedDistance, [0, 1], [1, 0.55], 'clamp'),
+      backgroundColor: '#fff',
+    };
+  });
+
+  return (
+    <Pressable onPress={onPress} className="p-1.5">
+      <Animated.View
+        className="w-2 h-2 rounded-full"
+        style={animatedStyle}
+      />
+    </Pressable>
+  );
 }
 
 // Number of copies to repeat for infinite scroll (odd number recommended)
@@ -145,176 +331,14 @@ export function Widget({ items }: WidgetProps) {
     }
   };
 
-  const renderItem = (item: WidgetItem, index: number) => {
-    // Parallax shift for background image (kept for visual effect)
-    const backgroundAnimatedStyle = useAnimatedStyle(() => {
-      const inputRange = [
-        (index - 1) * CARD_WIDTH,
-        index * CARD_WIDTH,
-        (index + 1) * CARD_WIDTH,
-      ];
-
-      return {
-        transform: [
-          {
-            translateX: interpolate(
-              scrollX.value,
-              inputRange,
-              [-24, 0, 24],
-              'clamp',
-            ),
-          },
-        ],
-      };
-    });
-
-    return (
-      <Animated.View
-        key={`${item.id}-${index}`}
-        className="justify-center items-center"
-        style={{
-          width: CARD_WIDTH,
-          height: heroHeight,
-        }}
-      >
-        <Animated.View className="flex-1 w-full">
-          <Pressable
-            onPress={item.onPress}
-            className="flex-1 w-full overflow-hidden bg-black"
-          >
-            <Animated.View
-              className="absolute inset-0"
-              style={backgroundAnimatedStyle}
-            >
-              <ExpoImage
-                source={
-                  typeof item.background === 'string'
-                    ? { uri: item.background }
-                    : item.background
-                }
-                style={{
-                  flex: 1,
-                  width: '100%',
-                  height: '100%',
-                }}
-                contentFit="cover"
-                contentPosition={item.contentPosition ?? 'center'}
-                cachePolicy="disk"
-              />
-            </Animated.View>
-
-            <View className="absolute inset-0 bg-black/20" />
-            <View className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent" />
-            <View className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
-
-            <View
-              className="absolute inset-x-0 bottom-0 z-10"
-              style={{
-                paddingHorizontal: CONTENT_HORIZONTAL_PADDING,
-                paddingTop: top + 16,
-                paddingBottom: 24,
-              }}
-            >
-              {item.content || (
-                <View className="bg-black/35 backdrop-blur-md rounded-[28px] p-5 border border-white/15">
-                  <View className="flex-row items-start justify-between mb-2">
-                    <View className="flex-1">
-                      <Text
-                        className="text-2xl font-black text-white mb-2 leading-tight tracking-tight"
-                        style={{
-                          textShadowColor: 'rgba(0, 0, 0, 0.8)',
-                          textShadowOffset: { width: 0, height: 2 },
-                          textShadowRadius: 8,
-                        }}
-                      >
-                        {item.title}
-                      </Text>
-                      {item.subtitle && (
-                        <Text
-                          className="text-lg font-semibold text-white/85 leading-snug mb-3"
-                          style={{
-                            textShadowColor: 'rgba(0, 0, 0, 0.6)',
-                            textShadowOffset: { width: 0, height: 1 },
-                            textShadowRadius: 4,
-                          }}
-                        >
-                          {item.subtitle}
-                        </Text>
-                      )}
-                    </View>
-
-                    {item.onPress ? (
-                      <View className="bg-white/15 rounded-full p-3 ml-3">
-                        <Icon
-                          as={ArrowRightIcon}
-                          size={20}
-                          className="text-white"
-                        />
-                      </View>
-                    ) : null}
-                  </View>
-                </View>
-              )}
-            </View>
-
-            <View className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
-          </Pressable>
-        </Animated.View>
-      </Animated.View>
-    );
-  };
-
   const renderWidgetItem = ({ item, index }: ListRenderItemInfo<WidgetItem>) =>
-    renderItem(item, index);
-
-  const renderDots = () => (
-    <View className="flex-row items-center justify-center gap-1">
-      {items.map((_, idx) => {
-        const animatedDotStyle = useAnimatedStyle(() => {
-          // Get current real index from scroll position
-          const currentScrollIndex = scrollX.value / CARD_WIDTH;
-          const currentRealIndex =
-            ((Math.round(currentScrollIndex) % originalLength) +
-              originalLength) %
-            originalLength;
-
-          const distance = Math.abs(idx - currentRealIndex);
-          const adjustedDistance = Math.min(
-            distance,
-            originalLength - distance,
-          );
-
-          return {
-            transform: [
-              {
-                scale: interpolate(
-                  adjustedDistance,
-                  [0, 1],
-                  [1.25, 0.85],
-                  'clamp',
-                ),
-              },
-            ],
-            opacity: interpolate(adjustedDistance, [0, 1], [1, 0.55], 'clamp'),
-            backgroundColor: '#fff',
-          };
-        });
-
-        return (
-          <Pressable
-            key={idx}
-            onPress={() => scrollToIndex(idx)}
-            className="p-1.5"
-          >
-            <Animated.View
-              className="w-2 h-2 rounded-full"
-              style={animatedDotStyle}
-            />
-          </Pressable>
-        );
-      })}
-    </View>
-  );
+    <WidgetSlide
+      heroHeight={heroHeight}
+      index={index}
+      item={item}
+      scrollX={scrollX}
+      topInset={top}
+    />;
 
   return (
     <View style={{ height: heroHeight }} className="bg-transparent">
@@ -340,7 +364,11 @@ export function Widget({ items }: WidgetProps) {
 
           <View className="absolute inset-x-0 bottom-6 items-center">
             <View className="bg-black/25 rounded-full px-3 py-2">
-              {renderDots()}
+              <WidgetDots
+                itemCount={items.length}
+                onSelect={scrollToIndex}
+                scrollX={scrollX}
+              />
             </View>
           </View>
         </View>

@@ -3,13 +3,7 @@ import type { StartSubscriptionResponse } from '@packages/database/functions.typ
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import {
-  useCallback,
-  useEffectEvent,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useRef, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import {
   AccessibilityInfo,
@@ -179,17 +173,13 @@ function useOnboardingWizard({
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
-  const initialForm = useMemo(
-    () =>
-      createInitialForm({
-        acceptedTermsAt,
-        application,
-        email,
-        profileBirthday,
-        profileName,
-      }),
-    [acceptedTermsAt, application, email, profileBirthday, profileName],
-  );
+  const initialForm = createInitialForm({
+    acceptedTermsAt,
+    application,
+    email,
+    profileBirthday,
+    profileName,
+  });
   const form = useForm<MembershipApplicationForm>({
     defaultValues: initialForm,
     mode: 'onChange',
@@ -205,7 +195,7 @@ function useOnboardingWizard({
         ? getFirstIncompleteStep(initialForm)
         : 0,
   );
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [showErrors, setShowErrors] = useState(false);
   const [createdApplicationId, setCreatedApplicationId] = useState<
     string | undefined
   >();
@@ -242,12 +232,15 @@ function useOnboardingWizard({
     ],
   }));
   const stepValid = isStepValid(currentForm, step);
+  const errors: FormErrors = showErrors
+    ? getStepErrors(currentForm, step)
+    : {};
   const applicationQueryKey = queryKeys.membershipApplication.byOrgUser(
     organizationId,
     userId,
   );
 
-  const getSubmittedApplicationId = useCallback(() => {
+  const getSubmittedApplicationId = () => {
     const cachedApplication =
       queryClient.getQueryData<MembershipApplication | null>(
         applicationQueryKey,
@@ -262,13 +255,7 @@ function useOnboardingWizard({
         ? application?.id
         : undefined)
     );
-  }, [
-    application?.id,
-    application?.status,
-    applicationQueryKey,
-    queryClient,
-    submittedApplicationId,
-  ]);
+  };
 
   const saveMutation = useMutation({
     mutationFn: async (nextForm: MembershipApplicationForm) =>
@@ -346,23 +333,17 @@ function useOnboardingWizard({
     },
   });
 
-  const saveNow = useCallback(
-    async (nextForm: MembershipApplicationForm) => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      return saveMutation.mutateAsync(nextForm);
-    },
-    [saveMutation],
-  );
+  const saveNow = async (nextForm: MembershipApplicationForm) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    return saveMutation.mutateAsync(nextForm);
+  };
 
-  const scheduleSave = useCallback(
-    (nextForm: MembershipApplicationForm) => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(() => {
-        saveMutation.mutate(nextForm);
-      }, 800);
-    },
-    [saveMutation],
-  );
+  const scheduleSave = (nextForm: MembershipApplicationForm) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveMutation.mutate(nextForm);
+    }, 800);
+  };
 
   useMountEffect(() => {
     AccessibilityInfo.announceForAccessibility(
@@ -375,33 +356,26 @@ function useOnboardingWizard({
     };
   });
 
-  const handleFormValuesChange = useEffectEvent(
-    (
-      values: Partial<MembershipApplicationForm>,
-      { name }: { name?: string },
-    ) => {
-      if (!name) return;
-
-      const next = values as MembershipApplicationForm;
-
-      if (Object.keys(errors).length > 0) {
-        setErrors(getStepErrors(next, step));
-      }
-
-      if (!getSubmittedApplicationId()) {
-        scheduleSave(next);
-      }
-    },
-  );
-
-  // Subscribe once: Effect Events always read the current callbacks and state.
   // `subscribe` is react-hook-form's compiler-safe, non-rendering subscription
   // API; its legacy `watch(callback)` overload prevents React Compiler output.
   useMountEffect(() =>
     form.subscribe({
       formState: { values: true },
-      callback: ({ values, name }) =>
-        handleFormValuesChange(values, { name }),
+      callback: ({ values, name }) => {
+        if (!name) return;
+
+        const cachedApplication =
+          queryClient.getQueryData<MembershipApplication | null>(
+            applicationQueryKey,
+          );
+        const isSubmitted =
+          cachedApplication?.status === 'submitted' ||
+          application?.status === 'submitted';
+
+        if (!isSubmitted) {
+          scheduleSave(values as MembershipApplicationForm);
+        }
+      },
     }),
   );
 
@@ -473,7 +447,7 @@ function useOnboardingWizard({
       }),
     );
     setStep(nextStep);
-    setErrors({});
+    setShowErrors(false);
     onScrollToTop();
     AccessibilityInfo.announceForAccessibility(
       `Passo ${nextStep + 1} de ${steps.length}, ${steps[nextStep].title}`,
@@ -492,7 +466,7 @@ function useOnboardingWizard({
     const values = form.getValues();
     const nextErrors = getStepErrors(values, step);
     if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
+      setShowErrors(true);
       onScrollToTop();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
@@ -581,9 +555,9 @@ function useOnboardingWizard({
 
 function OnboardingWizard(props: OnboardingWizardProps) {
   const scrollRef = useRef<ScrollView>(null);
-  const scrollToTop = useCallback(() => {
+  const scrollToTop = () => {
     scrollRef.current?.scrollTo({ animated: true, y: 0 });
-  }, []);
+  };
   const wizard = useOnboardingWizard({ ...props, onScrollToTop: scrollToTop });
 
   if (wizard.success) {
