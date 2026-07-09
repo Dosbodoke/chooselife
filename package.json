@@ -15,11 +15,5 @@
     "react-dom": "19.2.5",
     "turbo": "^2.6.1"
   },
-  "packageManager": "pnpm@10.26.0",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@shopify/react-native-skia"
-    ]
-  }
+  "packageManager": "pnpm@11.10.0"
 }
-
