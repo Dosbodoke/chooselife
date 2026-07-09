@@ -62,6 +62,25 @@ const textContentTypeToAutoComplete: Partial<
   telephoneNumber: 'tel',
 };
 
+/**
+ * Universal `@expo/ui` types only expose `.value`, but native `useNativeState`
+ * also implements React Compiler-friendly `.get()` / `.set()`. Prefer those.
+ * Web's polyfill only has the `.value` accessor.
+ */
+type NativeStateWrite<T> = {
+  value: T;
+  get?: () => T;
+  set?: (value: T) => void;
+};
+
+function setNativeState<T>(state: NativeStateWrite<T>, next: T) {
+  if (typeof state.set === 'function') {
+    state.set(next);
+    return;
+  }
+  state.value = next;
+}
+
 export function GlassField({
   accessibilityLabel,
   autoCapitalize,
@@ -80,29 +99,19 @@ export function GlassField({
   value,
 }: FieldProps) {
   const [focused, setFocused] = React.useState(false);
-  // Text lives in native SwiftUI state; React only mirrors it for the form.
+  // Text lives in native SwiftUI state (captured once on mount). External
+  // writes (e.g. CEP autofill) must remount via `key` on the parent.
   const text = useNativeState(value);
   const selection = useNativeState({ end: value.length, start: value.length });
-  const lastEmitted = React.useRef(value);
-
-  // Sync external writes (e.g. CEP autofill) into the native state.
-  React.useEffect(() => {
-    if (value !== lastEmitted.current) {
-      text.value = value;
-      selection.value = { end: value.length, start: value.length };
-      lastEmitted.current = value;
-    }
-  }, [selection, text, value]);
 
   const handleChangeText = (raw: string) => {
     const next = mask ? mask(raw) : raw;
     if (next !== raw) {
-      text.value = next;
+      setNativeState(text, next);
       // Rewriting the text leaves the caret at its old index; snap it to the
       // end so the next keystroke lands after the inserted mask characters.
-      selection.value = { end: next.length, start: next.length };
+      setNativeState(selection, { end: next.length, start: next.length });
     }
-    lastEmitted.current = next;
     onChangeText(next);
   };
 
@@ -486,7 +495,7 @@ function ProgressPill({
   progress: SharedValue<number>;
 }) {
   const animatedStyle = useAnimatedStyle(() => ({
-    width: `${Math.min(Math.max(progress.value - index, 0), 1) * 100}%`,
+    width: `${Math.min(Math.max(progress.get() - index, 0), 1) * 100}%`,
   }));
 
   return (
@@ -519,13 +528,14 @@ export function FooterCta({
       }}
     >
       <Pressable
-        className={`bg-zinc-950 rounded-full h-14 items-center justify-center ${
-          disabled ? 'opacity-50' : ''
-        }`}
+        accessibilityState={{ disabled: Boolean(disabled || loading) }}
+        className="bg-zinc-950 rounded-full h-14 items-center justify-center disabled:opacity-50"
         disabled={disabled || loading}
         onPress={onPress}
         style={({ pressed }) => ({
-          opacity: disabled || loading ? undefined : pressed ? 0.85 : 1,
+          // Inline opacity so disabled state is reliable (className alone was
+          // easy to miss against the solid black CTA).
+          opacity: disabled || loading ? 0.45 : pressed ? 0.85 : 1,
         })}
       >
         {loading ? (

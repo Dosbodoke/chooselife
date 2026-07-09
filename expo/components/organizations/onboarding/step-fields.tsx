@@ -27,6 +27,7 @@ import {
 import { Text } from '~/components/ui/text';
 
 type StepFieldsProps = {
+  addressAutofillKey: number;
   cepFailed: boolean;
   cepLoading: boolean;
   errors: FormErrors;
@@ -246,11 +247,13 @@ function DocumentsFields({ errors }: { errors: FormErrors }) {
 }
 
 function AddressContactFields({
+  addressAutofillKey,
   cepFailed,
   cepLoading,
   errors,
   onCepChange,
 }: {
+  addressAutofillKey: number;
   cepFailed: boolean;
   cepLoading: boolean;
   errors: FormErrors;
@@ -292,6 +295,7 @@ function AddressContactFields({
           name="address_line"
           render={({ field: { onChange, value } }) => (
             <GlassField
+              key={`address_line-${addressAutofillKey}`}
               accessibilityLabel="Endereço"
               error={errors.address_line}
               label="Endereço"
@@ -309,6 +313,7 @@ function AddressContactFields({
           name="city"
           render={({ field: { onChange, value } }) => (
             <GlassField
+              key={`city-${addressAutofillKey}`}
               accessibilityLabel="Cidade"
               error={errors.city}
               label="Cidade"
@@ -325,6 +330,7 @@ function AddressContactFields({
           name="state"
           render={({ field: { onChange, value } }) => (
             <GlassField
+              key={`state-${addressAutofillKey}`}
               accessibilityLabel="UF"
               autoCapitalize="characters"
               error={errors.state}
@@ -594,6 +600,7 @@ function EmergencyContactFields({ errors }: { errors: FormErrors }) {
 }
 
 export function StepFields({
+  addressAutofillKey,
   cepFailed,
   cepLoading,
   errors,
@@ -608,6 +615,7 @@ export function StepFields({
     case 2:
       return (
         <AddressContactFields
+          addressAutofillKey={addressAutofillKey}
           cepFailed={cepFailed}
           cepLoading={cepLoading}
           errors={errors}

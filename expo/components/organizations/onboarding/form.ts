@@ -139,7 +139,8 @@ export const firstAidOptions = [
   value: Enums<'first_aid_course_enum'>;
 }[];
 
-const digitsOnly = (value: string) => value.replace(/\D/g, '');
+const digitsOnly = (value: string | null | undefined) =>
+  (value ?? '').replace(/\D/g, '');
 
 export const maskCpf = (value: string) => {
   const digits = digitsOnly(value).slice(0, 11);
@@ -307,10 +308,10 @@ export const formToDraft = (
 const requiredText = (
   errors: FormErrors,
   field: FormField,
-  value: string,
+  value: string | null | undefined,
   message = 'Campo obrigatório.',
 ) => {
-  if (!value.trim()) errors[field] = message;
+  if (!value?.trim()) errors[field] = message;
 };
 
 export const getStepErrors = (

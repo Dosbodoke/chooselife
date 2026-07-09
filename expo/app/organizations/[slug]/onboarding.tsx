@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { FormProvider, useForm, useWatch } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -128,7 +128,9 @@ export default function OnboardingScreen() {
 
   return (
     <OnboardingWizard
-      key={applicationQuery.data?.id ?? 'new-application'}
+      // Stable for the org+user session. Using application id remounted the
+      // wizard on the first draft save and reset step/CTA state mid-flow.
+      key={`${organization.id}-${userId}`}
       acceptedTermsAt={accepted_terms_at}
       application={applicationQuery.data ?? null}
       email={session.user.email}
@@ -181,10 +183,9 @@ function OnboardingWizard({
     defaultValues: initialForm,
     mode: 'onChange',
   });
-  const formValues = useWatch({ control: form.control }) as
-    | MembershipApplicationForm
-    | undefined;
-  const currentForm = formValues ?? initialForm;
+  // `watch()` subscribes this component to every field change and always returns
+  // the live form values (not a stale initial snapshot).
+  const currentForm = form.watch();
   const [step, setStep] = React.useState(() =>
     application?.status === 'submitted'
       ? steps.length - 1
@@ -206,6 +207,9 @@ function OnboardingWizard({
   const [savedVisible, setSavedVisible] = React.useState(false);
   const [cepLoading, setCepLoading] = React.useState(false);
   const [cepFailed, setCepFailed] = React.useState(false);
+  // Bumps when ViaCEP fills address fields so GlassField remounts with new
+  // native state (useNativeState only captures the initial value once).
+  const [addressAutofillKey, setAddressAutofillKey] = React.useState(0);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [continuing, setContinuing] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
@@ -225,9 +229,9 @@ function OnboardingWizard({
   const stepTransition = useSharedValue(1);
   const stepDirection = useSharedValue(1);
   const stepAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: stepTransition.value,
+    opacity: stepTransition.get(),
     transform: [
-      { translateX: (1 - stepTransition.value) * 32 * stepDirection.value },
+      { translateX: (1 - stepTransition.get()) * 32 * stepDirection.get() },
     ],
   }));
   const stepValid = isStepValid(currentForm, step);
@@ -421,6 +425,7 @@ function OnboardingWizard({
             city: address.city,
             state: address.state,
           });
+          setAddressAutofillKey((key) => key + 1);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         })
         .catch(() => setCepFailed(true))
@@ -429,16 +434,20 @@ function OnboardingWizard({
   };
 
   const goToStep = (nextStep: number, nextDirection: 'back' | 'forward') => {
-    progress.value = withTiming(nextStep + 1, {
-      duration: 300,
-      easing: Easing.out(Easing.cubic),
-    });
-    stepDirection.value = nextDirection === 'forward' ? 1 : -1;
-    stepTransition.value = 0;
-    stepTransition.value = withTiming(1, {
-      duration: 250,
-      easing: Easing.out(Easing.cubic),
-    });
+    progress.set(
+      withTiming(nextStep + 1, {
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+      }),
+    );
+    stepDirection.set(nextDirection === 'forward' ? 1 : -1);
+    stepTransition.set(0);
+    stepTransition.set(
+      withTiming(1, {
+        duration: 250,
+        easing: Easing.out(Easing.cubic),
+      }),
+    );
     setStep(nextStep);
     setErrors({});
     scrollRef.current?.scrollTo({ animated: true, y: 0 });
@@ -569,6 +578,7 @@ function OnboardingWizard({
               style={stepAnimatedStyle}
             >
               <StepFields
+                addressAutofillKey={addressAutofillKey}
                 cepFailed={cepFailed}
                 cepLoading={cepLoading}
                 errors={errors}
