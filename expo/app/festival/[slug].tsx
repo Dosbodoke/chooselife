@@ -50,7 +50,7 @@ export default function FestivalScreen() {
   const selectedHighlineId = getSingleSearchParam(rawSelectedHighlineId);
   const selectedDayKey = getSingleSearchParam(rawSelectedDayKey);
   const festivalTimeZone = getFestivalTimeZone(query.data);
-  const title = query.data?.festival.name ?? 'Festival Chooselife';
+  const title = query.data?.festival.name ?? '';
 
   const cards = React.useMemo(() => {
     if (!query.data?.sectors) {
