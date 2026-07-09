@@ -9,6 +9,7 @@ import {
   Pressable,
   Text,
   View,
+  type ListRenderItemInfo,
 } from 'react-native';
 import Animated, {
   interpolate,
@@ -263,6 +264,9 @@ export function Widget({ items }: WidgetProps) {
     );
   };
 
+  const renderWidgetItem = ({ item, index }: ListRenderItemInfo<WidgetItem>) =>
+    renderItem(item, index);
+
   const renderDots = () => (
     <View className="flex-row items-center justify-center gap-1">
       {items.map((_, idx) => {
@@ -319,7 +323,7 @@ export function Widget({ items }: WidgetProps) {
           <Animated.FlatList
             ref={scrollViewRef}
             data={infiniteItems}
-            renderItem={({ item, index }) => renderItem(item, index)}
+            renderItem={renderWidgetItem}
             keyExtractor={(item, index) => `${item.id}-${index}`}
             horizontal
             showsHorizontalScrollIndicator={false}

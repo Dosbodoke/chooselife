@@ -154,6 +154,10 @@ type OnboardingWizardProps = {
   userId: string;
 };
 
+type OnboardingWorkflowProps = OnboardingWizardProps & {
+  onScrollToTop: () => void;
+};
+
 function useOnboardingWizard({
   acceptedTermsAt,
   application,
@@ -162,9 +166,10 @@ function useOnboardingWizard({
   planType,
   profileBirthday,
   profileName,
+  onScrollToTop,
   slug,
   userId,
-}: OnboardingWizardProps) {
+}: OnboardingWorkflowProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
@@ -217,7 +222,6 @@ function useOnboardingWizard({
   const savedTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const scrollRef = React.useRef<ScrollView>(null);
   const submittedIdRef = React.useRef(submittedApplicationId);
   const applicationStatusRef = React.useRef(application?.status);
   const errorsRef = React.useRef(errors);
@@ -267,10 +271,10 @@ function useOnboardingWizard({
       upsertMembershipApplicationDraft(
         formToDraft(nextForm, organizationId, userId),
       ),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setCreatedApplicationId(data.id);
       queryClient.setQueryData(applicationQueryKey, data);
-      void queryClient.invalidateQueries({ queryKey: applicationQueryKey });
+      await queryClient.invalidateQueries({ queryKey: applicationQueryKey });
       setSavedVisible(true);
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
       savedTimerRef.current = setTimeout(() => setSavedVisible(false), 1500);
@@ -321,6 +325,9 @@ function useOnboardingWizard({
     onSuccess: async (data) => {
       setSuccess(true);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.subscription.all,
+      });
       setTimeout(() => {
         router.replace({
           pathname: '/payment',
@@ -383,8 +390,8 @@ function useOnboardingWizard({
     },
   );
 
-  // react-doctor-disable-next-line react-hooks-js/incompatible-library
   // Subscribe once: Effect Events always read the current callbacks and state.
+  // react-doctor-disable-next-line react-hooks-js/incompatible-library
   React.useEffect(() => {
     const subscription = form.watch(handleFormValuesChange);
 
@@ -460,7 +467,7 @@ function useOnboardingWizard({
     );
     setStep(nextStep);
     setErrors({});
-    scrollRef.current?.scrollTo({ animated: true, y: 0 });
+    onScrollToTop();
     AccessibilityInfo.announceForAccessibility(
       `Passo ${nextStep + 1} de ${steps.length}, ${steps[nextStep].title}`,
     );
@@ -479,7 +486,7 @@ function useOnboardingWizard({
     const nextErrors = getStepErrors(values, step);
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
-      scrollRef.current?.scrollTo({ animated: true, y: 0 });
+      onScrollToTop();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
@@ -558,7 +565,6 @@ function useOnboardingWizard({
     progress,
     router,
     savedVisible,
-    scrollRef,
     step,
     stepAnimatedStyle,
     stepValid,
@@ -567,7 +573,11 @@ function useOnboardingWizard({
 }
 
 function OnboardingWizard(props: OnboardingWizardProps) {
-  const wizard = useOnboardingWizard(props);
+  const scrollRef = React.useRef<ScrollView>(null);
+  const scrollToTop = React.useCallback(() => {
+    scrollRef.current?.scrollTo({ animated: true, y: 0 });
+  }, []);
+  const wizard = useOnboardingWizard({ ...props, onScrollToTop: scrollToTop });
 
   if (wizard.success) {
     return (
@@ -595,15 +605,18 @@ function OnboardingWizard(props: OnboardingWizardProps) {
           className="flex-1"
         >
           <ScrollView
-            ref={wizard.scrollRef}
+            ref={scrollRef}
             className="flex-1"
-            contentInset={{ bottom: wizard.insets.bottom }}
+            contentInset={{
+              bottom: wizard.insets.bottom,
+              top: wizard.insets.top,
+            }}
             contentContainerClassName="px-6 gap-5"
             contentContainerStyle={{
               flexGrow: 1,
               justifyContent: 'flex-end',
               paddingBottom: 112,
-              paddingTop: wizard.insets.top + 196,
+              paddingTop: 196,
             }}
             keyboardShouldPersistTaps="handled"
             onScrollBeginDrag={Keyboard.dismiss}

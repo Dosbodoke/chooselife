@@ -56,14 +56,11 @@ export default function FestivalScreen() {
   const selectedCard =
     cards.find((item) => item.highline.id === selectedHighlineId) ?? null;
 
-  // expo-router's parameter setter uses syntax the current React Compiler
-  // cannot lower; this callback remains manually memoized.
-  // react-doctor-disable-next-line react-hooks-js/todo
   const handleOpenSchedule = React.useCallback(
-    (card: FestivalHighlineScheduleCard, dayKey = card.defaultDayKey) => {
+    (card: FestivalHighlineScheduleCard, dayKey?: string | null) => {
       router.setParams({
         highline: card.highline.id,
-        day: dayKey,
+        day: dayKey ?? card.defaultDayKey,
       });
     },
     [router],

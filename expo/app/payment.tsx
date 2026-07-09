@@ -266,31 +266,87 @@ export default function PaymentScreen() {
     );
   }
 
-  // Editorial Vault: title lives only in the content stack; close is ghost chrome.
+  return (
+    <ManualPixPayment
+      formattedAmount={formattedAmount}
+      insets={insets}
+      manualPixCopyPaste={manualPixCopyPaste}
+      markPaidError={markPaidMutation.isError}
+      markingPaid={markPaidMutation.isPending}
+      onClose={handleClose}
+      onMarkPaid={handleMarkPaid}
+      onPaymentFailed={() => setPaymentStatus('FAILED')}
+      onPaymentSucceeded={() => setPaymentStatus('SUCCESS')}
+      paymentContext={paymentContext}
+      paymentId={paymentId}
+      profileId={profile?.id}
+      queryClient={queryClient}
+      slug={slug}
+      subtitle={paymentSubtitle}
+      title={paymentTitle}
+      userMarkedPaidAt={userMarkedPaidAt}
+    />
+  );
+}
+
+function ManualPixPayment({
+  formattedAmount,
+  insets,
+  manualPixCopyPaste,
+  markPaidError,
+  markingPaid,
+  onClose,
+  onMarkPaid,
+  onPaymentFailed,
+  onPaymentSucceeded,
+  paymentContext,
+  paymentId,
+  profileId,
+  queryClient,
+  slug,
+  subtitle,
+  title,
+  userMarkedPaidAt,
+}: {
+  formattedAmount: string | null;
+  insets: ReturnType<typeof useSafeAreaInsets>;
+  manualPixCopyPaste: string;
+  markPaidError: boolean;
+  markingPaid: boolean;
+  onClose: () => void;
+  onMarkPaid: () => void;
+  onPaymentFailed: () => void;
+  onPaymentSucceeded: () => void;
+  paymentContext?: 'new_member' | 'subscription_renewal';
+  paymentId: string;
+  profileId?: string;
+  queryClient: ReturnType<typeof useQueryClient>;
+  slug?: string;
+  subtitle: string;
+  title: string;
+  userMarkedPaidAt: string | null;
+}) {
   return (
     <BgBlob>
       <PaymentStatusSubscription
-        key={`${paymentId}:${slug ?? ''}:${profile?.id ?? ''}:${
-          paymentContext ?? ''
-        }`}
+        key={`${paymentId}:${slug ?? ''}:${profileId ?? ''}:${paymentContext ?? ''}`}
         paymentContext={paymentContext}
         paymentId={paymentId}
-        profileId={profile?.id}
+        profileId={profileId}
         queryClient={queryClient}
         slug={slug}
-        onClose={handleClose}
-        onFailed={() => setPaymentStatus('FAILED')}
-        onSucceeded={() => setPaymentStatus('SUCCESS')}
+        onClose={onClose}
+        onFailed={onPaymentFailed}
+        onSucceeded={onPaymentSucceeded}
       />
-      <CloseButton onClose={handleClose} />
+      <CloseButton onClose={onClose} />
       <ScrollView
         className="flex-1"
-        contentInset={{ bottom: insets.bottom }}
+        contentInset={{ bottom: insets.bottom, top: insets.top }}
         contentContainerStyle={{
           flexGrow: 1,
           paddingBottom: 32,
-          // Clear the floating X without a header bar competing for hierarchy.
-          paddingTop: insets.top + 56,
+          paddingTop: 56,
         }}
         showsVerticalScrollIndicator={false}
       >
@@ -300,16 +356,15 @@ export default function PaymentScreen() {
             entering={FadeInDown.delay(300).duration(300)}
             className="text-white text-[32px] font-bold text-center leading-9 mb-2"
           >
-            {paymentTitle}
+            {title}
           </Animated.Text>
           <Animated.Text
             entering={FadeInDown.delay(400).duration(300)}
             className="text-white/65 text-[15px] text-center leading-6"
           >
-            {paymentSubtitle}
+            {subtitle}
           </Animated.Text>
         </View>
-
         <Animated.View
           entering={FadeInDown.delay(550).duration(450)}
           className="items-center mb-4"
@@ -318,14 +373,12 @@ export default function PaymentScreen() {
             <QRCode value={manualPixCopyPaste} size={220} level="M" />
           </View>
         </Animated.View>
-
         <Animated.View
           entering={FadeIn.delay(700).duration(300)}
           className="items-center mb-5 px-6"
         >
           <CopyCode code={manualPixCopyPaste} />
         </Animated.View>
-
         <Animated.View
           entering={FadeIn.delay(800).duration(300)}
           className="mx-6 rounded-2xl border border-white/15 bg-white/10 px-5 py-4 gap-1.5 mb-6"
@@ -345,27 +398,24 @@ export default function PaymentScreen() {
             aprova sua assinatura manualmente.
           </Text>
         </Animated.View>
-
         <Animated.View
           entering={FadeIn.delay(900).duration(300)}
           className="mx-6 gap-3 mt-auto"
         >
           <Pressable
-            onPress={handleMarkPaid}
-            disabled={markPaidMutation.isPending || Boolean(userMarkedPaidAt)}
-            className={`rounded-full py-4 items-center justify-center ${
-              userMarkedPaidAt ? 'bg-emerald-500/20' : 'bg-white'
-            }`}
+            onPress={onMarkPaid}
+            disabled={markingPaid || Boolean(userMarkedPaidAt)}
+            className={`rounded-full py-4 items-center justify-center ${userMarkedPaidAt ? 'bg-emerald-500/20' : 'bg-white'}`}
             style={({ pressed }) => ({
               opacity:
-                markPaidMutation.isPending || userMarkedPaidAt
+                markingPaid || userMarkedPaidAt
                   ? undefined
                   : pressed
                     ? 0.85
                     : 1,
             })}
           >
-            {markPaidMutation.isPending ? (
+            {markingPaid ? (
               <ActivityIndicator color="#000" />
             ) : (
               <View className="flex-row items-center gap-2">
@@ -373,24 +423,20 @@ export default function PaymentScreen() {
                   <Icon as={CheckIcon} size={18} color="#34D399" />
                 ) : null}
                 <Text
-                  className={`text-[17px] font-bold ${
-                    userMarkedPaidAt ? 'text-emerald-300' : 'text-black'
-                  }`}
+                  className={`text-[17px] font-bold ${userMarkedPaidAt ? 'text-emerald-300' : 'text-black'}`}
                 >
                   {userMarkedPaidAt ? 'Pagamento informado' : 'Já paguei'}
                 </Text>
               </View>
             )}
           </Pressable>
-
           {userMarkedPaidAt ? (
             <Text className="text-white/50 text-center text-sm leading-5">
               Recebemos seu aviso. A associação vai conferir o pagamento e
               aprovar manualmente sua assinatura.
             </Text>
           ) : null}
-
-          {markPaidMutation.isError ? (
+          {markPaidError ? (
             <Text className="text-red-200 text-center text-sm leading-5">
               Não foi possível avisar a associação agora. Tente novamente.
             </Text>
