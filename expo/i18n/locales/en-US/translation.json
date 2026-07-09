@@ -4,7 +4,9 @@
     "seeAll": "See all",
     "loop": "Loop",
     "loops": "Loops",
-    "optional": "*optional"
+    "optional": "*optional",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
   },
   "app": {
     "(festival)": {

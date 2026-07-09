@@ -4,7 +4,9 @@
     "seeAll": "Ver todos",
     "loop": "Olhal",
     "loops": "Olhais",
-    "optional": "*opcional"
+    "optional": "*opcional",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar"
   },
   "app": {
     "(festival)": {
