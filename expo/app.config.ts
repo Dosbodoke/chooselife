@@ -56,7 +56,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           {
             scheme: 'https',
             host: 'chooselife.club',
-            pathPattern: '/.*festival',
+            pathPattern: '/.*festival/.*',
           },
         ],
         category: ['BROWSABLE', 'DEFAULT'],
