@@ -29,6 +29,8 @@ interface WidgetItem {
   title: string;
   subtitle?: string;
   background: string | ImageSource;
+  /** How to align the background when cropped with cover. Defaults to center. */
+  contentPosition?: 'center' | 'top';
   content?: React.ReactNode;
   onPress?: () => void;
 }
@@ -186,6 +188,7 @@ export function Widget({ items }: WidgetProps) {
                   height: '100%',
                 }}
                 contentFit="cover"
+                contentPosition={item.contentPosition ?? 'center'}
                 cachePolicy="disk"
               />
             </Animated.View>

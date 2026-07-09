@@ -59,6 +59,7 @@ export default function HomeScreen() {
               title: t('app.(tabs).home.banner.title'),
               subtitle: t('app.(tabs).home.banner.description'),
               background: getR2PublicUrl('promo', 'monstros-do-lago-2026.jpg'),
+              contentPosition: 'top',
               onPress: () => {
                 router.push('/festival/monstros-do-lago-2026');
               },
@@ -68,6 +69,7 @@ export default function HomeScreen() {
               title: 'SLACK',
               subtitle: 'Conheça a associação',
               background: getR2PublicUrl('promo', 'slack-promo.png'),
+              contentPosition: 'center',
               onPress: () => {
                 router.push('/organizations');
               },
