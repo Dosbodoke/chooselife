@@ -12,7 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl =
     process.env.NEXT_PUBLIC_BASE_URL || "https://chooselife.club";
 
-  const staticRoutes = ["", "/festival", "/events", "/download", "/privacy"];
+  const staticRoutes = ["", "/events", "/download", "/privacy"];
 
   const entries: MetadataRoute.Sitemap = [];
 
@@ -30,6 +30,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         languages,
       },
     });
+  }
+
+  // Festival pages
+  const { data: festivals } = await supabase
+    .from("festival")
+    .select("slug, created_at")
+    .eq("is_active", true);
+
+  if (festivals) {
+    for (const festival of festivals) {
+      const languages: Record<string, string> = {};
+      for (const locale of locales) {
+        languages[locale] = `${baseUrl}/${locale}/festival/${festival.slug}`;
+      }
+
+      entries.push({
+        url: `${baseUrl}/pt/festival/${festival.slug}`,
+        lastModified: new Date(festival.created_at),
+        changeFrequency: "weekly",
+        priority: 0.9,
+        alternates: {
+          languages,
+        },
+      });
+    }
   }
 
   // News/blog posts
