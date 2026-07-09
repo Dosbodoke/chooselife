@@ -3,7 +3,13 @@ import type { StartSubscriptionResponse } from '@packages/database/functions.typ
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
+import {
+  useCallback,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import {
   AccessibilityInfo,
@@ -173,7 +179,7 @@ function useOnboardingWizard({
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
-  const initialForm = React.useMemo(
+  const initialForm = useMemo(
     () =>
       createInitialForm({
         acceptedTermsAt,
@@ -192,41 +198,37 @@ function useOnboardingWizard({
     control: form.control,
     defaultValue: initialForm,
   }) as MembershipApplicationForm;
-  const [step, setStep] = React.useState(() =>
+  const [step, setStep] = useState(() =>
     application?.status === 'submitted'
       ? steps.length - 1
       : application?.status === 'draft'
         ? getFirstIncompleteStep(initialForm)
         : 0,
   );
-  const [errors, setErrors] = React.useState<FormErrors>({});
-  const [createdApplicationId, setCreatedApplicationId] = React.useState<
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [createdApplicationId, setCreatedApplicationId] = useState<
     string | undefined
   >();
-  const [createdSubmittedId, setCreatedSubmittedId] = React.useState<
+  const [createdSubmittedId, setCreatedSubmittedId] = useState<
     string | undefined
   >();
   const applicationId = createdApplicationId ?? application?.id;
   const submittedApplicationId =
     createdSubmittedId ??
     (application?.status === 'submitted' ? application.id : undefined);
-  const [savedVisible, setSavedVisible] = React.useState(false);
-  const [cepLoading, setCepLoading] = React.useState(false);
-  const [cepFailed, setCepFailed] = React.useState(false);
+  const [savedVisible, setSavedVisible] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepFailed, setCepFailed] = useState(false);
   // Bumps when ViaCEP fills address fields so GlassField remounts with new
   // native state (useNativeState only captures the initial value once).
-  const [addressAutofillKey, setAddressAutofillKey] = React.useState(0);
-  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const [continuing, setContinuing] = React.useState(false);
-  const [success, setSuccess] = React.useState(false);
-  const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const savedTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+  const [addressAutofillKey, setAddressAutofillKey] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [continuing, setContinuing] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const submittedIdRef = React.useRef(submittedApplicationId);
-  const applicationStatusRef = React.useRef(application?.status);
-  const errorsRef = React.useRef(errors);
-  const stepRef = React.useRef(step);
   // Continuous stepper position: step + 1 pills' worth of fill.
   const progress = useSharedValue(step + 1);
   // 0 → 1 on every step change; drives the step slide-in deterministically so
@@ -245,27 +247,28 @@ function useOnboardingWizard({
     userId,
   );
 
-  submittedIdRef.current = submittedApplicationId;
-  applicationStatusRef.current = application?.status;
-  errorsRef.current = errors;
-  stepRef.current = step;
-
-  const getSubmittedApplicationId = React.useCallback(() => {
+  const getSubmittedApplicationId = useCallback(() => {
     const cachedApplication =
       queryClient.getQueryData<MembershipApplication | null>(
         applicationQueryKey,
       );
 
     return (
-      submittedIdRef.current ??
+      submittedApplicationId ??
       (cachedApplication?.status === 'submitted'
         ? cachedApplication.id
         : undefined) ??
-      (applicationStatusRef.current === 'submitted'
+      (application?.status === 'submitted'
         ? application?.id
         : undefined)
     );
-  }, [application?.id, applicationQueryKey, queryClient]);
+  }, [
+    application?.id,
+    application?.status,
+    applicationQueryKey,
+    queryClient,
+    submittedApplicationId,
+  ]);
 
   const saveMutation = useMutation({
     mutationFn: async (nextForm: MembershipApplicationForm) =>
@@ -343,7 +346,7 @@ function useOnboardingWizard({
     },
   });
 
-  const saveNow = React.useCallback(
+  const saveNow = useCallback(
     async (nextForm: MembershipApplicationForm) => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       return saveMutation.mutateAsync(nextForm);
@@ -351,7 +354,7 @@ function useOnboardingWizard({
     [saveMutation],
   );
 
-  const scheduleSave = React.useCallback(
+  const scheduleSave = useCallback(
     (nextForm: MembershipApplicationForm) => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(() => {
@@ -372,7 +375,7 @@ function useOnboardingWizard({
     };
   });
 
-  const handleFormValuesChange = React.useEffectEvent(
+  const handleFormValuesChange = useEffectEvent(
     (
       values: Partial<MembershipApplicationForm>,
       { name }: { name?: string },
@@ -381,8 +384,8 @@ function useOnboardingWizard({
 
       const next = values as MembershipApplicationForm;
 
-      if (Object.keys(errorsRef.current).length > 0) {
-        setErrors(getStepErrors(next, stepRef.current));
+      if (Object.keys(errors).length > 0) {
+        setErrors(getStepErrors(next, step));
       }
 
       if (!getSubmittedApplicationId()) {
@@ -577,8 +580,8 @@ function useOnboardingWizard({
 }
 
 function OnboardingWizard(props: OnboardingWizardProps) {
-  const scrollRef = React.useRef<ScrollView>(null);
-  const scrollToTop = React.useCallback(() => {
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollToTop = useCallback(() => {
     scrollRef.current?.scrollTo({ animated: true, y: 0 });
   }, []);
   const wizard = useOnboardingWizard({ ...props, onScrollToTop: scrollToTop });
