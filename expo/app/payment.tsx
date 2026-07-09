@@ -9,7 +9,6 @@ import {
   XIcon,
 } from 'lucide-react-native';
 import React from 'react';
-import QRCode from 'react-qr-code';
 import {
   ActivityIndicator,
   Pressable,
@@ -19,6 +18,7 @@ import {
 } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import QRCode from 'react-qr-code';
 
 import { useAuth } from '~/context/auth';
 import { useMountEffect } from '~/hooks/use-mount-effect';
@@ -34,6 +34,53 @@ type PaymentInstructions = {
   status: 'pending' | 'succeeded' | 'failed' | null;
   user_marked_paid_at: string | null;
 };
+
+function PaymentState({
+  children,
+  onClose,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <BgBlob>
+      <CloseButton onClose={onClose} />
+      <View className="flex-1 justify-center items-center gap-3 px-6">
+        {children}
+      </View>
+    </BgBlob>
+  );
+}
+
+function PaymentSuccessState({
+  onClose,
+  paymentContext,
+}: {
+  onClose: () => void;
+  paymentContext?: 'new_member' | 'subscription_renewal';
+}) {
+  return (
+    <PaymentState onClose={onClose}>
+      <Animated.View entering={ZoomIn}>
+        <Icon as={CheckCircle2Icon} size={64} color="#10B981" />
+      </Animated.View>
+      <Animated.Text
+        entering={FadeIn.delay(200)}
+        className="text-white text-3xl font-bold text-center leading-9"
+      >
+        Pagamento confirmado!
+      </Animated.Text>
+      <Animated.Text
+        entering={FadeIn.delay(400)}
+        className="text-white/65 text-[15px] text-center leading-6"
+      >
+        {paymentContext === 'subscription_renewal'
+          ? 'Você está em dia com a Associação!'
+          : 'Bem-vindo(a)! Você agora é membro oficial da Associação.'}
+      </Animated.Text>
+    </PaymentState>
+  );
+}
 
 const paymentInstructionsQueryKey = (paymentId: string | undefined) =>
   ['payment-instructions', paymentId] as const;
@@ -101,8 +148,7 @@ export default function PaymentScreen() {
     }
   };
 
-  const userMarkedPaidAt =
-    paymentInstructions?.user_marked_paid_at ?? null;
+  const userMarkedPaidAt = paymentInstructions?.user_marked_paid_at ?? null;
 
   const markPaidMutation = useMutation({
     mutationFn: async () => {
@@ -165,85 +211,58 @@ export default function PaymentScreen() {
 
   if (paymentStatus === 'SUCCESS') {
     return (
-      <BgBlob>
-        <CloseButton onClose={handleClose} />
-        <View className="flex-1 justify-center items-center gap-3 px-6">
-          <Animated.View entering={ZoomIn}>
-            <Icon as={CheckCircle2Icon} size={64} color="#10B981" />
-          </Animated.View>
-          <Animated.Text
-            entering={FadeIn.delay(200)}
-            className="text-white text-3xl font-bold text-center leading-9"
-          >
-            Pagamento confirmado!
-          </Animated.Text>
-          <Animated.Text
-            entering={FadeIn.delay(400)}
-            className="text-white/65 text-[15px] text-center leading-6"
-          >
-            {paymentContext === 'subscription_renewal'
-              ? 'Você está em dia com a Associação!'
-              : 'Bem-vindo(a)! Você agora é membro oficial da Associação.'}
-          </Animated.Text>
-        </View>
-      </BgBlob>
+      <PaymentSuccessState
+        onClose={handleClose}
+        paymentContext={paymentContext}
+      />
     );
   }
 
   if (paymentStatus === 'FAILED') {
     return (
-      <BgBlob>
-        <CloseButton onClose={handleClose} />
-        <View className="flex-1 justify-center items-center gap-3 px-6">
-          <Text className="text-white text-3xl font-bold text-center leading-9">
-            Pagamento falhou
-          </Text>
-          <Pressable
-            onPress={() => router.back()}
-            className="active:opacity-70 mt-2"
-          >
-            <Text className="text-white underline">Tentar novamente</Text>
-          </Pressable>
-        </View>
-      </BgBlob>
+      <PaymentState onClose={handleClose}>
+        <Text className="text-white text-3xl font-bold text-center leading-9">
+          Pagamento falhou
+        </Text>
+        <Pressable
+          onPress={() => router.back()}
+          className="active:opacity-70 mt-2"
+        >
+          <Text className="text-white underline">Tentar novamente</Text>
+        </Pressable>
+      </PaymentState>
     );
   }
 
   if (paymentInstructionsQuery.isLoading) {
     return (
-      <BgBlob>
-        <CloseButton onClose={handleClose} />
-        <View className="flex-1 justify-center items-center gap-4">
-          <ActivityIndicator color="#FFFFFF" />
-          <Text className="text-white/80">Carregando pagamento...</Text>
-        </View>
-      </BgBlob>
+      <PaymentState onClose={handleClose}>
+        <ActivityIndicator color="#FFFFFF" />
+        <Text className="text-white/80">Carregando pagamento...</Text>
+      </PaymentState>
     );
   }
 
   if (!paymentId || !hasManualPixInstructions) {
     return (
-      <BgBlob>
-        <CloseButton onClose={handleClose} />
-        <View className="flex-1 justify-center items-center px-6 gap-3">
-          <Text className="text-white text-3xl font-bold text-center leading-9">
-            Pagamento indisponível
+      <PaymentState onClose={handleClose}>
+        <Text className="text-white text-3xl font-bold text-center leading-9">
+          Pagamento indisponível
+        </Text>
+        <Text className="text-white/65 text-[15px] text-center leading-6">
+          O PIX da associação ainda não foi configurado no aplicativo.
+        </Text>
+        {paymentInstructionsQuery.isError ? (
+          <Text className="text-white/50 text-center text-sm">
+            Não foi possível carregar os dados do pagamento.
           </Text>
-          <Text className="text-white/65 text-[15px] text-center leading-6">
-            O PIX da associação ainda não foi configurado no aplicativo.
+        ) : null}
+        {formattedAmount ? (
+          <Text className="text-white/50 text-center text-sm">
+            Valor solicitado: {formattedAmount}
           </Text>
-          {paymentInstructionsQuery.isError ? (
-            <Text className="text-white/50 text-center text-sm">
-              Não foi possível carregar os dados do pagamento.
-            </Text>
-          ) : null}
-          {formattedAmount ? (
-            <Text className="text-white/50 text-center text-sm">
-              Valor solicitado: {formattedAmount}
-            </Text>
-          ) : null}
-        </View>
-      </BgBlob>
+        ) : null}
+      </PaymentState>
     );
   }
 
@@ -266,9 +285,10 @@ export default function PaymentScreen() {
       <CloseButton onClose={handleClose} />
       <ScrollView
         className="flex-1"
+        contentInset={{ bottom: insets.bottom }}
         contentContainerStyle={{
           flexGrow: 1,
-          paddingBottom: insets.bottom + 32,
+          paddingBottom: 32,
           // Clear the floating X without a header bar competing for hierarchy.
           paddingTop: insets.top + 56,
         }}

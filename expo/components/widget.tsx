@@ -1,8 +1,9 @@
 import { Image as ExpoImage, ImageSource } from 'expo-image';
 import { ArrowRightIcon } from 'lucide-react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Dimensions,
+  FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
@@ -16,6 +17,8 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { useMountEffect } from '~/hooks/use-mount-effect';
 
 import { Icon } from '~/components/ui/icon';
 
@@ -44,7 +47,7 @@ const REPEAT_COUNT = 5;
 
 export function Widget({ items }: WidgetProps) {
   const { top } = useSafeAreaInsets();
-  const scrollViewRef = useRef<Animated.ScrollView>(null);
+  const scrollViewRef = useRef<FlatList<WidgetItem>>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollX = useSharedValue(0);
   const heroHeight = WIDGET_HERO_BASE_HEIGHT + top;
@@ -59,16 +62,16 @@ export function Widget({ items }: WidgetProps) {
   const resetThresholdLow = originalLength;
   const resetThresholdHigh = totalItems - originalLength;
 
-  useEffect(() => {
+  useMountEffect(() => {
     // Initialize scroll position to the middle set without animation
     const timer = setTimeout(() => {
-      scrollViewRef.current?.scrollTo({
-        x: middleStartIndex * CARD_WIDTH,
+      scrollViewRef.current?.scrollToOffset({
+        offset: middleStartIndex * CARD_WIDTH,
         animated: false,
       });
     }, 50);
     return () => clearTimeout(timer);
-  }, [middleStartIndex]);
+  });
 
   const updateCurrentIndex = (offsetX: number) => {
     const rawIndex = Math.round(offsetX / CARD_WIDTH);
@@ -95,12 +98,18 @@ export function Widget({ items }: WidgetProps) {
     if (rawIndex <= resetThresholdLow) {
       // Jump forward to the middle set + low threshold
       const newOffset = (middleStartIndex + resetThresholdLow) * CARD_WIDTH;
-      scrollViewRef.current?.scrollTo({ x: newOffset, animated: false });
+      scrollViewRef.current?.scrollToOffset({
+        offset: newOffset,
+        animated: false,
+      });
     } else if (rawIndex >= resetThresholdHigh) {
       // Jump backward to the middle set - (totalItems - resetThresholdHigh)
       const newOffset =
         (middleStartIndex - (totalItems - resetThresholdHigh)) * CARD_WIDTH;
-      scrollViewRef.current?.scrollTo({ x: newOffset, animated: false });
+      scrollViewRef.current?.scrollToOffset({
+        offset: newOffset,
+        animated: false,
+      });
     }
   };
 
@@ -128,8 +137,8 @@ export function Widget({ items }: WidgetProps) {
       }
     }
     if (closestIndex !== -1) {
-      scrollViewRef.current?.scrollTo({
-        x: closestIndex * CARD_WIDTH,
+      scrollViewRef.current?.scrollToOffset({
+        offset: closestIndex * CARD_WIDTH,
         animated: true,
       });
     }
@@ -307,8 +316,11 @@ export function Widget({ items }: WidgetProps) {
     <View style={{ height: heroHeight }} className="bg-transparent">
       <View className="flex-1 bg-transparent">
         <View className="flex-1 bg-transparent relative">
-          <Animated.ScrollView
+          <Animated.FlatList
             ref={scrollViewRef}
+            data={infiniteItems}
+            renderItem={({ item, index }) => renderItem(item, index)}
+            keyExtractor={(item, index) => `${item.id}-${index}`}
             horizontal
             showsHorizontalScrollIndicator={false}
             pagingEnabled
@@ -320,9 +332,7 @@ export function Widget({ items }: WidgetProps) {
             onScroll={scrollHandler}
             onMomentumScrollEnd={onMomentumScrollEnd}
             scrollEventThrottle={16}
-          >
-            {infiniteItems.map((item, index) => renderItem(item, index))}
-          </Animated.ScrollView>
+          />
 
           <View className="absolute inset-x-0 bottom-6 items-center">
             <View className="bg-black/25 rounded-full px-3 py-2">

@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
-  TouchableOpacity,
+  Pressable,
   View,
 } from 'react-native';
 import Animated, {
@@ -255,14 +255,13 @@ export function BecomeMemberForm({
             <View className="gap-4">
               {/* Monthly Plan */}
               <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-                <TouchableOpacity
+                <Pressable
                   onPress={() => {
                     setSelectedPlan('monthly');
                     setErrorMessage(null);
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
                   disabled={mutation.isPending}
-                  activeOpacity={0.8}
                   className={`bg-white/10 backdrop-blur-xl p-5 rounded-2xl border-2 ${
                     selectedPlan === 'monthly'
                       ? 'border-white'
@@ -283,19 +282,18 @@ export function BecomeMemberForm({
                       <Text className="text-white/70 text-xs">/mês</Text>
                     </View>
                   </View>
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
 
               {/* Annual Plan */}
               <Animated.View entering={FadeInDown.delay(400).duration(400)}>
-                <TouchableOpacity
+                <Pressable
                   onPress={() => {
                     setSelectedPlan('annual');
                     setErrorMessage(null);
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
                   disabled={mutation.isPending}
-                  activeOpacity={0.8}
                   className={`bg-white/10 backdrop-blur-xl p-5 rounded-2xl border-2 ${
                     selectedPlan === 'annual'
                       ? 'border-emerald-400'
@@ -320,7 +318,7 @@ export function BecomeMemberForm({
                       <Text className="text-white/70 text-xs">/ano</Text>
                     </View>
                   </View>
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
             </View>
 
@@ -340,7 +338,7 @@ export function BecomeMemberForm({
                 entering={FadeInDown.delay(500).duration(400)}
                 layout={_layoutAnimation}
               >
-                <TouchableOpacity
+                <Pressable
                   onPress={() => {
                     handleSubmit();
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -355,7 +353,7 @@ export function BecomeMemberForm({
                       Tornar-me membro
                     </Text>
                   )}
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
 
               {/* Footer Note */}
@@ -368,11 +366,11 @@ export function BecomeMemberForm({
                   Ao clicar nesse botão você deve realizar o primeiro pagamento
                   para se tornar membro.
                 </Text>
-                <TouchableOpacity onPress={handleOpenEstatuto}>
+                <Pressable onPress={handleOpenEstatuto}>
                   <Text className="text-white/70 text-center text-sm mt-2 underline">
                     Ver Estatuto da Associação
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
             </View>
           </>

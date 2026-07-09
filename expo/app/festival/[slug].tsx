@@ -52,27 +52,13 @@ export default function FestivalScreen() {
   const festivalTimeZone = getFestivalTimeZone(query.data);
   const title = query.data?.festival.name ?? '';
 
-  const cards = React.useMemo(() => {
-    if (!query.data?.sectors) {
-      return [];
-    }
-
-    return query.data.sectors.flatMap((sector) => sector.cards);
-  }, [query.data?.sectors]);
-
+  const cards = query.data?.sectors.flatMap((sector) => sector.cards) ?? [];
   const selectedCard =
-    React.useMemo<FestivalHighlineScheduleCard | null>(() => {
-      const card = cards.find(
-        (item) => item.highline.id === selectedHighlineId,
-      );
+    cards.find((item) => item.highline.id === selectedHighlineId) ?? null;
 
-      if (!card) {
-        return null;
-      }
-
-      return card;
-    }, [cards, selectedHighlineId]);
-
+  // expo-router's parameter setter uses syntax the current React Compiler
+  // cannot lower; this callback remains manually memoized.
+  // react-doctor-disable-next-line react-hooks-js/todo
   const handleOpenSchedule = React.useCallback(
     (card: FestivalHighlineScheduleCard, dayKey = card.defaultDayKey) => {
       router.setParams({
@@ -203,13 +189,9 @@ function FestivalContent({
   ) => void;
 }) {
   let content: React.ReactNode;
-  const viewerBookings = React.useMemo(() => {
-    if (!query.data?.sectors.length) {
-      return [];
-    }
-
-    return getViewerFestivalBookings(query.data.sectors);
-  }, [query.data?.sectors]);
+  const viewerBookings = query.data?.sectors.length
+    ? getViewerFestivalBookings(query.data.sectors)
+    : [];
 
   if (query.isPending && !query.data) {
     content = <FestivalLoadingState />;

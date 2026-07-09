@@ -57,9 +57,7 @@ import {
 import { StepFields } from '~/components/organizations/onboarding/step-fields';
 import { Text } from '~/components/ui/text';
 
-type SettledResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; error: unknown };
+type SettledResult<T> = { ok: true; value: T } | { ok: false; error: unknown };
 
 const settle = <T,>(promise: Promise<T>): Promise<SettledResult<T>> =>
   promise.then(
@@ -144,17 +142,7 @@ export default function OnboardingScreen() {
   );
 }
 
-function OnboardingWizard({
-  acceptedTermsAt,
-  application,
-  email,
-  organizationId,
-  planType,
-  profileBirthday,
-  profileName,
-  slug,
-  userId,
-}: {
+type OnboardingWizardProps = {
   acceptedTermsAt?: string;
   application: MembershipApplication | null;
   email?: string | null;
@@ -164,7 +152,19 @@ function OnboardingWizard({
   profileName?: string | null;
   slug: string;
   userId: string;
-}) {
+};
+
+function useOnboardingWizard({
+  acceptedTermsAt,
+  application,
+  email,
+  organizationId,
+  planType,
+  profileBirthday,
+  profileName,
+  slug,
+  userId,
+}: OnboardingWizardProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
@@ -270,6 +270,7 @@ function OnboardingWizard({
     onSuccess: (data) => {
       setCreatedApplicationId(data.id);
       queryClient.setQueryData(applicationQueryKey, data);
+      void queryClient.invalidateQueries({ queryKey: applicationQueryKey });
       setSavedVisible(true);
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
       savedTimerRef.current = setTimeout(() => setSavedVisible(false), 1500);
@@ -363,11 +364,11 @@ function OnboardingWizard({
     };
   });
 
-  // Debounced draft save + live step-error refresh while the user is typing.
-  // Skip the initial watch emission (no `name`); both Controller updates and
-  // setValue calls include a field name.
-  React.useEffect(() => {
-    const subscription = form.watch((values, { name }) => {
+  const handleFormValuesChange = React.useEffectEvent(
+    (
+      values: Partial<MembershipApplicationForm>,
+      { name }: { name?: string },
+    ) => {
       if (!name) return;
 
       const next = values as MembershipApplicationForm;
@@ -379,10 +380,16 @@ function OnboardingWizard({
       if (!getSubmittedApplicationId()) {
         scheduleSave(next);
       }
-    });
+    },
+  );
+
+  // react-doctor-disable-next-line react-hooks-js/incompatible-library
+  // Subscribe once: Effect Events always read the current callbacks and state.
+  React.useEffect(() => {
+    const subscription = form.watch(handleFormValuesChange);
 
     return () => subscription.unsubscribe();
-  }, [form, getSubmittedApplicationId, scheduleSave]);
+  }, [form]);
 
   const setField = <T extends FormField>(
     field: T,
@@ -395,14 +402,17 @@ function OnboardingWizard({
   };
 
   const patchForm = (patch: Partial<MembershipApplicationForm>) => {
-    (Object.entries(patch) as [FormField, MembershipApplicationForm[FormField]][]).forEach(
-      ([field, value]) => {
-        form.setValue(field, value as never, {
-          shouldDirty: true,
-          shouldTouch: true,
-        });
-      },
-    );
+    (
+      Object.entries(patch) as [
+        FormField,
+        MembershipApplicationForm[FormField],
+      ][]
+    ).forEach(([field, value]) => {
+      form.setValue(field, value as never, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    });
   };
 
   const handleCepChange = (value: string) => {
@@ -533,7 +543,33 @@ function OnboardingWizard({
     setContinuing(false);
   };
 
-  if (success) {
+  return {
+    addressAutofillKey,
+    cepFailed,
+    cepLoading,
+    continuing,
+    errorMessage,
+    errors,
+    form,
+    handleBack,
+    handleCepChange,
+    handleContinue,
+    insets,
+    progress,
+    router,
+    savedVisible,
+    scrollRef,
+    step,
+    stepAnimatedStyle,
+    stepValid,
+    success,
+  };
+}
+
+function OnboardingWizard(props: OnboardingWizardProps) {
+  const wizard = useOnboardingWizard(props);
+
+  if (wizard.success) {
     return (
       <View className="flex-1 bg-white">
         <SuccessInterstitial />
@@ -542,16 +578,16 @@ function OnboardingWizard({
   }
 
   return (
-    <FormProvider {...form}>
+    <FormProvider {...wizard.form}>
       <View className="flex-1 bg-white">
         <ProgressHeader
-          canGoBack={step > 0}
-          currentStep={step}
-          onBack={handleBack}
-          onClose={() => router.replace('/(tabs)/organizations')}
-          progress={progress}
-          subtitle={steps[step].subtitle}
-          title={steps[step].title}
+          canGoBack={wizard.step > 0}
+          currentStep={wizard.step}
+          onBack={wizard.handleBack}
+          onClose={() => wizard.router.replace('/(tabs)/organizations')}
+          progress={wizard.progress}
+          subtitle={steps[wizard.step].subtitle}
+          title={steps[wizard.step].title}
           totalSteps={steps.length}
         />
         <KeyboardAvoidingView
@@ -559,52 +595,55 @@ function OnboardingWizard({
           className="flex-1"
         >
           <ScrollView
-            ref={scrollRef}
+            ref={wizard.scrollRef}
             className="flex-1"
+            contentInset={{ bottom: wizard.insets.bottom }}
             contentContainerClassName="px-6 gap-5"
             contentContainerStyle={{
               flexGrow: 1,
               justifyContent: 'flex-end',
-              paddingBottom: insets.bottom + 112,
-              paddingTop: insets.top + 196,
+              paddingBottom: 112,
+              paddingTop: wizard.insets.top + 196,
             }}
             keyboardShouldPersistTaps="handled"
             onScrollBeginDrag={Keyboard.dismiss}
             showsVerticalScrollIndicator={false}
           >
             <Animated.View
-              key={`step-${step}`}
+              key={`step-${wizard.step}`}
               className="gap-5"
-              style={stepAnimatedStyle}
+              style={wizard.stepAnimatedStyle}
             >
               <StepFields
-                addressAutofillKey={addressAutofillKey}
-                cepFailed={cepFailed}
-                cepLoading={cepLoading}
-                errors={errors}
-                onCepChange={handleCepChange}
-                step={step}
+                addressAutofillKey={wizard.addressAutofillKey}
+                cepFailed={wizard.cepFailed}
+                cepLoading={wizard.cepLoading}
+                errors={wizard.errors}
+                onCepChange={wizard.handleCepChange}
+                step={wizard.step}
               />
             </Animated.View>
           </ScrollView>
         </KeyboardAvoidingView>
-        {errorMessage ? (
+        {wizard.errorMessage ? (
           <Animated.Text
             entering={FadeIn.duration(180)}
             className="absolute left-6 right-6 text-red-600 text-sm text-center"
-            style={{ bottom: insets.bottom + 86 }}
+            style={{ bottom: wizard.insets.bottom + 86 }}
           >
-            {errorMessage}
+            {wizard.errorMessage}
           </Animated.Text>
         ) : null}
         <FooterCta
-          disabled={!stepValid}
+          disabled={!wizard.stepValid}
           label={
-            step === steps.length - 1 ? 'Ir para o pagamento' : 'Continuar'
+            wizard.step === steps.length - 1
+              ? 'Ir para o pagamento'
+              : 'Continuar'
           }
-          loading={continuing}
-          onPress={handleContinue}
-          saved={savedVisible && !continuing}
+          loading={wizard.continuing}
+          onPress={wizard.handleContinue}
+          saved={wizard.savedVisible && !wizard.continuing}
         />
       </View>
     </FormProvider>

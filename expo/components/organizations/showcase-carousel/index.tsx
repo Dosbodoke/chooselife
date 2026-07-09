@@ -47,6 +47,45 @@ export const showcaseData: ShowcaseItemData[] = [
 
 const carouselData = [...showcaseData, { type: 'form' }];
 
+function CarouselSlide({
+  height,
+  index,
+  item,
+  membershipApplication,
+  org,
+  scrollY,
+  width,
+}: {
+  height: number;
+  index: number;
+  item: (typeof carouselData)[number];
+  membershipApplication: MembershipApplication | null;
+  org: Tables<'organizations'>;
+  scrollY: ReturnType<typeof useScrollOffset>;
+  width: number;
+}) {
+  return (
+    <View style={{ width, height }}>
+      {'title' in item ? (
+        <ShowcaseItem
+          item={item}
+          index={index}
+          scrollY={scrollY}
+          itemSize={height}
+        />
+      ) : (
+        <BecomeMemberForm
+          scrollY={scrollY}
+          itemIndex={index}
+          itemHeight={height}
+          membershipApplication={membershipApplication}
+          org={org}
+        />
+      )}
+    </View>
+  );
+}
+
 export function Carousel({
   membershipApplication,
   org,
@@ -95,29 +134,15 @@ export function Carousel({
         snapToInterval={height}
         decelerationRate="fast"
         renderItem={({ item, index }) => (
-          <View
-            style={{
-              width,
-              height,
-            }}
-          >
-            {'title' in item ? (
-              <ShowcaseItem
-                item={item}
-                index={index}
-                scrollY={scrollY}
-                itemSize={height}
-              />
-            ) : (
-              <BecomeMemberForm
-                scrollY={scrollY}
-                itemIndex={index}
-                itemHeight={height}
-                membershipApplication={membershipApplication}
-                org={org}
-              />
-            )}
-          </View>
+          <CarouselSlide
+            height={height}
+            index={index}
+            item={item}
+            membershipApplication={membershipApplication}
+            org={org}
+            scrollY={scrollY}
+            width={width}
+          />
         )}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}

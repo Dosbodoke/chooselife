@@ -7,8 +7,8 @@ import { useTranslation } from 'react-i18next';
 import {
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Pressable,
   ScrollView,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -109,7 +109,7 @@ const QuickAction: React.FC<{
 }> = ({ ref, onPress, label, icon, isComingSoon = false }) => {
   const { t } = useTranslation();
   return (
-    <TouchableOpacity
+    <Pressable
       ref={ref}
       className="max-w-24 flex-col items-center gap-1"
       onPress={onPress}
@@ -131,7 +131,7 @@ const QuickAction: React.FC<{
         {icon}
       </View>
       <Text className="text-xs text-center font-medium">{label}</Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
@@ -194,9 +194,9 @@ const UpcomingEvents: React.FC = () => {
           {t('app.(tabs).home.sections.UpcomingEvents.title')}
         </Text>
         <Link href="/events" asChild>
-          <TouchableOpacity>
+          <Pressable>
             <Text className="text-sm text-blue-600">{t('common.seeAll')}</Text>
-          </TouchableOpacity>
+          </Pressable>
         </Link>
       </View>
       <View className="gap-3">

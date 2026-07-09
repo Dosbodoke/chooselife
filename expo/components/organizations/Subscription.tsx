@@ -18,7 +18,7 @@ import {
   XCircle,
 } from 'lucide-react-native';
 import React, { useCallback, useRef } from 'react';
-import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -480,7 +480,7 @@ export const Subscription = ({
           )}
 
           {/* Payment History Button */}
-          <TouchableOpacity
+          <Pressable
             onPress={handleOpenHistory}
             className="flex-row items-center justify-between pt-3 border-t border-gray-100"
           >
@@ -498,7 +498,7 @@ export const Subscription = ({
               </View>
             </View>
             <Text className="text-gray-400 text-2xl">›</Text>
-          </TouchableOpacity>
+          </Pressable>
         </Animated.View>
       </Animated.View>
 
@@ -522,12 +522,12 @@ export const Subscription = ({
                 {payments?.length || 0} pagamentos totais
               </Text>
             </View>
-            <TouchableOpacity
+            <Pressable
               onPress={() => historySheetRef.current?.close()}
               className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
             >
               <X className="text-gray-600" size={24} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
 
@@ -571,7 +571,7 @@ export const Subscription = ({
                       <Animated.View
                         entering={FadeInDown.delay(100).springify()}
                       >
-                        <TouchableOpacity
+                        <Pressable
                           onPress={() => {
                             historySheetRef.current?.close();
                             startPaymentMutation.mutate({
@@ -585,7 +585,7 @@ export const Subscription = ({
                           <Text className="text-emerald-700 font-bold text-center text-sm">
                             Pagar agora →
                           </Text>
-                        </TouchableOpacity>
+                        </Pressable>
                       </Animated.View>
                     )}
                   </Animated.View>

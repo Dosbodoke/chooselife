@@ -45,6 +45,7 @@ export default async function Festival({ params }: Props) {
       <Image
         src="/festival-hero.png"
         fill
+        sizes="100vw"
         className="absolute -z-10 h-full max-h-screen w-full object-cover opacity-70"
         alt="Illustration of a someone walking a Highline"
       />
