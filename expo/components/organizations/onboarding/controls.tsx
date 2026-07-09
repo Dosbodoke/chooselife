@@ -16,7 +16,6 @@ import {
   ActivityIndicator,
   Pressable,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import Animated, {
@@ -250,11 +249,10 @@ export function SelectCards<T extends string>({
       {options.map((option) => {
         const selected = option.value === value;
         return (
-          <TouchableOpacity
+          <Pressable
             key={option.value}
             accessibilityRole="radio"
             accessibilityState={{ selected }}
-            activeOpacity={0.85}
             onPress={() => {
               onChange(option.value);
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -262,10 +260,11 @@ export function SelectCards<T extends string>({
             className={`rounded-2xl p-5 ${
               selected ? 'bg-blue-50/60' : 'bg-zinc-50'
             }`}
-            style={{
+            style={({ pressed }) => ({
               borderColor: selected ? '#2563EB' : '#E4E4E7',
               borderWidth: 2,
-            }}
+              opacity: pressed ? 0.85 : 1,
+            })}
           >
             <View className="flex-row items-start justify-between gap-3">
               <View className="flex-1">
@@ -290,7 +289,7 @@ export function SelectCards<T extends string>({
                 ) : null}
               </View>
             </View>
-          </TouchableOpacity>
+          </Pressable>
         );
       })}
       {error ? <Text className="text-red-600 text-xs">{error}</Text> : null}
@@ -521,13 +520,15 @@ export function FooterCta({
         paddingBottom: insets.bottom + 16,
       }}
     >
-      <TouchableOpacity
-        activeOpacity={0.85}
+      <Pressable
         className={`bg-zinc-950 rounded-full h-14 items-center justify-center ${
           disabled ? 'opacity-50' : ''
         }`}
         disabled={disabled || loading}
         onPress={onPress}
+        style={({ pressed }) => ({
+          opacity: disabled || loading ? undefined : pressed ? 0.85 : 1,
+        })}
       >
         {loading ? (
           <ActivityIndicator color="#FFFFFF" />
@@ -543,7 +544,7 @@ export function FooterCta({
         ) : (
           <Text className="text-white text-lg font-bold">{label}</Text>
         )}
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }

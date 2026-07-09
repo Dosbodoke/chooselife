@@ -10,7 +10,6 @@ import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Pressable,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
@@ -97,17 +96,17 @@ export default function Profile() {
         keyboardShouldPersistTaps="handled"
         removeClippedSubviews={false}
       >
-        <TouchableOpacity
+        <Pressable
           onPress={() =>
             router.canGoBack() ? router.back() : router.replace('/(tabs)')
           }
-          className="p-2 flex-row items-center rounded-full "
+          className="p-2 flex-row items-center rounded-full active:opacity-70"
         >
           <Icon as={ChevronLeftIcon} className="text-primary size-6" />
           <Text className="text-primary font-semibold text-xl">
             {profile.username}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
         <SupabaseProvider supabase={supabase} userId={profile.id}>
           <UserHeader profile={profile} />
           <ProfileMembership />
