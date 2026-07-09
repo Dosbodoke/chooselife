@@ -57,6 +57,16 @@ import {
 import { StepFields } from '~/components/organizations/onboarding/step-fields';
 import { Text } from '~/components/ui/text';
 
+type SettledResult<T> =
+  | { ok: true; value: T }
+  | { ok: false; error: unknown };
+
+const settle = <T,>(promise: Promise<T>): Promise<SettledResult<T>> =>
+  promise.then(
+    (value) => ({ ok: true, value }),
+    (error: unknown) => ({ ok: false, error }),
+  );
+
 export default function OnboardingScreen() {
   const { session, sessionLoading, profile } = useAuth();
   const { accepted_terms_at, plan_type, slug } = useLocalSearchParams<{
@@ -449,46 +459,63 @@ function OnboardingWizard({
       return;
     }
 
-    let stage: 'payment' | 'save' = 'save';
-
     setContinuing(true);
-    try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      if (step < steps.length - 1) {
-        if (!getSubmittedApplicationId()) {
-          await saveNow(values);
+    const saveErrorMessage =
+      'Não foi possível salvar seu cadastro. Verifique a conexão e tente novamente.';
+
+    const reportError = async (message: string) => {
+      setErrorMessage(message);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setContinuing(false);
+    };
+
+    if (step < steps.length - 1) {
+      if (!getSubmittedApplicationId()) {
+        const saved = await settle(saveNow(values));
+        if (!saved.ok) {
+          await reportError(saveErrorMessage);
+          return;
         }
-        goToStep(step + 1, 'forward');
+      }
+      goToStep(step + 1, 'forward');
+      setContinuing(false);
+      return;
+    }
+
+    if (!getSubmittedApplicationId()) {
+      const saved = await settle(saveNow(values));
+      if (!saved.ok) {
+        await reportError(saveErrorMessage);
         return;
       }
 
-      const existingSubmittedId = getSubmittedApplicationId();
-
-      if (!existingSubmittedId) {
-        const saved = await saveNow(values);
-        const submitted = await submitMutation.mutateAsync(
-          applicationId ?? saved.id,
-        );
-        setSubmittedApplicationId(submitted?.id ?? applicationId ?? saved.id);
+      const submitted = await settle(
+        submitMutation.mutateAsync(applicationId ?? saved.value.id),
+      );
+      if (!submitted.ok) {
+        await reportError(saveErrorMessage);
+        return;
       }
 
-      stage = 'payment';
-      await startSubscriptionMutation.mutateAsync();
-    } catch (error) {
-      const message =
-        stage === 'payment'
-          ? error instanceof Error
-            ? error.message ||
-              'Não foi possível iniciar o pagamento. Tente novamente.'
-            : 'Não foi possível iniciar o pagamento. Tente novamente.'
-          : 'Não foi possível salvar seu cadastro. Verifique a conexão e tente novamente.';
-
-      setErrorMessage(message);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } finally {
-      setContinuing(false);
+      setSubmittedApplicationId(
+        submitted.value?.id ?? applicationId ?? saved.value.id,
+      );
     }
+
+    const payment = await settle(startSubscriptionMutation.mutateAsync());
+    if (!payment.ok) {
+      const message =
+        payment.error instanceof Error
+          ? payment.error.message ||
+            'Não foi possível iniciar o pagamento. Tente novamente.'
+          : 'Não foi possível iniciar o pagamento. Tente novamente.';
+      await reportError(message);
+      return;
+    }
+
+    setContinuing(false);
   };
 
   if (success) {
