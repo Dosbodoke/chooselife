@@ -14,9 +14,9 @@ import {
 } from 'lucide-react-native';
 import React from 'react';
 import {
+  Pressable,
   RefreshControl,
   ScrollView,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -231,9 +231,8 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
   destructive = false,
 }) => {
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}
       disabled={!onPress}
       className={cn(
         'flex-row items-center pl-4 bg-white active:bg-gray-50',
@@ -275,6 +274,6 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
           )}
         </View>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 };
