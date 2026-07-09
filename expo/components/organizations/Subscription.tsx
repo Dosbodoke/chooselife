@@ -72,11 +72,10 @@ const fetchSubscriptionData = async (
 };
 
 const SkeletonBox = ({ className }: { className?: string }) => (
-  <Animated.View
-    entering={FadeIn}
-    className={cn('bg-gray-200 rounded-lg', className)}
-    style={{ opacity: 0.6 }}
-  />
+  // Opacity must not live on the same node as `entering` (FadeIn owns opacity).
+  <Animated.View entering={FadeIn}>
+    <View className={cn('bg-gray-200 rounded-lg opacity-60', className)} />
+  </Animated.View>
 );
 
 const SubscriptionSkeleton = () => (
@@ -184,7 +183,6 @@ const PaymentStatusBadge = ({ status }: { status: string }) => {
   return (
     <Animated.View
       entering={ZoomIn.springify()}
-      layout={LinearTransition.springify()}
       className={`flex-row items-center gap-1.5 rounded-full px-3 py-1.5 ${config.bg} border ${config.border}`}
     >
       {config.icon}
@@ -208,7 +206,6 @@ const MembershipStatusBadge = ({
     return (
       <Animated.View
         entering={FadeIn.springify()}
-        layout={LinearTransition.springify()}
         className={cn(baseStyle, 'bg-green-50 border-green-200')}
       >
         <CheckCircle className="text-green-600" size={18} />
@@ -221,7 +218,6 @@ const MembershipStatusBadge = ({
     return (
       <Animated.View
         entering={FadeIn.springify()}
-        layout={LinearTransition.springify()}
         className={cn(baseStyle, 'bg-amber-50 border-amber-200')}
       >
         <Clock className="text-amber-600" size={18} />
@@ -233,7 +229,6 @@ const MembershipStatusBadge = ({
   return (
     <Animated.View
       entering={FadeIn.springify()}
-      layout={LinearTransition.springify()}
       className={cn(baseStyle, 'bg-gray-50 border-gray-200')}
     >
       <XCircle className="text-gray-600" size={18} />
@@ -251,35 +246,37 @@ const PendingPaymentAlert = ({
   onPayPress: () => void;
   isPaying: boolean;
 }) => (
-  <Animated.View
-    entering={FadeInDown.springify()}
-    exiting={FadeOut}
-    layout={LinearTransition.springify()}
-    className="bg-amber-50 border border-amber-200 rounded-xl p-4 gap-4 items-start"
-  >
-    <View className="flex flex-row gap-4">
-      <Clock className="text-amber-600 mt-0.5" size={24} />
-      <View className="flex-1 gap-1">
-        <Text className="text-amber-800 font-bold">Pagamento Pendente</Text>
-        <Text className="text-amber-700">
-          Conclua seu pagamento para ativar sua assinatura!
-        </Text>
-      </View>
-    </View>
-
-    <Button
-      onPress={onPayPress}
-      disabled={isPaying}
-      className="w-full h-12 min-h-12 flex-row items-center justify-center rounded-xl px-4 py-0 gap-2"
+  // Layout on the outer view; entering/exiting (opacity) on the inner view.
+  <Animated.View layout={LinearTransition.springify()}>
+    <Animated.View
+      entering={FadeInDown.springify()}
+      exiting={FadeOut}
+      className="bg-amber-50 border border-amber-200 rounded-xl p-4 gap-4 items-start"
     >
-      {isPaying ? (
-        <ActivityIndicator color="white" size="small" />
-      ) : (
-        <Text className="text-white font-bold text-center leading-5">
-          PAGAR AGORA • R$ {(amount / 100).toFixed(2)}
-        </Text>
-      )}
-    </Button>
+      <View className="flex flex-row gap-4">
+        <Clock className="text-amber-600 mt-0.5" size={24} />
+        <View className="flex-1 gap-1">
+          <Text className="text-amber-800 font-bold">Pagamento Pendente</Text>
+          <Text className="text-amber-700">
+            Conclua seu pagamento para ativar sua assinatura!
+          </Text>
+        </View>
+      </View>
+
+      <Button
+        onPress={onPayPress}
+        disabled={isPaying}
+        className="w-full h-12 min-h-12 flex-row items-center justify-center rounded-xl px-4 py-0 gap-2"
+      >
+        {isPaying ? (
+          <ActivityIndicator color="white" size="small" />
+        ) : (
+          <Text className="text-white font-bold text-center leading-5">
+            PAGAR AGORA • R$ {(amount / 100).toFixed(2)}
+          </Text>
+        )}
+      </Button>
+    </Animated.View>
   </Animated.View>
 );
 
@@ -406,111 +403,103 @@ export const Subscription = ({
 
   return (
     <>
-      {/* Membership Status Card */}
-      <Animated.View
-        entering={FadeInUp.springify()}
-        layout={LinearTransition.springify()}
-        className="bg-white border border-gray-200 rounded-2xl p-5 gap-4"
-      >
+      {/* Membership Status Card — layout outer, entering (opacity) inner */}
+      <Animated.View layout={LinearTransition.springify()}>
         <Animated.View
-          layout={LinearTransition.springify()}
-          className="flex-row items-center justify-between"
+          entering={FadeInUp.springify()}
+          className="bg-white border border-gray-200 rounded-2xl p-5 gap-4"
         >
-          <Text className="text-lg font-bold text-gray-900">
-            Status da Assinatura
-          </Text>
-          <MembershipStatusBadge
-            status={subscription.status}
-            isActive={isActive}
-          />
-        </Animated.View>
-
-        {shouldShowPendingPayment && pendingPayment && (
-          <PendingPaymentAlert
-            amount={pendingPayment.amount}
-            onPayPress={() =>
-              startPaymentMutation.mutate({
-                amount: pendingPayment.amount,
-                paymentId: pendingPayment.id,
-              })
-            }
-            isPaying={startPaymentMutation.isPending}
-          />
-        )}
-
-        <Animated.View
-          layout={LinearTransition.springify()}
-          className="flex-row items-center"
-        >
-          <View className="w-10 h-10 rounded-xl bg-purple-50 items-center justify-center mr-3">
-            <TrendingUp className="text-purple-600" size={20} />
-          </View>
-          <View className="flex-1">
-            <Text className="text-xs text-gray-500 font-semibold">
-              Ciclo de Cobrança
+          <View className="flex-row items-center justify-between">
+            <Text className="text-lg font-bold text-gray-900">
+              Status da Assinatura
             </Text>
-            <View className="flex-row items-center gap-2">
-              <Text className="text-base font-bold text-gray-900 capitalize">
-                {subscription.plan_type === 'annual' ? 'Anual' : 'Mensal'}
+            <MembershipStatusBadge
+              status={subscription.status}
+              isActive={isActive}
+            />
+          </View>
+
+          {shouldShowPendingPayment && pendingPayment && (
+            <PendingPaymentAlert
+              amount={pendingPayment.amount}
+              onPayPress={() =>
+                startPaymentMutation.mutate({
+                  amount: pendingPayment.amount,
+                  paymentId: pendingPayment.id,
+                })
+              }
+              isPaying={startPaymentMutation.isPending}
+            />
+          )}
+
+          <View className="flex-row items-center">
+            <View className="w-10 h-10 rounded-xl bg-purple-50 items-center justify-center mr-3">
+              <TrendingUp className="text-purple-600" size={20} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-xs text-gray-500 font-semibold">
+                Ciclo de Cobrança
               </Text>
-              <View className="bg-emerald-50 rounded-lg px-2 py-1">
-                <Text className="text-emerald-700 font-bold text-xs">
-                  R${' '}
-                  {subscription.plan_type === 'annual'
-                    ? annualPrice
-                    : monthlyPrice}
-                  {subscription.plan_type === 'monthly' && '/mês'}
+              <View className="flex-row items-center gap-2">
+                <Text className="text-base font-bold text-gray-900 capitalize">
+                  {subscription.plan_type === 'annual' ? 'Anual' : 'Mensal'}
                 </Text>
+                <View className="bg-emerald-50 rounded-lg px-2 py-1">
+                  <Text className="text-emerald-700 font-bold text-xs">
+                    R${' '}
+                    {subscription.plan_type === 'annual'
+                      ? annualPrice
+                      : monthlyPrice}
+                    {subscription.plan_type === 'monthly' && '/mês'}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
-        </Animated.View>
 
-        {lastSuccessfulPayment && (
-          <Animated.View
-            layout={LinearTransition.springify()}
-            className="flex-row items-center pt-3 border-t border-gray-100"
+          {lastSuccessfulPayment && (
+            <View className="flex-row items-center pt-3 border-t border-gray-100">
+              <View className="w-10 h-10 rounded-xl bg-blue-50 items-center justify-center mr-3">
+                <CalendarCheck className="text-blue-600" size={20} />
+              </View>
+              <View>
+                <Text className="text-xs text-gray-500 font-semibold">
+                  Membro Desde
+                </Text>
+                <Text className="text-base font-bold text-gray-900">
+                  {new Date(
+                    lastSuccessfulPayment.paid_at ||
+                      lastSuccessfulPayment.created_at,
+                  ).toLocaleDateString('pt-BR', {
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Payment History Button */}
+          <TouchableOpacity
+            onPress={handleOpenHistory}
+            className="flex-row items-center justify-between pt-3 border-t border-gray-100"
           >
-            <View className="w-10 h-10 rounded-xl bg-blue-50 items-center justify-center mr-3">
-              <CalendarCheck className="text-blue-600" size={20} />
+            <View className="flex-row items-center flex-1">
+              <View className="w-10 h-10 rounded-xl bg-gray-50 items-center justify-center mr-3">
+                <History className="text-gray-600" size={20} />
+              </View>
+              <View>
+                <Text className="text-base font-bold text-gray-900">
+                  Histórico de Pagamentos
+                </Text>
+                <Text className="text-xs text-gray-500 font-semibold">
+                  {payments?.length || 0} pagamentos totais
+                </Text>
+              </View>
             </View>
-            <View>
-              <Text className="text-xs text-gray-500 font-semibold">
-                Membro Desde
-              </Text>
-              <Text className="text-base font-bold text-gray-900">
-                {new Date(
-                  lastSuccessfulPayment.paid_at ||
-                    lastSuccessfulPayment.created_at,
-                ).toLocaleDateString('pt-BR', {
-                  month: 'long',
-                  year: 'numeric',
-                })}
-              </Text>
-            </View>
-          </Animated.View>
-        )}
-
-        {/* Payment History Button */}
-        <TouchableOpacity
-          onPress={handleOpenHistory}
-          className="flex-row items-center justify-between pt-3 border-t border-gray-100"
-        >
-          <View className="flex-row items-center flex-1">
-            <View className="w-10 h-10 rounded-xl bg-gray-50 items-center justify-center mr-3">
-              <History className="text-gray-600" size={20} />
-            </View>
-            <View>
-              <Text className="text-base font-bold text-gray-900">
-                Histórico de Pagamentos
-              </Text>
-              <Text className="text-xs text-gray-500 font-semibold">
-                {payments?.length || 0} pagamentos totais
-              </Text>
-            </View>
-          </View>
-          <Text className="text-gray-400 text-2xl">›</Text>
-        </TouchableOpacity>
+            <Text className="text-gray-400 text-2xl">›</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </Animated.View>
 
       {/* Payment History Bottom Sheet */}
@@ -548,56 +537,58 @@ export const Subscription = ({
               {payments.map((item, index) => (
                 <Animated.View
                   key={item.id}
-                  entering={FadeInDown.delay(index * 50).springify()}
                   layout={LinearTransition.springify()}
-                  className="bg-white border border-gray-200 rounded-xl p-4 mb-3"
                 >
-                  <View className="flex-row items-center justify-between mb-3">
-                    <View className="flex-row items-center flex-1">
-                      <View className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 items-center justify-center mr-3">
-                        <PixIcon />
+                  <Animated.View
+                    entering={FadeInDown.delay(index * 50).springify()}
+                    className="bg-white border border-gray-200 rounded-xl p-4 mb-3"
+                  >
+                    <View className="flex-row items-center justify-between mb-3">
+                      <View className="flex-row items-center flex-1">
+                        <View className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 items-center justify-center mr-3">
+                          <PixIcon />
+                        </View>
+                        <View className="flex-1">
+                          <Text className="text-xl font-bold text-gray-900">
+                            R$ {(item.amount / 100).toFixed(2)}
+                          </Text>
+                          <Text className="text-xs text-gray-500 font-semibold mt-0.5">
+                            {new Date(item.created_at).toLocaleDateString(
+                              'pt-BR',
+                              {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                              },
+                            )}
+                          </Text>
+                        </View>
                       </View>
-                      <View className="flex-1">
-                        <Text className="text-xl font-bold text-gray-900">
-                          R$ {(item.amount / 100).toFixed(2)}
-                        </Text>
-                        <Text className="text-xs text-gray-500 font-semibold mt-0.5">
-                          {new Date(item.created_at).toLocaleDateString(
-                            'pt-BR',
-                            {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                            },
-                          )}
-                        </Text>
-                      </View>
+                      <PaymentStatusBadge status={item.status} />
                     </View>
-                    <PaymentStatusBadge status={item.status} />
-                  </View>
 
-                  {item.status === 'pending' && (
-                    <Animated.View
-                      entering={FadeInDown.delay(100).springify()}
-                      layout={LinearTransition.springify()}
-                    >
-                      <TouchableOpacity
-                        onPress={() => {
-                          historySheetRef.current?.close();
-                          startPaymentMutation.mutate({
-                            amount: item.amount,
-                            paymentId: item.id,
-                          });
-                        }}
-                        className="bg-emerald-50 border border-emerald-200 rounded-lg py-3 mt-2"
-                        disabled={startPaymentMutation.isPending}
+                    {item.status === 'pending' && (
+                      <Animated.View
+                        entering={FadeInDown.delay(100).springify()}
                       >
-                        <Text className="text-emerald-700 font-bold text-center text-sm">
-                          Pagar agora →
-                        </Text>
-                      </TouchableOpacity>
-                    </Animated.View>
-                  )}
+                        <TouchableOpacity
+                          onPress={() => {
+                            historySheetRef.current?.close();
+                            startPaymentMutation.mutate({
+                              amount: item.amount,
+                              paymentId: item.id,
+                            });
+                          }}
+                          className="bg-emerald-50 border border-emerald-200 rounded-lg py-3 mt-2"
+                          disabled={startPaymentMutation.isPending}
+                        >
+                          <Text className="text-emerald-700 font-bold text-center text-sm">
+                            Pagar agora →
+                          </Text>
+                        </TouchableOpacity>
+                      </Animated.View>
+                    )}
+                  </Animated.View>
                 </Animated.View>
               ))}
             </View>
