@@ -59,12 +59,71 @@ Supabase serves as the project's backend, handling database and authentication.
 
 #### Deploying Edge Functions
 
-Some Edge Functions (like `create-abacate-pay-charge`) require specific configurations (e.g., `--no-verify-jwt`) that are critical for their operation. To ensure all functions are deployed correctly with their required flags, **always use the provided deployment script** instead of running `supabase functions deploy` manually.
+Use the provided deployment script instead of running `supabase functions deploy` manually. The current app membership flow does not require a payment gateway: `start-subscription` creates the local pending payment, the app shows the configured static PIX QR code, and admins manually settle payments after confirming the transfer.
 
 - **Deploy all functions:**
   ```bash
   npm run deploy:functions
   ```
+
+#### Manual PIX Configuration
+
+Configure the fixed PIX details on the association record in the database,
+alongside the plan prices:
+
+```sql
+update public.organizations
+set
+  monthly_price_amount = 3500,
+  monthly_pix_copy_paste = '<monthly-fixed-pix-copy-and-paste-code>',
+  annual_price_amount = 36000,
+  annual_pix_copy_paste = '<annual-fixed-pix-copy-and-paste-code>'
+where slug = 'slac';
+```
+
+The QR code is generated locally from the copy-paste payload returned by
+`get_manual_payment_instructions(payment_id)` for the signed-in owner of the
+manual payment. The payload is fixed per plan and is not generated per payment
+request.
+
+After paying, the user can tap **Já paguei**. This only records
+`payments.user_marked_paid_at` so the team knows the user claims to have paid;
+the payment remains `pending` until an admin manually confirms it with
+`mark_payment_succeeded_manually`.
+
+#### Optional Gateway Configuration
+
+Gateway functions are still present for a future Stripe approval, but the mobile app no longer calls them for membership signup or renewal.
+
+If Stripe is enabled later, set these secrets on each Supabase project:
+
+  ```bash
+  npx supabase secrets set STRIPE_SECRET_KEY=<sk_test_or_live_...>
+  npx supabase secrets set STRIPE_WEBHOOK_SECRET=<whsec_...>
+  ```
+
+- **Stripe webhook endpoint:**
+  `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`
+
+  Configure it in Stripe for `checkout.session.completed` and `checkout.session.expired` events.
+
+#### Manually Settling a Payment
+
+Use the database helper instead of editing `payments.status` directly. It marks the
+local payment as succeeded and applies subscription/membership effects exactly
+once, even if the payment is checked again later.
+
+```sql
+select *
+from public.mark_payment_succeeded_manually(
+  '<payment-id>'::uuid,
+  timezone('utc'::text, now())
+);
+```
+
+Check `applied_effects_now` in the result. `true` means this call activated the
+subscription/membership; `false` means the payment was already settled or could
+not apply effects, so inspect `settlement_applied_at` and the subscription row.
 
 #### Cron Jobs Secrets
 

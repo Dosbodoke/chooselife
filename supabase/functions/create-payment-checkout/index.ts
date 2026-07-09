@@ -6,11 +6,11 @@ import type {
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 import { createSupabaseClient } from "../_shared/supabase-client.ts";
 import {
-  createChargeForPayment,
+  createCheckoutForPayment,
   InvalidPaymentStateError,
   PaymentNotFoundError,
   PaymentOwnerMismatchError,
-} from "../_shared/abacate-pay-charge.ts";
+} from "../_shared/stripe-checkout.ts";
 
 function jsonResponse(
   body: unknown,
@@ -39,37 +39,20 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "User not authenticated." }, 401);
     }
 
-    const { paymentId, customer }: CreatePaymentCheckoutPayload = await req
-      .json();
+    const { paymentId }: CreatePaymentCheckoutPayload = await req.json();
     if (paymentId === undefined) {
       throw new Error("paymentId is required.");
     }
-    if (
-      customer !== undefined && (
-        customer.name === undefined ||
-        customer.email === undefined ||
-        customer.cellphone === undefined ||
-        customer.taxId === undefined
-      )
-    ) {
-      throw new Error(
-        "customer info should contain name, email, cellphone and taxId.",
-      );
-    }
 
-    const chargeData = await createChargeForPayment({
+    const checkoutData = await createCheckoutForPayment({
       supabaseAdmin,
       paymentId,
       expectedUserId: user.id,
-      customer,
+      customerEmail: user.email,
     });
 
     return new Response(
-      JSON.stringify(
-        {
-          ...chargeData,
-        } satisfies PaymentCheckoutSession,
-      ),
+      JSON.stringify(checkoutData satisfies PaymentCheckoutSession),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -87,13 +70,8 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: error.message }, 400);
     }
 
-    let errorMessage = "An unknown error occurred.";
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    }
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
-    });
+    return jsonResponse({
+      error: error instanceof Error ? error.message : "An unknown error occurred.",
+    }, 400);
   }
 });

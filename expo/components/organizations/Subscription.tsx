@@ -270,12 +270,12 @@ const PendingPaymentAlert = ({
     <Button
       onPress={onPayPress}
       disabled={isPaying}
-      className="w-full flex flex-row rounded-xl py-4 gap-2"
+      className="w-full h-12 min-h-12 flex-row items-center justify-center rounded-xl px-4 py-0 gap-2"
     >
       {isPaying ? (
         <ActivityIndicator color="white" size="small" />
       ) : (
-        <Text className="text-white font-bold">
+        <Text className="text-white font-bold text-center leading-5">
           PAGAR AGORA • R$ {(amount / 100).toFixed(2)}
         </Text>
       )}
@@ -289,6 +289,7 @@ export const Subscription = ({
   organization: Tables<'organizations'>;
 }) => {
   const { profile } = useAuth();
+  const profileId = profile?.id;
   const startPaymentMutation = useStartPayment();
 
   // Bottom Sheet configs
@@ -296,9 +297,15 @@ export const Subscription = ({
   const historySnapPoints = ['30%', '90%'];
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: queryKeys.subscription.byOrgUser(organization.id, profile!.id),
-    queryFn: () => fetchSubscriptionData(organization.id, profile!.id),
-    enabled: !!organization.id && !!profile?.id,
+    queryKey: queryKeys.subscription.byOrgUser(organization.id, profileId),
+    queryFn: () => {
+      if (!profileId) {
+        return Promise.resolve({ subscription: null, payments: [] });
+      }
+
+      return fetchSubscriptionData(organization.id, profileId);
+    },
+    enabled: !!organization.id && !!profileId,
   });
 
   const handleOpenHistory = () => {
@@ -325,7 +332,7 @@ export const Subscription = ({
     return diffDays;
   };
 
-  if (isLoading) {
+  if (!profileId || isLoading) {
     return <SubscriptionSkeleton />;
   }
 
@@ -368,9 +375,14 @@ export const Subscription = ({
   }
 
   const { subscription, payments } = data;
-  const pendingPayment = payments?.find((inv) => inv.status === 'pending');
   const lastSuccessfulPayment = payments?.find(
     (inv) => inv.status === 'succeeded',
+  );
+  const pendingPayment = payments?.find(
+    (inv) =>
+      inv.status === 'pending' &&
+      (!lastSuccessfulPayment ||
+        new Date(inv.created_at) > new Date(lastSuccessfulPayment.created_at)),
   );
   const daysUntilDue = subscription.current_period_end
     ? getDaysUntilDue(subscription.current_period_end)
@@ -382,6 +394,7 @@ export const Subscription = ({
     daysUntilDue < 0;
 
   const isActive = subscription.status === 'active' && !isOverdue;
+  const shouldShowPendingPayment = Boolean(pendingPayment && !isActive);
 
   // Calculate pricing info
   const monthlyPrice = organization.monthly_price_amount
@@ -412,7 +425,7 @@ export const Subscription = ({
           />
         </Animated.View>
 
-        {pendingPayment && !isOverdue && (
+        {shouldShowPendingPayment && pendingPayment && (
           <PendingPaymentAlert
             amount={pendingPayment.amount}
             onPayPress={() =>
@@ -580,7 +593,7 @@ export const Subscription = ({
                         disabled={startPaymentMutation.isPending}
                       >
                         <Text className="text-emerald-700 font-bold text-center text-sm">
-                          Gerar Código PIX →
+                          Pagar agora →
                         </Text>
                       </TouchableOpacity>
                     </Animated.View>

@@ -72,7 +72,7 @@ export default function SettingsPage() {
               </View>
               <View className="flex-1">
                 <Text variant="h2" className="text-xl">
-                  {profile.name}
+                  {profile.username}
                 </Text>
                 <Text className="text-muted-foreground">
                   {t('app.(tabs).settings.viewProfile')}
