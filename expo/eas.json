@@ -10,7 +10,7 @@
       "channel": "development",
       "environment": "development",
       "node": "22.14.0",
-      "pnpm": "10.26.0",
+      "pnpm": "11.10.0",
       "ios": {
         "simulator": true
       }
@@ -20,14 +20,14 @@
       "channel": "preview",
       "environment": "preview",
       "node": "22.14.0",
-      "pnpm": "10.26.0"
+      "pnpm": "11.10.0"
     },
     "production": {
       "autoIncrement": true,
       "channel": "production",
       "environment": "production",
       "node": "22.14.0",
-      "pnpm": "10.26.0"
+      "pnpm": "11.10.0"
     }
   },
   "submit": {
