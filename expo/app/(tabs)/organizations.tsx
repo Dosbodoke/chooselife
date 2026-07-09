@@ -5,8 +5,6 @@ import {
   useOrganization,
 } from '@chooselife/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import SlacCabeMaisImage from '~/assets/images/slac-cabe-mais.png';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import {
   ChevronRightIcon,
@@ -28,11 +26,11 @@ import { cn } from '~/lib/utils';
 
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { AssembleiaCard } from '~/components/organizations/assembleia-card';
+import { BecomeMemberCard } from '~/components/organizations/become-member-card';
 import { News } from '~/components/organizations/News';
 import { OrganizationErrorState } from '~/components/organizations/organization-error-state';
 import { OrganizationLoadingState } from '~/components/organizations/organization-loading-state';
 import { Subscription } from '~/components/organizations/Subscription';
-import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
@@ -143,56 +141,7 @@ function OrganizationDetailsPage() {
         {isMember ? (
           <Subscription organization={organization} />
         ) : (
-          <View className="relative bg-zinc-900 rounded-xl overflow-hidden min-h-[200px] justify-end p-6 gap-4">
-            {/* Spotlight Effect */}
-            <View
-              className="absolute left-0 top-0 w-full h-full"
-              style={{
-                experimental_backgroundImage:
-                  'radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.6) 0%, rgba(24, 24, 27, 0) 60%)',
-              }}
-            />
-
-            <Image
-              source={SlacCabeMaisImage}
-              style={{
-                position: 'absolute',
-                top: -30,
-                right: -30,
-                width: 250,
-                height: 250,
-                transform: [{ rotate: '25deg' }],
-                opacity: 0.4,
-              }}
-              contentFit="contain"
-            />
-
-            {/* Gradient Overlay for Text Readability */}
-            <View
-              className="absolute inset-0"
-              style={{
-                experimental_backgroundImage:
-                  'linear-gradient(to top, rgba(24, 24, 27, 1) 10%, rgba(24, 24, 27, 0.4) 100%)',
-              }}
-            />
-
-            <View className="gap-2 z-10">
-              <Text className="text-2xl font-black text-white">
-                Torne-se um membro
-              </Text>
-              <Text className="text-zinc-400 text-base font-medium leading-6">
-                Junte-se a nós e apoie o desenvolvimento do slackline no
-                Cerrado.
-              </Text>
-            </View>
-
-            <Button
-              onPress={handleBecomeMemberPress}
-              className="w-full bg-white active:bg-gray-100"
-            >
-              <Text className="text-black font-bold">Seja Membro</Text>
-            </Button>
-          </View>
+          <BecomeMemberCard onPress={handleBecomeMemberPress} />
         )}
 
         {/* Activities / Content */}
