@@ -193,10 +193,16 @@ function OnboardingWizard({
         : 0,
   );
   const [errors, setErrors] = React.useState<FormErrors>({});
-  const [applicationId, setApplicationId] = React.useState(application?.id);
-  const [submittedApplicationId, setSubmittedApplicationId] = React.useState(
-    application?.status === 'submitted' ? application.id : undefined,
-  );
+  const [createdApplicationId, setCreatedApplicationId] = React.useState<
+    string | undefined
+  >();
+  const [createdSubmittedId, setCreatedSubmittedId] = React.useState<
+    string | undefined
+  >();
+  const applicationId = createdApplicationId ?? application?.id;
+  const submittedApplicationId =
+    createdSubmittedId ??
+    (application?.status === 'submitted' ? application.id : undefined);
   const [savedVisible, setSavedVisible] = React.useState(false);
   const [cepLoading, setCepLoading] = React.useState(false);
   const [cepFailed, setCepFailed] = React.useState(false);
@@ -258,7 +264,7 @@ function OnboardingWizard({
         formToDraft(nextForm, organizationId, userId),
       ),
     onSuccess: (data) => {
-      setApplicationId(data.id);
+      setCreatedApplicationId(data.id);
       queryClient.setQueryData(applicationQueryKey, data);
       setSavedVisible(true);
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
@@ -269,7 +275,7 @@ function OnboardingWizard({
   const submitMutation = useMutation({
     mutationFn: submitMembershipApplication,
     onSuccess: async (data) => {
-      setSubmittedApplicationId(data?.id ?? applicationId);
+      setCreatedSubmittedId(data?.id ?? applicationId);
       await queryClient.invalidateQueries({
         queryKey: applicationQueryKey,
       });
@@ -499,7 +505,7 @@ function OnboardingWizard({
         return;
       }
 
-      setSubmittedApplicationId(
+      setCreatedSubmittedId(
         submitted.value?.id ?? applicationId ?? saved.value.id,
       );
     }
