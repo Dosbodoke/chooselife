@@ -1,6 +1,6 @@
 import SlacCabeMaisImage from '~/assets/images/slac-cabe-mais.png';
 import { Image } from 'expo-image';
-import { CheckIcon, ChevronRightIcon, Clock3Icon } from 'lucide-react-native';
+import { CheckIcon, ChevronRightIcon } from 'lucide-react-native';
 import React from 'react';
 import { View } from 'react-native';
 
@@ -35,15 +35,12 @@ export function PaymentUnderReviewCard({
       />
 
       <View className="gap-5 p-6">
-        <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center">
           <View className="flex-row items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-1.5">
             <Icon as={CheckIcon} size={14} color="#6EE7B7" strokeWidth={2.5} />
             <Text className="text-xs font-bold text-emerald-200">
               Confirmação recebida
             </Text>
-          </View>
-          <View className="size-10 items-center justify-center rounded-full border border-white/10 bg-white/10">
-            <Icon as={Clock3Icon} size={20} color="#FAFAFA" />
           </View>
         </View>
 
