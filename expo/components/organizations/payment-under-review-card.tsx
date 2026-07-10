@@ -2,8 +2,9 @@ import SlacCabeMaisImage from '~/assets/images/slac-cabe-mais.png';
 import { Image } from 'expo-image';
 import { CheckIcon, ChevronRightIcon, Clock3Icon } from 'lucide-react-native';
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
+import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 
@@ -34,45 +35,46 @@ export function PaymentUnderReviewCard({
       />
 
       <View className="gap-5 p-6">
-        <View className="flex-row items-center gap-2 self-start rounded-full bg-emerald-400/10 px-3 py-1.5">
-          <Icon as={CheckIcon} size={14} color="#6EE7B7" strokeWidth={2.5} />
-          <Text className="text-xs font-bold text-emerald-300">
-            Confirmação recebida
-          </Text>
-        </View>
-
-        <View className="max-w-[280px] gap-2">
-          <View className="flex-row items-center gap-3">
-            <View className="size-10 items-center justify-center rounded-full bg-white/10">
-              <Icon as={Clock3Icon} size={20} color="#F4F4F5" />
-            </View>
-            <Text className="flex-1 text-2xl font-black text-white">
-              Pagamento em análise
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-1.5">
+            <Icon as={CheckIcon} size={14} color="#6EE7B7" strokeWidth={2.5} />
+            <Text className="text-xs font-bold text-emerald-200">
+              Confirmação recebida
             </Text>
           </View>
-          <Text className="text-[15px] font-medium leading-6 text-zinc-400">
+          <View className="size-10 items-center justify-center rounded-full border border-white/10 bg-white/10">
+            <Icon as={Clock3Icon} size={20} color="#FAFAFA" />
+          </View>
+        </View>
+
+        <View className="gap-2">
+          <Text className="text-2xl font-black text-white">
+            Pagamento em análise
+          </Text>
+          <Text className="text-[15px] font-medium leading-6 text-zinc-300">
             Seu aviso de pagamento foi registrado. Agora, a equipe da SL.A.C
             está conferindo o PIX.
           </Text>
-          <Text className="text-sm leading-5 text-zinc-500">
+          <Text className="text-sm leading-5 text-zinc-400">
             Você verá sua associação aqui assim que a confirmação for concluída.
           </Text>
         </View>
-      </View>
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={onPress}
-        className="flex-row items-center justify-between border-t border-white/10 px-6 py-4 active:bg-white/5"
-      >
-        <View className="flex-row items-center gap-3">
-          <Text className="font-bold text-white">Ver pagamento</Text>
-          <View className="rounded-full bg-white/10 px-2 py-0.5">
-            <Text className="text-[11px] font-semibold text-zinc-400">PIX</Text>
+        <Button
+          size="lg"
+          accessibilityLabel="Ver detalhes do pagamento PIX"
+          className="h-12 w-full justify-between rounded-lg bg-white px-4 active:scale-[0.98] active:bg-zinc-100"
+          onPress={onPress}
+        >
+          <View className="flex-row items-center gap-2">
+            <Text className="font-bold text-zinc-950">Ver pagamento</Text>
+            <View className="rounded-full bg-zinc-200 px-2 py-0.5">
+              <Text className="text-[11px] font-bold text-zinc-600">PIX</Text>
+            </View>
           </View>
-        </View>
-        <Icon as={ChevronRightIcon} size={18} color="#A1A1AA" />
-      </Pressable>
+          <Icon as={ChevronRightIcon} size={18} color="#18181B" />
+        </Button>
+      </View>
     </View>
   );
 }
