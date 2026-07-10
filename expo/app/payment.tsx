@@ -182,6 +182,11 @@ export default function PaymentScreen() {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.subscription.all,
       });
+      if (slug && profile?.id) {
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.paymentReview.byOrgUser(slug, profile.id),
+        });
+      }
 
       if (paymentContext === 'new_member') {
         router.replace('/(tabs)/organizations');
@@ -488,6 +493,9 @@ const PaymentStatusSubscription = ({
               queryKey: queryKeys.subscription.all,
             });
             if (slug && profileId) {
+              queryClient.invalidateQueries({
+                queryKey: queryKeys.paymentReview.byOrgUser(slug, profileId),
+              });
               queryClient.invalidateQueries({
                 queryKey: queryKeys.organizations.isMember(slug, profileId),
               });

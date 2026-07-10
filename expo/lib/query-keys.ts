@@ -7,6 +7,11 @@ export const queryKeys = {
     byOrgUser: (organizationId: string, userId: string | undefined) =>
       [...queryKeys.subscription.all, organizationId, userId] as const,
   },
+  paymentReview: {
+    all: ['payment-review'] as const,
+    byOrgUser: (slug: string, userId: string | undefined) =>
+      [...queryKeys.paymentReview.all, slug, userId] as const,
+  },
   membershipApplication: {
     all: ['membership-application'] as const,
     byOrgUser: (

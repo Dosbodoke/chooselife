@@ -13,14 +13,13 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import React from 'react';
-import {
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  View,
-} from 'react-native';
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
+import { getManualPaymentRouteParams } from '~/lib/manual-payment';
+import { getMembershipDisplayState } from '~/lib/membership-display-state';
+import { fetchPaymentUnderReview } from '~/lib/payment-review';
+import { queryKeys as appQueryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 
@@ -30,6 +29,7 @@ import { BecomeMemberCard } from '~/components/organizations/become-member-card'
 import { News } from '~/components/organizations/News';
 import { OrganizationErrorState } from '~/components/organizations/organization-error-state';
 import { OrganizationLoadingState } from '~/components/organizations/organization-loading-state';
+import { PaymentUnderReviewCard } from '~/components/organizations/payment-under-review-card';
 import { Subscription } from '~/components/organizations/Subscription';
 import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
@@ -56,7 +56,25 @@ function OrganizationDetailsPage() {
 
   const { data: organization, isLoading } = useOrganization(ORG_SLUG);
 
-  const { data: isMember } = useIsMember(ORG_SLUG);
+  const { data: isMember, isLoading: isMemberLoading } = useIsMember(ORG_SLUG);
+  const {
+    data: paymentUnderReview,
+    isError: paymentReviewError,
+    isLoading: paymentReviewLoading,
+    refetch: refetchPaymentReview,
+  } = useQuery({
+    queryKey: appQueryKeys.paymentReview.byOrgUser(ORG_SLUG, session?.user.id),
+    queryFn: () => fetchPaymentUnderReview(ORG_SLUG, session!.user.id),
+    enabled: Boolean(session?.user.id && !isMember),
+  });
+  const membershipDisplayState = getMembershipDisplayState({
+    hasPaymentUnderReview: Boolean(paymentUnderReview),
+    isMember,
+    isMemberLoading,
+    isSignedIn: Boolean(session?.user),
+    paymentReviewError,
+    paymentReviewLoading,
+  });
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -70,8 +88,28 @@ function OrganizationDetailsPage() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.organizations.memberCount(ORG_SLUG),
       }),
+      queryClient.invalidateQueries({
+        queryKey: appQueryKeys.paymentReview.byOrgUser(
+          ORG_SLUG,
+          session?.user.id,
+        ),
+      }),
     ]);
     setRefreshing(false);
+  };
+
+  const handlePaymentUnderReviewPress = () => {
+    if (!paymentUnderReview) return;
+
+    router.push({
+      pathname: '/payment',
+      params: getManualPaymentRouteParams({
+        amount: paymentUnderReview.amount,
+        paymentId: paymentUnderReview.id,
+        paymentContext: 'new_member',
+        slug: organization?.slug ?? ORG_SLUG,
+      }),
+    });
   };
 
   const handleBecomeMemberPress = () => {
@@ -138,8 +176,28 @@ function OrganizationDetailsPage() {
         </View>
 
         {/* Membership Section */}
-        {isMember ? (
+        {membershipDisplayState === 'loading' ? (
+          <Skeleton className="h-[200px] w-full rounded-xl bg-gray-200" />
+        ) : membershipDisplayState === 'active-member' ? (
           <Subscription organization={organization} />
+        ) : membershipDisplayState === 'payment-review-error' ? (
+          <View className="gap-3 rounded-xl border border-red-200 bg-white p-6">
+            <Text className="text-lg font-bold text-gray-900">
+              Não foi possível verificar sua associação
+            </Text>
+            <Text className="text-gray-600">
+              Tente novamente para consultar o status do seu pagamento.
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => refetchPaymentReview()}
+              className="items-center rounded-lg bg-gray-900 px-4 py-3"
+            >
+              <Text className="font-bold text-white">Tentar novamente</Text>
+            </Pressable>
+          </View>
+        ) : membershipDisplayState === 'payment-under-review' ? (
+          <PaymentUnderReviewCard onPress={handlePaymentUnderReviewPress} />
         ) : (
           <BecomeMemberCard onPress={handleBecomeMemberPress} />
         )}
