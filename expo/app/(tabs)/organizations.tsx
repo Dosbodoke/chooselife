@@ -13,7 +13,14 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import React from 'react';
-import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import {
+  Alert,
+  Linking,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  View,
+} from 'react-native';
 
 import { useAuth } from '~/context/auth';
 import { getManualPaymentRouteParams } from '~/lib/manual-payment';
@@ -37,6 +44,8 @@ import { Text } from '~/components/ui/text';
 
 // TODO: When more orgs were to be implemented, it should be created the /organizations/[slug] route
 const ORG_SLUG = 'slac' as const;
+const MEMBERSHIP_FORM_URL =
+  'https://docs.google.com/forms/d/e/1FAIpQLSfkuXeriOAahUraV5UwLT88Huo-CVt33Yif_XyeWbBCquGOqw/viewform?usp=publish-editor';
 
 export default function OrganizationDetailsPageWrapper() {
   const { session } = useAuth();
@@ -112,21 +121,12 @@ function OrganizationDetailsPage() {
     });
   };
 
-  const handleBecomeMemberPress = () => {
-    const memberPath = `/organizations/${organization?.slug ?? ORG_SLUG}/member`;
-
-    if (!session?.user) {
-      router.push({
-        pathname: '/(modals)/login',
-        params: { redirect_to: memberPath },
-      });
-      return;
+  const handleBecomeMemberPress = async () => {
+    try {
+      await Linking.openURL(MEMBERSHIP_FORM_URL);
+    } catch {
+      Alert.alert('Erro', 'Não foi possível abrir o formulário.');
     }
-
-    router.push({
-      pathname: '/organizations/[slug]/member',
-      params: { slug: organization?.slug ?? ORG_SLUG },
-    });
   };
 
   if (isLoading) {
