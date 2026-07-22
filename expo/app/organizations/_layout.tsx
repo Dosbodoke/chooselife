@@ -11,6 +11,14 @@ export default function OrganizationsLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="[slug]/onboarding"
+        options={{
+          gestureEnabled: false,
+          headerShown: false,
+          presentation: 'modal',
+        }}
+      />
     </Stack>
   );
 }

@@ -2,10 +2,7 @@ import type { SupabaseClient } from "@supabase";
 import { createSupabaseClient } from "../_shared/supabase-client.ts";
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import type {
-  AbacatePayCharge,
-  CreateAbacatePayChargePayload,
-} from "../_shared/edge-functions.types.ts";
+import type { PaymentCheckoutSession } from "../_shared/edge-functions.types.ts";
 import type { Database } from "../_shared/database.types.ts";
 
 // Helper function to handle CORS preflight requests
@@ -18,15 +15,13 @@ function handleCors(req: Request): Response | null {
 
 type User = {
   id: string;
-  email: string;
 };
 
 async function getUser(supabase: SupabaseClient): Promise<User> {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error) throw error;
   if (!user) throw new Error("User not authenticated");
-  if (!user.email) throw new Error("User email is missing");
-  return { id: user.id, email: user.email };
+  return { id: user.id };
 }
 
 type Organization = Pick<
@@ -116,38 +111,48 @@ async function createPayment(
   return paymentData;
 }
 
-async function createCharge(
+async function findPendingManualPayment(
   supabaseAdmin: SupabaseClient,
-  { amount, paymentId, customer }: CreateAbacatePayChargePayload,
-): Promise<AbacatePayCharge> {
-  const { data: chargeData, error: chargeError } = await supabaseAdmin
-    .functions.invoke<AbacatePayCharge>(
-      "create-abacate-pay-charge",
-      {
-        body: {
-          amount,
-          paymentId,
-          customer,
-        } satisfies CreateAbacatePayChargePayload,
-      },
-    );
+  { organization_id, user_id, subscription_id, amount }: {
+    organization_id: string;
+    user_id: string;
+    subscription_id: string;
+    amount: number;
+  },
+): Promise<{ id: string; amount: number } | null> {
+  const { data: paymentData, error: paymentError } = await supabaseAdmin
+    .from("payments")
+    .select("id, amount")
+    .eq("organization_id", organization_id)
+    .eq("user_id", user_id)
+    .eq("subscription_id", subscription_id)
+    .eq("amount", amount)
+    .eq("status", "pending")
+    .is("payment_provider", null)
+    .is("provider_payment_id", null)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
-  if (chargeError) {
-    const errorDetails = await chargeError.context?.json();
-    throw new Error(
-      `Failed to create payment charge: ${
-        errorDetails?.error || chargeError.message
-      }`,
-    );
-  }
+  if (paymentError) throw paymentError;
 
-  if (!chargeData) {
-    throw new Error(
-      "No charge data received from 'create-abacate-pay-charge'",
-    );
-  }
+  return paymentData;
+}
 
-  return chargeData;
+async function findOrCreatePayment(
+  supabaseAdmin: SupabaseClient,
+  params: {
+    organization_id: string;
+    user_id: string;
+    subscription_id: string;
+    amount: number;
+  },
+): Promise<{ id: string; amount: number }> {
+  const existingPayment = await findPendingManualPayment(supabaseAdmin, params);
+  if (existingPayment) return existingPayment;
+
+  const newPayment = await createPayment(supabaseAdmin, params);
+  return { id: newPayment.id, amount: params.amount };
 }
 
 type RequestPayload = {
@@ -183,21 +188,22 @@ Deno.serve(async (req) => {
       plan_type,
     });
 
-    const payment = await createPayment(supabaseAdmin, {
+    const payment = await findOrCreatePayment(supabaseAdmin, {
       organization_id: organization.id,
       user_id: user.id,
       subscription_id: subscription.id,
       amount,
     });
 
-    const chargeData = await createCharge(supabaseAdmin, {
-      amount,
+    const checkoutData: PaymentCheckoutSession = {
+      amount: payment.amount,
+      method: "manual_pix",
       paymentId: payment.id,
-      customer: undefined,
-    });
+      provider: "manual",
+    };
 
     return new Response(
-      JSON.stringify(chargeData satisfies AbacatePayCharge),
+      JSON.stringify(checkoutData),
       {
         headers: {
           "Content-Type": "application/json",

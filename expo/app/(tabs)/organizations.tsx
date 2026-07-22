@@ -5,8 +5,7 @@ import {
   useOrganization,
 } from '@chooselife/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import SlacCabeMaisImage from '~/assets/images/slac-cabe-mais.png';
-import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import {
   ChevronRightIcon,
   MapPinIcon,
@@ -17,23 +16,28 @@ import React from 'react';
 import {
   Alert,
   Linking,
+  Pressable,
   RefreshControl,
   ScrollView,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
 import { useAuth } from '~/context/auth';
+import { getManualPaymentRouteParams } from '~/lib/manual-payment';
+import { getMembershipDisplayState } from '~/lib/membership-display-state';
+import { fetchPaymentUnderReview } from '~/lib/payment-review';
+import { queryKeys as appQueryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { AssembleiaCard } from '~/components/organizations/assembleia-card';
+import { BecomeMemberCard } from '~/components/organizations/become-member-card';
 import { News } from '~/components/organizations/News';
 import { OrganizationErrorState } from '~/components/organizations/organization-error-state';
 import { OrganizationLoadingState } from '~/components/organizations/organization-loading-state';
+import { PaymentUnderReviewCard } from '~/components/organizations/payment-under-review-card';
 import { Subscription } from '~/components/organizations/Subscription';
-import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
@@ -54,13 +58,32 @@ export default function OrganizationDetailsPageWrapper() {
 }
 
 function OrganizationDetailsPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { session } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const { data: organization, isLoading } = useOrganization(ORG_SLUG);
 
-  const { data: isMember } = useIsMember(ORG_SLUG);
+  const { data: isMember, isLoading: isMemberLoading } = useIsMember(ORG_SLUG);
+  const {
+    data: paymentUnderReview,
+    isError: paymentReviewError,
+    isLoading: paymentReviewLoading,
+    refetch: refetchPaymentReview,
+  } = useQuery({
+    queryKey: appQueryKeys.paymentReview.byOrgUser(ORG_SLUG, session?.user.id),
+    queryFn: () => fetchPaymentUnderReview(ORG_SLUG, session!.user.id),
+    enabled: Boolean(session?.user.id && !isMember),
+  });
+  const membershipDisplayState = getMembershipDisplayState({
+    hasPaymentUnderReview: Boolean(paymentUnderReview),
+    isMember,
+    isMemberLoading,
+    isSignedIn: Boolean(session?.user),
+    paymentReviewError,
+    paymentReviewLoading,
+  });
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -74,11 +97,31 @@ function OrganizationDetailsPage() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.organizations.memberCount(ORG_SLUG),
       }),
+      queryClient.invalidateQueries({
+        queryKey: appQueryKeys.paymentReview.byOrgUser(
+          ORG_SLUG,
+          session?.user.id,
+        ),
+      }),
     ]);
     setRefreshing(false);
   };
 
-  const handleOpenMembershipForm = async () => {
+  const handlePaymentUnderReviewPress = () => {
+    if (!paymentUnderReview) return;
+
+    router.push({
+      pathname: '/payment',
+      params: getManualPaymentRouteParams({
+        amount: paymentUnderReview.amount,
+        paymentId: paymentUnderReview.id,
+        paymentContext: 'new_member',
+        slug: organization?.slug ?? ORG_SLUG,
+      }),
+    });
+  };
+
+  const handleBecomeMemberPress = async () => {
     try {
       await Linking.openURL(MEMBERSHIP_FORM_URL);
     } catch {
@@ -133,59 +176,30 @@ function OrganizationDetailsPage() {
         </View>
 
         {/* Membership Section */}
-        {isMember ? (
+        {membershipDisplayState === 'loading' ? (
+          <Skeleton className="h-[200px] w-full rounded-xl bg-gray-200" />
+        ) : membershipDisplayState === 'active-member' ? (
           <Subscription organization={organization} />
-        ) : (
-          <View className="relative bg-zinc-900 rounded-xl overflow-hidden min-h-[200px] justify-end p-6 gap-4">
-            {/* Spotlight Effect */}
-            <View
-              className="absolute left-0 top-0 w-full h-full"
-              style={{
-                experimental_backgroundImage:
-                  'radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.6) 0%, rgba(24, 24, 27, 0) 60%)',
-              }}
-            />
-
-            <Image
-              source={SlacCabeMaisImage}
-              style={{
-                position: 'absolute',
-                top: -30,
-                right: -30,
-                width: 250,
-                height: 250,
-                transform: [{ rotate: '25deg' }],
-                opacity: 0.4,
-              }}
-              contentFit="contain"
-            />
-
-            {/* Gradient Overlay for Text Readability */}
-            <View
-              className="absolute inset-0"
-              style={{
-                experimental_backgroundImage:
-                  'linear-gradient(to top, rgba(24, 24, 27, 1) 10%, rgba(24, 24, 27, 0.4) 100%)',
-              }}
-            />
-
-            <View className="gap-2 z-10">
-              <Text className="text-2xl font-black text-white">
-                Torne-se um membro
-              </Text>
-              <Text className="text-zinc-400 text-base font-medium leading-6">
-                Junte-se a nós e apoie o desenvolvimento do slackline no
-                Cerrado.
-              </Text>
-            </View>
-
-            <Button
-              className="w-full bg-white active:bg-gray-100"
-              onPress={handleOpenMembershipForm}
+        ) : membershipDisplayState === 'payment-review-error' ? (
+          <View className="gap-3 rounded-xl border border-red-200 bg-white p-6">
+            <Text className="text-lg font-bold text-gray-900">
+              Não foi possível verificar sua associação
+            </Text>
+            <Text className="text-gray-600">
+              Tente novamente para consultar o status do seu pagamento.
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => refetchPaymentReview()}
+              className="items-center rounded-lg bg-gray-900 px-4 py-3"
             >
-              <Text className="text-black font-bold">Seja Membro</Text>
-            </Button>
+              <Text className="font-bold text-white">Tentar novamente</Text>
+            </Pressable>
           </View>
+        ) : membershipDisplayState === 'payment-under-review' ? (
+          <PaymentUnderReviewCard onPress={handlePaymentUnderReviewPress} />
+        ) : (
+          <BecomeMemberCard onPress={handleBecomeMemberPress} />
         )}
 
         {/* Activities / Content */}
@@ -275,9 +289,8 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
   destructive = false,
 }) => {
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}
       disabled={!onPress}
       className={cn(
         'flex-row items-center pl-4 bg-white active:bg-gray-50',
@@ -319,6 +332,6 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
           )}
         </View>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 };

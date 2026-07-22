@@ -1,6 +1,6 @@
 import { ENABLE_MEMBERSHIP_REGISTRATION } from '@chooselife/ui';
 import type { StartSubscriptionResponse } from '@packages/database/functions.types';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
-  TouchableOpacity,
+  Pressable,
   View,
 } from 'react-native';
 import Animated, {
@@ -20,6 +20,12 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { useAuth } from '~/context/auth';
+import { getManualPaymentRouteParams } from '~/lib/manual-payment';
+import {
+  fetchMembershipApplication,
+  type MembershipApplication,
+} from '~/lib/membership-application';
+import { queryKeys } from '~/lib/query-keys';
 import { getR2PublicUrl } from '~/lib/r2';
 import { supabase } from '~/lib/supabase';
 import { formatCurrency } from '~/utils';
@@ -35,14 +41,17 @@ export function BecomeMemberForm({
   scrollY,
   itemIndex,
   itemHeight,
+  membershipApplication,
   org,
 }: {
   scrollY: SharedValue<number>;
   itemIndex: number;
   itemHeight: number;
+  membershipApplication: MembershipApplication | null;
   org: Tables<'organizations'>;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [selectedPlan, setSelectedPlan] = React.useState<PlanType | null>(null);
   const [isFocused, setIsFocused] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -96,21 +105,19 @@ export function BecomeMemberForm({
       }
 
       return {
-        pixCopyPaste: charge.brCode,
-        qrCodeImage: charge.brCodeBase64,
-        chargeId: charge.id,
+        amount: 'amount' in charge ? charge.amount : undefined,
+        paymentId: charge.paymentId,
       };
     },
     onSuccess: (data) => {
       router.push({
         pathname: '/payment',
-        params: {
-          qrCodeImage: data.qrCodeImage,
-          pixCopyPaste: data.pixCopyPaste,
-          chargeId: data.chargeId,
+        params: getManualPaymentRouteParams({
+          amount: data.amount,
+          paymentId: data.paymentId,
           paymentContext: 'new_member',
           slug: org.slug,
-        },
+        }),
       });
     },
     onError: (error) => {
@@ -130,11 +137,44 @@ export function BecomeMemberForm({
     }
   };
 
+  const handleAgreeTerms = async () => {
+    if (!selectedPlan || !session?.user) return;
+
+    const queryKey = queryKeys.membershipApplication.byOrgUser(
+      org.id,
+      session.user.id,
+    );
+    const application =
+      queryClient.getQueryData<MembershipApplication | null>(queryKey) ??
+      membershipApplication ??
+      (await queryClient.fetchQuery({
+        queryKey,
+        queryFn: () => fetchMembershipApplication(org.id, session.user.id),
+      }));
+
+    if (application?.status === 'submitted') {
+      mutation.mutate({ plan_type: selectedPlan });
+      return;
+    }
+
+    router.push({
+      pathname: '/organizations/[slug]/onboarding',
+      params: {
+        accepted_terms_at: new Date().toISOString(),
+        plan_type: selectedPlan,
+        slug: org.slug,
+      },
+    });
+  };
+
   const handleSubmit = () => {
     if (!selectedPlan) return;
 
     if (!session?.user) {
-      router.push(`/(modals)/login?redirect_to=/organizations`);
+      router.push({
+        pathname: '/(modals)/login',
+        params: { redirect_to: `/organizations/${org.slug}/member` },
+      });
       return;
     }
 
@@ -153,7 +193,14 @@ export function BecomeMemberForm({
         {
           isPreferred: true,
           text: 'Concordar',
-          onPress: () => mutation.mutate({ plan_type: selectedPlan }),
+          onPress: () => {
+            handleAgreeTerms().catch((error) => {
+              console.error('Error checking membership application:', error);
+              setErrorMessage(
+                'Não foi possível verificar seu cadastro. Tente novamente.',
+              );
+            });
+          },
         },
       ],
       {
@@ -170,19 +217,19 @@ export function BecomeMemberForm({
       <Animated.View
         key={`plan-${isFocused}`}
         entering={isFocused ? FadeIn.duration(300) : undefined}
-        className="gap-12 flex-1 justify-center px-2"
+        className="gap-10 flex-1 justify-center px-5"
       >
         {/* Hero Section */}
         <View className="items-center mb-2">
           <Animated.Text
             entering={FadeInDown.delay(200).duration(400)}
-            className="text-white text-5xl font-black text-center mb-4 leading-tight"
+            className="text-white text-4xl font-black text-center mb-4 leading-[44px]"
           >
             Faça parte{'\n'}da comunidade
           </Animated.Text>
           <Animated.Text
             entering={FadeInDown.delay(350).duration(400)}
-            className="text-white/90 text-center text-lg max-w-md leading-7 font-medium"
+            className="text-white/80 text-center text-base max-w-md leading-6 font-medium px-4"
           >
             Cada membro fortalece o slackline brasileiro e apoia a preservação
             dos nossos espaços naturais
@@ -205,17 +252,16 @@ export function BecomeMemberForm({
         ) : (
           <>
             {/* Plan Cards - Simplified */}
-            <View className="gap-6">
+            <View className="gap-4">
               {/* Monthly Plan */}
               <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-                <TouchableOpacity
+                <Pressable
                   onPress={() => {
                     setSelectedPlan('monthly');
                     setErrorMessage(null);
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
                   disabled={mutation.isPending}
-                  activeOpacity={0.8}
                   className={`bg-white/10 backdrop-blur-xl p-5 rounded-2xl border-2 ${
                     selectedPlan === 'monthly'
                       ? 'border-white'
@@ -236,19 +282,18 @@ export function BecomeMemberForm({
                       <Text className="text-white/70 text-xs">/mês</Text>
                     </View>
                   </View>
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
 
               {/* Annual Plan */}
               <Animated.View entering={FadeInDown.delay(400).duration(400)}>
-                <TouchableOpacity
+                <Pressable
                   onPress={() => {
                     setSelectedPlan('annual');
                     setErrorMessage(null);
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
                   disabled={mutation.isPending}
-                  activeOpacity={0.8}
                   className={`bg-white/10 backdrop-blur-xl p-5 rounded-2xl border-2 ${
                     selectedPlan === 'annual'
                       ? 'border-emerald-400'
@@ -273,7 +318,7 @@ export function BecomeMemberForm({
                       <Text className="text-white/70 text-xs">/ano</Text>
                     </View>
                   </View>
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
             </View>
 
@@ -293,7 +338,7 @@ export function BecomeMemberForm({
                 entering={FadeInDown.delay(500).duration(400)}
                 layout={_layoutAnimation}
               >
-                <TouchableOpacity
+                <Pressable
                   onPress={() => {
                     handleSubmit();
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -308,7 +353,7 @@ export function BecomeMemberForm({
                       Tornar-me membro
                     </Text>
                   )}
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
 
               {/* Footer Note */}
@@ -321,11 +366,11 @@ export function BecomeMemberForm({
                   Ao clicar nesse botão você deve realizar o primeiro pagamento
                   para se tornar membro.
                 </Text>
-                <TouchableOpacity onPress={handleOpenEstatuto}>
+                <Pressable onPress={handleOpenEstatuto}>
                   <Text className="text-white/70 text-center text-sm mt-2 underline">
                     Ver Estatuto da Associação
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
             </View>
           </>

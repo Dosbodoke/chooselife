@@ -4,7 +4,9 @@
     "seeAll": "Ver todos",
     "loop": "Olhal",
     "loops": "Olhais",
-    "optional": "*opcional"
+    "optional": "*opcional",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar"
   },
   "app": {
     "(festival)": {
@@ -239,7 +241,7 @@
       },
       "home": {
         "banner": {
-          "title": "Festival Chooselife",
+          "title": "Festival dos Monstros",
           "description": "Clique para ver os Highlines do festival e agendar seu rolê"
         },
         "quickActions": {

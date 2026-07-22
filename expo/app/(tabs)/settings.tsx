@@ -21,13 +21,7 @@ import {
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import {
-  Alert,
-  Platform,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
@@ -66,13 +60,13 @@ export default function SettingsPage() {
             }}
             asChild
           >
-            <TouchableOpacity className="flex-row items-center gap-4 bg-white p-4 rounded-xl">
+            <Pressable className="flex-row items-center gap-4 bg-white p-4 rounded-xl">
               <View className="relative overflow-hidden size-16 rounded-full">
                 <SupabaseAvatar profileID={profile.id} />
               </View>
               <View className="flex-1">
                 <Text variant="h2" className="text-xl">
-                  {profile.name}
+                  {profile.username}
                 </Text>
                 <Text className="text-muted-foreground">
                   {t('app.(tabs).settings.viewProfile')}
@@ -82,7 +76,7 @@ export default function SettingsPage() {
                 as={ChevronRightIcon}
                 className="size-5 text-muted-foreground"
               />
-            </TouchableOpacity>
+            </Pressable>
           </Link>
 
           {/* My Webbings */}
@@ -167,9 +161,8 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
   destructive = false,
 }) => {
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      activeOpacity={0.7}
       className={cn(
         'flex-row items-center pl-4 bg-white active:bg-gray-50',
         !isLast && '',
@@ -208,7 +201,7 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
           />
         </View>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
@@ -362,14 +355,7 @@ const EditProfileButton: React.FC = () => {
         footerComponent={renderFooter}
         snapPoints={snapPoints}
         style={{
-          elevation: 4,
-          shadowColor: '#000',
-          shadowOpacity: 0.3,
-          shadowRadius: 4,
-          shadowOffset: {
-            width: 1,
-            height: 1,
-          },
+          boxShadow: '1px 1px 4px rgba(0, 0, 0, 0.3)',
         }}
       >
         <BottomSheetView className="p-4 gap-4 bg-white">

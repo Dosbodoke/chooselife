@@ -417,9 +417,15 @@ export function AuthProvider(props: React.PropsWithChildren) {
   );
 
   useMountEffect(function setupSession() {
-    void supabase.auth.getSession().then(({ data: { session } }) => {
-      handleSessionChange(session);
-    });
+    void supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        handleSessionChange(session);
+      })
+      .catch((error) => {
+        console.warn('Failed to restore session:', error);
+        handleSessionChange(null);
+      });
 
     const {
       data: { subscription },

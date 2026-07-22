@@ -720,28 +720,172 @@ export type Database = {
           },
         ]
       }
+      membership_applications: {
+        Row: {
+          accepted_terms_at: string | null
+          address_line: string | null
+          allergies: string | null
+          birth_date: string | null
+          birthplace: string | null
+          blood_type: Database["public"]["Enums"]["blood_type_enum"] | null
+          city: string | null
+          cpf: string | null
+          created_at: string
+          dietary_restrictions: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
+          first_aid_course:
+            | Database["public"]["Enums"]["first_aid_course_enum"]
+            | null
+          full_name: string | null
+          has_rescue_course: boolean | null
+          highline_experience:
+            | Database["public"]["Enums"]["highline_experience_enum"]
+            | null
+          id: string
+          id_document_issuer: string | null
+          id_document_number: string | null
+          marital_status:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
+          nationality: string | null
+          organization_id: string
+          phone: string | null
+          postal_code: string | null
+          profession: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["membership_application_status_enum"]
+          submitted_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accepted_terms_at?: string | null
+          address_line?: string | null
+          allergies?: string | null
+          birth_date?: string | null
+          birthplace?: string | null
+          blood_type?: Database["public"]["Enums"]["blood_type_enum"] | null
+          city?: string | null
+          cpf?: string | null
+          created_at?: string
+          dietary_restrictions?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          first_aid_course?:
+            | Database["public"]["Enums"]["first_aid_course_enum"]
+            | null
+          full_name?: string | null
+          has_rescue_course?: boolean | null
+          highline_experience?:
+            | Database["public"]["Enums"]["highline_experience_enum"]
+            | null
+          id?: string
+          id_document_issuer?: string | null
+          id_document_number?: string | null
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
+          nationality?: string | null
+          organization_id: string
+          phone?: string | null
+          postal_code?: string | null
+          profession?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["membership_application_status_enum"]
+          submitted_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accepted_terms_at?: string | null
+          address_line?: string | null
+          allergies?: string | null
+          birth_date?: string | null
+          birthplace?: string | null
+          blood_type?: Database["public"]["Enums"]["blood_type_enum"] | null
+          city?: string | null
+          cpf?: string | null
+          created_at?: string
+          dietary_restrictions?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          first_aid_course?:
+            | Database["public"]["Enums"]["first_aid_course_enum"]
+            | null
+          full_name?: string | null
+          has_rescue_course?: boolean | null
+          highline_experience?:
+            | Database["public"]["Enums"]["highline_experience_enum"]
+            | null
+          id?: string
+          id_document_issuer?: string | null
+          id_document_number?: string | null
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
+          nationality?: string | null
+          organization_id?: string
+          phone?: string | null
+          postal_code?: string | null
+          profession?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["membership_application_status_enum"]
+          submitted_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_applications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           annual_price_amount: number | null
+          annual_pix_copy_paste: string | null
           created_at: string
           id: string
           monthly_price_amount: number | null
+          monthly_pix_copy_paste: string | null
           name: string
           slug: string
         }
         Insert: {
           annual_price_amount?: number | null
+          annual_pix_copy_paste?: string | null
           created_at?: string
           id?: string
           monthly_price_amount?: number | null
+          monthly_pix_copy_paste?: string | null
           name: string
           slug: string
         }
         Update: {
           annual_price_amount?: number | null
+          annual_pix_copy_paste?: string | null
           created_at?: string
           id?: string
           monthly_price_amount?: number | null
+          monthly_pix_copy_paste?: string | null
           name?: string
           slug?: string
         }
@@ -755,8 +899,12 @@ export type Database = {
           id: string
           organization_id: string
           paid_at: string | null
+          payment_provider: string | null
+          provider_payment_id: string | null
+          settlement_applied_at: string | null
           status: Database["public"]["Enums"]["payment_status_enum"]
           subscription_id: string
+          user_marked_paid_at: string | null
           user_id: string
         }
         Insert: {
@@ -766,8 +914,12 @@ export type Database = {
           id?: string
           organization_id: string
           paid_at?: string | null
+          payment_provider?: string | null
+          provider_payment_id?: string | null
+          settlement_applied_at?: string | null
           status?: Database["public"]["Enums"]["payment_status_enum"]
           subscription_id: string
+          user_marked_paid_at?: string | null
           user_id: string
         }
         Update: {
@@ -777,8 +929,12 @@ export type Database = {
           id?: string
           organization_id?: string
           paid_at?: string | null
+          payment_provider?: string | null
+          provider_payment_id?: string | null
+          settlement_applied_at?: string | null
           status?: Database["public"]["Enums"]["payment_status_enum"]
           subscription_id?: string
+          user_marked_paid_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1111,6 +1267,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_payment_settlement_effects: {
+        Args: { p_payment_id: string }
+        Returns: boolean
+      }
       book_festival_schedule_slot: {
         Args: {
           target_display_name?: string
@@ -1210,6 +1370,45 @@ export type Database = {
       get_festival_schedule_booking_limit: {
         Args: never
         Returns: number
+      }
+      get_manual_payment_instructions: {
+        Args: { p_payment_id: string }
+        Returns: {
+          amount: number
+          payment_id: string
+          pix_copy_paste: string | null
+          status: Database["public"]["Enums"]["payment_status_enum"]
+          user_marked_paid_at: string | null
+        }[]
+      }
+      mark_payment_succeeded_manually: {
+        Args: { p_paid_at?: string; p_payment_id: string }
+        Returns: {
+          applied_effects_now: boolean
+          paid_at: string
+          payment_id: string
+          previous_status: Database["public"]["Enums"]["payment_status_enum"]
+          settlement_applied_at: string | null
+          status: Database["public"]["Enums"]["payment_status_enum"]
+        }[]
+      }
+      mark_manual_payment_paid_by_user: {
+        Args: { p_payment_id: string }
+        Returns: {
+          payment_id: string
+          status: Database["public"]["Enums"]["payment_status_enum"]
+          user_marked_paid_at: string | null
+        }[]
+      }
+      submit_membership_application: {
+        Args: { p_application_id: string }
+        Returns: {
+          id: string
+          organization_id: string
+          status: Database["public"]["Enums"]["membership_application_status_enum"]
+          submitted_at: string | null
+          user_id: string
+        }[]
       }
       get_highline: {
         Args: {
@@ -1332,6 +1531,15 @@ export type Database = {
       validate_locale_keys: { Args: { json_data: Json }; Returns: boolean }
     }
     Enums: {
+      blood_type_enum:
+        | "a_pos"
+        | "a_neg"
+        | "b_pos"
+        | "b_neg"
+        | "ab_pos"
+        | "ab_neg"
+        | "o_pos"
+        | "o_neg"
       festival_schedule_booking_cancellation_source_enum:
         | "user"
         | "staff"
@@ -1341,8 +1549,18 @@ export type Database = {
         | "cancelled"
         | "completed"
       festival_schedule_slot_status_enum: "available" | "blocked" | "expired"
+      first_aid_course_enum: "updated" | "outdated" | "none"
+      highline_experience_enum: "beginner" | "athlete" | "professional"
       language: "en" | "pt"
+      marital_status_enum:
+        | "single"
+        | "married"
+        | "divorced"
+        | "widowed"
+        | "legally_separated"
+        | "common_law"
       material_enum: "nylon" | "dyneema" | "polyester"
+      membership_application_status_enum: "draft" | "submitted"
       organization_role_enum: "admin" | "member"
       payment_status_enum: "pending" | "succeeded" | "failed"
       strength_class_enum: "A+" | "A" | "B" | "C"
@@ -2077,6 +2295,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      blood_type_enum: [
+        "a_pos",
+        "a_neg",
+        "b_pos",
+        "b_neg",
+        "ab_pos",
+        "ab_neg",
+        "o_pos",
+        "o_neg",
+      ],
       festival_schedule_booking_cancellation_source_enum: [
         "user",
         "staff",
@@ -2088,8 +2316,19 @@ export const Constants = {
         "completed",
       ],
       festival_schedule_slot_status_enum: ["available", "blocked", "expired"],
+      first_aid_course_enum: ["updated", "outdated", "none"],
+      highline_experience_enum: ["beginner", "athlete", "professional"],
       language: ["en", "pt"],
+      marital_status_enum: [
+        "single",
+        "married",
+        "divorced",
+        "widowed",
+        "legally_separated",
+        "common_law",
+      ],
       material_enum: ["nylon", "dyneema", "polyester"],
+      membership_application_status_enum: ["draft", "submitted"],
       organization_role_enum: ["admin", "member"],
       payment_status_enum: ["pending", "succeeded", "failed"],
       strength_class_enum: ["A+", "A", "B", "C"],
