@@ -11,7 +11,7 @@ import {
   MapPinIcon,
   ShareIcon,
   TicketIcon,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';

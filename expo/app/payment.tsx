@@ -7,7 +7,7 @@ import {
   CheckIcon,
   CopyIcon,
   XIcon,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import React from 'react';
 import {
   ActivityIndicator,

@@ -10,7 +10,7 @@ import {
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import { useQuery } from '@tanstack/react-query';
-import { BadgeCheckIcon, SearchIcon } from 'lucide-react-native';
+import { BadgeCheckIcon, SearchIcon } from '~/lib/icons/hugeicons';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, TouchableOpacity, View } from 'react-native';

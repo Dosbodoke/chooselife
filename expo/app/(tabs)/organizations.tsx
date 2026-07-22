@@ -10,8 +10,8 @@ import {
   ChevronRightIcon,
   MapPinIcon,
   UsersIcon,
-  type LucideIcon,
-} from 'lucide-react-native';
+  type Hugeicon,
+} from '~/lib/icons/hugeicons';
 import React from 'react';
 import {
   Alert,
@@ -270,7 +270,7 @@ const OrganizationStatsGroup = ({ slug }: { slug: string }) => {
 
 // Reusable Settings Item Component (Copied from settings.tsx style)
 interface SettingsItemProps {
-  icon?: LucideIcon;
+  icon?: Hugeicon;
   iconColor?: string;
   label: string;
   onPress?: () => void;

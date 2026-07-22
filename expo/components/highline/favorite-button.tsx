@@ -1,4 +1,4 @@
-import { HeartIcon } from 'lucide-react-native';
+import { HeartIcon } from '~/lib/icons/hugeicons';
 import { Pressable, StyleSheet } from 'react-native';
 import Animated, {
   Extrapolation,

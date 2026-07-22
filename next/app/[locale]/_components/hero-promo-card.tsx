@@ -1,4 +1,5 @@
-import { ArrowRightIcon } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -49,7 +50,10 @@ export const HeroPromoCard = () => {
               <span className="absolute inset-x-0 bottom-0 h-full w-full bg-gradient-to-tr from-primary/20 blur-md"></span>
               <span className="z-10 flex items-center justify-center gap-1 py-0.5 text-sm text-neutral-100">
                 ✨ Conheça a SL.A.C.
-                <ArrowRightIcon className="size-3 ml-1 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
+                <HugeiconsIcon
+                  icon={ArrowRight01Icon}
+                  className="size-3 ml-1 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5"
+                />
               </span>
             </button>
           </Link>
@@ -62,7 +66,10 @@ export const HeroPromoCard = () => {
               <span className="absolute inset-x-0 bottom-0 h-full w-full bg-gradient-to-tr from-cyan-500/20 blur-md"></span>
               <span className="z-10 flex items-center justify-center gap-1.5 py-0.5 text-sm text-neutral-100">
                 {`🗓️ ${t("hero.events")}`}
-                <ArrowRightIcon className="size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
+                <HugeiconsIcon
+                  icon={ArrowRight01Icon}
+                  className="size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5"
+                />
               </span>
             </button>
           </Link>

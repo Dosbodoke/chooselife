@@ -1,5 +1,9 @@
+import {
+  HorizontalResizeIcon,
+  VerticalResizeIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowRightIcon } from "@radix-ui/react-icons";
-import { UnfoldHorizontalIcon, UnfoldVerticalIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import type { Highline } from "@/app/actions/getHighline";
@@ -39,11 +43,11 @@ export function Highline({ highline, classname }: Props) {
         <CardTitle className="text-xl">{highline.name}</CardTitle>
         <div className="flex items-baseline gap-2 space-y-2 text-sm text-muted-foreground">
           <div className="flex gap-2">
-            <UnfoldVerticalIcon className="h-4 w-4" />{" "}
+            <HugeiconsIcon icon={VerticalResizeIcon} className="h-4 w-4" />{" "}
             {highline.height.toFixed(0)}m
           </div>
           <div className="flex gap-2">
-            <UnfoldHorizontalIcon className="h-4 w-4" />{" "}
+            <HugeiconsIcon icon={HorizontalResizeIcon} className="h-4 w-4" />{" "}
             {highline.length.toFixed(0)}m
           </div>
         </div>

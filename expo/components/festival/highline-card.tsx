@@ -13,7 +13,7 @@ import {
   ChevronRightIcon,
   MegaphoneIcon,
   UsersIcon,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {

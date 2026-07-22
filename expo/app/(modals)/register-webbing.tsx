@@ -22,7 +22,7 @@ import {
   ChevronDownIcon,
   PackagePlusIcon,
   TorusIcon,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import React, { useCallback, useId, useMemo, useRef } from 'react';
 import {
   Control,

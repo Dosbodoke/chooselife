@@ -1,6 +1,6 @@
 import { cva } from 'class-variance-authority';
 import { Link } from 'expo-router';
-import { CrownIcon } from 'lucide-react-native';
+import { CrownIcon } from '~/lib/icons/hugeicons';
 import React from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 

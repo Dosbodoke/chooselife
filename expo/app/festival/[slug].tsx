@@ -4,7 +4,7 @@ import {
   type FestivalHighlineScheduleCard,
 } from '@chooselife/ui';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Share as ShareIcon } from 'lucide-react-native';
+import { Share as ShareIcon } from '~/lib/icons/hugeicons';
 import React from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 

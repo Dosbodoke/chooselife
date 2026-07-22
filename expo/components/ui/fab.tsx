@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { PlusIcon, type LucideIcon } from 'lucide-react-native';
+import { PlusIcon, type Hugeicon } from '~/lib/icons/hugeicons';
 import React from 'react';
 import { TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,7 +14,7 @@ import { Text } from '~/components/ui/text';
 
 interface FABProps {
   /** Icon to display (defaults to PlusIcon) */
-  icon?: LucideIcon;
+  icon?: Hugeicon;
   /** Optional label text */
   label?: string;
   /** Press handler */

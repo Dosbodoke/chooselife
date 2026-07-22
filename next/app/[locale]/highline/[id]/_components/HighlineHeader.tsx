@@ -1,6 +1,6 @@
 "use client";
-
-import { MapPinIcon } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Location01Icon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
@@ -63,13 +63,15 @@ export const HighlineHeader = ({ highline }: { highline: Highline }) => {
         <Button variant="outline" className="border-dashed" asChild>
           {highline.anchor_a_lat && highline.anchor_b_lat ? (
             <Link href={`/?view=map&focusedMarker=${highline.id}`}>
-              <MapPinIcon className="mr-2 h-4 w-4" /> {t("seeOnMap")}
+              <HugeiconsIcon icon={Location01Icon} className="mr-2 h-4 w-4" />{" "}
+              {t("seeOnMap")}
             </Link>
           ) : (
             <Link
               href={`/?view=map&focusedMarker=${highline.id}&location=picking`}
             >
-              <MapPinIcon className="mr-2 h-4 w-4" /> {t("addToMap")}
+              <HugeiconsIcon icon={Location01Icon} className="mr-2 h-4 w-4" />{" "}
+              {t("addToMap")}
             </Link>
           )}
         </Button>

@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { Mountain } from 'lucide-react-native';
+import { Mountain } from '~/lib/icons/hugeicons';
 import React from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from '~/components/styled';

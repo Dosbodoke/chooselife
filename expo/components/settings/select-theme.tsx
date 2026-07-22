@@ -1,5 +1,5 @@
 import AsyncStorage from 'expo-sqlite/kv-store';
-import { MoonStar, SunIcon } from 'lucide-react-native';
+import { MoonStar, SunIcon } from '~/lib/icons/hugeicons';
 import { useUniwind, Uniwind } from 'uniwind';
 import { Pressable, View } from 'react-native';
 

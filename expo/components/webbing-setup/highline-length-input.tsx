@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { Minus, Plus } from 'lucide-react-native';
+import { Minus, Plus } from '~/lib/icons/hugeicons';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';

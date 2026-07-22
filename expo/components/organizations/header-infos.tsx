@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { MapPinIcon, Users } from 'lucide-react-native';
+import { MapPinIcon, Users } from '~/lib/icons/hugeicons';
 import React from 'react';
 import { View } from 'react-native';
 

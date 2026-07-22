@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import { MoveHorizontalIcon, MoveVerticalIcon } from 'lucide-react-native';
+import { MoveHorizontalIcon, MoveVerticalIcon } from '~/lib/icons/hugeicons';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, TouchableOpacity, View } from 'react-native';

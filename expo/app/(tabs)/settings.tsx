@@ -16,8 +16,8 @@ import {
   LogOutIcon,
   PencilIcon,
   Trash2Icon,
-  type LucideIcon,
-} from 'lucide-react-native';
+  type Hugeicon,
+} from '~/lib/icons/hugeicons';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -142,7 +142,7 @@ export default function SettingsPage() {
 
 // Reusable Settings Item Component
 interface SettingsItemProps {
-  icon?: LucideIcon;
+  icon?: Hugeicon;
   iconColor?: string;
   label: string;
   onPress?: () => void;

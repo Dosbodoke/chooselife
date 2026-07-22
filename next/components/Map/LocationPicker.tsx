@@ -1,8 +1,9 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Location01Icon } from "@hugeicons/core-free-icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import L, { type LatLng, type Marker as MarkerType } from "leaflet";
-import { MapPin } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { useQueryState } from "nuqs";
@@ -83,7 +84,10 @@ export const LocationPicker = ({
 
   const icon = new L.DivIcon({
     html: ReactDOMServer.renderToString(
-      <MapPin className="absolute left-1/2 top-1/2 z-[1000] h-6 w-6 -translate-x-1/2 -translate-y-full fill-red-500 text-black" />
+      <HugeiconsIcon
+        icon={Location01Icon}
+        className="absolute left-1/2 top-1/2 z-[1000] h-6 w-6 -translate-x-1/2 -translate-y-full fill-red-500 text-black"
+      />
     ),
     iconSize: [24, 24],
   });
@@ -161,7 +165,10 @@ export const LocationPicker = ({
               transition={{ type: "spring", bounce: 0.5, duration: 0.3 }}
               custom={anchorA && anchorB}
             >
-              <MapPin className="h-6 w-6 fill-red-500 text-black" />
+              <HugeiconsIcon
+                icon={Location01Icon}
+                className="h-6 w-6 fill-red-500 text-black"
+              />
             </motion.div>
           ) : null}
         </AnimatePresence>

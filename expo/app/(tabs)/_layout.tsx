@@ -5,7 +5,7 @@ import {
   TentTreeIcon,
   UserCircleIcon,
   UsersRoundIcon,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 

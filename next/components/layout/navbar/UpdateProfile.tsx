@@ -1,10 +1,11 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Calendar01Icon } from "@hugeicons/core-free-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { enUS, ptBR } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -180,7 +181,10 @@ export default function UpdateProfile({
                             ) : (
                               <span>{t("fields.birthday.placeholder")}</span>
                             )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            <HugeiconsIcon
+                              icon={Calendar01Icon}
+                              className="ml-auto h-4 w-4 opacity-50"
+                            />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>

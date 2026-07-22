@@ -1,6 +1,6 @@
 import SlacCabeMaisImage from '~/assets/images/slac-cabe-mais.png';
 import { Image } from 'expo-image';
-import { CheckIcon, ChevronRightIcon } from 'lucide-react-native';
+import { CheckIcon, ChevronRightIcon } from '~/lib/icons/hugeicons';
 import React from 'react';
 import { View } from 'react-native';
 

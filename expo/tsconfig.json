@@ -2,7 +2,13 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "types": ["jest", "react", "react-native"],
+    "types": [
+      "jest",
+      "react",
+      "react-native",
+      "@hugeicons/core-free-icons",
+      "@hugeicons/react-native"
+    ],
     "paths": {
       "~/*": ["./*"],
       "@packages/database/*": ["../packages/database/*"],

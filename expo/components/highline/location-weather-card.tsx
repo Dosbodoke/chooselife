@@ -1,5 +1,5 @@
 import { Link, useLocalSearchParams } from 'expo-router';
-import { MapPinIcon, NavigationIcon } from 'lucide-react-native';
+import { MapPinIcon, NavigationIcon } from '~/lib/icons/hugeicons';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';

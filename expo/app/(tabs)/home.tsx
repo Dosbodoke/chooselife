@@ -1,7 +1,7 @@
 import { useEvents } from '@chooselife/ui';
 import { Link, useRouter } from 'expo-router';
 import { StatusBar, StatusBarStyle } from 'expo-status-bar';
-import { BookIcon, CalendarIcon, PencilRulerIcon } from 'lucide-react-native';
+import { BookIcon, CalendarIcon, PencilRulerIcon } from '~/lib/icons/hugeicons';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {

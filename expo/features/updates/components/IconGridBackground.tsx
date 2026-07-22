@@ -11,7 +11,7 @@ import {
   Compass,
   MapPin,
   Activity,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import React from 'react';
 import { View } from 'react-native';
 
@@ -53,14 +53,14 @@ export function IconGridBackground({
           <View key={rowIndex} className="flex-row justify-evenly" style={{ height: CELL_SIZE }}>
             {Array.from({ length: cols }, (_, colIndex) => {
               const iconIndex = (rowIndex * cols + colIndex) % GRID_ICONS.length;
-              const LucideIcon = GRID_ICONS[iconIndex];
+              const Hugeicon = GRID_ICONS[iconIndex];
               return (
                 <View
                   key={colIndex}
                   className="items-center justify-center"
                   style={{ width: CELL_SIZE, height: CELL_SIZE, opacity: rowOpacity }}
                 >
-                  <Icon as={LucideIcon} size={ICON_SIZE} className="text-foreground" />
+                  <Icon as={Hugeicon} size={ICON_SIZE} className="text-foreground" />
                 </View>
               );
             })}

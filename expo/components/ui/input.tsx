@@ -1,4 +1,4 @@
-import { EyeIcon, EyeOffIcon } from 'lucide-react-native';
+import { EyeIcon, EyeOffIcon } from '~/lib/icons/hugeicons';
 import React from 'react';
 import {
   Platform,

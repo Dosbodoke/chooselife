@@ -1,7 +1,7 @@
 import { useAssets } from 'expo-asset';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { CameraIcon } from 'lucide-react-native';
+import { CameraIcon } from '~/lib/icons/hugeicons';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';

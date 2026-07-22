@@ -5,7 +5,7 @@ import {
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
-import { AlertTriangle, ShieldCheck, Sparkles } from 'lucide-react-native';
+import { AlertTriangle, ShieldCheck, Sparkles } from '~/lib/icons/hugeicons';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';

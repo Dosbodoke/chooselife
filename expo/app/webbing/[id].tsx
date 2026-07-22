@@ -13,7 +13,7 @@ import {
   MapPinIcon,
   MoveHorizontalIcon,
   ShieldIcon,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,

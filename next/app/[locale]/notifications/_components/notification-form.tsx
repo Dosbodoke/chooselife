@@ -1,7 +1,13 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  CancelCircleIcon,
+  CheckmarkCircle01Icon,
+  Notification01Icon,
+  SentIcon,
+} from "@hugeicons/core-free-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BellIcon,CheckCircleIcon, SendIcon, XCircleIcon } from "lucide-react";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 
@@ -32,7 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { UserPicker } from "@/components/user-picker";
 import type { Database } from "@/utils/supabase/database.types";
 
-import { type NotificationFormData,notificationSchema } from "./validations";
+import { type NotificationFormData, notificationSchema } from "./validations";
 
 type TNotification = Database["public"]["Tables"]["notifications"]["Row"];
 
@@ -287,7 +293,7 @@ export default function NotificationsForm({
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isPending}>
-                  <SendIcon className="mr-2 h-4 w-4" />
+                  <HugeiconsIcon icon={SentIcon} className="mr-2 h-4 w-4" />
                   {isPending ? "Enviando..." : "Enviar"}
                 </Button>
 
@@ -302,9 +308,15 @@ export default function NotificationsForm({
                   >
                     <div className="flex items-center gap-2">
                       {alert.type === "success" ? (
-                        <CheckCircleIcon className="h-4 w-4 text-green-600" />
+                        <HugeiconsIcon
+                          icon={CheckmarkCircle01Icon}
+                          className="h-4 w-4 text-green-600"
+                        />
                       ) : (
-                        <XCircleIcon className="h-4 w-4 text-red-600" />
+                        <HugeiconsIcon
+                          icon={CancelCircleIcon}
+                          className="h-4 w-4 text-red-600"
+                        />
                       )}
                       <AlertDescription
                         className={
@@ -371,7 +383,7 @@ const AppNotification: React.FC<{ notification: TNotification }> = ({
     {/* iOS notification content */}
     <div className="flex gap-3 p-3">
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 text-white shadow-sm">
-        <BellIcon className="h-6 w-6" />
+        <HugeiconsIcon icon={Notification01Icon} className="h-6 w-6" />
       </div>
 
       <div className="flex-1 gap-1 py-1">

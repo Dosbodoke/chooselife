@@ -4,7 +4,7 @@ import { QueryData } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
 import { Image as ExpoImage } from 'expo-image';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import { CalendarIcon, ChevronLeftIcon, FrownIcon } from 'lucide-react-native';
+import { CalendarIcon, ChevronLeftIcon, FrownIcon } from '~/lib/icons/hugeicons';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {

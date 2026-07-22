@@ -7,7 +7,7 @@ import {
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import { useQuery } from '@tanstack/react-query';
-import { BadgeCheckIcon, SearchIcon, XIcon } from 'lucide-react-native';
+import { BadgeCheckIcon, SearchIcon, XIcon } from '~/lib/icons/hugeicons';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {

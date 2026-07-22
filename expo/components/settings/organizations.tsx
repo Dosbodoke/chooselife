@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import { ArrowRightIcon } from 'lucide-react-native';
+import { ArrowRightIcon } from '~/lib/icons/hugeicons';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 

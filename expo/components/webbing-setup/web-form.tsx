@@ -10,7 +10,7 @@ import {
   MoveHorizontalIcon,
   PackagePlusIcon,
   TrashIcon,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import { useCallback, useId, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';

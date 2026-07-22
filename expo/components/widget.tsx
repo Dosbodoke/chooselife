@@ -1,5 +1,5 @@
 import { Image as ExpoImage, ImageSource } from 'expo-image';
-import { ArrowRightIcon } from 'lucide-react-native';
+import { ArrowRightIcon } from '~/lib/icons/hugeicons';
 import React, { useRef, useState } from 'react';
 import {
   Dimensions,

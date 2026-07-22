@@ -1,9 +1,10 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Add01Icon } from "@hugeicons/core-free-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import type { LatLng } from "leaflet";
-import { PlusIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { useQueryState } from "nuqs";
@@ -273,7 +274,7 @@ const CreateHighline = ({
             >
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" />
               <div className="group relative rounded-full bg-black p-2 text-white transition duration-200 hover:bg-transparent">
-                <PlusIcon />
+                <HugeiconsIcon icon={Add01Icon} />
               </div>
             </motion.button>
           </DrawerTrigger>

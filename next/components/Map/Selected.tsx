@@ -1,11 +1,12 @@
 "use client";
 
-import { useQueries } from "@tanstack/react-query";
 import {
-  ArrowRightIcon,
-  UnfoldHorizontalIcon,
-  UnfoldVerticalIcon,
-} from "lucide-react";
+  ArrowRight01Icon,
+  HorizontalResizeIcon,
+  VerticalResizeIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useQueries } from "@tanstack/react-query";
 import { useQueryState } from "nuqs";
 import React from "react";
 
@@ -80,13 +81,19 @@ export const Selected = ({
                     </h4>
                     <div className="flex gap-2">
                       <div className="flex items-center pt-2">
-                        <UnfoldVerticalIcon className="mr-2 h-4 w-4 text-gray-700" />{" "}
+                        <HugeiconsIcon
+                          icon={VerticalResizeIcon}
+                          className="mr-2 h-4 w-4 text-gray-700"
+                        />{" "}
                         <span className="text-sm text-gray-500">
                           {selected.height}m
                         </span>
                       </div>
                       <div className="flex items-center pt-2">
-                        <UnfoldHorizontalIcon className="mr-2 h-4 w-4 text-gray-700" />{" "}
+                        <HugeiconsIcon
+                          icon={HorizontalResizeIcon}
+                          className="mr-2 h-4 w-4 text-gray-700"
+                        />{" "}
                         <span className="text-sm text-gray-500">
                           {selected.length}m
                         </span>
@@ -102,7 +109,10 @@ export const Selected = ({
                         href={`/highline/${selected.id}`}
                       >
                         Ver detalhes
-                        <ArrowRightIcon className="ml-2 h-4 w-4" />
+                        <HugeiconsIcon
+                          icon={ArrowRight01Icon}
+                          className="ml-2 h-4 w-4"
+                        />
                       </Link>
                     </Button>
                   </div>
@@ -130,11 +140,17 @@ const SelectedSkeleton = ({ quantity }: { quantity: number }) => {
               <h4 className="h-6 w-4/5 rounded-md bg-muted-foreground opacity-70" />
               <div className="flex gap-2">
                 <div className="flex items-center pt-2">
-                  <UnfoldVerticalIcon className="mr-2 h-4 w-4 opacity-70" />{" "}
+                  <HugeiconsIcon
+                    icon={VerticalResizeIcon}
+                    className="mr-2 h-4 w-4 opacity-70"
+                  />{" "}
                   <span className="h-4 w-8 rounded-sm bg-muted-foreground opacity-70"></span>
                 </div>
                 <div className="flex items-center pt-2">
-                  <UnfoldHorizontalIcon className="mr-2 h-4 w-4 opacity-70" />{" "}
+                  <HugeiconsIcon
+                    icon={HorizontalResizeIcon}
+                    className="mr-2 h-4 w-4 opacity-70"
+                  />{" "}
                   <span className="h-4 w-8 rounded-sm bg-muted-foreground opacity-70"></span>
                 </div>
               </div>

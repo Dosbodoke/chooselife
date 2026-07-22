@@ -1,8 +1,9 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Cancel01Icon, CheckmarkBadge01Icon } from "@hugeicons/core-free-icons";
 import { useQuery } from "@tanstack/react-query";
 import { cva, type VariantProps } from "class-variance-authority";
-import { BadgeCheckIcon, XIcon } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import * as React from "react";
@@ -197,7 +198,10 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                     className={cn(userPickerVariants({ variant, className }))}
                   >
                     {value.verified && (
-                      <BadgeCheckIcon className="ml-1 h-3 w-3 text-blue-500" />
+                      <HugeiconsIcon
+                        icon={CheckmarkBadge01Icon}
+                        className="ml-1 h-3 w-3 text-blue-500"
+                      />
                     )}
                     {value.username}
                   </Badge>
@@ -268,10 +272,14 @@ export const UserPicker: React.FC<UserPickerProps> = ({
                       )}
                     >
                       {value.verified && (
-                        <BadgeCheckIcon className="ml-1 h-3 w-3 text-blue-500" />
+                        <HugeiconsIcon
+                          icon={CheckmarkBadge01Icon}
+                          className="ml-1 h-3 w-3 text-blue-500"
+                        />
                       )}
                       {value.username}
-                      <XIcon
+                      <HugeiconsIcon
+                        icon={Cancel01Icon}
                         className="mr-1 h-3 w-3 cursor-pointer text-red-500"
                         onClick={(event) => {
                           event.stopPropagation();
@@ -386,7 +394,10 @@ const VerifiedUser: React.FC<{
         </span>
         <span className="text-xs text-muted-foreground">{username}</span>
       </div>
-      <BadgeCheckIcon className="h-4 w-4 text-blue-500" />
+      <HugeiconsIcon
+        icon={CheckmarkBadge01Icon}
+        className="h-4 w-4 text-blue-500"
+      />
     </div>
   );
 };

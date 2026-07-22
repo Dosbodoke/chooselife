@@ -3,7 +3,7 @@ import {
   ChevronLeftIcon,
   MapPinnedIcon,
   MapPinOffIcon,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';

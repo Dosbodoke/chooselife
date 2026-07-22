@@ -1,4 +1,5 @@
-import { CalendarFoldIcon } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Calendar04Icon } from "@hugeicons/core-free-icons";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 
@@ -73,7 +74,10 @@ function UserHeader({ profile, username }: Props) {
             <ul className="space-y-2">
               {profile.birthday ? (
                 <li className="flex items-center gap-1 text-muted-foreground">
-                  <CalendarFoldIcon className="h-4 w-4 text-muted-foreground" />
+                  <HugeiconsIcon
+                    icon={Calendar04Icon}
+                    className="h-4 w-4 text-muted-foreground"
+                  />
                   <span>{t("age")}:</span> {calculateAge(profile.birthday)}
                 </li>
               ) : null}

@@ -1,6 +1,6 @@
 "use client";
-
-import { ArrowRightIcon, SearchIcon } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowRight01Icon, Search01Icon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { useQueryState } from "nuqs";
 
@@ -29,7 +29,10 @@ export default function Search() {
     >
       <div className="relative flex h-14 items-center overflow-hidden rounded-full border border-white/20 bg-black/40 shadow-2xl backdrop-blur-md transition-colors corner-squircle focus-within:bg-black/60 hover:border-white/30 hover:bg-black/50">
         <span className="flex h-full w-14 items-center justify-center pl-2">
-          <SearchIcon className="h-5 w-5 text-white/70" />
+          <HugeiconsIcon
+            icon={Search01Icon}
+            className="h-5 w-5 text-white/70"
+          />
         </span>
         <Input
           key={search}
@@ -48,7 +51,7 @@ export default function Search() {
           className="absolute right-2 h-10 w-10 rounded-full bg-blue-600 text-white shadow-lg transition-all duration-200 hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           aria-label="Search"
         >
-          <ArrowRightIcon className="h-5 w-5" />
+          <HugeiconsIcon icon={ArrowRight01Icon} className="h-5 w-5" />
         </Button>
       </div>
     </form>

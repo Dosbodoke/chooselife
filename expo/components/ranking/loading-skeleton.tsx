@@ -1,4 +1,4 @@
-import { CrownIcon } from 'lucide-react-native';
+import { CrownIcon } from '~/lib/icons/hugeicons';
 import { View } from 'react-native';
 
 import { cn } from '~/lib/utils';

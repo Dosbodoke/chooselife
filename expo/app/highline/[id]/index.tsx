@@ -5,7 +5,7 @@ import {
   FootprintsIcon,
   PencilIcon,
   ShareIcon,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, TouchableOpacity, View } from 'react-native';

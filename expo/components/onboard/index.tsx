@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft } from '~/lib/icons/hugeicons';
 import Animated, {
   FadeInDown,
   FadeInLeft,

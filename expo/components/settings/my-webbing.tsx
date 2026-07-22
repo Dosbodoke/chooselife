@@ -7,7 +7,7 @@ import {
   LinkIcon,
   MoveHorizontalIcon,
   PlusIcon,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 

@@ -1,5 +1,6 @@
+import { HugeiconsIcon } from "@hugeicons/react";
+import { CrownIcon } from "@hugeicons/core-free-icons";
 import { cva } from "class-variance-authority";
-import { CrownIcon } from "lucide-react";
 import Image from "next/image";
 import React from "react";
 
@@ -87,7 +88,8 @@ const Podium = ({ username, value, position, profilePicture }: PodiumProps) => {
           >
             <div className="flex flex-col items-center gap-1">
               <div className="flex h-8 w-8 items-center justify-center md:h-12 md:w-12">
-                <CrownIcon
+                <HugeiconsIcon
+                  icon={CrownIcon}
                   className={cn(
                     "text-2xl md:text-4xl",
                     podiumVariants({ text: variant })

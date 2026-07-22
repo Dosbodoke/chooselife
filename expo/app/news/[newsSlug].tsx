@@ -1,6 +1,6 @@
 import { useIsMember, useMutateComment, useNewsItem } from '@chooselife/ui';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { ChevronLeft, Send, Share as ShareIcon } from 'lucide-react-native';
+import { ChevronLeft, Send, Share as ShareIcon } from '~/lib/icons/hugeicons';
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,

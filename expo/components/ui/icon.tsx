@@ -1,9 +1,9 @@
 import { cn } from '~/lib/utils';
-import type { LucideIcon, LucideProps } from 'lucide-react-native';
+import type { Hugeicon, HugeiconProps } from '~/lib/icons/hugeicons';
 import { useResolveClassNames } from 'uniwind';
 
-type IconProps = LucideProps & {
-  as: LucideIcon;
+type IconProps = HugeiconProps & {
+  as: Hugeicon;
 };
 
 function Icon({ as: IconComponent, className, size, color, fill, ...props }: IconProps) {

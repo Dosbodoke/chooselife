@@ -11,7 +11,7 @@ import {
   RulerIcon,
   SearchIcon,
   XIcon,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {

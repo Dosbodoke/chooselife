@@ -1,7 +1,8 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { HeartIcon } from "lucide-react";
+import { HeartIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -58,7 +59,8 @@ export function FavoriteHighline({
       onClick={() => mutate()}
       disabled={isPending}
     >
-      <HeartIcon
+      <HugeiconsIcon
+        icon={HeartIcon}
         className={cn(
           "h-6 w-6",
           favorite

@@ -2,7 +2,7 @@ import Mapbox from '@rnmapbox/maps';
 import { useMapStore } from '~/store/map-store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { Position } from 'geojson';
-import { MapPinIcon } from 'lucide-react-native';
+import { MapPinIcon } from '~/lib/icons/hugeicons';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';

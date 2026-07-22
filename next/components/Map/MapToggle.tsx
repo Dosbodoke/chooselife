@@ -1,6 +1,7 @@
 "use client";
 
-import { ListIcon, MapIcon } from "lucide-react";
+import { ListViewIcon, MapsIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { useQueryState } from "nuqs";
@@ -41,7 +42,11 @@ function MapToggle({ mapIsOpen }: { mapIsOpen: boolean }) {
             transition={{ type: "spring", bounce: 0, duration: 0.2 }}
             className="h-6 w-6"
           >
-            {mapIsOpen ? <ListIcon /> : <MapIcon />}
+            {mapIsOpen ? (
+              <HugeiconsIcon icon={ListViewIcon} />
+            ) : (
+              <HugeiconsIcon icon={MapsIcon} />
+            )}
           </motion.div>
         </AnimatePresence>
       </motion.button>

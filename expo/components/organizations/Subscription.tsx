@@ -16,7 +16,7 @@ import {
   TrendingUp,
   X,
   XCircle,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import React, { useCallback, useRef } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import Animated, {

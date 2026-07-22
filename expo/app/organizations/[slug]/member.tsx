@@ -1,7 +1,7 @@
 import { useOrganization } from '@chooselife/ui';
 import { useQuery } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { XIcon } from 'lucide-react-native';
+import { XIcon } from '~/lib/icons/hugeicons';
 import React from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

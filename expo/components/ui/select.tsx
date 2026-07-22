@@ -1,5 +1,5 @@
 import * as SelectPrimitive from '@rn-primitives/select';
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react-native';
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from '~/lib/icons/hugeicons';
 import * as React from 'react';
 import { Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { FadeIn, FadeOut } from 'react-native-reanimated';

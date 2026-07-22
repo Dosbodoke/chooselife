@@ -8,7 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Position } from 'geojson';
 import i18next from 'i18next';
-import { MapPinIcon, UploadIcon, XIcon } from 'lucide-react-native';
+import { MapPinIcon, UploadIcon, XIcon } from '~/lib/icons/hugeicons';
 import React, { memo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';

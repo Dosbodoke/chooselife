@@ -6,8 +6,8 @@ import {
   ClockIcon,
   InfoIcon,
   ZapIcon,
-  type LucideIcon,
-} from 'lucide-react-native';
+  type Hugeicon,
+} from '~/lib/icons/hugeicons';
 import React, { useMemo, useState } from 'react';
 import { Controller, type SubmitHandler } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -441,7 +441,7 @@ const RigTypeOption: React.FC<{
   type: RigType;
   isSelected: boolean;
   onSelect: () => void;
-  icon: LucideIcon;
+  icon: Hugeicon;
   title: string;
   description: string;
 }> = ({ isSelected, onSelect, icon, title, description }) => (

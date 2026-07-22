@@ -1,13 +1,14 @@
 "use client";
 
-import type { FestivalHighlineScheduleCard } from "@chooselife/ui";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
-  ChevronRightIcon,
-  MegaphoneIcon,
-  MoveHorizontalIcon,
-  MoveVerticalIcon,
-  UsersIcon,
-} from "lucide-react";
+  ArrowRight01Icon,
+  HorizontalResizeIcon,
+  Megaphone01Icon,
+  UserGroupIcon,
+  VerticalResizeIcon,
+} from "@hugeicons/core-free-icons";
+import type { FestivalHighlineScheduleCard } from "@chooselife/ui";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -26,16 +27,10 @@ interface Props {
   viewerUserId?: string;
 }
 
-function StatPill({
-  icon: Icon,
-  value,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  value: string;
-}) {
+function StatPill({ icon, value }: { icon: IconSvgElement; value: string }) {
   return (
     <div className="flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-white backdrop-blur-sm">
-      <Icon className="h-3 w-3" />
+      <HugeiconsIcon icon={icon} className="h-3 w-3" />
       <span className="text-xs font-semibold">{value}</span>
     </div>
   );
@@ -90,11 +85,11 @@ export function FestivalHighlineCard({
 
             <div className="flex flex-wrap gap-2">
               <StatPill
-                icon={MoveVerticalIcon}
+                icon={VerticalResizeIcon}
                 value={`${card.highline.height.toFixed(0)}m`}
               />
               <StatPill
-                icon={MoveHorizontalIcon}
+                icon={HorizontalResizeIcon}
                 value={`${card.highline.length.toFixed(0)}m`}
               />
             </div>
@@ -104,7 +99,10 @@ export function FestivalHighlineCard({
         <div className="space-y-4 bg-white p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
-              <UsersIcon className="h-3 w-3 shrink-0 text-black" />
+              <HugeiconsIcon
+                icon={UserGroupIcon}
+                className="h-3 w-3 shrink-0 text-black"
+              />
               <p className="truncate text-sm font-semibold uppercase tracking-[1px] text-slate-500">
                 {t("availableCountLabel", {
                   count: card.availableCount,
@@ -114,7 +112,10 @@ export function FestivalHighlineCard({
 
             {card.featuredSlot?.booking ? (
               <div className="flex max-w-[56%] items-center gap-1.5">
-                <MegaphoneIcon className="h-3 w-3 shrink-0 text-green-500" />
+                <HugeiconsIcon
+                  icon={Megaphone01Icon}
+                  className="h-3 w-3 shrink-0 text-green-500"
+                />
                 <p className="truncate text-sm font-semibold text-green-500">
                   {card.featuredSlot.isCurrent ? t("current") : featuredLabel}:{" "}
                   {card.featuredSlot.booking.participant.primaryText}
@@ -132,7 +133,7 @@ export function FestivalHighlineCard({
             }}
           >
             <span className="font-semibold">{t("openSchedule")}</span>
-            <ChevronRightIcon className="h-4 w-4" />
+            <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4" />
           </Button>
         </div>
       </article>

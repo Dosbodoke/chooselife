@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority';
-import type { LucideIcon } from 'lucide-react-native';
+import type { Hugeicon } from '~/lib/icons/hugeicons';
 import * as React from 'react';
 import { View, type ViewProps } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -76,7 +76,7 @@ function AlertIcon({
   size = 20,
   ...props
 }: {
-  icon: LucideIcon;
+  icon: Hugeicon;
   size?: number;
   className?: string;
 }) {

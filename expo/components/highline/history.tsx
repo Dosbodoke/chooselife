@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { CalendarRangeIcon, FrownIcon, UsersIcon } from 'lucide-react-native';
+import { CalendarRangeIcon, FrownIcon, UsersIcon } from '~/lib/icons/hugeicons';
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';

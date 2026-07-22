@@ -1,5 +1,5 @@
 import { useMapStore } from '~/store/map-store';
-import { PlusIcon } from 'lucide-react-native';
+import { PlusIcon } from '~/lib/icons/hugeicons';
 import React from 'react';
 import { View } from 'react-native';
 

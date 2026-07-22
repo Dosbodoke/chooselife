@@ -4,7 +4,7 @@ import {
   type News as NewsType,
 } from '@chooselife/ui';
 import { useRouter } from 'expo-router';
-import { MessageSquare, ThumbsUp } from 'lucide-react-native';
+import { MessageSquare, ThumbsUp } from '~/lib/icons/hugeicons';
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { Markdown } from 'react-native-remark';

@@ -1,4 +1,4 @@
-import { WifiOffIcon } from 'lucide-react-native';
+import { WifiOffIcon } from '~/lib/icons/hugeicons';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';

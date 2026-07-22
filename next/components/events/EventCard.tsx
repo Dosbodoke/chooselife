@@ -1,6 +1,11 @@
 "use client";
-
-import { CalendarIcon, ChevronDown, MapPin, ExternalLink } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ArrowDown01Icon,
+  Calendar01Icon,
+  LinkSquare01Icon,
+  Location01Icon,
+} from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { type Event, isISAEvent, getCountryFlag } from "@chooselife/ui";
 import { cn } from "@/lib/utils";
@@ -12,7 +17,10 @@ import {
 } from "@/components/ui/collapsible";
 
 /** Category colors for badge */
-const CATEGORY_COLORS: Record<string, { bg: string; dot: string; text: string }> = {
+const CATEGORY_COLORS: Record<
+  string,
+  { bg: string; dot: string; text: string }
+> = {
   contests: { bg: "bg-blue-50", dot: "bg-blue-500", text: "text-blue-700" },
   education: { bg: "bg-green-50", dot: "bg-green-500", text: "text-green-700" },
   events: { bg: "bg-orange-50", dot: "bg-orange-500", text: "text-orange-700" },
@@ -99,10 +107,13 @@ export function EventCard({ event, locale = "en" }: EventCardProps) {
   const eventType = isFromISA ? event.type : "default";
 
   const startDate = new Date(event.start_date);
-  const monthShort = startDate.toLocaleString(locale, { month: "short" }).toUpperCase();
+  const monthShort = startDate
+    .toLocaleString(locale, { month: "short" })
+    .toUpperCase();
   const dayOfMonth = startDate.getDate();
 
-  const gradientClass = CATEGORY_GRADIENTS[eventType || "default"] || CATEGORY_GRADIENTS.default;
+  const gradientClass =
+    CATEGORY_GRADIENTS[eventType || "default"] || CATEGORY_GRADIENTS.default;
   const countryFlag = getCountryFlag(event.country);
 
   return (
@@ -133,7 +144,9 @@ export function EventCard({ event, locale = "en" }: EventCardProps) {
                 <span className="text-[10px] font-bold tracking-wider opacity-90">
                   {monthShort}
                 </span>
-                <span className="text-3xl font-black -mt-0.5">{dayOfMonth}</span>
+                <span className="text-3xl font-black -mt-0.5">
+                  {dayOfMonth}
+                </span>
               </div>
 
               {/* Main Content */}
@@ -143,7 +156,8 @@ export function EventCard({ event, locale = "en" }: EventCardProps) {
                   <h3 className="font-bold text-base text-foreground line-clamp-2">
                     {event.title}
                   </h3>
-                  <ChevronDown
+                  <HugeiconsIcon
+                    icon={ArrowDown01Icon}
                     className={cn(
                       "size-5 text-muted-foreground shrink-0 transition-transform",
                       isOpen && "rotate-180"
@@ -153,7 +167,10 @@ export function EventCard({ event, locale = "en" }: EventCardProps) {
 
                 {/* Location */}
                 <div className="inline-flex items-center gap-1.5 bg-muted/60 px-2.5 py-1.5 rounded-xl text-sm font-medium">
-                  <MapPin className="size-3.5 text-primary" />
+                  <HugeiconsIcon
+                    icon={Location01Icon}
+                    className="size-3.5 text-primary"
+                  />
                   <span className="truncate">
                     {event.city}
                     {event.state ? `, ${event.state}` : ""}
@@ -193,7 +210,10 @@ export function EventCard({ event, locale = "en" }: EventCardProps) {
               {/* Info Pills */}
               <div className="flex flex-wrap gap-2">
                 <div className="inline-flex items-center gap-2 bg-muted/50 px-3 py-2 rounded-xl text-sm font-medium">
-                  <CalendarIcon className="size-4 text-primary" />
+                  <HugeiconsIcon
+                    icon={Calendar01Icon}
+                    className="size-4 text-primary"
+                  />
                   <span>
                     {startDate.toLocaleDateString(locale, {
                       weekday: "long",
@@ -215,7 +235,7 @@ export function EventCard({ event, locale = "en" }: EventCardProps) {
                     className="gap-2"
                   >
                     {isFromISA ? "View Details" : "Book Now"}
-                    <ExternalLink className="size-4" />
+                    <HugeiconsIcon icon={LinkSquare01Icon} className="size-4" />
                   </a>
                 </Button>
               )}

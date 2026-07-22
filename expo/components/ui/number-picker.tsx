@@ -1,4 +1,4 @@
-import { MinusIcon, PlusIcon } from 'lucide-react-native';
+import { MinusIcon, PlusIcon } from '~/lib/icons/hugeicons';
 import React, { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import Animated, {

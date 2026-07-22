@@ -1,14 +1,15 @@
 "use client";
 
-import { 
-  useEvents, 
-  formatMonthHeader, 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Calendar01Icon, Loading02Icon } from "@hugeicons/core-free-icons";
+import {
+  useEvents,
+  formatMonthHeader,
   groupEventsByMonth,
   type CategoryFilterType,
   extractCountryOptions,
   filterEvents,
 } from "@chooselife/ui";
-import { CalendarDays, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocale } from "next-intl";
 
@@ -16,7 +17,6 @@ import { SupabaseProvider } from "@chooselife/ui";
 import { EventCard } from "@/components/events/EventCard";
 import { EventFilters } from "@/components/events/EventFilters";
 import { supabaseBrowser } from "@/utils/supabase/client";
-
 
 export default function EventWrapper() {
   return (
@@ -30,7 +30,8 @@ function EventsPage() {
   const locale = useLocale();
   const { filteredEvents, query } = useEvents();
 
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilterType>("all");
+  const [categoryFilter, setCategoryFilter] =
+    useState<CategoryFilterType>("all");
   const [countryFilter, setCountryFilter] = useState<string>("all");
 
   // Extract unique countries from events with flag emojis
@@ -43,7 +44,6 @@ function EventsPage() {
     return filterEvents(filteredEvents, categoryFilter, countryFilter);
   }, [filteredEvents, categoryFilter, countryFilter]);
 
-
   // Group filtered events by month
   const eventsByMonth = useMemo(() => {
     return groupEventsByMonth(locallyFilteredEvents);
@@ -53,10 +53,10 @@ function EventsPage() {
   const hasActiveFilters = categoryFilter !== "all" || countryFilter !== "all";
 
   return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          {/* Header */}
-          <div className="mb-6">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground">Events</h1>
           <p className="text-muted-foreground mt-1">
             Upcoming slackline events from around the world
@@ -76,12 +76,18 @@ function EventsPage() {
         <div className="mt-6">
           {query.isPending ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="size-8 animate-spin text-muted-foreground" />
+              <HugeiconsIcon
+                icon={Loading02Icon}
+                className="size-8 animate-spin text-muted-foreground"
+              />
             </div>
           ) : monthKeys.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <div className="bg-muted/30 rounded-full p-5">
-                <CalendarDays className="size-10 text-muted-foreground" />
+                <HugeiconsIcon
+                  icon={Calendar01Icon}
+                  className="size-10 text-muted-foreground"
+                />
               </div>
               <p className="text-center text-muted-foreground text-base">
                 {hasActiveFilters

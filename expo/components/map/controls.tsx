@@ -4,7 +4,7 @@ import {
   LocateIcon,
   MapIcon,
   SatelliteIcon,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import type React from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

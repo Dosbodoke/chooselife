@@ -1,6 +1,6 @@
 "use client";
-
-import { Check, Share2 } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Share03Icon, Tick01Icon } from "@hugeicons/core-free-icons";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 
@@ -57,7 +57,7 @@ export function ShareButton({ title, text, url }: ShareButtonProps) {
             transition={{ duration: 0.15 }}
             className="flex items-center gap-2"
           >
-            <Check className="h-4 w-4" />
+            <HugeiconsIcon icon={Tick01Icon} className="h-4 w-4" />
             <span>Copiado!</span>
           </motion.div>
         ) : (
@@ -69,7 +69,7 @@ export function ShareButton({ title, text, url }: ShareButtonProps) {
             transition={{ duration: 0.15 }}
             className="flex items-center gap-2"
           >
-            <Share2 className="h-4 w-4" />
+            <HugeiconsIcon icon={Share03Icon} className="h-4 w-4" />
             <span>Compartilhar</span>
           </motion.div>
         )}

@@ -1,7 +1,8 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Loading02Icon } from "@hugeicons/core-free-icons";
 import { SupabaseProvider, useFestivalSchedule } from "@chooselife/ui";
-import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Ranking } from "@/components/Ranking";
@@ -34,7 +35,10 @@ function FestivalTabsContent({ festivalSlug }: Props) {
   if (!data) {
     return (
       <div className="mt-12 grid w-full place-items-center">
-        <Loader2 className="h-20 w-20 animate-spin text-primary" />
+        <HugeiconsIcon
+          icon={Loading02Icon}
+          className="h-20 w-20 animate-spin text-primary"
+        />
       </div>
     );
   }
@@ -53,13 +57,19 @@ function FestivalTabsContent({ festivalSlug }: Props) {
       <TabsContent className="mt-4 space-y-8" value="highlines">
         {scheduleQuery.isFetching ? (
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <HugeiconsIcon
+              icon={Loading02Icon}
+              className="h-4 w-4 animate-spin"
+            />
             {t("schedule.loading")}
           </div>
         ) : null}
 
         {data.sectors.map((group, index) => (
-          <section key={group.sector?.id ?? `ungrouped-${index}`} className="space-y-4">
+          <section
+            key={group.sector?.id ?? `ungrouped-${index}`}
+            className="space-y-4"
+          >
             <div className="space-y-1">
               <h2 className="text-2xl font-bold">
                 {group.sector?.name ?? t("schedule.defaultSector")}

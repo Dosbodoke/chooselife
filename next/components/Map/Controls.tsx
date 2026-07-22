@@ -1,12 +1,13 @@
 "use client";
 
 import {
-  Layers2Icon,
-  LocateFixedIcon,
-  LocateIcon,
-  MapIcon,
+  Gps01Icon,
+  Gps02Icon,
+  Layers02Icon,
+  MapsIcon,
   SatelliteIcon,
-} from "lucide-react";
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useTranslations } from "next-intl";
 import { useQueryState } from "nuqs";
 import { useState } from "react";
@@ -63,12 +64,16 @@ export const MapControls = () => {
             map.locate();
           }}
         >
-          {isLocated ? <LocateFixedIcon /> : <LocateIcon />}
+          {isLocated ? (
+            <HugeiconsIcon icon={Gps02Icon} />
+          ) : (
+            <HugeiconsIcon icon={Gps01Icon} />
+          )}
         </button>
         <Popover>
           <PopoverTrigger asChild>
             <button className="grid h-9 w-9 place-items-center bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground">
-              <Layers2Icon />
+              <HugeiconsIcon icon={Layers02Icon} />
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-80">
@@ -86,7 +91,7 @@ export const MapControls = () => {
                   className="flex flex-1 flex-col gap-6 rounded-md border-2 border-border p-4 hover:border-ring data-[active=true]:bg-accent"
                 >
                   <div className="h-6 w-6">
-                    <MapIcon />
+                    <HugeiconsIcon icon={MapsIcon} />
                   </div>
                   <div>{t("map")}</div>
                 </button>
@@ -96,7 +101,7 @@ export const MapControls = () => {
                   className="flex flex-1 flex-col gap-6 rounded-md border-2 border-border p-4 hover:border-ring data-[active=true]:bg-accent"
                 >
                   <div className="h-6 w-6">
-                    <SatelliteIcon />
+                    <HugeiconsIcon icon={SatelliteIcon} />
                   </div>
                   <div>{t("satellite")}</div>
                 </button>

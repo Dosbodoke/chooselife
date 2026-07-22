@@ -4,7 +4,7 @@ import {
   GripVerticalIcon,
   MoveHorizontalIcon,
   TriangleAlertIcon,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';

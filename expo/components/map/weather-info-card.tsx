@@ -1,10 +1,10 @@
-import type { LucideIcon } from 'lucide-react-native';
+import type { Hugeicon } from '~/lib/icons/hugeicons';
 import {
   CloudIcon,
   DropletIcon,
   ThermometerIcon,
   WindIcon,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
@@ -35,7 +35,7 @@ interface WeatherSummaryProps {
 }
 
 interface WeatherDetailItemProps {
-  icon: LucideIcon;
+  icon: Hugeicon;
   label: string;
   value: string;
   subvalue?: string;

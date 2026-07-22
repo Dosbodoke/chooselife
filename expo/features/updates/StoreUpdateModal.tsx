@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { ShieldCheck } from 'lucide-react-native';
+import { ShieldCheck } from '~/lib/icons/hugeicons';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Platform, View } from 'react-native';

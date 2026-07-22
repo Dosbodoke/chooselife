@@ -4,7 +4,7 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   ChevronUpIcon,
-} from 'lucide-react-native';
+} from '~/lib/icons/hugeicons';
 import * as React from 'react';
 import {
   Platform,

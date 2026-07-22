@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { CalendarDaysIcon } from 'lucide-react-native';
+import { CalendarDaysIcon } from '~/lib/icons/hugeicons';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, View } from 'react-native';
