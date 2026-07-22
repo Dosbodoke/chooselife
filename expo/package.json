@@ -1,7 +1,7 @@
 {
   "name": "chooselife-mobile",
   "main": "expo-router/entry",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "private": true,
   "engines": {
     "node": "24.18.0"
@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@chooselife/ui": "workspace:*",
+    "@expo/dom-webview": "~57.0.1",
     "@expo/ui": "57.0.3",
     "@gorhom/bottom-sheet": "^5.2.10",
     "@hookform/resolvers": "^3.9.0",
@@ -136,6 +137,7 @@
     "@types/react": "~19.2.14",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
+    "@typescript/native": "npm:typescript@^7.0.2",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-i18n-json": "^4.0.1",
@@ -143,7 +145,6 @@
     "jest-expo": "^57.0.1",
     "prettier": "^3.3.3",
     "ts-jest": "^29.4.6",
-    "@typescript/native": "npm:typescript@^7.0.2",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "typescript-eslint": "^8.15.0"
   }
