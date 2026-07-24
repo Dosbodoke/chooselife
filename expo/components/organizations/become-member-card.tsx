@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
 
@@ -8,10 +9,12 @@ import { Button } from '~/components/ui/button';
 import { Text } from '~/components/ui/text';
 
 type BecomeMemberCardProps = {
-  onPress: () => void;
+  slug: string;
 };
 
-export function BecomeMemberCard({ onPress }: BecomeMemberCardProps) {
+export function BecomeMemberCard({ slug }: BecomeMemberCardProps) {
+  const router = useRouter();
+
   return (
     <View
       className="relative min-h-[200px] justify-end gap-4 overflow-hidden rounded-xl bg-zinc-900 p-6"
@@ -50,17 +53,20 @@ export function BecomeMemberCard({ onPress }: BecomeMemberCardProps) {
       />
 
       <View className="z-10 gap-2">
-        <Text className="text-2xl font-black text-white">Torne-se um membro</Text>
+        <Text className="text-2xl font-black text-white">
+          Torne-se um associado
+        </Text>
         <Text className="text-base font-medium leading-6 text-zinc-400">
-          Junte-se a nós e apoie o desenvolvimento do slackline no Cerrado.
+          Junte-se à associação e apoie o desenvolvimento do slackline no
+          Cerrado.
         </Text>
       </View>
 
       <Button
-        onPress={onPress}
+        onPress={() => router.push(`/organizations/${slug}/member`)}
         className="w-full bg-white active:bg-gray-100 active:scale-[0.98]"
       >
-        <Text className="font-bold text-black">Seja Membro</Text>
+        <Text className="font-bold text-black">Quero me associar</Text>
       </Button>
     </View>
   );

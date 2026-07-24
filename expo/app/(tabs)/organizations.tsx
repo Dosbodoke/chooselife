@@ -14,8 +14,6 @@ import {
 } from 'lucide-react-native';
 import React from 'react';
 import {
-  Alert,
-  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -44,8 +42,6 @@ import { Text } from '~/components/ui/text';
 
 // TODO: When more orgs were to be implemented, it should be created the /organizations/[slug] route
 const ORG_SLUG = 'slac' as const;
-const MEMBERSHIP_FORM_URL =
-  'https://docs.google.com/forms/d/e/1FAIpQLSfkuXeriOAahUraV5UwLT88Huo-CVt33Yif_XyeWbBCquGOqw/viewform?usp=publish-editor';
 
 export default function OrganizationDetailsPageWrapper() {
   const { session } = useAuth();
@@ -121,14 +117,6 @@ function OrganizationDetailsPage() {
     });
   };
 
-  const handleBecomeMemberPress = async () => {
-    try {
-      await Linking.openURL(MEMBERSHIP_FORM_URL);
-    } catch {
-      Alert.alert('Erro', 'Não foi possível abrir o formulário.');
-    }
-  };
-
   if (isLoading) {
     return <OrganizationLoadingState />;
   }
@@ -199,7 +187,7 @@ function OrganizationDetailsPage() {
         ) : membershipDisplayState === 'payment-under-review' ? (
           <PaymentUnderReviewCard onPress={handlePaymentUnderReviewPress} />
         ) : (
-          <BecomeMemberCard onPress={handleBecomeMemberPress} />
+          <BecomeMemberCard slug={organization.slug} />
         )}
 
         {/* Activities / Content */}
@@ -246,7 +234,7 @@ const OrganizationStatsGroup = ({ slug }: { slug: string }) => {
       <SettingsItem
         icon={UsersIcon}
         iconColor="#007AFF"
-        label="Membros"
+        label="Associados"
         rightElement={
           isLoading ? (
             <Skeleton className="h-5 w-8 rounded bg-gray-200" />

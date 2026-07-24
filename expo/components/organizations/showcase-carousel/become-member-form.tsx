@@ -33,6 +33,7 @@ import { _layoutAnimation } from '~/utils/constants';
 import { Tables } from '~/utils/database.types';
 
 import { BgBlob } from '~/components/bg-blog';
+import { PlanCard } from '~/components/organizations/showcase-carousel/plan-card';
 import { Text } from '~/components/ui/text';
 
 type PlanType = 'monthly' | 'annual';
@@ -127,6 +128,12 @@ export function BecomeMemberForm({
       );
     },
   });
+
+  const handleSelectPlan = (plan: PlanType) => {
+    setSelectedPlan(plan);
+    setErrorMessage(null);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
 
   const handleOpenEstatuto = async () => {
     const url = getR2PublicUrl('documents', 'estatuto-slac.pdf');
@@ -231,8 +238,8 @@ export function BecomeMemberForm({
             entering={FadeInDown.delay(350).duration(400)}
             className="text-white/80 text-center text-base max-w-md leading-6 font-medium px-4"
           >
-            Cada membro fortalece o slackline brasileiro e apoia a preservação
-            dos nossos espaços naturais
+            Cada associado fortalece o slackline brasileiro e apoia a
+            preservação dos nossos espaços naturais
           </Animated.Text>
         </View>
 
@@ -251,74 +258,35 @@ export function BecomeMemberForm({
           </Animated.View>
         ) : (
           <>
-            {/* Plan Cards - Simplified */}
-            <View className="gap-4">
-              {/* Monthly Plan */}
-              <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-                <Pressable
-                  onPress={() => {
-                    setSelectedPlan('monthly');
-                    setErrorMessage(null);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }}
+            {/* Plan Cards - side by side */}
+            <View className="flex-row items-stretch gap-3">
+              <Animated.View
+                entering={FadeInDown.delay(300).duration(400)}
+                className="flex-1"
+              >
+                <PlanCard
+                  label="Mensal"
+                  price={formatCurrency(org.monthly_price_amount)}
+                  period="/mês"
+                  selected={selectedPlan === 'monthly'}
                   disabled={mutation.isPending}
-                  className={`bg-white/10 backdrop-blur-xl p-5 rounded-2xl border-2 ${
-                    selectedPlan === 'monthly'
-                      ? 'border-white'
-                      : 'border-white/20'
-                  }`}
-                >
-                  <View className="flex-row justify-between items-center">
-                    <View className="flex-1">
-                      <Text className="text-white text-xl font-bold">
-                        Mensal
-                      </Text>
-                      <Text className="text-white/60 text-sm">Flexível</Text>
-                    </View>
-                    <View className="items-end">
-                      <Text className="text-white text-3xl font-bold">
-                        {formatCurrency(org.monthly_price_amount)}
-                      </Text>
-                      <Text className="text-white/70 text-xs">/mês</Text>
-                    </View>
-                  </View>
-                </Pressable>
+                  onPress={() => handleSelectPlan('monthly')}
+                />
               </Animated.View>
 
-              {/* Annual Plan */}
-              <Animated.View entering={FadeInDown.delay(400).duration(400)}>
-                <Pressable
-                  onPress={() => {
-                    setSelectedPlan('annual');
-                    setErrorMessage(null);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }}
+              <Animated.View
+                entering={FadeInDown.delay(400).duration(400)}
+                className="flex-1"
+              >
+                <PlanCard
+                  label="Anual"
+                  price={formatCurrency(org.annual_price_amount)}
+                  period="/ano"
+                  selected={selectedPlan === 'annual'}
                   disabled={mutation.isPending}
-                  className={`bg-white/10 backdrop-blur-xl p-5 rounded-2xl border-2 ${
-                    selectedPlan === 'annual'
-                      ? 'border-emerald-400'
-                      : 'border-white/20'
-                  } relative`}
-                >
-                  <View className="flex-row justify-between items-center">
-                    <View className="flex-1">
-                      <Text className="text-white text-xl font-bold">
-                        Anual
-                      </Text>
-                      {!!annualDiscountPercentage && (
-                        <Text className="text-emerald-300 text-sm font-medium">
-                          Economia de {annualDiscountPercentage}%
-                        </Text>
-                      )}
-                    </View>
-                    <View className="items-end">
-                      <Text className="text-white text-3xl font-bold">
-                        {formatCurrency(org.annual_price_amount)}
-                      </Text>
-                      <Text className="text-white/70 text-xs">/ano</Text>
-                    </View>
-                  </View>
-                </Pressable>
+                  badge={annualDiscountPercentage ? '2 meses grátis' : undefined}
+                  onPress={() => handleSelectPlan('annual')}
+                />
               </Animated.View>
             </View>
 
@@ -350,7 +318,7 @@ export function BecomeMemberForm({
                     <ActivityIndicator color="#000" />
                   ) : (
                     <Text className="text-black text-xl font-bold">
-                      Tornar-me membro
+                      Tornar-me associado
                     </Text>
                   )}
                 </Pressable>
@@ -364,7 +332,7 @@ export function BecomeMemberForm({
               >
                 <Text className="text-white/50 text-center text-sm leading-5 max-w-xs">
                   Ao clicar nesse botão você deve realizar o primeiro pagamento
-                  para se tornar membro.
+                  para se tornar associado.
                 </Text>
                 <Pressable onPress={handleOpenEstatuto}>
                   <Text className="text-white/70 text-center text-sm mt-2 underline">
