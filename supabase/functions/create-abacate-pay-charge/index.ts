@@ -1,13 +1,25 @@
-import AbacatePay from "abacatepay-nodejs-sdk";
 import { corsHeaders } from "../_shared/cors.ts";
 import type {
-  AbacatePayCharge,
-  CreateAbacatePayChargePayload,
+  CreatePaymentCheckoutPayload,
+  PaymentCheckoutSession,
 } from "../_shared/edge-functions.types.ts";
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
+import { createSupabaseClient } from "../_shared/supabase-client.ts";
+import {
+  createChargeForPayment,
+  InvalidPaymentStateError,
+  PaymentNotFoundError,
+  PaymentOwnerMismatchError,
+} from "../_shared/abacate-pay-charge.ts";
 
-if (!Deno.env.get("ABACATE_PAY_API_KEY")) {
-  throw new Error("Missing ABACATE_PAY_API_KEY environment variable.");
+function jsonResponse(
+  body: unknown,
+  status: number,
+): Response {
+  return new Response(JSON.stringify(body), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status,
+  });
 }
 
 Deno.serve(async (req) => {
@@ -16,12 +28,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { amount, paymentId, customer }: CreateAbacatePayChargePayload =
-      await req
-        .json();
-    if (amount === undefined) {
-      throw new Error("amount is required.");
+    const authorization = req.headers.get("Authorization");
+    if (!authorization) {
+      return jsonResponse({ error: "Authorization header is required." }, 401);
     }
+
+    const supabase = createSupabaseClient(authorization);
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return jsonResponse({ error: "User not authenticated." }, 401);
+    }
+
+    const { paymentId, customer }: CreatePaymentCheckoutPayload = await req
+      .json();
     if (paymentId === undefined) {
       throw new Error("paymentId is required.");
     }
@@ -38,37 +57,18 @@ Deno.serve(async (req) => {
       );
     }
 
-    const abacatePay = AbacatePay.default(Deno.env.get("ABACATE_PAY_API_KEY")!);
-    const pixCode = await abacatePay.pixQrCode.create({
-      amount: amount,
-      description: "Inscrição para se tornar associado da SL.A.C",
-      expiresIn: 3600, // 1 hour
+    const chargeData = await createChargeForPayment({
+      supabaseAdmin,
+      paymentId,
+      expectedUserId: user.id,
       customer,
     });
 
-    if (pixCode.error !== null) {
-      throw new Error(
-        `Abacate Pay SDK error: ${JSON.stringify(pixCode.error)}`,
-      );
-    }
-
-    const { error: updateError } = await supabaseAdmin
-      .from("payments")
-      .update({ abacate_pay_charge_id: pixCode.data.id })
-      .eq("id", paymentId);
-
-    if (updateError) {
-      throw new Error(
-        `Failed to update payment record: ${updateError.message}`,
-      );
-    }
-
-    // Return the PIX data from the SDK response to the frontend
     return new Response(
       JSON.stringify(
         {
-          ...pixCode.data,
-        } satisfies AbacatePayCharge,
+          ...chargeData,
+        } satisfies PaymentCheckoutSession,
       ),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -77,6 +77,16 @@ Deno.serve(async (req) => {
     );
   } catch (error: unknown) {
     console.error(error);
+    if (error instanceof PaymentOwnerMismatchError) {
+      return jsonResponse({ error: error.message }, 403);
+    }
+    if (
+      error instanceof PaymentNotFoundError ||
+      error instanceof InvalidPaymentStateError
+    ) {
+      return jsonResponse({ error: error.message }, 400);
+    }
+
     let errorMessage = "An unknown error occurred.";
     if (error instanceof Error) {
       errorMessage = error.message;

@@ -11,13 +11,13 @@ import {
 import React, { useMemo, useState } from 'react';
 import { Controller, type SubmitHandler } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import DateTimePicker from '@expo/ui/community/datetime-picker';
 import {
   ActivityIndicator,
   Platform,
-  TouchableOpacity,
+  Pressable,
   View,
 } from 'react-native';
-import DatePicker from 'react-native-date-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
   FadeInDown,
@@ -445,7 +445,10 @@ const RigTypeOption: React.FC<{
   title: string;
   description: string;
 }> = ({ isSelected, onSelect, icon, title, description }) => (
-  <TouchableOpacity onPress={onSelect} activeOpacity={0.7}>
+  <Pressable
+    onPress={onSelect}
+    style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+  >
     <Card
       className={cn(
         'border-2 transition-colors',
@@ -475,7 +478,7 @@ const RigTypeOption: React.FC<{
         </View>
       </CardContent>
     </Card>
-  </TouchableOpacity>
+  </Pressable>
 );
 
 const DateForm: React.FC<{
@@ -513,14 +516,15 @@ const DateForm: React.FC<{
               control={form.control}
               name="rigDate"
               render={({ field: { value, onChange } }) => (
-                <DatePicker
+                <DateTimePicker
                   mode="date"
                   locale={i18next.language}
-                  date={value}
+                  display="inline"
+                  value={value}
                   minimumDate={new Date()}
-                  onDateChange={(date) => onChange(date)}
-                  timeZoneOffsetInMinutes={0}
-                  theme={colorScheme}
+                  timeZoneName="UTC"
+                  themeVariant={colorScheme}
+                  onValueChange={(_event, selectedDate) => onChange(selectedDate)}
                 />
               )}
             />

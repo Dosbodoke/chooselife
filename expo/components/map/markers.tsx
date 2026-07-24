@@ -189,7 +189,7 @@ export const Markers: React.FC<{
     const ids = new Set<string>();
 
     clusters.forEach((point) => {
-      if (!isClusterFeature(point)) {
+      if (!isClusterFeature<PointProperties, Supercluster.AnyProps>(point)) {
         ids.add(point.properties.highID);
       }
     });
@@ -243,7 +243,9 @@ export const Markers: React.FC<{
       const clampedZoom = Math.min(expansionZoom, 17);
 
       const cluster = clusters.find(
-        (c) => isClusterFeature(c) && c.properties.cluster_id === cluster_id,
+        (c) =>
+          isClusterFeature<PointProperties, Supercluster.AnyProps>(c) &&
+          c.properties.cluster_id === cluster_id,
       );
 
       if (!cluster) return;
@@ -412,7 +414,7 @@ export const Markers: React.FC<{
           return null;
         }
 
-        if (isClusterFeature(point)) {
+        if (isClusterFeature<PointProperties, Supercluster.AnyProps>(point)) {
           if (highlightedMarker) {
             return null;
           }

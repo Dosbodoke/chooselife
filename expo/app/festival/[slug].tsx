@@ -24,7 +24,6 @@ import { FestivalScheduleSheet } from '~/components/festival/schedule-sheet';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { Icon } from '~/components/ui/icon';
 
-const FESTIVAL_SLUG = 'chooselife-2026';
 const DEFAULT_FESTIVAL_TIME_ZONE = 'America/Sao_Paulo';
 
 type FestivalScheduleQuery = ReturnType<typeof useFestivalSchedule>;
@@ -34,79 +33,65 @@ export default function FestivalScreen() {
   const isOnline = useOnlineStatus();
   const { share } = useShare();
 
-  const { day: rawSelectedDayKey, highline: rawSelectedHighlineId } =
-    useLocalSearchParams<{
-      day?: string | string[];
-      highline?: string | string[];
-    }>();
+  const {
+    slug: rawSlug,
+    day: rawSelectedDayKey,
+    highline: rawSelectedHighlineId,
+  } = useLocalSearchParams<{
+    slug: string | string[];
+    day?: string | string[];
+    highline?: string | string[];
+  }>();
 
-  const query = useFestivalSchedule({ festivalSlug: FESTIVAL_SLUG });
+  const festivalSlug = getSingleSearchParam(rawSlug) ?? '';
+
+  const query = useFestivalSchedule({ festivalSlug });
 
   const selectedHighlineId = getSingleSearchParam(rawSelectedHighlineId);
   const selectedDayKey = getSingleSearchParam(rawSelectedDayKey);
   const festivalTimeZone = getFestivalTimeZone(query.data);
-  const title = query.data?.festival.name ?? 'Festival Chooselife';
+  const title = query.data?.festival.name ?? '';
 
-  const cards = React.useMemo(() => {
-    if (!query.data?.sectors) {
-      return [];
-    }
-
-    return query.data.sectors.flatMap((sector) => sector.cards);
-  }, [query.data?.sectors]);
-
+  const cards = query.data?.sectors.flatMap((sector) => sector.cards) ?? [];
   const selectedCard =
-    React.useMemo<FestivalHighlineScheduleCard | null>(() => {
-      const card = cards.find(
-        (item) => item.highline.id === selectedHighlineId,
-      );
+    cards.find((item) => item.highline.id === selectedHighlineId) ?? null;
 
-      if (!card) {
-        return null;
-      }
+  const handleOpenSchedule = (
+    card: FestivalHighlineScheduleCard,
+    dayKey?: string | null,
+  ) => {
+    router.setParams({
+      highline: card.highline.id,
+      day: dayKey ?? card.defaultDayKey,
+    });
+  };
 
-      return card;
-    }, [cards, selectedHighlineId]);
-
-  const handleOpenSchedule = React.useCallback(
-    (card: FestivalHighlineScheduleCard, dayKey = card.defaultDayKey) => {
-      router.setParams({
-        highline: card.highline.id,
-        day: dayKey,
-      });
-    },
-    [router],
-  );
-
-  const handleDismissSchedule = React.useCallback(() => {
+  const handleDismissSchedule = () => {
     router.setParams({
       highline: undefined,
       day: undefined,
     });
-  }, [router]);
+  };
 
-  const handleSelectDayKey = React.useCallback(
-    (dayKey: string) => {
-      if (!selectedHighlineId) {
-        return;
-      }
+  const handleSelectDayKey = (dayKey: string) => {
+    if (!selectedHighlineId) {
+      return;
+    }
 
-      router.setParams({
-        highline: selectedHighlineId,
-        day: dayKey,
-      });
-    },
-    [router, selectedHighlineId],
-  );
+    router.setParams({
+      highline: selectedHighlineId,
+      day: dayKey,
+    });
+  };
 
-  const handleShareFestival = React.useCallback(async () => {
-    const url = `${process.env.EXPO_PUBLIC_WEB_URL}/festival`;
+  const handleShareFestival = async () => {
+    const url = `${process.env.EXPO_PUBLIC_WEB_URL}/festival/${festivalSlug}`;
 
     await share({
       title,
       url,
     });
-  }, [share, title]);
+  };
 
   return (
     <>
@@ -156,7 +141,7 @@ export default function FestivalScreen() {
           bookingLimit={query.data?.bookingLimit ?? null}
           canManage={query.data?.viewer.canManage || false}
           card={selectedCard}
-          festivalSlug={FESTIVAL_SLUG}
+          festivalSlug={festivalSlug}
           festivalTimeZone={festivalTimeZone}
           onDismiss={handleDismissSchedule}
           onSelectDayKey={handleSelectDayKey}
@@ -198,13 +183,9 @@ function FestivalContent({
   ) => void;
 }) {
   let content: React.ReactNode;
-  const viewerBookings = React.useMemo(() => {
-    if (!query.data?.sectors.length) {
-      return [];
-    }
-
-    return getViewerFestivalBookings(query.data.sectors);
-  }, [query.data?.sectors]);
+  const viewerBookings = query.data?.sectors.length
+    ? getViewerFestivalBookings(query.data.sectors)
+    : [];
 
   if (query.isPending && !query.data) {
     content = <FestivalLoadingState />;

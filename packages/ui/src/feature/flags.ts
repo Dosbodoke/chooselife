@@ -1,1 +1,1 @@
-export const ENABLE_MEMBERSHIP_REGISTRATION = false;
+export const ENABLE_MEMBERSHIP_REGISTRATION = true;

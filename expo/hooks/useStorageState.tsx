@@ -4,6 +4,10 @@ import { Platform } from 'react-native';
 
 type UseStateHook<T> = [[boolean, T | null], (value: T | null) => void];
 
+const secureStoreOptions: SecureStore.SecureStoreOptions = {
+  keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+};
+
 function useAsyncState<T>(
   initialValue: [boolean, T | null] = [true, null],
 ): UseStateHook<T> {
@@ -29,9 +33,9 @@ export async function setStorageItemAsync(key: string, value: string | null) {
     }
   } else {
     if (value == null) {
-      await SecureStore.deleteItemAsync(key);
+      await SecureStore.deleteItemAsync(key, secureStoreOptions);
     } else {
-      await SecureStore.setItemAsync(key, value);
+      await SecureStore.setItemAsync(key, value, secureStoreOptions);
     }
   }
 }
@@ -51,9 +55,14 @@ export function useStorageState(key: string): UseStateHook<string> {
         console.error('Local storage is unavailable:', e);
       }
     } else {
-      SecureStore.getItemAsync(key).then((value) => {
-        setState(value);
-      });
+      SecureStore.getItemAsync(key, secureStoreOptions)
+        .then((value) => {
+          setState(value);
+        })
+        .catch((error) => {
+          console.warn('Secure storage is unavailable:', error);
+          setState(null);
+        });
     }
   }, [key]);
 
@@ -61,7 +70,9 @@ export function useStorageState(key: string): UseStateHook<string> {
   const setValue = React.useCallback(
     (value: string | null) => {
       setState(value);
-      setStorageItemAsync(key, value);
+      void setStorageItemAsync(key, value).catch((error) => {
+        console.warn('Secure storage is unavailable:', error);
+      });
     },
     [key],
   );

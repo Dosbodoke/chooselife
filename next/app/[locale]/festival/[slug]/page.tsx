@@ -1,34 +1,51 @@
 import Image from "next/image";
+import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Locales } from "@/i18n/routing";
 import { createSupabaseClient } from "@/utils/supabase/server";
 
-import { FestivalTabs } from "./_components/festival-tabs";
-
-const FESTIVAL_SLUG = "chooselife-2026";
+import { FestivalTabs } from "../_components/festival-tabs";
 
 type Props = {
-  params: Promise<{ locale: Locales; username: string }>;
+  params: Promise<{ locale: Locales; slug: string }>;
   searchParams: Promise<{ [key: string]: string | undefined }>;
 };
 
 export default async function Festival({ params }: Props) {
-  const { locale } = await params;
+  const { locale, slug } = await params;
 
   setRequestLocale(locale);
-  const t = await getTranslations("festival");
-  const supabase = await createSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [t, supabase] = await Promise.all([
+    getTranslations("festival"),
+    createSupabaseClient(),
+  ]);
+
+  const [
+    {
+      data: { user },
+    },
+    { data: festival },
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from("festival")
+      .select("slug, name")
+      .eq("slug", slug)
+      .maybeSingle(),
+  ]);
+
+  if (!festival) {
+    notFound();
+  }
 
   return (
     <section className="relative w-full py-12 md:py-24 lg:py-32">
       <Image
         src="/festival-hero.png"
         fill
+        sizes="100vw"
         className="absolute -z-10 h-full max-h-screen w-full object-cover opacity-70"
         alt="Illustration of a someone walking a Highline"
       />
@@ -37,7 +54,7 @@ export default async function Festival({ params }: Props) {
         <div className="flex flex-col items-center justify-center space-y-6">
           <div className="space-y-2 text-center">
             <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
-              Festival Chooselife
+              {festival.name}
             </h1>
             <p className="max-w-[600px] text-secondary-foreground md:text-xl">
               {t("pageSubTitle")}
@@ -48,7 +65,7 @@ export default async function Festival({ params }: Props) {
               <TabsTrigger value="highlines">{t("tabs.highlines")}</TabsTrigger>
               <TabsTrigger value="ranking">{t("tabs.ranking")}</TabsTrigger>
             </TabsList>
-            <FestivalTabs festivalSlug={FESTIVAL_SLUG} userId={user?.id} />
+            <FestivalTabs festivalSlug={festival.slug} userId={user?.id} />
           </Tabs>
         </div>
       </div>

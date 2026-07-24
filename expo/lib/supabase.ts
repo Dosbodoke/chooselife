@@ -1,18 +1,21 @@
-import "react-native-url-polyfill/auto";
-import "react-native-get-random-values";
+import 'react-native-url-polyfill/auto';
+import 'react-native-get-random-values';
 
-import { createClient } from "@supabase/supabase-js";
-import * as aesjs from "aes-js";
-import * as SecureStore from "expo-secure-store";
-import AsyncStorage from "expo-sqlite/kv-store";
-import { AppState } from "react-native";
+import type { Database } from '@packages/database/index';
+import { createClient } from '@supabase/supabase-js';
+import * as aesjs from 'aes-js';
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from 'expo-sqlite/kv-store';
+import { AppState } from 'react-native';
 
-import type { Database } from "@packages/database/index";
+const secureStoreOptions: SecureStore.SecureStoreOptions = {
+  keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+};
 
 // As Expo's SecureStore does not support values larger than 2048
 // bytes, an AES-256 key is generated and stored in SecureStore, while
 // it is used to encrypt/decrypt values stored in AsyncStorage.
-class LargeSecureStore {
+export class LargeSecureStore {
   private async _encrypt(key: string, value: string) {
     const encryptionKey = crypto.getRandomValues(new Uint8Array(256 / 8));
 
@@ -25,13 +28,17 @@ class LargeSecureStore {
     await SecureStore.setItemAsync(
       key,
       aesjs.utils.hex.fromBytes(encryptionKey),
+      secureStoreOptions,
     );
 
     return aesjs.utils.hex.fromBytes(encryptedBytes);
   }
 
   private async _decrypt(key: string, value: string) {
-    const encryptionKeyHex = await SecureStore.getItemAsync(key);
+    const encryptionKeyHex = await SecureStore.getItemAsync(
+      key,
+      secureStoreOptions,
+    );
     if (!encryptionKeyHex) {
       return encryptionKeyHex;
     }
@@ -51,12 +58,17 @@ class LargeSecureStore {
       return encrypted;
     }
 
-    return await this._decrypt(key, encrypted);
+    try {
+      return await this._decrypt(key, encrypted);
+    } catch (error) {
+      console.warn('Unable to read secure auth storage:', error);
+      return null;
+    }
   }
 
   async removeItem(key: string) {
     await AsyncStorage.removeItem(key);
-    await SecureStore.deleteItemAsync(key);
+    await SecureStore.deleteItemAsync(key, secureStoreOptions);
   }
 
   async setItem(key: string, value: string) {
@@ -67,8 +79,8 @@ class LargeSecureStore {
 }
 
 export const supabase = createClient<Database>(
-  process.env.EXPO_PUBLIC_SUPABASE_URL || "",
-  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "",
+  process.env.EXPO_PUBLIC_SUPABASE_URL || '',
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '',
   {
     auth: {
       storage: new LargeSecureStore(),
@@ -79,8 +91,8 @@ export const supabase = createClient<Database>(
   },
 );
 
-AppState.addEventListener("change", (state) => {
-  if (state === "active") {
+AppState.addEventListener('change', (state) => {
+  if (state === 'active') {
     supabase.auth.startAutoRefresh();
   } else {
     supabase.auth.stopAutoRefresh();
