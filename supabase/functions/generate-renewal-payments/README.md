@@ -1,13 +1,33 @@
 # Generate Renewal Payments Function
 
-This Edge Function is responsible for generating renewal payments for active subscriptions.
+This Edge Function is responsible for generating renewal payments for active
+subscriptions.
 
 ## Logic
 
-1.  It queries for `active` subscriptions where the `current_period_end` is within the next 7 days.
-2.  For each subscription, it checks if a `pending` renewal payment already exists.
-3.  If no pending payment exists, it fetches the correct price from the `organizations` table based on the subscription's `plan_type` (monthly or annual).
-4.  It then creates a new `payments` record with a `status` of `pending`.
+1. It queries for `active` subscriptions where the `current_period_end` is
+   within the next 7 days.
+2. For each subscription, it checks if a `pending` renewal payment already
+   exists.
+3. If no pending payment exists, it fetches the correct price from the
+   `organizations` table based on the subscription's `plan_type` (monthly or
+   annual).
+4. It then creates a new `payments` record with a `status` of `pending`.
+5. On that same run, it inserts a targeted, localized `notifications` row
+   containing the payment, subscription, and organization identifiers plus a
+   deep link to the payment screen.
+
+When a pending payment already has its renewal notification, both inserts are
+skipped so the daily job does not send repeat reminders. If payment creation
+succeeded but notification insertion failed, a later run detects the missing
+notification by payment ID and retries only that notification.
+
+## Push delivery
+
+The app's existing notification pipeline expects an `INSERT` Database Webhook on
+`public.notifications` to call the `push-notification` Edge Function. Ensure
+that webhook is configured in each deployed Supabase project; the webhook
+configuration is currently managed outside this repository.
 
 ## Deployment
 
@@ -21,7 +41,8 @@ supabase functions deploy generate-renewal-payments --project-ref <your-project-
 
 This function is designed to be run on a schedule (e.g., daily) using `pg_cron`.
 
-After deploying the function, create a new SQL migration in your `supabase/migrations` folder to set up the cron job.
+After deploying the function, create a new SQL migration in your
+`supabase/migrations` folder to set up the cron job.
 
 The migration should contain the following SQL:
 

@@ -1,6 +1,10 @@
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
-import type { Tables } from "../_shared/database.types.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import {
+  processSubscription,
+  type RenewalNotification,
+  type RenewalOrganization,
+} from "./renewal-payment.ts";
 
 // ---- UTILS -------------------------------------------------
 
@@ -30,10 +34,10 @@ async function fetchSubscriptionsDueForRenewal(renewalDate: Date) {
   return data ?? [];
 }
 
-async function hasPendingPayment(subscriptionId: string): Promise<boolean> {
+async function findPendingPayment(subscriptionId: string) {
   const { data, error } = await supabaseAdmin
     .from("payments")
-    .select("id")
+    .select("id, amount")
     .eq("subscription_id", subscriptionId)
     .eq("status", "pending")
     .limit(1)
@@ -42,20 +46,37 @@ async function hasPendingPayment(subscriptionId: string): Promise<boolean> {
   if (error) {
     throw new Error(`Failed checking pending payment: ${error.message}`);
   }
+  return data;
+}
+
+async function hasRenewalNotification(paymentId: string): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from("notifications")
+    .select("id")
+    .contains("data", {
+      payment_id: paymentId,
+      type: "subscription_renewal_payment_ready",
+    })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed checking renewal notification: ${error.message}`);
+  }
   return !!data;
 }
 
 async function fetchOrganization(orgId: string) {
   const { data, error } = await supabaseAdmin
     .from("organizations")
-    .select("name, monthly_price_amount, annual_price_amount")
+    .select("name, slug, monthly_price_amount, annual_price_amount")
     .eq("id", orgId)
     .single();
 
   if (error) {
     throw new Error(`Failed to fetch organization ${orgId}: ${error.message}`);
   }
-  return data;
+  return data satisfies RenewalOrganization;
 }
 
 async function createPendingPayment({
@@ -85,74 +106,23 @@ async function createPendingPayment({
   return data;
 }
 
-async function createNotification({
-  user_id,
-  organizationName,
-  amount,
-}: {
-  user_id: string;
-  organizationName: string;
-  amount: number;
-}) {
-  const title = {
-    pt: `Fique em dia com sua assinatura ${organizationName}`,
-  };
-  const body = {
-    pt: `O pagamento de R$${(amount / 100).toFixed(2)} para o próximo período já está disponível. O vencimento é em 7 dias.`,
-  };
-
+async function createNotification(notification: RenewalNotification) {
   const { error } = await supabaseAdmin
     .from("notifications")
-    .insert({ title, body, user_id });
+    .insert(notification);
 
   if (error) throw new Error(`Failed to create notification: ${error.message}`);
 }
 
 // ---- CORE LOGIC --------------------------------------------
 
-async function processSubscription(
-  sub: Tables<"subscriptions">,
-): Promise<void> {
-  try {
-    if (await hasPendingPayment(sub.id)) {
-      console.log(`Subscription ${sub.id} already has a pending payment.`);
-      return;
-    }
-
-    const org = await fetchOrganization(sub.organization_id);
-    const amount = sub.plan_type === "annual"
-      ? org.annual_price_amount
-      : org.monthly_price_amount;
-
-    if (amount == null) {
-      console.error(
-        `Missing price for plan ${sub.plan_type} on subscription ${sub.id}`,
-      );
-      return;
-    }
-
-    const newPayment = await createPendingPayment({
-      organization_id: sub.organization_id,
-      user_id: sub.user_id,
-      subscription_id: sub.id,
-      amount,
-    });
-
-    console.log(
-      `Created pending payment ${newPayment.id} for subscription ${sub.id}.`,
-    );
-
-    await createNotification({
-      user_id: sub.user_id,
-      organizationName: org.name,
-      amount,
-    });
-
-    console.log(`Notification created for user ${sub.user_id}.`);
-  } catch (err) {
-    console.error(`Error processing subscription ${sub.id}:`, err);
-  }
-}
+const renewalPaymentDependencies = {
+  createNotification,
+  createPendingPayment,
+  fetchOrganization,
+  findPendingPayment,
+  hasRenewalNotification,
+};
 
 // ---- ENTRYPOINT --------------------------------------------
 
@@ -175,7 +145,11 @@ Deno.serve(async (req) => {
     }
 
     console.log(`Processing ${subscriptions.length} subscriptions...`);
-    await Promise.all(subscriptions.map(processSubscription));
+    await Promise.all(
+      subscriptions.map((subscription) =>
+        processSubscription(subscription, renewalPaymentDependencies)
+      ),
+    );
 
     console.log("Renewal check complete.");
     return jsonResponse({ message: "Renewal check complete." });
