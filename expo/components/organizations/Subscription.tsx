@@ -7,6 +7,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import {
   AlertCircle,
+  BellRing,
   CalendarCheck,
   CheckCircle,
   Clock,
@@ -38,6 +39,12 @@ import { Tables } from '~/utils/database.types';
 
 import { Button } from '~/components/ui/button';
 import { Text } from '~/components/ui/text';
+
+import {
+  findPendingRenewalPayment,
+  formatBillingAmount,
+  formatBillingDate,
+} from './subscription-billing';
 
 const fetchSubscriptionData = async (
   organizationId: string,
@@ -239,10 +246,14 @@ const MembershipStatusBadge = ({
 
 const PendingPaymentAlert = ({
   amount,
+  dueDate,
+  isRenewal,
   onPayPress,
   isPaying,
 }: {
   amount: number;
+  dueDate: string | null;
+  isRenewal: boolean;
   onPayPress: () => void;
   isPaying: boolean;
 }) => (
@@ -256,9 +267,15 @@ const PendingPaymentAlert = ({
       <View className="flex flex-row gap-4">
         <Clock className="text-amber-600 mt-0.5" size={24} />
         <View className="flex-1 gap-1">
-          <Text className="text-amber-800 font-bold">Pagamento Pendente</Text>
+          <Text className="text-amber-800 font-bold">
+            {isRenewal ? 'Próxima cobrança disponível' : 'Pagamento pendente'}
+          </Text>
           <Text className="text-amber-700">
-            Conclua seu pagamento para ativar sua assinatura!
+            {isRenewal
+              ? dueDate
+                ? `${formatBillingAmount(amount)} vence em ${dueDate}. Pague agora para renovar sem interrupções.`
+                : `${formatBillingAmount(amount)} já pode ser pago. Pague agora para renovar sem interrupções.`
+              : 'Conclua o pagamento para ativar sua assinatura.'}
           </Text>
         </View>
       </View>
@@ -272,7 +289,7 @@ const PendingPaymentAlert = ({
           <ActivityIndicator color="white" size="small" />
         ) : (
           <Text className="text-white font-bold text-center leading-5">
-            PAGAR AGORA • R$ {(amount / 100).toFixed(2)}
+            PAGAR AGORA • {formatBillingAmount(amount)}
           </Text>
         )}
       </Button>
@@ -375,12 +392,7 @@ export const Subscription = ({
   const lastSuccessfulPayment = payments?.find(
     (inv) => inv.status === 'succeeded',
   );
-  const pendingPayment = payments?.find(
-    (inv) =>
-      inv.status === 'pending' &&
-      (!lastSuccessfulPayment ||
-        new Date(inv.created_at) > new Date(lastSuccessfulPayment.created_at)),
-  );
+  const pendingPayment = findPendingRenewalPayment(payments ?? []);
   const daysUntilDue = subscription.current_period_end
     ? getDaysUntilDue(subscription.current_period_end)
     : null;
@@ -391,7 +403,7 @@ export const Subscription = ({
     daysUntilDue < 0;
 
   const isActive = subscription.status === 'active' && !isOverdue;
-  const shouldShowPendingPayment = Boolean(pendingPayment && !isActive);
+  const shouldShowPendingPayment = Boolean(pendingPayment);
 
   // Calculate pricing info
   const monthlyPrice = organization.monthly_price_amount
@@ -400,6 +412,13 @@ export const Subscription = ({
   const annualPrice = organization.annual_price_amount
     ? (organization.annual_price_amount / 100).toFixed(2)
     : null;
+  const configuredBillAmount =
+    subscription.plan_type === 'annual'
+      ? organization.annual_price_amount
+      : organization.monthly_price_amount;
+  const nextBillAmount = pendingPayment?.amount ?? configuredBillAmount;
+  const nextBillDate = formatBillingDate(subscription.current_period_end);
+  const hasStartedMembership = Boolean(lastSuccessfulPayment) || isActive;
 
   return (
     <>
@@ -422,6 +441,8 @@ export const Subscription = ({
           {shouldShowPendingPayment && pendingPayment && (
             <PendingPaymentAlert
               amount={pendingPayment.amount}
+              dueDate={nextBillDate}
+              isRenewal={hasStartedMembership}
               onPayPress={() =>
                 startPaymentMutation.mutate({
                   amount: pendingPayment.amount,
@@ -431,6 +452,39 @@ export const Subscription = ({
               isPaying={startPaymentMutation.isPending}
             />
           )}
+
+          {hasStartedMembership &&
+            !pendingPayment &&
+            nextBillAmount !== null && (
+              <View className="bg-blue-50 border border-blue-100 rounded-xl p-4 gap-3">
+                <View className="flex-row items-start gap-3">
+                  <View className="w-10 h-10 rounded-xl bg-blue-100 items-center justify-center">
+                    <CalendarCheck className="text-blue-700" size={20} />
+                  </View>
+                  <View className="flex-1 gap-1">
+                    <Text className="text-xs text-blue-700 font-bold uppercase tracking-wide">
+                      Próxima cobrança
+                    </Text>
+                    <Text className="text-2xl font-black text-gray-900">
+                      {formatBillingAmount(nextBillAmount)}
+                    </Text>
+                    <Text className="text-sm text-gray-700 font-semibold">
+                      {nextBillDate
+                        ? `Vencimento em ${nextBillDate}`
+                        : 'Data de vencimento a confirmar'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View className="flex-row items-center gap-2 pt-3 border-t border-blue-100">
+                  <BellRing className="text-blue-700" size={16} />
+                  <Text className="text-xs text-blue-800 font-semibold flex-1">
+                    Você receberá um lembrete assim que o pagamento estiver
+                    disponível.
+                  </Text>
+                </View>
+              </View>
+            )}
 
           <View className="flex-row items-center">
             <View className="w-10 h-10 rounded-xl bg-purple-50 items-center justify-center mr-3">
@@ -550,7 +604,7 @@ export const Subscription = ({
                         </View>
                         <View className="flex-1">
                           <Text className="text-xl font-bold text-gray-900">
-                            R$ {(item.amount / 100).toFixed(2)}
+                            {formatBillingAmount(item.amount)}
                           </Text>
                           <Text className="text-xs text-gray-500 font-semibold mt-0.5">
                             {new Date(item.created_at).toLocaleDateString(

@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
@@ -5,7 +6,7 @@ import { Href, router } from 'expo-router';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
-import { supabase } from '~/lib/supabase';
+import { registerPushTokenForProfile } from '~/lib/push-token-registration';
 
 import { useAuth } from './auth';
 import { useI18n } from './i18n';
@@ -93,7 +94,8 @@ async function registerForPushNotificationsAsync() {
         })
       ).data;
     } catch (e) {
-      token = `${e}`;
+      console.error('Failed to get an Expo push token:', e);
+      return;
     }
   } else {
     console.warn('Must use physical device for Push Notifications');
@@ -148,41 +150,25 @@ export function NotificationProvider({
     };
   }, []);
 
-  useEffect(() => {
-    async function manageToken() {
-      if (!expoPushToken) return;
+  useQuery({
+    queryKey: ['push-token-registration', expoPushToken, profile?.id, locale],
+    queryFn: async () => {
       try {
-        const { data } = await supabase
-          .from('push_tokens')
-          .select('*')
-          .eq('token', expoPushToken)
-          .single();
-
-        if (data) {
-          await supabase
-            .from('push_tokens')
-            .update({
-              token: expoPushToken,
-              profile_id: data.profile_id || profile?.id || null,
-              language: locale,
-              created_at: new Date().toISOString(),
-            })
-            .eq('id', data.id);
-          return;
-        }
-
-        await supabase.from('push_tokens').insert({
-          token: expoPushToken,
-          profile_id: profile?.id || null,
-          language: locale,
+        return await registerPushTokenForProfile({
+          expoPushToken,
+          locale,
+          profileId: profile?.id,
         });
       } catch (error) {
         console.error('Error managing push token:', error);
+        throw error;
       }
-    }
-
-    manageToken();
-  }, [expoPushToken, profile, locale]);
+    },
+    enabled: Boolean(expoPushToken && profile?.id),
+    refetchOnMount: 'always',
+    retry: 1,
+    staleTime: 0,
+  });
 
   const contextValue = {
     expoPushToken,
