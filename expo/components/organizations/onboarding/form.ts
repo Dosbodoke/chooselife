@@ -208,8 +208,7 @@ export const createInitialForm = ({
   profileBirthday?: string | null;
   profileName?: string | null;
 }): MembershipApplicationForm => ({
-  accepted_terms_at:
-    application?.accepted_terms_at ?? acceptedTermsAt ?? null,
+  accepted_terms_at: application?.accepted_terms_at ?? acceptedTermsAt ?? null,
   address_line: application?.address_line ?? '',
   allergies: application?.allergies ?? '',
   // A brand-new form must not pretend the health questions were answered, so
@@ -257,6 +256,7 @@ export const formToDraft = (
 ) => ({
   accepted_terms_at: form.accepted_terms_at,
   address_line: form.address_line.trim() || null,
+  has_allergies: form.allergies_choice === 'yes',
   allergies:
     form.allergies_choice === 'yes' ? form.allergies.trim() || null : null,
   birth_date: displayDateToIso(form.birth_date),
@@ -264,6 +264,7 @@ export const formToDraft = (
   blood_type: form.blood_type,
   city: form.city.trim() || null,
   cpf: digitsOnly(form.cpf) || null,
+  has_dietary_restrictions: form.dietary_choice === 'yes',
   dietary_restrictions:
     form.dietary_choice === 'yes'
       ? form.dietary_restrictions.trim() || null
@@ -369,7 +370,12 @@ const requiredPhone = (value: string) =>
 export const questions: Question[] = [
   {
     fields: [
-      { id: 'full_name', kind: 'text', reviewLabel: 'Nome completo', textContentType: 'name' },
+      {
+        id: 'full_name',
+        kind: 'text',
+        reviewLabel: 'Nome completo',
+        textContentType: 'name',
+      },
     ],
     id: 'full_name',
     prompt: 'Como devemos chamar você?',
@@ -805,4 +811,3 @@ export const getReviewRows = (form: MembershipApplicationForm): ReviewRow[] =>
       value: getAnswerLabel(form, field),
     })),
   );
-

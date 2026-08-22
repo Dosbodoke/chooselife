@@ -16,3 +16,23 @@ export function getManualPaymentRouteParams({
     slug,
   };
 }
+
+export function getPaymentObligationRouteParams({
+  amount,
+  currency,
+  obligationId,
+  slug,
+}: {
+  amount: number;
+  currency: string;
+  obligationId: string;
+  slug: string;
+}) {
+  return {
+    amount: String(amount),
+    currency,
+    obligationId,
+    paymentContext: 'new_member' as const,
+    slug,
+  };
+}

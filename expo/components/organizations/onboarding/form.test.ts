@@ -18,7 +18,10 @@ const findStep = (id: string) => {
   return question;
 };
 
-const findField = (stepId: string, fieldId: keyof MembershipApplicationForm) => {
+const findField = (
+  stepId: string,
+  fieldId: keyof MembershipApplicationForm,
+) => {
   const field = findStep(stepId).fields.find((item) => item.id === fieldId);
   if (!field) throw new Error(`Missing field ${fieldId} on step ${stepId}`);
   return field;
@@ -77,15 +80,15 @@ describe('membership onboarding steps', () => {
     const step = findStep('allergies');
     const answeredNo = { ...completeForm(), allergies_choice: 'no' as const };
 
-    expect(getVisibleFields(answeredNo, step).map((field) => field.id)).toEqual([
-      'allergies_choice',
-    ]);
+    expect(getVisibleFields(answeredNo, step).map((field) => field.id)).toEqual(
+      ['allergies_choice'],
+    );
     expect(getQuestionError(answeredNo, step)).toBeNull();
 
     const answeredYes = { ...completeForm(), allergies_choice: 'yes' as const };
-    expect(getVisibleFields(answeredYes, step).map((field) => field.id)).toEqual(
-      ['allergies_choice', 'allergies'],
-    );
+    expect(
+      getVisibleFields(answeredYes, step).map((field) => field.id),
+    ).toEqual(['allergies_choice', 'allergies']);
     expect(getQuestionError(answeredYes, step)).toBe('Descreva as alergias.');
   });
 
@@ -93,9 +96,9 @@ describe('membership onboarding steps', () => {
     const step = findStep('dietary');
     const answeredYes = { ...completeForm(), dietary_choice: 'yes' as const };
 
-    expect(getVisibleFields(answeredYes, step).map((field) => field.id)).toEqual(
-      ['dietary_choice', 'dietary_restrictions'],
-    );
+    expect(
+      getVisibleFields(answeredYes, step).map((field) => field.id),
+    ).toEqual(['dietary_choice', 'dietary_restrictions']);
     expect(getQuestionError(answeredYes, step)).toBe(
       'Descreva a restrição alimentar.',
     );
@@ -124,7 +127,10 @@ describe('membership onboarding steps', () => {
       'emergency_contact_phone',
     ]);
     expect(
-      getQuestionError({ ...completeForm(), emergency_contact_phone: '31' }, step),
+      getQuestionError(
+        { ...completeForm(), emergency_contact_phone: '31' },
+        step,
+      ),
     ).toBe('Informe um telefone com DDD.');
   });
 
@@ -133,9 +139,9 @@ describe('membership onboarding steps', () => {
 
     expect(form.allergies_choice).toBeNull();
     expect(form.dietary_choice).toBeNull();
-    expect(getFieldError(form, findField('allergies', 'allergies_choice'))).toBe(
-      'Escolha uma opção.',
-    );
+    expect(
+      getFieldError(form, findField('allergies', 'allergies_choice')),
+    ).toBe('Escolha uma opção.');
   });
 
   it('treats an explicit no as a valid rescue-course answer', () => {
@@ -144,9 +150,9 @@ describe('membership onboarding steps', () => {
 
     expect(getFieldError(form, field)).toBeNull();
     expect(getAnswerLabel(form, field)).toBe('Não');
-    expect(
-      getFieldError({ ...form, has_rescue_course: null }, field),
-    ).toBe('Escolha uma opção.');
+    expect(getFieldError({ ...form, has_rescue_course: null }, field)).toBe(
+      'Escolha uma opção.',
+    );
   });
 
   it('never blocks the flow on the optional blood type field', () => {
@@ -198,6 +204,8 @@ describe('membership onboarding steps', () => {
     const form = { ...completeForm(), has_rescue_course: false };
 
     expect(formToDraft(form, 'organization-id', 'user-id')).toMatchObject({
+      has_allergies: false,
+      has_dietary_restrictions: false,
       has_rescue_course: false,
       organization_id: 'organization-id',
       user_id: 'user-id',
