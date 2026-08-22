@@ -14,6 +14,7 @@ import {
   Pressable,
   ScrollView,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
@@ -22,6 +23,12 @@ import QRCode from 'react-qr-code';
 
 import { useAuth } from '~/context/auth';
 import { useMountEffect } from '~/hooks/use-mount-effect';
+import {
+  getPaymentClaimValidationError,
+  normalizePaymentPayerName,
+  type PaymentClaimPayerType,
+  type PaymentClaimStatus,
+} from '~/lib/payment-claim';
 import { queryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 
@@ -38,8 +45,14 @@ type PaymentInstructions = {
 type ObligationInstructions = {
   amount: number;
   available_at: string;
+  claim_created_at: string | null;
+  claim_decision_reason: string | null;
+  claim_id: string | null;
+  claim_status: PaymentClaimStatus | null;
   currency: string;
   obligation_id: string;
+  payer_name: string | null;
+  payer_type: PaymentClaimPayerType | null;
   payment_method: string;
   pix_copy_paste: string;
   plan_type: 'monthly' | 'annual';
@@ -97,6 +110,10 @@ function PaymentSuccessState({
 const paymentInstructionsQueryKey = (paymentId: string | undefined) =>
   ['payment-instructions', paymentId] as const;
 
+const paymentObligationInstructionsQueryKey = (
+  obligationId: string | undefined,
+) => ['payment-obligation-instructions', obligationId] as const;
+
 export default function PaymentScreen() {
   const router = useRouter();
   const {
@@ -152,7 +169,7 @@ export default function PaymentScreen() {
     enabled: Boolean(paymentId && !obligationId),
   });
   const obligationInstructionsQuery = useQuery({
-    queryKey: ['payment-obligation-instructions', obligationId],
+    queryKey: paymentObligationInstructionsQueryKey(obligationId),
     queryFn: async (): Promise<ObligationInstructions | null> => {
       if (!obligationId) return null;
 
@@ -163,7 +180,7 @@ export default function PaymentScreen() {
 
       if (error) throw error;
 
-      return data?.[0] ?? null;
+      return (data?.[0] as ObligationInstructions | undefined) ?? null;
     },
     enabled: Boolean(obligationId),
   });
@@ -185,7 +202,16 @@ export default function PaymentScreen() {
   const manualPixCopyPaste = obligationId
     ? (obligationInstructions?.pix_copy_paste ?? '')
     : (paymentInstructions?.pix_copy_paste ?? '');
-  const hasManualPixInstructions = Boolean(manualPixCopyPaste);
+  const isSettledObligation = obligationInstructions?.status === 'settled';
+  const isVoidedObligation = obligationInstructions?.status === 'void';
+  const hasManualPixInstructions =
+    Boolean(manualPixCopyPaste) && !isSettledObligation && !isVoidedObligation;
+  const initialClaimStatus = obligationInstructions?.claim_status ?? null;
+  const canClaimInitialPayment = Boolean(
+    obligationId &&
+    obligationInstructions?.status === 'available' &&
+    (initialClaimStatus === null || initialClaimStatus === 'rejected'),
+  );
 
   const handleClose = () => {
     if (router.canGoBack()) {
@@ -195,9 +221,73 @@ export default function PaymentScreen() {
     }
   };
 
+  const handleRetryPaymentInstructions = () => {
+    if (obligationId) {
+      void obligationInstructionsQuery.refetch();
+    } else if (paymentId) {
+      void paymentInstructionsQuery.refetch();
+    }
+  };
+
+  const isFetchingPaymentInstructions = obligationId
+    ? obligationInstructionsQuery.isFetching
+    : paymentInstructionsQuery.isFetching;
+
   const userMarkedPaidAt = obligationId
     ? null
     : (paymentInstructions?.user_marked_paid_at ?? null);
+
+  const claimPaymentMutation = useMutation({
+    mutationFn: async ({
+      payerName,
+      payerType,
+    }: {
+      payerName: string;
+      payerType: PaymentClaimPayerType;
+    }) => {
+      if (!obligationId) throw new Error('obligationId is required.');
+
+      const { data, error } = await supabase.rpc('claim_initial_payment', {
+        p_obligation_id: obligationId!,
+        p_paid_by_applicant: payerType === 'applicant',
+        p_payer_name:
+          payerType === 'applicant'
+            ? undefined
+            : normalizePaymentPayerName(payerName),
+      });
+
+      if (error) throw error;
+
+      const claim = data?.[0];
+      if (!claim) throw new Error('The payment claim response was empty.');
+
+      return claim;
+    },
+    onSuccess: async (claim) => {
+      queryClient.setQueryData<ObligationInstructions | null>(
+        paymentObligationInstructionsQueryKey(obligationId),
+        (current) =>
+          current
+            ? {
+                ...current,
+                claim_created_at: claim.claim_created_at,
+                claim_decision_reason: null,
+                claim_id: claim.claim_id,
+                claim_status: claim.claim_status,
+                payer_name: claim.payer_name,
+                payer_type: claim.payer_type,
+              }
+            : current,
+      );
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await queryClient.invalidateQueries({
+        queryKey: paymentObligationInstructionsQueryKey(obligationId),
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to claim initial payment:', error);
+    },
+  });
 
   const markPaidMutation = useMutation({
     mutationFn: async () => {
@@ -261,6 +351,23 @@ export default function PaymentScreen() {
     markPaidMutation.mutate();
   };
 
+  const handleClaimPayment = ({
+    payerName,
+    payerType,
+  }: {
+    payerName: string;
+    payerType: PaymentClaimPayerType;
+  }) => {
+    const validationError = getPaymentClaimValidationError({
+      payerName,
+      payerType,
+    });
+
+    if (validationError) return;
+
+    claimPaymentMutation.mutate({ payerName, payerType });
+  };
+
   const paymentTitle =
     paymentContext === 'subscription_renewal'
       ? 'Pague sua mensalidade'
@@ -308,13 +415,26 @@ export default function PaymentScreen() {
   }
 
   if ((!paymentId && !obligationId) || !hasManualPixInstructions) {
+    const unavailableTitle = isSettledObligation
+      ? 'Pagamento já confirmado'
+      : 'Pagamento indisponível';
+    const unavailableMessage = isSettledObligation
+      ? 'Esta cobrança já foi confirmada pela associação.'
+      : isVoidedObligation
+        ? 'Esta cobrança não está mais disponível. Feche esta tela e tente novamente pelo aplicativo.'
+        : 'O PIX da associação ainda não foi configurado no aplicativo.';
+    const canRetryInstructions =
+      Boolean(paymentId || obligationId) &&
+      !isSettledObligation &&
+      !isVoidedObligation;
+
     return (
       <PaymentState onClose={handleClose}>
         <Text className="text-white text-3xl font-bold text-center leading-9">
-          Pagamento indisponível
+          {unavailableTitle}
         </Text>
         <Text className="text-white/65 text-[15px] text-center leading-6">
-          O PIX da associação ainda não foi configurado no aplicativo.
+          {unavailableMessage}
         </Text>
         {paymentInstructionsQuery.isError ||
         obligationInstructionsQuery.isError ? (
@@ -327,6 +447,23 @@ export default function PaymentScreen() {
             Valor solicitado: {formattedAmount}
           </Text>
         ) : null}
+        {canRetryInstructions ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={handleRetryPaymentInstructions}
+            disabled={isFetchingPaymentInstructions}
+            className="rounded-full bg-white px-6 py-3 mt-2"
+            style={({ pressed }) => ({
+              opacity: isFetchingPaymentInstructions ? 0.6 : pressed ? 0.85 : 1,
+            })}
+          >
+            {isFetchingPaymentInstructions ? (
+              <ActivityIndicator color="#000" />
+            ) : (
+              <Text className="text-black font-semibold">Tentar novamente</Text>
+            )}
+          </Pressable>
+        ) : null}
       </PaymentState>
     );
   }
@@ -336,10 +473,21 @@ export default function PaymentScreen() {
       formattedAmount={formattedAmount}
       insets={insets}
       manualPixCopyPaste={manualPixCopyPaste}
+      canClaimInitialPayment={canClaimInitialPayment}
+      claimDecisionReason={
+        obligationInstructions?.claim_decision_reason ?? null
+      }
+      claimPayerName={obligationInstructions?.payer_name ?? null}
+      claimPayerType={obligationInstructions?.payer_type ?? null}
+      claimStatus={initialClaimStatus}
+      claimingPayment={claimPaymentMutation.isPending}
+      claimPaymentError={claimPaymentMutation.isError}
+      obligationStatus={obligationInstructions?.status ?? null}
       markPaidError={markPaidMutation.isError}
       markingPaid={markPaidMutation.isPending}
       canReportPayment={Boolean(paymentId && !obligationId)}
       onClose={handleClose}
+      onClaimPayment={handleClaimPayment}
       onMarkPaid={handleMarkPaid}
       onPaymentFailed={() => setPaymentStatus('FAILED')}
       onPaymentSucceeded={() => setPaymentStatus('SUCCESS')}
@@ -357,17 +505,26 @@ export default function PaymentScreen() {
 }
 
 function ManualPixPayment({
+  canClaimInitialPayment,
   canReportPayment,
+  claimDecisionReason,
+  claimPayerName,
+  claimPayerType,
+  claimStatus,
+  claimingPayment,
+  claimPaymentError,
   formattedAmount,
   insets,
   manualPixCopyPaste,
   markPaidError,
   markingPaid,
   onClose,
+  onClaimPayment,
   onMarkPaid,
   onPaymentFailed,
   onPaymentSucceeded,
   obligationId,
+  obligationStatus,
   paymentContext,
   paymentId,
   profileId,
@@ -377,17 +534,29 @@ function ManualPixPayment({
   title,
   userMarkedPaidAt,
 }: {
+  canClaimInitialPayment: boolean;
   canReportPayment: boolean;
+  claimDecisionReason: string | null;
+  claimPayerName: string | null;
+  claimPayerType: PaymentClaimPayerType | null;
+  claimStatus: PaymentClaimStatus | null;
+  claimingPayment: boolean;
+  claimPaymentError: boolean;
   formattedAmount: string | null;
   insets: ReturnType<typeof useSafeAreaInsets>;
   manualPixCopyPaste: string;
   markPaidError: boolean;
   markingPaid: boolean;
   onClose: () => void;
+  onClaimPayment: (input: {
+    payerName: string;
+    payerType: PaymentClaimPayerType;
+  }) => void;
   onMarkPaid: () => void;
   onPaymentFailed: () => void;
   onPaymentSucceeded: () => void;
   obligationId?: string;
+  obligationStatus: ObligationInstructions['status'] | null;
   paymentContext?: 'new_member' | 'subscription_renewal';
   paymentId?: string;
   profileId?: string;
@@ -397,6 +566,24 @@ function ManualPixPayment({
   title: string;
   userMarkedPaidAt: string | null;
 }) {
+  const [payerType, setPayerType] =
+    React.useState<PaymentClaimPayerType>('applicant');
+  const [payerName, setPayerName] = React.useState('');
+  const [showPayerError, setShowPayerError] = React.useState(false);
+  const payerValidationError = getPaymentClaimValidationError({
+    payerName,
+    payerType,
+  });
+  const isInitialClaimUnderReview = claimStatus === 'under_review';
+  const isInitialClaimRejected = claimStatus === 'rejected';
+
+  const handleClaimPress = () => {
+    setShowPayerError(true);
+    if (payerValidationError) return;
+
+    onClaimPayment({ payerName, payerType });
+  };
+
   return (
     <BgBlob>
       <PaymentStatusSubscription
@@ -465,16 +652,137 @@ function ManualPixPayment({
               : 'Associação'}
           </Text>
           <Text className="text-white/65 text-center text-sm leading-5 mt-1">
-            {canReportPayment
-              ? 'Depois de pagar, toque em "Já paguei". A equipe confere o PIX e aprova sua assinatura manualmente.'
-              : 'Depois de pagar, a associação confere o PIX e conclui a admissão manualmente.'}
+            {obligationStatus === 'void'
+              ? 'Esta cobrança não está mais disponível.'
+              : isInitialClaimUnderReview
+                ? 'Seu aviso de pagamento está em análise. A associação conferirá o PIX manualmente.'
+                : canClaimInitialPayment
+                  ? 'Depois de pagar, confirme quem fez o PIX para enviar o aviso à associação.'
+                  : canReportPayment
+                    ? 'Depois de pagar, toque em "Já paguei". A equipe confere o PIX e aprova sua assinatura manualmente.'
+                    : claimStatus === 'approved' ||
+                        obligationStatus === 'settled'
+                      ? 'Este pagamento já foi confirmado pela associação.'
+                      : 'Depois de pagar, a associação confere o PIX e conclui a admissão manualmente.'}
           </Text>
         </Animated.View>
         <Animated.View
           entering={FadeIn.delay(900).duration(300)}
           className="mx-6 gap-3 mt-auto"
         >
-          {canReportPayment ? (
+          {canClaimInitialPayment ? (
+            <View className="rounded-2xl border border-white/15 bg-white/10 p-4 gap-3">
+              <Text className="text-white text-base font-semibold">
+                Quem fez o PIX?
+              </Text>
+              <View className="flex-row gap-2">
+                {(
+                  [
+                    ['applicant', 'Eu fiz o PIX'],
+                    ['other', 'Outra pessoa fez'],
+                  ] as const
+                ).map(([option, label]) => {
+                  const selected = payerType === option;
+
+                  return (
+                    <Pressable
+                      key={option}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected }}
+                      onPress={() => {
+                        setPayerType(option);
+                        setShowPayerError(false);
+                      }}
+                      className={`flex-1 rounded-xl border px-3 py-3 ${selected ? 'border-white bg-white' : 'border-white/20 bg-white/5'}`}
+                    >
+                      <Text
+                        className={`text-center text-sm font-semibold ${selected ? 'text-black' : 'text-white/75'}`}
+                      >
+                        {label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              {payerType === 'other' ? (
+                <TextInput
+                  accessibilityLabel="Nome de quem fez o PIX"
+                  autoCapitalize="words"
+                  onChangeText={(value) => {
+                    setPayerName(value);
+                    setShowPayerError(false);
+                  }}
+                  placeholder="Nome de quem fez o PIX"
+                  placeholderTextColor="rgba(255,255,255,0.45)"
+                  style={{
+                    borderColor: 'rgba(255,255,255,0.2)',
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    color: '#FFFFFF',
+                    fontSize: 16,
+                    paddingHorizontal: 14,
+                    paddingVertical: 12,
+                  }}
+                  value={payerName}
+                />
+              ) : null}
+              {showPayerError && payerValidationError ? (
+                <Text
+                  accessibilityLiveRegion="polite"
+                  className="text-red-200 text-sm leading-5"
+                >
+                  {payerValidationError === 'payer_name_required'
+                    ? 'Informe o nome de quem fez o PIX.'
+                    : 'O nome deve ter no máximo 120 caracteres.'}
+                </Text>
+              ) : null}
+              {isInitialClaimRejected && claimDecisionReason ? (
+                <Text className="text-amber-100/80 text-sm leading-5">
+                  Motivo da última análise: {claimDecisionReason}
+                </Text>
+              ) : null}
+              <Pressable
+                accessibilityRole="button"
+                onPress={handleClaimPress}
+                disabled={claimingPayment}
+                className="rounded-full bg-white py-4 items-center justify-center"
+                style={({ pressed }) => ({
+                  opacity: claimingPayment ? 0.6 : pressed ? 0.85 : 1,
+                })}
+              >
+                {claimingPayment ? (
+                  <ActivityIndicator color="#000" />
+                ) : (
+                  <Text className="text-black text-[17px] font-bold">
+                    {isInitialClaimRejected
+                      ? 'Enviar nova confirmação'
+                      : 'Já fiz o PIX'}
+                  </Text>
+                )}
+              </Pressable>
+              {claimPaymentError ? (
+                <Text className="text-red-200 text-center text-sm leading-5">
+                  Não foi possível registrar o aviso agora. Tente novamente.
+                </Text>
+              ) : null}
+            </View>
+          ) : isInitialClaimUnderReview ? (
+            <View className="rounded-2xl border border-emerald-300/25 bg-emerald-400/10 p-4 gap-2">
+              <Text className="text-emerald-100 text-base font-semibold text-center">
+                Pagamento em análise
+              </Text>
+              <Text className="text-white/70 text-center text-sm leading-5">
+                Seu aviso foi registrado. A associação vai conferir o PIX e
+                retornar com a decisão.
+              </Text>
+              <Text className="text-white/50 text-center text-sm leading-5">
+                Pagador:{' '}
+                {claimPayerType === 'other'
+                  ? claimPayerName || 'Outra pessoa'
+                  : 'Você'}
+              </Text>
+            </View>
+          ) : canReportPayment ? (
             <Pressable
               onPress={onMarkPaid}
               disabled={markingPaid || Boolean(userMarkedPaidAt)}
@@ -503,10 +811,16 @@ function ManualPixPayment({
                 </View>
               )}
             </Pressable>
+          ) : obligationStatus === 'void' ? (
+            <Text className="text-white/65 text-center text-sm leading-5">
+              Esta cobrança não está mais disponível. Feche esta tela e tente
+              novamente pelo aplicativo.
+            </Text>
           ) : (
             <Text className="text-white/65 text-center text-sm leading-5">
-              Depois de pagar, a associação receberá sua solicitação para
-              conferir o PIX e concluir a admissão.
+              {claimStatus === 'approved' || obligationStatus === 'settled'
+                ? 'Este pagamento já foi confirmado pela associação.'
+                : 'Depois de pagar, a associação receberá sua solicitação para conferir o PIX e concluir a admissão.'}
             </Text>
           )}
           {canReportPayment && userMarkedPaidAt ? (
