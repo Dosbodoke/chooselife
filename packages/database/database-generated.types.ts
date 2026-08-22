@@ -731,6 +731,7 @@ export type Database = {
           city: string | null
           cpf: string | null
           created_at: string
+          draft_version: number
           dietary_restrictions: string | null
           email: string | null
           emergency_contact_name: string | null
@@ -740,6 +741,8 @@ export type Database = {
             | Database["public"]["Enums"]["first_aid_course_enum"]
             | null
           full_name: string | null
+          has_allergies: boolean
+          has_dietary_restrictions: boolean
           has_rescue_course: boolean | null
           highline_experience:
             | Database["public"]["Enums"]["highline_experience_enum"]
@@ -771,6 +774,7 @@ export type Database = {
           city?: string | null
           cpf?: string | null
           created_at?: string
+          draft_version?: number
           dietary_restrictions?: string | null
           email?: string | null
           emergency_contact_name?: string | null
@@ -780,6 +784,8 @@ export type Database = {
             | Database["public"]["Enums"]["first_aid_course_enum"]
             | null
           full_name?: string | null
+          has_allergies?: boolean
+          has_dietary_restrictions?: boolean
           has_rescue_course?: boolean | null
           highline_experience?:
             | Database["public"]["Enums"]["highline_experience_enum"]
@@ -811,6 +817,7 @@ export type Database = {
           city?: string | null
           cpf?: string | null
           created_at?: string
+          draft_version?: number
           dietary_restrictions?: string | null
           email?: string | null
           emergency_contact_name?: string | null
@@ -820,6 +827,8 @@ export type Database = {
             | Database["public"]["Enums"]["first_aid_course_enum"]
             | null
           full_name?: string | null
+          has_allergies?: boolean
+          has_dietary_restrictions?: boolean
           has_rescue_course?: boolean | null
           highline_experience?:
             | Database["public"]["Enums"]["highline_experience_enum"]
@@ -858,38 +867,299 @@ export type Database = {
           },
         ]
       }
+      membership_application_revisions: {
+        Row: {
+          accepted_terms_at: string
+          address_line: string | null
+          allergies: string | null
+          application_id: string
+          birth_date: string | null
+          birthplace: string | null
+          blood_type: Database["public"]["Enums"]["blood_type_enum"] | null
+          city: string | null
+          cpf: string | null
+          created_at: string
+          currency: string
+          dietary_restrictions: string | null
+          draft_version: number
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
+          first_aid_course:
+            | Database["public"]["Enums"]["first_aid_course_enum"]
+            | null
+          full_name: string | null
+          has_allergies: boolean
+          has_dietary_restrictions: boolean
+          has_rescue_course: boolean | null
+          highline_experience:
+            | Database["public"]["Enums"]["highline_experience_enum"]
+            | null
+          id: string
+          id_document_issuer: string | null
+          id_document_number: string | null
+          marital_status:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
+          nationality: string | null
+          organization_id: string
+          phone: string | null
+          pix_copy_paste: string
+          plan_amount: number
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          postal_code: string | null
+          profession: string | null
+          revision_number: number
+          state: string | null
+          submitted_at: string
+          terms_version: string
+          user_id: string
+        }
+        Insert: {
+          accepted_terms_at: string
+          address_line?: string | null
+          allergies?: string | null
+          application_id: string
+          birth_date?: string | null
+          birthplace?: string | null
+          blood_type?: Database["public"]["Enums"]["blood_type_enum"] | null
+          city?: string | null
+          cpf?: string | null
+          created_at?: string
+          currency: string
+          dietary_restrictions?: string | null
+          draft_version: number
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          first_aid_course?:
+            | Database["public"]["Enums"]["first_aid_course_enum"]
+            | null
+          full_name?: string | null
+          has_allergies: boolean
+          has_dietary_restrictions: boolean
+          has_rescue_course?: boolean | null
+          highline_experience?:
+            | Database["public"]["Enums"]["highline_experience_enum"]
+            | null
+          id?: string
+          id_document_issuer?: string | null
+          id_document_number?: string | null
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
+          nationality?: string | null
+          organization_id: string
+          phone?: string | null
+          pix_copy_paste: string
+          plan_amount: number
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          postal_code?: string | null
+          profession?: string | null
+          revision_number: number
+          state?: string | null
+          submitted_at: string
+          terms_version: string
+          user_id: string
+        }
+        Update: {
+          accepted_terms_at?: string
+          address_line?: string | null
+          allergies?: string | null
+          application_id?: string
+          birth_date?: string | null
+          birthplace?: string | null
+          blood_type?: Database["public"]["Enums"]["blood_type_enum"] | null
+          city?: string | null
+          cpf?: string | null
+          created_at?: string
+          currency?: string
+          dietary_restrictions?: string | null
+          draft_version?: number
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          first_aid_course?:
+            | Database["public"]["Enums"]["first_aid_course_enum"]
+            | null
+          full_name?: string | null
+          has_allergies?: boolean
+          has_dietary_restrictions?: boolean
+          has_rescue_course?: boolean | null
+          highline_experience?:
+            | Database["public"]["Enums"]["highline_experience_enum"]
+            | null
+          id?: string
+          id_document_issuer?: string | null
+          id_document_number?: string | null
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
+          nationality?: string | null
+          organization_id?: string
+          phone?: string | null
+          pix_copy_paste?: string
+          plan_amount?: number
+          plan_type?: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          postal_code?: string | null
+          profession?: string | null
+          revision_number?: number
+          state?: string | null
+          submitted_at?: string
+          terms_version?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_application_revisions_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "membership_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_application_revisions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_application_revisions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           annual_price_amount: number | null
           annual_pix_copy_paste: string | null
+          billing_currency: string
           created_at: string
           id: string
+          membership_terms_version: string
           monthly_price_amount: number | null
           monthly_pix_copy_paste: string | null
           name: string
+          organization_type: Database["public"]["Enums"]["organization_type_enum"]
           slug: string
         }
         Insert: {
           annual_price_amount?: number | null
           annual_pix_copy_paste?: string | null
+          billing_currency?: string
           created_at?: string
           id?: string
+          membership_terms_version?: string
           monthly_price_amount?: number | null
           monthly_pix_copy_paste?: string | null
           name: string
+          organization_type?: Database["public"]["Enums"]["organization_type_enum"]
           slug: string
         }
         Update: {
           annual_price_amount?: number | null
           annual_pix_copy_paste?: string | null
+          billing_currency?: string
           created_at?: string
           id?: string
+          membership_terms_version?: string
           monthly_price_amount?: number | null
           monthly_pix_copy_paste?: string | null
           name?: string
+          organization_type?: Database["public"]["Enums"]["organization_type_enum"]
           slug?: string
         }
         Relationships: []
+      }
+      payment_obligations: {
+        Row: {
+          amount: number
+          application_revision_id: string
+          available_at: string
+          created_at: string
+          currency: string
+          id: string
+          legacy_payment_id: string | null
+          organization_id: string
+          payment_method: string
+          pix_copy_paste: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          settled_at: string | null
+          status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          application_revision_id: string
+          available_at: string
+          created_at?: string
+          currency: string
+          id?: string
+          legacy_payment_id?: string | null
+          organization_id: string
+          payment_method?: string
+          pix_copy_paste: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          purpose?: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["payment_obligation_status_enum"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          application_revision_id?: string
+          available_at?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          legacy_payment_id?: string | null
+          organization_id?: string
+          payment_method?: string
+          pix_copy_paste?: string
+          plan_type?: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          purpose?: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["payment_obligation_status_enum"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_obligations_application_revision_id_fkey"
+            columns: ["application_revision_id"]
+            isOneToOne: false
+            referencedRelation: "membership_application_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_obligations_legacy_payment_id_fkey"
+            columns: ["legacy_payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_obligations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_obligations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -1381,6 +1651,21 @@ export type Database = {
           user_marked_paid_at: string | null
         }[]
       }
+      get_payment_obligation_instructions: {
+        Args: { p_obligation_id: string }
+        Returns: {
+          amount: number
+          available_at: string
+          currency: string
+          obligation_id: string
+          payment_method: string
+          pix_copy_paste: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+          organization_id: string
+        }[]
+      }
       mark_payment_succeeded_manually: {
         Args: { p_paid_at?: string; p_payment_id: string }
         Returns: {
@@ -1408,6 +1693,26 @@ export type Database = {
           status: Database["public"]["Enums"]["membership_application_status_enum"]
           submitted_at: string | null
           user_id: string
+        }[]
+      }
+      submit_association_application: {
+        Args: {
+          p_application_id: string
+          p_draft_version: number
+          p_organization_id: string
+          p_plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          p_terms_version: string
+        }
+        Returns: {
+          amount: number
+          application_revision_id: string
+          available_at: string
+          currency: string
+          obligation_id: string
+          obligation_status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+          organization_id: string
+          payment_method: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
         }[]
       }
       get_highline: {
@@ -1562,6 +1867,9 @@ export type Database = {
       material_enum: "nylon" | "dyneema" | "polyester"
       membership_application_status_enum: "draft" | "submitted"
       organization_role_enum: "admin" | "member"
+      organization_type_enum: "group" | "association"
+      payment_obligation_purpose_enum: "initial_admission"
+      payment_obligation_status_enum: "available" | "settled" | "void"
       payment_status_enum: "pending" | "succeeded" | "failed"
       strength_class_enum: "A+" | "A" | "B" | "C"
       subscription_plan_type_enum: "monthly" | "annual"
@@ -2330,6 +2638,9 @@ export const Constants = {
       material_enum: ["nylon", "dyneema", "polyester"],
       membership_application_status_enum: ["draft", "submitted"],
       organization_role_enum: ["admin", "member"],
+      organization_type_enum: ["group", "association"],
+      payment_obligation_purpose_enum: ["initial_admission"],
+      payment_obligation_status_enum: ["available", "settled", "void"],
       payment_status_enum: ["pending", "succeeded", "failed"],
       strength_class_enum: ["A+", "A", "B", "C"],
       subscription_plan_type_enum: ["monthly", "annual"],

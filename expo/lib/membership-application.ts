@@ -10,6 +10,18 @@ export type MembershipApplicationDraft =
   TablesInsert<'membership_applications'> &
     TablesUpdate<'membership_applications'>;
 
+export type AssociationApplicationSubmission = {
+  amount: number;
+  application_revision_id: string;
+  available_at: string;
+  currency: string;
+  obligation_id: string;
+  obligation_status: 'available' | 'settled' | 'void';
+  organization_id: string;
+  payment_method: 'manual_pix';
+  plan_type: 'monthly' | 'annual';
+};
+
 type ViaCepResponse = {
   bairro?: string;
   erro?: boolean;
@@ -56,14 +68,30 @@ export async function upsertMembershipApplicationDraft(
   return data;
 }
 
-export async function submitMembershipApplication(applicationId: string) {
-  const { data, error } = await supabase.rpc('submit_membership_application', {
+export async function submitAssociationApplication({
+  applicationId,
+  draftVersion,
+  organizationId,
+  planType,
+  termsVersion,
+}: {
+  applicationId: string;
+  draftVersion: number;
+  organizationId: string;
+  planType: 'monthly' | 'annual';
+  termsVersion: string;
+}): Promise<AssociationApplicationSubmission | null> {
+  const { data, error } = await supabase.rpc('submit_association_application', {
     p_application_id: applicationId,
+    p_draft_version: draftVersion,
+    p_organization_id: organizationId,
+    p_plan_type: planType,
+    p_terms_version: termsVersion,
   });
 
   if (error) throw error;
 
-  return data?.[0] ?? null;
+  return (data?.[0] as AssociationApplicationSubmission | undefined) ?? null;
 }
 
 export async function fetchAddressByCep(cep: string) {

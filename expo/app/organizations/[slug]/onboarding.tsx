@@ -1,5 +1,4 @@
 import { useOrganization } from '@chooselife/ui';
-import type { StartSubscriptionResponse } from '@packages/database/functions.types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -22,16 +21,15 @@ import Animated, {
 
 import { useAuth } from '~/context/auth';
 import { useMountEffect } from '~/hooks/use-mount-effect';
-import { getManualPaymentRouteParams } from '~/lib/manual-payment';
+import { getPaymentObligationRouteParams } from '~/lib/manual-payment';
 import {
   fetchAddressByCep,
   fetchMembershipApplication,
-  submitMembershipApplication,
+  submitAssociationApplication,
   upsertMembershipApplicationDraft,
   type MembershipApplication,
 } from '~/lib/membership-application';
 import { queryKeys } from '~/lib/query-keys';
-import { supabase } from '~/lib/supabase';
 
 import {
   FocusedHeader,
@@ -71,11 +69,13 @@ const errorHaptic = () =>
 
 export default function OnboardingScreen() {
   const { session, sessionLoading, profile } = useAuth();
-  const { accepted_terms_at, plan_type, slug } = useLocalSearchParams<{
-    accepted_terms_at?: string;
-    plan_type?: PlanType;
-    slug: string;
-  }>();
+  const { accepted_terms_at, plan_type, slug, terms_version } =
+    useLocalSearchParams<{
+      accepted_terms_at?: string;
+      plan_type?: PlanType;
+      slug: string;
+      terms_version?: string;
+    }>();
   const {
     data: organization,
     isLoading,
@@ -109,7 +109,7 @@ export default function OnboardingScreen() {
         href={{
           pathname: '/(modals)/login',
           params: {
-            redirect_to: `/organizations/${slug}/onboarding?plan_type=${plan_type ?? 'monthly'}`,
+            redirect_to: `/organizations/${slug}/onboarding?plan_type=${plan_type ?? 'monthly'}${terms_version ? `&terms_version=${encodeURIComponent(terms_version)}` : ''}`,
           },
         }}
       />
@@ -142,6 +142,7 @@ export default function OnboardingScreen() {
       profileBirthday={profile?.birthday}
       profileName={profile?.name}
       slug={slug}
+      termsVersion={terms_version ?? organization.membership_terms_version}
       userId={session.user.id}
     />
   );
@@ -157,6 +158,7 @@ type OnboardingWizardProps = {
   profileBirthday?: string | null;
   profileName?: string | null;
   slug: string;
+  termsVersion: string;
   userId: string;
 };
 
@@ -170,6 +172,7 @@ function OnboardingWizard({
   profileBirthday,
   profileName,
   slug,
+  termsVersion,
   userId,
 }: OnboardingWizardProps) {
   const router = useRouter();
@@ -208,16 +211,9 @@ function OnboardingWizard({
   const [autofillKey, setAutofillKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [createdApplicationId, setCreatedApplicationId] = useState<
-    string | undefined
-  >();
-  const [createdSubmittedId, setCreatedSubmittedId] = useState<
-    string | undefined
-  >();
   const submitLockRef = useRef(false);
   const lastCepLookupRef = useRef<string | null>(null);
 
-  const applicationId = createdApplicationId ?? application?.id;
   const applicationQueryKey = queryKeys.membershipApplication.byOrgUser(
     organizationId,
     userId,
@@ -360,78 +356,16 @@ function OnboardingWizard({
         formToDraft(nextForm, organizationId, userId),
       ),
     onSuccess: (data) => {
-      setCreatedApplicationId(data.id);
       queryClient.setQueryData(applicationQueryKey, data);
     },
     retry: 1,
   });
 
   const submitMutation = useMutation({
-    mutationFn: submitMembershipApplication,
-    onSuccess: (data) => {
-      setCreatedSubmittedId(data?.id ?? applicationId);
-      void queryClient.invalidateQueries({ queryKey: applicationQueryKey });
-    },
-  });
-
-  const startSubscriptionMutation = useMutation({
-    mutationFn: async () => {
-      const { data: charge, error } =
-        await supabase.functions.invoke<StartSubscriptionResponse>(
-          'start-subscription',
-          {
-            body: { plan_type: planType, slug },
-          },
-        );
-
-      if (error) {
-        const errorContext = error.context;
-        if (errorContext && typeof errorContext.json === 'function') {
-          const errorData = await errorContext.json();
-          throw new Error(errorData?.error || error.message);
-        }
-        throw error;
-      }
-
-      if (!charge) {
-        throw new Error('Invalid response from start-subscription function');
-      }
-
-      return {
-        amount: 'amount' in charge ? charge.amount : undefined,
-        paymentId: charge.paymentId,
-      };
-    },
-    onSuccess: (data) => {
-      setSuccess(true);
-      void Haptics.notificationAsync(
-        Haptics.NotificationFeedbackType.Success,
-      ).catch(() => undefined);
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.subscription.all,
-      });
-      setTimeout(() => {
-        router.replace({
-          pathname: '/payment',
-          params: getManualPaymentRouteParams({
-            amount: data.amount,
-            paymentId: data.paymentId,
-            paymentContext: 'new_member',
-            slug,
-          }),
-        });
-      }, 1600);
-    },
-    // The function reuses an existing pending manual payment, so retrying once
-    // is safe when the first response is lost to a transient network failure.
+    mutationFn: submitAssociationApplication,
     retry: 1,
     retryDelay: 500,
   });
-
-
-  const submittedApplicationId =
-    createdSubmittedId ??
-    (application?.status === 'submitted' ? application.id : undefined);
 
   const getSubmittedApplicationId = () => {
     const cachedApplication =
@@ -439,12 +373,11 @@ function OnboardingWizard({
         applicationQueryKey,
       );
 
-    return (
-      submittedApplicationId ??
-      (cachedApplication?.status === 'submitted'
-        ? cachedApplication.id
-        : undefined)
-    );
+    return cachedApplication?.status === 'submitted'
+      ? cachedApplication.id
+      : application?.status === 'submitted'
+        ? application.id
+        : undefined;
   };
 
   const handleSubmit = async () => {
@@ -478,6 +411,11 @@ function OnboardingWizard({
       errorHaptic();
     };
 
+    let applicationForSubmission =
+      queryClient.getQueryData<MembershipApplication | null>(
+        applicationQueryKey,
+      );
+
     if (!getSubmittedApplicationId()) {
       const saved = await settle(saveMutation.mutateAsync(form));
       if (!saved.ok) {
@@ -488,43 +426,114 @@ function OnboardingWizard({
         return;
       }
 
-      const submitted = await settle(
-        submitMutation.mutateAsync(applicationId ?? saved.value.id),
-      );
-      if (!submitted.ok) {
-        // A lost response can happen after the RPC committed. Re-read the
-        // application before telling the user to retry a completed submit.
-        const reconciled = await settle(
-          fetchMembershipApplication(organizationId, userId),
-        );
-        if (!reconciled.ok || reconciled.value?.status !== 'submitted') {
-          console.error(
-            'Error submitting membership application:',
-            submitted.error,
-          );
-          fail(
-            'Não foi possível concluir seu cadastro. Verifique a conexão e tente novamente.',
-          );
-          return;
-        }
-
-        setCreatedSubmittedId(reconciled.value.id);
-        queryClient.setQueryData(applicationQueryKey, reconciled.value);
-      } else {
-        setCreatedSubmittedId(
-          submitted.value?.id ?? applicationId ?? saved.value.id,
-        );
-      }
+      applicationForSubmission = saved.value;
     }
 
-    const payment = await settle(startSubscriptionMutation.mutateAsync());
-    if (!payment.ok) {
-      console.error('Error starting membership payment:', payment.error);
+    if (!applicationForSubmission) {
+      applicationForSubmission = await queryClient.fetchQuery({
+        queryKey: applicationQueryKey,
+        queryFn: () => fetchMembershipApplication(organizationId, userId),
+      });
+    }
+
+    if (!applicationForSubmission?.draft_version) {
       fail(
-        'Seu cadastro foi concluído, mas não foi possível iniciar o pagamento. Tente novamente.',
+        'Não foi possível identificar a versão atual do cadastro. Atualize e tente novamente.',
       );
       return;
     }
+
+    const submission = await settle(
+      submitMutation.mutateAsync({
+        applicationId: applicationForSubmission.id,
+        draftVersion: applicationForSubmission.draft_version,
+        organizationId,
+        planType,
+        termsVersion,
+      }),
+    );
+    if (!submission.ok || !submission.value) {
+      // A lost response can happen after the command committed. Re-read the
+      // draft and retry with the same optimistic version; the server returns
+      // the original revision and obligation rather than creating another.
+      const reconciled = await settle(
+        fetchMembershipApplication(organizationId, userId),
+      );
+      if (!reconciled.ok || reconciled.value?.status !== 'submitted') {
+        console.error(
+          'Error submitting membership application:',
+          submission.ok ? 'empty response' : submission.error,
+        );
+        fail(
+          'Não foi possível concluir seu cadastro. Verifique a conexão e tente novamente.',
+        );
+        return;
+      }
+
+      const retriedSubmission = await settle(
+        submitMutation.mutateAsync({
+          applicationId: reconciled.value.id,
+          draftVersion: reconciled.value.draft_version,
+          organizationId,
+          planType,
+          termsVersion,
+        }),
+      );
+      if (!retriedSubmission.ok || !retriedSubmission.value) {
+        console.error(
+          'Error reconciling membership application submission:',
+          retriedSubmission.ok ? 'empty response' : retriedSubmission.error,
+        );
+        fail(
+          'Não foi possível concluir seu cadastro. Verifique a conexão e tente novamente.',
+        );
+        return;
+      }
+
+      const authoritativeSubmission = retriedSubmission.value;
+      queryClient.setQueryData(applicationQueryKey, reconciled.value);
+      setSuccess(true);
+      void Haptics.notificationAsync(
+        Haptics.NotificationFeedbackType.Success,
+      ).catch(() => undefined);
+      setTimeout(() => {
+        router.replace({
+          pathname: '/payment',
+          params: getPaymentObligationRouteParams({
+            amount: authoritativeSubmission.amount,
+            currency: authoritativeSubmission.currency,
+            obligationId: authoritativeSubmission.obligation_id,
+            slug,
+          }),
+        });
+      }, 1600);
+      setSubmitting(false);
+      submitLockRef.current = false;
+      return;
+    }
+
+    const authoritativeSubmission = submission.value;
+    setSuccess(true);
+    void Haptics.notificationAsync(
+      Haptics.NotificationFeedbackType.Success,
+    ).catch(() => undefined);
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.membershipApplication.byOrgUser(
+        organizationId,
+        userId,
+      ),
+    });
+    setTimeout(() => {
+      router.replace({
+        pathname: '/payment',
+        params: getPaymentObligationRouteParams({
+          amount: authoritativeSubmission.amount,
+          currency: authoritativeSubmission.currency,
+          obligationId: authoritativeSubmission.obligation_id,
+          slug,
+        }),
+      });
+    }, 1600);
 
     setSubmitting(false);
     submitLockRef.current = false;
@@ -589,10 +598,7 @@ function OnboardingWizard({
                   Toque em uma resposta para corrigir. Seu cadastro é enviado
                   uma única vez, na confirmação.
                 </Text>
-                <ReviewList
-                  items={getReviewRows(form)}
-                  onEdit={handleEdit}
-                />
+                <ReviewList items={getReviewRows(form)} onEdit={handleEdit} />
               </View>
             ) : question ? (
               <QuestionCard

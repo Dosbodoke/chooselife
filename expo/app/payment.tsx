@@ -35,6 +35,18 @@ type PaymentInstructions = {
   user_marked_paid_at: string | null;
 };
 
+type ObligationInstructions = {
+  amount: number;
+  available_at: string;
+  currency: string;
+  obligation_id: string;
+  payment_method: string;
+  pix_copy_paste: string;
+  plan_type: 'monthly' | 'annual';
+  purpose: 'initial_admission';
+  status: 'available' | 'settled' | 'void';
+};
+
 function PaymentState({
   children,
   onClose,
@@ -87,10 +99,19 @@ const paymentInstructionsQueryKey = (paymentId: string | undefined) =>
 
 export default function PaymentScreen() {
   const router = useRouter();
-  const { amount, paymentId, paymentContext, slug } = useLocalSearchParams<{
+  const {
+    amount,
+    currency: routeCurrency,
+    obligationId,
+    paymentContext,
+    paymentId,
+    slug,
+  } = useLocalSearchParams<{
     amount?: string;
-    paymentId: string;
+    currency?: string;
+    obligationId?: string;
     paymentContext?: 'new_member' | 'subscription_renewal';
+    paymentId?: string;
     slug?: string;
   }>();
   const queryClient = useQueryClient();
@@ -128,16 +149,42 @@ export default function PaymentScreen() {
         }
       );
     },
-    enabled: Boolean(paymentId),
+    enabled: Boolean(paymentId && !obligationId),
+  });
+  const obligationInstructionsQuery = useQuery({
+    queryKey: ['payment-obligation-instructions', obligationId],
+    queryFn: async (): Promise<ObligationInstructions | null> => {
+      if (!obligationId) return null;
+
+      const { data, error } = await supabase.rpc(
+        'get_payment_obligation_instructions',
+        { p_obligation_id: obligationId },
+      );
+
+      if (error) throw error;
+
+      return data?.[0] ?? null;
+    },
+    enabled: Boolean(obligationId),
   });
   const paymentInstructions = paymentInstructionsQuery.data;
-  const amountInCents =
-    paymentInstructions?.amount ??
-    (Number.isFinite(routeAmountInCents) ? routeAmountInCents : null);
-  const formattedAmount = amountInCents
-    ? `R$ ${(amountInCents / 100).toFixed(2)}`
-    : null;
-  const manualPixCopyPaste = paymentInstructions?.pix_copy_paste ?? '';
+  const obligationInstructions = obligationInstructionsQuery.data;
+  const amountInCents = obligationId
+    ? (obligationInstructions?.amount ?? null)
+    : (paymentInstructions?.amount ??
+      (Number.isFinite(routeAmountInCents) ? routeAmountInCents : null));
+  const currency = obligationInstructions?.currency ?? routeCurrency ?? 'BRL';
+  const formattedAmount =
+    amountInCents === null
+      ? null
+      : new Intl.NumberFormat('pt-BR', {
+          currency,
+          minimumFractionDigits: 2,
+          style: 'currency',
+        }).format(amountInCents / 100);
+  const manualPixCopyPaste = obligationId
+    ? (obligationInstructions?.pix_copy_paste ?? '')
+    : (paymentInstructions?.pix_copy_paste ?? '');
   const hasManualPixInstructions = Boolean(manualPixCopyPaste);
 
   const handleClose = () => {
@@ -148,11 +195,13 @@ export default function PaymentScreen() {
     }
   };
 
-  const userMarkedPaidAt = paymentInstructions?.user_marked_paid_at ?? null;
+  const userMarkedPaidAt = obligationId
+    ? null
+    : (paymentInstructions?.user_marked_paid_at ?? null);
 
   const markPaidMutation = useMutation({
     mutationFn: async () => {
-      if (!paymentId) {
+      if (!paymentId || obligationId) {
         throw new Error('paymentId is required.');
       }
 
@@ -200,7 +249,14 @@ export default function PaymentScreen() {
   });
 
   const handleMarkPaid = async () => {
-    if (!paymentId || markPaidMutation.isPending || userMarkedPaidAt) return;
+    if (
+      !paymentId ||
+      obligationId ||
+      markPaidMutation.isPending ||
+      userMarkedPaidAt
+    ) {
+      return;
+    }
 
     markPaidMutation.mutate();
   };
@@ -239,7 +295,10 @@ export default function PaymentScreen() {
     );
   }
 
-  if (paymentInstructionsQuery.isLoading) {
+  if (
+    paymentInstructionsQuery.isLoading ||
+    obligationInstructionsQuery.isLoading
+  ) {
     return (
       <PaymentState onClose={handleClose}>
         <ActivityIndicator color="#FFFFFF" />
@@ -248,7 +307,7 @@ export default function PaymentScreen() {
     );
   }
 
-  if (!paymentId || !hasManualPixInstructions) {
+  if ((!paymentId && !obligationId) || !hasManualPixInstructions) {
     return (
       <PaymentState onClose={handleClose}>
         <Text className="text-white text-3xl font-bold text-center leading-9">
@@ -257,7 +316,8 @@ export default function PaymentScreen() {
         <Text className="text-white/65 text-[15px] text-center leading-6">
           O PIX da associação ainda não foi configurado no aplicativo.
         </Text>
-        {paymentInstructionsQuery.isError ? (
+        {paymentInstructionsQuery.isError ||
+        obligationInstructionsQuery.isError ? (
           <Text className="text-white/50 text-center text-sm">
             Não foi possível carregar os dados do pagamento.
           </Text>
@@ -278,11 +338,13 @@ export default function PaymentScreen() {
       manualPixCopyPaste={manualPixCopyPaste}
       markPaidError={markPaidMutation.isError}
       markingPaid={markPaidMutation.isPending}
+      canReportPayment={Boolean(paymentId && !obligationId)}
       onClose={handleClose}
       onMarkPaid={handleMarkPaid}
       onPaymentFailed={() => setPaymentStatus('FAILED')}
       onPaymentSucceeded={() => setPaymentStatus('SUCCESS')}
       paymentContext={paymentContext}
+      obligationId={obligationId}
       paymentId={paymentId}
       profileId={profile?.id}
       queryClient={queryClient}
@@ -295,6 +357,7 @@ export default function PaymentScreen() {
 }
 
 function ManualPixPayment({
+  canReportPayment,
   formattedAmount,
   insets,
   manualPixCopyPaste,
@@ -304,6 +367,7 @@ function ManualPixPayment({
   onMarkPaid,
   onPaymentFailed,
   onPaymentSucceeded,
+  obligationId,
   paymentContext,
   paymentId,
   profileId,
@@ -313,6 +377,7 @@ function ManualPixPayment({
   title,
   userMarkedPaidAt,
 }: {
+  canReportPayment: boolean;
   formattedAmount: string | null;
   insets: ReturnType<typeof useSafeAreaInsets>;
   manualPixCopyPaste: string;
@@ -322,8 +387,9 @@ function ManualPixPayment({
   onMarkPaid: () => void;
   onPaymentFailed: () => void;
   onPaymentSucceeded: () => void;
+  obligationId?: string;
   paymentContext?: 'new_member' | 'subscription_renewal';
-  paymentId: string;
+  paymentId?: string;
   profileId?: string;
   queryClient: ReturnType<typeof useQueryClient>;
   slug?: string;
@@ -334,7 +400,7 @@ function ManualPixPayment({
   return (
     <BgBlob>
       <PaymentStatusSubscription
-        key={`${paymentId}:${slug ?? ''}:${profileId ?? ''}:${paymentContext ?? ''}`}
+        key={`${paymentId ?? ''}:${obligationId ?? ''}:${slug ?? ''}:${profileId ?? ''}:${paymentContext ?? ''}`}
         paymentContext={paymentContext}
         paymentId={paymentId}
         profileId={profileId}
@@ -399,49 +465,57 @@ function ManualPixPayment({
               : 'Associação'}
           </Text>
           <Text className="text-white/65 text-center text-sm leading-5 mt-1">
-            Depois de pagar, toque em "Já paguei". A equipe confere o PIX e
-            aprova sua assinatura manualmente.
+            {canReportPayment
+              ? 'Depois de pagar, toque em "Já paguei". A equipe confere o PIX e aprova sua assinatura manualmente.'
+              : 'Depois de pagar, a associação confere o PIX e conclui a admissão manualmente.'}
           </Text>
         </Animated.View>
         <Animated.View
           entering={FadeIn.delay(900).duration(300)}
           className="mx-6 gap-3 mt-auto"
         >
-          <Pressable
-            onPress={onMarkPaid}
-            disabled={markingPaid || Boolean(userMarkedPaidAt)}
-            className={`rounded-full py-4 items-center justify-center ${userMarkedPaidAt ? 'bg-emerald-500/20' : 'bg-white'}`}
-            style={({ pressed }) => ({
-              opacity:
-                markingPaid || userMarkedPaidAt
-                  ? undefined
-                  : pressed
-                    ? 0.85
-                    : 1,
-            })}
-          >
-            {markingPaid ? (
-              <ActivityIndicator color="#000" />
-            ) : (
-              <View className="flex-row items-center gap-2">
-                {userMarkedPaidAt ? (
-                  <Icon as={CheckIcon} size={18} color="#34D399" />
-                ) : null}
-                <Text
-                  className={`text-[17px] font-bold ${userMarkedPaidAt ? 'text-emerald-300' : 'text-black'}`}
-                >
-                  {userMarkedPaidAt ? 'Pagamento informado' : 'Já paguei'}
-                </Text>
-              </View>
-            )}
-          </Pressable>
-          {userMarkedPaidAt ? (
+          {canReportPayment ? (
+            <Pressable
+              onPress={onMarkPaid}
+              disabled={markingPaid || Boolean(userMarkedPaidAt)}
+              className={`rounded-full py-4 items-center justify-center ${userMarkedPaidAt ? 'bg-emerald-500/20' : 'bg-white'}`}
+              style={({ pressed }) => ({
+                opacity:
+                  markingPaid || userMarkedPaidAt
+                    ? undefined
+                    : pressed
+                      ? 0.85
+                      : 1,
+              })}
+            >
+              {markingPaid ? (
+                <ActivityIndicator color="#000" />
+              ) : (
+                <View className="flex-row items-center gap-2">
+                  {userMarkedPaidAt ? (
+                    <Icon as={CheckIcon} size={18} color="#34D399" />
+                  ) : null}
+                  <Text
+                    className={`text-[17px] font-bold ${userMarkedPaidAt ? 'text-emerald-300' : 'text-black'}`}
+                  >
+                    {userMarkedPaidAt ? 'Pagamento informado' : 'Já paguei'}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+          ) : (
+            <Text className="text-white/65 text-center text-sm leading-5">
+              Depois de pagar, a associação receberá sua solicitação para
+              conferir o PIX e concluir a admissão.
+            </Text>
+          )}
+          {canReportPayment && userMarkedPaidAt ? (
             <Text className="text-white/50 text-center text-sm leading-5">
               Recebemos seu aviso. A associação vai conferir o pagamento e
               aprovar manualmente sua assinatura.
             </Text>
           ) : null}
-          {markPaidError ? (
+          {canReportPayment && markPaidError ? (
             <Text className="text-red-200 text-center text-sm leading-5">
               Não foi possível avisar a associação agora. Tente novamente.
             </Text>
