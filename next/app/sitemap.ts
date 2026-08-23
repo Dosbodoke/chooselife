@@ -9,8 +9,12 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL || "https://chooselife.club";
+  const baseUrl = (
+    process.env.NEXT_PUBLIC_BASE_URL || "https://chooselife.club"
+  ).replace(/\/+$/, "");
+
+  const localizedUrl = (locale: string, route: string) =>
+    `${baseUrl}${locale === "en" ? "/en" : ""}${route}`;
 
   const staticRoutes = ["", "/events", "/download", "/privacy"];
 
@@ -20,11 +24,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const route of staticRoutes) {
     const languages: Record<string, string> = {};
     for (const locale of locales) {
-      languages[locale] = `${baseUrl}/${locale}${route}`;
+      languages[locale] = localizedUrl(locale, route);
     }
 
     entries.push({
-      url: `${baseUrl}/pt${route}`,
+      url: localizedUrl("pt", route),
       lastModified: new Date(),
       alternates: {
         languages,
@@ -42,11 +46,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const festival of festivals) {
       const languages: Record<string, string> = {};
       for (const locale of locales) {
-        languages[locale] = `${baseUrl}/${locale}/festival/${festival.slug}`;
+        languages[locale] = localizedUrl(locale, `/festival/${festival.slug}`);
       }
 
       entries.push({
-        url: `${baseUrl}/pt/festival/${festival.slug}`,
+        url: localizedUrl("pt", `/festival/${festival.slug}`),
         lastModified: new Date(festival.created_at),
         changeFrequency: "weekly",
         priority: 0.9,
@@ -69,11 +73,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       const languages: Record<string, string> = {};
       for (const locale of locales) {
-        languages[locale] = `${baseUrl}/${locale}/news/${post.slug}`;
+        languages[locale] = localizedUrl(locale, `/news/${post.slug}`);
       }
 
       entries.push({
-        url: `${baseUrl}/pt/news/${post.slug}`,
+        url: localizedUrl("pt", `/news/${post.slug}`),
         lastModified: new Date(post.created_at),
         changeFrequency: "monthly",
         priority: 0.8,

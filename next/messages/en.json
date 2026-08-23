@@ -39,6 +39,18 @@
       },
       "submit": "Create"
     },
+    "browse": {
+      "eyebrow": "Start exploring",
+      "title": "Find your next highline",
+      "viewMap": "View the map",
+      "navigationLabel": "Homepage destinations",
+      "explore": "Explore",
+      "map": "Map",
+      "events": "Events",
+      "app": "The app",
+      "summary": "Highline map, community walks, and events in one place.",
+      "download": "Get the app"
+    },
     "seeDetails": "See details"
   },
   "map": {
