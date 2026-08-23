@@ -10,10 +10,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import type { InitialPaymentClaimQueueRow } from "@/lib/initial-payment-claims";
+
+import { formatAmount, formatDate } from "./initial-payment-claim-formatters";
 import {
   ApplicantAvatar,
-  formatAmount,
-  formatDate,
   QueueStatusBadge,
 } from "./initial-payment-claim-review";
 
