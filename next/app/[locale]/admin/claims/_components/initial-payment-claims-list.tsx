@@ -1,6 +1,8 @@
-import { CheckCircle2, ChevronRight, FileText, Search } from "lucide-react";
+"use client";
 
-import { Badge } from "@/components/ui/badge";
+import { CheckCircle2, ChevronRight, Search } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+
 import {
   Card,
   CardContent,
@@ -19,10 +21,6 @@ import {
 
 export type QueueStatusFilter = "all" | "under_review";
 export type QueueSort = "oldest" | "newest" | "amount" | "applicant";
-
-function statusLabel(status: QueueStatusFilter) {
-  return status === "all" ? "All current claims" : "Awaiting review";
-}
 
 export function InitialPaymentClaimsList({
   claims,
@@ -45,19 +43,26 @@ export function InitialPaymentClaimsList({
   sort: QueueSort;
   statusFilter: QueueStatusFilter;
 }) {
+  const locale = useLocale();
+  const t = useTranslations("admin");
+  const statusLabel = (status: QueueStatusFilter) =>
+    status === "all"
+      ? t("initialClaims.allCurrent")
+      : t("states.awaitingReview");
+
   return (
     <Card className="mt-8 overflow-hidden rounded-3xl border-0 shadow-[0_20px_70px_-40px_hsl(var(--foreground)/0.45)]">
       <CardHeader className="border-b bg-card/80 pb-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <CardTitle>Queue</CardTitle>
+            <CardTitle>{t("initialClaims.listTitle")}</CardTitle>
             <CardDescription className="mt-1">
-              Current initial claims from the associations you administer.
+              {t("initialClaims.listDescription")}
             </CardDescription>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <label className="relative block min-w-0 sm:w-72">
-              <span className="sr-only">Search claims</span>
+              <span className="sr-only">{t("initialClaims.searchLabel")}</span>
               <Search
                 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                 aria-hidden="true"
@@ -66,12 +71,12 @@ export function InitialPaymentClaimsList({
                 type="search"
                 value={search}
                 onChange={(event) => onSearchChange(event.target.value)}
-                placeholder="Search applicant or payer"
+                placeholder={t("initialClaims.searchPlaceholder")}
                 className="h-11 rounded-xl pl-9"
               />
             </label>
             <label>
-              <span className="sr-only">Filter payment state</span>
+              <span className="sr-only">{t("initialClaims.stateFilterLabel")}</span>
               <select
                 value={statusFilter}
                 onChange={(event) =>
@@ -86,7 +91,7 @@ export function InitialPaymentClaimsList({
               </select>
             </label>
             <label>
-              <span className="sr-only">Sort claims</span>
+              <span className="sr-only">{t("initialClaims.sortLabel")}</span>
               <select
                 value={sort}
                 onChange={(event) =>
@@ -94,10 +99,10 @@ export function InitialPaymentClaimsList({
                 }
                 className="h-11 min-w-40 rounded-xl border border-input bg-background px-3 text-sm shadow-sm outline-none focus:ring-1 focus:ring-ring"
               >
-                <option value="oldest">Oldest first</option>
-                <option value="newest">Newest first</option>
-                <option value="amount">Highest amount</option>
-                <option value="applicant">Applicant name</option>
+                <option value="oldest">{t("queue.sortOldest")}</option>
+                <option value="newest">{t("queue.sortNewest")}</option>
+                <option value="amount">{t("queue.sortAmount")}</option>
+                <option value="applicant">{t("queue.sortMember")}</option>
               </select>
             </label>
           </div>
@@ -112,17 +117,17 @@ export function InitialPaymentClaimsList({
             </span>
             <h2 className="mt-5 text-xl font-semibold">
               {initialClaimsCount === 0
-                ? "The queue is clear"
-                : "No claims match these filters"}
+                ? t("initialClaims.emptyTitle")
+                : t("initialClaims.emptyFilteredTitle")}
             </h2>
             <p className="mt-2 max-w-md text-sm text-muted-foreground">
               {initialClaimsCount === 0
-                ? "New initial payment claims will appear here when an applicant submits one."
-                : "Try clearing the search or changing the sort and payment-state filters."}
+                ? t("initialClaims.emptyDescription")
+                : t("initialClaims.emptyFilteredDescription")}
             </p>
           </div>
         ) : (
-          <ul aria-label="Initial payment claims" className="list-none p-0">
+          <ul aria-label={t("initialClaims.ariaLabel")} className="list-none p-0">
             {claims.map((claim) => (
               <li key={claim.claim_id}>
                 <button
@@ -139,36 +144,42 @@ export function InitialPaymentClaimsList({
                     />
                     <div className="min-w-0">
                       <p className="truncate font-semibold">
-                        {claim.applicant_name || "Unnamed applicant"}
+                        {claim.applicant_name || t("common.unnamedApplicant")}
                       </p>
                       <p className="truncate text-sm text-muted-foreground">
-                        {claim.applicant_handle || "No handle"}
+                        {claim.applicant_handle || t("common.noHandle")}
                       </p>
                     </div>
                   </div>
                   <div className="hidden min-w-0 md:block">
                     <p className="truncate text-sm font-medium">
                       {claim.payer_type === "applicant"
-                        ? "Applicant"
-                        : claim.payer_name || "Other payer"}
+                        ? t("common.applicant")
+                        : claim.payer_name || t("common.otherPayer")}
                     </p>
-                    <p className="text-xs text-muted-foreground">Payer</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("common.payer")}
+                    </p>
                   </div>
                   <div className="hidden md:block">
                     <p className="font-semibold">
-                      {claim.plan_type === "annual" ? "Annual" : "Monthly"}
+                      {claim.plan_type === "annual"
+                        ? t("plans.annual")
+                        : t("plans.monthly")}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {claim.attempt_count} attempt
-                      {claim.attempt_count === 1 ? "" : "s"}
+                      {claim.attempt_count}{" "}
+                      {claim.attempt_count === 1
+                        ? t("initialClaims.attempt")
+                        : t("initialClaims.attempts")}
                     </p>
                   </div>
                   <div className="hidden md:block">
                     <p className="font-semibold tabular-nums">
-                      {formatAmount(claim.amount, claim.currency)}
+                      {formatAmount(claim.amount, claim.currency, locale)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDate(claim.claim_created_at)}
+                      {formatDate(claim.claim_created_at, locale)}
                     </p>
                   </div>
                   <div className="flex items-center justify-end gap-3">

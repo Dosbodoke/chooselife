@@ -40,16 +40,9 @@ export type BillingHistoryEntry = {
   status?: string | null;
 };
 
-const BILLING_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeZone: "America/Sao_Paulo",
-});
-
-const BILLING_DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "America/Sao_Paulo",
-});
+function intlLocale(locale: string) {
+  return locale.toLowerCase().startsWith("pt") ? "pt-BR" : "en-US";
+}
 
 export function jsonArray(
   value: Json | null | undefined,
@@ -57,43 +50,38 @@ export function jsonArray(
   return Array.isArray(value) ? (value as BillingHistoryEntry[]) : [];
 }
 
-export function formatBillingDate(value: string | null | undefined) {
+export function formatBillingDate(
+  value: string | null | undefined,
+  locale = "en-US",
+) {
   if (!value) return "—";
 
-  return BILLING_DATE_FORMATTER.format(new Date(`${value}T00:00:00`));
+  return new Intl.DateTimeFormat(intlLocale(locale), {
+    dateStyle: "medium",
+    timeZone: "America/Sao_Paulo",
+  }).format(new Date(`${value}T00:00:00`));
 }
 
-export function formatBillingDateTime(value: string | null | undefined) {
+export function formatBillingDateTime(
+  value: string | null | undefined,
+  locale = "en-US",
+) {
   if (!value) return "—";
 
-  return BILLING_DATE_TIME_FORMATTER.format(new Date(value));
+  return new Intl.DateTimeFormat(intlLocale(locale), {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "America/Sao_Paulo",
+  }).format(new Date(value));
 }
 
-export function formatBillingAmount(amount: number, currency: string) {
-  return new Intl.NumberFormat("en-US", {
+export function formatBillingAmount(
+  amount: number,
+  currency: string,
+  locale = "en-US",
+) {
+  return new Intl.NumberFormat(intlLocale(locale), {
     style: "currency",
     currency,
   }).format(amount / 100);
-}
-
-export function purposeLabel(
-  purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"],
-) {
-  return purpose === "recurring"
-    ? "Recurring contribution"
-    : "Initial admission";
-}
-
-export function planLabel(
-  plan: Database["public"]["Enums"]["subscription_plan_type_enum"] | null,
-) {
-  if (!plan) return "No active plan";
-  return plan === "annual" ? "Annual" : "Monthly";
-}
-
-export function paymentStateLabel(state: string) {
-  return state
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
 }

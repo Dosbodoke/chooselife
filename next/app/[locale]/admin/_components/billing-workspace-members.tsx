@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -10,8 +11,6 @@ import type { BillingWorkspaceMemberRow } from "@/lib/billing-workspace";
 import {
   formatBillingDate,
   formatBillingDateTime,
-  paymentStateLabel,
-  planLabel,
 } from "@/lib/billing-workspace";
 
 import { ApplicantAvatar } from "../claims/_components/initial-payment-claim-review";
@@ -34,6 +33,21 @@ export default function BillingWorkspaceMembers({
 }: {
   members: BillingWorkspaceMemberRow[];
 }) {
+  const locale = useLocale();
+  const t = useTranslations("admin");
+  const stateLabel = (state: string) => {
+    if (state === "overdue") return t("states.overdue");
+    if (state === "payment_available") return t("states.paymentAvailable");
+    if (state === "under_review") return t("states.underReview");
+    if (state === "up_to_date") return t("states.upToDate");
+    return state;
+  };
+  const planLabel = (plan: BillingWorkspaceMemberRow["plan_type"]) =>
+    !plan
+      ? t("plans.noActivePlan")
+      : plan === "annual"
+        ? t("plans.annual")
+        : t("plans.monthly");
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] = useState<MemberStateFilter>("all");
 
@@ -61,14 +75,14 @@ export default function BillingWorkspaceMembers({
       <CardHeader className="border-b bg-card/80 pb-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <CardTitle>Members</CardTitle>
+            <CardTitle>{t("members.title")}</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
-              Active legal roster with financial standing derived from the billing ledger.
+              {t("members.description")}
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <label className="relative block min-w-0 sm:w-64">
-              <span className="sr-only">Search members</span>
+              <span className="sr-only">{t("members.searchLabel")}</span>
               <Search
                 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                 aria-hidden="true"
@@ -77,12 +91,12 @@ export default function BillingWorkspaceMembers({
                 type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search members"
+                placeholder={t("members.searchPlaceholder")}
                 className="h-11 rounded-xl pl-9"
               />
             </label>
             <label>
-              <span className="sr-only">Filter member financial standing</span>
+              <span className="sr-only">{t("members.stateFilterLabel")}</span>
               <select
                 value={stateFilter}
                 onChange={(event) =>
@@ -90,11 +104,13 @@ export default function BillingWorkspaceMembers({
                 }
                 className="h-11 min-w-44 rounded-xl border border-input bg-background px-3 text-sm shadow-sm outline-none focus:ring-1 focus:ring-ring"
               >
-                <option value="all">All standings</option>
-                <option value="overdue">Overdue</option>
-                <option value="payment_available">Payment available</option>
-                <option value="under_review">Under review</option>
-                <option value="up_to_date">Up to date</option>
+                <option value="all">{t("members.allStandings")}</option>
+                <option value="overdue">{t("states.overdue")}</option>
+                <option value="payment_available">
+                  {t("states.paymentAvailable")}
+                </option>
+                <option value="under_review">{t("states.underReview")}</option>
+                <option value="up_to_date">{t("states.upToDate")}</option>
               </select>
             </label>
           </div>
@@ -104,8 +120,8 @@ export default function BillingWorkspaceMembers({
         {visibleMembers.length === 0 ? (
           <div className="flex min-h-64 items-center justify-center rounded-2xl border border-dashed px-6 text-center text-sm text-muted-foreground">
             {members.length === 0
-              ? "No active members are available for this association."
-              : "No members match these filters."}
+              ? t("members.emptyNoMembers")
+              : t("members.emptyNoMatch")}
           </div>
         ) : (
           <div className="grid gap-3 xl:grid-cols-2">
@@ -124,45 +140,54 @@ export default function BillingWorkspaceMembers({
                     />
                     <div className="min-w-0">
                       <h2 className="truncate font-semibold">
-                        {member.member_name || "Unnamed member"}
+                        {member.member_name || t("common.unnamedMember")}
                       </h2>
                       <p className="truncate text-sm text-muted-foreground">
-                        {member.member_handle || "No handle"} · {member.member_role}
+                        {member.member_handle || t("common.noHandle")} · {member.member_role}
                       </p>
                     </div>
                   </div>
                   <Badge variant={stateVariant(member.financial_standing)}>
-                    {paymentStateLabel(member.financial_standing)}
+                    {stateLabel(member.financial_standing)}
                   </Badge>
                 </div>
 
                 <dl className="mt-5 grid gap-x-4 gap-y-4 text-sm sm:grid-cols-2">
                   <div>
-                    <dt className="text-muted-foreground">Plan</dt>
+                    <dt className="text-muted-foreground">{t("common.plan")}</dt>
                     <dd className="mt-1 font-medium">{planLabel(member.plan_type)}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Overdue obligations</dt>
+                    <dt className="text-muted-foreground">
+                      {t("common.overdueObligations")}
+                    </dt>
                     <dd className="mt-1 font-medium tabular-nums">
                       {member.overdue_count}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Oldest attention</dt>
+                    <dt className="text-muted-foreground">
+                      {t("common.oldestAttention")}
+                    </dt>
                     <dd className="mt-1 font-medium">
-                      {formatBillingDate(member.oldest_attention_due_on)}
+                      {formatBillingDate(member.oldest_attention_due_on, locale)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Next due</dt>
+                    <dt className="text-muted-foreground">{t("common.nextDue")}</dt>
                     <dd className="mt-1 font-medium">
-                      {formatBillingDate(member.next_due_on)}
+                      {formatBillingDate(member.next_due_on, locale)}
                     </dd>
                   </div>
                   <div className="sm:col-span-2">
-                    <dt className="text-muted-foreground">Last verified contribution</dt>
+                    <dt className="text-muted-foreground">
+                      {t("common.lastVerifiedContribution")}
+                    </dt>
                     <dd className="mt-1 font-medium">
-                      {formatBillingDateTime(member.last_verified_contribution_at)}
+                      {formatBillingDateTime(
+                        member.last_verified_contribution_at,
+                        locale,
+                      )}
                     </dd>
                   </div>
                 </dl>

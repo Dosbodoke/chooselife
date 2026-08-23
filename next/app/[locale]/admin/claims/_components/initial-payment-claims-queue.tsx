@@ -1,6 +1,7 @@
 "use client";
 
 import { ShieldCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useMemo, useReducer } from "react";
 
 import {
@@ -152,20 +153,34 @@ function queueReducer(state: QueueState, action: QueueAction): QueueState {
   }
 }
 
-function getRpcErrorMessage(error: { code?: string; message?: string }) {
+type QueueErrorCopy = {
+  concurrent: string;
+  unauthorized: string;
+  checkInformation: string;
+  decisionNotCompleted: string;
+  claimNoLongerAvailable: string;
+  detailsCouldNotLoad: string;
+  tryAgain: string;
+  rejectionReasonRequired: string;
+};
+
+function getRpcErrorMessage(
+  error: { code?: string; message?: string },
+  copy: QueueErrorCopy,
+) {
   if (error.code === "40001") {
-    return "Another reviewer may have acted on this claim. The review stays open while we refresh the authoritative state.";
+    return copy.concurrent;
   }
 
   if (error.code === "42501") {
-    return "You are not authorized to inspect or decide this claim.";
+    return copy.unauthorized;
   }
 
   if (error.code === "22023") {
-    return error.message || "Check the information and try again.";
+    return error.message || copy.checkInformation;
   }
 
-  return "The decision could not be completed. Nothing was changed; try again.";
+  return copy.decisionNotCompleted;
 }
 
 export default function InitialPaymentClaimsQueue({
@@ -174,6 +189,17 @@ export default function InitialPaymentClaimsQueue({
   initialClaims: InitialPaymentClaimQueueRow[];
 }) {
   const router = useRouter();
+  const t = useTranslations("admin");
+  const errorCopy: QueueErrorCopy = {
+    concurrent: t("errors.concurrent"),
+    unauthorized: t("errors.unauthorized"),
+    checkInformation: t("errors.checkInformation"),
+    decisionNotCompleted: t("errors.decisionNotCompleted"),
+    claimNoLongerAvailable: t("errors.claimNoLongerAvailable"),
+    detailsCouldNotLoad: t("errors.detailsCouldNotLoad"),
+    tryAgain: t("errors.tryAgain"),
+    rejectionReasonRequired: t("errors.rejectionReasonRequired"),
+  };
   const [state, dispatch] = useReducer(queueReducer, INITIAL_QUEUE_STATE);
 
   const visibleClaims = useMemo(() => {
@@ -232,7 +258,7 @@ export default function InitialPaymentClaimsQueue({
         dispatch({
           type: "detail_failed",
           claimId,
-          message: getRpcErrorMessage(error),
+          message: getRpcErrorMessage(error, errorCopy),
         });
       } else if (data?.[0]) {
         dispatch({
@@ -246,14 +272,14 @@ export default function InitialPaymentClaimsQueue({
           claimId,
           detail: null,
           message:
-            "This claim is no longer available to your reviewer scope. Refresh the queue.",
+            errorCopy.claimNoLongerAvailable,
         });
       }
     } catch {
       dispatch({
         type: "detail_failed",
         claimId,
-        message: "The claim details could not be loaded. Try again.",
+        message: errorCopy.detailsCouldNotLoad,
       });
     } finally {
       if (showLoading) {
@@ -285,7 +311,7 @@ export default function InitialPaymentClaimsQueue({
       if (error) {
         dispatch({
           type: "action_failed",
-          message: getRpcErrorMessage(error),
+          message: getRpcErrorMessage(error, errorCopy),
         });
         if (error.code === "40001") {
           await loadDetail(claimId, false);
@@ -299,7 +325,7 @@ export default function InitialPaymentClaimsQueue({
     } catch {
       dispatch({
         type: "action_failed",
-        message: "The decision could not be completed. Try again.",
+        message: errorCopy.tryAgain,
       });
     }
   };
@@ -312,7 +338,7 @@ export default function InitialPaymentClaimsQueue({
     if (!normalizedReason) {
       dispatch({
         type: "action_failed",
-        message: "A rejection reason is required.",
+        message: errorCopy.rejectionReasonRequired,
       });
       return;
     }
@@ -328,7 +354,7 @@ export default function InitialPaymentClaimsQueue({
       if (error) {
         dispatch({
           type: "action_failed",
-          message: getRpcErrorMessage(error),
+          message: getRpcErrorMessage(error, errorCopy),
         });
         if (error.code === "40001") {
           await loadDetail(claimId, false);
@@ -342,7 +368,7 @@ export default function InitialPaymentClaimsQueue({
     } catch {
       dispatch({
         type: "action_failed",
-        message: "The decision could not be completed. Try again.",
+        message: errorCopy.tryAgain,
       });
     }
   };
@@ -370,14 +396,13 @@ export default function InitialPaymentClaimsQueue({
           <div>
             <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
               <ShieldCheck className="size-4" aria-hidden="true" />
-              Association administration
+              {t("common.associationAdministration")}
             </div>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight">
-              Initial payment claims
+              {t("initialClaims.title")}
             </h1>
             <p className="mt-3 max-w-2xl text-muted-foreground">
-              Verify a payment and admit one applicant at a time. Every action
-              is checked and committed by the database as one decision.
+              {t("initialClaims.description")}
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-2xl border bg-card px-4 py-3 text-sm shadow-sm">
@@ -386,7 +411,9 @@ export default function InitialPaymentClaimsQueue({
                 {visibleClaims.length}
               </span>
             </span>
-            <span className="text-muted-foreground">visible claims</span>
+            <span className="text-muted-foreground">
+              {t("initialClaims.visibleCount", { count: visibleClaims.length })}
+            </span>
           </div>
         </div>
 
@@ -416,10 +443,9 @@ export default function InitialPaymentClaimsQueue({
         >
           <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden rounded-3xl p-0">
             <DialogHeader className="sr-only">
-              <DialogTitle>Review initial payment claim</DialogTitle>
+              <DialogTitle>{t("initialClaims.title")}</DialogTitle>
               <DialogDescription>
-                Inspect the submitted application revision and decide this
-                payment claim.
+                {t("workspace.reviewDescription")}
               </DialogDescription>
             </DialogHeader>
             {reviewSurface}
@@ -436,10 +462,9 @@ export default function InitialPaymentClaimsQueue({
         >
           <DrawerContent className="max-h-[96vh] overflow-hidden rounded-t-3xl p-0">
             <DrawerHeader className="sr-only">
-              <DrawerTitle>Review initial payment claim</DrawerTitle>
+              <DrawerTitle>{t("initialClaims.title")}</DrawerTitle>
               <DrawerDescription>
-                Inspect the submitted application revision and decide this
-                payment claim.
+                {t("workspace.reviewDescription")}
               </DrawerDescription>
             </DrawerHeader>
             {reviewSurface}

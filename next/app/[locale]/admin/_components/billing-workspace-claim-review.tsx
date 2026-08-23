@@ -10,6 +10,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -21,8 +22,6 @@ import {
   formatBillingDate,
   formatBillingDateTime,
   jsonArray,
-  planLabel,
-  purposeLabel,
 } from "@/lib/billing-workspace";
 
 import type { ReviewAction } from "../claims/_components/initial-payment-claim-review";
@@ -48,6 +47,29 @@ export default function BillingWorkspaceClaimReview({
   rejectionReason: string;
   onRejectionReasonChange: (value: string) => void;
 }) {
+  const locale = useLocale();
+  const t = useTranslations("admin");
+  const stateLabel = (state: string) => {
+    if (state === "under_review") return t("states.awaitingReview");
+    if (state === "approved") return t("states.approved");
+    if (state === "rejected") return t("states.rejected");
+    if (state === "scheduled") return t("states.scheduled");
+    if (state === "available") return t("states.available");
+    if (state === "overdue") return t("states.overdue");
+    if (state === "settled") return t("states.settled");
+    if (state === "void") return t("states.void");
+    return state;
+  };
+  const purposeLabel = (purpose: BillingWorkspaceClaimDetail["purpose"]) =>
+    purpose === "recurring"
+      ? t("purposes.recurringContribution")
+      : t("purposes.initialAdmission");
+  const planLabel = (plan: BillingWorkspaceClaimDetail["plan_type"]) =>
+    !plan
+      ? t("plans.noActivePlan")
+      : plan === "annual"
+        ? t("plans.annual")
+        : t("plans.monthly");
   const claimHistory = jsonArray(detail?.claim_history);
   const auditHistory = jsonArray(detail?.audit_history);
 
@@ -56,10 +78,10 @@ export default function BillingWorkspaceClaimReview({
       <header className="flex items-center justify-between gap-4 border-b px-5 py-5 md:px-7">
         <div className="min-w-0">
           <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Recurring claim review
+            {t("recurringReview.eyebrow")}
           </p>
           <h2 className="mt-1 truncate text-xl font-semibold">
-            {detail?.member_name || "Loading member"}
+            {detail?.member_name || t("common.loadingMember")}
           </h2>
           <p className="truncate text-sm text-muted-foreground">
             {detail?.member_handle || detail?.organization_name || ""}
@@ -71,7 +93,7 @@ export default function BillingWorkspaceClaimReview({
           size="icon"
           onClick={onClose}
           disabled={action !== null}
-          aria-label="Close review"
+          aria-label={t("common.closeReview")}
           className="shrink-0 rounded-xl"
         >
           <X className="size-5" aria-hidden="true" />
@@ -83,16 +105,16 @@ export default function BillingWorkspaceClaimReview({
           <div className="flex min-h-72 items-center justify-center">
             <Loader2
               className="size-7 animate-spin text-muted-foreground"
-              aria-label="Loading claim details"
+              aria-label={t("common.loadingClaimDetails")}
             />
           </div>
         ) : !detail ? (
           <div className="flex min-h-72 items-center justify-center">
             <Alert variant="destructive" className="max-w-lg">
               <AlertTriangle className="size-4" aria-hidden="true" />
-              <AlertTitle>Review unavailable</AlertTitle>
+              <AlertTitle>{t("recurringReview.reviewUnavailableTitle")}</AlertTitle>
               <AlertDescription>
-                {actionError || "Refresh the workspace and try again."}
+                {actionError || t("recurringReview.refreshWorkspace")}
               </AlertDescription>
             </Alert>
           </div>
@@ -102,8 +124,8 @@ export default function BillingWorkspaceClaimReview({
               <Badge variant="outline">
                 <Clock3 className="mr-1.5 size-3.5" aria-hidden="true" />
                 {detail.claim_status === "under_review"
-                  ? "Awaiting review"
-                  : detail.claim_status}
+                  ? t("states.awaitingReview")
+                  : stateLabel(detail.claim_status)}
               </Badge>
               <Badge variant="secondary">{purposeLabel(detail.purpose)}</Badge>
               <Badge variant="secondary">{detail.organization_name}</Badge>
@@ -112,62 +134,65 @@ export default function BillingWorkspaceClaimReview({
             {actionError ? (
               <Alert variant="destructive" aria-live="assertive">
                 <AlertTriangle className="size-4" aria-hidden="true" />
-                <AlertTitle>Decision not completed</AlertTitle>
+              <AlertTitle>
+                {t("recurringReview.decisionNotCompletedTitle")}
+              </AlertTitle>
                 <AlertDescription>{actionError}</AlertDescription>
               </Alert>
             ) : null}
 
             <div className="grid gap-3 sm:grid-cols-3">
               <SummaryCard
-                label="Contribution"
-                value={formatBillingAmount(detail.amount, detail.currency)}
+                label={t("common.contribution")}
+                value={formatBillingAmount(detail.amount, detail.currency, locale)}
               />
-              <SummaryCard label="Plan" value={planLabel(detail.plan_type)} />
-              <SummaryCard label="Submitted" value={formatBillingDateTime(detail.claim_created_at)} />
+              <SummaryCard label={t("common.plan")} value={planLabel(detail.plan_type)} />
+              <SummaryCard
+                label={t("common.submitted")}
+                value={formatBillingDateTime(detail.claim_created_at, locale)}
+              />
             </div>
 
             <section aria-labelledby="recurring-obligation-title">
               <SectionHeading
                 id="recurring-obligation-title"
                 icon={<CalendarDays className="size-4" aria-hidden="true" />}
-                title="Recurring obligation"
+                title={t("recurringReview.obligation")}
               />
               <div className="mt-3 grid gap-x-6 gap-y-4 rounded-2xl border bg-muted/20 p-4 sm:grid-cols-2">
-                <DetailField label="Period">{detail.period_key}</DetailField>
-                <DetailField label="Payer">
+                <DetailField label={t("common.period")}>{detail.period_key}</DetailField>
+                <DetailField label={t("common.payer")}>
                   {detail.payer_type === "applicant"
-                    ? "Member"
-                    : detail.payer_name || "Other payer"}
+                    ? t("common.member")
+                    : detail.payer_name || t("common.otherPayer")}
                 </DetailField>
-                <DetailField label="Period start">
-                  {formatBillingDate(detail.period_start)}
+                <DetailField label={t("recurringReview.periodStart")}>
+                  {formatBillingDate(detail.period_start, locale)}
                 </DetailField>
-                <DetailField label="Period end">
-                  {formatBillingDate(detail.period_end)}
+                <DetailField label={t("recurringReview.periodEnd")}>
+                  {formatBillingDate(detail.period_end, locale)}
                 </DetailField>
-                <DetailField label="Available on">
-                  {formatBillingDate(detail.available_on)}
+                <DetailField label={t("recurringReview.availableOn")}>
+                  {formatBillingDate(detail.available_on, locale)}
                 </DetailField>
-                <DetailField label="Due on">
-                  {formatBillingDate(detail.due_on)}
+                <DetailField label={t("recurringReview.dueOn")}>
+                  {formatBillingDate(detail.due_on, locale)}
                 </DetailField>
-                <DetailField label="Claim attempts">
+                <DetailField label={t("common.claimAttempts")}>
                   {detail.attempt_count}
                 </DetailField>
-                <DetailField label="Claim submitted">
-                  {formatBillingDateTime(detail.claim_created_at)}
+                <DetailField label={t("common.claimSubmitted")}>
+                  {formatBillingDateTime(detail.claim_created_at, locale)}
                 </DetailField>
               </div>
             </section>
 
             <section aria-labelledby="recurring-safety-title" className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
               <h3 id="recurring-safety-title" className="font-semibold">
-                Decision scope
+                {t("recurringReview.decisionScope")}
               </h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Approval settles this one obligation and records the reviewer.
-                It never changes legal membership, role, schedule anchors, due
-                dates, plan assignments, or any other obligation.
+                {t("recurringReview.decisionScopeDescription")}
               </p>
             </section>
 
@@ -176,18 +201,20 @@ export default function BillingWorkspaceClaimReview({
                 <SectionHeading
                   id="recurring-history-title"
                   icon={<CalendarDays className="size-4" aria-hidden="true" />}
-                  title="Immutable history"
+                  title={t("recurringReview.immutableHistory")}
                 />
                 <div className="mt-3 grid gap-3 rounded-2xl border bg-muted/20 p-4 lg:grid-cols-2">
-                  <HistoryColumn title="Claim states">
+                  <HistoryColumn title={t("recurringReview.claimStates")}>
                     {claimHistory.map((history) => (
                       <div
                         key={String(history.claim_id)}
                         className="flex flex-wrap items-center justify-between gap-2 text-sm"
                       >
-                        <span className="font-medium">{String(history.status)}</span>
+                          <span className="font-medium">
+                            {stateLabel(String(history.status))}
+                          </span>
                         <span className="text-muted-foreground">
-                          {formatBillingDateTime(history.created_at)}
+                          {formatBillingDateTime(history.created_at, locale)}
                           {history.decision_reason
                             ? ` · ${String(history.decision_reason)}`
                             : ""}
@@ -195,18 +222,19 @@ export default function BillingWorkspaceClaimReview({
                       </div>
                     ))}
                   </HistoryColumn>
-                  <HistoryColumn title="Audit events">
+                  <HistoryColumn title={t("recurringReview.auditEvents")}>
                     {auditHistory.map((history) => (
                       <div
                         key={String(history.id)}
                         className="flex flex-wrap items-center justify-between gap-2 text-sm"
                       >
                         <span className="font-medium">
-                          {String(history.previous_state)} → {String(history.next_state)}
+                          {stateLabel(String(history.previous_state))} →{" "}
+                          {stateLabel(String(history.next_state))}
                         </span>
                         <span className="text-muted-foreground">
                           {history.actor_name ? `${String(history.actor_name)} · ` : ""}
-                          {formatBillingDateTime(history.created_at)}
+                          {formatBillingDateTime(history.created_at, locale)}
                           {history.reason ? ` · ${String(history.reason)}` : ""}
                         </span>
                       </div>
@@ -235,15 +263,16 @@ export default function BillingWorkspaceClaimReview({
                 />
               )}
               <p>
-                This claim is {detail.claim_status}. Its obligation and full
-                chronology remain authoritative.
+                {t("recurringReview.resolvedMessage", {
+                  status: stateLabel(detail.claim_status),
+                })}
               </p>
             </div>
           </div>
         ) : (
           <div className="border-t bg-card px-5 py-4 md:px-7">
             <label htmlFor="recurring-rejection-reason" className="text-sm font-medium">
-              Rejection reason
+              {t("recurringReview.rejectionReason")}
               <span className="ml-1 text-destructive" aria-hidden="true">
                 *
               </span>
@@ -253,7 +282,7 @@ export default function BillingWorkspaceClaimReview({
               value={rejectionReason}
               onChange={(event) => onRejectionReasonChange(event.target.value)}
               maxLength={500}
-              placeholder="Explain what needs to be corrected."
+              placeholder={t("recurringReview.rejectionPlaceholder")}
               className="mt-2 min-h-20 rounded-xl"
               disabled={action !== null}
             />
@@ -270,7 +299,7 @@ export default function BillingWorkspaceClaimReview({
                 ) : (
                   <XCircle className="mr-2 size-4" aria-hidden="true" />
                 )}
-                Reject recurring claim
+                {t("recurringReview.rejectClaim")}
               </Button>
               <Button
                 type="button"
@@ -283,7 +312,7 @@ export default function BillingWorkspaceClaimReview({
                 ) : (
                   <Check className="mr-2 size-4" aria-hidden="true" />
                 )}
-                Approve recurring contribution
+                {t("recurringReview.approveContribution")}
               </Button>
             </div>
           </div>

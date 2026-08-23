@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle2, ChevronRight, Search, ShieldCheck } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -20,8 +21,6 @@ import {
   formatBillingAmount,
   formatBillingDate,
   formatBillingDateTime,
-  planLabel,
-  purposeLabel,
 } from "@/lib/billing-workspace";
 
 import { ApplicantAvatar } from "../claims/_components/initial-payment-claim-review";
@@ -29,12 +28,6 @@ import { ApplicantAvatar } from "../claims/_components/initial-payment-claim-rev
 type QueueStatusFilter = "all" | "under_review" | "approved" | "rejected";
 type QueuePurposeFilter = "all" | BillingWorkspaceQueueRow["purpose"];
 type QueueSort = "oldest" | "newest" | "amount" | "member";
-
-function statusLabel(status: QueueStatusFilter) {
-  if (status === "all") return "All claim states";
-  if (status === "under_review") return "Awaiting review";
-  return status.charAt(0).toUpperCase() + status.slice(1);
-}
 
 function statusVariant(status: BillingWorkspaceQueueRow["claim_status"]) {
   if (status === "under_review") return "default" as const;
@@ -47,7 +40,15 @@ function ClaimStatusBadge({
 }: {
   status: BillingWorkspaceQueueRow["claim_status"];
 }) {
-  return <Badge variant={statusVariant(status)}>{statusLabel(status)}</Badge>;
+  const t = useTranslations("admin");
+  const label =
+    status === "under_review"
+      ? t("states.awaitingReview")
+      : status === "approved"
+        ? t("states.approved")
+        : t("states.rejected");
+
+  return <Badge variant={statusVariant(status)}>{label}</Badge>;
 }
 
 export default function BillingWorkspaceQueue({
@@ -57,6 +58,23 @@ export default function BillingWorkspaceQueue({
   claims: BillingWorkspaceQueueRow[];
   onOpenClaim: (claim: BillingWorkspaceQueueRow) => void;
 }) {
+  const locale = useLocale();
+  const t = useTranslations("admin");
+  const statusLabel = (status: QueueStatusFilter) => {
+    if (status === "all") return t("states.allClaims");
+    if (status === "under_review") return t("states.awaitingReview");
+    return status === "approved" ? t("states.approved") : t("states.rejected");
+  };
+  const purposeLabel = (purpose: QueuePurposeFilter) =>
+    purpose === "recurring"
+      ? t("purposes.recurringContribution")
+      : t("purposes.initialAdmission");
+  const planLabel = (plan: BillingWorkspaceQueueRow["plan_type"]) =>
+    !plan
+      ? t("plans.noActivePlan")
+      : plan === "annual"
+        ? t("plans.annual")
+        : t("plans.monthly");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<QueueStatusFilter>(
     "under_review",
@@ -111,16 +129,14 @@ export default function BillingWorkspaceQueue({
       <CardHeader className="border-b bg-card/80 pb-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <CardTitle>Review queue</CardTitle>
+            <CardTitle>{t("queue.title")}</CardTitle>
             <CardDescription className="mt-1">
-              Initial and recurring claims from this association. Terminal
-              history stays available in the filter; only under-review claims
-              expose a decision action.
+              {t("queue.description")}
             </CardDescription>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <label className="relative block min-w-0 sm:w-64">
-              <span className="sr-only">Search claims</span>
+              <span className="sr-only">{t("queue.searchLabel")}</span>
               <Search
                 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                 aria-hidden="true"
@@ -129,12 +145,12 @@ export default function BillingWorkspaceQueue({
                 type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search member or payer"
+                placeholder={t("queue.searchPlaceholder")}
                 className="h-11 rounded-xl pl-9"
               />
             </label>
             <label>
-              <span className="sr-only">Filter claim state</span>
+              <span className="sr-only">{t("queue.stateFilterLabel")}</span>
               <select
                 value={statusFilter}
                 onChange={(event) =>
@@ -149,7 +165,7 @@ export default function BillingWorkspaceQueue({
               </select>
             </label>
             <label>
-              <span className="sr-only">Filter claim purpose</span>
+              <span className="sr-only">{t("queue.purposeFilterLabel")}</span>
               <select
                 value={purposeFilter}
                 onChange={(event) =>
@@ -157,22 +173,26 @@ export default function BillingWorkspaceQueue({
                 }
                 className="h-11 min-w-44 rounded-xl border border-input bg-background px-3 text-sm shadow-sm outline-none focus:ring-1 focus:ring-ring"
               >
-                <option value="all">All purposes</option>
-                <option value="initial_admission">Initial admission</option>
-                <option value="recurring">Recurring contribution</option>
+                <option value="all">{t("purposes.all")}</option>
+                <option value="initial_admission">
+                  {t("purposes.initialAdmission")}
+                </option>
+                <option value="recurring">
+                  {t("purposes.recurringContribution")}
+                </option>
               </select>
             </label>
             <label>
-              <span className="sr-only">Sort claims</span>
+              <span className="sr-only">{t("queue.sortLabel")}</span>
               <select
                 value={sort}
                 onChange={(event) => setSort(event.target.value as QueueSort)}
                 className="h-11 min-w-36 rounded-xl border border-input bg-background px-3 text-sm shadow-sm outline-none focus:ring-1 focus:ring-ring"
               >
-                <option value="oldest">Oldest first</option>
-                <option value="newest">Newest first</option>
-                <option value="amount">Highest amount</option>
-                <option value="member">Member name</option>
+                <option value="oldest">{t("queue.sortOldest")}</option>
+                <option value="newest">{t("queue.sortNewest")}</option>
+                <option value="amount">{t("queue.sortAmount")}</option>
+                <option value="member">{t("queue.sortMember")}</option>
               </select>
             </label>
           </div>
@@ -186,16 +206,18 @@ export default function BillingWorkspaceQueue({
               <CheckCircle2 className="size-7" aria-hidden="true" />
             </span>
             <h2 className="mt-5 text-xl font-semibold">
-              {claims.length === 0 ? "The queue is clear" : "No claims match these filters"}
+              {claims.length === 0
+                ? t("queue.clearTitle")
+                : t("queue.noMatchTitle")}
             </h2>
             <p className="mt-2 max-w-md text-sm text-muted-foreground">
               {claims.length === 0
-                ? "New member claims will appear here when an association member submits one."
-                : "Try clearing the search or changing the claim state and purpose filters."}
+                ? t("queue.clearDescription")
+                : t("queue.noMatchDescription")}
             </p>
           </div>
         ) : (
-          <ul aria-label="Billing claim queue" className="list-none p-0">
+          <ul aria-label={t("queue.ariaLabel")} className="list-none p-0">
             {visibleClaims.map((claim) => (
               <li key={claim.claim_id}>
                 <button
@@ -212,10 +234,10 @@ export default function BillingWorkspaceQueue({
                     />
                     <div className="min-w-0">
                       <p className="truncate font-semibold">
-                        {claim.member_name || "Unnamed member"}
+                        {claim.member_name || t("common.unnamedMember")}
                       </p>
                       <p className="truncate text-sm text-muted-foreground">
-                        {claim.member_handle || "No handle"}
+                        {claim.member_handle || t("common.noHandle")}
                       </p>
                     </div>
                   </div>
@@ -229,20 +251,21 @@ export default function BillingWorkspaceQueue({
                   </div>
                   <div className="hidden md:block">
                     <p className="font-semibold tabular-nums">
-                      {formatBillingAmount(claim.amount, claim.currency)}
+                      {formatBillingAmount(claim.amount, claim.currency, locale)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {formatBillingDate(claim.due_on)} due
+                      {formatBillingDate(claim.due_on, locale)}{" "}
+                      {t("queue.dueLabel")}
                     </p>
                   </div>
                   <div className="hidden md:block">
                     <p className="text-sm font-medium">
                       {claim.payer_type === "applicant"
-                        ? "Member"
-                        : claim.payer_name || "Other payer"}
+                        ? t("common.member")
+                        : claim.payer_name || t("common.otherPayer")}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {formatBillingDateTime(claim.claim_created_at)}
+                      {formatBillingDateTime(claim.claim_created_at, locale)}
                     </p>
                   </div>
                   <div className="flex items-center justify-end gap-3">
@@ -269,23 +292,22 @@ export function WorkspaceHeading({
   view: BillingWorkspaceView;
   organizationName: string;
 }) {
-  const copy = {
-    queue: {
-      title: "Review payments one at a time",
-      description:
-        "Keep each payment decision tied to one immutable obligation and its complete claim history.",
-    },
-    payments: {
-      title: "Payment history",
-      description:
-        "See the obligation, period, claim, decision, actor, and audit chronology for this association.",
-    },
-    members: {
-      title: "Member financial standing",
-      description:
-        "Legal membership stays active while financial standing is derived from each obligation.",
-    },
-  }[view];
+  const t = useTranslations("admin");
+  const copy =
+    view === "queue"
+      ? {
+          title: t("heading.queueTitle"),
+          description: t("heading.queueDescription"),
+        }
+      : view === "payments"
+        ? {
+            title: t("heading.paymentsTitle"),
+            description: t("heading.paymentsDescription"),
+          }
+        : {
+            title: t("heading.membersTitle"),
+            description: t("heading.membersDescription"),
+          };
 
   return (
     <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">

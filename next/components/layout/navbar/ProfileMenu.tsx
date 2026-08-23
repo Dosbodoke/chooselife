@@ -1,8 +1,8 @@
 "use client";
 
 import { AvatarIcon, ExitIcon } from "@radix-ui/react-icons";
-import { ShieldCheck } from "lucide-react";
 import { User } from "@supabase/supabase-js";
+import { ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,7 @@ export default function ProfileMenu({ user }: { user: User }) {
           <DropdownMenuItem asChild>
             <Link href="/admin">
               <ShieldCheck className="mr-2 size-4" aria-hidden="true" />
-              Billing workspace
+              {t("billingWorkspace")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={signOut}>

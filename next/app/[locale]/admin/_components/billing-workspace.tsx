@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { useRouter } from "@/i18n/navigation";
@@ -44,20 +45,29 @@ type DecisionVariables = {
 
 const supabase = supabaseBrowser();
 
-function getRpcErrorMessage(error: RpcError) {
+type WorkspaceErrorCopy = {
+  concurrent: string;
+  unauthorized: string;
+  checkInformation: string;
+  decisionNotCompleted: string;
+  claimNoLongerActionable: string;
+  rejectionReasonRequired: string;
+};
+
+function getRpcErrorMessage(error: RpcError, copy: WorkspaceErrorCopy) {
   if (error.code === "40001") {
-    return "Another reviewer may have acted on this claim. The review stays open while we refresh the authoritative state.";
+    return copy.concurrent;
   }
 
   if (error.code === "42501") {
-    return "You are not authorized to inspect or decide this claim.";
+    return copy.unauthorized;
   }
 
   if (error.code === "22023") {
-    return error.message || "Check the information and try again.";
+    return error.message || copy.checkInformation;
   }
 
-  return "The decision could not be completed. Nothing was changed; try again.";
+  return copy.decisionNotCompleted;
 }
 
 async function fetchWorkspaceData(
@@ -96,6 +106,15 @@ export default function BillingWorkspace({
   organizations: BillingWorkspaceOrganization[];
 }) {
   const router = useRouter();
+  const t = useTranslations("admin");
+  const errorCopy: WorkspaceErrorCopy = {
+    concurrent: t("errors.concurrent"),
+    unauthorized: t("errors.unauthorized"),
+    checkInformation: t("errors.checkInformation"),
+    decisionNotCompleted: t("errors.decisionNotCompleted"),
+    claimNoLongerActionable: t("errors.claimNoLongerActionable"),
+    rejectionReasonRequired: t("errors.rejectionReasonRequired"),
+  };
   const queryClient = useQueryClient();
   const [organizationId, setOrganizationId] = useState(
     organizations[0]?.organization_id ?? "",
@@ -151,7 +170,7 @@ export default function BillingWorkspace({
         throw {
           code: "40001",
           message:
-            "This claim is no longer actionable. Refresh before deciding.",
+            errorCopy.claimNoLongerActionable,
         } satisfies RpcError;
       }
 
@@ -171,7 +190,7 @@ export default function BillingWorkspace({
       if (!normalizedReason) {
         throw {
           code: "22023",
-          message: "A rejection reason is required.",
+          message: errorCopy.rejectionReasonRequired,
         } satisfies RpcError;
       }
 
@@ -199,7 +218,7 @@ export default function BillingWorkspace({
       router.refresh();
     },
     onError: async (error, variables) => {
-      setActionError(getRpcErrorMessage(error));
+      setActionError(getRpcErrorMessage(error, errorCopy));
       if (error.code === "40001") {
         await queryClient.invalidateQueries({
           queryKey: ["billing-workspace", activeOrganizationId],
@@ -270,7 +289,9 @@ export default function BillingWorkspace({
         }
         actionError={
           actionError ||
-          (detailQuery.error ? getRpcErrorMessage(detailQuery.error) : null)
+          (detailQuery.error
+            ? getRpcErrorMessage(detailQuery.error, errorCopy)
+            : null)
         }
         detail={
           detailQuery.data?.kind === "initial" ? detailQuery.data.detail : null
@@ -291,7 +312,9 @@ export default function BillingWorkspace({
         }
         actionError={
           actionError ||
-          (detailQuery.error ? getRpcErrorMessage(detailQuery.error) : null)
+          (detailQuery.error
+            ? getRpcErrorMessage(detailQuery.error, errorCopy)
+            : null)
         }
         detail={
           detailQuery.data?.kind === "recurring"
@@ -318,7 +341,9 @@ export default function BillingWorkspace({
       workspaceIsPending={workspaceQuery.isPending}
       workspaceIsFetching={workspaceQuery.isFetching}
       workspaceErrorMessage={
-        workspaceQuery.error ? getRpcErrorMessage(workspaceQuery.error) : null
+        workspaceQuery.error
+          ? getRpcErrorMessage(workspaceQuery.error, errorCopy)
+          : null
       }
       workspaceHasLoadedQueue={Boolean(workspaceQuery.data) && queue.length > 0}
       reviewOpen={selectedClaim !== null}

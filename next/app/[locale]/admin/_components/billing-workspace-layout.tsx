@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -73,6 +74,7 @@ export default function BillingWorkspaceLayout({
   onOpenClaim,
   onCloseReview,
 }: BillingWorkspaceLayoutProps) {
+  const t = useTranslations("admin");
   const selectedOrganization =
     organizations.find(
       (organization) => organization.organization_id === activeOrganizationId,
@@ -83,14 +85,13 @@ export default function BillingWorkspaceLayout({
       <section className="mx-auto flex min-h-[60vh] max-w-3xl items-center px-4 py-12 md:px-6">
         <div className="w-full rounded-3xl border bg-card p-8 shadow-sm">
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Association administration
+            {t("common.associationAdministration")}
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight">
-            No billing workspace access
+            {t("workspace.noAccessTitle")}
           </h1>
           <p className="mt-3 text-muted-foreground">
-            An authorized association admin can review payment claims and member
-            financial standing here.
+            {t("workspace.noAccessDescription")}
           </p>
         </div>
       </section>
@@ -103,7 +104,7 @@ export default function BillingWorkspaceLayout({
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <label className="flex items-center gap-3">
             <span className="text-sm font-medium text-muted-foreground">
-              Association
+              {t("common.association")}
             </span>
             <select
               value={activeOrganizationId}
@@ -123,10 +124,14 @@ export default function BillingWorkspaceLayout({
           <div className="flex items-center gap-3">
             <Badge variant="outline">
               {view === "queue"
-                ? `${queue.filter((claim) => claim.claim_status === "under_review").length} awaiting review`
+                ? t("workspace.awaitingReviewCount", {
+                    count: queue.filter(
+                      (claim) => claim.claim_status === "under_review",
+                    ).length,
+                  })
                 : view === "payments"
-                  ? `${payments.length} obligations`
-                  : `${members.length} active members`}
+                  ? t("workspace.obligationsCount", { count: payments.length })
+                  : t("workspace.activeMembersCount", { count: members.length })}
             </Badge>
             <Button
               type="button"
@@ -134,7 +139,7 @@ export default function BillingWorkspaceLayout({
               size="icon"
               onClick={onRefresh}
               disabled={workspaceIsFetching}
-              aria-label="Refresh workspace"
+              aria-label={t("workspace.refreshLabel")}
             >
               <RefreshCw
                 className={
@@ -149,13 +154,13 @@ export default function BillingWorkspaceLayout({
         <div
           className="mb-6 flex flex-wrap gap-2 rounded-2xl border bg-card p-2"
           role="tablist"
-          aria-label="Billing workspace views"
+          aria-label={t("workspace.viewsLabel")}
         >
           {(
             [
-              ["queue", "Queue"],
-              ["payments", "Payments"],
-              ["members", "Members"],
+              ["queue", t("workspace.queueTab")],
+              ["payments", t("workspace.paymentsTab")],
+              ["members", t("workspace.membersTab")],
             ] as const
           ).map(([value, label]) => (
             <button
@@ -178,7 +183,7 @@ export default function BillingWorkspaceLayout({
         <WorkspaceHeading
           view={view}
           organizationName={
-            selectedOrganization?.organization_name ?? "Association"
+            selectedOrganization?.organization_name ?? t("workspace.defaultAssociation")
           }
         />
 
@@ -186,15 +191,15 @@ export default function BillingWorkspaceLayout({
           <div className="mt-8 flex min-h-72 items-center justify-center rounded-3xl border bg-card">
             <Loader2
               className="size-7 animate-spin text-muted-foreground"
-              aria-label="Loading workspace"
+              aria-label={t("workspace.loadingLabel")}
             />
           </div>
         ) : workspaceErrorMessage ? (
           <Alert variant="destructive" className="mt-8">
             <AlertTriangle className="size-4" aria-hidden="true" />
-            <AlertTitle>Workspace unavailable</AlertTitle>
+            <AlertTitle>{t("workspace.unavailableTitle")}</AlertTitle>
             <AlertDescription>
-              {workspaceErrorMessage} Try refreshing the workspace.
+              {workspaceErrorMessage} {t("workspace.tryRefreshing")}
             </AlertDescription>
           </Alert>
         ) : (
@@ -229,9 +234,9 @@ export default function BillingWorkspaceLayout({
         >
           <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden rounded-3xl p-0">
             <DialogHeader className="sr-only">
-              <DialogTitle>Review payment claim</DialogTitle>
+              <DialogTitle>{t("workspace.reviewTitle")}</DialogTitle>
               <DialogDescription>
-                Inspect the authoritative obligation and decide this claim.
+                {t("workspace.reviewDescription")}
               </DialogDescription>
             </DialogHeader>
             {reviewSurface}
@@ -248,9 +253,9 @@ export default function BillingWorkspaceLayout({
         >
           <DrawerContent className="max-h-[96vh] overflow-hidden rounded-t-3xl p-0">
             <DrawerHeader className="sr-only">
-              <DrawerTitle>Review payment claim</DrawerTitle>
+              <DrawerTitle>{t("workspace.reviewTitle")}</DrawerTitle>
               <DrawerDescription>
-                Inspect the authoritative obligation and decide this claim.
+                {t("workspace.reviewDescription")}
               </DrawerDescription>
             </DrawerHeader>
             {reviewSurface}
@@ -261,7 +266,7 @@ export default function BillingWorkspaceLayout({
       {workspaceHasLoadedQueue ? (
         <div className="sr-only" aria-live="polite">
           <CheckCircle2 aria-hidden="true" />
-          Workspace loaded with {queue.length} claims.
+          {t("workspace.loadedAnnouncement", { count: queue.length })}
         </div>
       ) : null}
     </section>

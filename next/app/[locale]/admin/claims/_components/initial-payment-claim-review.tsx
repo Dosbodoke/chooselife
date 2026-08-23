@@ -1,4 +1,5 @@
-import Image from "next/image";
+"use client";
+
 import {
   AlertTriangle,
   CalendarDays,
@@ -11,6 +12,8 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+import Image from "next/image";
+import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -25,7 +28,7 @@ import type {
 import { formatAmount, formatDate } from "./initial-payment-claim-formatters";
 
 function getInitials(name: string | null, handle: string | null) {
-  const source = name?.trim() || handle?.replace(/^@/, "") || "Applicant";
+  const source = name?.trim() || handle?.replace(/^@/, "") || "A";
   const initials = source
     .split(/\s+/)
     .slice(0, 2)
@@ -50,13 +53,21 @@ export function QueueStatusBadge({
 }: {
   status: InitialPaymentClaimQueueRow["claim_status"];
 }) {
+  const t = useTranslations("admin");
+  const statusLabel =
+    status === "under_review"
+      ? t("states.awaitingReview")
+      : status === "approved"
+        ? t("states.approved")
+        : t("states.rejected");
+
   return (
     <Badge
       variant="outline"
       className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
     >
       <Clock3 className="mr-1.5 size-3.5" aria-hidden="true" />
-      {status === "under_review" ? "Awaiting review" : status}
+      {statusLabel}
     </Badge>
   );
 }
@@ -146,6 +157,8 @@ function ReviewHeader({
   detail: InitialPaymentClaimDetail | null;
   onClose: () => void;
 }) {
+  const t = useTranslations("admin");
+
   return (
     <div className="flex items-start justify-between gap-4 border-b px-5 py-5 md:px-7">
       <div className="flex min-w-0 items-center gap-3">
@@ -165,10 +178,10 @@ function ReviewHeader({
         )}
         <div className="min-w-0">
           <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Initial claim review
+            {t("initialReview.eyebrow")}
           </p>
           <h2 className="mt-1 truncate text-xl font-semibold">
-            {detail?.applicant_name || "Loading applicant"}
+            {detail?.applicant_name || t("common.loadingApplicant")}
           </h2>
           <p className="truncate text-sm text-muted-foreground">
             {detail?.applicant_handle || detail?.organization_name || ""}
@@ -181,7 +194,7 @@ function ReviewHeader({
         size="icon"
         onClick={onClose}
         disabled={action !== null}
-        aria-label="Close review"
+        aria-label={t("common.closeReview")}
         className="shrink-0 rounded-xl"
       >
         <X className="size-5" aria-hidden="true" />
@@ -199,6 +212,8 @@ function ReviewDetails({
   detail: InitialPaymentClaimDetail | null;
   detailLoading: boolean;
 }) {
+  const locale = useLocale();
+  const t = useTranslations("admin");
   const claimHistory = getHistory(detail?.claim_history);
   const auditHistory = getHistory(detail?.audit_history);
 
@@ -208,16 +223,16 @@ function ReviewDetails({
         <div className="flex min-h-72 items-center justify-center">
           <Loader2
             className="size-7 animate-spin text-muted-foreground"
-            aria-label="Loading claim details"
+            aria-label={t("common.loadingClaimDetails")}
           />
         </div>
       ) : !detail ? (
         <div className="flex min-h-72 items-center justify-center">
           <Alert variant="destructive" className="max-w-lg">
             <AlertTriangle className="size-4" aria-hidden="true" />
-            <AlertTitle>Review unavailable</AlertTitle>
+            <AlertTitle>{t("initialReview.reviewUnavailableTitle")}</AlertTitle>
             <AlertDescription>
-              {actionError || "Refresh the queue and try again."}
+              {actionError || t("initialReview.refreshQueue")}
             </AlertDescription>
           </Alert>
         </div>
@@ -225,30 +240,38 @@ function ReviewDetails({
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-2">
             <QueueStatusBadge status={detail.claim_status} />
-            <Badge variant="secondary">Revision {detail.revision_number}</Badge>
+            <Badge variant="secondary">
+              {t("common.revision", { number: detail.revision_number })}
+            </Badge>
             <Badge variant="secondary">{detail.organization_name}</Badge>
           </div>
 
           {actionError ? (
             <Alert variant="destructive" aria-live="assertive">
               <AlertTriangle className="size-4" aria-hidden="true" />
-              <AlertTitle>Decision not completed</AlertTitle>
+              <AlertTitle>
+                {t("initialReview.decisionNotCompletedTitle")}
+              </AlertTitle>
               <AlertDescription>{actionError}</AlertDescription>
             </Alert>
           ) : null}
 
           <div className="grid gap-3 sm:grid-cols-3">
             <SummaryCard
-              label="Claim amount"
-              value={formatAmount(detail.amount, detail.currency)}
+              label={t("common.claimAmount")}
+              value={formatAmount(detail.amount, detail.currency, locale)}
             />
             <SummaryCard
-              label="Plan"
-              value={detail.plan_type === "annual" ? "Annual" : "Monthly"}
+              label={t("common.plan")}
+              value={
+                detail.plan_type === "annual"
+                  ? t("plans.annual")
+                  : t("plans.monthly")
+              }
             />
             <SummaryCard
-              label="Submitted"
-              value={formatDate(detail.claim_created_at)}
+              label={t("common.submitted")}
+              value={formatDate(detail.claim_created_at, locale)}
             />
           </div>
 
@@ -256,21 +279,21 @@ function ReviewDetails({
             <SectionHeading
               id="payment-evidence-title"
               icon={<CheckCircle2 className="size-4" aria-hidden="true" />}
-              title="Payment evidence"
+              title={t("initialReview.paymentEvidence")}
             />
             <div className="mt-3 grid gap-x-6 gap-y-4 rounded-2xl border bg-muted/20 p-4 sm:grid-cols-2">
-              <DetailField label="Payer">
+              <DetailField label={t("common.payer")}>
                 {detail.payer_type === "applicant"
-                  ? "Applicant"
-                  : detail.payer_name || "Other payer"}
+                  ? t("common.applicant")
+                  : detail.payer_name || t("common.otherPayer")}
               </DetailField>
-              <DetailField label="Claim attempts">
+              <DetailField label={t("common.claimAttempts")}>
                 {detail.attempt_count}
               </DetailField>
-              <DetailField label="Claim created">
-                {formatDate(detail.claim_created_at)}
+              <DetailField label={t("common.claimCreated")}>
+                {formatDate(detail.claim_created_at, locale)}
               </DetailField>
-              <DetailField label="Terms version">
+              <DetailField label={t("common.termsVersion")}>
                 {detail.terms_version}
               </DetailField>
             </div>
@@ -295,56 +318,58 @@ function ApplicationRevision({
 }: {
   detail: InitialPaymentClaimDetail;
 }) {
+  const t = useTranslations("admin");
+
   return (
     <section aria-labelledby="application-title">
       <SectionHeading
         id="application-title"
         icon={<FileText className="size-4" aria-hidden="true" />}
-        title="Submitted application revision"
+        title={t("initialReview.applicationRevision")}
       />
       <div className="mt-3 grid gap-x-6 gap-y-4 rounded-2xl border bg-muted/20 p-4 sm:grid-cols-2">
-        <DetailField label="Full name">{detail.full_name}</DetailField>
-        <DetailField label="Handle">{detail.applicant_handle}</DetailField>
-        <DetailField label="Birth date">{detail.birth_date}</DetailField>
-        <DetailField label="Nationality">{detail.nationality}</DetailField>
-        <DetailField label="Marital status">
+        <DetailField label={t("initialReview.fullName")}>{detail.full_name}</DetailField>
+        <DetailField label={t("initialReview.handle")}>{detail.applicant_handle}</DetailField>
+        <DetailField label={t("initialReview.birthDate")}>{detail.birth_date}</DetailField>
+        <DetailField label={t("initialReview.nationality")}>{detail.nationality}</DetailField>
+        <DetailField label={t("initialReview.maritalStatus")}>
           {detail.marital_status}
         </DetailField>
-        <DetailField label="Profession">{detail.profession}</DetailField>
-        <DetailField label="Birthplace">{detail.birthplace}</DetailField>
-        <DetailField label="Email">{detail.email}</DetailField>
-        <DetailField label="Phone">{detail.phone}</DetailField>
-        <DetailField label="CPF">{detail.cpf}</DetailField>
-        <DetailField label="ID document">
+        <DetailField label={t("initialReview.profession")}>{detail.profession}</DetailField>
+        <DetailField label={t("initialReview.birthplace")}>{detail.birthplace}</DetailField>
+        <DetailField label={t("initialReview.email")}>{detail.email}</DetailField>
+        <DetailField label={t("initialReview.phone")}>{detail.phone}</DetailField>
+        <DetailField label={t("initialReview.cpf")}>{detail.cpf}</DetailField>
+        <DetailField label={t("initialReview.idDocument")}>
           {detail.id_document_number}
         </DetailField>
-        <DetailField label="Issuing authority">
+        <DetailField label={t("initialReview.issuingAuthority")}>
           {detail.id_document_issuer}
         </DetailField>
-        <DetailField label="Postal code">{detail.postal_code}</DetailField>
-        <DetailField label="Address">{detail.address_line}</DetailField>
-        <DetailField label="City / state">
+        <DetailField label={t("initialReview.postalCode")}>{detail.postal_code}</DetailField>
+        <DetailField label={t("initialReview.address")}>{detail.address_line}</DetailField>
+        <DetailField label={t("initialReview.cityState")}>
           {[detail.city, detail.state].filter(Boolean).join(" / ")}
         </DetailField>
-        <DetailField label="Blood type">{detail.blood_type}</DetailField>
-        <DetailField label="Allergies">
-          {detail.has_allergies ? detail.allergies : "None reported"}
+        <DetailField label={t("initialReview.bloodType")}>{detail.blood_type}</DetailField>
+        <DetailField label={t("initialReview.allergies")}>
+          {detail.has_allergies ? detail.allergies : t("common.noneReported")}
         </DetailField>
-        <DetailField label="Dietary restrictions">
+        <DetailField label={t("initialReview.dietaryRestrictions")}>
           {detail.has_dietary_restrictions
             ? detail.dietary_restrictions
-            : "None reported"}
+            : t("common.noneReported")}
         </DetailField>
-        <DetailField label="Highline experience">
+        <DetailField label={t("initialReview.highlineExperience")}>
           {detail.highline_experience}
         </DetailField>
-        <DetailField label="Rescue course">
-          {detail.has_rescue_course ? "Yes" : "No"}
+        <DetailField label={t("initialReview.rescueCourse")}>
+          {detail.has_rescue_course ? t("common.yes") : t("common.no")}
         </DetailField>
-        <DetailField label="First-aid course">
+        <DetailField label={t("initialReview.firstAidCourse")}>
           {detail.first_aid_course}
         </DetailField>
-        <DetailField label="Emergency contact">
+        <DetailField label={t("initialReview.emergencyContact")}>
           {[
             detail.emergency_contact_name,
             detail.emergency_contact_relationship,
@@ -365,23 +390,34 @@ function ClaimHistory({
   auditHistory: Record<string, unknown>[];
   claimHistory: Record<string, unknown>[];
 }) {
+  const locale = useLocale();
+  const t = useTranslations("admin");
+  const stateLabel = (status: string) => {
+    if (status === "under_review") return t("states.underReview");
+    if (status === "approved") return t("states.approved");
+    if (status === "rejected") return t("states.rejected");
+    return status;
+  };
+
   return (
     <section aria-labelledby="history-title">
       <SectionHeading
         id="history-title"
         icon={<CalendarDays className="size-4" aria-hidden="true" />}
-        title="Immutable history"
+        title={t("initialReview.immutableHistory")}
       />
       <div className="mt-3 grid gap-3 rounded-2xl border bg-muted/20 p-4 lg:grid-cols-2">
-        <HistoryColumn title="Claim states">
+        <HistoryColumn title={t("initialReview.claimStates")}>
           {claimHistory.map((history) => (
             <div
               key={String(history.claim_id)}
               className="flex flex-wrap items-center justify-between gap-2 text-sm"
             >
-              <span className="font-medium">{String(history.status)}</span>
+              <span className="font-medium">
+                {stateLabel(String(history.status))}
+              </span>
               <span className="text-muted-foreground">
-                {formatDate(String(history.created_at))}
+                {formatDate(String(history.created_at), locale)}
                 {history.decision_reason
                   ? ` · ${String(history.decision_reason)}`
                   : ""}
@@ -389,17 +425,18 @@ function ClaimHistory({
             </div>
           ))}
         </HistoryColumn>
-        <HistoryColumn title="Audit events">
+        <HistoryColumn title={t("initialReview.auditEvents")}>
           {auditHistory.map((history) => (
             <div
               key={String(history.id)}
               className="flex flex-wrap items-center justify-between gap-2 text-sm"
             >
               <span className="font-medium">
-                {String(history.previous_state)} → {String(history.next_state)}
+                {stateLabel(String(history.previous_state))} →{" "}
+                {stateLabel(String(history.next_state))}
               </span>
               <span className="text-muted-foreground">
-                {formatDate(String(history.created_at))}
+                {formatDate(String(history.created_at), locale)}
                 {history.reason ? ` · ${String(history.reason)}` : ""}
               </span>
             </div>
@@ -425,6 +462,8 @@ function ReviewActions({
   rejectionReason: string;
   onRejectionReasonChange: (value: string) => void;
 }) {
+  const t = useTranslations("admin");
+
   if (!detail) return null;
 
   if (detail.claim_status !== "under_review") {
@@ -443,8 +482,12 @@ function ReviewActions({
             />
           )}
           <p>
-            This claim is {detail.claim_status}. The authoritative state has
-            been preserved; close this review and refresh the queue.
+            {t("initialReview.resolvedMessage", {
+              status:
+                detail.claim_status === "approved"
+                  ? t("states.approved")
+                  : t("states.rejected"),
+            })}
           </p>
         </div>
       </div>
@@ -454,7 +497,7 @@ function ReviewActions({
   return (
     <div className="border-t bg-card px-5 py-4 md:px-7">
       <label htmlFor="rejection-reason" className="text-sm font-medium">
-        Rejection reason
+        {t("initialReview.rejectionReason")}
         <span className="ml-1 text-destructive" aria-hidden="true">
           *
         </span>
@@ -464,7 +507,7 @@ function ReviewActions({
         value={rejectionReason}
         onChange={(event) => onRejectionReasonChange(event.target.value)}
         maxLength={500}
-        placeholder="Explain what the applicant needs to correct."
+        placeholder={t("initialReview.rejectionPlaceholder")}
         className="mt-2 min-h-20 rounded-xl"
         disabled={action !== null}
       />
@@ -481,7 +524,7 @@ function ReviewActions({
           ) : (
             <XCircle className="mr-2 size-4" aria-hidden="true" />
           )}
-          Reject claim
+          {t("initialReview.rejectClaim")}
         </Button>
         <Button
           type="button"
@@ -494,7 +537,7 @@ function ReviewActions({
           ) : (
             <Check className="mr-2 size-4" aria-hidden="true" />
           )}
-          Verify payment and admit member.
+          {t("initialReview.approveAndAdmit")}
         </Button>
       </div>
     </div>
