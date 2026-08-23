@@ -21,8 +21,7 @@ export type InitialPaymentClaimDetail =
 export type BillingWorkspaceView = "queue" | "payments" | "members";
 
 export type BillingWorkspaceClaimDetailResult =
-  | BillingWorkspaceClaimDetail
-  | InitialPaymentClaimDetail;
+  BillingWorkspaceClaimDetail | InitialPaymentClaimDetail;
 
 export type BillingHistoryEntry = {
   actor_handle?: string | null;
@@ -41,27 +40,33 @@ export type BillingHistoryEntry = {
   status?: string | null;
 };
 
-export function jsonArray(value: Json | null | undefined): BillingHistoryEntry[] {
+const BILLING_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+  timeZone: "America/Sao_Paulo",
+});
+
+const BILLING_DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "America/Sao_Paulo",
+});
+
+export function jsonArray(
+  value: Json | null | undefined,
+): BillingHistoryEntry[] {
   return Array.isArray(value) ? (value as BillingHistoryEntry[]) : [];
 }
 
 export function formatBillingDate(value: string | null | undefined) {
   if (!value) return "—";
 
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeZone: "America/Sao_Paulo",
-  }).format(new Date(`${value}T00:00:00`));
+  return BILLING_DATE_FORMATTER.format(new Date(`${value}T00:00:00`));
 }
 
 export function formatBillingDateTime(value: string | null | undefined) {
   if (!value) return "—";
 
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "America/Sao_Paulo",
-  }).format(new Date(value));
+  return BILLING_DATE_TIME_FORMATTER.format(new Date(value));
 }
 
 export function formatBillingAmount(amount: number, currency: string) {
@@ -74,7 +79,9 @@ export function formatBillingAmount(amount: number, currency: string) {
 export function purposeLabel(
   purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"],
 ) {
-  return purpose === "recurring" ? "Recurring contribution" : "Initial admission";
+  return purpose === "recurring"
+    ? "Recurring contribution"
+    : "Initial admission";
 }
 
 export function planLabel(

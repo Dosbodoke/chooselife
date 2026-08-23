@@ -34,6 +34,25 @@ function stateVariant(state: string) {
   return "outline" as const;
 }
 
+function historyEntryKey(
+  title: string,
+  entry: ReturnType<typeof jsonArray>[number],
+) {
+  return (
+    entry.id ??
+    entry.claim_id ??
+    [
+      title,
+      entry.created_at,
+      entry.status,
+      entry.previous_state,
+      entry.next_state,
+      entry.reason,
+      entry.decision_reason,
+    ].join("|")
+  );
+}
+
 export default function BillingWorkspacePayments({
   payments,
 }: {
@@ -41,9 +60,8 @@ export default function BillingWorkspacePayments({
 }) {
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] = useState<PaymentStateFilter>("all");
-  const [purposeFilter, setPurposeFilter] = useState<PaymentPurposeFilter>(
-    "all",
-  );
+  const [purposeFilter, setPurposeFilter] =
+    useState<PaymentPurposeFilter>("all");
 
   const visiblePayments = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -153,10 +171,14 @@ export default function BillingWorkspacePayments({
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant={stateVariant(payment.effective_payment_state)}>
+                      <Badge
+                        variant={stateVariant(payment.effective_payment_state)}
+                      >
                         {paymentStateLabel(payment.effective_payment_state)}
                       </Badge>
-                      <Badge variant="outline">{purposeLabel(payment.purpose)}</Badge>
+                      <Badge variant="outline">
+                        {purposeLabel(payment.purpose)}
+                      </Badge>
                       <span className="text-xs text-muted-foreground">
                         {payment.period_key}
                       </span>
@@ -165,7 +187,8 @@ export default function BillingWorkspacePayments({
                       {payment.member_name || "Unnamed member"}
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      {payment.member_handle || "No handle"} · {planLabel(payment.plan_type)}
+                      {payment.member_handle || "No handle"} ·{" "}
+                      {planLabel(payment.plan_type)}
                     </p>
                   </div>
                   <div className="text-left lg:text-right">
@@ -182,7 +205,8 @@ export default function BillingWorkspacePayments({
                   <div>
                     <dt className="text-muted-foreground">Period</dt>
                     <dd className="mt-1 font-medium">
-                      {formatBillingDate(payment.period_start)} — {formatBillingDate(payment.period_end)}
+                      {formatBillingDate(payment.period_start)} —{" "}
+                      {formatBillingDate(payment.period_end)}
                     </dd>
                   </div>
                   <div>
@@ -194,7 +218,9 @@ export default function BillingWorkspacePayments({
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Last decision actor</dt>
+                    <dt className="text-muted-foreground">
+                      Last decision actor
+                    </dt>
                     <dd className="mt-1 font-medium">
                       {payment.last_decision_actor_name || "—"}
                     </dd>
@@ -216,7 +242,8 @@ export default function BillingWorkspacePayments({
                 <details className="mt-4 rounded-xl border bg-muted/20 px-3 py-2 text-sm">
                   <summary className="cursor-pointer font-medium">
                     View claim and decision history ({claims.length} claim
-                    {claims.length === 1 ? "" : "s"}, {audits.length} audit event
+                    {claims.length === 1 ? "" : "s"}, {audits.length} audit
+                    event
                     {audits.length === 1 ? "" : "s"})
                   </summary>
                   <div className="mt-3 grid gap-4 lg:grid-cols-2">
@@ -247,8 +274,11 @@ function HistoryList({
         <p className="mt-2 text-muted-foreground">No history yet.</p>
       ) : (
         <ol className="mt-2 space-y-2">
-          {entries.map((entry, index) => (
-            <li key={entry.id || entry.claim_id || index} className="rounded-lg border bg-background p-3">
+          {entries.map((entry) => (
+            <li
+              key={historyEntryKey(title, entry)}
+              className="rounded-lg border bg-background p-3"
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-medium">
                   {entry.status ||
