@@ -54,9 +54,9 @@ export default function ProfileMenu({ user }: { user: User }) {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/admin/claims">
+            <Link href="/admin">
               <ShieldCheck className="mr-2 size-4" aria-hidden="true" />
-              Review payment claims
+              Billing workspace
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={signOut}>

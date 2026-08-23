@@ -2007,6 +2007,127 @@ export type Database = {
           schedule_id: string
         }[]
       }
+      get_billing_workspace_claim_detail: {
+        Args: { p_claim_id: string }
+        Returns: {
+          amount: number
+          approve_command: string | null
+          attempt_count: number
+          audit_history: Json
+          available_on: string
+          claim_created_at: string
+          claim_decided_at: string | null
+          claim_decision_reason: string | null
+          claim_history: Json
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          currency: string
+          due_on: string
+          member_handle: string | null
+          member_name: string | null
+          member_profile_picture: string | null
+          member_user_id: string
+          obligation_id: string
+          organization_id: string
+          organization_name: string
+          organization_slug: string
+          payer_name: string | null
+          payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
+          period_end: string
+          period_key: string
+          period_start: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          reject_command: string | null
+        }[]
+      }
+      get_billing_workspace_members: {
+        Args: { p_organization_id: string }
+        Returns: {
+          financial_standing: string
+          joined_at: string
+          last_verified_contribution_at: string | null
+          member_handle: string | null
+          member_name: string | null
+          member_profile_picture: string | null
+          member_role: Database["public"]["Enums"]["organization_role_enum"]
+          member_user_id: string
+          next_due_on: string | null
+          oldest_attention_due_on: string | null
+          overdue_count: number
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"] | null
+        }[]
+      }
+      get_billing_workspace_organizations: {
+        Args: never
+        Returns: {
+          organization_id: string
+          organization_name: string
+          organization_slug: string
+        }[]
+      }
+      get_billing_workspace_payments: {
+        Args: { p_organization_id: string }
+        Returns: {
+          amount: number
+          audit_history: Json
+          available_on: string
+          claim_history: Json
+          currency: string
+          due_on: string
+          effective_payment_state: string
+          last_decision_actor_name: string | null
+          last_decision_actor_user_id: string | null
+          last_decision_at: string | null
+          latest_claim_created_at: string | null
+          latest_claim_decided_at: string | null
+          latest_claim_decision_reason: string | null
+          latest_claim_id: string | null
+          latest_claim_status: Database["public"]["Enums"]["payment_claim_status_enum"] | null
+          member_handle: string | null
+          member_name: string | null
+          member_user_id: string
+          obligation_id: string
+          obligation_status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+          organization_id: string
+          period_end: string
+          period_key: string
+          period_start: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          settled_at: string | null
+        }[]
+      }
+      get_billing_workspace_queue: {
+        Args: { p_organization_id: string }
+        Returns: {
+          amount: number
+          approve_command: string | null
+          attempt_count: number
+          available_on: string
+          claim_created_at: string
+          claim_decided_at: string | null
+          claim_decision_reason: string | null
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          currency: string
+          due_on: string
+          member_handle: string | null
+          member_name: string | null
+          member_profile_picture: string | null
+          member_user_id: string
+          obligation_id: string
+          organization_id: string
+          payer_name: string | null
+          payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
+          period_end: string
+          period_key: string
+          period_start: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          reject_command: string | null
+        }[]
+      }
       get_crossing_time: {
         Args: { highline_id: string; page_number: number; page_size: number }
         Returns: {
