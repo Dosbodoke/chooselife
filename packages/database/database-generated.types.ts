@@ -77,6 +77,244 @@ export type Database = {
           },
         ]
       }
+      contribution_reminder_batch_events: {
+        Row: {
+          batch_id: string
+          created_at: string
+          event_id: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          event_id: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contribution_reminder_batch_events_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "contribution_reminder_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_reminder_batch_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "contribution_reminder_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contribution_reminder_batches: {
+        Row: {
+          attempt_count: number
+          created_at: string
+          delivered_at: string | null
+          delivery_window_on: string
+          id: string
+          last_failure_code: string | null
+          lease_expires_at: string | null
+          lease_token: string | null
+          next_attempt_at: string
+          organization_id: string
+          recipient_user_id: string
+          status: Database["public"]["Enums"]["contribution_reminder_batch_status_enum"]
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          created_at?: string
+          delivered_at?: string | null
+          delivery_window_on: string
+          id?: string
+          last_failure_code?: string | null
+          lease_expires_at?: string | null
+          lease_token?: string | null
+          next_attempt_at?: string
+          organization_id: string
+          recipient_user_id: string
+          status?: Database["public"]["Enums"]["contribution_reminder_batch_status_enum"]
+          updated_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          created_at?: string
+          delivered_at?: string | null
+          delivery_window_on?: string
+          id?: string
+          last_failure_code?: string | null
+          lease_expires_at?: string | null
+          lease_token?: string | null
+          next_attempt_at?: string
+          organization_id?: string
+          recipient_user_id?: string
+          status?: Database["public"]["Enums"]["contribution_reminder_batch_status_enum"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contribution_reminder_batches_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_reminder_batches_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contribution_reminder_delivery_attempts: {
+        Row: {
+          attempt_count: number
+          batch_id: string
+          created_at: string
+          expo_receipt_error_code: string | null
+          expo_receipt_status: string | null
+          expo_ticket_id: string | null
+          id: string
+          language: Database["public"]["Enums"]["language"] | null
+          lease_expires_at: string | null
+          lease_token: string | null
+          next_attempt_at: string
+          next_receipt_check_at: string | null
+          push_token_id: number | null
+          status: Database["public"]["Enums"]["contribution_reminder_attempt_status_enum"]
+          terminal_outcome: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          batch_id: string
+          created_at?: string
+          expo_receipt_error_code?: string | null
+          expo_receipt_status?: string | null
+          expo_ticket_id?: string | null
+          id?: string
+          language?: Database["public"]["Enums"]["language"] | null
+          lease_expires_at?: string | null
+          lease_token?: string | null
+          next_attempt_at?: string
+          next_receipt_check_at?: string | null
+          push_token_id?: number | null
+          status?: Database["public"]["Enums"]["contribution_reminder_attempt_status_enum"]
+          terminal_outcome?: string | null
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          batch_id?: string
+          created_at?: string
+          expo_receipt_error_code?: string | null
+          expo_receipt_status?: string | null
+          expo_ticket_id?: string | null
+          id?: string
+          language?: Database["public"]["Enums"]["language"] | null
+          lease_expires_at?: string | null
+          lease_token?: string | null
+          next_attempt_at?: string
+          next_receipt_check_at?: string | null
+          push_token_id?: number | null
+          status?: Database["public"]["Enums"]["contribution_reminder_attempt_status_enum"]
+          terminal_outcome?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contribution_reminder_delivery_attempts_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "contribution_reminder_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_reminder_delivery_attempts_push_token_id_fkey"
+            columns: ["push_token_id"]
+            isOneToOne: false
+            referencedRelation: "push_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contribution_reminder_events: {
+        Row: {
+          created_at: string
+          delivered_at: string | null
+          delivery_window_on: string
+          id: string
+          obligation_id: string
+          organization_id: string
+          recipient_user_id: string
+          stage: Database["public"]["Enums"]["contribution_reminder_stage_enum"]
+          stage_on: string
+          status: Database["public"]["Enums"]["contribution_reminder_event_status_enum"]
+          suppression_reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string | null
+          delivery_window_on: string
+          id?: string
+          obligation_id: string
+          organization_id: string
+          recipient_user_id: string
+          stage: Database["public"]["Enums"]["contribution_reminder_stage_enum"]
+          stage_on: string
+          status?: Database["public"]["Enums"]["contribution_reminder_event_status_enum"]
+          suppression_reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string | null
+          delivery_window_on?: string
+          id?: string
+          obligation_id?: string
+          organization_id?: string
+          recipient_user_id?: string
+          stage?: Database["public"]["Enums"]["contribution_reminder_stage_enum"]
+          stage_on?: string
+          status?: Database["public"]["Enums"]["contribution_reminder_event_status_enum"]
+          suppression_reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contribution_reminder_events_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "payment_obligations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_reminder_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_reminder_events_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contribution_schedules: {
         Row: {
           active: boolean
@@ -1151,6 +1389,7 @@ export type Database = {
           billing_due_day: number
           billing_lead_days: number
           billing_timezone: string
+          contribution_reminder_local_time: string
           created_at: string
           id: string
           membership_terms_version: string
@@ -1167,6 +1406,7 @@ export type Database = {
           billing_due_day?: number
           billing_lead_days?: number
           billing_timezone?: string
+          contribution_reminder_local_time?: string
           created_at?: string
           id?: string
           membership_terms_version?: string
@@ -1183,6 +1423,7 @@ export type Database = {
           billing_due_day?: number
           billing_lead_days?: number
           billing_timezone?: string
+          contribution_reminder_local_time?: string
           created_at?: string
           id?: string
           membership_terms_version?: string
@@ -1920,6 +2161,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      claim_contribution_reminder_batches: {
+        Args: { p_lease_seconds?: number; p_limit?: number }
+        Returns: {
+          batch_id: string
+          lease_token: string
+        }[]
+      }
+      claim_contribution_reminder_receipts: {
+        Args: { p_lease_seconds?: number; p_limit?: number }
+        Returns: {
+          attempt_id: string
+          batch_id: string
+          expo_ticket_id: string
+          lease_token: string
+        }[]
+      }
       claim_initial_payment: {
         Args: {
           p_obligation_id: string
@@ -1955,6 +2212,36 @@ export type Database = {
       clamped_billing_date: {
         Args: { p_day: number; p_month: number; p_year: number }
         Returns: string
+      }
+      contribution_reminder_backoff: {
+        Args: { p_attempt_count: number }
+        Returns: unknown
+      }
+      contribution_reminder_delivery_at: {
+        Args: { p_local_time: string; p_stage_on: string; p_timezone: string }
+        Returns: string
+      }
+      contribution_reminder_stage_for_date: {
+        Args: { p_available_on: string; p_due_on: string; p_local_date: string }
+        Returns: Database["public"]["Enums"]["contribution_reminder_stage_enum"]
+      }
+      enqueue_contribution_reminder_events: {
+        Args: never
+        Returns: {
+          coalesced_count: number
+          created_count: number
+          skipped_count: number
+          suppressed_count: number
+        }[]
+      }
+      enqueue_contribution_reminder_events_at: {
+        Args: { p_as_of: string }
+        Returns: {
+          coalesced_count: number
+          created_count: number
+          skipped_count: number
+          suppressed_count: number
+        }[]
       }
       enqueue_festival_schedule_open_notifications: {
         Args: never
@@ -2011,34 +2298,34 @@ export type Database = {
         Args: { p_claim_id: string }
         Returns: {
           amount: number
-          approve_command: string | null
+          approve_command: string
           attempt_count: number
           audit_history: Json
           available_on: string
           claim_created_at: string
-          claim_decided_at: string | null
-          claim_decision_reason: string | null
+          claim_decided_at: string
+          claim_decision_reason: string
           claim_history: Json
           claim_id: string
           claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
           currency: string
           due_on: string
-          member_handle: string | null
-          member_name: string | null
-          member_profile_picture: string | null
+          member_handle: string
+          member_name: string
+          member_profile_picture: string
           member_user_id: string
           obligation_id: string
           organization_id: string
           organization_name: string
           organization_slug: string
-          payer_name: string | null
+          payer_name: string
           payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
           period_end: string
           period_key: string
           period_start: string
           plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
           purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
-          reject_command: string | null
+          reject_command: string
         }[]
       }
       get_billing_workspace_members: {
@@ -2046,16 +2333,16 @@ export type Database = {
         Returns: {
           financial_standing: string
           joined_at: string
-          last_verified_contribution_at: string | null
-          member_handle: string | null
-          member_name: string | null
-          member_profile_picture: string | null
+          last_verified_contribution_at: string
+          member_handle: string
+          member_name: string
+          member_profile_picture: string
           member_role: Database["public"]["Enums"]["organization_role_enum"]
           member_user_id: string
-          next_due_on: string | null
-          oldest_attention_due_on: string | null
+          next_due_on: string
+          oldest_attention_due_on: string
           overdue_count: number
-          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"] | null
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
         }[]
       }
       get_billing_workspace_organizations: {
@@ -2076,16 +2363,16 @@ export type Database = {
           currency: string
           due_on: string
           effective_payment_state: string
-          last_decision_actor_name: string | null
-          last_decision_actor_user_id: string | null
-          last_decision_at: string | null
-          latest_claim_created_at: string | null
-          latest_claim_decided_at: string | null
-          latest_claim_decision_reason: string | null
-          latest_claim_id: string | null
-          latest_claim_status: Database["public"]["Enums"]["payment_claim_status_enum"] | null
-          member_handle: string | null
-          member_name: string | null
+          last_decision_actor_name: string
+          last_decision_actor_user_id: string
+          last_decision_at: string
+          latest_claim_created_at: string
+          latest_claim_decided_at: string
+          latest_claim_decision_reason: string
+          latest_claim_id: string
+          latest_claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          member_handle: string
+          member_name: string
           member_user_id: string
           obligation_id: string
           obligation_status: Database["public"]["Enums"]["payment_obligation_status_enum"]
@@ -2095,37 +2382,37 @@ export type Database = {
           period_start: string
           plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
           purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
-          settled_at: string | null
+          settled_at: string
         }[]
       }
       get_billing_workspace_queue: {
         Args: { p_organization_id: string }
         Returns: {
           amount: number
-          approve_command: string | null
+          approve_command: string
           attempt_count: number
           available_on: string
           claim_created_at: string
-          claim_decided_at: string | null
-          claim_decision_reason: string | null
+          claim_decided_at: string
+          claim_decision_reason: string
           claim_id: string
           claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
           currency: string
           due_on: string
-          member_handle: string | null
-          member_name: string | null
-          member_profile_picture: string | null
+          member_handle: string
+          member_name: string
+          member_profile_picture: string
           member_user_id: string
           obligation_id: string
           organization_id: string
-          payer_name: string | null
+          payer_name: string
           payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
           period_end: string
           period_key: string
           period_start: string
           plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
           purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
-          reject_command: string | null
+          reject_command: string
         }[]
       }
       get_crossing_time: {
@@ -2421,6 +2708,19 @@ export type Database = {
         Returns: string
       }
       normalize_profile_username: { Args: { value: string }; Returns: string }
+      prepare_contribution_reminder_batch: {
+        Args: {
+          p_batch_id: string
+          p_lease_seconds?: number
+          p_lease_token: string
+        }
+        Returns: {
+          batch_id: string
+          delivery_attempts: Json
+          delivery_window_on: string
+          organization_slug: string
+        }[]
+      }
       profile_stats: {
         Args: { username: string }
         Returns: {
@@ -2451,6 +2751,22 @@ export type Database = {
           result: string
         }[]
       }
+      record_contribution_reminder_receipts: {
+        Args: { p_receipts: Json }
+        Returns: number
+      }
+      record_contribution_reminder_send_failure: {
+        Args: {
+          p_batch_id: string
+          p_failure_code: string
+          p_lease_token: string
+        }
+        Returns: number
+      }
+      record_contribution_reminder_tickets: {
+        Args: { p_batch_id: string; p_lease_token: string; p_tickets: Json }
+        Returns: number
+      }
       recurring_due_date_on_or_after: {
         Args: {
           p_admission_date: string
@@ -2467,9 +2783,20 @@ export type Database = {
         }
         Returns: string
       }
+      refresh_contribution_reminder_batch: {
+        Args: { p_batch_id: string }
+        Returns: undefined
+      }
       regenerate_festival_schedule_window: {
         Args: { target_window_id: string }
         Returns: number
+      }
+      register_push_token: {
+        Args: {
+          p_language?: Database["public"]["Enums"]["language"]
+          p_token: string
+        }
+        Returns: string
       }
       reject_initial_claim: {
         Args: { p_claim_id: string; p_reason: string }
@@ -2533,6 +2860,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      unregister_push_token: { Args: { p_token: string }; Returns: boolean }
       validate_locale_keys: { Args: { json_data: Json }; Returns: boolean }
     }
     Enums: {
@@ -2546,6 +2874,30 @@ export type Database = {
         | "o_pos"
         | "o_neg"
       contribution_cadence_enum: "monthly" | "annual"
+      contribution_reminder_attempt_status_enum:
+        | "pending"
+        | "leased"
+        | "ticketed"
+        | "retryable"
+        | "delivered"
+        | "terminal"
+      contribution_reminder_batch_status_enum:
+        | "pending"
+        | "leased"
+        | "awaiting_receipts"
+        | "retryable"
+        | "delivered"
+        | "no_device"
+        | "terminal"
+        | "suppressed"
+      contribution_reminder_event_status_enum:
+        | "pending"
+        | "delivered"
+        | "coalesced"
+        | "suppressed"
+        | "no_device"
+        | "exhausted"
+      contribution_reminder_stage_enum: "available" | "due" | "overdue"
       festival_schedule_booking_cancellation_source_enum:
         | "user"
         | "staff"
@@ -3262,6 +3614,33 @@ export const Constants = {
         "o_neg",
       ],
       contribution_cadence_enum: ["monthly", "annual"],
+      contribution_reminder_attempt_status_enum: [
+        "pending",
+        "leased",
+        "ticketed",
+        "retryable",
+        "delivered",
+        "terminal",
+      ],
+      contribution_reminder_batch_status_enum: [
+        "pending",
+        "leased",
+        "awaiting_receipts",
+        "retryable",
+        "delivered",
+        "no_device",
+        "terminal",
+        "suppressed",
+      ],
+      contribution_reminder_event_status_enum: [
+        "pending",
+        "delivered",
+        "coalesced",
+        "suppressed",
+        "no_device",
+        "exhausted",
+      ],
+      contribution_reminder_stage_enum: ["available", "due", "overdue"],
       festival_schedule_booking_cancellation_source_enum: [
         "user",
         "staff",

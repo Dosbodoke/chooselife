@@ -3,9 +3,10 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Href, router } from 'expo-router';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { Platform } from 'react-native';
 
+import { useMountEffect } from '~/hooks/use-mount-effect';
 import { registerPushTokenForProfile } from '~/lib/push-token-registration';
 
 import { useAuth } from './auth';
@@ -128,7 +129,7 @@ export function NotificationProvider({
     Notifications.Notification | undefined
   >(undefined);
 
-  useEffect(() => {
+  useMountEffect(() => {
     registerForPushNotificationsAsync().then(
       (token) => token && setExpoPushToken(token),
     );
@@ -139,16 +140,10 @@ export function NotificationProvider({
       },
     );
 
-    const responseListener =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log(response);
-      });
-
     return () => {
       notificationListener.remove();
-      responseListener.remove();
     };
-  }, []);
+  });
 
   useQuery({
     queryKey: ['push-token-registration', expoPushToken, profile?.id, locale],
@@ -184,7 +179,7 @@ export function NotificationProvider({
 }
 
 function useNotificationObserver() {
-  useEffect(() => {
+  useMountEffect(() => {
     let isMounted = true;
 
     function redirect(notification: Notifications.Notification) {
@@ -211,7 +206,7 @@ function useNotificationObserver() {
       isMounted = false;
       subscription.remove();
     };
-  }, []);
+  });
 }
 
 export function useNotification() {
