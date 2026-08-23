@@ -27,6 +27,101 @@ export type Database = {
         }
         Relationships: []
       }
+      contribution_plan_assignments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          effective_period_start: string
+          id: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          schedule_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency: string
+          effective_period_start: string
+          id?: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          schedule_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          effective_period_start?: string
+          id?: string
+          plan_type?: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          schedule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contribution_plan_assignments_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "contribution_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contribution_schedules: {
+        Row: {
+          active: boolean
+          admission_date: string
+          billing_timezone: string
+          cadence: Database["public"]["Enums"]["contribution_cadence_enum"]
+          created_at: string
+          currency: string
+          due_day: number
+          id: string
+          lead_days: number
+          organization_id: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          admission_date: string
+          billing_timezone: string
+          cadence: Database["public"]["Enums"]["contribution_cadence_enum"]
+          created_at?: string
+          currency: string
+          due_day: number
+          id?: string
+          lead_days: number
+          organization_id: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          admission_date?: string
+          billing_timezone?: string
+          cadence?: Database["public"]["Enums"]["contribution_cadence_enum"]
+          created_at?: string
+          currency?: string
+          due_day?: number
+          id?: string
+          lead_days?: number
+          organization_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contribution_schedules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_schedules_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entry: {
         Row: {
           cadenas: number | null
@@ -1041,6 +1136,9 @@ export type Database = {
           annual_pix_copy_paste: string | null
           annual_price_amount: number | null
           billing_currency: string
+          billing_due_day: number
+          billing_lead_days: number
+          billing_timezone: string
           created_at: string
           id: string
           membership_terms_version: string
@@ -1054,6 +1152,9 @@ export type Database = {
           annual_pix_copy_paste?: string | null
           annual_price_amount?: number | null
           billing_currency?: string
+          billing_due_day?: number
+          billing_lead_days?: number
+          billing_timezone?: string
           created_at?: string
           id?: string
           membership_terms_version?: string
@@ -1067,6 +1168,9 @@ export type Database = {
           annual_pix_copy_paste?: string | null
           annual_price_amount?: number | null
           billing_currency?: string
+          billing_due_day?: number
+          billing_lead_days?: number
+          billing_timezone?: string
           created_at?: string
           id?: string
           membership_terms_version?: string
@@ -1207,51 +1311,69 @@ export type Database = {
       payment_obligations: {
         Row: {
           amount: number
-          application_revision_id: string
+          application_revision_id: string | null
           available_at: string
+          available_on: string
           created_at: string
           currency: string
+          due_on: string
           id: string
           legacy_payment_id: string | null
           organization_id: string
           payment_method: string
+          period_end: string
+          period_key: string
+          period_start: string
           pix_copy_paste: string
           plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
           purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          schedule_id: string | null
           settled_at: string | null
           status: Database["public"]["Enums"]["payment_obligation_status_enum"]
           user_id: string
         }
         Insert: {
           amount: number
-          application_revision_id: string
+          application_revision_id?: string | null
           available_at: string
+          available_on?: string
           created_at?: string
           currency: string
+          due_on?: string
           id?: string
           legacy_payment_id?: string | null
           organization_id: string
           payment_method?: string
+          period_end?: string
+          period_key?: string
+          period_start?: string
           pix_copy_paste: string
           plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
           purpose?: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          schedule_id?: string | null
           settled_at?: string | null
           status?: Database["public"]["Enums"]["payment_obligation_status_enum"]
           user_id: string
         }
         Update: {
           amount?: number
-          application_revision_id?: string
+          application_revision_id?: string | null
           available_at?: string
+          available_on?: string
           created_at?: string
           currency?: string
+          due_on?: string
           id?: string
           legacy_payment_id?: string | null
           organization_id?: string
           payment_method?: string
+          period_end?: string
+          period_key?: string
+          period_start?: string
           pix_copy_paste?: string
           plan_type?: Database["public"]["Enums"]["subscription_plan_type_enum"]
           purpose?: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          schedule_id?: string | null
           settled_at?: string | null
           status?: Database["public"]["Enums"]["payment_obligation_status_enum"]
           user_id?: string
@@ -1276,6 +1398,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_obligations_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "contribution_schedules"
             referencedColumns: ["id"]
           },
           {
@@ -1682,6 +1811,17 @@ export type Database = {
           subscription_status: Database["public"]["Enums"]["subscription_status_enum"]
         }[]
       }
+      approve_recurring_payment_claim: {
+        Args: { p_claim_id: string }
+        Returns: {
+          audit_event_id: string
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          decision_applied_now: boolean
+          obligation_id: string
+          obligation_status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+        }[]
+      }
       book_festival_schedule_slot: {
         Args: {
           target_display_name?: string
@@ -1759,9 +1899,55 @@ export type Database = {
           payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
         }[]
       }
+      claim_recurring_payment: {
+        Args: {
+          p_obligation_id: string
+          p_paid_by_applicant: boolean
+          p_payer_name?: string
+        }
+        Returns: {
+          audit_event_id: string
+          claim_created_at: string
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          obligation_id: string
+          payer_name: string
+          payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
+        }[]
+      }
+      clamped_billing_date: {
+        Args: { p_day: number; p_month: number; p_year: number }
+        Returns: string
+      }
       enqueue_festival_schedule_open_notifications: {
         Args: never
         Returns: number
+      }
+      ensure_contribution_schedule: {
+        Args: {
+          p_admission_date?: string
+          p_organization_id: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      first_recurring_due_date: {
+        Args: {
+          p_admission_date: string
+          p_cadence: Database["public"]["Enums"]["contribution_cadence_enum"]
+          p_due_day: number
+        }
+        Returns: string
+      }
+      generate_membership_billing_obligations: {
+        Args: { p_as_of?: string }
+        Returns: {
+          failure_reason: string
+          obligation_id: string
+          period_key: string
+          result: string
+          schedule_id: string
+        }[]
       }
       get_crossing_time: {
         Args: { highline_id: string; page_number: number; page_size: number }
@@ -1911,25 +2097,36 @@ export type Database = {
           user_marked_paid_at: string
         }[]
       }
+      get_membership_billing_ledger: {
+        Args: {
+          p_history_cursor?: string
+          p_history_limit?: number
+          p_organization_id: string
+        }
+        Returns: Json
+      }
       get_payment_obligation_instructions: {
         Args: { p_obligation_id: string }
         Returns: {
           amount: number
           available_at: string
+          available_on: string
           claim_created_at: string
           claim_decision_reason: string
           claim_id: string
           claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
           currency: string
+          due_on: string
           obligation_id: string
           organization_id: string
           payer_name: string
           payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
           payment_method: string
+          period_key: string
           pix_copy_paste: string
           plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
           purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
-          status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+          status: string
         }[]
       }
       get_total_cadenas: {
@@ -2020,6 +2217,14 @@ export type Database = {
           status: Database["public"]["Enums"]["payment_status_enum"]
         }[]
       }
+      next_recurring_due_date: {
+        Args: {
+          p_cadence: Database["public"]["Enums"]["contribution_cadence_enum"]
+          p_due_date: string
+          p_due_day: number
+        }
+        Returns: string
+      }
       normalize_festival_instagram_username: {
         Args: { value: string }
         Returns: string
@@ -2050,6 +2255,18 @@ export type Database = {
         Returns: number
       }
       reject_initial_claim: {
+        Args: { p_claim_id: string; p_reason: string }
+        Returns: {
+          audit_event_id: string
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          decision_applied_now: boolean
+          decision_reason: string
+          obligation_id: string
+          obligation_status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+        }[]
+      }
+      reject_recurring_payment_claim: {
         Args: { p_claim_id: string; p_reason: string }
         Returns: {
           audit_event_id: string
@@ -2103,6 +2320,7 @@ export type Database = {
         | "ab_neg"
         | "o_pos"
         | "o_neg"
+      contribution_cadence_enum: "monthly" | "annual"
       festival_schedule_booking_cancellation_source_enum:
         | "user"
         | "staff"
@@ -2128,7 +2346,7 @@ export type Database = {
       organization_type_enum: "group" | "association"
       payment_claim_payer_type_enum: "applicant" | "other"
       payment_claim_status_enum: "under_review" | "approved" | "rejected"
-      payment_obligation_purpose_enum: "initial_admission"
+      payment_obligation_purpose_enum: "initial_admission" | "recurring"
       payment_obligation_status_enum: "available" | "settled" | "void"
       payment_status_enum: "pending" | "succeeded" | "failed"
       strength_class_enum: "A+" | "A" | "B" | "C"
@@ -2818,6 +3036,7 @@ export const Constants = {
         "o_pos",
         "o_neg",
       ],
+      contribution_cadence_enum: ["monthly", "annual"],
       festival_schedule_booking_cancellation_source_enum: [
         "user",
         "staff",
@@ -2846,7 +3065,7 @@ export const Constants = {
       organization_type_enum: ["group", "association"],
       payment_claim_payer_type_enum: ["applicant", "other"],
       payment_claim_status_enum: ["under_review", "approved", "rejected"],
-      payment_obligation_purpose_enum: ["initial_admission"],
+      payment_obligation_purpose_enum: ["initial_admission", "recurring"],
       payment_obligation_status_enum: ["available", "settled", "void"],
       payment_status_enum: ["pending", "succeeded", "failed"],
       strength_class_enum: ["A+", "A", "B", "C"],

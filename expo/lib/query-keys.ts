@@ -20,6 +20,11 @@ export const queryKeys = {
     ) =>
       [...queryKeys.membershipApplication.all, organizationId, userId] as const,
   },
+  membershipBilling: {
+    all: ['membership-billing'] as const,
+    byOrg: (organizationId: string, userId: string | undefined) =>
+      [...queryKeys.membershipBilling.all, organizationId, userId] as const,
+  },
   organizations: {
     all: ['organizations'] as const,
     bySlug: (slug: string) => [...queryKeys.organizations.all, slug] as const,

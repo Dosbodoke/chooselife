@@ -1,18 +1,32 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { supabaseAdmin } from "../_shared/supabase-admin.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import {
-  processSubscription,
-  type RenewalNotification,
-  type RenewalOrganization,
-} from "./renewal-payment.ts";
 
-// ---- UTILS -------------------------------------------------
+type Locale = "en" | "pt";
 
-function calculateRenewalDate(daysAhead = 7): Date {
-  const date = new Date();
-  date.setDate(date.getDate() + daysAhead);
-  return date;
-}
+type GeneratedObligation = {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  amount: number;
+  currency: string;
+  due_on: string;
+  period_key: string;
+  plan_type: "monthly" | "annual";
+  organization: {
+    name: string;
+    slug: string;
+    billing_timezone: string;
+  };
+};
+
+type GeneratorResult = {
+  failure_reason: string | null;
+  obligation_id: string | null;
+  period_key: string;
+  result: string;
+  schedule_id: string;
+};
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -21,110 +35,204 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-// ---- DATABASE HELPERS --------------------------------------
-
-async function fetchSubscriptionsDueForRenewal(renewalDate: Date) {
-  const { data, error } = await supabaseAdmin
-    .from("subscriptions")
-    .select("*")
-    .eq("status", "active")
-    .lte("current_period_end", renewalDate.toISOString());
-
-  if (error) throw new Error(`Failed to fetch subscriptions: ${error.message}`);
-  return data ?? [];
+function formatAmount(
+  amount: number,
+  currency: string,
+  locale: Locale,
+): string {
+  return new Intl.NumberFormat(locale === "pt" ? "pt-BR" : "en-US", {
+    currency,
+    style: "currency",
+  }).format(amount / 100);
 }
 
-async function findPendingPayment(subscriptionId: string) {
-  const { data, error } = await supabaseAdmin
-    .from("payments")
-    .select("id, amount")
-    .eq("subscription_id", subscriptionId)
-    .eq("status", "pending")
-    .limit(1)
-    .maybeSingle();
+function formatCalendarDate(date: string, locale: Locale): string {
+  const parsed = new Date(`${date}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return date;
 
-  if (error) {
-    throw new Error(`Failed checking pending payment: ${error.message}`);
-  }
-  return data;
+  return new Intl.DateTimeFormat(locale === "pt" ? "pt-BR" : "en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "UTC",
+    year: "numeric",
+  }).format(parsed);
 }
 
-async function hasRenewalNotification(paymentId: string): Promise<boolean> {
+function getLocalDate(timezone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: timezone,
+    year: "numeric",
+  }).formatToParts(new Date());
+  const values = parts.reduce<Record<string, string>>((result, part) => {
+    if (part.type !== "literal") result[part.type] = part.value;
+    return result;
+  }, {});
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+export function buildRecurringPaymentUrl({
+  amount,
+  currency,
+  obligationId,
+  organizationSlug,
+}: {
+  amount: number;
+  currency: string;
+  obligationId: string;
+  organizationSlug: string;
+}): string {
+  const params = new URLSearchParams({
+    amount: String(amount),
+    currency,
+    obligationId,
+    paymentContext: "subscription_renewal",
+    slug: organizationSlug,
+  });
+
+  return `/payment?${params.toString()}`;
+}
+
+function buildNotification(obligation: GeneratedObligation) {
+  const isOverdue =
+    obligation.due_on < getLocalDate(obligation.organization.billing_timezone);
+  const amountPt = formatAmount(obligation.amount, obligation.currency, "pt");
+  const amountEn = formatAmount(obligation.amount, obligation.currency, "en");
+  const dueDatePt = formatCalendarDate(obligation.due_on, "pt");
+  const dueDateEn = formatCalendarDate(obligation.due_on, "en");
+
+  return {
+    user_id: obligation.user_id,
+    title: {
+      en: isOverdue
+        ? "Your membership contribution needs attention"
+        : "Your membership contribution is ready",
+      pt: isOverdue
+        ? "Sua contribuição precisa de atenção"
+        : "Sua contribuição está disponível",
+    },
+    body: {
+      en: isOverdue
+        ? `Your ${amountEn} contribution for ${obligation.organization.name} is overdue. Open the Ledger to regularize it.`
+        : `Your ${amountEn} contribution for ${obligation.organization.name} is ready. Pay by ${dueDateEn}.`,
+      pt: isOverdue
+        ? `Sua contribuição de ${amountPt} para ${obligation.organization.name} está em atraso. Abra o Ledger para regularizar.`
+        : `Sua contribuição de ${amountPt} para ${obligation.organization.name} está disponível. Pague até ${dueDatePt}.`,
+    },
+    data: {
+      amount: String(obligation.amount),
+      currency: obligation.currency,
+      obligation_id: obligation.id,
+      organization_id: obligation.organization_id,
+      organization_slug: obligation.organization.slug,
+      payment_context: "subscription_renewal",
+      period_key: obligation.period_key,
+      type: "recurring_contribution_payment_ready",
+      url: buildRecurringPaymentUrl({
+        amount: obligation.amount,
+        currency: obligation.currency,
+        obligationId: obligation.id,
+        organizationSlug: obligation.organization.slug,
+      }),
+    },
+  };
+}
+
+async function hasLedgerNotification(obligation: GeneratedObligation) {
   const { data, error } = await supabaseAdmin
     .from("notifications")
     .select("id")
+    .eq("user_id", obligation.user_id)
     .contains("data", {
-      payment_id: paymentId,
-      type: "subscription_renewal_payment_ready",
+      obligation_id: obligation.id,
+      type: "recurring_contribution_payment_ready",
     })
     .limit(1)
     .maybeSingle();
 
   if (error) {
-    throw new Error(`Failed checking renewal notification: ${error.message}`);
+    throw new Error(
+      `Failed checking Ledger notification for ${obligation.id}: ${error.message}`,
+    );
   }
-  return !!data;
+
+  return Boolean(data);
 }
 
-async function fetchOrganization(orgId: string) {
-  const { data, error } = await supabaseAdmin
-    .from("organizations")
-    .select("name, slug, monthly_price_amount, annual_price_amount")
-    .eq("id", orgId)
-    .single();
-
-  if (error) {
-    throw new Error(`Failed to fetch organization ${orgId}: ${error.message}`);
-  }
-  return data satisfies RenewalOrganization;
-}
-
-async function createPendingPayment({
-  organization_id,
-  user_id,
-  subscription_id,
-  amount,
-}: {
-  organization_id: string;
-  user_id: string;
-  subscription_id: string;
-  amount: number;
-}) {
-  const { data, error } = await supabaseAdmin
-    .from("payments")
-    .insert({
-      organization_id,
-      user_id,
-      subscription_id,
-      amount,
-      status: "pending",
-    })
-    .select("id")
-    .single();
-
-  if (error) throw new Error(`Failed to create payment: ${error.message}`);
-  return data;
-}
-
-async function createNotification(notification: RenewalNotification) {
+async function createLedgerNotification(obligation: GeneratedObligation) {
   const { error } = await supabaseAdmin
     .from("notifications")
-    .insert(notification);
+    .insert(buildNotification(obligation));
 
-  if (error) throw new Error(`Failed to create notification: ${error.message}`);
+  if (error) {
+    throw new Error(
+      `Failed creating Ledger notification for ${obligation.id}: ${error.message}`,
+    );
+  }
 }
 
-// ---- CORE LOGIC --------------------------------------------
+async function generateLedgerObligations() {
+  const { data: generated, error: generationError } = await supabaseAdmin.rpc(
+    "generate_membership_billing_obligations",
+    { p_as_of: new Date().toISOString() },
+  );
 
-const renewalPaymentDependencies = {
-  createNotification,
-  createPendingPayment,
-  fetchOrganization,
-  findPendingPayment,
-  hasRenewalNotification,
-};
+  if (generationError) {
+    throw new Error(
+      `Failed generating membership billing obligations: ${generationError.message}`,
+    );
+  }
 
-// ---- ENTRYPOINT --------------------------------------------
+  const results = (generated ?? []) as GeneratorResult[];
+  const obligationIds = [
+    ...results.reduce<Set<string>>((ids, result) => {
+      if (result.obligation_id) ids.add(result.obligation_id);
+      return ids;
+    }, new Set<string>()),
+  ];
+
+  if (obligationIds.length === 0) {
+    return {
+      generated: results.length,
+      notified: 0,
+      results,
+    };
+  }
+
+  const { data: obligations, error: obligationError } = await supabaseAdmin
+    .from("payment_obligations")
+    .select(
+      "id, organization_id, user_id, amount, currency, due_on, period_key, plan_type, organization:organizations!inner(name, slug, billing_timezone)",
+    )
+    .in("id", obligationIds);
+
+  if (obligationError) {
+    throw new Error(
+      `Failed loading generated Ledger obligations: ${obligationError.message}`,
+    );
+  }
+
+  const typedObligations = (obligations ??
+    []) as unknown as GeneratedObligation[];
+  const notified = (
+    await Promise.all(
+      typedObligations.map(async (obligation) => {
+        if (await hasLedgerNotification(obligation)) return 0;
+
+        await createLedgerNotification(obligation);
+        return 1;
+      }),
+    )
+  ).reduce<number>((total, created) => total + created, 0);
+
+  return {
+    generated: results.length,
+    notified,
+    results,
+  };
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -132,27 +240,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const renewalDate = calculateRenewalDate(7);
+    const result = await generateLedgerObligations();
     console.log(
-      `Checking for subscriptions ending before ${renewalDate.toISOString()}`,
+      `Membership Ledger generation complete: ${result.generated} periods, ${result.notified} notifications.`,
     );
-
-    const subscriptions = await fetchSubscriptionsDueForRenewal(renewalDate);
-
-    if (subscriptions.length === 0) {
-      console.log("No subscriptions to renew.");
-      return jsonResponse({ message: "No subscriptions to renew." });
-    }
-
-    console.log(`Processing ${subscriptions.length} subscriptions...`);
-    await Promise.all(
-      subscriptions.map((subscription) =>
-        processSubscription(subscription, renewalPaymentDependencies)
-      ),
-    );
-
-    console.log("Renewal check complete.");
-    return jsonResponse({ message: "Renewal check complete." });
+    return jsonResponse(result);
   } catch (error) {
     console.error("Error in generate-renewal-payments:", error);
     return jsonResponse(
