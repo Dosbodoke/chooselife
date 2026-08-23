@@ -1,17 +1,23 @@
 # Generate Membership Ledger Obligations
 
-This scheduled Edge Function materializes the recurring periods that are ready
-for payment and creates one targeted notification per obligation.
+This scheduled Edge Function materializes recurring periods that are ready for
+payment. It is a thin scheduler adapter; it does not send reminders or mutate
+membership state.
 
 The database function `generate_membership_billing_obligations` is the
 idempotent source of truth. It snapshots the plan, amount, currency, PIX
-payload, availability date, and due date into `payment_obligations`. The Edge
-Function then links notifications to the exact `obligationId`, so opening a
-reminder always refetches the current server-owned Ledger state.
+payload, availability date, and due date into `payment_obligations`. Database
+uniqueness makes retries and concurrent runs safe. Reminder stages belong to a
+separate workflow and must reference the materialized obligation after
+generation.
 
-Notification deduplication uses the obligation ID and notification type. A
-retry can therefore recover a missing notification without creating a second
-obligation or sending a duplicate reminder.
+The production RPC derives the database clock and is executable only by the
+Supabase service role. The timestamp-injected worker is private and exists for
+local regression tests.
+
+Before the first scheduled run after cutover, review the legacy mapping with
+`select * from public.reconcile_legacy_payment_obligations(false)`. Apply only
+the reviewed, unambiguous mappings with the same command set to `true`.
 
 ## Push delivery
 
@@ -30,8 +36,7 @@ supabase functions deploy generate-renewal-payments --project-ref <your-project-
 
 ## Scheduling
 
-The existing `daily-renewal-check` `pg_cron` job invokes this function daily.
-The job lives in
-`supabase/migrations/20251113121601_schedule-payment.sql` and uses Supabase
-Vault for the project URL and service-role key. Keep those secrets out of the
-repository.
+The cutover migration replaces the legacy `daily-renewal-check` job with one
+`membership-billing-obligation-generator` job that runs every 15 minutes. It
+uses Supabase Vault for the project URL and service-role key. Keep those
+secrets out of the repository.

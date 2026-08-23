@@ -436,6 +436,7 @@ select set_config(
   '81000000-0000-4000-8000-000000000104',
   true
 );
+set local role postgres;
 
 select is(
   public.get_membership_billing_ledger(
@@ -525,18 +526,57 @@ where id = '81000000-0000-4000-8000-000000000001'::uuid;
 
 update public.subscriptions
 set
-  plan_type = 'annual'::public.subscription_plan_type_enum,
   status = 'active'::public.subscription_status_enum
 where organization_id = '81000000-0000-4000-8000-000000000001'::uuid
   and user_id = '81000000-0000-4000-8000-000000000104'::uuid;
 
+set local role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  '81000000-0000-4000-8000-000000000104',
+  true
+);
+
 select is(
-  (select cadence
-   from public.contribution_schedules
+  (
+    public.schedule_contribution_plan_change(
+      (
+        select cs.id
+        from public.contribution_schedules cs
+        where cs.organization_id = '81000000-0000-4000-8000-000000000001'::uuid
+          and cs.user_id = '81000000-0000-4000-8000-000000000104'::uuid
+      ),
+      (
+        select case
+          when candidate_due >= minimum_due then candidate_due
+          else (candidate_due + interval '1 month')::date
+        end
+        from (
+          select
+            (cs.admission_date + interval '1 month')::date as minimum_due,
+            (
+              date_trunc('month', cs.admission_date + interval '1 month')
+              + interval '9 days'
+            )::date as candidate_due
+          from public.contribution_schedules cs
+          where cs.organization_id = '81000000-0000-4000-8000-000000000001'::uuid
+            and cs.user_id = '81000000-0000-4000-8000-000000000104'::uuid
+        ) first_period
+      ),
+      'annual'::public.subscription_plan_type_enum
+    ) is not null
+  ),
+  true,
+  'a future plan change is appended through the effective-dated command'
+);
+
+select is(
+   (select cadence
+    from public.contribution_schedules
    where organization_id = '81000000-0000-4000-8000-000000000001'::uuid
      and user_id = '81000000-0000-4000-8000-000000000104'::uuid),
-  'annual'::public.contribution_cadence_enum,
-  'reactivating a plan synchronizes its Ledger cadence'
+  'monthly'::public.contribution_cadence_enum,
+  'the admission schedule cadence remains an immutable anchor'
 );
 
 select is(
@@ -548,7 +588,7 @@ select is(
    order by cpa.effective_period_start desc
    limit 1),
   'annual'::public.subscription_plan_type_enum,
-  'a plan change updates the effective price snapshot'
+  'a plan change appends the effective price snapshot'
 );
 
 select * from finish();

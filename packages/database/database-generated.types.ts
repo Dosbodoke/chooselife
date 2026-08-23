@@ -30,28 +30,40 @@ export type Database = {
       contribution_plan_assignments: {
         Row: {
           amount: number
+          billing_timezone: string | null
           created_at: string
           currency: string
+          due_day: number | null
           effective_period_start: string
           id: string
+          lead_days: number | null
+          pix_copy_paste: string | null
           plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
           schedule_id: string
         }
         Insert: {
           amount: number
+          billing_timezone?: string | null
           created_at?: string
           currency: string
+          due_day?: number | null
           effective_period_start: string
           id?: string
+          lead_days?: number | null
+          pix_copy_paste?: string | null
           plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
           schedule_id: string
         }
         Update: {
           amount?: number
+          billing_timezone?: string | null
           created_at?: string
           currency?: string
+          due_day?: number | null
           effective_period_start?: string
           id?: string
+          lead_days?: number | null
+          pix_copy_paste?: string | null
           plan_type?: Database["public"]["Enums"]["subscription_plan_type_enum"]
           schedule_id?: string
         }
@@ -1314,12 +1326,17 @@ export type Database = {
           application_revision_id: string | null
           available_at: string
           available_on: string
+          billing_due_day: number | null
+          billing_lead_days: number | null
+          billing_timezone: string | null
           created_at: string
           currency: string
           due_on: string
           id: string
           legacy_payment_id: string | null
           organization_id: string
+          organization_name_snapshot: string | null
+          organization_slug_snapshot: string | null
           payment_method: string
           period_end: string
           period_key: string
@@ -1328,6 +1345,7 @@ export type Database = {
           plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
           purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
           schedule_id: string | null
+          schedule_term_id: string | null
           settled_at: string | null
           status: Database["public"]["Enums"]["payment_obligation_status_enum"]
           user_id: string
@@ -1337,12 +1355,17 @@ export type Database = {
           application_revision_id?: string | null
           available_at: string
           available_on?: string
+          billing_due_day?: number | null
+          billing_lead_days?: number | null
+          billing_timezone?: string | null
           created_at?: string
           currency: string
           due_on?: string
           id?: string
           legacy_payment_id?: string | null
           organization_id: string
+          organization_name_snapshot?: string | null
+          organization_slug_snapshot?: string | null
           payment_method?: string
           period_end?: string
           period_key?: string
@@ -1351,6 +1374,7 @@ export type Database = {
           plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
           purpose?: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
           schedule_id?: string | null
+          schedule_term_id?: string | null
           settled_at?: string | null
           status?: Database["public"]["Enums"]["payment_obligation_status_enum"]
           user_id: string
@@ -1360,12 +1384,17 @@ export type Database = {
           application_revision_id?: string | null
           available_at?: string
           available_on?: string
+          billing_due_day?: number | null
+          billing_lead_days?: number | null
+          billing_timezone?: string | null
           created_at?: string
           currency?: string
           due_on?: string
           id?: string
           legacy_payment_id?: string | null
           organization_id?: string
+          organization_name_snapshot?: string | null
+          organization_slug_snapshot?: string | null
           payment_method?: string
           period_end?: string
           period_key?: string
@@ -1374,6 +1403,7 @@ export type Database = {
           plan_type?: Database["public"]["Enums"]["subscription_plan_type_enum"]
           purpose?: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
           schedule_id?: string | null
+          schedule_term_id?: string | null
           settled_at?: string | null
           status?: Database["public"]["Enums"]["payment_obligation_status_enum"]
           user_id?: string
@@ -1405,6 +1435,13 @@ export type Database = {
             columns: ["schedule_id"]
             isOneToOne: false
             referencedRelation: "contribution_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_obligations_schedule_term_id_fkey"
+            columns: ["schedule_term_id"]
+            isOneToOne: false
+            referencedRelation: "contribution_plan_assignments"
             referencedColumns: ["id"]
           },
           {
@@ -1939,8 +1976,29 @@ export type Database = {
         }
         Returns: string
       }
-      generate_membership_billing_obligations: {
-        Args: { p_as_of?: string }
+      generate_membership_billing_obligations:
+        | {
+            Args: never
+            Returns: {
+              failure_reason: string
+              obligation_id: string
+              period_key: string
+              result: string
+              schedule_id: string
+            }[]
+          }
+        | {
+            Args: { p_as_of?: string }
+            Returns: {
+              failure_reason: string
+              obligation_id: string
+              period_key: string
+              result: string
+              schedule_id: string
+            }[]
+          }
+      generate_membership_billing_obligations_at: {
+        Args: { p_as_of: string }
         Returns: {
           failure_reason: string
           obligation_id: string
@@ -2105,6 +2163,14 @@ export type Database = {
         }
         Returns: Json
       }
+      get_membership_billing_ledger_legacy: {
+        Args: {
+          p_history_cursor?: string
+          p_history_limit?: number
+          p_organization_id: string
+        }
+        Returns: Json
+      }
       get_payment_obligation_instructions: {
         Args: { p_obligation_id: string }
         Returns: {
@@ -2198,6 +2264,10 @@ export type Database = {
         Args: { target_festival_id: string; target_profile_id: string }
         Returns: boolean
       }
+      is_valid_billing_timezone: {
+        Args: { p_timezone: string }
+        Returns: boolean
+      }
       mark_manual_payment_paid_by_user: {
         Args: { p_payment_id: string }
         Returns: {
@@ -2250,6 +2320,32 @@ export type Database = {
         Args: { target_festival_id?: string }
         Returns: undefined
       }
+      reconcile_legacy_payment_obligations: {
+        Args: { p_apply?: boolean }
+        Returns: {
+          obligation_id: string
+          payment_id: string
+          payment_status: Database["public"]["Enums"]["payment_status_enum"]
+          reason: string
+          result: string
+        }[]
+      }
+      recurring_due_date_on_or_after: {
+        Args: {
+          p_admission_date: string
+          p_cadence: Database["public"]["Enums"]["contribution_cadence_enum"]
+          p_due_day: number
+          p_from_date: string
+        }
+        Returns: string
+      }
+      recurring_period_key: {
+        Args: {
+          p_cadence: Database["public"]["Enums"]["contribution_cadence_enum"]
+          p_due_date: string
+        }
+        Returns: string
+      }
       regenerate_festival_schedule_window: {
         Args: { target_window_id: string }
         Returns: number
@@ -2277,6 +2373,14 @@ export type Database = {
           obligation_id: string
           obligation_status: Database["public"]["Enums"]["payment_obligation_status_enum"]
         }[]
+      }
+      schedule_contribution_plan_change: {
+        Args: {
+          p_effective_period_start: string
+          p_plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          p_schedule_id: string
+        }
+        Returns: string
       }
       submit_association_application: {
         Args: {
