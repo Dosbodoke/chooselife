@@ -1,6 +1,6 @@
 BEGIN;
 
-select plan(30);
+select plan(32);
 
 -- These fixtures model the same server-owned rows created by application
 -- submission. The public command below is the seam under test.
@@ -545,6 +545,45 @@ select throws_ok(
   '55000',
   'Payment claim evidence is immutable.',
   'claim evidence cannot be mutated even with server-side table access'
+);
+
+select throws_ok(
+  $$update public.payment_claims
+    set status = 'rejected', decided_at = null
+    where id = (
+      select id
+      from public.payment_claims
+      where obligation_id = 'ccccccc1-cccc-4ccc-8ccc-ccccccccccc1'::uuid
+    )$$,
+  '23514',
+  null,
+  'terminal claims require a decision timestamp'
+);
+
+select throws_ok(
+  $$insert into public.payment_claim_audit_events (
+    organization_id,
+    obligation_id,
+    claim_id,
+    actor_user_id,
+    previous_state,
+    next_state
+  )
+  values (
+    '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1'::uuid,
+    'ccccccc1-cccc-4ccc-8ccc-ccccccccccc1'::uuid,
+    (
+      select id
+      from public.payment_claims
+      where obligation_id = 'ccccccc1-cccc-4ccc-8ccc-ccccccccccc1'::uuid
+    ),
+    '11111111-1111-4111-8111-111111111111'::uuid,
+    'payment_available',
+    'payment_available'
+  )$$,
+  '23514',
+  null,
+  'audit events reject invalid state transitions'
 );
 
 set local role authenticated;
