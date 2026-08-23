@@ -511,6 +511,65 @@
       "emptyNoMembers": "No active members are available for this association.",
       "emptyNoMatch": "No members match these filters."
     },
+    "ledger": {
+      "eyebrow": "Member ledger",
+      "title": "People & contribution status",
+      "description": "One table for active members, applicants, and drafts in {period}.",
+      "peopleCount": "{count} people",
+      "notPaidCount": "{count} not paid",
+      "searchLabel": "Search people",
+      "searchPlaceholder": "Search name or handle",
+      "periodLabel": "Billing period",
+      "lifecycleLabel": "Lifecycle",
+      "financialLabel": "Financial status",
+      "tableLabel": "Association member ledger",
+      "review": "Review",
+      "showing": "Showing {shown} of {total} people",
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "emptyTitle": "No people match these filters",
+      "emptyDescription": "Try another period or reset the filters.",
+      "resetFilters": "Reset filters",
+      "columns": {
+        "person": "Person",
+        "lifecycle": "Lifecycle",
+        "periodStatus": "Period status",
+        "plan": "Plan",
+        "amount": "Amount",
+        "due": "Due",
+        "lastPaid": "Last paid",
+        "action": "Action"
+      },
+      "lifecycle": {
+        "all": "All lifecycle states",
+        "active": "Active member",
+        "activePlural": "Active members",
+        "applicant": "Applicant",
+        "applicants": "Applicants",
+        "draft": "Draft",
+        "drafts": "Drafts"
+      },
+      "financial": {
+        "all": "All financial states",
+        "notPaid": "Not paid this period",
+        "paid": "Paid",
+        "underReview": "Under review",
+        "awaitingPayment": "Awaiting payment",
+        "overdue": "Overdue",
+        "scheduled": "Scheduled",
+        "noObligation": "No obligation"
+      },
+      "loadedAnnouncement": "Ledger loaded with {count} people."
+    },
+    "ledgerReview": {
+      "eyebrow": "Person record",
+      "periodDetail": "Period detail",
+      "paymentType": "Payment type",
+      "available": "Available",
+      "joined": "Joined",
+      "recentPeriods": "Recent periods",
+      "noHistory": "There is no payment history for this person yet."
+    },
     "initialClaims": {
       "title": "Initial payment claims",
       "description": "Verify a payment and admit one applicant at a time. Every action is checked and committed by the database as one decision.",

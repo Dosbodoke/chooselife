@@ -2334,6 +2334,21 @@ export type Database = {
           plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
         }[]
       }
+      get_billing_workspace_people: {
+        Args: { p_organization_id: string }
+        Returns: {
+          application_status: Database["public"]["Enums"]["membership_application_status_enum"]
+          joined_at: string
+          last_verified_contribution_at: string
+          lifecycle_status: string
+          member_handle: string
+          member_name: string
+          member_profile_picture: string
+          member_role: Database["public"]["Enums"]["organization_role_enum"]
+          member_user_id: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+        }[]
+      }
       get_billing_workspace_organizations: {
         Args: never
         Returns: {

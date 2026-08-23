@@ -1,19 +1,19 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
+import type { MemberTableRow } from "@/components/admin/member-ledger";
 import { useRouter } from "@/i18n/navigation";
 import type {
   BillingWorkspaceClaimDetail,
-  BillingWorkspaceMemberRow,
   BillingWorkspaceOrganization,
   BillingWorkspacePaymentRow,
+  BillingWorkspacePersonRow,
   BillingWorkspaceQueueRow,
-  BillingWorkspaceView,
-  InitialPaymentClaimDetail,
 } from "@/lib/billing-workspace";
+import { buildBillingWorkspaceMemberRows } from "@/lib/billing-workspace-ledger";
 import { supabaseBrowser } from "@/utils/supabase/client";
 
 import {
@@ -22,19 +22,21 @@ import {
 } from "../claims/_components/initial-payment-claim-review";
 import BillingWorkspaceClaimReview from "./billing-workspace-claim-review";
 import BillingWorkspaceLayout from "./billing-workspace-layout";
+import BillingWorkspaceLedger from "./billing-workspace-ledger";
+import BillingWorkspaceMemberReview from "./billing-workspace-member-review";
 
 type RpcError = {
   code?: string;
   message?: string;
 };
 
-type WorkspaceData =
-  | BillingWorkspaceQueueRow[]
-  | BillingWorkspacePaymentRow[]
-  | BillingWorkspaceMemberRow[];
+type WorkspaceData = {
+  payments: BillingWorkspacePaymentRow[];
+  people: BillingWorkspacePersonRow[];
+};
 
 type ClaimDetailEnvelope =
-  | { kind: "initial"; detail: InitialPaymentClaimDetail }
+  | { kind: "initial"; detail: import("@/lib/initial-payment-claims").InitialPaymentClaimDetail }
   | { kind: "recurring"; detail: BillingWorkspaceClaimDetail };
 
 type DecisionVariables = {
@@ -42,8 +44,6 @@ type DecisionVariables = {
   claim: BillingWorkspaceQueueRow;
   reason?: string;
 };
-
-const supabase = supabaseBrowser();
 
 type WorkspaceErrorCopy = {
   concurrent: string;
@@ -54,50 +54,75 @@ type WorkspaceErrorCopy = {
   rejectionReasonRequired: string;
 };
 
+const supabase = supabaseBrowser();
+
 function getRpcErrorMessage(error: RpcError, copy: WorkspaceErrorCopy) {
-  if (error.code === "40001") {
-    return copy.concurrent;
-  }
-
-  if (error.code === "42501") {
-    return copy.unauthorized;
-  }
-
-  if (error.code === "22023") {
-    return error.message || copy.checkInformation;
-  }
-
+  if (error.code === "40001") return copy.concurrent;
+  if (error.code === "42501") return copy.unauthorized;
+  if (error.code === "22023") return error.message || copy.checkInformation;
   return copy.decisionNotCompleted;
 }
 
 async function fetchWorkspaceData(
   organizationId: string,
-  view: BillingWorkspaceView,
 ): Promise<WorkspaceData> {
-  if (view === "queue") {
-    const { data, error } = await supabase.rpc("get_billing_workspace_queue", {
+  const [peopleResult, paymentsResult] = await Promise.all([
+    supabase.rpc("get_billing_workspace_people", {
       p_organization_id: organizationId,
-    });
-    if (error) throw error;
-    return data ?? [];
+    }),
+    supabase.rpc("get_billing_workspace_payments", {
+      p_organization_id: organizationId,
+    }),
+  ]);
+
+  if (peopleResult.error) throw peopleResult.error;
+  if (paymentsResult.error) throw paymentsResult.error;
+
+  return {
+    people: peopleResult.data ?? [],
+    payments: paymentsResult.data ?? [],
+  };
+}
+
+function memberToClaim(member: MemberTableRow): BillingWorkspaceQueueRow | null {
+  const period = member.selectedPeriod;
+  if (!period.claimId || !period.obligationId || !period.obligationKind) {
+    return null;
   }
 
-  if (view === "payments") {
-    const { data, error } = await supabase.rpc(
-      "get_billing_workspace_payments",
-      {
-        p_organization_id: organizationId,
-      },
-    );
-    if (error) throw error;
-    return data ?? [];
-  }
-
-  const { data, error } = await supabase.rpc("get_billing_workspace_members", {
-    p_organization_id: organizationId,
-  });
-  if (error) throw error;
-  return data ?? [];
+  return {
+    claim_id: period.claimId,
+    obligation_id: period.obligationId,
+    organization_id: "",
+    purpose: period.obligationKind,
+    member_user_id: member.id,
+    member_name: member.name,
+    member_handle: member.handle,
+    member_profile_picture: member.profilePicture,
+    payer_type: "applicant",
+    payer_name: "",
+    plan_type: member.plan ?? "monthly",
+    amount: period.amount ?? 0,
+    currency: period.currency,
+    period_key: period.periodKey,
+    period_start: period.periodKey ? `${period.periodKey}-01` : "",
+    period_end: period.dueDate ?? "",
+    available_on: period.availableDate ?? "",
+    due_on: period.dueDate ?? "",
+    claim_created_at: period.claimCreatedAt ?? "",
+    claim_decided_at: period.claimDecidedAt ?? "",
+    claim_decision_reason: period.claimReason ?? "",
+    claim_status: period.claimStatus ?? "under_review",
+    attempt_count: 1,
+    approve_command:
+      period.obligationKind === "initial_admission"
+        ? "approve_initial_claim"
+        : "approve_recurring_payment_claim",
+    reject_command:
+      period.obligationKind === "initial_admission"
+        ? "reject_initial_claim"
+        : "reject_recurring_payment_claim",
+  } as unknown as BillingWorkspaceQueueRow;
 }
 
 export default function BillingWorkspace({
@@ -105,8 +130,10 @@ export default function BillingWorkspace({
 }: {
   organizations: BillingWorkspaceOrganization[];
 }) {
+  const locale = useLocale();
   const router = useRouter();
   const t = useTranslations("admin");
+  const queryClient = useQueryClient();
   const errorCopy: WorkspaceErrorCopy = {
     concurrent: t("errors.concurrent"),
     unauthorized: t("errors.unauthorized"),
@@ -115,11 +142,10 @@ export default function BillingWorkspace({
     claimNoLongerActionable: t("errors.claimNoLongerActionable"),
     rejectionReasonRequired: t("errors.rejectionReasonRequired"),
   };
-  const queryClient = useQueryClient();
   const [organizationId, setOrganizationId] = useState(
     organizations[0]?.organization_id ?? "",
   );
-  const [view, setView] = useState<BillingWorkspaceView>("queue");
+  const [selectedMember, setSelectedMember] = useState<MemberTableRow | null>(null);
   const [selectedClaim, setSelectedClaim] =
     useState<BillingWorkspaceQueueRow | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -132,10 +158,17 @@ export default function BillingWorkspace({
   const activeOrganizationId = selectedOrganization?.organization_id ?? "";
 
   const workspaceQuery = useQuery<WorkspaceData, RpcError>({
-    queryKey: ["billing-workspace", activeOrganizationId, view],
-    queryFn: () => fetchWorkspaceData(activeOrganizationId, view),
+    queryKey: ["billing-workspace", activeOrganizationId],
+    queryFn: () => fetchWorkspaceData(activeOrganizationId),
     enabled: activeOrganizationId.length > 0,
   });
+
+  const workspaceData = workspaceQuery.data ?? { people: [], payments: [] };
+  const ledger = buildBillingWorkspaceMemberRows(
+    workspaceData.people,
+    workspaceData.payments,
+    locale.toLowerCase().startsWith("pt") ? "pt-BR" : "en-US",
+  );
 
   const detailQuery = useQuery<ClaimDetailEnvelope | null, RpcError>({
     queryKey: ["billing-workspace-claim", selectedClaim?.claim_id],
@@ -163,17 +196,6 @@ export default function BillingWorkspace({
 
   const decisionMutation = useMutation<void, RpcError, DecisionVariables>({
     mutationFn: async ({ action, claim, reason }) => {
-      const rpcName =
-        action === "approve" ? claim.approve_command : claim.reject_command;
-
-      if (!rpcName) {
-        throw {
-          code: "40001",
-          message:
-            errorCopy.claimNoLongerActionable,
-        } satisfies RpcError;
-      }
-
       if (action === "approve") {
         const { error } = await (claim.purpose === "initial_admission"
           ? supabase.rpc("approve_initial_claim", {
@@ -212,12 +234,13 @@ export default function BillingWorkspace({
       await queryClient.invalidateQueries({
         queryKey: ["billing-workspace-claim", variables.claim.claim_id],
       });
+      setSelectedMember(null);
       setSelectedClaim(null);
       setRejectionReason("");
       setActionError(null);
       router.refresh();
     },
-    onError: async (error, variables) => {
+    onError: async (error) => {
       setActionError(getRpcErrorMessage(error, errorCopy));
       if (error.code === "40001") {
         await queryClient.invalidateQueries({
@@ -225,25 +248,19 @@ export default function BillingWorkspace({
         });
         await detailQuery.refetch();
       }
-      void variables;
     },
   });
 
-  const data = workspaceQuery.data ?? [];
-  const queue = view === "queue" ? (data as BillingWorkspaceQueueRow[]) : [];
-  const payments =
-    view === "payments" ? (data as BillingWorkspacePaymentRow[]) : [];
-  const members =
-    view === "members" ? (data as BillingWorkspaceMemberRow[]) : [];
-
-  const openClaim = (claim: BillingWorkspaceQueueRow) => {
+  const openMember = (member: MemberTableRow) => {
     setActionError(null);
     setRejectionReason("");
-    setSelectedClaim(claim);
+    setSelectedMember(member);
+    setSelectedClaim(memberToClaim(member));
   };
 
-  const closeClaim = () => {
+  const closeReview = () => {
     if (decisionMutation.isPending) return;
+    setSelectedMember(null);
     setSelectedClaim(null);
     setActionError(null);
     setRejectionReason("");
@@ -251,14 +268,7 @@ export default function BillingWorkspace({
 
   const handleOrganizationChange = (nextOrganizationId: string) => {
     setOrganizationId(nextOrganizationId);
-    setSelectedClaim(null);
-    setActionError(null);
-  };
-
-  const handleViewChange = (nextView: BillingWorkspaceView) => {
-    setView(nextView);
-    setSelectedClaim(null);
-    setActionError(null);
+    closeReview();
   };
 
   const handleApprove = async () => {
@@ -279,8 +289,8 @@ export default function BillingWorkspace({
     });
   };
 
-  const reviewSurface =
-    selectedClaim?.purpose === "initial_admission" ? (
+  const reviewSurface = selectedClaim ? (
+    selectedClaim.purpose === "initial_admission" ? (
       <InitialPaymentClaimReview
         action={
           decisionMutation.isPending
@@ -298,7 +308,7 @@ export default function BillingWorkspace({
         }
         detailLoading={detailQuery.isPending}
         onApprove={handleApprove}
-        onClose={closeClaim}
+        onClose={closeReview}
         onReject={handleReject}
         rejectionReason={rejectionReason}
         onRejectionReasonChange={setRejectionReason}
@@ -323,21 +333,21 @@ export default function BillingWorkspace({
         }
         detailLoading={detailQuery.isPending}
         onApprove={handleApprove}
-        onClose={closeClaim}
+        onClose={closeReview}
         onReject={handleReject}
         rejectionReason={rejectionReason}
         onRejectionReasonChange={setRejectionReason}
       />
-    );
+    )
+  ) : selectedMember ? (
+    <BillingWorkspaceMemberReview member={selectedMember} onClose={closeReview} />
+  ) : null;
 
   return (
     <BillingWorkspaceLayout
       organizations={organizations}
       activeOrganizationId={activeOrganizationId}
-      view={view}
-      queue={queue}
-      payments={payments}
-      members={members}
+      memberCount={ledger.rows.length}
       workspaceIsPending={workspaceQuery.isPending}
       workspaceIsFetching={workspaceQuery.isFetching}
       workspaceErrorMessage={
@@ -345,14 +355,20 @@ export default function BillingWorkspace({
           ? getRpcErrorMessage(workspaceQuery.error, errorCopy)
           : null
       }
-      workspaceHasLoadedQueue={Boolean(workspaceQuery.data) && queue.length > 0}
-      reviewOpen={selectedClaim !== null}
+      workspaceHasLoadedLedger={Boolean(workspaceQuery.data)}
+      ledger={
+        <BillingWorkspaceLedger
+          key={activeOrganizationId}
+          data={ledger.rows}
+          periodOptions={ledger.periodOptions}
+          onOpenMember={openMember}
+        />
+      }
+      reviewOpen={selectedMember !== null}
       reviewSurface={reviewSurface}
       onOrganizationChange={handleOrganizationChange}
-      onViewChange={handleViewChange}
       onRefresh={() => void workspaceQuery.refetch()}
-      onOpenClaim={openClaim}
-      onCloseReview={closeClaim}
+      onCloseReview={closeReview}
     />
   );
 }

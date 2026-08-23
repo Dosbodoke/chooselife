@@ -511,6 +511,65 @@
       "emptyNoMembers": "Não há membros ativos disponíveis para esta associação.",
       "emptyNoMatch": "Nenhum membro corresponde a estes filtros."
     },
+    "ledger": {
+      "eyebrow": "Livro-caixa de membros",
+      "title": "Pessoas e situação das contribuições",
+      "description": "Uma tabela para membros ativos, candidatos e rascunhos em {period}.",
+      "peopleCount": "{count} pessoas",
+      "notPaidCount": "{count} não pagas",
+      "searchLabel": "Buscar pessoas",
+      "searchPlaceholder": "Buscar nome ou @usuário",
+      "periodLabel": "Período de cobrança",
+      "lifecycleLabel": "Ciclo",
+      "financialLabel": "Situação financeira",
+      "tableLabel": "Livro-caixa de membros da associação",
+      "review": "Revisar",
+      "showing": "Mostrando {shown} de {total} pessoas",
+      "previousPage": "Página anterior",
+      "nextPage": "Próxima página",
+      "emptyTitle": "Nenhuma pessoa corresponde a estes filtros",
+      "emptyDescription": "Tente outro período ou limpe os filtros.",
+      "resetFilters": "Limpar filtros",
+      "columns": {
+        "person": "Pessoa",
+        "lifecycle": "Ciclo",
+        "periodStatus": "Situação do período",
+        "plan": "Plano",
+        "amount": "Valor",
+        "due": "Vencimento",
+        "lastPaid": "Último pagamento",
+        "action": "Ação"
+      },
+      "lifecycle": {
+        "all": "Todos os ciclos",
+        "active": "Membro ativo",
+        "activePlural": "Membros ativos",
+        "applicant": "Candidato",
+        "applicants": "Candidatos",
+        "draft": "Rascunho",
+        "drafts": "Rascunhos"
+      },
+      "financial": {
+        "all": "Todas as situações",
+        "notPaid": "Não pagas neste período",
+        "paid": "Paga",
+        "underReview": "Em revisão",
+        "awaitingPayment": "Aguardando pagamento",
+        "overdue": "Vencida",
+        "scheduled": "Agendada",
+        "noObligation": "Sem obrigação"
+      },
+      "loadedAnnouncement": "Livro-caixa carregado com {count} pessoas."
+    },
+    "ledgerReview": {
+      "eyebrow": "Registro da pessoa",
+      "periodDetail": "Detalhes do período",
+      "paymentType": "Tipo de pagamento",
+      "available": "Disponível em",
+      "joined": "Entrada",
+      "recentPeriods": "Períodos recentes",
+      "noHistory": "Ainda não há histórico de pagamentos para esta pessoa."
+    },
     "initialClaims": {
       "title": "Solicitações de pagamento inicial",
       "description": "Verifique um pagamento e admita um candidato por vez. Cada ação é verificada e registrada pelo banco de dados como uma única decisão.",
