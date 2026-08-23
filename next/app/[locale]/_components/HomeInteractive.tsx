@@ -6,9 +6,8 @@ import { useQueryState } from "nuqs";
 import CreateHighline from "@/components/CreateHighline";
 import MapToggle from "@/components/Map/MapToggle";
 
-import { HighlineList } from "./HighlineList";
+import { HomeBrowseFirst } from "./HomeBrowseFirst";
 import { QrCodeBadge } from "./qr-code-badge";
-import Search from "./search";
 
 const Map = dynamic(() => import("@/components/Map/Map"), {
   ssr: false,
@@ -53,13 +52,7 @@ export default function HomeInteractive() {
       ) : (
         <>
           <QrCodeBadge />
-          <div
-            className="relative z-20 mx-2 max-w-screen-xl space-y-4 md:mx-auto"
-            style={{ marginTop: "70dvh" }}
-          >
-            <Search />
-            <HighlineList />
-          </div>
+          <HomeBrowseFirst />
         </>
       )}
       <CreateHighline

@@ -72,6 +72,10 @@ test("homepage contains crawlable content and SoftwareApplication JSON-LD", asyn
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") || "", /^text\/html/);
   assert.match(html, /<h1\b/i);
+  assert.match(
+    html,
+    /(?:Find your next highline|Encontre seu pr[oó]ximo highline)/,
+  );
   assert.ok(
     visibleText(html).length >= 500,
     `expected at least 500 visible characters, got ${visibleText(html).length}`,

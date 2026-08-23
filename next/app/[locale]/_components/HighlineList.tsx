@@ -11,7 +11,11 @@ import { HighlineListSkeleton } from "./HighlineListSkeleton";
 
 const PAGE_SIZE = 6;
 
-export function HighlineList() {
+type HighlineListProps = {
+  layout?: "grid" | "rail";
+};
+
+export function HighlineList({ layout = "grid" }: HighlineListProps) {
   const [searchValue = ""] = useQueryState("q");
 
   const { data, fetchNextPage, hasNextPage, isFetching } = useInfiniteQuery({
@@ -29,13 +33,22 @@ export function HighlineList() {
     },
   });
 
+  const listClassName =
+    layout === "rail"
+      ? "flex snap-x gap-4 overflow-x-auto pb-4 md:gap-5"
+      : "grid grid-cols-1 justify-items-center gap-4 md:grid-cols-2 lg:grid-cols-3";
+  const cardClassName =
+    layout === "rail" ? "min-w-[18rem] snap-start md:min-w-[20rem]" : undefined;
+
   return (
     <>
-      <section className="grid grid-cols-1 justify-items-center gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <section className={listClassName}>
         {data?.pages.map((page) =>
-          page.data?.map((high) => <Highline key={high.id} highline={high} />)
+          page.data?.map((high) => (
+            <Highline key={high.id} highline={high} classname={cardClassName} />
+          )),
         )}
-        {isFetching ? <HighlineListSkeleton /> : null}
+        {isFetching ? <HighlineListSkeleton layout={layout} /> : null}
       </section>
       <motion.div
         key={data?.pages.length}
