@@ -16,16 +16,31 @@ import UsernameDialog from "./_components/UsernameDialog";
 import Providers from "./Providers";
 
 const APP_NAME = "Chooselife";
-const APP_DEFAULT_TITLE = "Chooselife";
+const APP_DEFAULT_TITLE = "Chooselife | Highline community";
 const APP_TITLE_TEMPLATE = "%s 🆑";
-const APP_DESCRIPTION = "O aplicativo feito para o Highliner";
+const APP_DESCRIPTION =
+  "Chooselife is the highline app for discovering lines, exploring their locations, recording walks, and finding events.";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://localhost:3000";
+const BASE_URL = (
+  process.env.NEXT_PUBLIC_BASE_URL || "https://chooselife.club"
+).replace(/\/+$/, "");
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
-  keywords: ["Highline", "Slackline", "Slackmap", "Freestyle"],
+  keywords: [
+    "Chooselife",
+    "Highline",
+    "Slackline",
+    "Highline map",
+    "Slackmap",
+    "Freestyle",
+  ],
   applicationName: APP_NAME,
+  authors: [{ name: APP_NAME, url: BASE_URL }],
+  creator: APP_NAME,
+  publisher: APP_NAME,
+  category: "sports",
+  classification: "Highline and slackline community",
   title: {
     default: APP_DEFAULT_TITLE,
     template: APP_TITLE_TEMPLATE,

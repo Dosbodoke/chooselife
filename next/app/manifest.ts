@@ -4,7 +4,8 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Chooselife",
     short_name: "Chooselife",
-    description: "O aplicativo feito para o Highliner",
+    description:
+      "Chooselife is the highline app for discovering lines, exploring their locations, recording walks, and finding events.",
     start_url: "/",
     display: "standalone",
     orientation: "portrait",
