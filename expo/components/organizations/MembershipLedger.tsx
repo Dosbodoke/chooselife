@@ -9,7 +9,7 @@ import {
   RefreshCw,
   ShieldCheck,
 } from 'lucide-react-native';
-import React, { useCallback } from 'react';
+import React from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
@@ -31,16 +31,18 @@ const formatAmount = (amount: number, currency: string) =>
     currency,
   }).format(amount / 100);
 
+const ledgerDateFormatter = new Intl.DateTimeFormat('pt-BR', {
+  day: '2-digit',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
 const formatDate = (date: string) => {
   const parsed = new Date(`${date}T00:00:00Z`);
   if (Number.isNaN(parsed.getTime())) return date;
 
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(parsed);
+  return ledgerDateFormatter.format(parsed);
 };
 
 const financialCopy: Record<
@@ -325,14 +327,12 @@ export function MembershipLedger({
     refetchOnWindowFocus: true,
   });
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!userId) return;
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.membershipBilling.byOrg(organizationId, userId),
-      });
-    }, [organizationId, queryClient, userId]),
-  );
+  useFocusEffect(() => {
+    if (!userId) return;
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.membershipBilling.byOrg(organizationId, userId),
+    });
+  });
 
   if (!userId) return null;
 

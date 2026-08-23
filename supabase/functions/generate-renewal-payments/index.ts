@@ -65,11 +65,10 @@ function getLocalDate(timezone: string): string {
     timeZone: timezone,
     year: "numeric",
   }).formatToParts(new Date());
-  const values = Object.fromEntries(
-    parts
-      .filter((part) => part.type !== "literal")
-      .map((part) => [part.type, part.value]),
-  );
+  const values = parts.reduce<Record<string, string>>((result, part) => {
+    if (part.type !== "literal") result[part.type] = part.value;
+    return result;
+  }, {});
 
   return `${values.year}-${values.month}-${values.day}`;
 }
@@ -188,11 +187,10 @@ async function generateLedgerObligations() {
 
   const results = (generated ?? []) as GeneratorResult[];
   const obligationIds = [
-    ...new Set(
-      results
-        .filter((result) => result.obligation_id)
-        .map((result) => result.obligation_id as string),
-    ),
+    ...results.reduce<Set<string>>((ids, result) => {
+      if (result.obligation_id) ids.add(result.obligation_id);
+      return ids;
+    }, new Set<string>()),
   ];
 
   if (obligationIds.length === 0) {
@@ -218,14 +216,16 @@ async function generateLedgerObligations() {
 
   const typedObligations = (obligations ??
     []) as unknown as GeneratedObligation[];
-  let notified = 0;
+  const notified = (
+    await Promise.all(
+      typedObligations.map(async (obligation) => {
+        if (await hasLedgerNotification(obligation)) return 0;
 
-  for (const obligation of typedObligations) {
-    if (await hasLedgerNotification(obligation)) continue;
-
-    await createLedgerNotification(obligation);
-    notified += 1;
-  }
+        await createLedgerNotification(obligation);
+        return 1;
+      }),
+    )
+  ).reduce<number>((total, created) => total + created, 0);
 
   return {
     generated: results.length,
