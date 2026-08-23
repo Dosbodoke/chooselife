@@ -20,6 +20,15 @@ npx supabase functions deploy stripe-webhook --no-verify-jwt
 echo -e "${GREEN}Deploying generate-renewal-payments...${NC}"
 npx supabase functions deploy generate-renewal-payments
 
+echo -e "${GREEN}Deploying contribution-reminder-enqueuer...${NC}"
+npx supabase functions deploy contribution-reminder-enqueuer
+
+echo -e "${GREEN}Deploying contribution-reminder-dispatcher...${NC}"
+npx supabase functions deploy contribution-reminder-dispatcher
+
+echo -e "${GREEN}Deploying contribution-reminder-receipts...${NC}"
+npx supabase functions deploy contribution-reminder-receipts
+
 echo -e "${GREEN}Deploying push-notification...${NC}"
 npx supabase functions deploy push-notification
 

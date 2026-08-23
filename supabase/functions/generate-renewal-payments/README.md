@@ -21,10 +21,18 @@ the reviewed, unambiguous mappings with the same command set to `true`.
 
 ## Push delivery
 
-The app's existing notification pipeline expects an `INSERT` Database Webhook
-on `public.notifications` to call the `push-notification` Edge Function. Ensure
-that webhook is configured in each deployed Supabase project; webhook
-configuration is managed outside this repository.
+Contribution reminders use the private outbox workflow in issue #211. The
+`contribution-reminder-enqueuer` polls for the latest useful logical stage, the
+`contribution-reminder-dispatcher` leases one physical member/association
+window and sends a generic Ledger deep link, and
+`contribution-reminder-receipts` reconciles Expo tickets and retires invalid
+tokens. These jobs are scheduled from the migration and use the Vault
+`project_url` and `secret_key` values.
+
+The legacy `daily-renewal-check` job and its immediate renewal-notification
+behavior were removed by the recurring-obligation cutover. Keep the general
+`public.notifications` webhook for unrelated product notifications, but do
+not use it for contribution reminders.
 
 ## Deployment
 

@@ -309,3 +309,21 @@ entrypoint = "./functions/start-subscription/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/start-subscription/*.html" ]
+
+[functions.contribution-reminder-enqueuer]
+enabled = true
+verify_jwt = true
+import_map = "./functions/contribution-reminder-enqueuer/deno.json"
+entrypoint = "./functions/contribution-reminder-enqueuer/index.ts"
+
+[functions.contribution-reminder-dispatcher]
+enabled = true
+verify_jwt = true
+import_map = "./functions/contribution-reminder-dispatcher/deno.json"
+entrypoint = "./functions/contribution-reminder-dispatcher/index.ts"
+
+[functions.contribution-reminder-receipts]
+enabled = true
+verify_jwt = true
+import_map = "./functions/contribution-reminder-receipts/deno.json"
+entrypoint = "./functions/contribution-reminder-receipts/index.ts"
