@@ -2215,7 +2215,7 @@ export type Database = {
       }
       contribution_reminder_backoff: {
         Args: { p_attempt_count: number }
-        Returns: unknown
+        Returns: string
       }
       contribution_reminder_delivery_at: {
         Args: { p_local_time: string; p_stage_on: string; p_timezone: string }
@@ -2263,27 +2263,16 @@ export type Database = {
         }
         Returns: string
       }
-      generate_membership_billing_obligations:
-        | {
-            Args: never
-            Returns: {
-              failure_reason: string
-              obligation_id: string
-              period_key: string
-              result: string
-              schedule_id: string
-            }[]
-          }
-        | {
-            Args: { p_as_of?: string }
-            Returns: {
-              failure_reason: string
-              obligation_id: string
-              period_key: string
-              result: string
-              schedule_id: string
-            }[]
-          }
+      generate_membership_billing_obligations: {
+        Args: never
+        Returns: {
+          failure_reason: string
+          obligation_id: string
+          period_key: string
+          result: string
+          schedule_id: string
+        }[]
+      }
       generate_membership_billing_obligations_at: {
         Args: { p_as_of: string }
         Returns: {
@@ -2564,14 +2553,6 @@ export type Database = {
         }[]
       }
       get_membership_billing_ledger: {
-        Args: {
-          p_history_cursor?: string
-          p_history_limit?: number
-          p_organization_id: string
-        }
-        Returns: Json
-      }
-      get_membership_billing_ledger_legacy: {
         Args: {
           p_history_cursor?: string
           p_history_limit?: number
