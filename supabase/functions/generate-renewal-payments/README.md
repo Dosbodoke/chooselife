@@ -1,33 +1,24 @@
-# Generate Renewal Payments Function
+# Generate Membership Ledger Obligations
 
-This Edge Function is responsible for generating renewal payments for active
-subscriptions.
+This scheduled Edge Function materializes the recurring periods that are ready
+for payment and creates one targeted notification per obligation.
 
-## Logic
+The database function `generate_membership_billing_obligations` is the
+idempotent source of truth. It snapshots the plan, amount, currency, PIX
+payload, availability date, and due date into `payment_obligations`. The Edge
+Function then links notifications to the exact `obligationId`, so opening a
+reminder always refetches the current server-owned Ledger state.
 
-1. It queries for `active` subscriptions where the `current_period_end` is
-   within the next 7 days.
-2. For each subscription, it checks if a `pending` renewal payment already
-   exists.
-3. If no pending payment exists, it fetches the correct price from the
-   `organizations` table based on the subscription's `plan_type` (monthly or
-   annual).
-4. It then creates a new `payments` record with a `status` of `pending`.
-5. On that same run, it inserts a targeted, localized `notifications` row
-   containing the payment, subscription, and organization identifiers plus a
-   deep link to the payment screen.
-
-When a pending payment already has its renewal notification, both inserts are
-skipped so the daily job does not send repeat reminders. If payment creation
-succeeded but notification insertion failed, a later run detects the missing
-notification by payment ID and retries only that notification.
+Notification deduplication uses the obligation ID and notification type. A
+retry can therefore recover a missing notification without creating a second
+obligation or sending a duplicate reminder.
 
 ## Push delivery
 
-The app's existing notification pipeline expects an `INSERT` Database Webhook on
-`public.notifications` to call the `push-notification` Edge Function. Ensure
-that webhook is configured in each deployed Supabase project; the webhook
-configuration is currently managed outside this repository.
+The app's existing notification pipeline expects an `INSERT` Database Webhook
+on `public.notifications` to call the `push-notification` Edge Function. Ensure
+that webhook is configured in each deployed Supabase project; webhook
+configuration is managed outside this repository.
 
 ## Deployment
 
@@ -39,63 +30,8 @@ supabase functions deploy generate-renewal-payments --project-ref <your-project-
 
 ## Scheduling
 
-This function is designed to be run on a schedule (e.g., daily) using `pg_cron`.
-
-After deploying the function, create a new SQL migration in your
-`supabase/migrations` folder to set up the cron job.
-
-The migration should contain the following SQL:
-
-```sql
--- This migration schedules the 'generate-renewal-payments' Edge Function to run daily.
--- It uses Supabase Vault to securely store your project URL and service role key.
-
--- 1. Enable necessary extensions.
-create extension if not exists pg_cron with schema "extensions";
-create extension if not exists pg_net with schema "extensions";
-create extension if not exists supabase_vault with schema "vault";
-
--- 2. Grant necessary permissions.
-grant usage on schema cron to postgres;
-grant all on all tables in schema cron to postgres;
-grant usage on schema net to postgres;
-
--- IMPORTANT: Store your secrets in the Supabase Vault.
--- You must run the following commands manually in the Supabase SQL Editor once.
--- Replace the placeholder values with your actual project reference and service role key.
--- Do NOT commit your secrets to this migration file.
-
-/*
--- Run this in your Supabase SQL Editor:
-select vault.create_secret('https://<your-project-ref>.supabase.co', 'project_url', 'URL for the Supabase project');
-select vault.create_secret('<your-secret-key>', 'service_role_key', 'Supabase secret key');
-*/
-
--- 3. Schedule the function to run daily at midnight UTC.
--- This cron job fetches secrets from the vault to securely call the Edge Function.
-select
-  cron.schedule(
-    'daily-renewal-check',
-    '0 0 * * *', -- Every day at midnight UTC.
-    $$
-    select
-      net.http_post(
-          url:= (select decrypted_secret from vault.decrypted_secrets where name = 'project_url') || '/functions/v1/generate-renewal-payments',
-          headers:=jsonb_build_object(
-            'Content-Type', 'application/json',
-            'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'service_role_key')
-          ),
-          body:='{}'::jsonb
-      ) as request_id;
-    $$
-  );
-
--- NOTE: To unschedule this job if needed, run the following command:
--- select cron.unschedule('daily-renewal-check');
-
--- NOTE: To delete the secrets if you unschedule the job (run manually in SQL Editor):
-/*
-delete from vault.secrets where name = 'project_url';
-delete from vault.secrets where name = 'service_role_key';
-*/
-```
+The existing `daily-renewal-check` `pg_cron` job invokes this function daily.
+The job lives in
+`supabase/migrations/20251113121601_schedule-payment.sql` and uses Supabase
+Vault for the project URL and service-role key. Keep those secrets out of the
+repository.

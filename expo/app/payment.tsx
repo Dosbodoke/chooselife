@@ -56,8 +56,12 @@ type ObligationInstructions = {
   payment_method: string;
   pix_copy_paste: string;
   plan_type: 'monthly' | 'annual';
-  purpose: 'initial_admission';
-  status: 'available' | 'settled' | 'void';
+  purpose: 'initial_admission' | 'recurring';
+  status:
+    'scheduled' | 'available' | 'under_review' | 'overdue' | 'settled' | 'void';
+  available_on: string;
+  due_on: string;
+  period_key: string;
 };
 
 function PaymentState({
@@ -206,11 +210,12 @@ export default function PaymentScreen() {
   const isVoidedObligation = obligationInstructions?.status === 'void';
   const hasManualPixInstructions =
     Boolean(manualPixCopyPaste) && !isSettledObligation && !isVoidedObligation;
-  const initialClaimStatus = obligationInstructions?.claim_status ?? null;
-  const canClaimInitialPayment = Boolean(
+  const claimStatus = obligationInstructions?.claim_status ?? null;
+  const canClaimPayment = Boolean(
     obligationId &&
-    obligationInstructions?.status === 'available' &&
-    (initialClaimStatus === null || initialClaimStatus === 'rejected'),
+    (obligationInstructions?.status === 'available' ||
+      obligationInstructions?.status === 'overdue') &&
+    (claimStatus === null || claimStatus === 'rejected'),
   );
 
   const handleClose = () => {
@@ -247,14 +252,18 @@ export default function PaymentScreen() {
     }) => {
       if (!obligationId) throw new Error('obligationId is required.');
 
-      const { data, error } = await supabase.rpc('claim_initial_payment', {
-        p_obligation_id: obligationId!,
+      const claimArgs = {
+        p_obligation_id: obligationId,
         p_paid_by_applicant: payerType === 'applicant',
         p_payer_name:
           payerType === 'applicant'
             ? undefined
             : normalizePaymentPayerName(payerName),
-      });
+      };
+      const { data, error } =
+        obligationInstructions?.purpose === 'recurring'
+          ? await supabase.rpc('claim_recurring_payment', claimArgs)
+          : await supabase.rpc('claim_initial_payment', claimArgs);
 
       if (error) throw error;
 
@@ -283,9 +292,12 @@ export default function PaymentScreen() {
       await queryClient.invalidateQueries({
         queryKey: paymentObligationInstructionsQueryKey(obligationId),
       });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.membershipBilling.all,
+      });
     },
     onError: (error) => {
-      console.error('Failed to claim initial payment:', error);
+      console.error('Failed to claim payment:', error);
     },
   });
 
@@ -473,13 +485,13 @@ export default function PaymentScreen() {
       formattedAmount={formattedAmount}
       insets={insets}
       manualPixCopyPaste={manualPixCopyPaste}
-      canClaimInitialPayment={canClaimInitialPayment}
+      canClaimPayment={canClaimPayment}
       claimDecisionReason={
         obligationInstructions?.claim_decision_reason ?? null
       }
       claimPayerName={obligationInstructions?.payer_name ?? null}
       claimPayerType={obligationInstructions?.payer_type ?? null}
-      claimStatus={initialClaimStatus}
+      claimStatus={claimStatus}
       claimingPayment={claimPaymentMutation.isPending}
       claimPaymentError={claimPaymentMutation.isError}
       obligationStatus={obligationInstructions?.status ?? null}
@@ -505,7 +517,7 @@ export default function PaymentScreen() {
 }
 
 function ManualPixPayment({
-  canClaimInitialPayment,
+  canClaimPayment,
   canReportPayment,
   claimDecisionReason,
   claimPayerName,
@@ -534,7 +546,7 @@ function ManualPixPayment({
   title,
   userMarkedPaidAt,
 }: {
-  canClaimInitialPayment: boolean;
+  canClaimPayment: boolean;
   canReportPayment: boolean;
   claimDecisionReason: string | null;
   claimPayerName: string | null;
@@ -574,8 +586,8 @@ function ManualPixPayment({
     payerName,
     payerType,
   });
-  const isInitialClaimUnderReview = claimStatus === 'under_review';
-  const isInitialClaimRejected = claimStatus === 'rejected';
+  const isClaimUnderReview = claimStatus === 'under_review';
+  const isClaimRejected = claimStatus === 'rejected';
 
   const handleClaimPress = () => {
     setShowPayerError(true);
@@ -654,23 +666,23 @@ function ManualPixPayment({
           <Text className="text-white/65 text-center text-sm leading-5 mt-1">
             {obligationStatus === 'void'
               ? 'Esta cobrança não está mais disponível.'
-              : isInitialClaimUnderReview
+              : isClaimUnderReview
                 ? 'Seu aviso de pagamento está em análise. A associação conferirá o PIX manualmente.'
-                : canClaimInitialPayment
+                : canClaimPayment
                   ? 'Depois de pagar, confirme quem fez o PIX para enviar o aviso à associação.'
                   : canReportPayment
                     ? 'Depois de pagar, toque em "Já paguei". A equipe confere o PIX e aprova sua assinatura manualmente.'
                     : claimStatus === 'approved' ||
                         obligationStatus === 'settled'
                       ? 'Este pagamento já foi confirmado pela associação.'
-                      : 'Depois de pagar, a associação confere o PIX e conclui a admissão manualmente.'}
+                      : 'Depois de pagar, a associação confere o PIX e conclui a confirmação manualmente.'}
           </Text>
         </Animated.View>
         <Animated.View
           entering={FadeIn.delay(900).duration(300)}
           className="mx-6 gap-3 mt-auto"
         >
-          {canClaimInitialPayment ? (
+          {canClaimPayment ? (
             <View className="rounded-2xl border border-white/15 bg-white/10 p-4 gap-3">
               <Text className="text-white text-base font-semibold">
                 Quem fez o PIX?
@@ -736,7 +748,7 @@ function ManualPixPayment({
                     : 'O nome deve ter no máximo 120 caracteres.'}
                 </Text>
               ) : null}
-              {isInitialClaimRejected && claimDecisionReason ? (
+              {isClaimRejected && claimDecisionReason ? (
                 <Text className="text-amber-100/80 text-sm leading-5">
                   Motivo da última análise: {claimDecisionReason}
                 </Text>
@@ -754,7 +766,7 @@ function ManualPixPayment({
                   <ActivityIndicator color="#000" />
                 ) : (
                   <Text className="text-black text-[17px] font-bold">
-                    {isInitialClaimRejected
+                    {isClaimRejected
                       ? 'Enviar nova confirmação'
                       : 'Já fiz o PIX'}
                   </Text>
@@ -766,7 +778,7 @@ function ManualPixPayment({
                 </Text>
               ) : null}
             </View>
-          ) : isInitialClaimUnderReview ? (
+          ) : isClaimUnderReview ? (
             <View className="rounded-2xl border border-emerald-300/25 bg-emerald-400/10 p-4 gap-2">
               <Text className="text-emerald-100 text-base font-semibold text-center">
                 Pagamento em análise
@@ -820,7 +832,7 @@ function ManualPixPayment({
             <Text className="text-white/65 text-center text-sm leading-5">
               {claimStatus === 'approved' || obligationStatus === 'settled'
                 ? 'Este pagamento já foi confirmado pela associação.'
-                : 'Depois de pagar, a associação receberá sua solicitação para conferir o PIX e concluir a admissão.'}
+                : 'Depois de pagar, a associação receberá sua solicitação para conferir o PIX e concluir a confirmação.'}
             </Text>
           )}
           {canReportPayment && userMarkedPaidAt ? (
@@ -879,6 +891,9 @@ const PaymentStatusSubscription = ({
             onSucceeded();
             queryClient.invalidateQueries({
               queryKey: queryKeys.subscription.all,
+            });
+            queryClient.invalidateQueries({
+              queryKey: queryKeys.membershipBilling.all,
             });
             if (slug && profileId) {
               queryClient.invalidateQueries({
