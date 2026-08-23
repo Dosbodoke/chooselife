@@ -264,6 +264,15 @@ select set_config(
 );
 
 select is(
+  (select count(*)::integer
+   from public.get_billing_workspace_people(
+     '82000000-0000-4000-8000-000000000001'::uuid
+   )),
+  2,
+  'the people ledger returns active association members with profile fields'
+);
+
+select is(
   (select count(*)::integer from public.get_billing_workspace_organizations()),
   1,
   'the workspace lists only association admin scopes'
