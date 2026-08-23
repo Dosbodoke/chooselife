@@ -32,4 +32,4 @@ jobs:
 
       - name: Run format:translations check
         working-directory: ./expo
-        run: pnpm run format:translations
+        run: pnpm exec eslint --fix --format ../node_modules/eslint-plugin-i18n-json/formatter.js ./i18n/locales
