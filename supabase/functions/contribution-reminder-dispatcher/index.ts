@@ -130,17 +130,45 @@ async function dispatchBatch(batch: ClaimedBatch): Promise<{
   let failed = 0;
   let ticketed = 0;
   let messageOffset = 0;
+  const chunks = expo
+    .chunkPushNotifications(messages.map(({ message }) => message))
+    .map((chunk) => {
+      const chunkWithOffset = { chunk, messageOffset };
+      messageOffset += chunk.length;
+      return chunkWithOffset;
+    });
+  let transportFailure: unknown = null;
 
   try {
-    for (
-      const chunk of expo.chunkPushNotifications(
-        messages.map(({ message }) => message),
-      )
-    ) {
-      const chunkResults = await expo.sendPushNotificationsAsync(chunk);
+    const chunkResults = await Promise.all(
+      chunks.map(async ({ chunk, messageOffset: chunkOffset }) => {
+        try {
+          return {
+            chunk,
+            messageOffset: chunkOffset,
+            results: await expo.sendPushNotificationsAsync(chunk),
+            error: null,
+          };
+        } catch (error) {
+          return {
+            chunk,
+            messageOffset: chunkOffset,
+            results: null,
+            error,
+          };
+        }
+      }),
+    );
 
-      chunkResults.forEach((ticket, index) => {
-        const attempt = messages[messageOffset + index]?.attempt;
+    for (const chunkResult of chunkResults) {
+      if (chunkResult.results === null) {
+        transportFailure ??= chunkResult.error ?? new Error("Expo send failed");
+        failed += 1;
+        continue;
+      }
+
+      chunkResult.results.forEach((ticket, index) => {
+        const attempt = messages[chunkResult.messageOffset + index]?.attempt;
         if (!attempt) return;
 
         if (ticket.status === "ok") {
@@ -163,8 +191,12 @@ async function dispatchBatch(batch: ClaimedBatch): Promise<{
         });
       });
 
-      for (let index = chunkResults.length; index < chunk.length; index += 1) {
-        const attempt = messages[messageOffset + index]?.attempt;
+      for (
+        let index = chunkResult.results.length;
+        index < chunkResult.chunk.length;
+        index += 1
+      ) {
+        const attempt = messages[chunkResult.messageOffset + index]?.attempt;
         if (!attempt) continue;
 
         failed += 1;
@@ -175,8 +207,6 @@ async function dispatchBatch(batch: ClaimedBatch): Promise<{
           status: "error",
         });
       }
-
-      messageOffset += chunk.length;
     }
   } catch (error) {
     await recordTickets(batch, tickets);
@@ -188,6 +218,21 @@ async function dispatchBatch(batch: ClaimedBatch): Promise<{
     return {
       batches: 1,
       failed: failed + 1,
+      messages: attempts.length,
+      ticketed,
+    };
+  }
+
+  if (transportFailure !== null) {
+    await recordTickets(batch, tickets);
+    await supabaseAdmin.rpc("record_contribution_reminder_send_failure", {
+      p_batch_id: batch.batch_id,
+      p_failure_code: classifyTransportFailure(transportFailure),
+      p_lease_token: batch.lease_token,
+    });
+    return {
+      batches: 1,
+      failed,
       messages: attempts.length,
       ticketed,
     };
@@ -235,24 +280,34 @@ Deno.serve(async (req) => {
     ticketed: 0,
   };
 
-  for (const batch of batches) {
-    try {
-      const result = await dispatchBatch(batch);
-      summary.batches += result.batches;
-      summary.failed += result.failed;
-      summary.messages += result.messages;
-      summary.ticketed += result.ticketed;
-    } catch (error) {
+  const dispatchResults = await Promise.all(
+    batches.map(async (batch) => {
+      try {
+        return { result: await dispatchBatch(batch) };
+      } catch (error) {
+        console.error("Contribution reminder batch dispatch failed", {
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+        await supabaseAdmin.rpc("record_contribution_reminder_send_failure", {
+          p_batch_id: batch.batch_id,
+          p_failure_code: classifyTransportFailure(error),
+          p_lease_token: batch.lease_token,
+        });
+        return { result: null };
+      }
+    }),
+  );
+
+  for (const { result } of dispatchResults) {
+    if (!result) {
       summary.failed += 1;
-      console.error("Contribution reminder batch dispatch failed", {
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-      await supabaseAdmin.rpc("record_contribution_reminder_send_failure", {
-        p_batch_id: batch.batch_id,
-        p_failure_code: classifyTransportFailure(error),
-        p_lease_token: batch.lease_token,
-      });
+      continue;
     }
+
+    summary.batches += result.batches;
+    summary.failed += result.failed;
+    summary.messages += result.messages;
+    summary.ticketed += result.ticketed;
   }
 
   console.log("Contribution reminder dispatch complete", summary);
