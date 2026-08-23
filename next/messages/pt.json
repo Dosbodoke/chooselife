@@ -161,17 +161,17 @@
     },
     "email": {
       "buttonLabel": "Continuar com email",
-      "title": "Continuar com um link de email 💌",
-      "description": "Um link será enviado para seu e-mail e ele poderá ser usado para fazer login sem digitar nenhuma senha",
-      "placeholder": "Insira seu email",
+      "title": "Entrar com email",
+      "description": "Digite o email e a senha que você usa no app Chooselife.",
+      "placeholder": "Seu email",
+      "passwordPlaceholder": "Sua senha",
       "back": "Voltar",
-      "submit": "Enviar",
-      "invalid": "Email invalido"
-    },
-    "inbox": {
-      "title": "Cheque seu email! 🍄",
-      "preDescription": "Abra o link enviado para",
-      "postDescription": "neste navegador"
+      "submit": "Entrar",
+      "submitting": "Entrando…",
+      "invalid": "Email inválido",
+      "passwordRequired": "Senha é obrigatória",
+      "invalidCredentials": "Email ou senha inválidos",
+      "loginError": "Não foi possível entrar. Tente novamente."
     }
   },
   "profileMenu": {
