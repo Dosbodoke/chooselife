@@ -1667,6 +1667,21 @@ export type Database = {
         Args: { p_payment_id: string }
         Returns: boolean
       }
+      approve_initial_claim: {
+        Args: { p_claim_id: string }
+        Returns: {
+          audit_event_id: string
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          decision_applied_now: boolean
+          membership_user_id: string
+          obligation_id: string
+          obligation_status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+          subscription_current_period_end: string
+          subscription_id: string
+          subscription_status: Database["public"]["Enums"]["subscription_status_enum"]
+        }[]
+      }
       book_festival_schedule_slot: {
         Args: {
           target_display_name?: string
@@ -1803,6 +1818,87 @@ export type Database = {
           name: string
           sector_id: number
           status: string
+        }[]
+      }
+      get_initial_payment_claim_detail: {
+        Args: { p_claim_id: string }
+        Returns: {
+          accepted_terms_at: string
+          address_line: string
+          allergies: string
+          amount: number
+          applicant_handle: string
+          applicant_name: string
+          applicant_profile_picture: string
+          application_id: string
+          application_revision_id: string
+          attempt_count: number
+          audit_history: Json
+          birth_date: string
+          birthplace: string
+          blood_type: Database["public"]["Enums"]["blood_type_enum"]
+          city: string
+          claim_created_at: string
+          claim_history: Json
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          claimant_user_id: string
+          cpf: string
+          currency: string
+          decided_at: string
+          decision_reason: string
+          dietary_restrictions: string
+          draft_version: number
+          email: string
+          emergency_contact_name: string
+          emergency_contact_phone: string
+          emergency_contact_relationship: string
+          first_aid_course: Database["public"]["Enums"]["first_aid_course_enum"]
+          full_name: string
+          has_allergies: boolean
+          has_dietary_restrictions: boolean
+          has_rescue_course: boolean
+          highline_experience: Database["public"]["Enums"]["highline_experience_enum"]
+          id_document_issuer: string
+          id_document_number: string
+          marital_status: Database["public"]["Enums"]["marital_status_enum"]
+          nationality: string
+          obligation_id: string
+          organization_id: string
+          organization_name: string
+          organization_slug: string
+          payer_name: string
+          payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
+          phone: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          postal_code: string
+          profession: string
+          revision_number: number
+          state: string
+          submitted_at: string
+          terms_version: string
+        }[]
+      }
+      get_initial_payment_claim_queue: {
+        Args: never
+        Returns: {
+          amount: number
+          applicant_handle: string
+          applicant_name: string
+          applicant_profile_picture: string
+          application_revision_id: string
+          attempt_count: number
+          claim_created_at: string
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          claimant_user_id: string
+          currency: string
+          obligation_id: string
+          organization_id: string
+          organization_name: string
+          payer_name: string
+          payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
         }[]
       }
       get_manual_payment_instructions: {
@@ -1952,6 +2048,18 @@ export type Database = {
       regenerate_festival_schedule_window: {
         Args: { target_window_id: string }
         Returns: number
+      }
+      reject_initial_claim: {
+        Args: { p_claim_id: string; p_reason: string }
+        Returns: {
+          audit_event_id: string
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          decision_applied_now: boolean
+          decision_reason: string
+          obligation_id: string
+          obligation_status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+        }[]
       }
       submit_association_application: {
         Args: {
