@@ -142,20 +142,13 @@ export default function BillingWorkspace({
     claimNoLongerActionable: t("errors.claimNoLongerActionable"),
     rejectionReasonRequired: t("errors.rejectionReasonRequired"),
   };
-  const [organizationId, setOrganizationId] = useState(
-    organizations[0]?.organization_id ?? "",
-  );
   const [selectedMember, setSelectedMember] = useState<MemberTableRow | null>(null);
   const [selectedClaim, setSelectedClaim] =
     useState<BillingWorkspaceQueueRow | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const selectedOrganization =
-    organizations.find(
-      (organization) => organization.organization_id === organizationId,
-    ) ?? organizations[0];
-  const activeOrganizationId = selectedOrganization?.organization_id ?? "";
+  const activeOrganizationId = organizations[0]?.organization_id ?? "";
 
   const workspaceQuery = useQuery<WorkspaceData, RpcError>({
     queryKey: ["billing-workspace", activeOrganizationId],
@@ -266,11 +259,6 @@ export default function BillingWorkspace({
     setRejectionReason("");
   };
 
-  const handleOrganizationChange = (nextOrganizationId: string) => {
-    setOrganizationId(nextOrganizationId);
-    closeReview();
-  };
-
   const handleApprove = async () => {
     if (!selectedClaim || decisionMutation.isPending) return;
     setActionError(null);
@@ -346,10 +334,8 @@ export default function BillingWorkspace({
   return (
     <BillingWorkspaceLayout
       organizations={organizations}
-      activeOrganizationId={activeOrganizationId}
       memberCount={ledger.rows.length}
       workspaceIsPending={workspaceQuery.isPending}
-      workspaceIsFetching={workspaceQuery.isFetching}
       workspaceErrorMessage={
         workspaceQuery.error
           ? getRpcErrorMessage(workspaceQuery.error, errorCopy)
@@ -366,8 +352,6 @@ export default function BillingWorkspace({
       }
       reviewOpen={selectedMember !== null}
       reviewSurface={reviewSurface}
-      onOrganizationChange={handleOrganizationChange}
-      onRefresh={() => void workspaceQuery.refetch()}
       onCloseReview={closeReview}
     />
   );

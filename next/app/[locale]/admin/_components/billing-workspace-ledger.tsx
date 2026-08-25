@@ -46,7 +46,7 @@ function statusTone(status: FinancialStatus) {
 }
 
 function lifecycleTone(status: LifecycleStatus) {
-  if (status === "active") return "border-slate-200 bg-white text-slate-700";
+  if (status === "active") return "border-emerald-200 bg-emerald-50 text-emerald-700";
   if (status === "applicant") return "border-violet-200 bg-violet-50 text-violet-700";
   return "border-dashed border-slate-300 bg-slate-50 text-slate-500";
 }
@@ -85,9 +85,6 @@ export default function BillingWorkspaceLedger({
     initialPeriodKey: periodOptions[0]?.key,
     periodOptions,
   });
-  const periodLabel =
-    model.periodOptions.find((period) => period.key === model.filters.periodKey)?.label ??
-    model.filters.periodKey;
   const lifecycleLabels: Record<LifecycleStatus, string> = {
     active: t("ledger.lifecycle.active"),
     applicant: t("ledger.lifecycle.applicant"),
@@ -130,6 +127,10 @@ export default function BillingWorkspaceLedger({
     if (columnId === "lifecycle") {
       return (
         <Badge variant="outline" className={lifecycleTone(row.lifecycle)}>
+          <span
+            className="mr-1.5 inline-block size-1.5 shrink-0 rounded-full bg-current"
+            aria-hidden="true"
+          />
           {lifecycleLabels[row.lifecycle]}
         </Badge>
       );
@@ -141,7 +142,10 @@ export default function BillingWorkspaceLedger({
           variant="outline"
           className={`whitespace-nowrap ${statusTone(period.status)}`}
         >
-          <span className="mr-1.5 size-1.5 rounded-full bg-current" aria-hidden="true" />
+          <span
+            className="mr-1.5 inline-block size-1.5 shrink-0 rounded-full bg-current"
+            aria-hidden="true"
+          />
           {financialLabels[period.status]}
         </Badge>
       );
@@ -187,9 +191,9 @@ export default function BillingWorkspaceLedger({
   return (
     <section
       aria-labelledby="billing-ledger-title"
-      className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_-38px_rgba(15,23,42,0.55)]"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden"
     >
-      <div className="border-b border-slate-200 px-5 py-5 md:px-6">
+      <div className="shrink-0 border-b border-slate-200/80 pb-5 pt-0">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
@@ -199,17 +203,6 @@ export default function BillingWorkspaceLedger({
             <h1 id="billing-ledger-title" className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
               {t("ledger.title")}
             </h1>
-            <p className="mt-1 text-sm text-slate-500">
-              {t("ledger.description", { period: periodLabel })}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-slate-500">
-            <span className="rounded-full bg-slate-100 px-3 py-1.5 font-medium text-slate-700">
-              {t("ledger.peopleCount", { count: model.counts.total })}
-            </span>
-            <span className="rounded-full bg-orange-50 px-3 py-1.5 font-medium text-orange-800">
-              {t("ledger.notPaidCount", { count: model.counts.notPaid })}
-            </span>
           </div>
         </div>
 
@@ -267,10 +260,10 @@ export default function BillingWorkspaceLedger({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="min-h-0 flex-1 overflow-auto">
         <table className="min-w-[1050px] w-full border-collapse text-left text-sm">
           <caption className="sr-only">{t("ledger.tableLabel")}</caption>
-          <thead className="bg-slate-50 text-xs uppercase tracking-[0.08em] text-slate-500">
+          <thead className="text-xs uppercase tracking-[0.08em] text-slate-500">
             {model.table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
@@ -301,7 +294,7 @@ export default function BillingWorkspaceLedger({
               model.table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="cursor-pointer bg-white transition-colors hover:bg-slate-50"
+                  className="cursor-pointer transition-colors hover:bg-white/60"
                   onClick={() => onOpenMember(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -351,7 +344,7 @@ export default function BillingWorkspaceLedger({
         </table>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between md:px-6">
+      <div className="flex shrink-0 flex-col gap-3 border-t border-slate-200/80 py-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
         <span>
           {t("ledger.showing", {
             shown: model.table.getRowModel().rows.length,

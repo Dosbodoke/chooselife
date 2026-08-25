@@ -33,7 +33,7 @@ export default function ProfileMenu({ user }: { user: User }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" className="bg-background">
           <AvatarIcon className="h-6 w-6" />
         </Button>
       </DropdownMenuTrigger>
