@@ -2,9 +2,14 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
+import { useQueryState } from "nuqs";
 import { useState } from "react";
 
-import type { MemberTableRow } from "@/components/admin/member-ledger";
+import {
+  memberLedgerParsers,
+  type MemberTableRow,
+  resolvePeriodRows,
+} from "@/components/admin/member-ledger";
 import { useRouter } from "@/i18n/navigation";
 import type {
   BillingWorkspaceClaimDetail,
@@ -142,11 +147,24 @@ export default function BillingWorkspace({
     claimNoLongerActionable: t("errors.claimNoLongerActionable"),
     rejectionReasonRequired: t("errors.rejectionReasonRequired"),
   };
-  const [selectedMember, setSelectedMember] = useState<MemberTableRow | null>(null);
-  const [selectedClaim, setSelectedClaim] =
-    useState<BillingWorkspaceQueueRow | null>(null);
+  // The drawer is addressed by the same URL the ledger filters live in, so a
+  // pasted link reopens on the exact person the sender was looking at.
+  const [memberId, setMemberId] = useQueryState(
+    "member",
+    memberLedgerParsers.member,
+  );
+  const [periodKey] = useQueryState("period", memberLedgerParsers.period);
   const [rejectionReason, setRejectionReason] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
+  const [focusedMemberId, setFocusedMemberId] = useState(memberId);
+
+  // Moving to another person mid-review must not carry that review's typed
+  // rejection reason or error across with it.
+  if (focusedMemberId !== memberId) {
+    setFocusedMemberId(memberId);
+    setRejectionReason("");
+    setActionError(null);
+  }
 
   const activeOrganizationId = organizations[0]?.organization_id ?? "";
 
@@ -162,6 +180,14 @@ export default function BillingWorkspace({
     workspaceData.payments,
     locale.toLowerCase().startsWith("pt") ? "pt-BR" : "en-US",
   );
+
+  const selectedMember =
+    memberId === null
+      ? null
+      : (resolvePeriodRows(ledger.rows, periodKey, ledger.periodOptions).find(
+          (row) => row.id === memberId,
+        ) ?? null);
+  const selectedClaim = selectedMember ? memberToClaim(selectedMember) : null;
 
   const detailQuery = useQuery<ClaimDetailEnvelope | null, RpcError>({
     queryKey: ["billing-workspace-claim", selectedClaim?.claim_id],
@@ -227,8 +253,7 @@ export default function BillingWorkspace({
       await queryClient.invalidateQueries({
         queryKey: ["billing-workspace-claim", variables.claim.claim_id],
       });
-      setSelectedMember(null);
-      setSelectedClaim(null);
+      void setMemberId(null);
       setRejectionReason("");
       setActionError(null);
       router.refresh();
@@ -244,17 +269,9 @@ export default function BillingWorkspace({
     },
   });
 
-  const openMember = (member: MemberTableRow) => {
-    setActionError(null);
-    setRejectionReason("");
-    setSelectedMember(member);
-    setSelectedClaim(memberToClaim(member));
-  };
-
   const closeReview = () => {
     if (decisionMutation.isPending) return;
-    setSelectedMember(null);
-    setSelectedClaim(null);
+    void setMemberId(null);
     setActionError(null);
     setRejectionReason("");
   };
@@ -347,7 +364,6 @@ export default function BillingWorkspace({
           key={activeOrganizationId}
           data={ledger.rows}
           periodOptions={ledger.periodOptions}
-          onOpenMember={openMember}
         />
       }
       reviewOpen={selectedMember !== null}

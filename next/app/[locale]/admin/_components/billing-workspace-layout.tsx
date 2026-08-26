@@ -51,6 +51,15 @@ type BillingWorkspaceLayoutProps = {
   onCloseReview: () => void;
 };
 
+/**
+ * Fills the viewport exactly: minus the navbar (5rem) and minus the pb-4/md:pb-6
+ * that <main> in the root layout adds below us. Footer renders null on /admin,
+ * so this is the last box on the page -- any excess height scrolls the whole
+ * document instead of just the table.
+ */
+const WORKSPACE_SHELL =
+  "flex h-[calc(100dvh-5rem-1rem)] min-h-0 flex-col overflow-hidden bg-muted/20 md:h-[calc(100dvh-5rem-1.5rem)]";
+
 export default function BillingWorkspaceLayout({
   ledger,
   memberCount,
@@ -85,7 +94,7 @@ export default function BillingWorkspaceLayout({
   }
 
   return (
-    <section className="flex h-[calc(100dvh-5rem)] min-h-0 flex-col overflow-hidden bg-muted/20 pb-4 md:pb-6">
+    <section className={WORKSPACE_SHELL}>
       <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col px-4 md:px-6">
         {workspaceIsPending ? (
           <div className="flex min-h-72 flex-1 items-center justify-center">

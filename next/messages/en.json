@@ -381,6 +381,8 @@
       "no": "No",
       "noneReported": "None reported",
       "closeReview": "Close review",
+      "copyLink": "Copy link to this view",
+      "linkCopied": "Link copied",
       "loadingApplicant": "Loading applicant",
       "loadingMember": "Loading member",
       "loadingClaimDetails": "Loading claim details",
@@ -396,7 +398,8 @@
       "oldestAttention": "Oldest attention",
       "nextDue": "Next due",
       "overdueObligations": "Overdue obligations",
-      "lastVerifiedContribution": "Last verified contribution"
+      "lastVerifiedContribution": "Last verified contribution",
+      "cancel": "Cancel"
     },
     "page": {
       "signInTitle": "Sign in to open the billing workspace",
@@ -512,8 +515,7 @@
       "emptyNoMatch": "No members match these filters."
     },
     "ledger": {
-      "eyebrow": "Member ledger",
-      "title": "People & contribution status",
+      "title": "SL.A.C control panel",
       "description": "One table for active members, applicants, and drafts in {period}.",
       "peopleCount": "{count} people",
       "notPaidCount": "{count} not paid",
@@ -523,7 +525,6 @@
       "lifecycleLabel": "Lifecycle",
       "financialLabel": "Financial status",
       "tableLabel": "Association member ledger",
-      "review": "Review",
       "showing": "Showing {shown} of {total} people",
       "previousPage": "Previous page",
       "nextPage": "Next page",
@@ -532,16 +533,17 @@
       "resetFilters": "Reset filters",
       "columns": {
         "person": "Person",
-        "lifecycle": "Lifecycle",
+        "lifecycle": "Registration status",
         "periodStatus": "Period status",
         "plan": "Plan",
         "amount": "Amount",
-        "due": "Due",
-        "lastPaid": "Last paid",
-        "action": "Action"
+        "due": "Due"
+      },
+      "period": {
+        "all": "All periods"
       },
       "lifecycle": {
-        "all": "All lifecycle states",
+        "all": "All registrations",
         "active": "Active member",
         "activePlural": "Active members",
         "applicant": "Applicant",
@@ -557,16 +559,17 @@
         "awaitingPayment": "Awaiting payment",
         "overdue": "Overdue",
         "scheduled": "Scheduled",
-        "noObligation": "No obligation"
+        "noObligation": "No charge"
       },
-      "loadedAnnouncement": "Ledger loaded with {count} people."
+      "loadedAnnouncement": "Ledger loaded with {count} people.",
+      "reviewPerson": "Review {name}"
     },
     "ledgerReview": {
-      "eyebrow": "Person record",
       "periodDetail": "Period detail",
       "paymentType": "Payment type",
       "available": "Available",
       "joined": "Joined",
+      "paidAt": "Paid {date}",
       "recentPeriods": "Recent periods",
       "noHistory": "There is no payment history for this person yet."
     },
@@ -624,8 +627,9 @@
       "resolvedMessage": "This claim is {status}. The authoritative state has been preserved; close this review and refresh the queue.",
       "rejectionReason": "Rejection reason",
       "rejectionPlaceholder": "Explain what the applicant needs to correct.",
-      "rejectClaim": "Reject claim",
-      "approveAndAdmit": "Verify payment and admit member."
+      "rejectClaim": "Reject enrollment",
+      "confirmEnrollment": "Confirm enrollment",
+      "confirmRejection": "Confirm rejection"
     },
     "recurringReview": {
       "eyebrow": "Recurring claim review",
@@ -645,8 +649,9 @@
       "resolvedMessage": "This claim is {status}. Its obligation and full chronology remain authoritative.",
       "rejectionReason": "Rejection reason",
       "rejectionPlaceholder": "Explain what needs to be corrected.",
-      "rejectClaim": "Reject recurring claim",
-      "approveContribution": "Approve recurring contribution"
+      "rejectClaim": "Reject payment",
+      "confirmPayment": "Confirm payment",
+      "confirmRejection": "Confirm rejection"
     }
   }
 }

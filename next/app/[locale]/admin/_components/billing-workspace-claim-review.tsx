@@ -1,21 +1,15 @@
 "use client";
 
-import {
-  AlertTriangle,
-  CalendarDays,
-  Check,
-  CheckCircle2,
-  Clock3,
-  Loader2,
-  X,
-  XCircle,
-} from "lucide-react";
+import { AlertTriangle, CalendarDays, Clock3, Loader2, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
+import {
+  ClaimDecisionFooter,
+  ClaimResolvedNotice,
+} from "@/components/admin/claim-decision-footer";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import type { BillingWorkspaceClaimDetail } from "@/lib/billing-workspace";
 import {
   formatBillingAmount,
@@ -60,10 +54,6 @@ export default function BillingWorkspaceClaimReview({
     if (state === "void") return t("states.void");
     return state;
   };
-  const purposeLabel = (purpose: BillingWorkspaceClaimDetail["purpose"]) =>
-    purpose === "recurring"
-      ? t("purposes.recurringContribution")
-      : t("purposes.initialAdmission");
   const planLabel = (plan: BillingWorkspaceClaimDetail["plan_type"]) =>
     !plan
       ? t("plans.noActivePlan")
@@ -127,7 +117,6 @@ export default function BillingWorkspaceClaimReview({
                   ? t("states.awaitingReview")
                   : stateLabel(detail.claim_status)}
               </Badge>
-              <Badge variant="secondary">{purposeLabel(detail.purpose)}</Badge>
               <Badge variant="secondary">{detail.organization_name}</Badge>
             </div>
 
@@ -247,77 +236,31 @@ export default function BillingWorkspaceClaimReview({
         )}
       </div>
 
-      {detail ? (
-        detail.claim_status !== "under_review" ? (
-          <div className="border-t bg-muted/20 px-5 py-4 md:px-7">
-            <div className="flex items-start gap-3 text-sm text-muted-foreground">
-              {detail.claim_status === "approved" ? (
-                <CheckCircle2
-                  className="mt-0.5 size-5 shrink-0 text-emerald-600"
-                  aria-hidden="true"
-                />
-              ) : (
-                <XCircle
-                  className="mt-0.5 size-5 shrink-0 text-destructive"
-                  aria-hidden="true"
-                />
-              )}
-              <p>
-                {t("recurringReview.resolvedMessage", {
-                  status: stateLabel(detail.claim_status),
-                })}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="border-t bg-card px-5 py-4 md:px-7">
-            <label htmlFor="recurring-rejection-reason" className="text-sm font-medium">
-              {t("recurringReview.rejectionReason")}
-              <span className="ml-1 text-destructive" aria-hidden="true">
-                *
-              </span>
-            </label>
-            <Textarea
-              id="recurring-rejection-reason"
-              value={rejectionReason}
-              onChange={(event) => onRejectionReasonChange(event.target.value)}
-              maxLength={500}
-              placeholder={t("recurringReview.rejectionPlaceholder")}
-              className="mt-2 min-h-20 rounded-xl"
-              disabled={action !== null}
-            />
-            <div className="mt-3 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => void onReject()}
-                disabled={action !== null}
-                className="h-11 rounded-xl px-5 active:scale-[0.96]"
-              >
-                {action === "reject" ? (
-                  <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-                ) : (
-                  <XCircle className="mr-2 size-4" aria-hidden="true" />
-                )}
-                {t("recurringReview.rejectClaim")}
-              </Button>
-              <Button
-                type="button"
-                onClick={() => void onApprove()}
-                disabled={action !== null}
-                className="h-11 rounded-xl px-5 active:scale-[0.96]"
-              >
-                {action === "approve" ? (
-                  <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-                ) : (
-                  <Check className="mr-2 size-4" aria-hidden="true" />
-                )}
-                {t("recurringReview.approveContribution")}
-              </Button>
-            </div>
-          </div>
-        )
-      ) : null}
+      {!detail ? null : detail.claim_status !== "under_review" ? (
+        <ClaimResolvedNotice
+          status={detail.claim_status}
+          message={t("recurringReview.resolvedMessage", {
+            status: stateLabel(detail.claim_status),
+          })}
+        />
+      ) : (
+        <ClaimDecisionFooter
+          action={action}
+          reasonInputId="recurring-rejection-reason"
+          copy={{
+            approve: t("recurringReview.confirmPayment"),
+            cancel: t("common.cancel"),
+            confirmRejection: t("recurringReview.confirmRejection"),
+            reject: t("recurringReview.rejectClaim"),
+            rejectionPlaceholder: t("recurringReview.rejectionPlaceholder"),
+            rejectionReason: t("recurringReview.rejectionReason"),
+          }}
+          onApprove={onApprove}
+          onReject={onReject}
+          rejectionReason={rejectionReason}
+          onRejectionReasonChange={onRejectionReasonChange}
+        />
+      )}
     </div>
   );
 }

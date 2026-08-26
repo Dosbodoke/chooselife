@@ -3,23 +3,24 @@
 import {
   AlertTriangle,
   CalendarDays,
-  Check,
   CheckCircle2,
   Clock3,
   FileText,
   Loader2,
   UserRound,
   X,
-  XCircle,
 } from "lucide-react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
+import {
+  ClaimDecisionFooter,
+  ClaimResolvedNotice,
+} from "@/components/admin/claim-decision-footer";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import type {
   InitialPaymentClaimDetail,
   InitialPaymentClaimQueueRow,
@@ -129,7 +130,7 @@ export function InitialPaymentClaimReview({
   onRejectionReasonChange: (value: string) => void;
 }) {
   return (
-    <div className="flex max-h-[90vh] flex-col bg-background">
+    <div className="flex h-full flex-col overflow-hidden bg-background">
       <ReviewHeader action={action} detail={detail} onClose={onClose} />
       <ReviewDetails
         actionError={actionError}
@@ -218,7 +219,7 @@ function ReviewDetails({
   const auditHistory = getHistory(detail?.audit_history);
 
   return (
-    <div className="scrollbar overflow-y-auto px-5 py-5 md:px-7 md:py-6">
+    <div className="scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-5 md:px-7 md:py-6">
       {detailLoading ? (
         <div className="flex min-h-72 items-center justify-center">
           <Loader2
@@ -238,14 +239,6 @@ function ReviewDetails({
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <QueueStatusBadge status={detail.claim_status} />
-            <Badge variant="secondary">
-              {t("common.revision", { number: detail.revision_number })}
-            </Badge>
-            <Badge variant="secondary">{detail.organization_name}</Badge>
-          </div>
-
           {actionError ? (
             <Alert variant="destructive" aria-live="assertive">
               <AlertTriangle className="size-4" aria-hidden="true" />
@@ -256,18 +249,14 @@ function ReviewDetails({
             </Alert>
           ) : null}
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <SummaryCard
               label={t("common.claimAmount")}
-              value={formatAmount(detail.amount, detail.currency, locale)}
-            />
-            <SummaryCard
-              label={t("common.plan")}
-              value={
+              value={`${formatAmount(detail.amount, detail.currency, locale)} · ${
                 detail.plan_type === "annual"
                   ? t("plans.annual")
                   : t("plans.monthly")
-              }
+              }`}
             />
             <SummaryCard
               label={t("common.submitted")}
@@ -468,89 +457,47 @@ function ReviewActions({
 
   if (detail.claim_status !== "under_review") {
     return (
-      <div className="border-t bg-muted/20 px-5 py-4 md:px-7">
-        <div className="flex items-start gap-3 text-sm text-muted-foreground">
-          {detail.claim_status === "approved" ? (
-            <CheckCircle2
-              className="mt-0.5 size-5 shrink-0 text-emerald-600"
-              aria-hidden="true"
-            />
-          ) : (
-            <XCircle
-              className="mt-0.5 size-5 shrink-0 text-destructive"
-              aria-hidden="true"
-            />
-          )}
-          <p>
-            {t("initialReview.resolvedMessage", {
-              status:
-                detail.claim_status === "approved"
-                  ? t("states.approved")
-                  : t("states.rejected"),
-            })}
-          </p>
-        </div>
-      </div>
+      <ClaimResolvedNotice
+        status={detail.claim_status}
+        message={t("initialReview.resolvedMessage", {
+          status:
+            detail.claim_status === "approved"
+              ? t("states.approved")
+              : t("states.rejected"),
+        })}
+      />
     );
   }
 
   return (
-    <div className="border-t bg-card px-5 py-4 md:px-7">
-      <label htmlFor="rejection-reason" className="text-sm font-medium">
-        {t("initialReview.rejectionReason")}
-        <span className="ml-1 text-destructive" aria-hidden="true">
-          *
-        </span>
-      </label>
-      <Textarea
-        id="rejection-reason"
-        value={rejectionReason}
-        onChange={(event) => onRejectionReasonChange(event.target.value)}
-        maxLength={500}
-        placeholder={t("initialReview.rejectionPlaceholder")}
-        className="mt-2 min-h-20 rounded-xl"
-        disabled={action !== null}
-      />
-      <div className="mt-3 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button
-          type="button"
-          variant="destructive"
-          onClick={() => void onReject()}
-          disabled={action !== null}
-          className="h-11 rounded-xl px-5 active:scale-[0.96]"
-        >
-          {action === "reject" ? (
-            <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-          ) : (
-            <XCircle className="mr-2 size-4" aria-hidden="true" />
-          )}
-          {t("initialReview.rejectClaim")}
-        </Button>
-        <Button
-          type="button"
-          onClick={() => void onApprove()}
-          disabled={action !== null}
-          className="h-11 rounded-xl px-5 active:scale-[0.96]"
-        >
-          {action === "approve" ? (
-            <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-          ) : (
-            <Check className="mr-2 size-4" aria-hidden="true" />
-          )}
-          {t("initialReview.approveAndAdmit")}
-        </Button>
-      </div>
-    </div>
+    <ClaimDecisionFooter
+      action={action}
+      reasonInputId="rejection-reason"
+      copy={{
+        approve: t("initialReview.confirmEnrollment"),
+        cancel: t("common.cancel"),
+        confirmRejection: t("initialReview.confirmRejection"),
+        reject: t("initialReview.rejectClaim"),
+        rejectionPlaceholder: t("initialReview.rejectionPlaceholder"),
+        rejectionReason: t("initialReview.rejectionReason"),
+      }}
+      onApprove={onApprove}
+      onReject={onReject}
+      rejectionReason={rejectionReason}
+      onRejectionReasonChange={onRejectionReasonChange}
+    />
   );
 }
 
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border bg-card p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+    <div className="rounded-xl border border-slate-200 bg-white p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
         {label}
       </p>
-      <p className="mt-2 truncate font-semibold tabular-nums">{value}</p>
+      <p className="mt-1 truncate font-semibold tabular-nums text-slate-950">
+        {value}
+      </p>
     </div>
   );
 }

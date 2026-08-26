@@ -1,4 +1,4 @@
-import type { Row, Table } from "@tanstack/react-table";
+import type { Table } from "@tanstack/react-table";
 
 export type LifecycleStatus = "draft" | "applicant" | "active";
 
@@ -15,6 +15,9 @@ export type ClaimStatus = "under_review" | "approved" | "rejected";
 export type ObligationKind = "initial_admission" | "recurring";
 
 export type PeriodKey = `${number}-${number}`;
+
+/** `all` collapses every period into the member's most urgent open charge. */
+export type PeriodFilter = PeriodKey | "all";
 
 export type MemberPeriod = {
   periodKey: PeriodKey;
@@ -62,7 +65,7 @@ export type MemberTableFilters = {
   search: string;
   lifecycle: LifecycleFilter;
   financial: FinancialFilter;
-  periodKey: PeriodKey;
+  periodKey: PeriodFilter;
 };
 
 export type MemberTableCounts = {
@@ -88,11 +91,12 @@ export type MemberTableController = {
     value: FinancialFilter;
     label: string;
   }>;
-  selectedRow: Row<MemberTableRow> | null;
+  selectedRowId: string | null;
+  selectedMember: MemberTableRow | null;
   setSearch: (value: string) => void;
   setLifecycleFilter: (value: LifecycleFilter) => void;
   setFinancialFilter: (value: FinancialFilter) => void;
-  setPeriodKey: (value: PeriodKey) => void;
+  setPeriodKey: (value: PeriodFilter) => void;
   setSelectedRowId: (value: string | null) => void;
   resetFilters: () => void;
 };

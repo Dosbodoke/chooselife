@@ -13,6 +13,13 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
+import {
+  createParser,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryState,
+  useQueryStates,
+} from "nuqs";
 import { useCallback, useMemo, useState } from "react";
 
 import type {
@@ -23,13 +30,58 @@ import type {
   MemberRow,
   MemberTableController,
   MemberTableRow,
+  PeriodFilter,
   PeriodKey,
 } from "./types";
 
-const DEFAULT_PERIOD_KEY = "2000-01" as PeriodKey;
+const DEFAULT_PERIOD_FILTER: PeriodFilter = "all";
+
+const LIFECYCLE_VALUES = [
+  "all",
+  "draft",
+  "applicant",
+  "active",
+] as const satisfies readonly LifecycleFilter[];
+
+const FINANCIAL_VALUES = [
+  "all",
+  "not_paid",
+  "paid",
+  "under_review",
+  "awaiting_payment",
+  "overdue",
+  "scheduled",
+  "no_obligation",
+] as const satisfies readonly FinancialFilter[];
+
+const PERIOD_KEY_PATTERN = /^\d{4}-\d{2}$/;
+
+/** A period is a `YYYY-MM` key; anything else is rejected so a mangled link
+ * falls back to the default instead of emptying the table. */
+export const parseAsPeriodFilter = createParser<PeriodFilter>({
+  parse: (value) => {
+    if (value === "all") return "all";
+    return PERIOD_KEY_PATTERN.test(value) ? (value as PeriodKey) : null;
+  },
+  serialize: (value) => value,
+});
+
+/**
+ * The ledger view lives entirely in the URL: an admin can paste "who is overdue
+ * this month, with Ana open" into a message and the person opening it lands on
+ * exactly that screen.
+ */
+export const memberLedgerParsers = {
+  q: parseAsString.withDefault(""),
+  lifecycle: parseAsStringLiteral(LIFECYCLE_VALUES).withDefault("all"),
+  financial: parseAsStringLiteral(FINANCIAL_VALUES).withDefault("all"),
+  period: parseAsPeriodFilter.withDefault(DEFAULT_PERIOD_FILTER),
+  /** The focused drawer. Pushed, so Back closes the drawer instead of leaving the page. */
+  member: parseAsString.withOptions({ history: "push", scroll: false }),
+};
 
 const DEFAULT_LIFECYCLE_OPTIONS = [
-  { value: "all", label: "All lifecycle states" },
+  { value: "all", label: "All registrations" },
   { value: "active", label: "Active members" },
   { value: "applicant", label: "Applicants" },
   { value: "draft", label: "Drafts" },
@@ -43,7 +95,7 @@ const DEFAULT_FINANCIAL_OPTIONS = [
   { value: "awaiting_payment", label: "Awaiting payment" },
   { value: "scheduled", label: "Scheduled" },
   { value: "paid", label: "Paid" },
-  { value: "no_obligation", label: "No obligation" },
+  { value: "no_obligation", label: "No charge" },
 ] as const;
 
 const financialRank: Record<FinancialStatus, number> = {
@@ -58,6 +110,16 @@ const financialRank: Record<FinancialStatus, number> = {
 const financialSorting: SortingFn<MemberTableRow> = (left, right) =>
   financialRank[left.original.selectedPeriod.status] -
   financialRank[right.original.selectedPeriod.status];
+
+/** A row with no charge has no due date, so it sinks instead of leading the asc sort. */
+const dueDateSorting: SortingFn<MemberTableRow> = (left, right) => {
+  const leftDue = left.original.selectedPeriod.dueDate;
+  const rightDue = right.original.selectedPeriod.dueDate;
+  if (!leftDue && !rightDue) return 0;
+  if (!leftDue) return 1;
+  if (!rightDue) return -1;
+  return leftDue.localeCompare(rightDue);
+};
 
 const globalFilter: FilterFn<MemberTableRow> = (row, _columnId, value) => {
   const search = String(value).trim().toLocaleLowerCase();
@@ -108,7 +170,6 @@ function noObligationFor(
 export type MemberColumnLabels = {
   amount: string;
   due: string;
-  lastPaid: string;
   lifecycle: string;
   periodStatus: string;
   person: string;
@@ -121,7 +182,6 @@ export function createMemberColumns(
   const resolvedLabels: MemberColumnLabels = {
     amount: "Amount",
     due: "Due",
-    lastPaid: "Last paid",
     lifecycle: "Lifecycle",
     periodStatus: "Period status",
     person: "Person",
@@ -149,13 +209,7 @@ export function createMemberColumns(
       id: "dueDate",
       accessorFn: (row) => row.selectedPeriod.dueDate,
       header: resolvedLabels.due,
-      sortUndefined: "last",
-    },
-    {
-      id: "paidAt",
-      accessorFn: (row) => row.selectedPeriod.paidAt,
-      header: resolvedLabels.lastPaid,
-      sortUndefined: "last",
+      sortingFn: dueDateSorting,
     },
   ];
 }
@@ -174,21 +228,47 @@ export type UseMemberTableOptions = {
     value: FinancialFilter;
     label: string;
   }>;
-  initialPeriodKey?: PeriodKey;
+  initialPeriodKey?: PeriodFilter;
   initialPageSize?: number;
   initialColumnVisibility?: VisibilityState;
 };
 
-function resolvePeriodRows(
+/**
+ * With no month selected the row still has to show a single charge, so it shows
+ * the one an admin would act on: the most urgent unsettled period, earliest due
+ * first. A member who owes nothing falls back to their latest period, which is
+ * how a fully paid row still reads as "paid" instead of "no charge".
+ */
+function mostUrgentPeriod(row: MemberRow): MemberPeriod | undefined {
+  const ranked = [...row.history].sort(
+    (left, right) =>
+      financialRank[left.status] - financialRank[right.status] ||
+      (left.dueDate ?? "").localeCompare(right.dueDate ?? ""),
+  );
+
+  return ranked[0];
+}
+
+export function resolvePeriodRows(
   data: MemberRow[],
-  periodKey: PeriodKey,
+  periodKey: PeriodFilter,
   periodOptions: ReadonlyArray<{ key: PeriodKey; label: string }>,
 ) {
   return data.map<MemberTableRow>((row) => ({
     ...row,
     selectedPeriod:
-      row.periods[periodKey] ?? noObligationFor(periodKey, periodOptions),
+      (periodKey === "all" ? mostUrgentPeriod(row) : row.periods[periodKey]) ??
+      noObligationFor(
+        periodKey === "all" ? currentPeriodKeyOf(periodOptions) : periodKey,
+        periodOptions,
+      ),
   }));
+}
+
+function currentPeriodKeyOf(
+  periodOptions: ReadonlyArray<{ key: PeriodKey; label: string }>,
+): PeriodKey {
+  return periodOptions[0]?.key ?? ("2000-01" as PeriodKey);
 }
 
 export function useMemberTable({
@@ -197,23 +277,43 @@ export function useMemberTable({
   financialOptions = DEFAULT_FINANCIAL_OPTIONS,
   initialColumnVisibility,
   initialPageSize = 8,
-  initialPeriodKey = DEFAULT_PERIOD_KEY,
+  initialPeriodKey = DEFAULT_PERIOD_FILTER,
   lifecycleOptions = DEFAULT_LIFECYCLE_OPTIONS,
   periodOptions = [],
 }: UseMemberTableOptions = {}): MemberTableController {
-  const [search, setSearchState] = useState("");
-  const [lifecycle, setLifecycleState] = useState<LifecycleFilter>("all");
-  const [financial, setFinancialState] = useState<FinancialFilter>("all");
-  const [periodKey, setPeriodKeyState] = useState<PeriodKey>(initialPeriodKey);
+  const filterParsers = useMemo(
+    () => ({
+      q: memberLedgerParsers.q,
+      lifecycle: memberLedgerParsers.lifecycle,
+      financial: memberLedgerParsers.financial,
+      period: parseAsPeriodFilter.withDefault(initialPeriodKey),
+    }),
+    [initialPeriodKey],
+  );
+
+  // Filters replace rather than push: typing in the search box should not bury
+  // the page under a stack of history entries.
+  const [
+    { q: search, lifecycle, financial, period: periodKey },
+    setFilters,
+  ] = useQueryStates(filterParsers, { history: "replace", scroll: false });
+
+  const [selectedRowId, setSelectedRowIdState] = useQueryState(
+    "member",
+    memberLedgerParsers.member,
+  );
+
+  // Sorting and column layout are how one admin reads the table, not what they
+  // are looking at, so they stay out of a link meant to be shared.
   const [sorting, setSorting] = useState<SortingState>([
-    { id: "financialStatus", desc: false },
+    // Due date leads: the ledger is read as "what is coming up / already late".
     { id: "dueDate", desc: false },
+    { id: "financialStatus", desc: false },
   ]);
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
     initialColumnVisibility ?? {},
   );
-  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
 
   const periodRows = useMemo(
     () => resolvePeriodRows(data, periodKey, periodOptions),
@@ -276,7 +376,9 @@ export function useMemberTable({
       },
       globalFilterFn: globalFilter,
       enableRowSelection: true,
-      onGlobalFilterChange: (value) => setSearchState(String(value ?? "")),
+      onGlobalFilterChange: (value) => {
+        void setFilters({ q: String(value ?? "") });
+      },
       onSortingChange: setSorting,
       onRowSelectionChange: setRowSelection,
       onColumnVisibilityChange: setColumnVisibility,
@@ -289,51 +391,66 @@ export function useMemberTable({
         pagination: { pageSize: initialPageSize, pageIndex: 0 },
       },
     }),
-    [columnVisibility, columns, filteredRows, initialPageSize, rowSelection, search, sorting],
+    [
+      columnVisibility,
+      columns,
+      filteredRows,
+      initialPageSize,
+      rowSelection,
+      search,
+      setFilters,
+      sorting,
+    ],
   );
 
   const table = useReactTable(tableOptions);
 
   const setSearch = useCallback(
     (value: string) => {
-      setSearchState(value);
+      void setFilters({ q: value });
       table.setPageIndex(0);
     },
-    [table],
+    [setFilters, table],
   );
 
   const setLifecycleFilter = useCallback(
     (value: LifecycleFilter) => {
-      setLifecycleState(value);
+      void setFilters({ lifecycle: value });
       table.setPageIndex(0);
     },
-    [table],
+    [setFilters, table],
   );
 
   const setFinancialFilter = useCallback(
     (value: FinancialFilter) => {
-      setFinancialState(value);
+      void setFilters({ financial: value });
       table.setPageIndex(0);
     },
-    [table],
+    [setFilters, table],
   );
 
   const setPeriodKey = useCallback(
-    (value: PeriodKey) => {
-      setPeriodKeyState(value);
+    (value: PeriodFilter) => {
+      void setFilters({ period: value });
       table.setPageIndex(0);
     },
-    [table],
+    [setFilters, table],
+  );
+
+  const setSelectedRowId = useCallback(
+    (value: string | null) => {
+      void setSelectedRowIdState(value);
+    },
+    [setSelectedRowIdState],
   );
 
   const resetFilters = useCallback(() => {
-    setSearchState("");
-    setLifecycleState("all");
-    setFinancialState("all");
-    setPeriodKeyState(initialPeriodKey);
-    setSelectedRowId(null);
+    // `null` clears every key this hook owns, so the shared link collapses back
+    // to a bare `/admin` instead of carrying default values around.
+    void setFilters(null);
+    void setSelectedRowIdState(null);
     table.setPageIndex(0);
-  }, [initialPeriodKey, table]);
+  }, [setFilters, setSelectedRowIdState, table]);
 
   return {
     table,
@@ -342,10 +459,11 @@ export function useMemberTable({
     periodOptions,
     lifecycleOptions,
     financialOptions,
-    selectedRow:
-      selectedRowId === null
-        ? null
-        : table.getRowModel().rows.find((row) => row.id === selectedRowId) ?? null,
+    selectedRowId,
+    // Resolved from every row, not just the visible page: a link to a member who
+    // sits behind a filter or on page three still opens on that member.
+    selectedMember:
+      periodRows.find((row) => row.id === selectedRowId) ?? null,
     setSearch,
     setLifecycleFilter,
     setFinancialFilter,

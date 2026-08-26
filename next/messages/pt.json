@@ -381,6 +381,8 @@
       "no": "Não",
       "noneReported": "Nenhum informado",
       "closeReview": "Fechar revisão",
+      "copyLink": "Copiar link desta visualização",
+      "linkCopied": "Link copiado",
       "loadingApplicant": "Carregando candidato",
       "loadingMember": "Carregando membro",
       "loadingClaimDetails": "Carregando detalhes da solicitação",
@@ -396,7 +398,8 @@
       "oldestAttention": "Pendência mais antiga",
       "nextDue": "Próximo vencimento",
       "overdueObligations": "Obrigações vencidas",
-      "lastVerifiedContribution": "Última contribuição verificada"
+      "lastVerifiedContribution": "Última contribuição verificada",
+      "cancel": "Cancelar"
     },
     "page": {
       "signInTitle": "Entre para abrir a área financeira",
@@ -512,8 +515,7 @@
       "emptyNoMatch": "Nenhum membro corresponde a estes filtros."
     },
     "ledger": {
-      "eyebrow": "Livro-caixa de membros",
-      "title": "Pessoas e situação das contribuições",
+      "title": "Painel de controle da SL.A.C",
       "description": "Uma tabela para membros ativos, candidatos e rascunhos em {period}.",
       "peopleCount": "{count} pessoas",
       "notPaidCount": "{count} não pagas",
@@ -523,7 +525,6 @@
       "lifecycleLabel": "Ciclo",
       "financialLabel": "Situação financeira",
       "tableLabel": "Livro-caixa de membros da associação",
-      "review": "Revisar",
       "showing": "Mostrando {shown} de {total} pessoas",
       "previousPage": "Página anterior",
       "nextPage": "Próxima página",
@@ -532,16 +533,17 @@
       "resetFilters": "Limpar filtros",
       "columns": {
         "person": "Pessoa",
-        "lifecycle": "Ciclo",
+        "lifecycle": "Situação cadastral",
         "periodStatus": "Situação do período",
         "plan": "Plano",
         "amount": "Valor",
-        "due": "Vencimento",
-        "lastPaid": "Último pagamento",
-        "action": "Ação"
+        "due": "Vencimento"
+      },
+      "period": {
+        "all": "Todos os períodos"
       },
       "lifecycle": {
-        "all": "Todos os ciclos",
+        "all": "Todos os cadastros",
         "active": "Membro ativo",
         "activePlural": "Membros ativos",
         "applicant": "Candidato",
@@ -557,16 +559,17 @@
         "awaitingPayment": "Aguardando pagamento",
         "overdue": "Vencida",
         "scheduled": "Agendada",
-        "noObligation": "Sem obrigação"
+        "noObligation": "Sem cobrança"
       },
-      "loadedAnnouncement": "Livro-caixa carregado com {count} pessoas."
+      "loadedAnnouncement": "Livro-caixa carregado com {count} pessoas.",
+      "reviewPerson": "Revisar {name}"
     },
     "ledgerReview": {
-      "eyebrow": "Registro da pessoa",
       "periodDetail": "Detalhes do período",
       "paymentType": "Tipo de pagamento",
       "available": "Disponível em",
       "joined": "Entrada",
+      "paidAt": "Pago em {date}",
       "recentPeriods": "Períodos recentes",
       "noHistory": "Ainda não há histórico de pagamentos para esta pessoa."
     },
@@ -624,8 +627,9 @@
       "resolvedMessage": "Esta solicitação está {status}. O estado oficial foi preservado; feche esta revisão e atualize a fila.",
       "rejectionReason": "Motivo da recusa",
       "rejectionPlaceholder": "Explique o que o candidato precisa corrigir.",
-      "rejectClaim": "Recusar solicitação",
-      "approveAndAdmit": "Verificar pagamento e admitir membro."
+      "rejectClaim": "Recusar inscrição",
+      "confirmEnrollment": "Confirmar inscrição",
+      "confirmRejection": "Confirmar recusa"
     },
     "recurringReview": {
       "eyebrow": "Revisão da solicitação recorrente",
@@ -645,8 +649,9 @@
       "resolvedMessage": "Esta solicitação está {status}. A obrigação e sua cronologia completa continuam oficiais.",
       "rejectionReason": "Motivo da recusa",
       "rejectionPlaceholder": "Explique o que precisa ser corrigido.",
-      "rejectClaim": "Recusar solicitação recorrente",
-      "approveContribution": "Aprovar contribuição recorrente"
+      "rejectClaim": "Recusar pagamento",
+      "confirmPayment": "Confirmar pagamento",
+      "confirmRejection": "Confirmar recusa"
     }
   }
 }

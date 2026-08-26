@@ -2,6 +2,9 @@ export {
   createMemberColumns,
   type MemberColumnLabels,
   memberColumns,
+  memberLedgerParsers,
+  parseAsPeriodFilter,
+  resolvePeriodRows,
   useMemberTable,
   type UseMemberTableOptions,
 } from "./member-table";
@@ -18,6 +21,7 @@ export type {
   MemberTableFilters,
   MemberTableRow,
   ObligationKind,
+  PeriodFilter,
   PeriodKey,
 } from "./types";
 
