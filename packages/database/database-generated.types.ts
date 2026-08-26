@@ -1381,6 +1381,61 @@ export type Database = {
           },
         ]
       }
+      organization_membership_departures: {
+        Row: {
+          actor_user_id: string
+          departed_at: string
+          departed_role: Database["public"]["Enums"]["organization_role_enum"]
+          id: string
+          joined_at: string
+          organization_id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          actor_user_id: string
+          departed_at?: string
+          departed_role: Database["public"]["Enums"]["organization_role_enum"]
+          id?: string
+          joined_at: string
+          organization_id: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          actor_user_id?: string
+          departed_at?: string
+          departed_role?: Database["public"]["Enums"]["organization_role_enum"]
+          id?: string
+          joined_at?: string
+          organization_id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_membership_departures_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_membership_departures_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_membership_departures_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           annual_pix_copy_paste: string | null
@@ -2225,6 +2280,20 @@ export type Database = {
         Args: { p_available_on: string; p_due_on: string; p_local_date: string }
         Returns: Database["public"]["Enums"]["contribution_reminder_stage_enum"]
       }
+      end_association_membership: {
+        Args: {
+          p_organization_id: string
+          p_reason?: string
+          p_user_id?: string
+        }
+        Returns: {
+          departed_at: string
+          departed_role: Database["public"]["Enums"]["organization_role_enum"]
+          departure_id: string
+          organization_id: string
+          user_id: string
+        }[]
+      }
       enqueue_contribution_reminder_events: {
         Args: never
         Returns: {
@@ -2283,6 +2352,57 @@ export type Database = {
           schedule_id: string
         }[]
       }
+      get_association_member_detail: {
+        Args: { p_organization_id: string; p_user_id: string }
+        Returns: {
+          accepted_terms_at: string
+          address_line: string
+          allergies: string
+          application_id: string
+          application_revision_id: string
+          birth_date: string
+          birthplace: string
+          blood_type: Database["public"]["Enums"]["blood_type_enum"]
+          city: string
+          cpf: string
+          departed_at: string
+          departure_reason: string
+          dietary_restrictions: string
+          email: string
+          emergency_contact_name: string
+          emergency_contact_phone: string
+          emergency_contact_relationship: string
+          first_aid_course: Database["public"]["Enums"]["first_aid_course_enum"]
+          full_name: string
+          has_allergies: boolean
+          has_dietary_restrictions: boolean
+          has_rescue_course: boolean
+          highline_experience: Database["public"]["Enums"]["highline_experience_enum"]
+          id_document_issuer: string
+          id_document_number: string
+          joined_at: string
+          lifecycle_status: string
+          marital_status: Database["public"]["Enums"]["marital_status_enum"]
+          member_handle: string
+          member_name: string
+          member_profile_picture: string
+          member_role: Database["public"]["Enums"]["organization_role_enum"]
+          member_user_id: string
+          nationality: string
+          next_charge_amount: number
+          next_charge_currency: string
+          next_charge_due_on: string
+          next_charge_period_key: string
+          phone: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          postal_code: string
+          profession: string
+          revision_number: number
+          state: string
+          submitted_at: string
+          terms_version: string
+        }[]
+      }
       get_billing_workspace_claim_detail: {
         Args: { p_claim_id: string }
         Returns: {
@@ -2334,21 +2454,6 @@ export type Database = {
           plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
         }[]
       }
-      get_billing_workspace_people: {
-        Args: { p_organization_id: string }
-        Returns: {
-          application_status: Database["public"]["Enums"]["membership_application_status_enum"]
-          joined_at: string
-          last_verified_contribution_at: string
-          lifecycle_status: string
-          member_handle: string
-          member_name: string
-          member_profile_picture: string
-          member_role: Database["public"]["Enums"]["organization_role_enum"]
-          member_user_id: string
-          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
-        }[]
-      }
       get_billing_workspace_organizations: {
         Args: never
         Returns: {
@@ -2387,6 +2492,21 @@ export type Database = {
           plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
           purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
           settled_at: string
+        }[]
+      }
+      get_billing_workspace_people: {
+        Args: { p_organization_id: string }
+        Returns: {
+          application_status: Database["public"]["Enums"]["membership_application_status_enum"]
+          joined_at: string
+          last_verified_contribution_at: string
+          lifecycle_status: string
+          member_handle: string
+          member_name: string
+          member_profile_picture: string
+          member_role: Database["public"]["Enums"]["organization_role_enum"]
+          member_user_id: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
         }[]
       }
       get_billing_workspace_queue: {
@@ -2947,6 +3067,7 @@ export type Database = {
           public: boolean | null
           type: Database["storage"]["Enums"]["buckettype"]
           updated_at: string | null
+          versioning_status: string
         }
         Insert: {
           allowed_mime_types?: string[] | null
@@ -2960,6 +3081,7 @@ export type Database = {
           public?: boolean | null
           type?: Database["storage"]["Enums"]["buckettype"]
           updated_at?: string | null
+          versioning_status?: string
         }
         Update: {
           allowed_mime_types?: string[] | null
@@ -2973,6 +3095,7 @@ export type Database = {
           public?: boolean | null
           type?: Database["storage"]["Enums"]["buckettype"]
           updated_at?: string | null
+          versioning_status?: string
         }
         Relationships: []
       }
@@ -3145,9 +3268,12 @@ export type Database = {
       }
       objects: {
         Row: {
+          archived_at: string | null
           bucket_id: string | null
           created_at: string | null
           id: string
+          is_delete_marker: boolean
+          is_versioned: boolean
           last_accessed_at: string | null
           metadata: Json | null
           name: string | null
@@ -3159,9 +3285,12 @@ export type Database = {
           version: string | null
         }
         Insert: {
+          archived_at?: string | null
           bucket_id?: string | null
           created_at?: string | null
           id?: string
+          is_delete_marker?: boolean
+          is_versioned?: boolean
           last_accessed_at?: string | null
           metadata?: Json | null
           name?: string | null
@@ -3173,9 +3302,12 @@ export type Database = {
           version?: string | null
         }
         Update: {
+          archived_at?: string | null
           bucket_id?: string | null
           created_at?: string | null
           id?: string
+          is_delete_marker?: boolean
+          is_versioned?: boolean
           last_accessed_at?: string | null
           metadata?: Json | null
           name?: string | null
@@ -3681,3 +3813,4 @@ export const Constants = {
     },
   },
 } as const
+

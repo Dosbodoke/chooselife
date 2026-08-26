@@ -1,4 +1,5 @@
 import type {
+  ClaimStatus,
   FinancialStatus,
   MemberPeriod,
   MemberRow,
@@ -12,11 +13,12 @@ import type {
 
 const financialRank: Record<FinancialStatus, number> = {
   overdue: 0,
-  under_review: 1,
-  awaiting_payment: 2,
-  scheduled: 3,
-  paid: 4,
-  no_obligation: 5,
+  rejected: 1,
+  under_review: 2,
+  awaiting_payment: 3,
+  scheduled: 4,
+  paid: 5,
+  no_obligation: 6,
 };
 
 function currentPeriodKey() {
@@ -34,14 +36,30 @@ function normalizePeriodKey(payment: BillingWorkspacePaymentRow): PeriodKey {
   return currentPeriodKey();
 }
 
-function financialStatus(value: string): FinancialStatus {
+/**
+ * The obligation's own state cannot tell "never paid" apart from "paid, and we
+ * refused it": rejecting a claim deliberately returns the obligation to
+ * `available`, because the money is still owed. The refusal only survives on the
+ * newest claim, so read it from there.
+ *
+ * This self-clears without any extra bookkeeping. A fresh claim becomes the
+ * newest one and flips `effective_payment_state` to `under_review`, so the chip
+ * moves on the moment the person tries again -- and not before.
+ *
+ * `overdue` deliberately outranks a refusal: a missed due date is the more
+ * urgent fact, and the rejection is still one click away in the drawer.
+ */
+function financialStatus(
+  value: string,
+  latestClaimStatus: ClaimStatus | null,
+): FinancialStatus {
   switch (value) {
     case "settled":
       return "paid";
     case "under_review":
       return "under_review";
     case "available":
-      return "awaiting_payment";
+      return latestClaimStatus === "rejected" ? "rejected" : "awaiting_payment";
     case "overdue":
       return "overdue";
     case "scheduled":
@@ -78,7 +96,10 @@ function toMemberPeriod(
     }).format(new Date(`${periodKey}-01T00:00:00`)),
     obligationId: payment.obligation_id,
     obligationKind: payment.purpose,
-    status: financialStatus(payment.effective_payment_state),
+    status: financialStatus(
+      payment.effective_payment_state,
+      payment.latest_claim_status,
+    ),
     amount:
       payment.effective_payment_state === "void" ? null : payment.amount,
     currency: payment.currency,
@@ -126,10 +147,10 @@ export function buildBillingWorkspaceMemberRows(
       .sort((left, right) => (right.due_on ?? "").localeCompare(left.due_on ?? ""))
       .find((payment) => payment.plan_type)?.plan_type;
     const lifecycle =
-      person.lifecycle_status === "applicant"
-        ? "applicant"
-        : person.lifecycle_status === "draft"
-          ? "draft"
+      person.lifecycle_status === "pending"
+        ? "pending"
+        : person.lifecycle_status === "inactive"
+          ? "inactive"
           : "active";
 
     return {

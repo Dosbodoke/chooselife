@@ -23,7 +23,7 @@ import {
   formatBillingDateTime,
 } from "@/lib/billing-workspace";
 
-import { ApplicantAvatar } from "../claims/_components/initial-payment-claim-review";
+import { ApplicantAvatar } from "./initial-payment-claim-review";
 
 type QueueStatusFilter = "all" | "under_review" | "approved" | "rejected";
 type QueuePurposeFilter = "all" | BillingWorkspaceQueueRow["purpose"];

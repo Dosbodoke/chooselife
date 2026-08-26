@@ -26,6 +26,10 @@ import type {
   InitialPaymentClaimQueueRow,
 } from "@/lib/initial-payment-claims";
 
+import {
+  ApplicationRevisionFields,
+  DetailField,
+} from "./application-revision-fields";
 import { formatAmount, formatDate } from "./initial-payment-claim-formatters";
 
 function getInitials(name: string | null, handle: string | null) {
@@ -316,57 +320,11 @@ function ApplicationRevision({
         icon={<FileText className="size-4" aria-hidden="true" />}
         title={t("initialReview.applicationRevision")}
       />
-      <div className="mt-3 grid gap-x-6 gap-y-4 rounded-2xl border bg-muted/20 p-4 sm:grid-cols-2">
-        <DetailField label={t("initialReview.fullName")}>{detail.full_name}</DetailField>
-        <DetailField label={t("initialReview.handle")}>{detail.applicant_handle}</DetailField>
-        <DetailField label={t("initialReview.birthDate")}>{detail.birth_date}</DetailField>
-        <DetailField label={t("initialReview.nationality")}>{detail.nationality}</DetailField>
-        <DetailField label={t("initialReview.maritalStatus")}>
-          {detail.marital_status}
-        </DetailField>
-        <DetailField label={t("initialReview.profession")}>{detail.profession}</DetailField>
-        <DetailField label={t("initialReview.birthplace")}>{detail.birthplace}</DetailField>
-        <DetailField label={t("initialReview.email")}>{detail.email}</DetailField>
-        <DetailField label={t("initialReview.phone")}>{detail.phone}</DetailField>
-        <DetailField label={t("initialReview.cpf")}>{detail.cpf}</DetailField>
-        <DetailField label={t("initialReview.idDocument")}>
-          {detail.id_document_number}
-        </DetailField>
-        <DetailField label={t("initialReview.issuingAuthority")}>
-          {detail.id_document_issuer}
-        </DetailField>
-        <DetailField label={t("initialReview.postalCode")}>{detail.postal_code}</DetailField>
-        <DetailField label={t("initialReview.address")}>{detail.address_line}</DetailField>
-        <DetailField label={t("initialReview.cityState")}>
-          {[detail.city, detail.state].filter(Boolean).join(" / ")}
-        </DetailField>
-        <DetailField label={t("initialReview.bloodType")}>{detail.blood_type}</DetailField>
-        <DetailField label={t("initialReview.allergies")}>
-          {detail.has_allergies ? detail.allergies : t("common.noneReported")}
-        </DetailField>
-        <DetailField label={t("initialReview.dietaryRestrictions")}>
-          {detail.has_dietary_restrictions
-            ? detail.dietary_restrictions
-            : t("common.noneReported")}
-        </DetailField>
-        <DetailField label={t("initialReview.highlineExperience")}>
-          {detail.highline_experience}
-        </DetailField>
-        <DetailField label={t("initialReview.rescueCourse")}>
-          {detail.has_rescue_course ? t("common.yes") : t("common.no")}
-        </DetailField>
-        <DetailField label={t("initialReview.firstAidCourse")}>
-          {detail.first_aid_course}
-        </DetailField>
-        <DetailField label={t("initialReview.emergencyContact")}>
-          {[
-            detail.emergency_contact_name,
-            detail.emergency_contact_relationship,
-            detail.emergency_contact_phone,
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        </DetailField>
+      <div className="mt-3">
+        <ApplicationRevisionFields
+          handle={detail.applicant_handle}
+          revision={detail}
+        />
       </div>
     </section>
   );
@@ -516,25 +474,6 @@ function SectionHeading({
       <span className="text-muted-foreground">{icon}</span>
       {title}
     </h3>
-  );
-}
-
-function DetailField({
-  children,
-  label,
-}: {
-  children: ReactNode;
-  label: string;
-}) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
-        {label}
-      </dt>
-      <dd className="mt-1 break-words text-sm font-medium">
-        {children || "—"}
-      </dd>
-    </div>
   );
 }
 

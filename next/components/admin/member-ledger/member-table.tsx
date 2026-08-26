@@ -38,9 +38,9 @@ const DEFAULT_PERIOD_FILTER: PeriodFilter = "all";
 
 const LIFECYCLE_VALUES = [
   "all",
-  "draft",
-  "applicant",
   "active",
+  "pending",
+  "inactive",
 ] as const satisfies readonly LifecycleFilter[];
 
 const FINANCIAL_VALUES = [
@@ -48,11 +48,24 @@ const FINANCIAL_VALUES = [
   "not_paid",
   "paid",
   "under_review",
+  "rejected",
   "awaiting_payment",
   "overdue",
   "scheduled",
   "no_obligation",
 ] as const satisfies readonly FinancialFilter[];
+
+/**
+ * What "not paid this period" groups. A refused payment belongs here: the money
+ * is still owed, which is exactly why rejecting a claim returns the obligation
+ * to `available`.
+ */
+const NOT_PAID_STATUSES: FinancialStatus[] = [
+  "under_review",
+  "rejected",
+  "awaiting_payment",
+  "overdue",
+];
 
 const PERIOD_KEY_PATTERN = /^\d{4}-\d{2}$/;
 
@@ -83,14 +96,15 @@ export const memberLedgerParsers = {
 const DEFAULT_LIFECYCLE_OPTIONS = [
   { value: "all", label: "All registrations" },
   { value: "active", label: "Active members" },
-  { value: "applicant", label: "Applicants" },
-  { value: "draft", label: "Drafts" },
+  { value: "pending", label: "Pending" },
+  { value: "inactive", label: "Inactive members" },
 ] as const;
 
 const DEFAULT_FINANCIAL_OPTIONS = [
   { value: "all", label: "All financial states" },
   { value: "not_paid", label: "Not paid this period" },
   { value: "overdue", label: "Overdue" },
+  { value: "rejected", label: "Rejected" },
   { value: "under_review", label: "Under review" },
   { value: "awaiting_payment", label: "Awaiting payment" },
   { value: "scheduled", label: "Scheduled" },
@@ -100,11 +114,12 @@ const DEFAULT_FINANCIAL_OPTIONS = [
 
 const financialRank: Record<FinancialStatus, number> = {
   overdue: 0,
-  under_review: 1,
-  awaiting_payment: 2,
-  scheduled: 3,
-  paid: 4,
-  no_obligation: 5,
+  rejected: 1,
+  under_review: 2,
+  awaiting_payment: 3,
+  scheduled: 4,
+  paid: 5,
+  no_obligation: 6,
 };
 
 const financialSorting: SortingFn<MemberTableRow> = (left, right) =>
@@ -183,7 +198,7 @@ export function createMemberColumns(
     amount: "Amount",
     due: "Due",
     lifecycle: "Lifecycle",
-    periodStatus: "Period status",
+    periodStatus: "Payment status",
     person: "Person",
     plan: "Plan",
     ...labels,
@@ -324,9 +339,7 @@ export function useMemberTable({
     () =>
       periodRows.filter((row) => {
         if (lifecycle !== "all" && row.lifecycle !== lifecycle) return false;
-        const notPaid = ["under_review", "awaiting_payment", "overdue"].includes(
-          row.selectedPeriod.status,
-        );
+        const notPaid = NOT_PAID_STATUSES.includes(row.selectedPeriod.status);
         if (financial === "not_paid" && !notPaid) return false;
         if (
           financial !== "all" &&
@@ -341,11 +354,7 @@ export function useMemberTable({
   );
 
   const counts = useMemo(() => {
-    const attentionStatuses: FinancialStatus[] = [
-      "under_review",
-      "awaiting_payment",
-      "overdue",
-    ];
+    const attentionStatuses = NOT_PAID_STATUSES;
 
     return {
       total: periodRows.length,
@@ -358,9 +367,8 @@ export function useMemberTable({
         attentionStatuses.includes(row.selectedPeriod.status),
       ).length,
       active: periodRows.filter((row) => row.lifecycle === "active").length,
-      applicants: periodRows.filter((row) => row.lifecycle === "applicant")
-        .length,
-      drafts: periodRows.filter((row) => row.lifecycle === "draft").length,
+      pending: periodRows.filter((row) => row.lifecycle === "pending").length,
+      inactive: periodRows.filter((row) => row.lifecycle === "inactive").length,
     };
   }, [periodRows]);
 

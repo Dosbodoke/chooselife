@@ -363,7 +363,6 @@
       "applicant": "Candidato",
       "otherPayer": "Outro pagador",
       "unnamedMember": "Membro sem nome",
-      "unnamedApplicant": "Candidato sem nome",
       "noHandle": "Sem @usuário",
       "payer": "Pagador",
       "due": "Vencimento",
@@ -459,7 +458,6 @@
       "decisionNotCompleted": "Não foi possível concluir a decisão. Nada foi alterado; tente novamente.",
       "claimNoLongerActionable": "Esta solicitação não pode mais ser processada. Atualize antes de decidir.",
       "rejectionReasonRequired": "O motivo da recusa é obrigatório.",
-      "claimNoLongerAvailable": "Esta solicitação não está mais disponível para o seu escopo de revisão. Atualize a fila.",
       "detailsCouldNotLoad": "Não foi possível carregar os detalhes da solicitação. Tente novamente.",
       "tryAgain": "Não foi possível concluir a decisão. Tente novamente."
     },
@@ -516,7 +514,7 @@
     },
     "ledger": {
       "title": "Painel de controle da SL.A.C",
-      "description": "Uma tabela para membros ativos, candidatos e rascunhos em {period}.",
+      "description": "Uma tabela para membros ativos, pendentes e inativos em {period}.",
       "peopleCount": "{count} pessoas",
       "notPaidCount": "{count} não pagas",
       "searchLabel": "Buscar pessoas",
@@ -534,7 +532,7 @@
       "columns": {
         "person": "Pessoa",
         "lifecycle": "Situação cadastral",
-        "periodStatus": "Situação do período",
+        "periodStatus": "Status do pagamento",
         "plan": "Plano",
         "amount": "Valor",
         "due": "Vencimento"
@@ -546,19 +544,20 @@
         "all": "Todos os cadastros",
         "active": "Membro ativo",
         "activePlural": "Membros ativos",
-        "applicant": "Candidato",
-        "applicants": "Candidatos",
-        "draft": "Rascunho",
-        "drafts": "Rascunhos"
+        "pending": "Pendente",
+        "pendingPlural": "Pendentes",
+        "inactive": "Membro inativo",
+        "inactivePlural": "Membros inativos"
       },
       "financial": {
         "all": "Todas as situações",
-        "notPaid": "Não pagas neste período",
-        "paid": "Paga",
+        "notPaid": "Não pagos neste período",
+        "paid": "Pago",
         "underReview": "Em revisão",
         "awaitingPayment": "Aguardando pagamento",
-        "overdue": "Vencida",
-        "scheduled": "Agendada",
+        "overdue": "Vencido",
+        "rejected": "Recusado",
+        "scheduled": "Agendado",
         "noObligation": "Sem cobrança"
       },
       "loadedAnnouncement": "Livro-caixa carregado com {count} pessoas.",
@@ -570,27 +569,18 @@
       "available": "Disponível em",
       "joined": "Entrada",
       "paidAt": "Pago em {date}",
-      "recentPeriods": "Períodos recentes",
+      "recentPeriods": "Histórico de pagamento",
       "noHistory": "Ainda não há histórico de pagamentos para esta pessoa."
     },
-    "initialClaims": {
-      "title": "Solicitações de pagamento inicial",
-      "description": "Verifique um pagamento e admita um candidato por vez. Cada ação é verificada e registrada pelo banco de dados como uma única decisão.",
-      "visibleCount": "{count} solicitações visíveis",
-      "listTitle": "Fila",
-      "listDescription": "Solicitações iniciais atuais das associações que você administra.",
-      "searchLabel": "Buscar solicitações",
-      "searchPlaceholder": "Buscar candidato ou pagador",
-      "stateFilterLabel": "Filtrar estado do pagamento",
-      "sortLabel": "Ordenar solicitações",
-      "allCurrent": "Todas as solicitações atuais",
-      "emptyTitle": "A fila está vazia",
-      "emptyFilteredTitle": "Nenhuma solicitação corresponde a estes filtros",
-      "emptyDescription": "Novas solicitações de pagamento inicial aparecerão aqui quando um candidato enviar uma.",
-      "emptyFilteredDescription": "Limpe a busca ou altere os filtros de ordenação e estado do pagamento.",
-      "ariaLabel": "Solicitações de pagamento inicial",
-      "attempt": "tentativa",
-      "attempts": "tentativas"
+    "memberDetail": {
+      "title": "Detalhes do membro",
+      "memberSince": "Membro desde",
+      "departedOn": "Saiu em",
+      "departureReason": "Motivo da saída",
+      "applicationForm": "Formulário de inscrição",
+      "noApplication": "Esta pessoa não tem formulário de inscrição registrado.",
+      "loading": "Carregando detalhes do membro",
+      "unavailable": "Não foi possível carregar os detalhes do membro."
     },
     "initialReview": {
       "eyebrow": "Revisão da solicitação inicial",

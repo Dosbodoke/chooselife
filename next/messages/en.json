@@ -363,7 +363,6 @@
       "applicant": "Applicant",
       "otherPayer": "Other payer",
       "unnamedMember": "Unnamed member",
-      "unnamedApplicant": "Unnamed applicant",
       "noHandle": "No handle",
       "payer": "Payer",
       "due": "Due",
@@ -459,7 +458,6 @@
       "decisionNotCompleted": "The decision could not be completed. Nothing was changed; try again.",
       "claimNoLongerActionable": "This claim is no longer actionable. Refresh before deciding.",
       "rejectionReasonRequired": "A rejection reason is required.",
-      "claimNoLongerAvailable": "This claim is no longer available to your reviewer scope. Refresh the queue.",
       "detailsCouldNotLoad": "The claim details could not be loaded. Try again.",
       "tryAgain": "The decision could not be completed. Try again."
     },
@@ -516,7 +514,7 @@
     },
     "ledger": {
       "title": "SL.A.C control panel",
-      "description": "One table for active members, applicants, and drafts in {period}.",
+      "description": "One table for active, pending, and inactive members in {period}.",
       "peopleCount": "{count} people",
       "notPaidCount": "{count} not paid",
       "searchLabel": "Search people",
@@ -534,7 +532,7 @@
       "columns": {
         "person": "Person",
         "lifecycle": "Registration status",
-        "periodStatus": "Period status",
+        "periodStatus": "Payment status",
         "plan": "Plan",
         "amount": "Amount",
         "due": "Due"
@@ -546,10 +544,10 @@
         "all": "All registrations",
         "active": "Active member",
         "activePlural": "Active members",
-        "applicant": "Applicant",
-        "applicants": "Applicants",
-        "draft": "Draft",
-        "drafts": "Drafts"
+        "pending": "Pending",
+        "pendingPlural": "Pending",
+        "inactive": "Inactive member",
+        "inactivePlural": "Inactive members"
       },
       "financial": {
         "all": "All financial states",
@@ -558,6 +556,7 @@
         "underReview": "Under review",
         "awaitingPayment": "Awaiting payment",
         "overdue": "Overdue",
+        "rejected": "Rejected",
         "scheduled": "Scheduled",
         "noObligation": "No charge"
       },
@@ -570,27 +569,18 @@
       "available": "Available",
       "joined": "Joined",
       "paidAt": "Paid {date}",
-      "recentPeriods": "Recent periods",
+      "recentPeriods": "Payment history",
       "noHistory": "There is no payment history for this person yet."
     },
-    "initialClaims": {
-      "title": "Initial payment claims",
-      "description": "Verify a payment and admit one applicant at a time. Every action is checked and committed by the database as one decision.",
-      "visibleCount": "{count} visible claims",
-      "listTitle": "Queue",
-      "listDescription": "Current initial claims from the associations you administer.",
-      "searchLabel": "Search claims",
-      "searchPlaceholder": "Search applicant or payer",
-      "stateFilterLabel": "Filter payment state",
-      "sortLabel": "Sort claims",
-      "allCurrent": "All current claims",
-      "emptyTitle": "The queue is clear",
-      "emptyFilteredTitle": "No claims match these filters",
-      "emptyDescription": "New initial payment claims will appear here when an applicant submits one.",
-      "emptyFilteredDescription": "Try clearing the search or changing the sort and payment-state filters.",
-      "ariaLabel": "Initial payment claims",
-      "attempt": "attempt",
-      "attempts": "attempts"
+    "memberDetail": {
+      "title": "Member details",
+      "memberSince": "Member since",
+      "departedOn": "Left on",
+      "departureReason": "Reason for leaving",
+      "applicationForm": "Application form",
+      "noApplication": "This person has no application form on file.",
+      "loading": "Loading member details",
+      "unavailable": "Member details could not be loaded."
     },
     "initialReview": {
       "eyebrow": "Initial claim review",

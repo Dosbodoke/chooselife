@@ -59,6 +59,9 @@ const NEUTRAL_TONE: Tone = {
 const FINANCIAL_TONES: Record<FinancialStatus, Tone> = {
   paid: { chip: "border-emerald-200 bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
   overdue: { chip: "border-red-200 bg-red-50 text-red-700", dot: "bg-red-500" },
+  // Deeper and more saturated than `overdue`, so a refusal is not mistaken for a
+  // missed due date when the two sit in the same column.
+  rejected: { chip: "border-rose-300 bg-rose-100 text-rose-900", dot: "bg-rose-700" },
   under_review: { chip: "border-amber-200 bg-amber-50 text-amber-800", dot: "bg-amber-500" },
   awaiting_payment: {
     chip: "border-orange-200 bg-orange-50 text-orange-800",
@@ -76,11 +79,8 @@ const NOT_PAID_TONE: Tone = {
 
 const LIFECYCLE_TONES: Record<LifecycleStatus, Tone> = {
   active: { chip: "border-emerald-200 bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
-  applicant: { chip: "border-violet-200 bg-violet-50 text-violet-700", dot: "bg-violet-500" },
-  draft: {
-    chip: "border-dashed border-slate-300 bg-slate-50 text-slate-500",
-    dot: "bg-slate-400",
-  },
+  pending: { chip: "border-violet-200 bg-violet-50 text-violet-700", dot: "bg-violet-500" },
+  inactive: { chip: "border-red-200 bg-red-50 text-red-700", dot: "bg-red-500" },
 };
 
 /** The plan is not a status, so it stays quiet -- annual is the only tinted one. */
@@ -132,14 +132,15 @@ export default function BillingWorkspaceLedger({
   });
   const lifecycleLabels: Record<LifecycleStatus, string> = {
     active: t("ledger.lifecycle.active"),
-    applicant: t("ledger.lifecycle.applicant"),
-    draft: t("ledger.lifecycle.draft"),
+    pending: t("ledger.lifecycle.pending"),
+    inactive: t("ledger.lifecycle.inactive"),
   };
   const financialLabels: Record<FinancialStatus, string> = {
     awaiting_payment: t("ledger.financial.awaitingPayment"),
     no_obligation: t("ledger.financial.noObligation"),
     overdue: t("ledger.financial.overdue"),
     paid: t("ledger.financial.paid"),
+    rejected: t("ledger.financial.rejected"),
     scheduled: t("ledger.financial.scheduled"),
     under_review: t("ledger.financial.underReview"),
   };
@@ -271,14 +272,14 @@ export default function BillingWorkspaceLedger({
                 tone: LIFECYCLE_TONES.active,
               },
               {
-                value: "applicant",
-                label: t("ledger.lifecycle.applicants"),
-                tone: LIFECYCLE_TONES.applicant,
+                value: "pending",
+                label: t("ledger.lifecycle.pendingPlural"),
+                tone: LIFECYCLE_TONES.pending,
               },
               {
-                value: "draft",
-                label: t("ledger.lifecycle.drafts"),
-                tone: LIFECYCLE_TONES.draft,
+                value: "inactive",
+                label: t("ledger.lifecycle.inactivePlural"),
+                tone: LIFECYCLE_TONES.inactive,
               },
             ]}
             icon={<Users className="size-3.5" aria-hidden="true" />}
@@ -298,6 +299,11 @@ export default function BillingWorkspaceLedger({
                 value: "overdue",
                 label: t("ledger.financial.overdue"),
                 tone: FINANCIAL_TONES.overdue,
+              },
+              {
+                value: "rejected",
+                label: t("ledger.financial.rejected"),
+                tone: FINANCIAL_TONES.rejected,
               },
               {
                 value: "under_review",

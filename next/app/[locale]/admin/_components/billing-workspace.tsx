@@ -21,14 +21,14 @@ import type {
 import { buildBillingWorkspaceMemberRows } from "@/lib/billing-workspace-ledger";
 import { supabaseBrowser } from "@/utils/supabase/client";
 
-import {
-  InitialPaymentClaimReview,
-  type ReviewAction,
-} from "../claims/_components/initial-payment-claim-review";
 import BillingWorkspaceClaimReview from "./billing-workspace-claim-review";
 import BillingWorkspaceLayout from "./billing-workspace-layout";
 import BillingWorkspaceLedger from "./billing-workspace-ledger";
 import BillingWorkspaceMemberReview from "./billing-workspace-member-review";
+import {
+  InitialPaymentClaimReview,
+  type ReviewAction,
+} from "./initial-payment-claim-review";
 
 type RpcError = {
   code?: string;
@@ -345,7 +345,11 @@ export default function BillingWorkspace({
       />
     )
   ) : selectedMember ? (
-    <BillingWorkspaceMemberReview member={selectedMember} onClose={closeReview} />
+    <BillingWorkspaceMemberReview
+      member={selectedMember}
+      onClose={closeReview}
+      organizationId={activeOrganizationId}
+    />
   ) : null;
 
   return (

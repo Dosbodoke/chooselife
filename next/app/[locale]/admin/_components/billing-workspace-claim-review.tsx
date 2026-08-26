@@ -18,7 +18,7 @@ import {
   jsonArray,
 } from "@/lib/billing-workspace";
 
-import type { ReviewAction } from "../claims/_components/initial-payment-claim-review";
+import type { ReviewAction } from "./initial-payment-claim-review";
 
 export default function BillingWorkspaceClaimReview({
   action,

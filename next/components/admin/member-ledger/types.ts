@@ -1,10 +1,11 @@
 import type { Table } from "@tanstack/react-table";
 
-export type LifecycleStatus = "draft" | "applicant" | "active";
+export type LifecycleStatus = "active" | "pending" | "inactive";
 
 export type FinancialStatus =
   | "paid"
   | "under_review"
+  | "rejected"
   | "awaiting_payment"
   | "overdue"
   | "scheduled"
@@ -44,7 +45,7 @@ export type MemberRow = {
   id: string;
   name: string;
   handle: string;
-  role: "admin" | "member" | "applicant" | "draft";
+  role: "admin" | "member" | "pending" | "inactive";
   profilePicture: string | null;
   lifecycle: LifecycleStatus;
   plan: "monthly" | "annual" | null;
@@ -74,8 +75,8 @@ export type MemberTableCounts = {
   paid: number;
   notPaid: number;
   active: number;
-  applicants: number;
-  drafts: number;
+  pending: number;
+  inactive: number;
 };
 
 export type MemberTableController = {

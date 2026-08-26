@@ -62,7 +62,8 @@ from (
     ('c1fe0000-0000-4000-8000-000000000007'::uuid, 'monthly-current@chooselife.local', 'Mensal Em Dia'),
     ('c1fe0000-0000-4000-8000-000000000008'::uuid, 'monthly-overdue@chooselife.local', 'Mensal Em Atraso'),
     ('c1fe0000-0000-4000-8000-000000000009'::uuid, 'annual-current@chooselife.local', 'Anual Em Dia'),
-    ('c1fe0000-0000-4000-8000-000000000010'::uuid, 'recurring-review@chooselife.local', 'Recorrência Em Análise')
+    ('c1fe0000-0000-4000-8000-000000000010'::uuid, 'recurring-review@chooselife.local', 'Recorrência Em Análise'),
+    ('c1fe0000-0000-4000-8000-000000000011'::uuid, 'ex-member@chooselife.local', 'Ex Membro')
 ) as persona(id, email, display_name);
 
 insert into auth.identities (
@@ -95,7 +96,8 @@ from (
     ('c1fe0000-0000-4000-8000-000000000007'::uuid, 'monthly-current@chooselife.local'),
     ('c1fe0000-0000-4000-8000-000000000008'::uuid, 'monthly-overdue@chooselife.local'),
     ('c1fe0000-0000-4000-8000-000000000009'::uuid, 'annual-current@chooselife.local'),
-    ('c1fe0000-0000-4000-8000-000000000010'::uuid, 'recurring-review@chooselife.local')
+    ('c1fe0000-0000-4000-8000-000000000010'::uuid, 'recurring-review@chooselife.local'),
+    ('c1fe0000-0000-4000-8000-000000000011'::uuid, 'ex-member@chooselife.local')
 ) as persona(id, email);
 
 insert into public.profiles (id, name, username, description, birthday)
@@ -109,7 +111,8 @@ values
   ('c1fe0000-0000-4000-8000-000000000007', 'Mensal Em Dia', '@seed_mensal_em_dia', 'Mensalista com histórico quitado.', '1997-01-25'),
   ('c1fe0000-0000-4000-8000-000000000008', 'Mensal Em Atraso', '@seed_mensal_atraso', 'Mensalista com contribuição vencida.', '1989-08-17'),
   ('c1fe0000-0000-4000-8000-000000000009', 'Anual Em Dia', '@seed_anual_em_dia', 'Plano anual com dois anos de histórico.', '1993-03-30'),
-  ('c1fe0000-0000-4000-8000-000000000010', 'Recorrência Em Análise', '@seed_recorrencia', 'Pagamento recorrente feito por terceiro.', '1995-12-05')
+  ('c1fe0000-0000-4000-8000-000000000010', 'Recorrência Em Análise', '@seed_recorrencia', 'Pagamento recorrente feito por terceiro.', '1995-12-05'),
+  ('c1fe0000-0000-4000-8000-000000000011', 'Ex Membro', '@seed_ex_membro', 'Saiu da associação depois de um ano de contribuições.', '1991-05-11')
 on conflict (id) do update
 set
   name = excluded.name,
@@ -457,6 +460,75 @@ values
   ('2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000008', 'member', timezone('utc'::text, now()) - interval '1 year'),
   ('2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000009', 'member', timezone('utc'::text, now()) - interval '2 years'),
   ('2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000010', 'member', timezone('utc'::text, now()) - interval '1 year');
+
+-- An ex-member: the membership row is gone, the departure journal keeps the
+-- relationship visible, and the retired schedule stops minting new periods.
+insert into public.subscriptions (id, organization_id, user_id, plan_type, status, current_period_end)
+values
+  ('c1fe0000-0000-4000-8000-000000000611', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000011', 'monthly', 'canceled', timezone('utc'::text, now()) - interval '2 months');
+
+insert into public.contribution_schedules (
+  id,
+  organization_id,
+  user_id,
+  cadence,
+  admission_date,
+  due_day,
+  lead_days,
+  billing_timezone,
+  currency,
+  active
+)
+values
+  ('c1fe0000-0000-4000-8000-000000000711', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000011', 'monthly', timezone('America/Sao_Paulo', now())::date - 400, 10, 7, 'America/Sao_Paulo', 'BRL', false);
+
+insert into public.contribution_plan_assignments (
+  id,
+  schedule_id,
+  effective_period_start,
+  plan_type,
+  amount,
+  currency,
+  due_day,
+  lead_days,
+  billing_timezone,
+  pix_copy_paste
+)
+select
+  'c1fe0000-0000-4000-8000-000000000811'::uuid,
+  schedule.id,
+  schedule.admission_date,
+  'monthly'::public.subscription_plan_type_enum,
+  3500,
+  'BRL',
+  10,
+  7,
+  'America/Sao_Paulo',
+  '000201LOCAL-SLAC-MONTHLY-PIX'
+from public.contribution_schedules schedule
+where schedule.id = 'c1fe0000-0000-4000-8000-000000000711'::uuid;
+
+insert into public.organization_membership_departures (
+  id,
+  organization_id,
+  user_id,
+  departed_role,
+  joined_at,
+  departed_at,
+  actor_user_id,
+  reason
+)
+values
+  (
+    'c1fe0000-0000-4000-8000-000000000911',
+    '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1',
+    'c1fe0000-0000-4000-8000-000000000011',
+    'member',
+    timezone('utc'::text, now()) - interval '14 months',
+    timezone('utc'::text, now()) - interval '2 months',
+    'c1fe0000-0000-4000-8000-000000000011',
+    'Mudou de cidade.'
+  );
 
 -- Twelve settled monthly periods for the up-to-date persona.
 insert into public.payment_obligations (
