@@ -129,19 +129,12 @@ values
     'admin'
   );
 
-insert into public.subscriptions (
-  organization_id,
-  user_id,
-  plan_type,
-  status,
-  current_period_end
-)
-values (
+-- Admission opens the schedule and snapshots the plan. There is no
+-- subscription behind a membership any more.
+select public.ensure_contribution_schedule(
   '82000000-0000-4000-8000-000000000001'::uuid,
   '82000000-0000-4000-8000-000000000102'::uuid,
-  'monthly',
-  'active',
-  timezone('utc'::text, now()) + interval '1 month'
+  'monthly'::public.subscription_plan_type_enum
 );
 
 insert into public.payment_obligations (

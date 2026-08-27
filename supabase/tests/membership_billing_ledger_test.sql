@@ -132,19 +132,14 @@ from unnest(
   ]
 ) as members(user_id);
 
-insert into public.subscriptions (
-  organization_id,
-  user_id,
-  plan_type,
-  status,
-  current_period_end
-)
-select
+-- Admission opens the schedule and snapshots the plan the applicant chose.
+-- There is no subscription row behind a membership any more, and no trigger on
+-- organization_members either.
+select public.ensure_contribution_schedule(
   '81000000-0000-4000-8000-000000000001'::uuid,
-  user_id,
-  'monthly'::public.subscription_plan_type_enum,
-  'active'::public.subscription_status_enum,
-  timezone('utc'::text, now()) + interval '1 month'
+  members.user_id,
+  'monthly'::public.subscription_plan_type_enum
+)
 from unnest(
   array[
     '81000000-0000-4000-8000-000000000101'::uuid,
@@ -157,9 +152,10 @@ from unnest(
 select is(
   (select count(*)::integer
    from public.contribution_schedules
-   where organization_id = '81000000-0000-4000-8000-000000000001'::uuid),
+   where organization_id = '81000000-0000-4000-8000-000000000001'::uuid
+     and active),
   4,
-  'an active subscription creates one contribution schedule per member'
+  'admission opens exactly one active contribution schedule per member'
 );
 
 select is(
@@ -168,7 +164,7 @@ select is(
    join public.contribution_schedules cs on cs.id = cpa.schedule_id
    where cs.organization_id = '81000000-0000-4000-8000-000000000001'::uuid),
   4,
-  'schedule creation snapshots the selected plan and amount'
+  'admission snapshots the selected plan and amount'
 );
 
 insert into public.payment_obligations (
@@ -503,32 +499,10 @@ select throws_ok(
   'client schedule writes are disabled behind the server boundary'
 );
 
-set local role postgres;
-update public.subscriptions
-set status = 'canceled'::public.subscription_status_enum
-where organization_id = '81000000-0000-4000-8000-000000000001'::uuid
-  and user_id = '81000000-0000-4000-8000-000000000104'::uuid;
-
-select is(
-  (select active
-   from public.contribution_schedules
-   where organization_id = '81000000-0000-4000-8000-000000000001'::uuid
-     and user_id = '81000000-0000-4000-8000-000000000104'::uuid),
-  false,
-  'a canceled subscription stops future Ledger generation'
-);
-
-update public.organizations
-set
-  annual_price_amount = 140000,
-  annual_pix_copy_paste = '000201ledger-annual-pix'
-where id = '81000000-0000-4000-8000-000000000001'::uuid;
-
-update public.subscriptions
-set
-  status = 'active'::public.subscription_status_enum
-where organization_id = '81000000-0000-4000-8000-000000000001'::uuid
-  and user_id = '81000000-0000-4000-8000-000000000104'::uuid;
+-- ---------------------------------------------------------------------------
+-- Ending a membership stops future generation. A canceled subscription used to
+-- do this; the departure command does it now.
+-- ---------------------------------------------------------------------------
 
 set local role authenticated;
 select set_config(
@@ -538,37 +512,63 @@ select set_config(
 );
 
 select is(
-  (
-    public.schedule_contribution_plan_change(
-      (
-        select cs.id
-        from public.contribution_schedules cs
-        where cs.organization_id = '81000000-0000-4000-8000-000000000001'::uuid
-          and cs.user_id = '81000000-0000-4000-8000-000000000104'::uuid
-      ),
-      (
-        select case
-          when candidate_due >= minimum_due then candidate_due
-          else (candidate_due + interval '1 month')::date
-        end
-        from (
-          select
-            (cs.admission_date + interval '1 month')::date as minimum_due,
-            (
-              date_trunc('month', cs.admission_date + interval '1 month')
-              + interval '9 days'
-            )::date as candidate_due
-          from public.contribution_schedules cs
-          where cs.organization_id = '81000000-0000-4000-8000-000000000001'::uuid
-            and cs.user_id = '81000000-0000-4000-8000-000000000104'::uuid
-        ) first_period
-      ),
-      'annual'::public.subscription_plan_type_enum
-    ) is not null
-  ),
-  true,
-  'a future plan change is appended through the effective-dated command'
+  (select departed_role::text
+   from public.end_association_membership(
+     '81000000-0000-4000-8000-000000000001'::uuid,
+     '81000000-0000-4000-8000-000000000101'::uuid,
+     'Saiu da associacao.'
+   )),
+  'member',
+  'the admin ends another member''s membership'
 );
+
+select is(
+  (select count(*)::integer
+   from public.contribution_schedules
+   where organization_id = '81000000-0000-4000-8000-000000000001'::uuid
+     and user_id = '81000000-0000-4000-8000-000000000101'::uuid
+     and active),
+  0,
+  'a closed membership stops future Ledger generation'
+);
+
+select cmp_ok(
+  (select count(*)::integer
+   from public.payment_obligations
+   where organization_id = '81000000-0000-4000-8000-000000000001'::uuid
+     and user_id = '81000000-0000-4000-8000-000000000101'::uuid
+     and status = 'available'),
+  '>',
+  0,
+  'the unpaid contributions left behind are still owed and still on the Ledger'
+);
+
+select is(
+  (select count(*)::integer
+   from public.payment_obligations
+   where organization_id = '81000000-0000-4000-8000-000000000001'::uuid
+     and user_id = '81000000-0000-4000-8000-000000000101'::uuid
+     and status in ('settled', 'void')),
+  0,
+  'leaving neither settles nor voids what was owed'
+);
+
+-- ---------------------------------------------------------------------------
+-- There is no in-place plan change.
+--
+-- A member who wants a different plan closes the membership and opens a new
+-- one, so the new plan is snapshotted at a new admission rather than spliced
+-- into an existing schedule. The schedule anchor and its policy stay immutable,
+-- and the effective-dated term history is append-only.
+-- ---------------------------------------------------------------------------
+
+set local role postgres;
+
+update public.organizations
+set
+  annual_price_amount = 140000,
+  annual_pix_copy_paste = '000201ledger-annual-pix'
+where id = '81000000-0000-4000-8000-000000000001'::uuid;
 
 select is(
    (select cadence
@@ -579,6 +579,29 @@ select is(
   'the admission schedule cadence remains an immutable anchor'
 );
 
+select throws_ok(
+  $$update public.contribution_schedules
+    set cadence = 'annual'::public.contribution_cadence_enum
+    where organization_id = '81000000-0000-4000-8000-000000000001'::uuid
+      and user_id = '81000000-0000-4000-8000-000000000104'::uuid$$,
+  '55000',
+  'Contribution schedule policy is immutable; append an effective-dated term.',
+  'a member''s plan cannot be switched in place on the schedule'
+);
+
+select throws_ok(
+  $$update public.contribution_plan_assignments
+    set plan_type = 'annual'::public.subscription_plan_type_enum
+    where schedule_id = (
+      select cs.id from public.contribution_schedules cs
+      where cs.organization_id = '81000000-0000-4000-8000-000000000001'::uuid
+        and cs.user_id = '81000000-0000-4000-8000-000000000104'::uuid
+    )$$,
+  '55000',
+  'An effective-dated contribution term is immutable; append a new term.',
+  'an existing price snapshot cannot be rewritten into another plan'
+);
+
 select is(
   (select plan_type
    from public.contribution_plan_assignments cpa
@@ -587,8 +610,58 @@ select is(
      and cs.user_id = '81000000-0000-4000-8000-000000000104'::uuid
    order by cpa.effective_period_start desc
    limit 1),
-  'annual'::public.subscription_plan_type_enum,
-  'a plan change appends the effective price snapshot'
+  'monthly'::public.subscription_plan_type_enum,
+  'raising the association''s annual price does not reprice an existing member'
+);
+
+-- Rejoining on a different plan is the supported route, and it snapshots the
+-- price that is current at the new admission.
+set local role authenticated;
+
+select is(
+  (select departed_role::text
+   from public.end_association_membership(
+     '81000000-0000-4000-8000-000000000001'::uuid,
+     '81000000-0000-4000-8000-000000000102'::uuid
+   )),
+  'member',
+  'the member who wants another plan leaves first'
+);
+
+set local role postgres;
+
+insert into public.organization_members (organization_id, user_id, role)
+values (
+  '81000000-0000-4000-8000-000000000001'::uuid,
+  '81000000-0000-4000-8000-000000000102'::uuid,
+  'member'::public.organization_role_enum
+);
+
+select public.ensure_contribution_schedule(
+  '81000000-0000-4000-8000-000000000001'::uuid,
+  '81000000-0000-4000-8000-000000000102'::uuid,
+  'annual'::public.subscription_plan_type_enum
+);
+
+select is(
+  (select cpa.amount
+   from public.contribution_schedules cs
+   join public.contribution_plan_assignments cpa on cpa.schedule_id = cs.id
+   where cs.organization_id = '81000000-0000-4000-8000-000000000001'::uuid
+     and cs.user_id = '81000000-0000-4000-8000-000000000102'::uuid
+     and cs.active),
+  140000,
+  'the new membership snapshots the price current at its own admission'
+);
+
+select is(
+  (select cs.cadence::text
+   from public.contribution_schedules cs
+   where cs.organization_id = '81000000-0000-4000-8000-000000000001'::uuid
+     and cs.user_id = '81000000-0000-4000-8000-000000000102'::uuid
+     and cs.active),
+  'annual',
+  'the new membership runs on the plan the person actually chose'
 );
 
 select * from finish();

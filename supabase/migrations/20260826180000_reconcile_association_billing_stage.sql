@@ -2685,17 +2685,31 @@ for each row execute function public.set_association_person_from_obligation();
 -- predicate goes empty, leaving association admins as the only readers.
 -- ---------------------------------------------------------------------------
 
+-- Owner-only here made the retention rule unreachable: once the account is
+-- gone the owner predicate is empty, and get_association_member_detail is
+-- anchored on profiles, so the row the association must keep had no reader.
 drop policy if exists "Application owners can read their submitted revisions"
   on public.membership_application_revisions;
-create policy "Application owners can read their submitted revisions"
+drop policy if exists "Owners and association admins can read submitted revisions"
+  on public.membership_application_revisions;
+create policy "Owners and association admins can read submitted revisions"
   on public.membership_application_revisions
   for select to authenticated
-  using (exists (
-    select 1
-    from public.association_people ap
-    where ap.id = membership_application_revisions.association_person_id
-      and ap.account_user_id = (select auth.uid())
-  ));
+  using (
+    exists (
+      select 1
+      from public.association_people ap
+      where ap.id = membership_application_revisions.association_person_id
+        and ap.account_user_id = (select auth.uid())
+    )
+    or exists (
+      select 1
+      from public.organization_members om
+      where om.organization_id = membership_application_revisions.organization_id
+        and om.user_id = (select auth.uid())
+        and om.role = 'admin'::public.organization_role_enum
+    )
+  );
 
 drop policy if exists "Association admins can read payment obligations"
   on public.payment_obligations;

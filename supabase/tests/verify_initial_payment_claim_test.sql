@@ -592,19 +592,43 @@ select is(
 
 set local role postgres;
 
+-- Admission is one atomic command now: it opens the contribution schedule and
+-- its admission-effective plan snapshot, and reports both ids. There is no
+-- subscription behind a membership any more.
 select is(
-  (select status::text from public.subscriptions
+  (select count(*)::integer from public.contribution_schedules
    where organization_id = '70000000-0000-4000-8000-000000000001'::uuid
-     and user_id = '70000000-0000-4000-8000-000000000101'::uuid),
-  'active',
-  'approval activates the selected subscription'
+     and user_id = '70000000-0000-4000-8000-000000000101'::uuid
+     and active),
+  1,
+  'approval opens exactly one active contribution schedule'
 );
 
 select ok(
-  (select current_period_end is not null from public.subscriptions
-   where organization_id = '70000000-0000-4000-8000-000000000001'::uuid
-     and user_id = '70000000-0000-4000-8000-000000000101'::uuid),
-  'approval creates the first recurring schedule'
+  (select schedule_id is not null and assignment_id is not null
+   from approved_claim),
+  'approval reports the schedule and the plan snapshot it created'
+);
+
+select ok(
+  (select exists (
+     select 1
+     from public.contribution_schedules cs
+     join public.contribution_plan_assignments cpa on cpa.schedule_id = cs.id
+     where cs.id = (select schedule_id from approved_claim)
+       and cpa.id = (select assignment_id from approved_claim)
+       and cpa.effective_period_start = cs.admission_date
+   )),
+  'the reported plan snapshot is the one effective from the admission date'
+);
+
+select is(
+  (select ma.status::text
+   from public.membership_applications ma
+   where ma.organization_id = '70000000-0000-4000-8000-000000000001'::uuid
+     and ma.user_id = '70000000-0000-4000-8000-000000000101'::uuid),
+  'admitted',
+  'approval marks the application admitted'
 );
 
 set local role authenticated;
@@ -686,8 +710,28 @@ set local role postgres;
 select is(
   (select status::text from public.payment_obligations
    where id = '70000000-0000-4000-8000-000000000402'::uuid),
-  'available',
-  'rejection leaves the same obligation actionable'
+  'void',
+  'one refusal voids the obligation it decided'
+);
+
+select is(
+  (select application_status::text from rejected_claim),
+  'refused',
+  'the same action refuses the application'
+);
+
+select is(
+  (select claim_status::text from rejected_claim),
+  'rejected',
+  'the same action rejects the claim'
+);
+
+select is(
+  (select ma.status::text
+   from public.membership_applications ma
+   where ma.id = (select application_id from rejected_claim)),
+  'refused',
+  'the refusal is recorded on the application itself, not only in the result'
 );
 
 select is(
@@ -699,11 +743,44 @@ select is(
 );
 
 select is(
-  (select count(*)::integer from public.subscriptions
+  (select count(*)::integer from public.contribution_schedules
    where organization_id = '70000000-0000-4000-8000-000000000001'::uuid
      and user_id = '70000000-0000-4000-8000-000000000102'::uuid),
   0,
-  'rejection creates no subscription schedule'
+  'rejection opens no contribution schedule'
+);
+
+-- Nothing is deleted. The revision, the payer identity, the claim and the
+-- audit trail are the evidence of what was decided, and they all survive.
+select cmp_ok(
+  (select count(*)::integer from public.membership_application_revisions mar
+   where mar.application_id = (select application_id from rejected_claim)),
+  '>',
+  0,
+  'the refused application keeps its submitted revision'
+);
+
+select is(
+  (select count(*)::integer from public.payment_claims pc
+   where pc.id = '70000000-0000-4000-8000-000000000502'::uuid),
+  1,
+  'the rejected claim row is preserved, not removed'
+);
+
+select cmp_ok(
+  (select count(*)::integer from public.payment_claim_audit_events pcae
+   where pcae.claim_id = '70000000-0000-4000-8000-000000000502'::uuid),
+  '>',
+  0,
+  'the refusal leaves an audit event behind'
+);
+
+select is(
+  (select pcae.reason from public.payment_claim_audit_events pcae
+   where pcae.claim_id = '70000000-0000-4000-8000-000000000502'::uuid
+     and pcae.next_state = 'payment_available'),
+  'Incorrect payer',
+  'the audit event carries the normalized user-visible reason'
 );
 
 set local role authenticated;
@@ -727,13 +804,142 @@ select throws_ok(
   'a conflicting rejection retry cannot rewrite history'
 );
 
+-- ---------------------------------------------------------------------------
+-- Rule 6, correction: a refusal is terminal for the application it decided.
+--
+-- The refused application, its revision, its claim and its voided obligation
+-- all stay exactly as they were. Correcting means submitting a NEW application
+-- with a NEW revision and a NEW obligation. The stale claim can no longer be
+-- decided either way, so a reviewer cannot reach back and approve the version
+-- that was already refused.
+-- ---------------------------------------------------------------------------
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  '70000000-0000-4000-8000-000000000102',
+  true
+);
+
+select throws_ok(
+  $$select * from public.claim_initial_payment(
+    '70000000-0000-4000-8000-000000000402'::uuid,
+    true,
+    null
+  )$$,
+  '23514',
+  'This payment obligation cannot be claimed.',
+  'the voided obligation of a refused application cannot be claimed again'
+);
+
 set local role postgres;
 
-insert into public.organization_members (organization_id, user_id, role)
+-- The correction: a second application for the same person, with its own
+-- revision and its own obligation. The refused row is left untouched.
+insert into public.membership_applications (
+  id, organization_id, user_id, status, accepted_terms_at, submitted_at
+)
 values (
+  '70000000-0000-4000-8000-000000000212'::uuid,
   '70000000-0000-4000-8000-000000000001'::uuid,
   '70000000-0000-4000-8000-000000000102'::uuid,
-  'admin'
+  'submitted',
+  timezone('utc'::text, now()),
+  timezone('utc'::text, now())
+);
+
+insert into public.membership_application_revisions (
+  id, application_id, organization_id, user_id, revision_number, draft_version,
+  plan_type, terms_version, accepted_terms_at, submitted_at,
+  full_name, birth_date, nationality, marital_status, profession, birthplace,
+  cpf, id_document_number, id_document_issuer, postal_code, address_line,
+  city, state, email, phone, has_allergies, allergies,
+  has_dietary_restrictions, dietary_restrictions,
+  plan_amount, currency, pix_copy_paste
+)
+values (
+  '70000000-0000-4000-8000-000000000312'::uuid,
+  '70000000-0000-4000-8000-000000000212'::uuid,
+  '70000000-0000-4000-8000-000000000001'::uuid,
+  '70000000-0000-4000-8000-000000000102'::uuid,
+  1,
+  1,
+  'monthly',
+  'estatuto-v1',
+  timezone('utc'::text, now()),
+  timezone('utc'::text, now()),
+  'Corrected Applicant Name',
+  '1990-01-01',
+  'Brazilian',
+  'single',
+  'Engineer',
+  'Sao Paulo',
+  '12345678901',
+  'RG-2',
+  'SSP',
+  '01001000',
+  'Main Street 2',
+  'Sao Paulo',
+  'SP',
+  'corrected@example.com',
+  '11999999998',
+  false,
+  null,
+  false,
+  null,
+  12500,
+  'BRL',
+  '000201initial-monthly'
+);
+
+insert into public.payment_obligations (
+  id, organization_id, user_id, application_revision_id, purpose, status,
+  plan_type, amount, currency, payment_method, pix_copy_paste, available_at
+)
+values (
+  '70000000-0000-4000-8000-000000000412'::uuid,
+  '70000000-0000-4000-8000-000000000001'::uuid,
+  '70000000-0000-4000-8000-000000000102'::uuid,
+  '70000000-0000-4000-8000-000000000312'::uuid,
+  'initial_admission',
+  'available',
+  'monthly',
+  12500,
+  'BRL',
+  'manual_pix',
+  '000201initial-monthly',
+  timezone('utc'::text, now())
+);
+
+select is(
+  (select count(*)::integer
+   from public.membership_applications ma
+   where ma.organization_id = '70000000-0000-4000-8000-000000000001'::uuid
+     and ma.user_id = '70000000-0000-4000-8000-000000000102'::uuid),
+  2,
+  'a correction is a second application, so the refused one survives intact'
+);
+
+select is(
+  (select ma.status::text
+   from public.membership_applications ma
+   where ma.id = '70000000-0000-4000-8000-000000000202'::uuid),
+  'refused',
+  'the refused application is not reopened by the correction'
+);
+
+select throws_ok(
+  $$insert into public.membership_applications (
+      id, organization_id, user_id, status
+    ) values (
+      '70000000-0000-4000-8000-000000000213'::uuid,
+      '70000000-0000-4000-8000-000000000001'::uuid,
+      '70000000-0000-4000-8000-000000000102'::uuid,
+      'submitted'
+    )$$,
+  '23505',
+  'duplicate key value violates unique constraint "membership_applications_one_open_per_person_idx"',
+  'only one application per person may be open at a time'
 );
 
 set local role authenticated;
@@ -745,14 +951,71 @@ select set_config(
 
 select is(
   (select count(*)::integer from public.claim_initial_payment(
-    '70000000-0000-4000-8000-000000000402'::uuid,
+    '70000000-0000-4000-8000-000000000412'::uuid,
     true,
     null
   )),
   1,
-  'a later claim can be submitted against the same obligation after rejection'
+  'the corrected application can be claimed on its own new obligation'
 );
 
+select set_config(
+  'request.jwt.claim.sub',
+  '70000000-0000-4000-8000-000000000103',
+  true
+);
+
+select throws_ok(
+  $$select * from public.approve_initial_claim(
+    '70000000-0000-4000-8000-000000000502'::uuid
+  )$$,
+  '40001',
+  'This claim was already rejected. Refresh before deciding.',
+  'the stale claim of a refused application can no longer be approved'
+);
+
+select is(
+  (select decision_applied_now from public.approve_initial_claim(
+    (
+      select id
+      from public.payment_claims
+      where obligation_id = '70000000-0000-4000-8000-000000000412'::uuid
+        and status = 'under_review'
+    )
+  )),
+  true,
+  'a reviewer approves the corrected submission instead'
+);
+
+set local role postgres;
+
+select is(
+  (select ma.status::text
+   from public.membership_applications ma
+   where ma.id = '70000000-0000-4000-8000-000000000212'::uuid),
+  'admitted',
+  'approval admits the corrected application'
+);
+
+set local role authenticated;
+
+select is(
+  (select count(*)::integer from public.organization_members
+   where organization_id = '70000000-0000-4000-8000-000000000001'::uuid
+     and user_id = '70000000-0000-4000-8000-000000000102'::uuid),
+  1,
+  'approving the correction admits the applicant exactly once'
+);
+
+set local role postgres;
+
+-- Approval preserves an existing admin role rather than overwriting it.
+update public.organization_members
+set role = 'admin'::public.organization_role_enum
+where organization_id = '70000000-0000-4000-8000-000000000001'::uuid
+  and user_id = '70000000-0000-4000-8000-000000000102'::uuid;
+
+set local role authenticated;
 select set_config(
   'request.jwt.claim.sub',
   '70000000-0000-4000-8000-000000000103',
@@ -764,12 +1027,12 @@ select is(
     (
       select id
       from public.payment_claims
-      where obligation_id = '70000000-0000-4000-8000-000000000402'::uuid
-        and status = 'under_review'
+      where obligation_id = '70000000-0000-4000-8000-000000000412'::uuid
+        and status = 'approved'
     )
   )),
-  true,
-  'an authorized reviewer can approve the later claim'
+  false,
+  'approving an already-approved claim replays its result instead of redoing it'
 );
 
 select is(
@@ -778,74 +1041,6 @@ select is(
      and user_id = '70000000-0000-4000-8000-000000000102'::uuid),
   'admin',
   'approval never demotes an existing admin role'
-);
-
-select is(
-  (select count(*)::integer from public.organization_members
-   where organization_id = '70000000-0000-4000-8000-000000000001'::uuid
-     and user_id = '70000000-0000-4000-8000-000000000102'::uuid),
-  1,
-  'approving a later claim admits the applicant exactly once'
-);
-
-set local role postgres;
-
-create temp table legacy_subscription as
-select gen_random_uuid() as id;
-
-insert into public.subscriptions (
-  id,
-  organization_id,
-  user_id,
-  plan_type,
-  status
-)
-select
-  id,
-  '70000000-0000-4000-8000-000000000001'::uuid,
-  '70000000-0000-4000-8000-000000000105'::uuid,
-  'monthly',
-  'pending_payment'
-from legacy_subscription;
-
-insert into public.payments (
-  id,
-  organization_id,
-  user_id,
-  subscription_id,
-  amount,
-  status
-)
-select
-  '70000000-0000-4000-8000-000000000601'::uuid,
-  '70000000-0000-4000-8000-000000000001'::uuid,
-  '70000000-0000-4000-8000-000000000105'::uuid,
-  id,
-  12500,
-  'pending'
-from legacy_subscription;
-
-update public.payment_obligations
-set legacy_payment_id = '70000000-0000-4000-8000-000000000601'::uuid
-where id = '70000000-0000-4000-8000-000000000403'::uuid;
-
-update public.payments
-set status = 'succeeded', paid_at = timezone('utc'::text, now())
-where id = '70000000-0000-4000-8000-000000000601'::uuid;
-
-select is(
-  (select status::text from public.subscriptions
-   where user_id = '70000000-0000-4000-8000-000000000105'::uuid),
-  'pending_payment',
-  'generic payment settlement cannot activate an initial-admission subscription'
-);
-
-select is(
-  (select count(*)::integer from public.organization_members
-   where organization_id = '70000000-0000-4000-8000-000000000001'::uuid
-     and user_id = '70000000-0000-4000-8000-000000000105'::uuid),
-  0,
-  'generic payment settlement cannot admit an initial applicant'
 );
 
 set local role authenticated;

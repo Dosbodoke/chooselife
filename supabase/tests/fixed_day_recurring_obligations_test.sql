@@ -115,6 +115,16 @@ values
     timezone('utc'::text, now())
   ),
   (
+    '82000000-0000-4000-8000-000000000103'::uuid,
+    'authenticated',
+    'authenticated',
+    'fixed-day-admin@example.com',
+    timezone('utc'::text, now()),
+    '{"full_name":"Fixed Day Admin"}'::jsonb,
+    timezone('utc'::text, now()),
+    timezone('utc'::text, now())
+  ),
+  (
     '82000000-0000-4000-8000-000000000102'::uuid,
     'authenticated',
     'authenticated',
@@ -136,6 +146,11 @@ values
     '82000000-0000-4000-8000-000000000102'::uuid,
     'Fixed Day Invalid',
     '@fixed_day_invalid'
+  ),
+  (
+    '82000000-0000-4000-8000-000000000103'::uuid,
+    'Fixed Day Admin',
+    '@fixed_day_admin'
   )
 on conflict (id) do update
 set name = excluded.name,
@@ -159,30 +174,27 @@ values
     '82000000-0000-4000-8000-000000000102'::uuid,
     'member'::public.organization_role_enum,
     '2026-01-09 12:00:00+00'
-  );
-
-insert into public.subscriptions (
-  organization_id,
-  user_id,
-  plan_type,
-  status,
-  current_period_end
-)
-values
-  (
-    '82000000-0000-4000-8000-000000000001'::uuid,
-    '82000000-0000-4000-8000-000000000101'::uuid,
-    'monthly'::public.subscription_plan_type_enum,
-    'active'::public.subscription_status_enum,
-    '2026-02-09 00:00:00+00'
   ),
   (
     '82000000-0000-4000-8000-000000000001'::uuid,
-    '82000000-0000-4000-8000-000000000102'::uuid,
-    'monthly'::public.subscription_plan_type_enum,
-    'active'::public.subscription_status_enum,
-    '2026-02-09 00:00:00+00'
+    '82000000-0000-4000-8000-000000000103'::uuid,
+    'admin'::public.organization_role_enum,
+    '2026-01-09 12:00:00+00'
   );
+
+-- Admission opens the schedule directly. The membership row no longer has a
+-- trigger behind it, and there is no subscription to read the plan from.
+select public.ensure_contribution_schedule(
+  '82000000-0000-4000-8000-000000000001'::uuid,
+  persona.user_id,
+  'monthly'::public.subscription_plan_type_enum,
+  '2026-01-09'::date
+)
+from (
+  values
+    ('82000000-0000-4000-8000-000000000101'::uuid),
+    ('82000000-0000-4000-8000-000000000102'::uuid)
+) as persona(user_id);
 
 select is(
   (select admission_date from public.contribution_schedules
@@ -450,67 +462,281 @@ select throws_ok(
   'invalid IANA timezones are rejected by the database policy boundary'
 );
 
-insert into public.payments (
-  id,
-  organization_id,
-  user_id,
-  subscription_id,
+-- ---------------------------------------------------------------------------
+-- Rule 8: every missed contribution stays its own owed obligation, and
+-- nonpayment never touches the membership.
+--
+-- Nothing here suspends, downgrades or ends anybody. A member who has not paid
+-- for a year owes twelve separate contributions and is still a member; an
+-- admin settles or voids them later.
+-- ---------------------------------------------------------------------------
+
+select is(
+  (select count(*)::integer
+   from public.payment_obligations po
+   where po.organization_id = '82000000-0000-4000-8000-000000000001'::uuid
+     and po.user_id = '82000000-0000-4000-8000-000000000101'::uuid
+     and po.purpose = 'recurring'
+     and po.status = 'available'),
+  (select count(distinct po.period_key)::integer
+   from public.payment_obligations po
+   where po.organization_id = '82000000-0000-4000-8000-000000000001'::uuid
+     and po.user_id = '82000000-0000-4000-8000-000000000101'::uuid
+     and po.purpose = 'recurring'
+     and po.status = 'available'),
+  'each missed period is a separate owed obligation, never one rolled-up debt'
+);
+
+select cmp_ok(
+  (select count(*)::integer
+   from public.payment_obligations po
+   where po.organization_id = '82000000-0000-4000-8000-000000000001'::uuid
+     and po.user_id = '82000000-0000-4000-8000-000000000101'::uuid
+     and po.purpose = 'recurring'
+     and po.status = 'available'),
+  '>',
+  1,
+  'a long-unpaid member has accumulated more than one owed contribution'
+);
+
+select is(
+  (select count(*)::integer
+   from public.organization_members om
+   where om.organization_id = '82000000-0000-4000-8000-000000000001'::uuid
+     and om.user_id = '82000000-0000-4000-8000-000000000101'::uuid),
+  1,
+  'nonpayment leaves the membership exactly where it was'
+);
+
+select is(
+  (select cs.active
+   from public.contribution_schedules cs
+   where cs.organization_id = '82000000-0000-4000-8000-000000000001'::uuid
+     and cs.user_id = '82000000-0000-4000-8000-000000000101'::uuid),
+  true,
+  'nonpayment does not retire the contribution schedule'
+);
+
+-- ---------------------------------------------------------------------------
+-- Rule 10: the upcoming charge is priced by the term EFFECTIVE for its due
+-- date, not by whichever term happens to be latest on file.
+--
+-- Ordering assignments by effective_period_start alone quoted a future price
+-- for a charge falling before that price took effect. Member 101 gets a term
+-- effective years from now; the next charge must ignore it.
+-- ---------------------------------------------------------------------------
+
+insert into public.contribution_plan_assignments (
+  schedule_id,
+  effective_period_start,
+  plan_type,
   amount,
-  status,
-  created_at
+  currency,
+  due_day,
+  lead_days,
+  billing_timezone,
+  pix_copy_paste
 )
 select
-  '82000000-0000-4000-8000-000000000401'::uuid,
-  '82000000-0000-4000-8000-000000000001'::uuid,
-  '82000000-0000-4000-8000-000000000101'::uuid,
-  s.id,
-  36000,
-  'pending'::public.payment_status_enum,
-  '2027-01-31 12:00:00+00'
-from public.subscriptions s
-where s.organization_id = '82000000-0000-4000-8000-000000000001'::uuid
-  and s.user_id = '82000000-0000-4000-8000-000000000101'::uuid;
+  cs.id,
+  (timezone('UTC', clock_timestamp())::date + interval '10 years')::date,
+  'annual'::public.subscription_plan_type_enum,
+  999999,
+  'BRL',
+  cs.due_day,
+  cs.lead_days,
+  cs.billing_timezone,
+  '000201future-term-pix'
+from public.contribution_schedules cs
+where cs.organization_id = '82000000-0000-4000-8000-000000000001'::uuid
+  and cs.user_id = '82000000-0000-4000-8000-000000000101'::uuid;
 
-select is(
-  (select result
-   from public.reconcile_legacy_payment_obligations(false)
-   where payment_id = '82000000-0000-4000-8000-000000000401'::uuid),
-  'ready',
-  'legacy pending payments produce a reviewed dry-run mapping'
-);
-
-select is(
-  (select result
-   from public.reconcile_legacy_payment_obligations(true)
-   where payment_id = '82000000-0000-4000-8000-000000000401'::uuid),
-  'linked',
-  'only an unambiguous legacy mapping is applied'
-);
-
-select is(
-  (select status
-   from public.payment_obligations
-   where legacy_payment_id = '82000000-0000-4000-8000-000000000401'::uuid),
-  'available'::public.payment_obligation_status_enum,
-  'a pending legacy payment is linked without being falsely settled'
+select cmp_ok(
+  (select count(*)::integer
+   from public.contribution_plan_assignments cpa
+   join public.contribution_schedules cs on cs.id = cpa.schedule_id
+   where cs.organization_id = '82000000-0000-4000-8000-000000000001'::uuid
+     and cs.user_id = '82000000-0000-4000-8000-000000000101'::uuid),
+  '>',
+  1,
+  'the schedule now carries a future-effective term alongside its admission term'
 );
 
 set local role authenticated;
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config(
   'request.jwt.claim.sub',
-  '82000000-0000-4000-8000-000000000101',
+  '82000000-0000-4000-8000-000000000103',
   true
 );
 
-select throws_ok(
-  $$update public.subscriptions
-    set plan_type = 'annual'::public.subscription_plan_type_enum
-    where organization_id = '82000000-0000-4000-8000-000000000001'::uuid
-      and user_id = '82000000-0000-4000-8000-000000000101'::uuid$$,
-  '42501',
-  'permission denied for table subscriptions',
-  'authenticated members cannot mutate the recurring billing source'
+select isnt(
+  (select next_charge_amount
+   from public.get_association_member_detail(
+     '82000000-0000-4000-8000-000000000001'::uuid,
+     '82000000-0000-4000-8000-000000000101'::uuid
+   )),
+  999999,
+  'the next charge is not priced from a term that is not effective yet'
+);
+
+select ok(
+  (select next_charge_due_on
+     < (timezone('UTC', clock_timestamp())::date + interval '10 years')::date
+   from public.get_association_member_detail(
+     '82000000-0000-4000-8000-000000000001'::uuid,
+     '82000000-0000-4000-8000-000000000101'::uuid
+   )),
+  'the next charge falls before the future term takes effect'
+);
+
+set local role postgres;
+
+-- ---------------------------------------------------------------------------
+-- The retired model is actually gone, not merely unused.
+-- ---------------------------------------------------------------------------
+
+select hasnt_table('public', 'payments', 'the legacy payments table is gone');
+select hasnt_table('public', 'subscriptions', 'the legacy subscriptions table is gone');
+select hasnt_table('public', 'contribution_reminder_events',
+  'the reminder event queue is gone');
+select hasnt_table('public', 'contribution_reminder_batches',
+  'the reminder batch queue is gone');
+select hasnt_table('public', 'contribution_reminder_batch_events',
+  'the reminder batch join table is gone');
+select hasnt_table('public', 'contribution_reminder_delivery_attempts',
+  'the reminder delivery attempt table is gone');
+
+select hasnt_type('public', 'payment_status_enum',
+  'the legacy payment status type is gone');
+select hasnt_type('public', 'subscription_status_enum',
+  'the legacy subscription status type is gone');
+select hasnt_type('public', 'contribution_reminder_stage_enum',
+  'the reminder stage type is gone');
+
+select hasnt_function('public', 'reconcile_legacy_payment_obligations',
+  'the legacy reconciliation helper is gone');
+select hasnt_function('public', 'apply_payment_settlement_effects',
+  'the legacy settlement path is gone');
+select hasnt_function('public', 'schedule_contribution_plan_change',
+  'there is no in-place plan change command');
+select hasnt_function('public', 'sync_contribution_schedule_on_subscription',
+  'no trigger derives a schedule from a subscription');
+select hasnt_function('public', 'sync_contribution_schedule_on_membership',
+  'admission opens the schedule itself instead of a membership row trigger');
+select hasnt_function('public', 'enqueue_contribution_reminder_events',
+  'the reminder scheduler command is gone');
+
+select hasnt_column('public', 'organizations', 'contribution_reminder_local_time',
+  'the reminder delivery time is no longer part of the billing policy');
+select hasnt_column('public', 'payment_obligations', 'legacy_payment_id',
+  'obligations no longer carry a link to a legacy payment');
+
+-- Every SECURITY DEFINER function in the association model pins an empty
+-- search_path, so an attacker cannot resolve an unqualified name into a schema
+-- they control. Scoped to this model by name: the festival functions come from
+-- unrelated migrations and still carry search_path=public.
+--
+-- Postgres stores the setting as search_path="" rather than search_path=, which
+-- is why the comparison accepts both spellings.
+select is(
+  (select count(*)::integer
+   from pg_proc p
+   join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public'
+     and p.prosecdef
+     and p.proname in (
+       'approve_initial_claim',
+       'approve_recurring_payment_claim',
+       'claim_initial_payment',
+       'claim_recurring_payment',
+       'end_association_membership',
+       'ensure_contribution_schedule',
+       'generate_membership_billing_obligations',
+       'generate_membership_billing_obligations_at',
+       'get_association_member_detail',
+       'get_billing_workspace_claim_detail',
+       'get_billing_workspace_members',
+       'get_billing_workspace_organizations',
+       'get_billing_workspace_payments',
+       'get_billing_workspace_people',
+       'get_billing_workspace_queue',
+       'get_initial_payment_claim_detail',
+       'get_initial_payment_claim_queue',
+       'get_membership_billing_ledger',
+       'get_payment_obligation_instructions',
+       'is_person_link_maintenance',
+       'is_valid_billing_timezone',
+       'prepare_association_account_deletion',
+       'reject_contribution_plan_assignment_mutation',
+       'reject_contribution_schedule_anchor_mutation',
+       'reject_initial_claim',
+       'reject_membership_application_revision_mutation',
+       'reject_membership_departure_mutation',
+       'reject_payment_claim_audit_mutation',
+       'reject_payment_claim_evidence_mutation',
+       'reject_payment_obligation_context_mutation',
+       'reject_recurring_payment_claim',
+       'resolve_association_person',
+       'set_association_person_from_obligation',
+       'set_association_person_from_subject',
+       'snapshot_payment_obligation_context',
+       'submit_association_application',
+       'validate_billing_policy_timezone'
+     )
+     and not exists (
+       select 1 from unnest(coalesce(p.proconfig, array[]::text[])) as config(entry)
+       where config.entry in ('search_path=', 'search_path=""')
+     )),
+  0,
+  'every SECURITY DEFINER function in the association model pins an empty search_path'
+);
+
+-- No authenticated client may execute the account-deletion closure. It is the
+-- one command that ends a membership without an admin, so it stays service
+-- role only.
+select is(
+  (select has_function_privilege(
+     'authenticated',
+     'public.prepare_association_account_deletion(uuid)',
+     'execute'
+   )),
+  false,
+  'authenticated clients cannot run the account deletion closure'
+);
+
+select is(
+  (select has_function_privilege(
+     'service_role',
+     'public.prepare_association_account_deletion(uuid)',
+     'execute'
+   )),
+  true,
+  'the service role can run the account deletion closure'
+);
+
+select is(
+  (select has_table_privilege('authenticated', 'public.organization_members', 'INSERT')
+     or has_table_privilege('authenticated', 'public.organization_members', 'UPDATE')
+     or has_table_privilege('authenticated', 'public.organization_members', 'DELETE')
+     or has_table_privilege('authenticated', 'public.organization_members', 'TRUNCATE')),
+  false,
+  'authenticated clients hold no write privilege on organization_members'
+);
+
+select is(
+  (select has_table_privilege('authenticated', 'public.organization_members', 'SELECT')),
+  true,
+  'membership display for signed-in users is preserved'
+);
+
+select is(
+  (select count(*)::integer
+   from pg_policies
+   where tablename = 'organization_members'
+     and cmd <> 'SELECT'),
+  0,
+  'organization_members carries no write policy at all'
 );
 
 select * from finish();

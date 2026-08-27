@@ -6081,17 +6081,34 @@ alter table public.organization_membership_departures
 -- `user_id = auth.uid()` did. Once it is deleted, account_user_id is null and
 -- the predicate goes empty, leaving association admins as the only readers --
 -- which is the whole point of the retention rule.
+--
+-- The revision policy also gains an admin branch. It was owner-only, which
+-- made the retention rule unreachable in practice: once the account is gone
+-- the owner predicate is empty, and get_association_member_detail is anchored
+-- on profiles, so the row the association is obliged to keep had no reader
+-- left at all. Association admins already see this data through the claim and
+-- member detail commands while the account exists; this makes the table agree
+-- with them.
 drop policy "Application owners can read their submitted revisions"
   on public.membership_application_revisions;
-create policy "Application owners can read their submitted revisions"
+create policy "Owners and association admins can read submitted revisions"
   on public.membership_application_revisions
   for select to authenticated
-  using (exists (
-    select 1
-    from public.association_people ap
-    where ap.id = membership_application_revisions.association_person_id
-      and ap.account_user_id = (select auth.uid())
-  ));
+  using (
+    exists (
+      select 1
+      from public.association_people ap
+      where ap.id = membership_application_revisions.association_person_id
+        and ap.account_user_id = (select auth.uid())
+    )
+    or exists (
+      select 1
+      from public.organization_members om
+      where om.organization_id = membership_application_revisions.organization_id
+        and om.user_id = (select auth.uid())
+        and om.role = 'admin'::public.organization_role_enum
+    )
+  );
 
 drop policy "Owners and association admins can read payment obligations"
   on public.payment_obligations;

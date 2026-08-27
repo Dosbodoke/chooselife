@@ -1,6 +1,6 @@
 BEGIN;
 
-select plan(32);
+select plan(34);
 
 -- These fixtures model the same server-owned rows created by application
 -- submission. The public command below is the seam under test.
@@ -486,12 +486,14 @@ select is(
   'claiming does not create membership'
 );
 
-select is(
-  (select count(*)::integer from public.payments
-   where organization_id = '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1'::uuid
-     and user_id = '11111111-1111-4111-8111-111111111111'::uuid),
-  0,
-  'claiming does not create or settle a legacy payment'
+-- The legacy provider model is retired outright, so there is no parallel
+-- payment row for a claim to create or settle. Assert its absence rather than
+-- counting rows in a table that no longer exists.
+select hasnt_table('public', 'payments', 'the legacy payments table is gone');
+select hasnt_table('public', 'subscriptions', 'the legacy subscriptions table is gone');
+select hasnt_column(
+  'public', 'payment_obligations', 'legacy_payment_id',
+  'obligations no longer carry a link to a legacy payment'
 );
 
 select is(
