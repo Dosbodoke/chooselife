@@ -5376,3 +5376,929 @@ create unique index membership_applications_one_open_per_person_idx
 
 create index membership_applications_person_history_idx
   on public.membership_applications (organization_id, user_id, created_at desc);
+
+-- ---------------------------------------------------------------------------
+-- Formal association identity, decoupled from the Choose Life account.
+--
+-- A Choose Life account and a formal SL.A.C subject are two different things
+-- with two different lifetimes. Deleting the account has to remove ordinary
+-- profile data, but the association is legally obliged to keep exactly what a
+-- person submitted and what was decided about it. Today it cannot: every
+-- formal record hangs off profiles(id) with NOT NULL, so a hard account
+-- deletion is simply refused (SQLSTATE 23503) -- and the one relaxation that
+-- looks obvious, dropping contribution_schedules' ON DELETE CASCADE alone,
+-- would silently destroy the billing history instead.
+--
+-- association_people is that indirection and nothing more. It carries NO
+-- personal data: the exact application revision already IS the retained form,
+-- and copying name or document numbers in here would create a second, weaker
+-- copy of the same PII with none of the revision's immutability.
+--
+-- An account has at most one formal subject per association, and may hold
+-- subjects in several associations. Once the account is gone the subject
+-- survives with account_user_id null, which is exactly what makes owner RLS
+-- go empty and leaves association admins as the only remaining readers.
+-- ---------------------------------------------------------------------------
+
+create table public.association_people (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  account_user_id uuid references public.profiles(id) on delete set null,
+  created_at timestamp with time zone not null default timezone('utc'::text, now()),
+  anonymized_at timestamp with time zone
+);
+
+comment on table public.association_people is
+  'One formal association subject. Holds no personal data: the submitted application revision is the retained form. Survives deletion of the linked Choose Life account with account_user_id null, after which only association admins can read the linked formal records.';
+comment on column public.association_people.account_user_id is
+  'The linked Choose Life account while one exists. Null once the account has been deleted.';
+comment on column public.association_people.anonymized_at is
+  'When the linked account was prepared for deletion. Null while the account exists.';
+
+alter table public.association_people enable row level security;
+
+create unique index association_people_account_idx
+  on public.association_people (organization_id, account_user_id)
+  where account_user_id is not null;
+create index association_people_organization_idx
+  on public.association_people (organization_id, created_at desc);
+
+create policy "People can read their own association subject"
+  on public.association_people
+  for select to authenticated
+  using (account_user_id = (select auth.uid()));
+
+create policy "Association admins can read association subjects"
+  on public.association_people
+  for select to authenticated
+  using (exists (
+    select 1
+    from public.organization_members om
+    where om.organization_id = association_people.organization_id
+      and om.user_id = (select auth.uid())
+      and om.role = 'admin'::public.organization_role_enum
+  ));
+
+revoke all on table public.association_people from public, anon, authenticated;
+grant select on table public.association_people to authenticated;
+
+-- Resolving a subject.
+--
+-- Membership application drafts are written straight from the client under
+-- RLS, with no command in between, so the subject cannot be resolved by a
+-- caller. A trigger is the only place that holds for every insert path at
+-- once, and it can only ever mint a subject for the row's own organization and
+-- person, so it grants nothing the inserting client did not already have.
+create function public.resolve_association_person(
+  p_organization_id uuid,
+  p_user_id uuid
+)
+returns uuid
+language plpgsql
+volatile
+security definer
+set search_path to ''
+as $function$
+declare
+  resolved uuid;
+begin
+  if p_organization_id is null or p_user_id is null then
+    return null;
+  end if;
+
+  select ap.id
+  into resolved
+  from public.association_people ap
+  where ap.organization_id = p_organization_id
+    and ap.account_user_id = p_user_id;
+
+  if resolved is not null then
+    return resolved;
+  end if;
+
+  insert into public.association_people (organization_id, account_user_id)
+  values (p_organization_id, p_user_id)
+  on conflict (organization_id, account_user_id)
+    where account_user_id is not null
+    do nothing
+  returning id into resolved;
+
+  if resolved is null then
+    select ap.id
+    into resolved
+    from public.association_people ap
+    where ap.organization_id = p_organization_id
+      and ap.account_user_id = p_user_id;
+  end if;
+
+  return resolved;
+end;
+$function$;
+
+comment on function public.resolve_association_person(uuid, uuid) is
+  'Returns the formal association subject for one account in one organization, creating it on first use.';
+
+revoke all on function public.resolve_association_person(uuid, uuid)
+  from public, anon, authenticated, service_role;
+
+-- Reads the subject column named by the trigger argument, so one function
+-- serves user_id and claimant_user_id alike.
+create function public.set_association_person_from_subject()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+declare
+  subject uuid;
+begin
+  if new.association_person_id is not null then
+    return new;
+  end if;
+
+  subject := nullif(to_jsonb(new) ->> tg_argv[0], '')::uuid;
+  new.association_person_id := public.resolve_association_person(
+    new.organization_id,
+    subject
+  );
+
+  return new;
+end;
+$function$;
+
+revoke all on function public.set_association_person_from_subject()
+  from public, anon, authenticated, service_role;
+
+-- An audit event's subject is the person the obligation belongs to, not the
+-- admin who acted on it. The acting admin stays in actor_user_id, which is
+-- allowed to go null when that admin deletes their own account.
+create function public.set_association_person_from_obligation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  if new.association_person_id is not null then
+    return new;
+  end if;
+
+  select po.association_person_id
+  into new.association_person_id
+  from public.payment_obligations po
+  where po.id = new.obligation_id;
+
+  return new;
+end;
+$function$;
+
+revoke all on function public.set_association_person_from_obligation()
+  from public, anon, authenticated, service_role;
+
+-- Add the subject reference to every formal record, backfill it, then make it
+-- total. The column is added nullable first because the backfill has to run
+-- before NOT NULL can hold.
+alter table public.membership_applications add column association_person_id uuid;
+alter table public.membership_application_revisions add column association_person_id uuid;
+alter table public.organization_membership_departures add column association_person_id uuid;
+alter table public.contribution_schedules add column association_person_id uuid;
+alter table public.payment_obligations add column association_person_id uuid;
+alter table public.payment_claims add column association_person_id uuid;
+alter table public.payment_claim_audit_events add column association_person_id uuid;
+
+insert into public.association_people (organization_id, account_user_id)
+select distinct subject.organization_id, subject.user_id
+from (
+  select organization_id, user_id from public.membership_applications
+  union
+  select organization_id, user_id from public.membership_application_revisions
+  union
+  select organization_id, user_id from public.organization_membership_departures
+  union
+  select organization_id, user_id from public.contribution_schedules
+  union
+  select organization_id, user_id from public.payment_obligations
+  union
+  select organization_id, claimant_user_id from public.payment_claims
+) subject
+where subject.organization_id is not null
+  and subject.user_id is not null
+on conflict do nothing;
+
+update public.membership_applications t
+set association_person_id = ap.id
+from public.association_people ap
+where ap.organization_id = t.organization_id
+  and ap.account_user_id = t.user_id;
+
+update public.membership_application_revisions t
+set association_person_id = ap.id
+from public.association_people ap
+where ap.organization_id = t.organization_id
+  and ap.account_user_id = t.user_id;
+
+update public.organization_membership_departures t
+set association_person_id = ap.id
+from public.association_people ap
+where ap.organization_id = t.organization_id
+  and ap.account_user_id = t.user_id;
+
+update public.contribution_schedules t
+set association_person_id = ap.id
+from public.association_people ap
+where ap.organization_id = t.organization_id
+  and ap.account_user_id = t.user_id;
+
+update public.payment_obligations t
+set association_person_id = ap.id
+from public.association_people ap
+where ap.organization_id = t.organization_id
+  and ap.account_user_id = t.user_id;
+
+update public.payment_claims t
+set association_person_id = ap.id
+from public.association_people ap
+where ap.organization_id = t.organization_id
+  and ap.account_user_id = t.claimant_user_id;
+
+update public.payment_claim_audit_events t
+set association_person_id = po.association_person_id
+from public.payment_obligations po
+where po.id = t.obligation_id;
+
+do $$
+declare
+  offenders text;
+begin
+  select string_agg(unresolved.detail, ', ' order by unresolved.detail)
+  into offenders
+  from (
+    select format('membership_applications %s', id) as detail
+      from public.membership_applications where association_person_id is null
+    union all
+    select format('membership_application_revisions %s', id)
+      from public.membership_application_revisions where association_person_id is null
+    union all
+    select format('organization_membership_departures %s', id)
+      from public.organization_membership_departures where association_person_id is null
+    union all
+    select format('contribution_schedules %s', id)
+      from public.contribution_schedules where association_person_id is null
+    union all
+    select format('payment_obligations %s', id)
+      from public.payment_obligations where association_person_id is null
+    union all
+    select format('payment_claims %s', id)
+      from public.payment_claims where association_person_id is null
+    union all
+    select format('payment_claim_audit_events %s', id)
+      from public.payment_claim_audit_events where association_person_id is null
+  ) unresolved;
+
+  if offenders is not null then
+    raise exception
+      'Billing cutover stopped: these formal records could not be linked to an association subject: %',
+      offenders;
+  end if;
+end;
+$$;
+
+alter table public.membership_applications
+  alter column association_person_id set not null,
+  add constraint membership_applications_association_person_id_fkey
+    foreign key (association_person_id) references public.association_people(id),
+  alter column user_id drop not null,
+  drop constraint membership_applications_user_id_fkey,
+  add constraint membership_applications_user_id_fkey
+    foreign key (user_id) references public.profiles(id) on delete set null;
+
+alter table public.membership_application_revisions
+  alter column association_person_id set not null,
+  add constraint membership_application_revisions_association_person_id_fkey
+    foreign key (association_person_id) references public.association_people(id),
+  alter column user_id drop not null,
+  drop constraint membership_application_revisions_user_id_fkey,
+  add constraint membership_application_revisions_user_id_fkey
+    foreign key (user_id) references public.profiles(id) on delete set null;
+
+alter table public.organization_membership_departures
+  alter column association_person_id set not null,
+  add constraint organization_membership_departures_association_person_id_fkey
+    foreign key (association_person_id) references public.association_people(id),
+  alter column user_id drop not null,
+  drop constraint organization_membership_departures_user_id_fkey,
+  add constraint organization_membership_departures_user_id_fkey
+    foreign key (user_id) references public.profiles(id) on delete set null,
+  drop constraint organization_membership_departures_actor_user_id_fkey,
+  add constraint organization_membership_departures_actor_user_id_fkey
+    foreign key (actor_user_id) references public.profiles(id) on delete set null;
+
+-- ON DELETE CASCADE here would have deleted the retained schedule -- and with
+-- it the anchor every historical obligation is read against.
+alter table public.contribution_schedules
+  alter column association_person_id set not null,
+  add constraint contribution_schedules_association_person_id_fkey
+    foreign key (association_person_id) references public.association_people(id),
+  alter column user_id drop not null,
+  drop constraint contribution_schedules_user_id_fkey,
+  add constraint contribution_schedules_user_id_fkey
+    foreign key (user_id) references public.profiles(id) on delete set null;
+
+alter table public.payment_obligations
+  alter column association_person_id set not null,
+  add constraint payment_obligations_association_person_id_fkey
+    foreign key (association_person_id) references public.association_people(id),
+  alter column user_id drop not null,
+  drop constraint payment_obligations_user_id_fkey,
+  add constraint payment_obligations_user_id_fkey
+    foreign key (user_id) references public.profiles(id) on delete set null;
+
+alter table public.payment_claims
+  alter column association_person_id set not null,
+  add constraint payment_claims_association_person_id_fkey
+    foreign key (association_person_id) references public.association_people(id),
+  alter column claimant_user_id drop not null,
+  drop constraint payment_claims_claimant_user_id_fkey,
+  add constraint payment_claims_claimant_user_id_fkey
+    foreign key (claimant_user_id) references public.profiles(id) on delete set null;
+
+alter table public.payment_claim_audit_events
+  alter column association_person_id set not null,
+  add constraint payment_claim_audit_events_association_person_id_fkey
+    foreign key (association_person_id) references public.association_people(id),
+  alter column actor_user_id drop not null,
+  drop constraint payment_claim_audit_events_actor_user_id_fkey,
+  add constraint payment_claim_audit_events_actor_user_id_fkey
+    foreign key (actor_user_id) references public.profiles(id) on delete set null;
+
+create index membership_applications_association_person_idx
+  on public.membership_applications (association_person_id);
+create index membership_application_revisions_association_person_idx
+  on public.membership_application_revisions (association_person_id);
+create index organization_membership_departures_association_person_idx
+  on public.organization_membership_departures (association_person_id, departed_at desc);
+create index contribution_schedules_association_person_idx
+  on public.contribution_schedules (association_person_id);
+create index payment_obligations_association_person_idx
+  on public.payment_obligations (association_person_id);
+create index payment_claims_association_person_idx
+  on public.payment_claims (association_person_id);
+create index payment_claim_audit_events_association_person_idx
+  on public.payment_claim_audit_events (association_person_id);
+
+create trigger membership_applications_set_association_person
+before insert on public.membership_applications
+for each row execute function public.set_association_person_from_subject('user_id');
+
+create trigger membership_application_revisions_set_association_person
+before insert on public.membership_application_revisions
+for each row execute function public.set_association_person_from_subject('user_id');
+
+create trigger organization_membership_departures_set_association_person
+before insert on public.organization_membership_departures
+for each row execute function public.set_association_person_from_subject('user_id');
+
+create trigger contribution_schedules_set_association_person
+before insert on public.contribution_schedules
+for each row execute function public.set_association_person_from_subject('user_id');
+
+create trigger payment_obligations_set_association_person
+before insert on public.payment_obligations
+for each row execute function public.set_association_person_from_subject('user_id');
+
+create trigger payment_claims_set_association_person
+before insert on public.payment_claims
+for each row execute function public.set_association_person_from_subject('claimant_user_id');
+
+create trigger payment_claim_audit_events_set_association_person
+before insert on public.payment_claim_audit_events
+for each row execute function public.set_association_person_from_obligation();
+
+-- Re-key the identity constraints onto the subject.
+--
+-- A partial unique index over a nullable user_id is vacuous once accounts
+-- start being deleted, because NULLs are all distinct: two deleted subjects in
+-- the same association would both satisfy it. association_person_id is NOT
+-- NULL and therefore actually constrains.
+drop index public.contribution_schedules_one_active_per_member_idx;
+create unique index contribution_schedules_one_active_per_person_idx
+  on public.contribution_schedules (organization_id, association_person_id)
+  where active;
+
+drop index public.membership_applications_one_open_per_person_idx;
+create unique index membership_applications_one_open_per_person_idx
+  on public.membership_applications (organization_id, association_person_id)
+  where status in (
+    'draft'::public.membership_application_status_enum,
+    'submitted'::public.membership_application_status_enum
+  );
+
+drop index public.membership_applications_person_history_idx;
+create index membership_applications_person_history_idx
+  on public.membership_applications (organization_id, association_person_id, created_at desc);
+
+alter table public.organization_membership_departures
+  drop constraint organization_membership_departures_period_key,
+  add constraint organization_membership_departures_period_key
+    unique (organization_id, association_person_id, joined_at);
+
+-- Owner reads resolve through the subject.
+--
+-- While the account exists this selects exactly the same rows as the old
+-- `user_id = auth.uid()` did. Once it is deleted, account_user_id is null and
+-- the predicate goes empty, leaving association admins as the only readers --
+-- which is the whole point of the retention rule.
+drop policy "Application owners can read their submitted revisions"
+  on public.membership_application_revisions;
+create policy "Application owners can read their submitted revisions"
+  on public.membership_application_revisions
+  for select to authenticated
+  using (exists (
+    select 1
+    from public.association_people ap
+    where ap.id = membership_application_revisions.association_person_id
+      and ap.account_user_id = (select auth.uid())
+  ));
+
+drop policy "Owners and association admins can read payment obligations"
+  on public.payment_obligations;
+create policy "Owners and association admins can read payment obligations"
+  on public.payment_obligations
+  for select to authenticated
+  using (
+    exists (
+      select 1
+      from public.association_people ap
+      where ap.id = payment_obligations.association_person_id
+        and ap.account_user_id = (select auth.uid())
+    )
+    or exists (
+      select 1
+      from public.organization_members om
+      join public.organizations o on o.id = om.organization_id
+      where om.organization_id = payment_obligations.organization_id
+        and om.user_id = (select auth.uid())
+        and om.role = 'admin'::public.organization_role_enum
+        and o.organization_type = 'association'::public.organization_type_enum
+    )
+  );
+
+drop policy "Claimants and organization admins can read payment claims"
+  on public.payment_claims;
+create policy "Claimants and organization admins can read payment claims"
+  on public.payment_claims
+  for select to authenticated
+  using (
+    exists (
+      select 1
+      from public.association_people ap
+      where ap.id = payment_claims.association_person_id
+        and ap.account_user_id = (select auth.uid())
+    )
+    or exists (
+      select 1
+      from public.organization_members om
+      where om.organization_id = payment_claims.organization_id
+        and om.user_id = (select auth.uid())
+        and om.role = 'admin'::public.organization_role_enum
+    )
+  );
+
+drop policy "Claimants and admins can read claim audit"
+  on public.payment_claim_audit_events;
+create policy "Claimants and admins can read claim audit"
+  on public.payment_claim_audit_events
+  for select to authenticated
+  using (
+    exists (
+      select 1
+      from public.association_people ap
+      where ap.id = payment_claim_audit_events.association_person_id
+        and ap.account_user_id = (select auth.uid())
+    )
+    or exists (
+      select 1
+      from public.organization_members om
+      where om.organization_id = payment_claim_audit_events.organization_id
+        and om.user_id = (select auth.uid())
+        and om.role = 'admin'::public.organization_role_enum
+    )
+  );
+
+drop policy "Members and association admins can read schedules"
+  on public.contribution_schedules;
+create policy "Members and association admins can read schedules"
+  on public.contribution_schedules
+  for select to authenticated
+  using (
+    exists (
+      select 1
+      from public.association_people ap
+      where ap.id = contribution_schedules.association_person_id
+        and ap.account_user_id = (select auth.uid())
+    )
+    or exists (
+      select 1
+      from public.organization_members om
+      where om.organization_id = contribution_schedules.organization_id
+        and om.user_id = (select auth.uid())
+        and om.role = 'admin'::public.organization_role_enum
+    )
+  );
+
+drop policy "Members and association admins can read plan snapshots"
+  on public.contribution_plan_assignments;
+create policy "Members and association admins can read plan snapshots"
+  on public.contribution_plan_assignments
+  for select to authenticated
+  using (exists (
+    select 1
+    from public.contribution_schedules cs
+    where cs.id = contribution_plan_assignments.schedule_id
+      and (
+        exists (
+          select 1
+          from public.association_people ap
+          where ap.id = cs.association_person_id
+            and ap.account_user_id = (select auth.uid())
+        )
+        or exists (
+          select 1
+          from public.organization_members om
+          where om.organization_id = cs.organization_id
+            and om.user_id = (select auth.uid())
+            and om.role = 'admin'::public.organization_role_enum
+        )
+      )
+  ));
+
+drop policy "Former members and admins can read membership periods"
+  on public.organization_membership_departures;
+create policy "Former members and admins can read membership periods"
+  on public.organization_membership_departures
+  for select to authenticated
+  using (
+    exists (
+      select 1
+      from public.association_people ap
+      where ap.id = organization_membership_departures.association_person_id
+        and ap.account_user_id = (select auth.uid())
+    )
+    or exists (
+      select 1
+      from public.organization_members om
+      where om.organization_id = organization_membership_departures.organization_id
+        and om.user_id = (select auth.uid())
+        and om.role = 'admin'::public.organization_role_enum
+    )
+  );
+
+-- Preparing an account for deletion.
+--
+-- This is the ONE sanctioned exception to "membership only ends through the
+-- admin command": somebody deleting their Choose Life account cannot be left
+-- holding an active membership nobody can see, and cannot be made to wait for
+-- an admin. It closes the relationship and severs the account link, and it
+-- deletes nothing formal -- not a revision, not an obligation, not a claim,
+-- not a payer assertion, not a decision, not an audit row.
+--
+-- Service role only. An authenticated client must never reach this.
+create function public.prepare_association_account_deletion(p_user_id uuid)
+returns void
+language plpgsql
+volatile
+security definer
+set search_path to ''
+as $function$
+declare
+  person_record public.association_people%rowtype;
+  membership public.organization_members%rowtype;
+begin
+  if p_user_id is null then
+    raise exception 'A person is required.' using errcode = '22023';
+  end if;
+
+  for person_record in
+    select ap.*
+    from public.association_people ap
+    where ap.account_user_id = p_user_id
+    order by ap.id
+    for update
+  loop
+    select om.*
+    into membership
+    from public.organization_members om
+    where om.organization_id = person_record.organization_id
+      and om.user_id = p_user_id
+    for update;
+
+    if found then
+      insert into public.organization_membership_departures (
+        organization_id,
+        association_person_id,
+        user_id,
+        departed_role,
+        joined_at,
+        actor_user_id,
+        reason
+      )
+      values (
+        person_record.organization_id,
+        person_record.id,
+        p_user_id,
+        membership.role,
+        membership.joined_at,
+        null,
+        'Account deleted.'
+      )
+      on conflict (organization_id, association_person_id, joined_at) do nothing;
+
+      delete from public.organization_members om
+      where om.organization_id = person_record.organization_id
+        and om.user_id = p_user_id;
+    end if;
+
+    update public.contribution_schedules cs
+    set active = false
+    where cs.association_person_id = person_record.id
+      and cs.active;
+
+    update public.association_people ap
+    set
+      account_user_id = null,
+      anonymized_at = timezone('utc'::text, clock_timestamp())
+    where ap.id = person_record.id;
+  end loop;
+end;
+$function$;
+
+comment on function public.prepare_association_account_deletion(uuid) is
+  'Prepares one Choose Life account for deletion: journals any still-active association membership as a closure, removes the membership authorization, deactivates the contribution schedules, and severs the account link so only association admins retain access. Deletes no formal record. Service role only.';
+
+revoke all on function public.prepare_association_account_deletion(uuid)
+  from public, anon, authenticated, service_role;
+grant execute on function public.prepare_association_account_deletion(uuid)
+  to service_role;
+
+-- ---------------------------------------------------------------------------
+-- Immutability versus account deletion.
+--
+-- Every formal record is protected by a trigger that rejects UPDATE. Those
+-- triggers are what make the evidence trustworthy, and they must stay. But the
+-- account references on those same records are now ON DELETE SET NULL, so a
+-- hard account deletion arrives at each of them as an UPDATE -- and is
+-- rejected, which is exactly how deletion was blocked before this migration
+-- (SQLSTATE 23503 became SQLSTATE 55000).
+--
+-- The distinction that resolves it: severing a link to a deleted account is
+-- not a change to the record's CONTENT. Nothing a person attested to and
+-- nothing an admin decided is altered. So the guards below allow precisely one
+-- shape of update -- account reference columns going to null, and nothing else
+-- changing -- and continue to reject everything else.
+-- ---------------------------------------------------------------------------
+
+create function public.is_account_link_severance(p_old jsonb, p_new jsonb)
+returns boolean
+language sql
+immutable
+set search_path to ''
+as $function$
+  select coalesce(
+    bool_and(
+      changed.key in ('user_id', 'actor_user_id', 'claimant_user_id')
+      and jsonb_typeof(p_new -> changed.key) = 'null'
+    ),
+    false
+  )
+  from (
+    select o.key
+    from jsonb_each(p_old) o
+    where o.value is distinct from (p_new -> o.key)
+  ) changed;
+$function$;
+
+comment on function public.is_account_link_severance(jsonb, jsonb) is
+  'True when an update changes nothing except account reference columns, and only by setting them to null. This is the shape a deleted Choose Life account produces through ON DELETE SET NULL; it is not a change to the retained formal record.';
+
+revoke all on function public.is_account_link_severance(jsonb, jsonb)
+  from public, anon, authenticated, service_role;
+
+create or replace function public.reject_membership_departure_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  if tg_op = 'UPDATE'
+    and public.is_account_link_severance(to_jsonb(old), to_jsonb(new)) then
+    return new;
+  end if;
+
+  raise exception 'Membership periods are append-only.' using errcode = '55000';
+end;
+$function$;
+
+create or replace function public.reject_membership_application_revision_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  if tg_op = 'UPDATE'
+    and public.is_account_link_severance(to_jsonb(old), to_jsonb(new)) then
+    return new;
+  end if;
+
+  raise exception 'Submitted application revisions are immutable.'
+    using errcode = '55000';
+end;
+$function$;
+
+create or replace function public.reject_payment_claim_audit_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  if tg_op = 'UPDATE'
+    and public.is_account_link_severance(to_jsonb(old), to_jsonb(new)) then
+    return new;
+  end if;
+
+  raise exception 'Payment claim audit events are immutable.'
+    using errcode = '55000';
+end;
+$function$;
+
+create or replace function public.reject_payment_claim_evidence_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  if tg_op = 'DELETE' then
+    raise exception 'Payment claim evidence is immutable.'
+      using errcode = '55000';
+  end if;
+
+  if public.is_account_link_severance(to_jsonb(old), to_jsonb(new)) then
+    return new;
+  end if;
+
+  if old.id is distinct from new.id
+    or old.obligation_id is distinct from new.obligation_id
+    or old.organization_id is distinct from new.organization_id
+    or old.association_person_id is distinct from new.association_person_id
+    or old.claimant_user_id is distinct from new.claimant_user_id
+    or old.payer_type is distinct from new.payer_type
+    or old.payer_name is distinct from new.payer_name
+    or old.created_at is distinct from new.created_at then
+    raise exception 'Payment claim evidence is immutable.'
+      using errcode = '55000';
+  end if;
+
+  if old.status is distinct from new.status
+    or old.decided_at is distinct from new.decided_at
+    or old.decision_reason is distinct from new.decision_reason then
+    if current_setting('app.payment_claim_decision_command', true) <> 'on' then
+      raise exception 'Payment claim decisions must use the decision command.'
+        using errcode = '42501';
+    end if;
+
+    if old.status <> 'under_review'::public.payment_claim_status_enum
+      or new.status not in (
+        'approved'::public.payment_claim_status_enum,
+        'rejected'::public.payment_claim_status_enum
+      )
+      or new.decided_at is null
+      or (new.status = 'approved'::public.payment_claim_status_enum
+        and new.decision_reason is not null)
+      or (new.status = 'rejected'::public.payment_claim_status_enum
+        and nullif(btrim(new.decision_reason), '') is null) then
+      raise exception 'Invalid payment claim decision transition.'
+        using errcode = '23514';
+    end if;
+  end if;
+
+  return new;
+end;
+$function$;
+
+create or replace function public.reject_payment_obligation_context_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  if public.is_account_link_severance(to_jsonb(old), to_jsonb(new)) then
+    return new;
+  end if;
+
+  if old.organization_id is distinct from new.organization_id
+    or old.association_person_id is distinct from new.association_person_id
+    or old.user_id is distinct from new.user_id
+    or old.application_revision_id is distinct from new.application_revision_id
+    or old.purpose is distinct from new.purpose
+    or old.plan_type is distinct from new.plan_type
+    or old.amount is distinct from new.amount
+    or old.currency is distinct from new.currency
+    or old.payment_method is distinct from new.payment_method
+    or old.pix_copy_paste is distinct from new.pix_copy_paste
+    or old.available_at is distinct from new.available_at
+    or old.schedule_id is distinct from new.schedule_id
+    or old.schedule_term_id is distinct from new.schedule_term_id
+    or old.period_key is distinct from new.period_key
+    or old.period_start is distinct from new.period_start
+    or old.period_end is distinct from new.period_end
+    or old.available_on is distinct from new.available_on
+    or old.due_on is distinct from new.due_on
+    or old.billing_timezone is distinct from new.billing_timezone
+    or old.billing_due_day is distinct from new.billing_due_day
+    or old.billing_lead_days is distinct from new.billing_lead_days
+    or old.organization_name_snapshot is distinct from new.organization_name_snapshot
+    or old.organization_slug_snapshot is distinct from new.organization_slug_snapshot then
+    raise exception 'Payment obligation billing context is immutable.'
+      using errcode = '55000';
+  end if;
+
+  return new;
+end;
+$function$;
+
+create or replace function public.reject_contribution_schedule_anchor_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  if public.is_account_link_severance(to_jsonb(old), to_jsonb(new)) then
+    return new;
+  end if;
+
+  if old.admission_date is distinct from new.admission_date then
+    raise exception 'A contribution schedule admission anchor is immutable.'
+      using errcode = '55000';
+  end if;
+
+  if old.association_person_id is distinct from new.association_person_id then
+    raise exception 'A contribution schedule subject is immutable.'
+      using errcode = '55000';
+  end if;
+
+  if old.cadence is distinct from new.cadence
+    or old.due_day is distinct from new.due_day
+    or old.lead_days is distinct from new.lead_days
+    or old.billing_timezone is distinct from new.billing_timezone
+    or old.currency is distinct from new.currency then
+    raise exception 'Contribution schedule policy is immutable; append an effective-dated term.'
+      using errcode = '55000';
+  end if;
+
+  return new;
+end;
+$function$;
+
+create or replace function public.reject_contribution_plan_assignment_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  if old.schedule_id is distinct from new.schedule_id
+    or old.effective_period_start is distinct from new.effective_period_start
+    or old.plan_type is distinct from new.plan_type
+    or old.amount is distinct from new.amount
+    or old.currency is distinct from new.currency
+    or old.due_day is distinct from new.due_day
+    or old.lead_days is distinct from new.lead_days
+    or old.billing_timezone is distinct from new.billing_timezone
+    or old.pix_copy_paste is distinct from new.pix_copy_paste then
+    raise exception 'An effective-dated contribution term is immutable; append a new term.'
+      using errcode = '55000';
+  end if;
+
+  return new;
+end;
+$function$;
+
+revoke all on function public.reject_membership_departure_mutation()
+  from public, anon, authenticated, service_role;
+revoke all on function public.reject_membership_application_revision_mutation()
+  from public, anon, authenticated, service_role;
+revoke all on function public.reject_payment_claim_audit_mutation()
+  from public, anon, authenticated, service_role;
+revoke all on function public.reject_payment_claim_evidence_mutation()
+  from public, anon, authenticated, service_role;
+revoke all on function public.reject_payment_obligation_context_mutation()
+  from public, anon, authenticated, service_role;
+revoke all on function public.reject_contribution_schedule_anchor_mutation()
+  from public, anon, authenticated, service_role;
+revoke all on function public.reject_contribution_plan_assignment_mutation()
+  from public, anon, authenticated, service_role;
