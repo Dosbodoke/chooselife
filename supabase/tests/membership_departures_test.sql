@@ -600,5 +600,49 @@ select is(
   'an admin can end their own membership without naming themselves'
 );
 
+-- ---------------------------------------------------------------------------
+-- Rule 13: the acting admin is optional, because a system-initiated closure
+-- records no admin.
+--
+-- The retired 20260825120000_membership_departures.sql declared actor_user_id
+-- NOT NULL and staging recorded that version, so the stage companion
+-- 20260826180000 has to drop the constraint explicitly. Both migration paths
+-- must agree the column is nullable: prepare_association_account_deletion
+-- closes a membership with no acting admin, and would otherwise fail with
+-- SQLSTATE 23502 on staging only -- a divergence a green local reset cannot
+-- see.
+-- ---------------------------------------------------------------------------
+
+set local role postgres;
+
+select col_is_null(
+  'public',
+  'organization_membership_departures',
+  'actor_user_id',
+  'the acting admin column is nullable on whichever path built this database'
+);
+
+select lives_ok(
+  $$insert into public.organization_membership_departures (
+      organization_id, user_id, departed_role, joined_at, actor_user_id, reason
+    ) values (
+      '83000000-0000-4000-8000-000000000001'::uuid,
+      '83000000-0000-4000-8000-000000000102'::uuid,
+      'member'::public.organization_role_enum,
+      timezone('utc'::text, now()) - interval '11 years',
+      null,
+      'Encerramento pelo sistema.'
+    )$$,
+  'a membership period can be journaled with no acting admin'
+);
+
+select ok(
+  (select d.actor_user_id is null
+   from public.organization_membership_departures d
+   where d.organization_id = '83000000-0000-4000-8000-000000000001'::uuid
+     and d.joined_at = timezone('utc'::text, now()) - interval '11 years'),
+  'the system-closed period is stored with a null acting admin'
+);
+
 select * from finish();
 rollback;
