@@ -3795,7 +3795,7 @@ ALTER TABLE public.contribution_schedules ADD CONSTRAINT contribution_schedules_
 ALTER TABLE public.contribution_schedules ADD CONSTRAINT contribution_schedules_due_day_check CHECK (due_day >= 1 AND due_day <= 31);
 ALTER TABLE public.contribution_schedules ADD CONSTRAINT contribution_schedules_lead_days_check CHECK (lead_days >= 0 AND lead_days <= 31);
 ALTER TABLE public.contribution_schedules ADD CONSTRAINT contribution_schedules_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
-ALTER TABLE public.contribution_schedules ADD CONSTRAINT contribution_schedules_organization_id_user_id_key UNIQUE (organization_id, user_id);
+CREATE UNIQUE INDEX contribution_schedules_one_active_per_member_idx ON public.contribution_schedules (organization_id, user_id) WHERE active;
 ALTER TABLE public.contribution_schedules ADD CONSTRAINT contribution_schedules_pkey PRIMARY KEY (id);
 ALTER TABLE public.contribution_plan_assignments ADD CONSTRAINT contribution_plan_assignments_schedule_id_fkey FOREIGN KEY (schedule_id) REFERENCES public.contribution_schedules(id) ON DELETE CASCADE;
 ALTER TABLE public.contribution_schedules ADD CONSTRAINT contribution_schedules_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
@@ -3951,6 +3951,16 @@ CREATE POLICY "Obligation owners can read their obligations" ON public.payment_o
 REVOKE ALL ON public.push_tokens FROM anon;
 REVOKE ALL ON public.push_tokens FROM authenticated;
 
+-- ---------------------------------------------------------------------------
+-- Conversion of the pre-cutover data.
+--
+-- Fresh databases have nothing to convert and skip every statement below.
+-- Production has never applied this migration, so this block IS the production
+-- cutover: it must carry every existing application, admission payment and
+-- active membership into the final model before the legacy provider tables are
+-- dropped.
+-- ---------------------------------------------------------------------------
+
 -- Normalize legacy drafts before snapshotting submitted applications.
 update public.membership_applications
 set has_allergies = true
@@ -3960,7 +3970,49 @@ update public.membership_applications
 set has_dietary_restrictions = true
 where nullif(btrim(dietary_restrictions), '') is not null;
 
+-- An admission date must come from verified payment evidence. Abort the
+-- cutover instead of silently inventing anchors for existing active members.
+-- The offending pairs are named: on production this exception is the only
+-- diagnostic anyone gets.
+do $$
+declare
+  offenders text;
+begin
+  select string_agg(
+    format('(organization %s, user %s)', om.organization_id, om.user_id),
+    ', '
+    order by om.organization_id, om.user_id
+  )
+  into offenders
+  from public.organization_members om
+  join public.organizations o on o.id = om.organization_id
+  where o.organization_type = 'association'::public.organization_type_enum
+    and om.role in (
+      'admin'::public.organization_role_enum,
+      'member'::public.organization_role_enum
+    )
+    and not exists (
+      select 1
+      from public.payments p
+      where p.organization_id = om.organization_id
+        and p.user_id = om.user_id
+        and p.status = 'succeeded'::public.payment_status_enum
+    );
+
+  if offenders is not null then
+    raise exception
+      'Billing cutover stopped: these active association members have no succeeded admission payment: %',
+      offenders;
+  end if;
+end;
+$$;
+
 -- Preserve each existing submitted application as one immutable revision.
+--
+-- The plan is read from the legacy subscription where one exists. It is a LEFT
+-- join on purpose: a submitted application with no subscription row is exactly
+-- the applicant who is still waiting for a decision, and dropping them here
+-- would leave them permanently undecidable with no revision to review.
 insert into public.membership_application_revisions (
   application_id,
   organization_id,
@@ -4007,7 +4059,7 @@ select
   ma.user_id,
   1,
   ma.draft_version,
-  s.plan_type,
+  legacy_plan.plan_type,
   o.membership_terms_version,
   coalesce(ma.accepted_terms_at, ma.submitted_at, timezone('utc'::text, now())),
   coalesce(ma.submitted_at, timezone('utc'::text, now())),
@@ -4037,33 +4089,54 @@ select
   ma.emergency_contact_name,
   ma.emergency_contact_relationship,
   ma.emergency_contact_phone,
-  case s.plan_type
+  case legacy_plan.plan_type
     when 'annual'::public.subscription_plan_type_enum then o.annual_price_amount
     else o.monthly_price_amount
   end,
   o.billing_currency,
-  case s.plan_type
+  case legacy_plan.plan_type
     when 'annual'::public.subscription_plan_type_enum then o.annual_pix_copy_paste
     else o.monthly_pix_copy_paste
   end
 from public.membership_applications ma
 join public.organizations o on o.id = ma.organization_id
-join public.subscriptions s
-  on s.organization_id = ma.organization_id
-  and s.user_id = ma.user_id
+cross join lateral (
+  select coalesce(
+    (
+      select s.plan_type
+      from public.subscriptions s
+      where s.organization_id = ma.organization_id
+        and s.user_id = ma.user_id
+      order by
+        case
+          when s.status = 'active'::public.subscription_status_enum then 0
+          else 1
+        end,
+        s.id
+      limit 1
+    ),
+    'monthly'::public.subscription_plan_type_enum
+  ) as plan_type
+) legacy_plan
 where ma.status = 'submitted'::public.membership_application_status_enum
   and o.organization_type = 'association'::public.organization_type_enum
-  and case s.plan_type
+  and case legacy_plan.plan_type
     when 'annual'::public.subscription_plan_type_enum then o.annual_price_amount
     else o.monthly_price_amount
   end > 0
-  and nullif(btrim(case s.plan_type
+  and nullif(btrim(case legacy_plan.plan_type
     when 'annual'::public.subscription_plan_type_enum then o.annual_pix_copy_paste
     else o.monthly_pix_copy_paste
   end), '') is not null
 on conflict (application_id, draft_version) do nothing;
 
 -- Convert the historical admission payment into one final-shape obligation.
+--
+-- Any succeeded payment counts as settlement evidence, including one taken
+-- through Stripe or Abacate Pay. Restricting this to provider-less rows would
+-- leave a member who paid through a gateway holding an `available` admission
+-- obligation -- production would show a paid-up founding member as owing their
+-- admission fee -- while the abort guard above already let them through.
 insert into public.payment_obligations (
   organization_id,
   user_id,
@@ -4139,10 +4212,6 @@ select
   o.slug
 from public.membership_application_revisions mar
 join public.organizations o on o.id = mar.organization_id
-left join public.subscriptions s
-  on s.organization_id = mar.organization_id
-  and s.user_id = mar.user_id
-  and s.plan_type = mar.plan_type
 left join lateral (
   select
     p.id,
@@ -4154,9 +4223,6 @@ left join lateral (
   from public.payments p
   where p.organization_id = mar.organization_id
     and p.user_id = mar.user_id
-    and p.subscription_id = s.id
-    and p.payment_provider is null
-    and p.provider_payment_id is null
   order by
     case when p.status = 'succeeded'::public.payment_status_enum then 0 else 1 end,
     p.created_at asc
@@ -4166,37 +4232,21 @@ where mar.plan_amount > 0
   and nullif(btrim(mar.pix_copy_paste), '') is not null
 on conflict (application_revision_id, purpose) do nothing;
 
--- An admission date must come from verified payment evidence. Abort the
--- cutover instead of silently inventing anchors for existing active members.
-do $$
-begin
-  if exists (
+-- A settled admission obligation is proof the association admitted this
+-- person, so the application leaves the `submitted` queue. Applications with
+-- no settled admission stay `submitted` and remain decidable.
+update public.membership_applications ma
+set status = 'admitted'::public.membership_application_status_enum
+where ma.status = 'submitted'::public.membership_application_status_enum
+  and exists (
     select 1
-    from public.organization_members om
-    join public.organizations o on o.id = om.organization_id
-    join public.subscriptions s
-      on s.organization_id = om.organization_id
-      and s.user_id = om.user_id
-      and s.status = 'active'::public.subscription_status_enum
-    where o.organization_type = 'association'::public.organization_type_enum
-      and om.role in (
-        'admin'::public.organization_role_enum,
-        'member'::public.organization_role_enum
-      )
-      and not exists (
-        select 1
-        from public.payments p
-        where p.organization_id = om.organization_id
-          and p.user_id = om.user_id
-          and p.subscription_id = s.id
-          and p.status = 'succeeded'::public.payment_status_enum
-      )
-  ) then
-    raise exception
-      'Billing cutover stopped: an active association member has no succeeded admission payment.';
-  end if;
-end;
-$$;
+    from public.membership_application_revisions mar
+    join public.payment_obligations po
+      on po.application_revision_id = mar.id
+      and po.purpose = 'initial_admission'::public.payment_obligation_purpose_enum
+      and po.status = 'settled'::public.payment_obligation_status_enum
+    where mar.application_id = ma.id
+  );
 
 insert into public.contribution_schedules (
   organization_id,
@@ -4213,7 +4263,7 @@ select
   om.organization_id,
   om.user_id,
   case
-    when s.plan_type = 'annual'::public.subscription_plan_type_enum
+    when legacy_plan.plan_type = 'annual'::public.subscription_plan_type_enum
       then 'annual'::public.contribution_cadence_enum
     else 'monthly'::public.contribution_cadence_enum
   end,
@@ -4228,16 +4278,29 @@ select
   true
 from public.organization_members om
 join public.organizations o on o.id = om.organization_id
-join public.subscriptions s
-  on s.organization_id = om.organization_id
-  and s.user_id = om.user_id
-  and s.status = 'active'::public.subscription_status_enum
+cross join lateral (
+  select coalesce(
+    (
+      select s.plan_type
+      from public.subscriptions s
+      where s.organization_id = om.organization_id
+        and s.user_id = om.user_id
+      order by
+        case
+          when s.status = 'active'::public.subscription_status_enum then 0
+          else 1
+        end,
+        s.id
+      limit 1
+    ),
+    'monthly'::public.subscription_plan_type_enum
+  ) as plan_type
+) legacy_plan
 join lateral (
   select min(coalesce(p.paid_at, p.settlement_applied_at, p.created_at)) as admission_at
   from public.payments p
   where p.organization_id = om.organization_id
     and p.user_id = om.user_id
-    and p.subscription_id = s.id
     and p.status = 'succeeded'::public.payment_status_enum
 ) admission_payment on admission_payment.admission_at is not null
 where o.organization_type = 'association'::public.organization_type_enum
@@ -4245,7 +4308,7 @@ where o.organization_type = 'association'::public.organization_type_enum
     'admin'::public.organization_role_enum,
     'member'::public.organization_role_enum
   )
-on conflict (organization_id, user_id) do nothing;
+on conflict do nothing;
 
 insert into public.contribution_plan_assignments (
   schedule_id,
@@ -4261,8 +4324,8 @@ insert into public.contribution_plan_assignments (
 select
   cs.id,
   cs.admission_date,
-  s.plan_type,
-  case s.plan_type
+  legacy_plan.plan_type,
+  case legacy_plan.plan_type
     when 'annual'::public.subscription_plan_type_enum then o.annual_price_amount
     else o.monthly_price_amount
   end,
@@ -4270,25 +4333,131 @@ select
   o.billing_due_day,
   o.billing_lead_days,
   o.billing_timezone,
-  case s.plan_type
+  case legacy_plan.plan_type
     when 'annual'::public.subscription_plan_type_enum then o.annual_pix_copy_paste
     else o.monthly_pix_copy_paste
   end
 from public.contribution_schedules cs
 join public.organizations o on o.id = cs.organization_id
-join public.subscriptions s
-  on s.organization_id = cs.organization_id
-  and s.user_id = cs.user_id
+cross join lateral (
+  select case
+    when cs.cadence = 'annual'::public.contribution_cadence_enum
+      then 'annual'::public.subscription_plan_type_enum
+    else 'monthly'::public.subscription_plan_type_enum
+  end as plan_type
+) legacy_plan
 where cs.active
-  and case s.plan_type
+  and case legacy_plan.plan_type
     when 'annual'::public.subscription_plan_type_enum then o.annual_price_amount
     else o.monthly_price_amount
   end > 0
-  and nullif(btrim(case s.plan_type
+  and nullif(btrim(case legacy_plan.plan_type
     when 'annual'::public.subscription_plan_type_enum then o.annual_pix_copy_paste
     else o.monthly_pix_copy_paste
   end), '') is not null
 on conflict (schedule_id, effective_period_start) do nothing;
+
+-- Every active member must come out of the conversion with exactly one active
+-- schedule and one effective term. Anything else means the ledger would show a
+-- member the generator can never bill, so stop rather than ship it.
+do $$
+declare
+  offenders text;
+begin
+  select string_agg(
+    format('(organization %s, user %s)', om.organization_id, om.user_id),
+    ', '
+    order by om.organization_id, om.user_id
+  )
+  into offenders
+  from public.organization_members om
+  join public.organizations o on o.id = om.organization_id
+  where o.organization_type = 'association'::public.organization_type_enum
+    and om.role in (
+      'admin'::public.organization_role_enum,
+      'member'::public.organization_role_enum
+    )
+    and (
+      select count(*)
+      from public.contribution_schedules cs
+      where cs.organization_id = om.organization_id
+        and cs.user_id = om.user_id
+        and cs.active
+    ) <> 1;
+
+  if offenders is not null then
+    raise exception
+      'Billing cutover stopped: these active association members do not have exactly one active contribution schedule: %',
+      offenders;
+  end if;
+
+  select string_agg(
+    format('(schedule %s)', cs.id),
+    ', '
+    order by cs.id
+  )
+  into offenders
+  from public.contribution_schedules cs
+  where cs.active
+    and not exists (
+      select 1
+      from public.contribution_plan_assignments cpa
+      where cpa.schedule_id = cs.id
+        and cpa.effective_period_start <= cs.admission_date
+    );
+
+  if offenders is not null then
+    raise exception
+      'Billing cutover stopped: these active contribution schedules have no effective plan term: %',
+      offenders;
+  end if;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Retire the legacy provider model.
+--
+-- Manual PIX obligations and claims are the only payment model now. Future
+-- gateways attach transactions to an obligation instead of reviving a parallel
+-- one, so nothing here is kept "for later".
+--
+-- Every row and provider identifier in payments and subscriptions is deleted,
+-- including rows belonging to organizations that are not associations. That is
+-- intentional and is not a migration blocker.
+--
+-- One thing is deliberately NOT reconstructed: a canceled subscription
+-- belonging to somebody who is no longer in organization_members is a
+-- membership that ended before departures were journalled. subscriptions
+-- carries no created_at and no departure date, so a membership period would
+-- have to be invented to record it. The payment evidence survives -- their
+-- application revision and admission obligation are converted above -- but the
+-- unreconstructable membership dates are discarded rather than fabricated.
+-- ---------------------------------------------------------------------------
+
+-- The obligation's link to its originating payment has served its purpose in
+-- the conversion above and cannot outlive the table it points at.
+alter table public.payment_obligations
+  drop constraint if exists payment_obligations_legacy_payment_id_fkey;
+alter table public.payment_obligations
+  drop constraint if exists payment_obligations_legacy_payment_id_key;
+alter table public.payment_obligations
+  drop column if exists legacy_payment_id;
+
+alter publication supabase_realtime drop table public.payments;
+
+drop trigger if exists payments_apply_succeeded_effects on public.payments;
+
+drop function if exists public.apply_succeeded_payment_effects();
+drop function if exists public.apply_payment_settlement_effects(uuid);
+drop function if exists public.mark_payment_succeeded_manually(uuid, timestamp with time zone);
+drop function if exists public.mark_manual_payment_paid_by_user(uuid);
+drop function if exists public.get_manual_payment_instructions(uuid);
+
+drop table public.payments;
+drop table public.subscriptions;
+
+drop type public.payment_status_enum;
+drop type public.subscription_status_enum;
 
 -- Foreign-key and membership lookup indexes missing from the generated delta.
 create index membership_application_revisions_user_idx
@@ -4495,3 +4664,715 @@ to service_role;
 -- Install the staging/production scheduler contract in a paused state.
 -- Deployment activates these jobs only after Edge Functions, Vault secrets,
 -- generator dry-run output, and reconciliation dry-run output are reviewed.
+
+-- ---------------------------------------------------------------------------
+-- Membership periods.
+--
+-- "Member" used to be a binary: a row in organization_members meant active and
+-- its absence meant nothing at all. Somebody who left the association simply
+-- disappeared from the admin ledger while their unpaid obligations stayed
+-- behind, orphaned.
+--
+-- The closed periods live in an append-only side table rather than as a status
+-- column, because every authorization check in this schema already reads "row
+-- exists" as "is an active member". Keeping the row and adding a flag would
+-- have made each of those checks silently wrong; deleting the row and
+-- journalling the period keeps them correct exactly as written.
+-- ---------------------------------------------------------------------------
+
+create table public.organization_membership_departures (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id),
+  user_id uuid not null references public.profiles(id),
+  departed_role public.organization_role_enum not null,
+  joined_at timestamp with time zone not null,
+  departed_at timestamp with time zone not null default timezone('utc'::text, now()),
+  actor_user_id uuid references public.profiles(id),
+  reason text,
+  constraint organization_membership_departures_period_check
+    check (departed_at >= joined_at),
+  constraint organization_membership_departures_reason_check
+    check (reason is null or char_length(reason) <= 500),
+  constraint organization_membership_departures_period_key
+    unique (organization_id, user_id, joined_at)
+);
+
+comment on table public.organization_membership_departures is
+  'Append-only journal of membership periods that ended. A person with a departure row and no current organization_members row reads as an inactive member.';
+comment on column public.organization_membership_departures.actor_user_id is
+  'The association admin who ended the membership. Null for a system closure, such as the one account deletion performs.';
+
+alter table public.organization_membership_departures enable row level security;
+
+create index organization_membership_departures_org_user_idx
+  on public.organization_membership_departures (organization_id, user_id, departed_at desc);
+create index organization_membership_departures_actor_idx
+  on public.organization_membership_departures (actor_user_id, departed_at desc)
+  where actor_user_id is not null;
+
+create function public.reject_membership_departure_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  raise exception 'Membership periods are append-only.' using errcode = '55000';
+end;
+$function$;
+
+revoke all on function public.reject_membership_departure_mutation()
+  from public, anon, authenticated, service_role;
+
+create trigger organization_membership_departures_append_only
+before update or delete on public.organization_membership_departures
+for each row execute function public.reject_membership_departure_mutation();
+
+create policy "Former members and admins can read membership periods"
+  on public.organization_membership_departures
+  for select to authenticated
+  using (
+    user_id = (select auth.uid())
+    or exists (
+      select 1
+      from public.organization_members om
+      where om.organization_id = organization_membership_departures.organization_id
+        and om.user_id = (select auth.uid())
+        and om.role = 'admin'::public.organization_role_enum
+    )
+  );
+
+revoke all on public.organization_membership_departures from public, anon;
+revoke delete, insert, references, trigger, truncate, update
+  on public.organization_membership_departures from authenticated;
+grant select on public.organization_membership_departures to authenticated;
+
+-- Direct membership mutation is closed.
+--
+-- These two policies let any signed-in client write organization_members
+-- straight from the app, which bypasses admission review entirely: a person
+-- could insert themselves as a member without an application, a contribution
+-- or a decision, and could remove themselves without a membership period ever
+-- being journalled. Admission and departure are reviewed commands now.
+--
+-- The authenticated SELECT policy is deliberately left exactly as it was, so
+-- membership display for signed-in Choose Life users does not change.
+drop policy "Authenticated users can join an organization." on public.organization_members;
+drop policy "Members can leave an organization." on public.organization_members;
+
+revoke insert, update, delete, truncate, references, trigger
+  on table public.organization_members from public, anon, authenticated;
+
+-- Ending a membership.
+--
+-- The membership row and the contribution schedule are two facts about the
+-- same relationship, so they are retired together in one transaction.
+-- Obligations already generated are deliberately left alone: an unpaid month
+-- does not stop being owed because somebody walked away, and the ledger still
+-- has to show it.
+--
+-- Only an association admin may end a membership -- including their own. There
+-- is deliberately no last-admin invariant: an association that ends up with no
+-- admin is recovered operationally, not by refusing the write.
+create function public.end_association_membership(
+  p_organization_id uuid,
+  p_user_id uuid default null,
+  p_reason text default null
+)
+returns table (
+  departure_id uuid,
+  organization_id uuid,
+  user_id uuid,
+  departed_role public.organization_role_enum,
+  departed_at timestamp with time zone
+)
+language plpgsql
+volatile
+security definer
+set search_path to ''
+as $function$
+declare
+  actor_id uuid := (select auth.uid());
+  target_id uuid := coalesce(p_user_id, (select auth.uid()));
+  membership public.organization_members%rowtype;
+  inserted public.organization_membership_departures%rowtype;
+  normalized_reason text;
+begin
+  if actor_id is null then
+    raise exception 'Authentication is required.' using errcode = '42501';
+  end if;
+
+  if p_organization_id is null then
+    raise exception 'Organization is required.' using errcode = '22023';
+  end if;
+
+  normalized_reason := nullif(
+    btrim(regexp_replace(coalesce(p_reason, ''), '\s+', ' ', 'g')),
+    ''
+  );
+
+  if normalized_reason is not null and char_length(normalized_reason) > 500 then
+    raise exception 'The reason is too long.' using errcode = '22023';
+  end if;
+
+  if not exists (
+    select 1
+    from public.organizations o
+    where o.id = p_organization_id
+      and o.organization_type = 'association'::public.organization_type_enum
+  ) then
+    raise exception 'Association was not found.' using errcode = 'P0002';
+  end if;
+
+  -- Ending a membership is an admin action, whoever the member is. A member
+  -- cannot end their own membership from the app.
+  if not exists (
+    select 1
+    from public.organization_members om
+    where om.organization_id = p_organization_id
+      and om.user_id = actor_id
+      and om.role = 'admin'::public.organization_role_enum
+  ) then
+    raise exception 'You are not authorized to end this membership.'
+      using errcode = '42501';
+  end if;
+
+  select * into membership
+  from public.organization_members om
+  where om.organization_id = p_organization_id
+    and om.user_id = target_id
+  for update;
+
+  if not found then
+    raise exception 'This person is not a current member of the association.'
+      using errcode = 'P0002';
+  end if;
+
+  insert into public.organization_membership_departures (
+    organization_id,
+    user_id,
+    departed_role,
+    joined_at,
+    actor_user_id,
+    reason
+  )
+  values (
+    p_organization_id,
+    target_id,
+    membership.role,
+    membership.joined_at,
+    actor_id,
+    normalized_reason
+  )
+  returning * into inserted;
+
+  delete from public.organization_members om
+  where om.organization_id = p_organization_id
+    and om.user_id = target_id;
+
+  -- Stops generate_membership_billing_obligations from minting new periods.
+  -- The schedule is kept, deactivated, so its obligations stay readable and so
+  -- a rejoin opens a fresh schedule instead of reviving this anchor.
+  update public.contribution_schedules cs
+  set active = false
+  where cs.organization_id = p_organization_id
+    and cs.user_id = target_id
+    and cs.active;
+
+  return query
+  select
+    inserted.id,
+    inserted.organization_id,
+    inserted.user_id,
+    inserted.departed_role,
+    inserted.departed_at;
+end;
+$function$;
+
+comment on function public.end_association_membership(uuid, uuid, text) is
+  'Ends one current association membership, journalling it as an immutable membership period and deactivating the contribution schedule. Callable only by an association admin, who may end their own membership. Existing obligations stay owed.';
+
+revoke all on function public.end_association_membership(uuid, uuid, text)
+from public, anon, authenticated, service_role;
+
+grant execute on function public.end_association_membership(uuid, uuid, text)
+to authenticated;
+
+-- The people ledger reports three states instead of three half-states. Drafts
+-- are excluded: a half-filled form is not a person the association has any
+-- relationship with yet, and every draft row pushed a real member further down
+-- the table.
+create function public.get_billing_workspace_people(
+  p_organization_id uuid
+)
+returns table (
+  member_user_id uuid,
+  member_name text,
+  member_handle text,
+  member_profile_picture text,
+  member_role public.organization_role_enum,
+  lifecycle_status text,
+  application_status public.membership_application_status_enum,
+  joined_at timestamp with time zone,
+  plan_type public.subscription_plan_type_enum,
+  last_verified_contribution_at timestamp with time zone
+)
+language plpgsql
+stable
+security definer
+set search_path to ''
+as $function$
+begin
+  if p_organization_id is null then
+    raise exception 'Organization is required.' using errcode = '22023';
+  end if;
+
+  if not exists (
+    select 1
+    from public.organizations o
+    where o.id = p_organization_id
+      and o.organization_type = 'association'::public.organization_type_enum
+  ) then
+    raise exception 'Association was not found.' using errcode = 'P0002';
+  end if;
+
+  if not exists (
+    select 1
+    from public.organization_members om
+    where om.organization_id = p_organization_id
+      and om.user_id = (select auth.uid())
+      and om.role = 'admin'::public.organization_role_enum
+  ) then
+    raise exception 'You are not authorized to view this association.'
+      using errcode = '42501';
+  end if;
+
+  return query
+  with eligible_people as (
+    select
+      om.user_id,
+      om.role,
+      'active'::text as lifecycle_status,
+      null::public.membership_application_status_enum as application_status,
+      om.joined_at
+    from public.organization_members om
+    where om.organization_id = p_organization_id
+      and om.role in (
+        'admin'::public.organization_role_enum,
+        'member'::public.organization_role_enum
+      )
+
+    union all
+
+    select
+      ma.user_id,
+      null::public.organization_role_enum,
+      'pending'::text,
+      ma.status,
+      ma.created_at
+    from public.membership_applications ma
+    where ma.organization_id = p_organization_id
+      and ma.status = 'submitted'::public.membership_application_status_enum
+      and not exists (
+        select 1
+        from public.organization_members active_member
+        where active_member.organization_id = ma.organization_id
+          and active_member.user_id = ma.user_id
+          and active_member.role in (
+            'admin'::public.organization_role_enum,
+            'member'::public.organization_role_enum
+          )
+      )
+
+    union all
+
+    select
+      departure.user_id,
+      departure.departed_role,
+      'inactive'::text,
+      null::public.membership_application_status_enum,
+      departure.joined_at
+    from public.organization_membership_departures departure
+    where departure.organization_id = p_organization_id
+      and not exists (
+        select 1
+        from public.organization_members active_member
+        where active_member.organization_id = departure.organization_id
+          and active_member.user_id = departure.user_id
+          and active_member.role in (
+            'admin'::public.organization_role_enum,
+            'member'::public.organization_role_enum
+          )
+      )
+  ),
+  people as (
+    select distinct on (eligible.user_id)
+      eligible.user_id,
+      eligible.role,
+      eligible.lifecycle_status,
+      eligible.application_status,
+      eligible.joined_at
+    from eligible_people eligible
+    order by
+      eligible.user_id,
+      -- Somebody who left and re-applied reads as pending, not as an
+      -- ex-member, and somebody who rejoined reads as active. One row per
+      -- person, whatever their history.
+      case eligible.lifecycle_status
+        when 'active' then 0
+        when 'pending' then 1
+        else 2
+      end,
+      eligible.joined_at desc
+  )
+  select
+    people.user_id,
+    profile.name::text,
+    profile.username::text,
+    profile.profile_picture,
+    people.role,
+    people.lifecycle_status,
+    coalesce(people.application_status, latest_application.status),
+    people.joined_at,
+    coalesce(current_term.plan_type, latest_revision.plan_type),
+    contribution_history.last_verified_contribution_at
+  from people
+  join public.profiles profile on profile.id = people.user_id
+  left join lateral (
+    select ma.status
+    from public.membership_applications ma
+    where ma.organization_id = p_organization_id
+      and ma.user_id = people.user_id
+    order by ma.updated_at desc, ma.id desc
+    limit 1
+  ) latest_application on true
+  left join lateral (
+    select assignment.plan_type
+    from public.contribution_schedules schedule
+    join public.contribution_plan_assignments assignment
+      on assignment.schedule_id = schedule.id
+    join public.organizations organization_record
+      on organization_record.id = schedule.organization_id
+    where schedule.organization_id = p_organization_id
+      and schedule.user_id = people.user_id
+      and schedule.active
+      and assignment.effective_period_start <= timezone(
+        organization_record.billing_timezone,
+        clock_timestamp()
+      )::date
+    order by assignment.effective_period_start desc, assignment.id desc
+    limit 1
+  ) current_term on true
+  left join lateral (
+    select revision.plan_type
+    from public.membership_applications application_record
+    join public.membership_application_revisions revision
+      on revision.application_id = application_record.id
+    where application_record.organization_id = p_organization_id
+      and application_record.user_id = people.user_id
+    order by revision.submitted_at desc, revision.id desc
+    limit 1
+  ) latest_revision on true
+  left join lateral (
+    select max(obligation.settled_at) as last_verified_contribution_at
+    from public.payment_obligations obligation
+    where obligation.organization_id = p_organization_id
+      and obligation.user_id = people.user_id
+      and obligation.status = 'settled'::public.payment_obligation_status_enum
+  ) contribution_history on true
+  order by profile.name, profile.username, people.user_id;
+end;
+$function$;
+
+comment on function public.get_billing_workspace_people(uuid) is
+  'Returns the organization-scoped people ledger: active members, pending applicants, and inactive ex-members, one row per person. Unsubmitted drafts are excluded.';
+
+revoke all on function public.get_billing_workspace_people(uuid)
+from public, anon, authenticated, service_role;
+
+grant execute on function public.get_billing_workspace_people(uuid)
+to authenticated;
+
+-- Member detail for the admin ledger drawer.
+--
+-- The only way to read the form somebody filled in used to be
+-- get_initial_payment_claim_detail, which is addressed by CLAIM id. That works
+-- for the review queue, but the ledger drawer opens on a PERSON -- and the
+-- people who most need looking up (a long-standing member, an ex-member,
+-- anyone whose claim was already decided) have no claim to address.
+--
+-- The revision columns deliberately carry the same names as
+-- get_initial_payment_claim_detail so one presentation component renders
+-- either result.
+create function public.get_association_member_detail(
+  p_organization_id uuid,
+  p_user_id uuid
+)
+returns table (
+  member_user_id uuid,
+  member_name text,
+  member_handle text,
+  member_profile_picture text,
+  member_role public.organization_role_enum,
+  lifecycle_status text,
+  joined_at timestamp with time zone,
+  departed_at timestamp with time zone,
+  departure_reason text,
+  application_id uuid,
+  application_revision_id uuid,
+  revision_number integer,
+  submitted_at timestamp with time zone,
+  plan_type public.subscription_plan_type_enum,
+  terms_version text,
+  accepted_terms_at timestamp with time zone,
+  full_name text,
+  birth_date date,
+  nationality text,
+  marital_status public.marital_status_enum,
+  profession text,
+  birthplace text,
+  cpf text,
+  id_document_number text,
+  id_document_issuer text,
+  postal_code text,
+  address_line text,
+  city text,
+  state text,
+  email text,
+  phone text,
+  blood_type public.blood_type_enum,
+  has_allergies boolean,
+  allergies text,
+  has_dietary_restrictions boolean,
+  dietary_restrictions text,
+  highline_experience public.highline_experience_enum,
+  has_rescue_course boolean,
+  first_aid_course public.first_aid_course_enum,
+  emergency_contact_name text,
+  emergency_contact_relationship text,
+  emergency_contact_phone text,
+  next_charge_period_key text,
+  next_charge_due_on date,
+  next_charge_amount integer,
+  next_charge_currency text
+)
+language plpgsql
+stable
+security definer
+set search_path to ''
+as $function$
+begin
+  if p_organization_id is null or p_user_id is null then
+    raise exception 'Organization and person are required.' using errcode = '22023';
+  end if;
+
+  if not exists (
+    select 1
+    from public.organizations o
+    where o.id = p_organization_id
+      and o.organization_type = 'association'::public.organization_type_enum
+  ) then
+    raise exception 'Association was not found.' using errcode = 'P0002';
+  end if;
+
+  if not exists (
+    select 1
+    from public.organization_members om
+    where om.organization_id = p_organization_id
+      and om.user_id = (select auth.uid())
+      and om.role = 'admin'::public.organization_role_enum
+  ) then
+    raise exception 'You are not authorized to view this association.'
+      using errcode = '42501';
+  end if;
+
+  return query
+  select
+    profile.id,
+    profile.name::text,
+    profile.username::text,
+    profile.profile_picture,
+    membership.role,
+    case
+      when membership.user_id is not null then 'active'
+      when submitted_application.id is not null then 'pending'
+      when departure.id is not null then 'inactive'
+      else 'unknown'
+    end::text,
+    -- "Member since" reads from whichever record actually starts the current
+    -- relationship: the live membership, the membership that ended, or -- for
+    -- somebody still waiting -- the day they applied.
+    coalesce(
+      membership.joined_at,
+      departure.joined_at,
+      submitted_application.created_at
+    ),
+    -- A rejoined active member must not be presented with their old departure
+    -- as their current state, so the closed period is only reported when
+    -- there is no live membership.
+    case when membership.user_id is null then departure.departed_at end,
+    case when membership.user_id is null then departure.reason end,
+    revision.application_id,
+    revision.id,
+    revision.revision_number,
+    revision.submitted_at,
+    revision.plan_type,
+    revision.terms_version,
+    revision.accepted_terms_at,
+    revision.full_name,
+    revision.birth_date,
+    revision.nationality,
+    revision.marital_status,
+    revision.profession,
+    revision.birthplace,
+    revision.cpf,
+    revision.id_document_number,
+    revision.id_document_issuer,
+    revision.postal_code,
+    revision.address_line,
+    revision.city,
+    revision.state,
+    revision.email,
+    revision.phone,
+    revision.blood_type,
+    revision.has_allergies,
+    revision.allergies,
+    revision.has_dietary_restrictions,
+    revision.dietary_restrictions,
+    revision.highline_experience,
+    revision.has_rescue_course,
+    revision.first_aid_course,
+    revision.emergency_contact_name,
+    revision.emergency_contact_relationship,
+    revision.emergency_contact_phone,
+    next_charge.period_key,
+    next_charge.due_on,
+    next_charge.amount,
+    next_charge.currency
+  from public.profiles profile
+  left join public.organization_members membership
+    on membership.organization_id = p_organization_id
+    and membership.user_id = profile.id
+    and membership.role in (
+      'admin'::public.organization_role_enum,
+      'member'::public.organization_role_enum
+    )
+  left join lateral (
+    select ma.id, ma.created_at
+    from public.membership_applications ma
+    where ma.organization_id = p_organization_id
+      and ma.user_id = profile.id
+      and ma.status = 'submitted'::public.membership_application_status_enum
+    order by ma.created_at desc, ma.id desc
+    limit 1
+  ) submitted_application on true
+  left join lateral (
+    select d.id, d.joined_at, d.departed_at, d.reason
+    from public.organization_membership_departures d
+    where d.organization_id = p_organization_id
+      and d.user_id = profile.id
+    order by d.departed_at desc, d.id desc
+  limit 1
+  ) departure on true
+  -- The newest SUBMITTED snapshot. Never the live application row: an
+  -- applicant can keep editing a draft, and the revision is the immutable
+  -- record of what they actually attested to.
+  left join lateral (
+    select rev.*
+    from public.membership_application_revisions rev
+    where rev.organization_id = p_organization_id
+      and rev.user_id = profile.id
+    order by rev.submitted_at desc, rev.revision_number desc, rev.id desc
+    limit 1
+  ) revision on true
+  -- The next charge the member will owe, derived rather than stored: the
+  -- obligation generator runs on a schedule, so for most of a billing cycle
+  -- the upcoming period has no row yet -- and "when is my next payment due" is
+  -- exactly what an admin gets asked on the phone.
+  --
+  -- Anchored on the newest existing obligation so the derived period can never
+  -- collide with a real one. A departure deactivates the schedule, so an
+  -- ex-member correctly has no next charge.
+  left join lateral (
+    select
+      public.recurring_period_key(schedule.cadence, upcoming.due_on) as period_key,
+      upcoming.due_on,
+      term.amount,
+      term.currency
+    from public.contribution_schedules schedule
+    left join lateral (
+      select po.due_on
+      from public.payment_obligations po
+      where po.organization_id = p_organization_id
+        and po.user_id = profile.id
+        and po.purpose = 'recurring'::public.payment_obligation_purpose_enum
+      order by po.due_on desc, po.id desc
+      limit 1
+    ) last_obligation on true
+    cross join lateral (
+      select case
+        when last_obligation.due_on is not null then
+          public.next_recurring_due_date(
+            last_obligation.due_on,
+            schedule.cadence,
+            schedule.due_day
+          )
+        else
+          public.recurring_due_date_on_or_after(
+            schedule.admission_date,
+            schedule.cadence,
+            schedule.due_day,
+            timezone(schedule.billing_timezone, clock_timestamp())::date
+          )
+      end as due_on
+    ) upcoming
+    -- The term EFFECTIVE for the upcoming period, not merely the latest one on
+    -- file. Ordering by effective_period_start alone would quote a future
+    -- price for a charge that falls before that price takes effect.
+    left join lateral (
+      select a.amount, a.currency
+      from public.contribution_plan_assignments a
+      where a.schedule_id = schedule.id
+        and a.effective_period_start <= upcoming.due_on
+      order by a.effective_period_start desc, a.id desc
+      limit 1
+    ) term on true
+    where schedule.organization_id = p_organization_id
+      and schedule.user_id = profile.id
+      and schedule.active
+    limit 1
+  ) next_charge on true
+  where profile.id = p_user_id;
+end;
+$function$;
+
+comment on function public.get_association_member_detail(uuid, uuid) is
+  'Admin-only person-addressed detail for the ledger drawer: current relationship dates plus the newest submitted application snapshot. A closed membership period is reported only when there is no live membership, so a rejoined member is never shown as departed.';
+
+revoke all on function public.get_association_member_detail(uuid, uuid)
+from public, anon, authenticated, service_role;
+
+grant execute on function public.get_association_member_detail(uuid, uuid)
+to authenticated;
+
+-- One open application per person per association.
+--
+-- The total unique (organization_id, user_id) that used to be here made a
+-- refusal terminal for the person, not just for the application: with no way
+-- to create a second row, a corrected resubmission had to overwrite the
+-- evidence of what was originally submitted and decided. Refused and admitted
+-- rows now accumulate, and a correction or a rejoin is a new application. The
+-- correction chain is discoverable through (organization_id, user_id,
+-- created_at), not through revision_number.
+alter table public.membership_applications
+  drop constraint membership_applications_organization_id_user_id_key;
+
+create unique index membership_applications_one_open_per_person_idx
+  on public.membership_applications (organization_id, user_id)
+  where status in (
+    'draft'::public.membership_application_status_enum,
+    'submitted'::public.membership_application_status_enum
+  );
+
+create index membership_applications_person_history_idx
+  on public.membership_applications (organization_id, user_id, created_at desc);
