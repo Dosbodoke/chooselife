@@ -10,7 +10,6 @@ set
   billing_timezone = 'America/Sao_Paulo',
   billing_due_day = 10,
   billing_lead_days = 7,
-  contribution_reminder_local_time = '09:00:00'::time,
   monthly_price_amount = 3500,
   annual_price_amount = 36000,
   monthly_pix_copy_paste = '000201LOCAL-SLAC-MONTHLY-PIX',
@@ -394,15 +393,8 @@ values
   ('c1fe0000-0000-4000-8000-000000000506', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000306', 'c1fe0000-0000-4000-8000-000000000406', 'c1fe0000-0000-4000-8000-000000000006', 'payment_available', 'under_review', null, timezone('utc'::text, now()) - interval '3 days'),
   ('c1fe0000-0000-4000-8000-000000000507', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000306', 'c1fe0000-0000-4000-8000-000000000406', 'c1fe0000-0000-4000-8000-000000000001', 'under_review', 'payment_available', 'Valor não identificado no extrato local.', timezone('utc'::text, now()) - interval '1 day');
 
--- Active members are inserted with deterministic schedules before membership
--- triggers run, preserving stable IDs while exercising the production trigger.
-insert into public.subscriptions (id, organization_id, user_id, plan_type, status, current_period_end)
-values
-  ('c1fe0000-0000-4000-8000-000000000607', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000007', 'monthly', 'active', timezone('utc'::text, now()) + interval '1 month'),
-  ('c1fe0000-0000-4000-8000-000000000608', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000008', 'monthly', 'active', timezone('utc'::text, now()) + interval '1 month'),
-  ('c1fe0000-0000-4000-8000-000000000609', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000009', 'annual', 'active', timezone('utc'::text, now()) + interval '1 year'),
-  ('c1fe0000-0000-4000-8000-000000000610', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000010', 'monthly', 'active', timezone('utc'::text, now()) + interval '1 month');
-
+-- Active members get deterministic schedules with stable IDs. Membership rows
+-- are inserted afterwards so the production trigger still runs.
 insert into public.contribution_schedules (
   id,
   organization_id,
@@ -463,10 +455,6 @@ values
 
 -- An ex-member: the membership row is gone, the departure journal keeps the
 -- relationship visible, and the retired schedule stops minting new periods.
-insert into public.subscriptions (id, organization_id, user_id, plan_type, status, current_period_end)
-values
-  ('c1fe0000-0000-4000-8000-000000000611', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000011', 'monthly', 'canceled', timezone('utc'::text, now()) - interval '2 months');
-
 insert into public.contribution_schedules (
   id,
   organization_id,
@@ -745,33 +733,3 @@ values (
   'under_review',
   timezone('utc'::text, now()) - interval '1 day'
 );
-
--- Safe reminder pipeline coverage. No push_tokens rows are created.
-insert into public.contribution_reminder_events (
-  id, organization_id, obligation_id, recipient_user_id, stage, stage_on,
-  delivery_window_on, status, suppression_reason, created_at, updated_at,
-  delivered_at
-)
-values
-  ('c1fe0000-0000-4000-8000-000000001001', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000908', 'c1fe0000-0000-4000-8000-000000000008', 'overdue', timezone('America/Sao_Paulo', now())::date - 13, timezone('America/Sao_Paulo', now())::date, 'pending', null, timezone('utc'::text, now()) - interval '1 hour', timezone('utc'::text, now()) - interval '1 hour', null),
-  ('c1fe0000-0000-4000-8000-000000001002', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000908', 'c1fe0000-0000-4000-8000-000000000008', 'due', timezone('America/Sao_Paulo', now())::date - 20, timezone('America/Sao_Paulo', now())::date - 20, 'no_device', 'no_push_tokens', timezone('utc'::text, now()) - interval '20 days', timezone('utc'::text, now()) - interval '20 days', null),
-  ('c1fe0000-0000-4000-8000-000000001003', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000910', 'c1fe0000-0000-4000-8000-000000000010', 'due', timezone('America/Sao_Paulo', now())::date + 3, timezone('America/Sao_Paulo', now())::date, 'suppressed', 'claim_under_review', timezone('utc'::text, now()) - interval '30 minutes', timezone('utc'::text, now()) - interval '30 minutes', null),
-  ('c1fe0000-0000-4000-8000-000000001004', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', md5('seed-monthly-current-1')::uuid, 'c1fe0000-0000-4000-8000-000000000007', 'available', timezone('America/Sao_Paulo', now())::date - 37, timezone('America/Sao_Paulo', now())::date - 37, 'delivered', null, timezone('utc'::text, now()) - interval '37 days', timezone('utc'::text, now()) - interval '37 days', timezone('utc'::text, now()) - interval '37 days');
-
-insert into public.contribution_reminder_batches (
-  id, organization_id, recipient_user_id, delivery_window_on, status,
-  attempt_count, next_attempt_at, last_failure_code, created_at, updated_at,
-  delivered_at
-)
-values
-  ('c1fe0000-0000-4000-8000-000000001101', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000008', timezone('America/Sao_Paulo', now())::date, 'pending', 0, timezone('utc'::text, now()), null, timezone('utc'::text, now()) - interval '1 hour', timezone('utc'::text, now()) - interval '1 hour', null),
-  ('c1fe0000-0000-4000-8000-000000001102', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000008', timezone('America/Sao_Paulo', now())::date - 20, 'no_device', 1, timezone('utc'::text, now()) - interval '20 days', 'no_devices', timezone('utc'::text, now()) - interval '20 days', timezone('utc'::text, now()) - interval '20 days', null),
-  ('c1fe0000-0000-4000-8000-000000001103', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000010', timezone('America/Sao_Paulo', now())::date, 'suppressed', 0, timezone('utc'::text, now()) + interval '100 years', null, timezone('utc'::text, now()) - interval '30 minutes', timezone('utc'::text, now()) - interval '30 minutes', null),
-  ('c1fe0000-0000-4000-8000-000000001104', '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1', 'c1fe0000-0000-4000-8000-000000000007', timezone('America/Sao_Paulo', now())::date - 37, 'delivered', 1, timezone('utc'::text, now()) - interval '37 days', null, timezone('utc'::text, now()) - interval '37 days', timezone('utc'::text, now()) - interval '37 days', timezone('utc'::text, now()) - interval '37 days');
-
-insert into public.contribution_reminder_batch_events (batch_id, event_id)
-values
-  ('c1fe0000-0000-4000-8000-000000001101', 'c1fe0000-0000-4000-8000-000000001001'),
-  ('c1fe0000-0000-4000-8000-000000001102', 'c1fe0000-0000-4000-8000-000000001002'),
-  ('c1fe0000-0000-4000-8000-000000001103', 'c1fe0000-0000-4000-8000-000000001003'),
-  ('c1fe0000-0000-4000-8000-000000001104', 'c1fe0000-0000-4000-8000-000000001004');

@@ -2,128 +2,70 @@ SET check_function_bodies = false;
 DROP POLICY "Allow all users to insert push tokens" ON public.push_tokens;
 DROP POLICY "Allow all users to read push tokens" ON public.push_tokens;
 DROP POLICY "Allow authenticated users to update their own push tokens" ON public.push_tokens;
+
+-- The membership application lifecycle grows from two states to the four the
+-- association actually decides between: draft, submitted, admitted, refused.
+--
+-- The type is REPLACED rather than extended with `ALTER TYPE ... ADD VALUE`.
+-- Postgres refuses to use a newly added enum value inside the transaction that
+-- added it (SQLSTATE 55P04), and this migration must both add the states and
+-- write them while converting existing applications. The swap has no such
+-- restriction. Two policies and one retired command depend on the old type and
+-- are handled first; a column type cannot be altered while a policy references
+-- it (SQLSTATE 0A000).
+DROP FUNCTION IF EXISTS public.submit_membership_application(uuid);
+DROP POLICY "Membership application owners can insert drafts" ON public.membership_applications;
+DROP POLICY "Membership application owners can update drafts" ON public.membership_applications;
+
+CREATE TYPE public.membership_application_status_enum_next AS ENUM (
+  'draft',
+  'submitted',
+  'admitted',
+  'refused'
+);
+
+ALTER TABLE public.membership_applications
+  ALTER COLUMN status DROP DEFAULT;
+ALTER TABLE public.membership_applications
+  ALTER COLUMN status TYPE public.membership_application_status_enum_next
+  USING status::text::public.membership_application_status_enum_next;
+
+DROP TYPE public.membership_application_status_enum;
+ALTER TYPE public.membership_application_status_enum_next
+  RENAME TO membership_application_status_enum;
+
+ALTER TABLE public.membership_applications
+  ALTER COLUMN status SET DEFAULT 'draft'::public.membership_application_status_enum;
+
+CREATE POLICY "Membership application owners can insert drafts"
+  ON public.membership_applications
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    (select auth.uid()) = user_id
+    and status = 'draft'::public.membership_application_status_enum
+  );
+
+CREATE POLICY "Membership application owners can update drafts"
+  ON public.membership_applications
+  FOR UPDATE
+  TO authenticated
+  USING (
+    (select auth.uid()) = user_id
+    and status = 'draft'::public.membership_application_status_enum
+  )
+  WITH CHECK (
+    (select auth.uid()) = user_id
+    and status = 'draft'::public.membership_application_status_enum
+  );
 CREATE TYPE public.contribution_cadence_enum AS ENUM ('monthly', 'annual');
-CREATE TYPE public.contribution_reminder_attempt_status_enum AS ENUM ('pending', 'leased', 'ticketed', 'retryable', 'delivered', 'terminal');
-CREATE TYPE public.contribution_reminder_batch_status_enum AS ENUM ('pending', 'leased', 'awaiting_receipts', 'retryable', 'delivered', 'no_device', 'terminal', 'suppressed');
-CREATE TYPE public.contribution_reminder_event_status_enum AS ENUM ('pending', 'delivered', 'coalesced', 'suppressed', 'no_device', 'exhausted');
-CREATE TYPE public.contribution_reminder_stage_enum AS ENUM ('available', 'due', 'overdue');
 CREATE TYPE public.organization_type_enum AS ENUM ('group', 'association');
 CREATE TYPE public.payment_claim_payer_type_enum AS ENUM ('applicant', 'other');
 CREATE TYPE public.payment_claim_status_enum AS ENUM ('under_review', 'approved', 'rejected');
 CREATE TYPE public.payment_obligation_purpose_enum AS ENUM ('initial_admission', 'recurring');
 CREATE TYPE public.payment_obligation_status_enum AS ENUM ('available', 'settled', 'void');
-CREATE OR REPLACE FUNCTION public.apply_payment_settlement_effects(p_payment_id uuid)
- RETURNS boolean
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  payment_record record;
-  subscription_record record;
-  period_start timestamp with time zone;
-begin
-  select
-    p.id,
-    p.subscription_id,
-    p.user_id,
-    p.organization_id,
-    p.status,
-    p.settlement_applied_at
-  into payment_record
-  from public.payments p
-  where p.id = p_payment_id
-  for update;
-
-  if not found then
-    raise exception 'Payment % was not found.', p_payment_id
-      using errcode = 'P0002';
-  end if;
-
-  if payment_record.status <> 'succeeded'::public.payment_status_enum then
-    return false;
-  end if;
-
-  -- Legacy rows can be linked to an initial obligation during migration. They
-  -- remain reconciliation evidence; succeeding them is never admission.
-  if exists (
-    select 1
-    from public.payment_obligations po
-    where po.legacy_payment_id = payment_record.id
-      and po.purpose = 'initial_admission'::public.payment_obligation_purpose_enum
-  ) then
-    return false;
-  end if;
-
-  if payment_record.settlement_applied_at is not null then
-    return false;
-  end if;
-
-  select s.current_period_end, s.plan_type
-  into subscription_record
-  from public.subscriptions s
-  where s.id = payment_record.subscription_id
-  for update;
-
-  if not found then
-    raise warning 'Cannot apply payment effects. Subscription % was not found for payment %.',
-      payment_record.subscription_id,
-      payment_record.id;
-    return false;
-  end if;
-
-  period_start = greatest(
-    coalesce(subscription_record.current_period_end, timezone('utc'::text, now())),
-    timezone('utc'::text, now())
-  );
-
-  update public.subscriptions s
-  set
-    status = 'active'::public.subscription_status_enum,
-    current_period_end = period_start + case subscription_record.plan_type
-      when 'annual'::public.subscription_plan_type_enum then interval '1 year'
-      else interval '1 month'
-    end
-  where s.id = payment_record.subscription_id;
-
-  insert into public.organization_members (organization_id, user_id, role)
-  values (
-    payment_record.organization_id,
-    payment_record.user_id,
-    'member'::public.organization_role_enum
-  )
-  on conflict (organization_id, user_id) do update
-  set role = case
-    when public.organization_members.role = 'admin'::public.organization_role_enum
-      then 'admin'::public.organization_role_enum
-    else excluded.role
-  end;
-
-  update public.payments p
-  set settlement_applied_at = timezone('utc'::text, now())
-  where p.id = payment_record.id
-    and p.settlement_applied_at is null;
-
-  return true;
-end;
-$function$;
-CREATE OR REPLACE FUNCTION public.apply_succeeded_payment_effects()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-begin
-  if new.status <> 'succeeded'::public.payment_status_enum then
-    return new;
-  end if;
-
-  perform public.apply_payment_settlement_effects(new.id);
-  return new;
-end;
-$function$;
 CREATE FUNCTION public.approve_initial_claim(p_claim_id uuid)
- RETURNS TABLE(claim_id uuid, obligation_id uuid, claim_status public.payment_claim_status_enum, obligation_status public.payment_obligation_status_enum, membership_user_id uuid, subscription_id uuid, subscription_status public.subscription_status_enum, subscription_current_period_end timestamp with time zone, audit_event_id uuid, decision_applied_now boolean)
+ RETURNS TABLE(claim_id uuid, obligation_id uuid, claim_status public.payment_claim_status_enum, obligation_status public.payment_obligation_status_enum, membership_user_id uuid, schedule_id uuid, assignment_id uuid, audit_event_id uuid, decision_applied_now boolean)
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
@@ -137,13 +79,11 @@ declare
   revision_record public.membership_application_revisions%rowtype;
   application_record public.membership_applications%rowtype;
   applicant_membership public.organization_members%rowtype;
-  subscription_record public.subscriptions%rowtype;
   audit_record public.payment_claim_audit_events%rowtype;
-  applicant_membership_found boolean;
-  subscription_found boolean;
+  schedule_id_value uuid;
+  assignment_id_value uuid;
   audit_found boolean;
   decision_timestamp timestamp with time zone := timezone('utc'::text, clock_timestamp());
-  subscription_end timestamp with time zone;
 begin
   if actor_id is null then
     raise exception 'Authentication is required.' using errcode = '42501';
@@ -227,23 +167,14 @@ begin
       using errcode = '23514';
   end if;
 
-  -- Lock the applicant membership and subscription in the same order for
-  -- approve and reject. This keeps concurrent decisions deterministic.
+  -- Lock the applicant membership in the same order for approve and reject so
+  -- concurrent decisions stay deterministic.
   select om.*
   into applicant_membership
   from public.organization_members om
   where om.organization_id = obligation_record.organization_id
     and om.user_id = obligation_record.user_id
   for update;
-  applicant_membership_found := found;
-
-  select s.*
-  into subscription_record
-  from public.subscriptions s
-  where s.organization_id = obligation_record.organization_id
-    and s.user_id = obligation_record.user_id
-  for update;
-  subscription_found := found;
 
   if claim_record.status = 'approved'::public.payment_claim_status_enum then
     if obligation_record.status <> 'settled'::public.payment_obligation_status_enum then
@@ -265,9 +196,19 @@ begin
         using errcode = '23514';
     end if;
 
-    if not applicant_membership_found
-      or not subscription_found
-      or subscription_record.status <> 'active'::public.subscription_status_enum then
+    select cs.id, cpa.id
+    into schedule_id_value, assignment_id_value
+    from public.contribution_schedules cs
+    left join public.contribution_plan_assignments cpa
+      on cpa.schedule_id = cs.id
+      and cpa.effective_period_start = cs.admission_date
+    where cs.organization_id = obligation_record.organization_id
+      and cs.user_id = obligation_record.user_id
+      and cs.active;
+
+    if applicant_membership.user_id is null
+      or schedule_id_value is null
+      or application_record.status <> 'admitted'::public.membership_application_status_enum then
       raise exception 'The approved claim is missing its admission effects.'
         using errcode = '23514';
     end if;
@@ -279,9 +220,8 @@ begin
       claim_record.status,
       obligation_record.status,
       applicant_membership.user_id,
-      subscription_record.id,
-      subscription_record.status,
-      subscription_record.current_period_end,
+      schedule_id_value,
+      assignment_id_value,
       audit_record.id,
       false;
     return;
@@ -316,10 +256,22 @@ begin
       using errcode = '40001';
   end if;
 
-  if subscription_found
-    and subscription_record.plan_type <> revision_record.plan_type then
-    raise exception 'The applicant has a conflicting subscription plan.'
-      using errcode = '23514';
+  -- Only the newest submitted revision of this application is actionable. A
+  -- correction supersedes its predecessor rather than deleting it.
+  if exists (
+    select 1
+    from public.membership_application_revisions newer
+    where newer.application_id = application_record.id
+      and (
+        newer.revision_number > revision_record.revision_number
+        or (
+          newer.revision_number = revision_record.revision_number
+          and newer.id > revision_record.id
+        )
+      )
+  ) then
+    raise exception 'A newer submission supersedes this claim. Refresh before deciding.'
+      using errcode = '40001';
   end if;
 
   -- Preserve an existing admin role. A prior member row is also reused so the
@@ -338,43 +290,25 @@ begin
   end
   returning * into applicant_membership;
 
-  subscription_end = case revision_record.plan_type
-    when 'annual'::public.subscription_plan_type_enum
-      then decision_timestamp + interval '1 year'
-    else decision_timestamp + interval '1 month'
-  end;
+  -- Admission opens the contribution schedule and snapshots the plan the
+  -- applicant actually attested to. A rejoin gets a brand new anchor.
+  select ensured.schedule_id, ensured.assignment_id
+  into schedule_id_value, assignment_id_value
+  from public.ensure_contribution_schedule(
+    obligation_record.organization_id,
+    obligation_record.user_id,
+    revision_record.plan_type,
+    timezone(organization_record.billing_timezone, decision_timestamp)::date
+  ) ensured;
 
-  if subscription_found then
-    update public.subscriptions s
-    set
-      plan_type = revision_record.plan_type,
-      status = 'active'::public.subscription_status_enum,
-      current_period_end = case
-        when subscription_record.status = 'active'::public.subscription_status_enum
-          and subscription_record.current_period_end is not null
-          and subscription_record.current_period_end > decision_timestamp
-          then subscription_record.current_period_end
-        else subscription_end
-      end
-    where s.id = subscription_record.id
-    returning * into subscription_record;
-  else
-    insert into public.subscriptions (
-      organization_id,
-      user_id,
-      plan_type,
-      status,
-      current_period_end
-    )
-    values (
-      obligation_record.organization_id,
-      obligation_record.user_id,
-      revision_record.plan_type,
-      'active'::public.subscription_status_enum,
-      subscription_end
-    )
-    returning * into subscription_record;
+  if schedule_id_value is null then
+    raise exception 'The association contribution schedule could not be opened.'
+      using errcode = '23514';
   end if;
+
+  update public.membership_applications ma
+  set status = 'admitted'::public.membership_application_status_enum
+  where ma.id = application_record.id;
 
   perform set_config('app.payment_claim_decision_command', 'on', true);
 
@@ -422,14 +356,13 @@ begin
     'approved'::public.payment_claim_status_enum,
     'settled'::public.payment_obligation_status_enum,
     applicant_membership.user_id,
-    subscription_record.id,
-    subscription_record.status,
-    subscription_record.current_period_end,
+    schedule_id_value,
+    assignment_id_value,
     audit_record.id,
     true;
 end;
 $function$;
-COMMENT ON FUNCTION public.approve_initial_claim(uuid) IS 'Atomically verifies an actionable initial claim, settles its obligation, admits the applicant, activates the selected subscription schedule, and appends one audit event.';
+COMMENT ON FUNCTION public.approve_initial_claim(uuid) IS 'Atomically verifies an actionable initial claim, settles its obligation, admits the applicant, opens the contribution schedule with its admission plan snapshot, marks the application admitted, and appends one audit event.';
 REVOKE ALL ON FUNCTION public.approve_initial_claim(uuid) FROM anon;
 CREATE FUNCTION public.approve_recurring_payment_claim(p_claim_id uuid)
  RETURNS TABLE(claim_id uuid, obligation_id uuid, claim_status public.payment_claim_status_enum, obligation_status public.payment_obligation_status_enum, audit_event_id uuid, decision_applied_now boolean)
@@ -556,116 +489,6 @@ end;
 $function$;
 COMMENT ON FUNCTION public.approve_recurring_payment_claim(uuid) IS 'Atomically verifies a recurring contribution claim and settles only that obligation.';
 REVOKE ALL ON FUNCTION public.approve_recurring_payment_claim(uuid) FROM anon;
-CREATE FUNCTION public.claim_contribution_reminder_batches(p_limit integer DEFAULT 20, p_lease_seconds integer DEFAULT 120)
- RETURNS TABLE(batch_id uuid, lease_token uuid)
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  batch_record public.contribution_reminder_batches%rowtype;
-  lease_value uuid;
-  limit_value integer := greatest(1, least(coalesce(p_limit, 20), 100));
-  lease_interval interval := make_interval(
-    secs => greatest(30, least(coalesce(p_lease_seconds, 120), 900))
-  );
-begin
-  for batch_record in
-    select b.*
-    from public.contribution_reminder_batches b
-    where (
-      b.status in (
-        'pending'::public.contribution_reminder_batch_status_enum,
-        'retryable'::public.contribution_reminder_batch_status_enum
-      )
-      and b.next_attempt_at <= clock_timestamp()
-      or (
-        b.status = 'leased'::public.contribution_reminder_batch_status_enum
-        and b.lease_expires_at < clock_timestamp()
-        and not exists (
-          select 1
-          from public.contribution_reminder_delivery_attempts da
-          where da.batch_id = b.id
-            and da.status = 'ticketed'::public.contribution_reminder_attempt_status_enum
-        )
-      )
-    )
-    order by b.delivery_window_on, b.organization_id, b.recipient_user_id, b.id
-    limit limit_value
-    for update skip locked
-  loop
-    lease_value := gen_random_uuid();
-
-    update public.contribution_reminder_batches
-    set
-      status = 'leased'::public.contribution_reminder_batch_status_enum,
-      lease_token = lease_value,
-      lease_expires_at = clock_timestamp() + lease_interval,
-      attempt_count = attempt_count + 1,
-      updated_at = clock_timestamp()
-    where id = batch_record.id;
-
-    batch_id := batch_record.id;
-    lease_token := lease_value;
-    return next;
-  end loop;
-end;
-$function$;
-COMMENT ON FUNCTION public.claim_contribution_reminder_batches(integer,integer) IS 'Claims private reminder batches with SKIP LOCKED so concurrent dispatchers do not process the same batch.';
-REVOKE ALL ON FUNCTION public.claim_contribution_reminder_batches(integer, integer) FROM anon;
-REVOKE ALL ON FUNCTION public.claim_contribution_reminder_batches(integer, integer) FROM authenticated;
-CREATE FUNCTION public.claim_contribution_reminder_receipts(p_limit integer DEFAULT 100, p_lease_seconds integer DEFAULT 120)
- RETURNS TABLE(attempt_id uuid, batch_id uuid, lease_token uuid, expo_ticket_id text)
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  attempt_record public.contribution_reminder_delivery_attempts%rowtype;
-  lease_value uuid;
-  limit_value integer := greatest(1, least(coalesce(p_limit, 100), 500));
-  lease_interval interval := make_interval(
-    secs => greatest(30, least(coalesce(p_lease_seconds, 120), 900))
-  );
-begin
-  for attempt_record in
-    select da.*
-    from public.contribution_reminder_delivery_attempts da
-    join public.contribution_reminder_batches b on b.id = da.batch_id
-    where b.status = 'awaiting_receipts'::public.contribution_reminder_batch_status_enum
-      and (
-        (
-          da.status = 'ticketed'::public.contribution_reminder_attempt_status_enum
-          and da.next_receipt_check_at <= clock_timestamp()
-        )
-        or (
-          da.status = 'leased'::public.contribution_reminder_attempt_status_enum
-          and da.lease_expires_at < clock_timestamp()
-        )
-      )
-    order by da.next_receipt_check_at, da.id
-    limit limit_value
-    for update of da skip locked
-  loop
-    lease_value := gen_random_uuid();
-    update public.contribution_reminder_delivery_attempts da
-    set
-      status = 'leased'::public.contribution_reminder_attempt_status_enum,
-      lease_token = lease_value,
-      lease_expires_at = clock_timestamp() + lease_interval,
-      updated_at = clock_timestamp()
-    where da.id = attempt_record.id;
-
-    attempt_id := attempt_record.id;
-    batch_id := attempt_record.batch_id;
-    lease_token := lease_value;
-    expo_ticket_id := attempt_record.expo_ticket_id;
-    return next;
-  end loop;
-end;
-$function$;
-REVOKE ALL ON FUNCTION public.claim_contribution_reminder_receipts(integer, integer) FROM anon;
-REVOKE ALL ON FUNCTION public.claim_contribution_reminder_receipts(integer, integer) FROM authenticated;
 CREATE FUNCTION public.claim_initial_payment(p_obligation_id uuid, p_paid_by_applicant boolean, p_payer_name text DEFAULT NULL::text)
  RETURNS TABLE(claim_id uuid, obligation_id uuid, payer_type public.payment_claim_payer_type_enum, payer_name text, claim_status public.payment_claim_status_enum, claim_created_at timestamp with time zone, audit_event_id uuid)
  LANGUAGE plpgsql
@@ -1049,372 +872,25 @@ AS $function$
 $function$;
 REVOKE ALL ON FUNCTION public.clamped_billing_date(integer, integer, integer) FROM anon;
 REVOKE ALL ON FUNCTION public.clamped_billing_date(integer, integer, integer) FROM authenticated;
-CREATE FUNCTION public.contribution_reminder_backoff(p_attempt_count integer)
- RETURNS interval
- LANGUAGE sql
- IMMUTABLE
- SET search_path TO ''
-AS $function$
-  select make_interval(
-    secs => least(
-      3600::double precision,
-      60::double precision * power(
-        2::double precision,
-        greatest(coalesce(p_attempt_count, 1) - 1, 0)
-      )
-    )
-  );
-$function$;
-REVOKE ALL ON FUNCTION public.contribution_reminder_backoff(integer) FROM anon;
-REVOKE ALL ON FUNCTION public.contribution_reminder_backoff(integer) FROM authenticated;
-REVOKE ALL ON FUNCTION public.contribution_reminder_backoff(integer) FROM service_role;
-CREATE FUNCTION public.contribution_reminder_delivery_at(p_stage_on date, p_timezone text, p_local_time time without time zone)
- RETURNS timestamp with time zone
- LANGUAGE sql
- IMMUTABLE
- SET search_path TO ''
-AS $function$
-  select (
-    p_stage_on::timestamp
-      + (p_local_time - time '00:00:00')
-  ) at time zone p_timezone;
-$function$;
-REVOKE ALL ON FUNCTION public.contribution_reminder_delivery_at(date, text, time without time zone) FROM anon;
-REVOKE ALL ON FUNCTION public.contribution_reminder_delivery_at(date, text, time without time zone) FROM authenticated;
-REVOKE ALL ON FUNCTION public.contribution_reminder_delivery_at(date, text, time without time zone) FROM service_role;
-CREATE FUNCTION public.contribution_reminder_stage_for_date(p_available_on date, p_due_on date, p_local_date date)
- RETURNS public.contribution_reminder_stage_enum
- LANGUAGE sql
- IMMUTABLE
- SET search_path TO ''
-AS $function$
-  select case
-    when p_local_date >= p_due_on + 7 then
-      'overdue'::public.contribution_reminder_stage_enum
-    when p_local_date >= p_due_on then
-      'due'::public.contribution_reminder_stage_enum
-    when p_local_date >= p_available_on then
-      'available'::public.contribution_reminder_stage_enum
-    else null
-  end;
-$function$;
-REVOKE ALL ON FUNCTION public.contribution_reminder_stage_for_date(date, date, date) FROM anon;
-REVOKE ALL ON FUNCTION public.contribution_reminder_stage_for_date(date, date, date) FROM authenticated;
-REVOKE ALL ON FUNCTION public.contribution_reminder_stage_for_date(date, date, date) FROM service_role;
-CREATE FUNCTION public.enqueue_contribution_reminder_events_at(p_as_of timestamp with time zone)
- RETURNS TABLE(created_count integer, skipped_count integer, suppressed_count integer, coalesced_count integer)
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  evaluated_at timestamp with time zone := coalesce(p_as_of, clock_timestamp());
-  obligation_record record;
-  stage_value public.contribution_reminder_stage_enum;
-  stage_on_value date;
-  local_date_value date;
-  delivery_at_value timestamp with time zone;
-  inserted_event public.contribution_reminder_events%rowtype;
-  existing_event public.contribution_reminder_events%rowtype;
-  batch_record public.contribution_reminder_batches%rowtype;
-  affected_count integer;
-begin
-  if evaluated_at is null then
-    raise exception 'The reminder evaluation clock is required.' using errcode = '22023';
-  end if;
-
-  created_count := 0;
-  skipped_count := 0;
-  suppressed_count := 0;
-  coalesced_count := 0;
-
-  update public.contribution_reminder_events event_record
-  set
-    status = 'suppressed'::public.contribution_reminder_event_status_enum,
-    suppression_reason = case
-      when po.status = 'settled'::public.payment_obligation_status_enum
-        then 'obligation_settled'
-      when po.status = 'void'::public.payment_obligation_status_enum
-        then 'obligation_void'
-      when exists (
-        select 1
-        from public.payment_claims pc
-        where pc.obligation_id = po.id
-          and pc.status = 'under_review'::public.payment_claim_status_enum
-      ) then 'claim_under_review'
-      else 'membership_not_active'
-    end,
-    updated_at = clock_timestamp()
-  from public.payment_obligations po
-  where event_record.obligation_id = po.id
-    and event_record.status = 'pending'::public.contribution_reminder_event_status_enum
-    and (
-      po.status in (
-        'settled'::public.payment_obligation_status_enum,
-        'void'::public.payment_obligation_status_enum
-      )
-      or exists (
-        select 1
-        from public.payment_claims pc
-        where pc.obligation_id = po.id
-          and pc.status = 'under_review'::public.payment_claim_status_enum
-      )
-      or not exists (
-        select 1
-        from public.organization_members om
-        join public.subscriptions s
-          on s.organization_id = om.organization_id
-          and s.user_id = om.user_id
-          and s.status = 'active'::public.subscription_status_enum
-        where om.organization_id = po.organization_id
-          and om.user_id = po.user_id
-          and om.role in (
-            'admin'::public.organization_role_enum,
-            'member'::public.organization_role_enum
-          )
-      )
-    );
-  get diagnostics affected_count = row_count;
-  suppressed_count := suppressed_count + affected_count;
-
-  for obligation_record in
-    select
-      po.id,
-      po.organization_id,
-      po.user_id,
-      po.available_on,
-      po.due_on,
-      coalesce(po.billing_timezone, o.billing_timezone) as billing_timezone,
-      o.contribution_reminder_local_time
-    from public.payment_obligations po
-    join public.organizations o on o.id = po.organization_id
-    join public.organization_members om
-      on om.organization_id = po.organization_id
-      and om.user_id = po.user_id
-      and om.role in (
-        'admin'::public.organization_role_enum,
-        'member'::public.organization_role_enum
-      )
-    join public.subscriptions s
-      on s.organization_id = po.organization_id
-      and s.user_id = po.user_id
-      and s.status = 'active'::public.subscription_status_enum
-    where po.purpose = 'recurring'::public.payment_obligation_purpose_enum
-      and po.status not in (
-        'settled'::public.payment_obligation_status_enum,
-        'void'::public.payment_obligation_status_enum
-      )
-      and o.organization_type = 'association'::public.organization_type_enum
-      and not exists (
-        select 1
-        from public.payment_claims pc
-        where pc.obligation_id = po.id
-          and pc.status = 'under_review'::public.payment_claim_status_enum
-      )
-    order by po.organization_id, po.user_id, po.due_on, po.id
-  loop
-    local_date_value := timezone(
-      obligation_record.billing_timezone,
-      evaluated_at
-    )::date;
-    stage_value := public.contribution_reminder_stage_for_date(
-      obligation_record.available_on,
-      obligation_record.due_on,
-      local_date_value
-    );
-
-    if stage_value is null then
-      skipped_count := skipped_count + 1;
-      continue;
-    end if;
-
-    stage_on_value := case stage_value
-      when 'available'::public.contribution_reminder_stage_enum
-        then obligation_record.available_on
-      when 'due'::public.contribution_reminder_stage_enum
-        then obligation_record.due_on
-      else obligation_record.due_on + 7
-    end;
-
-    delivery_at_value := public.contribution_reminder_delivery_at(
-      stage_on_value,
-      obligation_record.billing_timezone,
-      obligation_record.contribution_reminder_local_time
-    );
-
-    if evaluated_at < delivery_at_value then
-      skipped_count := skipped_count + 1;
-      continue;
-    end if;
-
-    update public.contribution_reminder_events event_record
-    set
-      status = 'suppressed'::public.contribution_reminder_event_status_enum,
-      suppression_reason = 'superseded_by_newer_stage',
-      updated_at = clock_timestamp()
-    where event_record.obligation_id = obligation_record.id
-      and event_record.recipient_user_id = obligation_record.user_id
-      and event_record.status = 'pending'::public.contribution_reminder_event_status_enum
-      and event_record.stage < stage_value;
-    get diagnostics affected_count = row_count;
-    suppressed_count := suppressed_count + affected_count;
-
-    inserted_event := null;
-    existing_event := null;
-    insert into public.contribution_reminder_events (
-      organization_id,
-      obligation_id,
-      recipient_user_id,
-      stage,
-      stage_on,
-      delivery_window_on,
-      status
-    )
-    values (
-      obligation_record.organization_id,
-      obligation_record.id,
-      obligation_record.user_id,
-      stage_value,
-      stage_on_value,
-      local_date_value,
-      'pending'::public.contribution_reminder_event_status_enum
-    )
-    on conflict (obligation_id, recipient_user_id, stage)
-    do nothing
-    returning * into inserted_event;
-
-    if inserted_event.id is null then
-      select event_record.*
-      into existing_event
-      from public.contribution_reminder_events event_record
-      where event_record.obligation_id = obligation_record.id
-        and event_record.recipient_user_id = obligation_record.user_id
-        and event_record.stage = stage_value;
-    else
-      created_count := created_count + 1;
-      existing_event := inserted_event;
-    end if;
-
-    if existing_event.status <>
-      'pending'::public.contribution_reminder_event_status_enum then
-      continue;
-    end if;
-
-    batch_record := null;
-    insert into public.contribution_reminder_batches (
-      organization_id,
-      recipient_user_id,
-      delivery_window_on
-    )
-    values (
-      obligation_record.organization_id,
-      obligation_record.user_id,
-      local_date_value
-    )
-    on conflict (organization_id, recipient_user_id, delivery_window_on)
-    do update set updated_at = clock_timestamp()
-    returning * into batch_record;
-
-    insert into public.contribution_reminder_batch_events (batch_id, event_id)
-    values (batch_record.id, existing_event.id)
-    on conflict (event_id) do nothing;
-
-    if batch_record.status =
-      'delivered'::public.contribution_reminder_batch_status_enum then
-      update public.contribution_reminder_events
-      set
-        status = 'coalesced'::public.contribution_reminder_event_status_enum,
-        suppression_reason = 'coalesced_into_completed_window',
-        updated_at = clock_timestamp()
-      where id = existing_event.id
-        and status = 'pending'::public.contribution_reminder_event_status_enum;
-      if found then
-        coalesced_count := coalesced_count + 1;
-      end if;
-    elsif batch_record.status =
-      'no_device'::public.contribution_reminder_batch_status_enum then
-      update public.contribution_reminder_events
-      set
-        status = 'no_device'::public.contribution_reminder_event_status_enum,
-        suppression_reason = 'no_current_device',
-        updated_at = clock_timestamp()
-      where id = existing_event.id
-        and status = 'pending'::public.contribution_reminder_event_status_enum;
-    elsif batch_record.status =
-      'terminal'::public.contribution_reminder_batch_status_enum then
-      update public.contribution_reminder_events
-      set
-        status = 'exhausted'::public.contribution_reminder_event_status_enum,
-        suppression_reason = 'delivery_exhausted',
-        updated_at = clock_timestamp()
-      where id = existing_event.id
-        and status = 'pending'::public.contribution_reminder_event_status_enum;
-    elsif batch_record.status =
-      'suppressed'::public.contribution_reminder_batch_status_enum then
-      update public.contribution_reminder_events
-      set
-        status = 'suppressed'::public.contribution_reminder_event_status_enum,
-        suppression_reason = 'batch_suppressed',
-        updated_at = clock_timestamp()
-      where id = existing_event.id
-        and status = 'pending'::public.contribution_reminder_event_status_enum;
-    end if;
-  end loop;
-
-  update public.contribution_reminder_batches queued_batch
-  set
-    status = 'suppressed'::public.contribution_reminder_batch_status_enum,
-    last_failure_code = 'no_pending_events',
-    updated_at = clock_timestamp()
-  where queued_batch.status =
-      'pending'::public.contribution_reminder_batch_status_enum
-    and not exists (
-      select 1
-      from public.contribution_reminder_batch_events batch_event
-      join public.contribution_reminder_events event_record
-        on event_record.id = batch_event.event_id
-      where batch_event.batch_id = queued_batch.id
-        and event_record.status =
-          'pending'::public.contribution_reminder_event_status_enum
-    )
-    and not exists (
-      select 1
-      from public.contribution_reminder_delivery_attempts delivery_attempt
-      where delivery_attempt.batch_id = queued_batch.id
-    );
-  return next;
-end;
-$function$;
-REVOKE ALL ON FUNCTION public.enqueue_contribution_reminder_events_at(timestamp with time zone) FROM anon;
-REVOKE ALL ON FUNCTION public.enqueue_contribution_reminder_events_at(timestamp with time zone) FROM authenticated;
-REVOKE ALL ON FUNCTION public.enqueue_contribution_reminder_events_at(timestamp with time zone) FROM service_role;
-CREATE FUNCTION public.enqueue_contribution_reminder_events()
- RETURNS TABLE(created_count integer, skipped_count integer, suppressed_count integer, coalesced_count integer)
- LANGUAGE sql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-  select *
-  from public.enqueue_contribution_reminder_events_at(clock_timestamp());
-$function$;
-COMMENT ON FUNCTION public.enqueue_contribution_reminder_events() IS 'Trusted scheduler command that creates only the latest useful reminder stage for each eligible recurring obligation.';
-REVOKE ALL ON FUNCTION public.enqueue_contribution_reminder_events() FROM anon;
-REVOKE ALL ON FUNCTION public.enqueue_contribution_reminder_events() FROM authenticated;
-CREATE FUNCTION public.ensure_contribution_schedule(p_organization_id uuid, p_user_id uuid, p_admission_date date DEFAULT NULL::date)
- RETURNS uuid
+CREATE FUNCTION public.ensure_contribution_schedule(p_organization_id uuid, p_user_id uuid, p_plan_type public.subscription_plan_type_enum, p_admission_date date DEFAULT NULL::date)
+ RETURNS TABLE(schedule_id uuid, assignment_id uuid)
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
 AS $function$
 declare
   organization_record public.organizations%rowtype;
-  subscription_record public.subscriptions%rowtype;
   schedule_record public.contribution_schedules%rowtype;
+  assignment_record public.contribution_plan_assignments%rowtype;
   admission_date_value date;
   cadence_value public.contribution_cadence_enum;
   amount_value integer;
   pix_value text;
 begin
+  if p_plan_type is null then
+    raise exception 'A contribution plan is required.' using errcode = '22023';
+  end if;
+
   select o.*
   into organization_record
   from public.organizations o
@@ -1423,7 +899,7 @@ begin
   for update;
 
   if not found then
-    return null;
+    return;
   end if;
 
   if not public.is_valid_billing_timezone(organization_record.billing_timezone)
@@ -1433,29 +909,17 @@ begin
     raise exception 'The association billing policy is invalid.' using errcode = '23514';
   end if;
 
-  select s.*
-  into subscription_record
-  from public.subscriptions s
-  where s.organization_id = p_organization_id
-    and s.user_id = p_user_id
-    and s.status = 'active'::public.subscription_status_enum
-  for update;
-
-  if not found then
-    return null;
-  end if;
-
   cadence_value := case
-    when subscription_record.plan_type = 'annual'::public.subscription_plan_type_enum
+    when p_plan_type = 'annual'::public.subscription_plan_type_enum
       then 'annual'::public.contribution_cadence_enum
     else 'monthly'::public.contribution_cadence_enum
   end;
-  amount_value := case subscription_record.plan_type
+  amount_value := case p_plan_type
     when 'annual'::public.subscription_plan_type_enum
       then organization_record.annual_price_amount
     else organization_record.monthly_price_amount
   end;
-  pix_value := case subscription_record.plan_type
+  pix_value := case p_plan_type
     when 'annual'::public.subscription_plan_type_enum
       then organization_record.annual_pix_copy_paste
     else organization_record.monthly_pix_copy_paste
@@ -1467,53 +931,57 @@ begin
       using errcode = '23514';
   end if;
 
-  admission_date_value := coalesce(
-    p_admission_date,
-    (
-      select timezone(organization_record.billing_timezone, om.joined_at)::date
-      from public.organization_members om
-      where om.organization_id = p_organization_id
-        and om.user_id = p_user_id
-    ),
-    timezone(organization_record.billing_timezone, clock_timestamp())::date
-  );
+  -- A retried admission must find the schedule it already opened. A REJOIN must
+  -- not: the pre-departure schedule is deactivated and stays that way, so the
+  -- new membership is anchored on the new admission date instead of silently
+  -- inheriting the old anchor and backfilling the absence.
+  select cs.*
+  into schedule_record
+  from public.contribution_schedules cs
+  where cs.organization_id = p_organization_id
+    and cs.user_id = p_user_id
+    and cs.active
+  for update;
 
-  insert into public.contribution_schedules (
-    organization_id,
-    user_id,
-    cadence,
-    admission_date,
-    due_day,
-    lead_days,
-    billing_timezone,
-    currency,
-    active
-  )
-  values (
-    p_organization_id,
-    p_user_id,
-    cadence_value,
-    admission_date_value,
-    organization_record.billing_due_day,
-    organization_record.billing_lead_days,
-    organization_record.billing_timezone,
-    organization_record.billing_currency,
-    true
-  )
-  on conflict (organization_id, user_id) do update
-  set active = true
-  returning * into schedule_record;
+  if not found then
+    admission_date_value := coalesce(
+      p_admission_date,
+      (
+        select timezone(organization_record.billing_timezone, om.joined_at)::date
+        from public.organization_members om
+        where om.organization_id = p_organization_id
+          and om.user_id = p_user_id
+      ),
+      timezone(organization_record.billing_timezone, clock_timestamp())::date
+    );
 
-  if schedule_record.id is null then
-    select cs.*
-    into schedule_record
-    from public.contribution_schedules cs
-    where cs.organization_id = p_organization_id
-      and cs.user_id = p_user_id
-    for update;
+    insert into public.contribution_schedules (
+      organization_id,
+      user_id,
+      cadence,
+      admission_date,
+      due_day,
+      lead_days,
+      billing_timezone,
+      currency,
+      active
+    )
+    values (
+      p_organization_id,
+      p_user_id,
+      cadence_value,
+      admission_date_value,
+      organization_record.billing_due_day,
+      organization_record.billing_lead_days,
+      organization_record.billing_timezone,
+      organization_record.billing_currency,
+      true
+    )
+    returning * into schedule_record;
   end if;
 
-  perform 1
+  select cpa.*
+  into assignment_record
   from public.contribution_plan_assignments cpa
   where cpa.schedule_id = schedule_record.id
     and cpa.effective_period_start = schedule_record.admission_date
@@ -1534,21 +1002,23 @@ begin
     values (
       schedule_record.id,
       schedule_record.admission_date,
-      subscription_record.plan_type,
+      p_plan_type,
       amount_value,
       organization_record.billing_currency,
       schedule_record.due_day,
       schedule_record.lead_days,
       schedule_record.billing_timezone,
       pix_value
-    );
+    )
+    returning * into assignment_record;
   end if;
 
-  return schedule_record.id;
+  return query select schedule_record.id, assignment_record.id;
 end;
 $function$;
-REVOKE ALL ON FUNCTION public.ensure_contribution_schedule(uuid, uuid, date) FROM anon;
-REVOKE ALL ON FUNCTION public.ensure_contribution_schedule(uuid, uuid, date) FROM authenticated;
+COMMENT ON FUNCTION public.ensure_contribution_schedule(uuid, uuid, public.subscription_plan_type_enum, date) IS 'Opens (or idempotently returns) the active contribution schedule and its admission-effective plan snapshot for one association member. A deactivated pre-departure schedule is never revived, so a rejoin is anchored on its own admission date.';
+REVOKE ALL ON FUNCTION public.ensure_contribution_schedule(uuid, uuid, public.subscription_plan_type_enum, date) FROM anon;
+REVOKE ALL ON FUNCTION public.ensure_contribution_schedule(uuid, uuid, public.subscription_plan_type_enum, date) FROM authenticated;
 CREATE FUNCTION public.first_recurring_due_date(p_admission_date date, p_cadence public.contribution_cadence_enum, p_due_day integer)
  RETURNS date
  LANGUAGE plpgsql
@@ -1626,10 +1096,6 @@ begin
     join public.organization_members om
       on om.organization_id = cs.organization_id
       and om.user_id = cs.user_id
-    join public.subscriptions s
-      on s.organization_id = cs.organization_id
-      and s.user_id = cs.user_id
-      and s.status = 'active'::public.subscription_status_enum
     where cs.active
       and o.organization_type = 'association'::public.organization_type_enum
       and om.role in (
@@ -2001,16 +1467,12 @@ AS $function$
     end,
     coalesce(financial.overdue_count, 0),
     financial.oldest_attention_due_on,
-    coalesce(current_term.plan_type, active_subscription.plan_type),
+    current_term.plan_type,
     financial.last_verified_contribution_at,
     financial.next_due_on
   from public.organization_members om
   join public.organizations o on o.id = om.organization_id
   join public.profiles member_profile on member_profile.id = om.user_id
-  left join public.subscriptions active_subscription
-    on active_subscription.organization_id = om.organization_id
-    and active_subscription.user_id = om.user_id
-    and active_subscription.status = 'active'::public.subscription_status_enum
   left join lateral (
     select cpa.plan_type
     from public.contribution_plan_assignments cpa
@@ -3213,707 +2675,6 @@ AS $function$
 $function$;
 REVOKE ALL ON FUNCTION public.next_recurring_due_date(date, public.contribution_cadence_enum, integer) FROM anon;
 REVOKE ALL ON FUNCTION public.next_recurring_due_date(date, public.contribution_cadence_enum, integer) FROM authenticated;
-CREATE FUNCTION public.prepare_contribution_reminder_batch(p_batch_id uuid, p_lease_token uuid, p_lease_seconds integer DEFAULT 120)
- RETURNS TABLE(batch_id uuid, organization_slug text, delivery_window_on date, delivery_attempts jsonb)
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  batch_record public.contribution_reminder_batches%rowtype;
-  lease_interval interval := make_interval(
-    secs => greatest(30, least(coalesce(p_lease_seconds, 120), 900))
-  );
-  token_count integer;
-  active_event_count integer;
-  attempt_count_value integer;
-  slug_value text;
-begin
-  select b.*
-  into batch_record
-  from public.contribution_reminder_batches b
-  where b.id = p_batch_id
-    and b.status = 'leased'::public.contribution_reminder_batch_status_enum
-    and b.lease_token = p_lease_token
-    and b.lease_expires_at > clock_timestamp()
-  for update;
-
-  if not found then
-    return;
-  end if;
-
-  update public.contribution_reminder_events event_record
-  set
-    status = 'suppressed'::public.contribution_reminder_event_status_enum,
-    suppression_reason = case
-      when po.status = 'settled'::public.payment_obligation_status_enum
-        then 'obligation_settled'
-      when po.status = 'void'::public.payment_obligation_status_enum
-        then 'obligation_void'
-      when exists (
-        select 1
-        from public.payment_claims pc
-        where pc.obligation_id = po.id
-          and pc.status = 'under_review'::public.payment_claim_status_enum
-      ) then 'claim_under_review'
-      else 'membership_not_active'
-    end,
-    updated_at = clock_timestamp()
-  from public.contribution_reminder_batch_events batch_event
-  join public.contribution_reminder_events batch_event_record
-    on batch_event_record.id = batch_event.event_id
-  join public.payment_obligations po on po.id = batch_event_record.obligation_id
-  where batch_event.batch_id = p_batch_id
-    and event_record.id = batch_event.event_id
-    and event_record.status = 'pending'::public.contribution_reminder_event_status_enum
-    and (
-      po.status in (
-        'settled'::public.payment_obligation_status_enum,
-        'void'::public.payment_obligation_status_enum
-      )
-      or exists (
-        select 1
-        from public.payment_claims pc
-        where pc.obligation_id = po.id
-          and pc.status = 'under_review'::public.payment_claim_status_enum
-      )
-      or not exists (
-        select 1
-        from public.organization_members om
-        join public.subscriptions s
-          on s.organization_id = om.organization_id
-          and s.user_id = om.user_id
-          and s.status = 'active'::public.subscription_status_enum
-        where om.organization_id = po.organization_id
-          and om.user_id = po.user_id
-          and om.role in (
-            'admin'::public.organization_role_enum,
-            'member'::public.organization_role_enum
-          )
-      )
-    );
-
-  select count(*)
-  into active_event_count
-  from public.contribution_reminder_batch_events batch_event
-  join public.contribution_reminder_events event_record
-    on event_record.id = batch_event.event_id
-  where batch_event.batch_id = p_batch_id
-    and event_record.status = 'pending'::public.contribution_reminder_event_status_enum;
-
-  if active_event_count = 0 then
-    update public.contribution_reminder_batches
-    set
-      status = 'suppressed'::public.contribution_reminder_batch_status_enum,
-      lease_token = null,
-      lease_expires_at = null,
-      updated_at = clock_timestamp()
-    where id = p_batch_id;
-    return;
-  end if;
-
-  select o.slug
-  into slug_value
-  from public.organizations o
-  where o.id = batch_record.organization_id
-    and o.organization_type = 'association'::public.organization_type_enum;
-
-  if slug_value is null then
-    update public.contribution_reminder_batches
-    set
-      status = 'suppressed'::public.contribution_reminder_batch_status_enum,
-      last_failure_code = 'organization_unavailable',
-      lease_token = null,
-      lease_expires_at = null,
-      updated_at = clock_timestamp()
-    where id = p_batch_id;
-    return;
-  end if;
-
-  update public.contribution_reminder_delivery_attempts da
-  set
-    status = 'terminal'::public.contribution_reminder_attempt_status_enum,
-    terminal_outcome = 'token_no_longer_owned',
-    lease_token = null,
-    lease_expires_at = null,
-    updated_at = clock_timestamp()
-  where da.batch_id = p_batch_id
-    and da.status in (
-      'pending'::public.contribution_reminder_attempt_status_enum,
-      'retryable'::public.contribution_reminder_attempt_status_enum,
-      'leased'::public.contribution_reminder_attempt_status_enum
-    )
-    and not exists (
-      select 1
-      from public.push_tokens pt
-      where pt.token = da.token
-        and pt.profile_id = batch_record.recipient_user_id
-    );
-
-  insert into public.contribution_reminder_delivery_attempts (
-    batch_id,
-    push_token_id,
-    token,
-    language,
-    status,
-    next_attempt_at
-  )
-  select
-    p_batch_id,
-    pt.id,
-    pt.token,
-    pt.language,
-    'pending'::public.contribution_reminder_attempt_status_enum,
-    clock_timestamp()
-  from public.push_tokens pt
-  where pt.profile_id = batch_record.recipient_user_id
-  on conflict on constraint contribution_reminder_delivery_attempts_batch_id_token_key
-  do update
-  set
-    push_token_id = excluded.push_token_id,
-    language = excluded.language,
-    updated_at = clock_timestamp();
-
-  select count(*)
-  into token_count
-  from public.push_tokens pt
-  where pt.profile_id = batch_record.recipient_user_id;
-
-  if token_count = 0 then
-    update public.contribution_reminder_batches
-    set
-      status = 'no_device'::public.contribution_reminder_batch_status_enum,
-      lease_token = null,
-      lease_expires_at = null,
-      updated_at = clock_timestamp()
-    where id = p_batch_id;
-
-    update public.contribution_reminder_events event_record
-    set
-      status = 'no_device'::public.contribution_reminder_event_status_enum,
-      suppression_reason = 'no_current_device',
-      updated_at = clock_timestamp()
-    where event_record.id in (
-      select event_id
-      from public.contribution_reminder_batch_events batch_event
-      where batch_event.batch_id = p_batch_id
-    )
-      and event_record.status = 'pending'::public.contribution_reminder_event_status_enum;
-    return;
-  end if;
-
-  with candidates as (
-    select da.id
-    from public.contribution_reminder_delivery_attempts da
-    where da.batch_id = p_batch_id
-      and da.status in (
-        'pending'::public.contribution_reminder_attempt_status_enum,
-        'retryable'::public.contribution_reminder_attempt_status_enum,
-        'leased'::public.contribution_reminder_attempt_status_enum
-      )
-      and (
-        da.status in (
-          'pending'::public.contribution_reminder_attempt_status_enum,
-          'retryable'::public.contribution_reminder_attempt_status_enum
-        )
-        and da.next_attempt_at <= clock_timestamp()
-        or da.status = 'leased'::public.contribution_reminder_attempt_status_enum
-          and da.lease_expires_at < clock_timestamp()
-      )
-      and exists (
-        select 1
-        from public.push_tokens pt
-        where pt.token = da.token
-          and pt.profile_id = batch_record.recipient_user_id
-      )
-    order by da.id
-    for update skip locked
-  )
-  update public.contribution_reminder_delivery_attempts da
-  set
-    status = 'leased'::public.contribution_reminder_attempt_status_enum,
-    lease_token = p_lease_token,
-    lease_expires_at = clock_timestamp() + lease_interval,
-    attempt_count = da.attempt_count + 1,
-    updated_at = clock_timestamp()
-  where da.id in (select id from candidates);
-
-  select count(*)
-  into attempt_count_value
-  from public.contribution_reminder_delivery_attempts da
-  where da.batch_id = p_batch_id
-    and da.status = 'leased'::public.contribution_reminder_attempt_status_enum
-    and da.lease_token = p_lease_token;
-
-  if attempt_count_value = 0 then
-    perform public.refresh_contribution_reminder_batch(p_batch_id);
-    return;
-  end if;
-
-  batch_id := p_batch_id;
-  organization_slug := slug_value;
-  delivery_window_on := batch_record.delivery_window_on;
-  select coalesce(
-    jsonb_agg(
-      jsonb_build_object(
-        'attempt_id', da.id,
-        'token', da.token,
-        'language', da.language
-      )
-      order by da.id
-    ),
-    '[]'::jsonb
-  )
-  into delivery_attempts
-  from public.contribution_reminder_delivery_attempts da
-  where da.batch_id = p_batch_id
-    and da.status = 'leased'::public.contribution_reminder_attempt_status_enum
-    and da.lease_token = p_lease_token;
-  return next;
-end;
-$function$;
-REVOKE ALL ON FUNCTION public.prepare_contribution_reminder_batch(uuid, uuid, integer) FROM anon;
-REVOKE ALL ON FUNCTION public.prepare_contribution_reminder_batch(uuid, uuid, integer) FROM authenticated;
-CREATE FUNCTION public.reconcile_legacy_payment_obligations(p_apply boolean DEFAULT false)
- RETURNS TABLE(payment_id uuid, obligation_id uuid, payment_status public.payment_status_enum, result text, reason text)
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  payment_record record;
-  candidate_obligation_id uuid;
-  candidate_count integer;
-  matched_obligation public.payment_obligations%rowtype;
-begin
-  for payment_record in
-    select p.*
-    from public.payments p
-    where p.status in (
-      'pending'::public.payment_status_enum,
-      'succeeded'::public.payment_status_enum
-    )
-      and p.payment_provider is null
-      and p.provider_payment_id is null
-      and not exists (
-        select 1
-        from public.payment_obligations linked
-        where linked.legacy_payment_id = p.id
-      )
-    order by coalesce(p.paid_at, p.created_at), p.id
-  loop
-    select count(*)::integer, min(candidates.id::text)::uuid
-    into candidate_count, candidate_obligation_id
-    from public.payment_obligations candidates
-    where candidates.purpose = 'recurring'::public.payment_obligation_purpose_enum
-      and candidates.legacy_payment_id is null
-      and candidates.organization_id = payment_record.organization_id
-      and candidates.user_id = payment_record.user_id
-      and candidates.amount = payment_record.amount
-      and timezone(
-        coalesce(
-          candidates.billing_timezone,
-          (select o.billing_timezone
-           from public.organizations o
-           where o.id = candidates.organization_id)
-        ),
-        coalesce(payment_record.paid_at, payment_record.created_at)
-      )::date between candidates.period_start and candidates.period_end;
-
-    payment_id := payment_record.id;
-    obligation_id := candidate_obligation_id;
-    payment_status := payment_record.status;
-
-    if candidate_count = 0 then
-      result := 'unmatched';
-      reason := 'No stable recurring period matches this legacy payment.';
-      return next;
-      continue;
-    end if;
-
-    if candidate_count > 1 then
-      obligation_id := null;
-      result := 'ambiguous';
-      reason := 'More than one recurring period matches this legacy payment.';
-      return next;
-      continue;
-    end if;
-
-    select po.*
-    into matched_obligation
-    from public.payment_obligations po
-    where po.id = candidate_obligation_id
-    for update;
-
-    if exists (
-      select 1
-      from public.payment_claims pc
-      where pc.obligation_id = matched_obligation.id
-        and pc.status = 'under_review'::public.payment_claim_status_enum
-    ) then
-      result := 'blocked_under_review';
-      reason := 'The period has an active payment claim under review.';
-      return next;
-      continue;
-    end if;
-
-    if not p_apply then
-      result := 'ready';
-      reason := 'One stable period matches; apply only after dry-run review.';
-      return next;
-      continue;
-    end if;
-
-    update public.payment_obligations po
-    set
-      legacy_payment_id = payment_record.id,
-      status = case
-        when payment_record.status = 'succeeded'::public.payment_status_enum
-          then 'settled'::public.payment_obligation_status_enum
-        else po.status
-      end,
-      settled_at = case
-        when payment_record.status = 'succeeded'::public.payment_status_enum
-          then coalesce(payment_record.paid_at, payment_record.created_at)
-        else po.settled_at
-      end
-    where po.id = matched_obligation.id
-      and po.legacy_payment_id is null;
-
-    if found then
-      result := 'linked';
-      reason := 'One stable period was linked to the legacy payment.';
-    else
-      result := 'already_linked';
-      reason := 'The stable period was linked by an earlier reconciliation row.';
-    end if;
-    return next;
-  end loop;
-end;
-$function$;
-COMMENT ON FUNCTION public.reconcile_legacy_payment_obligations(boolean) IS 'Returns a dry-run legacy payment mapping by default; only unambiguous reviewed mappings may be applied.';
-REVOKE ALL ON FUNCTION public.reconcile_legacy_payment_obligations(boolean) FROM anon;
-REVOKE ALL ON FUNCTION public.reconcile_legacy_payment_obligations(boolean) FROM authenticated;
-CREATE FUNCTION public.record_contribution_reminder_receipts(p_receipts jsonb)
- RETURNS integer
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  receipt_record record;
-  updated_count integer := 0;
-  changed_count integer;
-  normalized_error text;
-  batch_id_value uuid;
-begin
-  for receipt_record in
-    select *
-    from jsonb_to_recordset(coalesce(p_receipts, '[]'::jsonb)) as receipt(
-      attempt_id uuid,
-      lease_token uuid,
-      status text,
-      error_code text
-    )
-  loop
-    normalized_error := lower(
-      replace(coalesce(receipt_record.error_code, ''), '_', '')
-    );
-
-    select da.batch_id
-    into batch_id_value
-    from public.contribution_reminder_delivery_attempts da
-    where da.id = receipt_record.attempt_id
-      and da.status = 'leased'::public.contribution_reminder_attempt_status_enum
-      and da.lease_token = receipt_record.lease_token;
-
-    if batch_id_value is null then
-      continue;
-    end if;
-
-    if receipt_record.status = 'ok' then
-      update public.contribution_reminder_delivery_attempts da
-      set
-        status = 'delivered'::public.contribution_reminder_attempt_status_enum,
-        expo_receipt_status = 'ok',
-        expo_receipt_error_code = null,
-        terminal_outcome = null,
-        lease_token = null,
-        lease_expires_at = null,
-        next_receipt_check_at = null,
-        updated_at = clock_timestamp()
-      where da.id = receipt_record.attempt_id
-        and da.status = 'leased'::public.contribution_reminder_attempt_status_enum
-        and da.lease_token = receipt_record.lease_token;
-      get diagnostics changed_count = row_count;
-      updated_count := updated_count + changed_count;
-    else
-      update public.contribution_reminder_delivery_attempts da
-      set
-        status = case
-          when normalized_error in (
-            'toomanyrequests',
-            'ratelimited',
-            'messagerateexceeded',
-            'serviceunavailable',
-            'internalservererror',
-            'timeout',
-            'network'
-          ) and da.attempt_count < 5
-            then 'retryable'::public.contribution_reminder_attempt_status_enum
-          else 'terminal'::public.contribution_reminder_attempt_status_enum
-        end,
-        expo_receipt_status = 'error',
-        expo_receipt_error_code = nullif(receipt_record.error_code, ''),
-        terminal_outcome = case
-          when normalized_error = 'devicenotregistered'
-            then 'device_not_registered'
-          when normalized_error in (
-            'toomanyrequests',
-            'ratelimited',
-            'messagerateexceeded',
-            'serviceunavailable',
-            'internalservererror',
-            'timeout',
-            'network'
-          ) and da.attempt_count < 5 then null
-          when da.attempt_count >= 5 then 'retry_exhausted'
-          else 'expo_receipt_error'
-        end,
-        next_attempt_at = case
-          when normalized_error in (
-            'toomanyrequests',
-            'ratelimited',
-            'messagerateexceeded',
-            'serviceunavailable',
-            'internalservererror',
-            'timeout',
-            'network'
-          ) and da.attempt_count < 5
-            then clock_timestamp() + public.contribution_reminder_backoff(da.attempt_count)
-          else da.next_attempt_at
-        end,
-        lease_token = null,
-        lease_expires_at = null,
-        next_receipt_check_at = null,
-        updated_at = clock_timestamp()
-      where da.id = receipt_record.attempt_id
-        and da.status = 'leased'::public.contribution_reminder_attempt_status_enum
-        and da.lease_token = receipt_record.lease_token;
-      get diagnostics changed_count = row_count;
-      updated_count := updated_count + changed_count;
-
-      if normalized_error = 'devicenotregistered'
-        or normalized_error = 'invalidpushtoken'
-        or normalized_error = 'invalidtoken' then
-        delete from public.push_tokens pt
-        where exists (
-          select 1
-          from public.contribution_reminder_delivery_attempts da
-          where da.id = receipt_record.attempt_id
-            and da.token = pt.token
-        );
-      end if;
-    end if;
-
-    perform public.refresh_contribution_reminder_batch(batch_id_value);
-  end loop;
-
-  return updated_count;
-end;
-$function$;
-REVOKE ALL ON FUNCTION public.record_contribution_reminder_receipts(jsonb) FROM anon;
-REVOKE ALL ON FUNCTION public.record_contribution_reminder_receipts(jsonb) FROM authenticated;
-CREATE FUNCTION public.record_contribution_reminder_send_failure(p_batch_id uuid, p_lease_token uuid, p_failure_code text)
- RETURNS integer
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  updated_count integer;
-begin
-  update public.contribution_reminder_delivery_attempts da
-  set
-    status = case
-      when da.attempt_count < 5
-        then 'retryable'::public.contribution_reminder_attempt_status_enum
-      else 'terminal'::public.contribution_reminder_attempt_status_enum
-    end,
-    expo_receipt_status = 'send_error',
-    expo_receipt_error_code = case
-      when p_failure_code in ('network', 'rate_limit', 'server')
-        then p_failure_code
-      else 'unknown'
-    end,
-    terminal_outcome = case
-      when da.attempt_count >= 5 then 'retry_exhausted'
-      else null
-    end,
-    next_attempt_at = case
-      when da.attempt_count < 5
-        then clock_timestamp() + public.contribution_reminder_backoff(da.attempt_count)
-      else da.next_attempt_at
-    end,
-    lease_token = null,
-    lease_expires_at = null,
-    updated_at = clock_timestamp()
-  where da.batch_id = p_batch_id
-    and da.status = 'leased'::public.contribution_reminder_attempt_status_enum
-    and da.lease_token = p_lease_token;
-  get diagnostics updated_count = row_count;
-
-  update public.contribution_reminder_batches
-  set
-    status = 'retryable'::public.contribution_reminder_batch_status_enum,
-    last_failure_code = case
-      when p_failure_code in ('network', 'rate_limit', 'server') then p_failure_code
-      else 'unknown'
-    end,
-    lease_token = null,
-    lease_expires_at = null,
-    updated_at = clock_timestamp()
-  where id = p_batch_id
-    and status = 'leased'::public.contribution_reminder_batch_status_enum
-    and lease_token = p_lease_token;
-
-  perform public.refresh_contribution_reminder_batch(p_batch_id);
-  return updated_count;
-end;
-$function$;
-REVOKE ALL ON FUNCTION public.record_contribution_reminder_send_failure(uuid, uuid, text) FROM anon;
-REVOKE ALL ON FUNCTION public.record_contribution_reminder_send_failure(uuid, uuid, text) FROM authenticated;
-CREATE FUNCTION public.record_contribution_reminder_tickets(p_batch_id uuid, p_lease_token uuid, p_tickets jsonb)
- RETURNS integer
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  ticket_record record;
-  updated_count integer := 0;
-  changed_count integer;
-  normalized_error text;
-begin
-  for ticket_record in
-    select *
-    from jsonb_to_recordset(coalesce(p_tickets, '[]'::jsonb)) as ticket(
-      attempt_id uuid,
-      status text,
-      expo_ticket_id text,
-      error_code text
-    )
-  loop
-    normalized_error := lower(
-      replace(coalesce(ticket_record.error_code, ''), '_', '')
-    );
-
-    if ticket_record.status = 'ok'
-      and nullif(ticket_record.expo_ticket_id, '') is not null then
-      update public.contribution_reminder_delivery_attempts da
-      set
-        status = 'ticketed'::public.contribution_reminder_attempt_status_enum,
-        expo_ticket_id = ticket_record.expo_ticket_id,
-        expo_receipt_status = null,
-        expo_receipt_error_code = null,
-        terminal_outcome = null,
-        lease_token = null,
-        lease_expires_at = null,
-        next_receipt_check_at = clock_timestamp() + interval '1 minute',
-        updated_at = clock_timestamp()
-      where da.id = ticket_record.attempt_id
-        and da.batch_id = p_batch_id
-        and da.status = 'leased'::public.contribution_reminder_attempt_status_enum
-        and da.lease_token = p_lease_token;
-      get diagnostics changed_count = row_count;
-      updated_count := updated_count + changed_count;
-    else
-      update public.contribution_reminder_delivery_attempts da
-      set
-        status = case
-          when normalized_error in (
-            'toomanyrequests',
-            'ratelimited',
-            'messagerateexceeded',
-            'serviceunavailable',
-            'internalservererror',
-            'timeout',
-            'network'
-          ) and da.attempt_count < 5
-            then 'retryable'::public.contribution_reminder_attempt_status_enum
-          else 'terminal'::public.contribution_reminder_attempt_status_enum
-        end,
-        expo_receipt_status = 'error',
-        expo_receipt_error_code = nullif(ticket_record.error_code, ''),
-        terminal_outcome = case
-          when normalized_error = 'devicenotregistered'
-            then 'device_not_registered'
-          when normalized_error in (
-            'toomanyrequests',
-            'ratelimited',
-            'messagerateexceeded',
-            'serviceunavailable',
-            'internalservererror',
-            'timeout',
-            'network'
-          ) and da.attempt_count < 5 then null
-          when da.attempt_count >= 5 then 'retry_exhausted'
-          else 'expo_ticket_error'
-        end,
-        next_attempt_at = case
-          when normalized_error in (
-            'toomanyrequests',
-            'ratelimited',
-            'messagerateexceeded',
-            'serviceunavailable',
-            'internalservererror',
-            'timeout',
-            'network'
-          ) and da.attempt_count < 5
-            then clock_timestamp() + public.contribution_reminder_backoff(da.attempt_count)
-          else da.next_attempt_at
-        end,
-        lease_token = null,
-        lease_expires_at = null,
-        updated_at = clock_timestamp()
-      where da.id = ticket_record.attempt_id
-        and da.batch_id = p_batch_id
-        and da.status = 'leased'::public.contribution_reminder_attempt_status_enum
-        and da.lease_token = p_lease_token;
-      get diagnostics changed_count = row_count;
-      updated_count := updated_count + changed_count;
-
-      if normalized_error = 'devicenotregistered'
-        or normalized_error = 'invalidpushtoken'
-        or normalized_error = 'invalidtoken' then
-        delete from public.push_tokens pt
-        where exists (
-          select 1
-          from public.contribution_reminder_delivery_attempts da
-          where da.id = ticket_record.attempt_id
-            and da.batch_id = p_batch_id
-            and da.token = pt.token
-        );
-      end if;
-    end if;
-  end loop;
-
-  update public.contribution_reminder_batches
-  set
-    status = 'awaiting_receipts'::public.contribution_reminder_batch_status_enum,
-    lease_token = null,
-    lease_expires_at = null,
-    updated_at = clock_timestamp()
-  where id = p_batch_id
-    and status = 'leased'::public.contribution_reminder_batch_status_enum
-    and lease_token = p_lease_token;
-
-  perform public.refresh_contribution_reminder_batch(p_batch_id);
-  return updated_count;
-end;
-$function$;
-REVOKE ALL ON FUNCTION public.record_contribution_reminder_tickets(uuid, uuid, jsonb) FROM anon;
-REVOKE ALL ON FUNCTION public.record_contribution_reminder_tickets(uuid, uuid, jsonb) FROM authenticated;
 CREATE FUNCTION public.recurring_due_date_on_or_after(p_admission_date date, p_cadence public.contribution_cadence_enum, p_due_day integer, p_from_date date)
  RETURNS date
  LANGUAGE plpgsql
@@ -3966,143 +2727,6 @@ AS $function$
 $function$;
 REVOKE ALL ON FUNCTION public.recurring_period_key(public.contribution_cadence_enum, date) FROM anon;
 REVOKE ALL ON FUNCTION public.recurring_period_key(public.contribution_cadence_enum, date) FROM authenticated;
-CREATE FUNCTION public.refresh_contribution_reminder_batch(p_batch_id uuid)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  has_pending boolean;
-  has_waiting boolean;
-  has_delivered boolean;
-  has_attempts boolean;
-  next_retry timestamp with time zone;
-begin
-  select
-    exists (
-      select 1
-      from public.contribution_reminder_delivery_attempts da
-      where da.batch_id = p_batch_id
-        and da.status in (
-          'pending'::public.contribution_reminder_attempt_status_enum,
-          'retryable'::public.contribution_reminder_attempt_status_enum
-        )
-    ),
-    exists (
-      select 1
-      from public.contribution_reminder_delivery_attempts da
-      where da.batch_id = p_batch_id
-        and da.status in (
-          'leased'::public.contribution_reminder_attempt_status_enum,
-          'ticketed'::public.contribution_reminder_attempt_status_enum
-        )
-    ),
-    exists (
-      select 1
-      from public.contribution_reminder_delivery_attempts da
-      where da.batch_id = p_batch_id
-        and da.status = 'delivered'::public.contribution_reminder_attempt_status_enum
-    ),
-    exists (
-      select 1
-      from public.contribution_reminder_delivery_attempts da
-      where da.batch_id = p_batch_id
-    )
-  into has_pending, has_waiting, has_delivered, has_attempts;
-
-  if has_pending and has_waiting then
-    update public.contribution_reminder_batches
-    set
-      status = 'awaiting_receipts'::public.contribution_reminder_batch_status_enum,
-      next_attempt_at = coalesce(
-        (
-          select min(da.next_attempt_at)
-          from public.contribution_reminder_delivery_attempts da
-          where da.batch_id = p_batch_id
-            and da.status = 'retryable'::public.contribution_reminder_attempt_status_enum
-        ),
-        clock_timestamp()
-      ),
-      updated_at = clock_timestamp()
-    where id = p_batch_id;
-    return;
-  end if;
-
-  if has_waiting then
-    update public.contribution_reminder_batches
-    set
-      status = 'awaiting_receipts'::public.contribution_reminder_batch_status_enum,
-      updated_at = clock_timestamp()
-    where id = p_batch_id;
-    return;
-  end if;
-
-  if has_pending then
-    select min(da.next_attempt_at)
-    into next_retry
-    from public.contribution_reminder_delivery_attempts da
-    where da.batch_id = p_batch_id
-      and da.status in (
-        'pending'::public.contribution_reminder_attempt_status_enum,
-        'retryable'::public.contribution_reminder_attempt_status_enum
-      );
-
-    update public.contribution_reminder_batches
-    set
-      status = 'retryable'::public.contribution_reminder_batch_status_enum,
-      next_attempt_at = coalesce(next_retry, clock_timestamp()),
-      updated_at = clock_timestamp()
-    where id = p_batch_id;
-    return;
-  end if;
-
-  if has_delivered then
-    update public.contribution_reminder_batches
-    set
-      status = 'delivered'::public.contribution_reminder_batch_status_enum,
-      delivered_at = coalesce(delivered_at, clock_timestamp()),
-      updated_at = clock_timestamp()
-    where id = p_batch_id;
-
-    update public.contribution_reminder_events event_record
-    set
-      status = 'delivered'::public.contribution_reminder_event_status_enum,
-      delivered_at = coalesce(delivered_at, clock_timestamp()),
-      updated_at = clock_timestamp()
-    where event_record.id in (
-      select event_id
-      from public.contribution_reminder_batch_events batch_event
-      where batch_event.batch_id = p_batch_id
-    )
-      and event_record.status = 'pending'::public.contribution_reminder_event_status_enum;
-    return;
-  end if;
-
-  if has_attempts then
-    update public.contribution_reminder_batches
-    set
-      status = 'terminal'::public.contribution_reminder_batch_status_enum,
-      updated_at = clock_timestamp()
-    where id = p_batch_id;
-
-    update public.contribution_reminder_events event_record
-    set
-      status = 'exhausted'::public.contribution_reminder_event_status_enum,
-      suppression_reason = 'delivery_exhausted',
-      updated_at = clock_timestamp()
-    where event_record.id in (
-      select event_id
-      from public.contribution_reminder_batch_events batch_event
-      where batch_event.batch_id = p_batch_id
-    )
-      and event_record.status = 'pending'::public.contribution_reminder_event_status_enum;
-  end if;
-end;
-$function$;
-REVOKE ALL ON FUNCTION public.refresh_contribution_reminder_batch(uuid) FROM anon;
-REVOKE ALL ON FUNCTION public.refresh_contribution_reminder_batch(uuid) FROM authenticated;
-REVOKE ALL ON FUNCTION public.refresh_contribution_reminder_batch(uuid) FROM service_role;
 CREATE FUNCTION public.register_push_token(p_token text, p_language public.language DEFAULT NULL::public.language)
  RETURNS text
  LANGUAGE plpgsql
@@ -4186,7 +2810,7 @@ $function$;
 REVOKE ALL ON FUNCTION public.reject_contribution_schedule_anchor_mutation() FROM anon;
 REVOKE ALL ON FUNCTION public.reject_contribution_schedule_anchor_mutation() FROM authenticated;
 CREATE FUNCTION public.reject_initial_claim(p_claim_id uuid, p_reason text)
- RETURNS TABLE(claim_id uuid, obligation_id uuid, claim_status public.payment_claim_status_enum, obligation_status public.payment_obligation_status_enum, decision_reason text, audit_event_id uuid, decision_applied_now boolean)
+ RETURNS TABLE(claim_id uuid, obligation_id uuid, application_id uuid, application_status public.membership_application_status_enum, claim_status public.payment_claim_status_enum, obligation_status public.payment_obligation_status_enum, decision_reason text, audit_event_id uuid, decision_applied_now boolean)
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
@@ -4199,8 +2823,6 @@ declare
   obligation_record public.payment_obligations%rowtype;
   revision_record public.membership_application_revisions%rowtype;
   application_record public.membership_applications%rowtype;
-  applicant_membership public.organization_members%rowtype;
-  subscription_record public.subscriptions%rowtype;
   audit_record public.payment_claim_audit_events%rowtype;
   normalized_reason text;
   decision_timestamp timestamp with time zone := timezone('utc'::text, clock_timestamp());
@@ -4301,20 +2923,6 @@ begin
       using errcode = '23514';
   end if;
 
-  select om.*
-  into applicant_membership
-  from public.organization_members om
-  where om.organization_id = obligation_record.organization_id
-    and om.user_id = obligation_record.user_id
-  for update;
-
-  select s.*
-  into subscription_record
-  from public.subscriptions s
-  where s.organization_id = obligation_record.organization_id
-    and s.user_id = obligation_record.user_id
-  for update;
-
   if claim_record.status = 'rejected'::public.payment_claim_status_enum then
     if claim_record.decision_reason is distinct from normalized_reason then
       raise exception 'This claim was already rejected with a different reason. Refresh before deciding.'
@@ -4334,10 +2942,19 @@ begin
         using errcode = '23514';
     end if;
 
+    -- Refusal is one atomic outcome, so a replay must find all three parts.
+    if application_record.status <> 'refused'::public.membership_application_status_enum
+      or obligation_record.status <> 'void'::public.payment_obligation_status_enum then
+      raise exception 'The refused application is missing its refusal effects.'
+        using errcode = '23514';
+    end if;
+
     return query
     select
       claim_record.id,
       obligation_record.id,
+      application_record.id,
+      application_record.status,
       claim_record.status,
       obligation_record.status,
       claim_record.decision_reason,
@@ -4375,7 +2992,18 @@ begin
       using errcode = '40001';
   end if;
 
-  -- A rejected claim leaves the obligation and all admission effects untouched.
+  -- One refusal action refuses the application, rejects the claim, and voids
+  -- the obligation. Nothing is deleted: the revision, the payer identity, the
+  -- claim and the audit trail all stay readable as the evidence of what was
+  -- decided. A correction is a new application, not an edit of this one.
+  update public.membership_applications ma
+  set status = 'refused'::public.membership_application_status_enum
+  where ma.id = application_record.id;
+
+  update public.payment_obligations po
+  set status = 'void'::public.payment_obligation_status_enum
+  where po.id = obligation_record.id;
+
   perform set_config('app.payment_claim_decision_command', 'on', true);
 
   update public.payment_claims pc
@@ -4413,14 +3041,16 @@ begin
   select
     claim_record.id,
     obligation_record.id,
+    application_record.id,
+    'refused'::public.membership_application_status_enum,
     'rejected'::public.payment_claim_status_enum,
-    obligation_record.status,
+    'void'::public.payment_obligation_status_enum,
     normalized_reason,
     audit_record.id,
     true;
 end;
 $function$;
-COMMENT ON FUNCTION public.reject_initial_claim(uuid,text) IS 'Atomically rejects only the current initial claim, records a normalized reason, keeps the obligation available, and appends one audit event.';
+COMMENT ON FUNCTION public.reject_initial_claim(uuid,text) IS 'The unified refusal command. Atomically refuses the application, rejects the current claim, voids that obligation, records one required normalized reason, and appends one audit event. No revision, payer identity, claim or audit row is ever deleted; a correction is submitted as a new application.';
 REVOKE ALL ON FUNCTION public.reject_initial_claim(uuid, text) FROM anon;
 CREATE FUNCTION public.reject_membership_application_revision_mutation()
  RETURNS trigger
@@ -4672,177 +3302,6 @@ end;
 $function$;
 COMMENT ON FUNCTION public.reject_recurring_payment_claim(uuid,text) IS 'Rejects one recurring contribution claim, preserves its evidence, and leaves the obligation available for another claim.';
 REVOKE ALL ON FUNCTION public.reject_recurring_payment_claim(uuid, text) FROM anon;
-CREATE FUNCTION public.schedule_contribution_plan_change(p_schedule_id uuid, p_effective_period_start date, p_plan_type public.subscription_plan_type_enum)
- RETURNS uuid
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-declare
-  actor_id uuid := (select auth.uid());
-  caller_role text := coalesce((select auth.jwt() ->> 'role'), '');
-  schedule_record public.contribution_schedules%rowtype;
-  organization_record public.organizations%rowtype;
-  latest_assignment public.contribution_plan_assignments%rowtype;
-  existing_assignment public.contribution_plan_assignments%rowtype;
-  amount_value integer;
-  pix_value text;
-  expected_period_start date;
-  local_date_value date;
-begin
-  if actor_id is null and caller_role <> 'service_role' then
-    raise exception 'Authentication is required.' using errcode = '42501';
-  end if;
-
-  select cs.*
-  into schedule_record
-  from public.contribution_schedules cs
-  where cs.id = p_schedule_id
-  for update;
-
-  if not found then
-    raise exception 'Contribution schedule was not found.' using errcode = 'P0002';
-  end if;
-
-  if not schedule_record.active then
-    raise exception 'Only an active contribution schedule can receive a plan change.'
-      using errcode = '55000';
-  end if;
-
-  select o.*
-  into organization_record
-  from public.organizations o
-  where o.id = schedule_record.organization_id
-    and o.organization_type = 'association'::public.organization_type_enum
-  for update;
-
-  if not found then
-    raise exception 'Contribution organization was not found.' using errcode = 'P0002';
-  end if;
-
-  if caller_role <> 'service_role'
-    and not exists (
-      select 1
-      from public.organization_members om
-      where om.organization_id = schedule_record.organization_id
-        and om.user_id = actor_id
-        and om.role = 'admin'::public.organization_role_enum
-    ) then
-    raise exception 'Association admin access is required.' using errcode = '42501';
-  end if;
-
-  if p_effective_period_start is null or p_plan_type is null then
-    raise exception 'A future effective period and plan are required.'
-      using errcode = '22023';
-  end if;
-
-  local_date_value := timezone(schedule_record.billing_timezone, clock_timestamp())::date;
-  if p_effective_period_start <= local_date_value then
-    raise exception 'A plan change must start in a future billing period.'
-      using errcode = '22023';
-  end if;
-
-  select cpa.*
-  into latest_assignment
-  from public.contribution_plan_assignments cpa
-  where cpa.schedule_id = schedule_record.id
-  order by cpa.effective_period_start desc, cpa.id desc
-  limit 1;
-
-  if not found then
-    raise exception 'Contribution schedule has no billing term.' using errcode = '23514';
-  end if;
-
-  if p_effective_period_start <= latest_assignment.effective_period_start then
-    raise exception 'A plan change must append a later effective billing period.'
-      using errcode = '22023';
-  end if;
-
-  expected_period_start := public.recurring_due_date_on_or_after(
-    schedule_record.admission_date,
-    case latest_assignment.plan_type
-      when 'annual'::public.subscription_plan_type_enum
-        then 'annual'::public.contribution_cadence_enum
-      else 'monthly'::public.contribution_cadence_enum
-    end,
-    coalesce(latest_assignment.due_day, schedule_record.due_day),
-    p_effective_period_start
-  );
-
-  if expected_period_start <> p_effective_period_start then
-    raise exception 'The effective date must be the start of an existing recurring period.'
-      using errcode = '22023';
-  end if;
-
-  amount_value := case p_plan_type
-    when 'annual'::public.subscription_plan_type_enum
-      then organization_record.annual_price_amount
-    else organization_record.monthly_price_amount
-  end;
-  pix_value := case p_plan_type
-    when 'annual'::public.subscription_plan_type_enum
-      then organization_record.annual_pix_copy_paste
-    else organization_record.monthly_pix_copy_paste
-  end;
-
-  if amount_value is null or amount_value <= 0
-    or nullif(btrim(pix_value), '') is null
-    or organization_record.billing_currency !~ '^[A-Z]{3}$' then
-    raise exception 'The future plan price or PIX configuration is incomplete.'
-      using errcode = '23514';
-  end if;
-
-  select cpa.*
-  into existing_assignment
-  from public.contribution_plan_assignments cpa
-  where cpa.schedule_id = schedule_record.id
-    and cpa.effective_period_start = p_effective_period_start
-  for update;
-
-  if found then
-    if existing_assignment.plan_type <> p_plan_type
-      or existing_assignment.amount <> amount_value
-      or existing_assignment.currency <> organization_record.billing_currency
-      or existing_assignment.due_day <> schedule_record.due_day
-      or existing_assignment.lead_days <> schedule_record.lead_days
-      or existing_assignment.billing_timezone <> schedule_record.billing_timezone
-      or existing_assignment.pix_copy_paste <> pix_value then
-      raise exception 'A different plan is already scheduled for this period.'
-        using errcode = '40001';
-    end if;
-
-    return existing_assignment.id;
-  end if;
-
-  insert into public.contribution_plan_assignments (
-    schedule_id,
-    effective_period_start,
-    plan_type,
-    amount,
-    currency,
-    due_day,
-    lead_days,
-    billing_timezone,
-    pix_copy_paste
-  )
-  values (
-    schedule_record.id,
-    p_effective_period_start,
-    p_plan_type,
-    amount_value,
-    organization_record.billing_currency,
-    schedule_record.due_day,
-    schedule_record.lead_days,
-    schedule_record.billing_timezone,
-    pix_value
-  )
-  returning id into existing_assignment.id;
-
-  return existing_assignment.id;
-end;
-$function$;
-COMMENT ON FUNCTION public.schedule_contribution_plan_change(uuid,date,public.subscription_plan_type_enum) IS 'Appends one idempotent future-effective billing term. Existing periods and schedule anchors are never rewritten.';
-REVOKE ALL ON FUNCTION public.schedule_contribution_plan_change(uuid, date, public.subscription_plan_type_enum) FROM anon;
 CREATE OR REPLACE FUNCTION public.set_membership_applications_updated_at()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -5273,58 +3732,6 @@ end;
 $function$;
 COMMENT ON FUNCTION public.submit_association_application(uuid,uuid,public.subscription_plan_type_enum,text,bigint) IS 'Atomically snapshots an authenticated association application and creates exactly one initial manual-PIX obligation. Returns no personal application fields.';
 REVOKE ALL ON FUNCTION public.submit_association_application(uuid, uuid, public.subscription_plan_type_enum, text, bigint) FROM anon;
-REVOKE ALL ON FUNCTION public.submit_membership_application(uuid) FROM authenticated;
-CREATE FUNCTION public.sync_contribution_schedule_on_membership()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-begin
-  if new.role in (
-    'admin'::public.organization_role_enum,
-    'member'::public.organization_role_enum
-  ) then
-    perform public.ensure_contribution_schedule(new.organization_id, new.user_id, null);
-  end if;
-
-  return new;
-end;
-$function$;
-REVOKE ALL ON FUNCTION public.sync_contribution_schedule_on_membership() FROM anon;
-REVOKE ALL ON FUNCTION public.sync_contribution_schedule_on_membership() FROM authenticated;
-CREATE FUNCTION public.sync_contribution_schedule_on_subscription()
- RETURNS trigger
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO ''
-AS $function$
-begin
-  if new.status = 'active'::public.subscription_status_enum then
-    if exists (
-      select 1
-      from public.organization_members om
-      where om.organization_id = new.organization_id
-        and om.user_id = new.user_id
-        and om.role in (
-          'admin'::public.organization_role_enum,
-          'member'::public.organization_role_enum
-        )
-    ) then
-      perform public.ensure_contribution_schedule(new.organization_id, new.user_id, null);
-    end if;
-  else
-    update public.contribution_schedules
-    set active = false
-    where organization_id = new.organization_id
-      and user_id = new.user_id;
-  end if;
-
-  return new;
-end;
-$function$;
-REVOKE ALL ON FUNCTION public.sync_contribution_schedule_on_subscription() FROM anon;
-REVOKE ALL ON FUNCTION public.sync_contribution_schedule_on_subscription() FROM authenticated;
 CREATE FUNCTION public.unregister_push_token(p_token text)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -5382,50 +3789,6 @@ CREATE INDEX contribution_plan_assignments_schedule_period_idx ON public.contrib
 CREATE INDEX contribution_plan_assignments_schedule_effective_idx ON public.contribution_plan_assignments (schedule_id, effective_period_start DESC);
 CREATE TRIGGER contribution_plan_assignments_immutable BEFORE UPDATE ON public.contribution_plan_assignments FOR EACH ROW EXECUTE FUNCTION public.reject_contribution_plan_assignment_mutation();
 CREATE TRIGGER contribution_plan_assignments_validate_timezone BEFORE INSERT OR UPDATE OF billing_timezone ON public.contribution_plan_assignments FOR EACH ROW WHEN (new.billing_timezone IS NOT NULL) EXECUTE FUNCTION public.validate_billing_policy_timezone();
-CREATE TABLE public.contribution_reminder_batch_events (batch_id uuid NOT NULL, event_id uuid NOT NULL, created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL);
-ALTER TABLE public.contribution_reminder_batch_events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.contribution_reminder_batch_events ADD CONSTRAINT contribution_reminder_batch_events_event_id_key UNIQUE (event_id);
-ALTER TABLE public.contribution_reminder_batch_events ADD CONSTRAINT contribution_reminder_batch_events_pkey PRIMARY KEY (batch_id, event_id);
-REVOKE ALL ON public.contribution_reminder_batch_events FROM anon;
-REVOKE ALL ON public.contribution_reminder_batch_events FROM authenticated;
-CREATE INDEX contribution_reminder_batch_events_event_idx ON public.contribution_reminder_batch_events (event_id, batch_id);
-CREATE TABLE public.contribution_reminder_batches (id uuid DEFAULT gen_random_uuid() NOT NULL, organization_id uuid NOT NULL, recipient_user_id uuid NOT NULL, delivery_window_on date NOT NULL, status public.contribution_reminder_batch_status_enum DEFAULT 'pending'::public.contribution_reminder_batch_status_enum NOT NULL, lease_token uuid, lease_expires_at timestamp with time zone, attempt_count integer DEFAULT 0 NOT NULL, next_attempt_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL, last_failure_code text, created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL, updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL, delivered_at timestamp with time zone);
-COMMENT ON TABLE public.contribution_reminder_batches IS 'Private physical delivery windows. Several logical events share at most one batch per member and association window.';
-ALTER TABLE public.contribution_reminder_batches ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.contribution_reminder_batches ADD CONSTRAINT contribution_reminder_batches_attempt_count_check CHECK (attempt_count >= 0);
-ALTER TABLE public.contribution_reminder_batches ADD CONSTRAINT contribution_reminder_batches_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
-ALTER TABLE public.contribution_reminder_batches ADD CONSTRAINT contribution_reminder_batches_organization_id_recipient_use_key UNIQUE (organization_id, recipient_user_id, delivery_window_on);
-ALTER TABLE public.contribution_reminder_batches ADD CONSTRAINT contribution_reminder_batches_pkey PRIMARY KEY (id);
-ALTER TABLE public.contribution_reminder_batch_events ADD CONSTRAINT contribution_reminder_batch_events_batch_id_fkey FOREIGN KEY (batch_id) REFERENCES public.contribution_reminder_batches(id) ON DELETE CASCADE;
-ALTER TABLE public.contribution_reminder_batches ADD CONSTRAINT contribution_reminder_batches_recipient_user_id_fkey FOREIGN KEY (recipient_user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
-REVOKE ALL ON public.contribution_reminder_batches FROM anon;
-REVOKE ALL ON public.contribution_reminder_batches FROM authenticated;
-CREATE INDEX contribution_reminder_batches_due_idx ON public.contribution_reminder_batches (next_attempt_at, delivery_window_on, organization_id, recipient_user_id, id) WHERE status = ANY (ARRAY['pending'::public.contribution_reminder_batch_status_enum, 'retryable'::public.contribution_reminder_batch_status_enum]);
-CREATE TABLE public.contribution_reminder_delivery_attempts (id uuid DEFAULT gen_random_uuid() NOT NULL, batch_id uuid NOT NULL, push_token_id bigint, token text NOT NULL, language public.language, status public.contribution_reminder_attempt_status_enum DEFAULT 'pending'::public.contribution_reminder_attempt_status_enum NOT NULL, attempt_count integer DEFAULT 0 NOT NULL, lease_token uuid, lease_expires_at timestamp with time zone, next_attempt_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL, expo_ticket_id text, expo_receipt_status text, expo_receipt_error_code text, terminal_outcome text, created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL, updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL, next_receipt_check_at timestamp with time zone);
-COMMENT ON TABLE public.contribution_reminder_delivery_attempts IS 'Private at-least-once delivery state for one reminder batch and one device token.';
-ALTER TABLE public.contribution_reminder_delivery_attempts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.contribution_reminder_delivery_attempts ADD CONSTRAINT contribution_reminder_delivery_attempts_attempt_count_check CHECK (attempt_count >= 0);
-ALTER TABLE public.contribution_reminder_delivery_attempts ADD CONSTRAINT contribution_reminder_delivery_attempts_batch_id_fkey FOREIGN KEY (batch_id) REFERENCES public.contribution_reminder_batches(id) ON DELETE CASCADE;
-ALTER TABLE public.contribution_reminder_delivery_attempts ADD CONSTRAINT contribution_reminder_delivery_attempts_batch_id_token_key UNIQUE (batch_id, token);
-ALTER TABLE public.contribution_reminder_delivery_attempts ADD CONSTRAINT contribution_reminder_delivery_attempts_pkey PRIMARY KEY (id);
-ALTER TABLE public.contribution_reminder_delivery_attempts ADD CONSTRAINT contribution_reminder_delivery_attempts_push_token_id_fkey FOREIGN KEY (push_token_id) REFERENCES public.push_tokens(id) ON DELETE SET NULL;
-REVOKE ALL ON public.contribution_reminder_delivery_attempts FROM anon;
-REVOKE ALL ON public.contribution_reminder_delivery_attempts FROM authenticated;
-CREATE INDEX contribution_reminder_attempts_due_idx ON public.contribution_reminder_delivery_attempts (next_attempt_at, batch_id, status, id);
-CREATE INDEX contribution_reminder_attempts_receipts_idx ON public.contribution_reminder_delivery_attempts (next_receipt_check_at, status, id) WHERE status = 'ticketed'::public.contribution_reminder_attempt_status_enum;
-CREATE INDEX contribution_reminder_attempts_expired_receipt_leases_idx ON public.contribution_reminder_delivery_attempts (lease_expires_at, id) WHERE status = 'leased'::public.contribution_reminder_attempt_status_enum AND expo_ticket_id IS NOT NULL;
-CREATE TABLE public.contribution_reminder_events (id uuid DEFAULT gen_random_uuid() NOT NULL, organization_id uuid NOT NULL, obligation_id uuid NOT NULL, recipient_user_id uuid NOT NULL, stage public.contribution_reminder_stage_enum NOT NULL, stage_on date NOT NULL, delivery_window_on date NOT NULL, status public.contribution_reminder_event_status_enum DEFAULT 'pending'::public.contribution_reminder_event_status_enum NOT NULL, suppression_reason text, created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL, updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL, delivered_at timestamp with time zone);
-COMMENT ON TABLE public.contribution_reminder_events IS 'Private logical contribution reminder events. One row exists per obligation, recipient, and stage.';
-ALTER TABLE public.contribution_reminder_events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.contribution_reminder_events ADD CONSTRAINT contribution_reminder_events_obligation_id_recipient_user_i_key UNIQUE (obligation_id, recipient_user_id, stage);
-ALTER TABLE public.contribution_reminder_events ADD CONSTRAINT contribution_reminder_events_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
-ALTER TABLE public.contribution_reminder_events ADD CONSTRAINT contribution_reminder_events_pkey PRIMARY KEY (id);
-ALTER TABLE public.contribution_reminder_batch_events ADD CONSTRAINT contribution_reminder_batch_events_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.contribution_reminder_events(id) ON DELETE CASCADE;
-ALTER TABLE public.contribution_reminder_events ADD CONSTRAINT contribution_reminder_events_recipient_user_id_fkey FOREIGN KEY (recipient_user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
-REVOKE ALL ON public.contribution_reminder_events FROM anon;
-REVOKE ALL ON public.contribution_reminder_events FROM authenticated;
-CREATE INDEX contribution_reminder_events_obligation_idx ON public.contribution_reminder_events (obligation_id, status, stage);
-CREATE INDEX contribution_reminder_events_pending_idx ON public.contribution_reminder_events (delivery_window_on, organization_id, recipient_user_id, created_at, id) WHERE status = 'pending'::public.contribution_reminder_event_status_enum;
 CREATE TABLE public.contribution_schedules (id uuid DEFAULT gen_random_uuid() NOT NULL, organization_id uuid NOT NULL, user_id uuid NOT NULL, cadence public.contribution_cadence_enum NOT NULL, admission_date date NOT NULL, due_day smallint NOT NULL, lead_days smallint NOT NULL, billing_timezone text NOT NULL, currency text NOT NULL, active boolean DEFAULT true NOT NULL, created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL);
 ALTER TABLE public.contribution_schedules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contribution_schedules ADD CONSTRAINT contribution_schedules_currency_check CHECK (currency ~ '^[A-Z]{3}$'::text);
@@ -5466,7 +3829,6 @@ ALTER TABLE public.membership_applications ADD CONSTRAINT membership_application
 ALTER TABLE public.membership_applications ADD COLUMN has_allergies boolean DEFAULT false NOT NULL;
 ALTER TABLE public.membership_applications ADD COLUMN has_dietary_restrictions boolean DEFAULT false NOT NULL;
 CREATE INDEX organization_members_billing_workspace_idx ON public.organization_members (organization_id, role, user_id);
-CREATE TRIGGER organization_members_sync_contribution_schedule AFTER INSERT OR UPDATE OF role ON public.organization_members FOR EACH ROW EXECUTE FUNCTION public.sync_contribution_schedule_on_membership();
 ALTER TABLE public.organizations ADD COLUMN organization_type public.organization_type_enum DEFAULT 'association'::public.organization_type_enum NOT NULL;
 CREATE POLICY "Members and association admins can read plan snapshots" ON public.contribution_plan_assignments FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
    FROM public.contribution_schedules cs
@@ -5494,8 +3856,6 @@ ALTER TABLE public.organizations ADD CONSTRAINT organizations_billing_due_day_ch
 ALTER TABLE public.organizations ADD COLUMN billing_lead_days smallint DEFAULT 7 NOT NULL;
 COMMENT ON COLUMN public.organizations.billing_lead_days IS 'Number of calendar days before due_on when a recurring obligation becomes available.';
 ALTER TABLE public.organizations ADD CONSTRAINT organizations_billing_lead_days_check CHECK (billing_lead_days >= 0 AND billing_lead_days <= 31);
-ALTER TABLE public.organizations ADD COLUMN contribution_reminder_local_time time without time zone DEFAULT '09:00:00'::time without time zone NOT NULL;
-COMMENT ON COLUMN public.organizations.contribution_reminder_local_time IS 'Local delivery time for private contribution reminders. The initial default is 09:00.';
 CREATE TRIGGER organizations_validate_billing_policy_timezone BEFORE INSERT OR UPDATE OF billing_timezone ON public.organizations FOR EACH ROW EXECUTE FUNCTION public.validate_billing_policy_timezone();
 CREATE TABLE public.payment_claim_audit_events (id uuid DEFAULT gen_random_uuid() NOT NULL, organization_id uuid NOT NULL, obligation_id uuid NOT NULL, claim_id uuid NOT NULL, actor_user_id uuid NOT NULL, previous_state text NOT NULL, next_state text NOT NULL, reason text, created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL);
 COMMENT ON TABLE public.payment_claim_audit_events IS 'Append-only claim transition evidence containing server-derived actor, obligation, claim, state change, time, and optional reason.';
@@ -5566,7 +3926,6 @@ ALTER TABLE public.payment_obligations ADD CONSTRAINT payment_obligations_organi
 ALTER TABLE public.payment_obligations ADD CONSTRAINT payment_obligations_payment_method_check CHECK (payment_method = 'manual_pix'::text);
 ALTER TABLE public.payment_obligations ADD CONSTRAINT payment_obligations_pix_copy_paste_check CHECK (NULLIF(btrim(pix_copy_paste), ''::text) IS NOT NULL);
 ALTER TABLE public.payment_obligations ADD CONSTRAINT payment_obligations_pkey PRIMARY KEY (id);
-ALTER TABLE public.contribution_reminder_events ADD CONSTRAINT contribution_reminder_events_obligation_id_fkey FOREIGN KEY (obligation_id) REFERENCES public.payment_obligations(id) ON DELETE CASCADE;
 ALTER TABLE public.payment_claim_audit_events ADD CONSTRAINT payment_claim_audit_events_obligation_id_fkey FOREIGN KEY (obligation_id) REFERENCES public.payment_obligations(id);
 ALTER TABLE public.payment_claims ADD CONSTRAINT payment_claims_obligation_id_fkey FOREIGN KEY (obligation_id) REFERENCES public.payment_obligations(id);
 ALTER TABLE public.payment_obligations ADD CONSTRAINT payment_obligations_schedule_id_fkey FOREIGN KEY (schedule_id) REFERENCES public.contribution_schedules(id);
@@ -5591,9 +3950,6 @@ CREATE POLICY "Association admins can read payment obligations" ON public.paymen
 CREATE POLICY "Obligation owners can read their obligations" ON public.payment_obligations FOR SELECT TO authenticated USING ((( SELECT auth.uid() AS uid) = user_id));
 REVOKE ALL ON public.push_tokens FROM anon;
 REVOKE ALL ON public.push_tokens FROM authenticated;
-REVOKE DELETE, INSERT, UPDATE ON public.subscriptions FROM anon;
-REVOKE DELETE, INSERT, UPDATE ON public.subscriptions FROM authenticated;
-CREATE TRIGGER subscriptions_sync_contribution_schedule AFTER INSERT OR UPDATE OF status ON public.subscriptions FOR EACH ROW EXECUTE FUNCTION public.sync_contribution_schedule_on_subscription();
 
 -- Normalize legacy drafts before snapshotting submitted applications.
 update public.membership_applications
@@ -5945,13 +4301,6 @@ create index contribution_schedules_active_user_idx
 create index push_tokens_profile_id_idx
   on public.push_tokens (profile_id)
   where profile_id is not null;
-create index contribution_reminder_delivery_attempts_push_token_idx
-  on public.contribution_reminder_delivery_attempts (push_token_id)
-  where push_token_id is not null;
-create index contribution_reminder_events_recipient_organization_idx
-  on public.contribution_reminder_events (recipient_user_id, organization_id);
-create index contribution_reminder_batches_recipient_organization_idx
-  on public.contribution_reminder_batches (recipient_user_id, organization_id);
 
 alter function public.set_membership_applications_updated_at()
   set search_path = '';
@@ -6036,11 +4385,7 @@ revoke all on table
   public.payment_claims,
   public.payment_claim_audit_events,
   public.contribution_schedules,
-  public.contribution_plan_assignments,
-  public.contribution_reminder_events,
-  public.contribution_reminder_batches,
-  public.contribution_reminder_batch_events,
-  public.contribution_reminder_delivery_attempts
+  public.contribution_plan_assignments
 from public, anon, authenticated;
 
 grant select on table
@@ -6068,20 +4413,11 @@ begin
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
       and p.proname = any (array[
-        'apply_payment_settlement_effects',
-        'apply_succeeded_payment_effects',
         'approve_initial_claim',
         'approve_recurring_payment_claim',
-        'claim_contribution_reminder_batches',
-        'claim_contribution_reminder_receipts',
         'claim_initial_payment',
         'claim_recurring_payment',
         'clamped_billing_date',
-        'contribution_reminder_backoff',
-        'contribution_reminder_delivery_at',
-        'contribution_reminder_stage_for_date',
-        'enqueue_contribution_reminder_events_at',
-        'enqueue_contribution_reminder_events',
         'ensure_contribution_schedule',
         'first_recurring_due_date',
         'generate_membership_billing_obligations_at',
@@ -6097,14 +4433,8 @@ begin
         'get_payment_obligation_instructions',
         'is_valid_billing_timezone',
         'next_recurring_due_date',
-        'prepare_contribution_reminder_batch',
-        'reconcile_legacy_payment_obligations',
-        'record_contribution_reminder_receipts',
-        'record_contribution_reminder_send_failure',
-        'record_contribution_reminder_tickets',
         'recurring_due_date_on_or_after',
         'recurring_period_key',
-        'refresh_contribution_reminder_batch',
         'register_push_token',
         'reject_contribution_plan_assignment_mutation',
         'reject_contribution_schedule_anchor_mutation',
@@ -6114,12 +4444,9 @@ begin
         'reject_payment_claim_evidence_mutation',
         'reject_payment_obligation_context_mutation',
         'reject_recurring_payment_claim',
-        'schedule_contribution_plan_change',
         'set_membership_applications_updated_at',
         'snapshot_payment_obligation_context',
         'submit_association_application',
-        'sync_contribution_schedule_on_membership',
-        'sync_contribution_schedule_on_subscription',
         'unregister_push_token',
         'validate_billing_policy_timezone'
       ])
@@ -6151,11 +4478,6 @@ grant execute on function
   public.register_push_token(text, public.language),
   public.reject_initial_claim(uuid, text),
   public.reject_recurring_payment_claim(uuid, text),
-  public.schedule_contribution_plan_change(
-    uuid,
-    date,
-    public.subscription_plan_type_enum
-  ),
   public.submit_association_application(
     uuid,
     uuid,
@@ -6167,157 +4489,9 @@ grant execute on function
 to authenticated;
 
 grant execute on function
-  public.claim_contribution_reminder_batches(integer, integer),
-  public.claim_contribution_reminder_receipts(integer, integer),
-  public.enqueue_contribution_reminder_events(),
-  public.generate_membership_billing_obligations(),
-  public.prepare_contribution_reminder_batch(uuid, uuid, integer),
-  public.reconcile_legacy_payment_obligations(boolean),
-  public.record_contribution_reminder_receipts(jsonb),
-  public.record_contribution_reminder_send_failure(uuid, uuid, text),
-  public.record_contribution_reminder_tickets(uuid, uuid, jsonb),
-  public.schedule_contribution_plan_change(
-    uuid,
-    date,
-    public.subscription_plan_type_enum
-  )
+  public.generate_membership_billing_obligations()
 to service_role;
 
 -- Install the staging/production scheduler contract in a paused state.
 -- Deployment activates these jobs only after Edge Functions, Vault secrets,
 -- generator dry-run output, and reconciliation dry-run output are reviewed.
-do $migration$
-declare
-  job_record record;
-  job_id bigint;
-begin
-  if to_regclass('cron.job') is null then
-    return;
-  end if;
-
-  if exists (
-    select 1
-    from cron.job
-    where jobname = 'daily-renewal-check'
-  ) then
-    perform cron.unschedule('daily-renewal-check');
-  end if;
-
-  for job_record in
-    select *
-    from (
-      values
-        (
-          'membership-billing-obligation-generator',
-          '*/15 * * * *',
-          $command$
-          select net.http_post(
-            url := (
-              select decrypted_secret
-              from vault.decrypted_secrets
-              where name = 'project_url'
-            ) || '/functions/v1/generate-renewal-payments',
-            headers := jsonb_build_object(
-              'Content-Type', 'application/json',
-              'Authorization', 'Bearer ' || (
-                select decrypted_secret
-                from vault.decrypted_secrets
-                where name = 'secret_key'
-              )
-            ),
-            body := '{}'::jsonb
-          ) as request_id;
-          $command$
-        ),
-        (
-          'contribution-reminder-enqueuer',
-          '*/15 * * * *',
-          $command$
-          select net.http_post(
-            url := (
-              select decrypted_secret
-              from vault.decrypted_secrets
-              where name = 'project_url'
-            ) || '/functions/v1/contribution-reminder-enqueuer',
-            headers := jsonb_build_object(
-              'Content-Type', 'application/json',
-              'Authorization', 'Bearer ' || (
-                select decrypted_secret
-                from vault.decrypted_secrets
-                where name = 'secret_key'
-              )
-            ),
-            body := '{}'::jsonb
-          ) as request_id;
-          $command$
-        ),
-        (
-          'contribution-reminder-dispatcher',
-          '* * * * *',
-          $command$
-          select net.http_post(
-            url := (
-              select decrypted_secret
-              from vault.decrypted_secrets
-              where name = 'project_url'
-            ) || '/functions/v1/contribution-reminder-dispatcher',
-            headers := jsonb_build_object(
-              'Content-Type', 'application/json',
-              'Authorization', 'Bearer ' || (
-                select decrypted_secret
-                from vault.decrypted_secrets
-                where name = 'secret_key'
-              )
-            ),
-            body := '{}'::jsonb
-          ) as request_id;
-          $command$
-        ),
-        (
-          'contribution-reminder-receipts',
-          '* * * * *',
-          $command$
-          select net.http_post(
-            url := (
-              select decrypted_secret
-              from vault.decrypted_secrets
-              where name = 'project_url'
-            ) || '/functions/v1/contribution-reminder-receipts',
-            headers := jsonb_build_object(
-              'Content-Type', 'application/json',
-              'Authorization', 'Bearer ' || (
-                select decrypted_secret
-                from vault.decrypted_secrets
-                where name = 'secret_key'
-              )
-            ),
-            body := '{}'::jsonb
-          ) as request_id;
-          $command$
-        )
-    ) as jobs(job_name, job_schedule, job_command)
-  loop
-    select jobid
-    into job_id
-    from cron.job
-    where jobname = job_record.job_name;
-
-    if job_id is null then
-      job_id := cron.schedule(
-        job_record.job_name,
-        job_record.job_schedule,
-        job_record.job_command
-      );
-    end if;
-
-    perform cron.alter_job(
-      job_id,
-      schedule => job_record.job_schedule,
-      command => job_record.job_command,
-      active => false
-    );
-
-    job_id := null;
-  end loop;
-end;
-$migration$;
