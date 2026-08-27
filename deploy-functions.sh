@@ -7,33 +7,8 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}Starting deployment of Supabase Edge Functions...${NC}"
 
-# 1. Deploy create-payment-checkout with JWT verification.
-echo -e "${GREEN}Deploying create-payment-checkout...${NC}"
-npx supabase functions deploy create-payment-checkout
-
-# 2. Deploy stripe-webhook
-# This external provider webhook intentionally skips JWT verification.
-echo -e "${GREEN}Deploying stripe-webhook...${NC}"
-npx supabase functions deploy stripe-webhook --no-verify-jwt
-
-# 3. Deploy other functions (Standard deployment)
-echo -e "${GREEN}Deploying generate-renewal-payments...${NC}"
-npx supabase functions deploy generate-renewal-payments
-
-echo -e "${GREEN}Deploying contribution-reminder-enqueuer...${NC}"
-npx supabase functions deploy contribution-reminder-enqueuer
-
-echo -e "${GREEN}Deploying contribution-reminder-dispatcher...${NC}"
-npx supabase functions deploy contribution-reminder-dispatcher
-
-echo -e "${GREEN}Deploying contribution-reminder-receipts...${NC}"
-npx supabase functions deploy contribution-reminder-receipts
-
 echo -e "${GREEN}Deploying push-notification...${NC}"
 npx supabase functions deploy push-notification
-
-echo -e "${GREEN}Deploying start-subscription...${NC}"
-npx supabase functions deploy start-subscription
 
 echo -e "${GREEN}Deploying user-self-deletion...${NC}"
 npx supabase functions deploy user-self-deletion
