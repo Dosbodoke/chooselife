@@ -12,7 +12,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node --test utils/auth/sign-in.test.ts lib/billing-workspace-ledger.test.ts"
+    "test": "node --test utils/auth/sign-in.test.ts lib/billing-workspace-ledger.test.ts lib/billing-workspace.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1013.0",

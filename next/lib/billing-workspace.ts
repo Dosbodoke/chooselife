@@ -47,6 +47,19 @@ function intlLocale(locale: string) {
   return locale.toLowerCase().startsWith("pt") ? "pt-BR" : "en-US";
 }
 
+/**
+ * Refusing an enrollment is one action carrying one reason. `reject_initial_claim`
+ * refuses the application, rejects the claim and voids its obligation in a single
+ * command, and it requires a normalized non-empty reason (SQLSTATE 22023), so the
+ * admin surface normalizes the same way before sending. Returns null when the
+ * reason is absent or whitespace-only.
+ */
+export function normalizeDecisionReason(reason: string | null | undefined) {
+  const normalized = reason?.trim().replace(/\s+/g, " ");
+
+  return normalized ? normalized : null;
+}
+
 export function jsonArray(
   value: Json | null | undefined,
 ): BillingHistoryEntry[] {

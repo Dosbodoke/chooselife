@@ -11,12 +11,13 @@ import {
   resolvePeriodRows,
 } from "@/components/admin/member-ledger";
 import { useRouter } from "@/i18n/navigation";
-import type {
-  BillingWorkspaceClaimDetail,
-  BillingWorkspaceOrganization,
-  BillingWorkspacePaymentRow,
-  BillingWorkspacePersonRow,
-  BillingWorkspaceQueueRow,
+import {
+  type BillingWorkspaceClaimDetail,
+  type BillingWorkspaceOrganization,
+  type BillingWorkspacePaymentRow,
+  type BillingWorkspacePersonRow,
+  type BillingWorkspaceQueueRow,
+  normalizeDecisionReason,
 } from "@/lib/billing-workspace";
 import { buildBillingWorkspaceMemberRows } from "@/lib/billing-workspace-ledger";
 import { supabaseBrowser } from "@/utils/supabase/client";
@@ -227,7 +228,7 @@ export default function BillingWorkspace({
         return;
       }
 
-      const normalizedReason = reason?.trim().replace(/\s+/g, " ");
+      const normalizedReason = normalizeDecisionReason(reason);
       if (!normalizedReason) {
         throw {
           code: "22023",
