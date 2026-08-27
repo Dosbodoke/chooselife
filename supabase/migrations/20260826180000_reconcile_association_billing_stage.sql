@@ -235,7 +235,7 @@ alter table public.organizations
 -- 20251113121601_schedule-payment.sql scheduled it to POST daily to
 -- /functions/v1/generate-renewal-payments, and that function no longer exists,
 -- so the job would keep hitting a dead endpoint once for every day this
--- database stays up. A wildcard like '%renewal%' would work today but would
+-- database stays up. A wildcard like '%renewal%' works today but would
 -- silently swallow an unrelated future job, so the name is spelled out.
 --
 -- Jobs are unscheduled by iterating over rows that actually exist:
@@ -409,20 +409,22 @@ $function$;
 -- association_person_id is the durable subject key: NOT NULL, the basis of the
 -- partial unique index that enforces one open application per person, and the
 -- join key for every person-keyed read and for records retained after account
--- deletion. It must NEVER be client-supplied. This function therefore
--- overwrites whatever arrived on the row unconditionally — it deliberately has
--- no "already set, leave it alone" early return.
+-- deletion. It must NEVER be client-supplied, so this function overwrites
+-- whatever arrived on the row unconditionally. It deliberately has no
+-- "already set, leave it alone" early return.
 --
 -- Do not "simplify" that back. membership_applications is the one
 -- subject-keyed table `authenticated` may INSERT into, and its RLS policy
--- constrains only user_id and status. An early return here made a
--- client-supplied value authoritative, which let any authenticated user bind
--- their draft to another person's formal association identity — occupying that
+-- constrains only user_id and status, so an early return here made a
+-- client-supplied value authoritative. That let any authenticated user bind
+-- their draft to another person's formal association identity, occupying that
 -- person's single open-application slot and attaching immutable revisions to
--- someone else's subject. The policy cannot close it on its own: WITH CHECK is
--- evaluated AFTER this BEFORE INSERT trigger (measured on this repo's Postgres
--- image), so an `association_person_id is null` predicate would reject every
--- legitimate insert instead.
+-- someone else's subject.
+--
+-- The policy cannot close the gap on its own. WITH CHECK is evaluated AFTER
+-- this BEFORE INSERT trigger on this repo's Postgres image, measured rather
+-- than assumed, so an `association_person_id is null` predicate there would
+-- reject every legitimate insert instead of only the malicious ones.
 CREATE OR REPLACE FUNCTION public.set_association_person_from_subject()
  RETURNS trigger
  LANGUAGE plpgsql
