@@ -5378,6 +5378,279 @@ create index membership_applications_person_history_idx
   on public.membership_applications (organization_id, user_id, created_at desc);
 
 -- ---------------------------------------------------------------------------
+-- Immutability versus account deletion.
+--
+-- Every formal record is protected by a trigger that rejects UPDATE. Those
+-- triggers are what make the evidence trustworthy, and they must stay. But the
+-- account references on those same records are now ON DELETE SET NULL, so a
+-- hard account deletion arrives at each of them as an UPDATE -- and is
+-- rejected, which is exactly how deletion was blocked before this migration
+-- (SQLSTATE 23503 became SQLSTATE 55000).
+--
+-- The distinction that resolves it: severing a link to a deleted account is
+-- not a change to the record's CONTENT. Nothing a person attested to and
+-- nothing an admin decided is altered. So the guards below allow precisely one
+-- shape of update -- account reference columns going to null, and nothing else
+-- changing -- and continue to reject everything else.
+-- ---------------------------------------------------------------------------
+
+create function public.is_person_link_maintenance(p_old jsonb, p_new jsonb)
+returns boolean
+language sql
+immutable
+set search_path to ''
+as $function$
+  select coalesce(
+    bool_and(
+      case changed.key
+        -- A deleted Choose Life account arrives here as ON DELETE SET NULL.
+        when 'user_id' then jsonb_typeof(p_new -> 'user_id') = 'null'
+        when 'actor_user_id' then jsonb_typeof(p_new -> 'actor_user_id') = 'null'
+        when 'claimant_user_id' then jsonb_typeof(p_new -> 'claimant_user_id') = 'null'
+        -- The subject link is filled in once, on rows that predate the column.
+        -- It can be populated but never repointed.
+        when 'association_person_id' then
+          jsonb_typeof(p_old -> 'association_person_id') = 'null'
+          and jsonb_typeof(p_new -> 'association_person_id') <> 'null'
+        else false
+      end
+    ),
+    false
+  )
+  from (
+    select o.key
+    from jsonb_each(p_old) o
+    where o.value is distinct from (p_new -> o.key)
+  ) changed;
+$function$;
+
+comment on function public.is_person_link_maintenance(jsonb, jsonb) is
+  'True when an update changes nothing except the links between a formal record and its people: an account reference set to null (the shape a deleted Choose Life account produces through ON DELETE SET NULL), or the subject reference populated for the first time. Neither alters what a person attested to or what an admin decided, so the immutability guards allow exactly these and nothing else.';
+
+revoke all on function public.is_person_link_maintenance(jsonb, jsonb)
+  from public, anon, authenticated, service_role;
+
+create or replace function public.reject_membership_departure_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  if tg_op = 'UPDATE'
+    and public.is_person_link_maintenance(to_jsonb(old), to_jsonb(new)) then
+    return new;
+  end if;
+
+  raise exception 'Membership periods are append-only.' using errcode = '55000';
+end;
+$function$;
+
+create or replace function public.reject_membership_application_revision_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  if tg_op = 'UPDATE'
+    and public.is_person_link_maintenance(to_jsonb(old), to_jsonb(new)) then
+    return new;
+  end if;
+
+  raise exception 'Submitted application revisions are immutable.'
+    using errcode = '55000';
+end;
+$function$;
+
+create or replace function public.reject_payment_claim_audit_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  if tg_op = 'UPDATE'
+    and public.is_person_link_maintenance(to_jsonb(old), to_jsonb(new)) then
+    return new;
+  end if;
+
+  raise exception 'Payment claim audit events are immutable.'
+    using errcode = '55000';
+end;
+$function$;
+
+create or replace function public.reject_payment_claim_evidence_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  if tg_op = 'DELETE' then
+    raise exception 'Payment claim evidence is immutable.'
+      using errcode = '55000';
+  end if;
+
+  if public.is_person_link_maintenance(to_jsonb(old), to_jsonb(new)) then
+    return new;
+  end if;
+
+  if old.id is distinct from new.id
+    or old.obligation_id is distinct from new.obligation_id
+    or old.organization_id is distinct from new.organization_id
+    or old.association_person_id is distinct from new.association_person_id
+    or old.claimant_user_id is distinct from new.claimant_user_id
+    or old.payer_type is distinct from new.payer_type
+    or old.payer_name is distinct from new.payer_name
+    or old.created_at is distinct from new.created_at then
+    raise exception 'Payment claim evidence is immutable.'
+      using errcode = '55000';
+  end if;
+
+  if old.status is distinct from new.status
+    or old.decided_at is distinct from new.decided_at
+    or old.decision_reason is distinct from new.decision_reason then
+    if current_setting('app.payment_claim_decision_command', true) <> 'on' then
+      raise exception 'Payment claim decisions must use the decision command.'
+        using errcode = '42501';
+    end if;
+
+    if old.status <> 'under_review'::public.payment_claim_status_enum
+      or new.status not in (
+        'approved'::public.payment_claim_status_enum,
+        'rejected'::public.payment_claim_status_enum
+      )
+      or new.decided_at is null
+      or (new.status = 'approved'::public.payment_claim_status_enum
+        and new.decision_reason is not null)
+      or (new.status = 'rejected'::public.payment_claim_status_enum
+        and nullif(btrim(new.decision_reason), '') is null) then
+      raise exception 'Invalid payment claim decision transition.'
+        using errcode = '23514';
+    end if;
+  end if;
+
+  return new;
+end;
+$function$;
+
+create or replace function public.reject_payment_obligation_context_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  if public.is_person_link_maintenance(to_jsonb(old), to_jsonb(new)) then
+    return new;
+  end if;
+
+  if old.organization_id is distinct from new.organization_id
+    or old.association_person_id is distinct from new.association_person_id
+    or old.user_id is distinct from new.user_id
+    or old.application_revision_id is distinct from new.application_revision_id
+    or old.purpose is distinct from new.purpose
+    or old.plan_type is distinct from new.plan_type
+    or old.amount is distinct from new.amount
+    or old.currency is distinct from new.currency
+    or old.payment_method is distinct from new.payment_method
+    or old.pix_copy_paste is distinct from new.pix_copy_paste
+    or old.available_at is distinct from new.available_at
+    or old.schedule_id is distinct from new.schedule_id
+    or old.schedule_term_id is distinct from new.schedule_term_id
+    or old.period_key is distinct from new.period_key
+    or old.period_start is distinct from new.period_start
+    or old.period_end is distinct from new.period_end
+    or old.available_on is distinct from new.available_on
+    or old.due_on is distinct from new.due_on
+    or old.billing_timezone is distinct from new.billing_timezone
+    or old.billing_due_day is distinct from new.billing_due_day
+    or old.billing_lead_days is distinct from new.billing_lead_days
+    or old.organization_name_snapshot is distinct from new.organization_name_snapshot
+    or old.organization_slug_snapshot is distinct from new.organization_slug_snapshot then
+    raise exception 'Payment obligation billing context is immutable.'
+      using errcode = '55000';
+  end if;
+
+  return new;
+end;
+$function$;
+
+create or replace function public.reject_contribution_schedule_anchor_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  if public.is_person_link_maintenance(to_jsonb(old), to_jsonb(new)) then
+    return new;
+  end if;
+
+  if old.admission_date is distinct from new.admission_date then
+    raise exception 'A contribution schedule admission anchor is immutable.'
+      using errcode = '55000';
+  end if;
+
+  if old.association_person_id is distinct from new.association_person_id then
+    raise exception 'A contribution schedule subject is immutable.'
+      using errcode = '55000';
+  end if;
+
+  if old.cadence is distinct from new.cadence
+    or old.due_day is distinct from new.due_day
+    or old.lead_days is distinct from new.lead_days
+    or old.billing_timezone is distinct from new.billing_timezone
+    or old.currency is distinct from new.currency then
+    raise exception 'Contribution schedule policy is immutable; append an effective-dated term.'
+      using errcode = '55000';
+  end if;
+
+  return new;
+end;
+$function$;
+
+create or replace function public.reject_contribution_plan_assignment_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+begin
+  if old.schedule_id is distinct from new.schedule_id
+    or old.effective_period_start is distinct from new.effective_period_start
+    or old.plan_type is distinct from new.plan_type
+    or old.amount is distinct from new.amount
+    or old.currency is distinct from new.currency
+    or old.due_day is distinct from new.due_day
+    or old.lead_days is distinct from new.lead_days
+    or old.billing_timezone is distinct from new.billing_timezone
+    or old.pix_copy_paste is distinct from new.pix_copy_paste then
+    raise exception 'An effective-dated contribution term is immutable; append a new term.'
+      using errcode = '55000';
+  end if;
+
+  return new;
+end;
+$function$;
+
+revoke all on function public.reject_membership_departure_mutation()
+  from public, anon, authenticated, service_role;
+revoke all on function public.reject_membership_application_revision_mutation()
+  from public, anon, authenticated, service_role;
+revoke all on function public.reject_payment_claim_audit_mutation()
+  from public, anon, authenticated, service_role;
+revoke all on function public.reject_payment_claim_evidence_mutation()
+  from public, anon, authenticated, service_role;
+revoke all on function public.reject_payment_obligation_context_mutation()
+  from public, anon, authenticated, service_role;
+revoke all on function public.reject_contribution_schedule_anchor_mutation()
+  from public, anon, authenticated, service_role;
+revoke all on function public.reject_contribution_plan_assignment_mutation()
+  from public, anon, authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
 -- Formal association identity, decoupled from the Choose Life account.
 --
 -- A Choose Life account and a formal SL.A.C subject are two different things
@@ -6039,266 +6312,3 @@ revoke all on function public.prepare_association_account_deletion(uuid)
   from public, anon, authenticated, service_role;
 grant execute on function public.prepare_association_account_deletion(uuid)
   to service_role;
-
--- ---------------------------------------------------------------------------
--- Immutability versus account deletion.
---
--- Every formal record is protected by a trigger that rejects UPDATE. Those
--- triggers are what make the evidence trustworthy, and they must stay. But the
--- account references on those same records are now ON DELETE SET NULL, so a
--- hard account deletion arrives at each of them as an UPDATE -- and is
--- rejected, which is exactly how deletion was blocked before this migration
--- (SQLSTATE 23503 became SQLSTATE 55000).
---
--- The distinction that resolves it: severing a link to a deleted account is
--- not a change to the record's CONTENT. Nothing a person attested to and
--- nothing an admin decided is altered. So the guards below allow precisely one
--- shape of update -- account reference columns going to null, and nothing else
--- changing -- and continue to reject everything else.
--- ---------------------------------------------------------------------------
-
-create function public.is_account_link_severance(p_old jsonb, p_new jsonb)
-returns boolean
-language sql
-immutable
-set search_path to ''
-as $function$
-  select coalesce(
-    bool_and(
-      changed.key in ('user_id', 'actor_user_id', 'claimant_user_id')
-      and jsonb_typeof(p_new -> changed.key) = 'null'
-    ),
-    false
-  )
-  from (
-    select o.key
-    from jsonb_each(p_old) o
-    where o.value is distinct from (p_new -> o.key)
-  ) changed;
-$function$;
-
-comment on function public.is_account_link_severance(jsonb, jsonb) is
-  'True when an update changes nothing except account reference columns, and only by setting them to null. This is the shape a deleted Choose Life account produces through ON DELETE SET NULL; it is not a change to the retained formal record.';
-
-revoke all on function public.is_account_link_severance(jsonb, jsonb)
-  from public, anon, authenticated, service_role;
-
-create or replace function public.reject_membership_departure_mutation()
-returns trigger
-language plpgsql
-security definer
-set search_path to ''
-as $function$
-begin
-  if tg_op = 'UPDATE'
-    and public.is_account_link_severance(to_jsonb(old), to_jsonb(new)) then
-    return new;
-  end if;
-
-  raise exception 'Membership periods are append-only.' using errcode = '55000';
-end;
-$function$;
-
-create or replace function public.reject_membership_application_revision_mutation()
-returns trigger
-language plpgsql
-security definer
-set search_path to ''
-as $function$
-begin
-  if tg_op = 'UPDATE'
-    and public.is_account_link_severance(to_jsonb(old), to_jsonb(new)) then
-    return new;
-  end if;
-
-  raise exception 'Submitted application revisions are immutable.'
-    using errcode = '55000';
-end;
-$function$;
-
-create or replace function public.reject_payment_claim_audit_mutation()
-returns trigger
-language plpgsql
-security definer
-set search_path to ''
-as $function$
-begin
-  if tg_op = 'UPDATE'
-    and public.is_account_link_severance(to_jsonb(old), to_jsonb(new)) then
-    return new;
-  end if;
-
-  raise exception 'Payment claim audit events are immutable.'
-    using errcode = '55000';
-end;
-$function$;
-
-create or replace function public.reject_payment_claim_evidence_mutation()
-returns trigger
-language plpgsql
-security definer
-set search_path to ''
-as $function$
-begin
-  if tg_op = 'DELETE' then
-    raise exception 'Payment claim evidence is immutable.'
-      using errcode = '55000';
-  end if;
-
-  if public.is_account_link_severance(to_jsonb(old), to_jsonb(new)) then
-    return new;
-  end if;
-
-  if old.id is distinct from new.id
-    or old.obligation_id is distinct from new.obligation_id
-    or old.organization_id is distinct from new.organization_id
-    or old.association_person_id is distinct from new.association_person_id
-    or old.claimant_user_id is distinct from new.claimant_user_id
-    or old.payer_type is distinct from new.payer_type
-    or old.payer_name is distinct from new.payer_name
-    or old.created_at is distinct from new.created_at then
-    raise exception 'Payment claim evidence is immutable.'
-      using errcode = '55000';
-  end if;
-
-  if old.status is distinct from new.status
-    or old.decided_at is distinct from new.decided_at
-    or old.decision_reason is distinct from new.decision_reason then
-    if current_setting('app.payment_claim_decision_command', true) <> 'on' then
-      raise exception 'Payment claim decisions must use the decision command.'
-        using errcode = '42501';
-    end if;
-
-    if old.status <> 'under_review'::public.payment_claim_status_enum
-      or new.status not in (
-        'approved'::public.payment_claim_status_enum,
-        'rejected'::public.payment_claim_status_enum
-      )
-      or new.decided_at is null
-      or (new.status = 'approved'::public.payment_claim_status_enum
-        and new.decision_reason is not null)
-      or (new.status = 'rejected'::public.payment_claim_status_enum
-        and nullif(btrim(new.decision_reason), '') is null) then
-      raise exception 'Invalid payment claim decision transition.'
-        using errcode = '23514';
-    end if;
-  end if;
-
-  return new;
-end;
-$function$;
-
-create or replace function public.reject_payment_obligation_context_mutation()
-returns trigger
-language plpgsql
-security definer
-set search_path to ''
-as $function$
-begin
-  if public.is_account_link_severance(to_jsonb(old), to_jsonb(new)) then
-    return new;
-  end if;
-
-  if old.organization_id is distinct from new.organization_id
-    or old.association_person_id is distinct from new.association_person_id
-    or old.user_id is distinct from new.user_id
-    or old.application_revision_id is distinct from new.application_revision_id
-    or old.purpose is distinct from new.purpose
-    or old.plan_type is distinct from new.plan_type
-    or old.amount is distinct from new.amount
-    or old.currency is distinct from new.currency
-    or old.payment_method is distinct from new.payment_method
-    or old.pix_copy_paste is distinct from new.pix_copy_paste
-    or old.available_at is distinct from new.available_at
-    or old.schedule_id is distinct from new.schedule_id
-    or old.schedule_term_id is distinct from new.schedule_term_id
-    or old.period_key is distinct from new.period_key
-    or old.period_start is distinct from new.period_start
-    or old.period_end is distinct from new.period_end
-    or old.available_on is distinct from new.available_on
-    or old.due_on is distinct from new.due_on
-    or old.billing_timezone is distinct from new.billing_timezone
-    or old.billing_due_day is distinct from new.billing_due_day
-    or old.billing_lead_days is distinct from new.billing_lead_days
-    or old.organization_name_snapshot is distinct from new.organization_name_snapshot
-    or old.organization_slug_snapshot is distinct from new.organization_slug_snapshot then
-    raise exception 'Payment obligation billing context is immutable.'
-      using errcode = '55000';
-  end if;
-
-  return new;
-end;
-$function$;
-
-create or replace function public.reject_contribution_schedule_anchor_mutation()
-returns trigger
-language plpgsql
-security definer
-set search_path to ''
-as $function$
-begin
-  if public.is_account_link_severance(to_jsonb(old), to_jsonb(new)) then
-    return new;
-  end if;
-
-  if old.admission_date is distinct from new.admission_date then
-    raise exception 'A contribution schedule admission anchor is immutable.'
-      using errcode = '55000';
-  end if;
-
-  if old.association_person_id is distinct from new.association_person_id then
-    raise exception 'A contribution schedule subject is immutable.'
-      using errcode = '55000';
-  end if;
-
-  if old.cadence is distinct from new.cadence
-    or old.due_day is distinct from new.due_day
-    or old.lead_days is distinct from new.lead_days
-    or old.billing_timezone is distinct from new.billing_timezone
-    or old.currency is distinct from new.currency then
-    raise exception 'Contribution schedule policy is immutable; append an effective-dated term.'
-      using errcode = '55000';
-  end if;
-
-  return new;
-end;
-$function$;
-
-create or replace function public.reject_contribution_plan_assignment_mutation()
-returns trigger
-language plpgsql
-security definer
-set search_path to ''
-as $function$
-begin
-  if old.schedule_id is distinct from new.schedule_id
-    or old.effective_period_start is distinct from new.effective_period_start
-    or old.plan_type is distinct from new.plan_type
-    or old.amount is distinct from new.amount
-    or old.currency is distinct from new.currency
-    or old.due_day is distinct from new.due_day
-    or old.lead_days is distinct from new.lead_days
-    or old.billing_timezone is distinct from new.billing_timezone
-    or old.pix_copy_paste is distinct from new.pix_copy_paste then
-    raise exception 'An effective-dated contribution term is immutable; append a new term.'
-      using errcode = '55000';
-  end if;
-
-  return new;
-end;
-$function$;
-
-revoke all on function public.reject_membership_departure_mutation()
-  from public, anon, authenticated, service_role;
-revoke all on function public.reject_membership_application_revision_mutation()
-  from public, anon, authenticated, service_role;
-revoke all on function public.reject_payment_claim_audit_mutation()
-  from public, anon, authenticated, service_role;
-revoke all on function public.reject_payment_claim_evidence_mutation()
-  from public, anon, authenticated, service_role;
-revoke all on function public.reject_payment_obligation_context_mutation()
-  from public, anon, authenticated, service_role;
-revoke all on function public.reject_contribution_schedule_anchor_mutation()
-  from public, anon, authenticated, service_role;
-revoke all on function public.reject_contribution_plan_assignment_mutation()
-  from public, anon, authenticated, service_role;
