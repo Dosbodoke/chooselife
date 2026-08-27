@@ -5776,6 +5776,24 @@ revoke all on function public.resolve_association_person(uuid, uuid)
 
 -- Reads the subject column named by the trigger argument, so one function
 -- serves user_id and claimant_user_id alike.
+--
+-- association_person_id is the durable subject key: NOT NULL, the basis of the
+-- partial unique index that enforces one open application per person, and the
+-- join key for every person-keyed read and for records retained after account
+-- deletion. It must NEVER be client-supplied. This function therefore
+-- overwrites whatever arrived on the row unconditionally — it deliberately has
+-- no "already set, leave it alone" early return.
+--
+-- Do not "simplify" that back. membership_applications is the one
+-- subject-keyed table `authenticated` may INSERT into, and its RLS policy
+-- constrains only user_id and status. An early return here made a
+-- client-supplied value authoritative, which let any authenticated user bind
+-- their draft to another person's formal association identity — occupying that
+-- person's single open-application slot and attaching immutable revisions to
+-- someone else's subject. The policy cannot close it on its own: WITH CHECK is
+-- evaluated AFTER this BEFORE INSERT trigger (measured on this repo's Postgres
+-- image), so an `association_person_id is null` predicate would reject every
+-- legitimate insert instead.
 create function public.set_association_person_from_subject()
 returns trigger
 language plpgsql
@@ -5785,10 +5803,6 @@ as $function$
 declare
   subject uuid;
 begin
-  if new.association_person_id is not null then
-    return new;
-  end if;
-
   subject := nullif(to_jsonb(new) ->> tg_argv[0], '')::uuid;
   new.association_person_id := public.resolve_association_person(
     new.organization_id,
@@ -6329,3 +6343,39 @@ revoke all on function public.prepare_association_account_deletion(uuid)
   from public, anon, authenticated, service_role;
 grant execute on function public.prepare_association_account_deletion(uuid)
   to service_role;
+
+-- ---------------------------------------------------------------------------
+-- Retire the orphaned renewal scheduler.
+--
+-- 20251113121601_schedule-payment.sql runs before this file on every database,
+-- including a fresh local reset, and schedules 'daily-renewal-check' to POST
+-- daily to /functions/v1/generate-renewal-payments. That Edge Function is gone,
+-- so the job would keep hitting a dead endpoint once per day forever.
+--
+-- The job name is spelled out rather than matched by a wildcard like
+-- '%renewal%': the wildcard would work today but would silently swallow an
+-- unrelated future job. pg_cron is not assumed to be installed — it is absent
+-- from the local image — and jobs are unscheduled by iterating over rows that
+-- actually exist, because cron.unschedule() raises when handed a name it
+-- cannot find.
+-- ---------------------------------------------------------------------------
+
+do $migration$
+declare
+  job_record record;
+begin
+  if to_regclass('cron.job') is null then
+    return;
+  end if;
+
+  for job_record in
+    execute $sql$
+      select jobname
+      from cron.job
+      where jobname = 'daily-renewal-check'
+    $sql$
+  loop
+    execute format('select cron.unschedule(%L)', job_record.jobname);
+  end loop;
+end;
+$migration$;
