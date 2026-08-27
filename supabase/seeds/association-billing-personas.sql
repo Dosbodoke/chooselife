@@ -377,6 +377,18 @@ values
     'Valor não identificado no extrato local.'
   );
 
+-- The refusal is one atomic outcome: application refused, claim rejected,
+-- obligation void. The rows above are inserted directly rather than through
+-- reject_initial_claim, so the other two halves are applied here -- otherwise
+-- this persona would sit in a state the command can never produce.
+update public.payment_obligations
+set status = 'void'::public.payment_obligation_status_enum
+where id = 'c1fe0000-0000-4000-8000-000000000306'::uuid;
+
+update public.membership_applications
+set status = 'refused'::public.membership_application_status_enum
+where id = 'c1fe0000-0000-4000-8000-000000000106'::uuid;
+
 insert into public.payment_claim_audit_events (
   id,
   organization_id,
