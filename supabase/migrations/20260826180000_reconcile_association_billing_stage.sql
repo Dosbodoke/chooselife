@@ -231,12 +231,16 @@ alter table public.organizations
 -- The original cutover installed the scheduler contract in a paused state.
 -- Unschedule whatever survived, without assuming pg_cron is installed.
 --
--- 'daily-renewal-check' is named explicitly rather than matched by a wildcard.
--- 20251113121601_schedule-payment.sql scheduled it to POST daily to
--- /functions/v1/generate-renewal-payments, and that function no longer exists,
--- so the job would keep hitting a dead endpoint once for every day this
--- database stays up. A wildcard like '%renewal%' works today but would
--- silently swallow an unrelated future job, so the name is spelled out.
+-- 'daily-renewal-check' and 'membership-billing-obligation-generator' are named
+-- explicitly rather than matched by a wildcard. Both targeted
+-- /functions/v1/generate-renewal-payments, which no longer exists:
+-- 20251113121601_schedule-payment.sql scheduled the first, and the original
+-- association cutover scheduled the second, so either would keep hitting a dead
+-- endpoint for as long as this database stays up. A wildcard like '%renewal%' or
+-- '%obligation%' works today but would silently swallow an unrelated future job,
+-- so both names are spelled out.
+--
+-- The unrelated 'festival-schedule-*' jobs must survive this loop.
 --
 -- Jobs are unscheduled by iterating over rows that actually exist:
 -- cron.unschedule() raises when handed a name it cannot find.
@@ -253,7 +257,10 @@ begin
       select jobname
       from cron.job
       where jobname like '%contribution%'
-         or jobname = 'daily-renewal-check'
+         or jobname in (
+           'daily-renewal-check',
+           'membership-billing-obligation-generator'
+         )
     $sql$
   loop
     execute format('select cron.unschedule(%L)', job_record.jobname);
@@ -675,6 +682,21 @@ comment on table public.organization_membership_departures is
   'Append-only journal of membership periods that ended. A person with a departure row and no current organization_members row reads as an inactive member.';
 comment on column public.organization_membership_departures.actor_user_id is
   'The association admin who ended the membership. Null for a system closure, such as the one account deletion performs.';
+
+-- Relax the acting-admin reference, which staging still has as NOT NULL.
+--
+-- The retired 20260825120000_membership_departures.sql declared
+-- `actor_user_id uuid not null`. The rewritten baseline deliberately declares it
+-- nullable, because a system-initiated closure -- the one account deletion
+-- performs -- records no acting admin. The `create table if not exists` above is
+-- a no-op on staging, so the surviving constraint has to be dropped explicitly
+-- or that supported path fails there with a not-null violation.
+--
+-- No guard is needed: `alter column ... drop not null` on an already-nullable
+-- column is a no-op in Postgres and does not error, so this is safe on the
+-- baseline path as well.
+alter table public.organization_membership_departures
+  alter column actor_user_id drop not null;
 
 alter table public.organization_membership_departures enable row level security;
 
