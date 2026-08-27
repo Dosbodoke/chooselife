@@ -36,7 +36,7 @@ describe('payment obligation navigation', () => {
     });
   });
 
-  it('never emits a legacy paymentId deep-link parameter', () => {
+  it('emits exactly the obligation route contract and no legacy state', () => {
     const params = getPaymentObligationRouteParams({
       amount: 12500,
       currency: 'BRL',
@@ -44,6 +44,15 @@ describe('payment obligation navigation', () => {
       slug: 'slac',
     });
 
-    expect(Object.keys(params)).not.toContain('paymentId');
+    // Exhaustive on purpose: the retired flow addressed the PIX screen by a
+    // `payments` row id, and the screen no longer has a branch that could read
+    // one. Any extra key here would be a resurrected deep-link parameter.
+    expect(Object.keys(params).sort()).toEqual([
+      'amount',
+      'currency',
+      'obligationId',
+      'paymentContext',
+      'slug',
+    ]);
   });
 });
