@@ -32,6 +32,16 @@ export const queryKeys = {
       [...queryKeys.organizations.bySlug(slug), 'members', userId] as const,
     memberCount: (slug: string) =>
       [...queryKeys.organizations.bySlug(slug), 'memberCount'] as const,
+    adminRole: (
+      organizationId: string | undefined,
+      userId: string | undefined,
+    ) =>
+      [
+        ...queryKeys.organizations.all,
+        'adminRole',
+        organizationId,
+        userId,
+      ] as const,
   },
   news: {
     all: ['news'] as const,
