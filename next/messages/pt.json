@@ -569,7 +569,7 @@
       "available": "Disponível em",
       "joined": "Entrada",
       "paidAt": "Pago em {date}",
-      "recentPeriods": "Histórico de pagamento",
+      "recentPeriods": "Histórico de Contribuições",
       "noHistory": "Ainda não há histórico de pagamentos para esta pessoa."
     },
     "memberDetail": {

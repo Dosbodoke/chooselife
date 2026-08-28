@@ -82,7 +82,7 @@ export function ClaimDecisionFooter({
             variant="outline"
             onClick={() => setIsRejecting(true)}
             disabled={action !== null}
-            className="h-11 rounded-xl px-5 text-destructive hover:bg-destructive/5 hover:text-destructive active:scale-[0.96]"
+            className="h-11 flex-1 rounded-xl px-5 text-destructive hover:bg-destructive/5 hover:text-destructive active:scale-[0.96]"
           >
             <XCircle className="mr-2 size-4" aria-hidden="true" />
             {copy.reject}
@@ -91,7 +91,7 @@ export function ClaimDecisionFooter({
             type="button"
             onClick={() => void onApprove()}
             disabled={action !== null}
-            className="h-11 rounded-xl px-5 active:scale-[0.96]"
+            className="h-11 flex-1 rounded-xl px-5 active:scale-[0.96]"
           >
             {action === "approve" ? (
               <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
@@ -132,7 +132,7 @@ export function ClaimDecisionFooter({
             onRejectionReasonChange("");
           }}
           disabled={action !== null}
-          className="h-11 rounded-xl px-5"
+          className="h-11 flex-1 rounded-xl px-5"
         >
           {copy.cancel}
         </Button>
@@ -141,7 +141,7 @@ export function ClaimDecisionFooter({
           variant="destructive"
           onClick={() => void onReject()}
           disabled={action !== null}
-          className="h-11 rounded-xl px-5 active:scale-[0.96]"
+          className="h-11 flex-1 rounded-xl px-5 active:scale-[0.96]"
         >
           {action === "reject" ? (
             <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
@@ -157,7 +157,7 @@ export function ClaimDecisionFooter({
 
 function FooterShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="shrink-0 border-t bg-card px-5 py-3 md:px-7">{children}</div>
+    <div className="shrink-0 border-t bg-card px-5 py-2 md:px-7">{children}</div>
   );
 }
 
