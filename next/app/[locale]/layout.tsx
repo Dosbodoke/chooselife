@@ -117,7 +117,7 @@ export default async function RootLayout({
         <Providers locale={locale as Locales} messages={messages}>
           <div className="relative flex h-full min-h-screen flex-col">
             <NavBar />
-            <main className="flex-1 pb-4 md:pb-6">
+            <main className="flex min-h-0 flex-1 flex-col">
               <UsernameDialog />
               {children}
             </main>

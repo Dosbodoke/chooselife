@@ -51,14 +51,9 @@ type BillingWorkspaceLayoutProps = {
   onCloseReview: () => void;
 };
 
-/**
- * Fills the viewport exactly: minus the navbar (5rem) and minus the pb-4/md:pb-6
- * that <main> in the root layout adds below us. Footer renders null on /admin,
- * so this is the last box on the page -- any excess height scrolls the whole
- * document instead of just the table.
- */
+/** Fills the available root main area below the navbar without a bottom gap. */
 const WORKSPACE_SHELL =
-  "flex h-[calc(100dvh-5rem-1rem)] min-h-0 flex-col overflow-hidden bg-muted/20 md:h-[calc(100dvh-5rem-1.5rem)]";
+  "flex min-h-0 flex-1 flex-col overflow-hidden bg-muted/20";
 
 export default function BillingWorkspaceLayout({
   ledger,
