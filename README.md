@@ -59,7 +59,7 @@ Supabase serves as the project's backend, handling database and authentication.
 
 #### Deploying Edge Functions
 
-Use the provided deployment script instead of running `supabase functions deploy` manually. The current app membership flow does not require a payment gateway: `start-subscription` creates the local pending payment, the app shows the configured static PIX QR code, and admins manually settle payments after confirming the transfer.
+Use the provided deployment script instead of running `supabase functions deploy` manually. There are two deployable functions, `push-notification` and `user-self-deletion`. There is no payment gateway: association contributions are manual PIX obligations that an association admin verifies by hand, so no Edge Function is involved in taking a payment.
 
 - **Deploy all functions:**
   ```bash
@@ -81,49 +81,38 @@ set
 where slug = 'slac';
 ```
 
-The QR code is generated locally from the copy-paste payload returned by
-`get_manual_payment_instructions(payment_id)` for the signed-in owner of the
-manual payment. The payload is fixed per plan and is not generated per payment
-request.
+The payload is fixed per plan and is not generated per payment request.
 
-After paying, the user can tap **Já paguei**. This only records
-`payments.user_marked_paid_at` so the team knows the user claims to have paid;
-the payment remains `pending` until an admin manually confirms it with
-`mark_payment_succeeded_manually`.
+#### The Obligation and Claim Flow
 
-#### Optional Gateway Configuration
+Association billing has one model. Every amount a person owes is a **payment
+obligation**; the app never invents a payment, it opens the obligation the
+database already created.
 
-Gateway functions are still present for a future Stripe approval, but the mobile app no longer calls them for membership signup or renewal.
+1.  Submitting an association application through
+    `submit_association_application(...)` writes one immutable revision and
+    opens the `initial_admission` obligation for the first contribution.
+2.  The app shows that obligation's fixed PIX QR code, read with
+    `get_payment_obligation_instructions(obligation_id)` by the signed-in owner.
+3.  After paying, the person files a **claim** — `claim_initial_payment(...)` for
+    admission, `claim_recurring_payment(...)` for a later contribution — stating
+    who made the transfer. The obligation moves to `under_review`.
+4.  An association admin verifies the PIX by hand in the admin billing
+    workspace. There are exactly two decisions, and both are atomic:
 
-If Stripe is enabled later, set these secrets on each Supabase project:
+    - `approve_initial_claim(claim_id)` settles the obligation, admits the
+      applicant, and opens the contribution schedule with its plan snapshot.
+    - `reject_initial_claim(claim_id, reason)` is the single refusal command. It
+      refuses the application, rejects the claim, voids the obligation and
+      stores one required user-visible reason. Nothing is deleted: a correction
+      is a brand new application, revision and obligation.
 
-  ```bash
-  npx supabase secrets set STRIPE_SECRET_KEY=<sk_test_or_live_...>
-  npx supabase secrets set STRIPE_WEBHOOK_SECRET=<whsec_...>
-  ```
+Recurring contributions use the matching
+`approve_recurring_payment_claim` / `reject_recurring_payment_claim` pair.
+Nonpayment never ends or suspends a membership — each missed contribution stays
+a distinct owed obligation until an admin settles or voids it.
 
-- **Stripe webhook endpoint:**
-  `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`
-
-  Configure it in Stripe for `checkout.session.completed` and `checkout.session.expired` events.
-
-#### Manually Settling a Payment
-
-Use the database helper instead of editing `payments.status` directly. It marks the
-local payment as succeeded and applies subscription/membership effects exactly
-once, even if the payment is checked again later.
-
-```sql
-select *
-from public.mark_payment_succeeded_manually(
-  '<payment-id>'::uuid,
-  timezone('utc'::text, now())
-);
-```
-
-Check `applied_effects_now` in the result. `true` means this call activated the
-subscription/membership; `false` means the payment was already settled or could
-not apply effects, so inspect `settlement_applied_at` and the subscription row.
+There is no automatic settlement, no provider webhook, and no renewal job.
 
 #### Cron Jobs Secrets
 
@@ -137,6 +126,17 @@ Replace the placeholder values with your actual project reference and service ro
 select vault.create_secret('https://<your-project-ref>.supabase.co', 'project_url', 'URL for the Supabase project');
 select vault.create_secret('<your-secret-key>', 'secret_key', 'Supabase Secret key');
 ```
+
+> **Known loose end.** `20251113121601_schedule-payment.sql` scheduled a
+> `daily-renewal-check` cron job that POSTs to
+> `/functions/v1/generate-renewal-payments`. That function no longer exists —
+> there are no automatic renewal payments. On any project where the job is
+> still registered it now calls a missing endpoint once a day. Unscheduling it
+> needs a migration:
+>
+> ```sql
+> select cron.unschedule('daily-renewal-check');
+> ```
 
 #### OAuth Configuration
 
