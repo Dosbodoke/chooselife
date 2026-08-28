@@ -6,10 +6,9 @@ select * from no_plan();
 -- 20260730140837_festival_live_companion.sql.
 --
 -- That migration ran directly against stage on 2026-07-30 and was never
--- committed, so until now it had no test of any kind. It is recovered verbatim,
--- which means these assertions pin what stage ACTUALLY runs -- not what a
--- tidied-up version would run. If a future change edits the recovered file,
--- these tests are the record of the behaviour that stage already depends on.
+-- committed, so until now it had no test of any kind. The recovered migration
+-- also repairs its notification enqueuer before stage is rebuilt from this
+-- repository.
 --
 -- Two surfaces are covered:
 --
@@ -26,9 +25,8 @@ select * from no_plan();
 --
 --   3. The singleton `festival_companion_config` the migration seeds.
 --
---   4. `enqueue_festival_companion_notifications`, which is BROKEN in the
---      recovered body and is pinned here as broken. See the comment above that
---      assertion -- it is deliberate, and a future fix must invert it.
+--   4. `enqueue_festival_companion_notifications`, including a clean no-work
+--      execution when no due festival bookings exist.
 
 set local role postgres;
 
@@ -393,42 +391,20 @@ select is(
 );
 
 -- ---------------------------------------------------------------------------
--- 4. enqueue_festival_companion_notifications is BROKEN, and this pins it.
+-- 4. enqueue_festival_companion_notifications executes successfully.
 --
--- Read this before "fixing" the assertion below.
---
--- The recovered function's `schedule` CTE selects `highline.name AS
--- highline_name` and never selects `highline.id`. `candidate_events` carries
--- that CTE forward with `schedule.*`. The final INSERT then reads
--- `event.highline_id` to build a URL. That name is not in scope, so the
--- statement fails during planning with 42703 -- unconditionally, even with zero
--- bookings, because planning happens before any row is examined.
---
--- The recovered file's last statement schedules this function to run every
--- minute. It has therefore been failing on every tick on stage since
--- 2026-07-30, and it fails the same way here. `cron.job_run_details` records
--- `festival-companion-notifications-every-minute` as `failed` with this exact
--- message while the pre-existing `festival-schedule-*` jobs succeed in the same
--- worker.
---
--- This assertion pins MEASURED state, not desired state. It exists so that the
--- defect is covered and intentional rather than merely known, and so that any
--- future repair is forced to acknowledge what it is switching on: the fix would
--- turn a never-once-successful, once-per-minute writer into
--- `public.notifications` live for real users for the first time. That is a
--- behaviour change and a product decision, not a lint cleanup.
---
--- A follow-up that repairs the function MUST invert or delete this assertion.
--- If it goes green on its own, something changed the recovered file.
+-- The function is scheduled every minute. With no due bookings in this test,
+-- it must complete without writing a notification and report zero inserted
+-- rows. This also forces Postgres to plan the complete statement, catching
+-- missing columns in the event projection before the cron reaches stage.
 -- ---------------------------------------------------------------------------
 
 set local role postgres;
 
-select throws_ok(
-  $$select public.enqueue_festival_companion_notifications()$$,
-  '42703',
-  'column event.highline_id does not exist',
-  'the recovered notification enqueuer fails unconditionally, exactly as it does on stage'
+select is(
+  public.enqueue_festival_companion_notifications(),
+  0,
+  'the notification enqueuer succeeds and reports no work when no booking is due'
 );
 
 select * from finish();

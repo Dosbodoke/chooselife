@@ -337,6 +337,7 @@ BEGIN
       slot.id AS slot_id,
       slot.start_at,
       slot.end_at,
+      booking.highline_id,
       highline.name AS highline_name,
       to_char(
         (slot.start_at AT TIME ZONE festival.timezone)::date,
