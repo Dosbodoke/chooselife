@@ -1,9 +1,8 @@
+import SlacCabeMaisImage from '~/assets/images/slac-cabe-mais.png';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
-
-import SlacCabeMaisImage from '~/assets/images/slac-cabe-mais.png';
 
 import { Button } from '~/components/ui/button';
 import { Text } from '~/components/ui/text';
@@ -20,7 +19,6 @@ export function BecomeMemberCard({ slug }: BecomeMemberCardProps) {
       className="relative min-h-[200px] justify-end gap-4 overflow-hidden rounded-xl bg-zinc-900 p-6"
       style={{ borderCurve: 'continuous' }}
     >
-      {/* Spotlight */}
       <View
         className="absolute left-0 top-0 h-full w-full"
         style={{
@@ -43,7 +41,6 @@ export function BecomeMemberCard({ slug }: BecomeMemberCardProps) {
         contentFit="contain"
       />
 
-      {/* Gradient for text readability */}
       <View
         className="absolute inset-0"
         style={{
@@ -63,6 +60,7 @@ export function BecomeMemberCard({ slug }: BecomeMemberCardProps) {
       </View>
 
       <Button
+        accessibilityLabel="Quero me associar"
         onPress={() => router.push(`/organizations/${slug}/member`)}
         className="w-full bg-white active:bg-gray-100 active:scale-[0.98]"
       >

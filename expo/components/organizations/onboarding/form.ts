@@ -39,33 +39,6 @@ export type FormField = keyof MembershipApplicationForm;
 
 export type FormErrors = Partial<Record<FormField, string>>;
 
-export const steps = [
-  {
-    title: 'Sobre você',
-    subtitle: 'Comece pelos dados básicos para a associação te identificar.',
-  },
-  {
-    title: 'Documentos',
-    subtitle: 'Informe os documentos usados no cadastro oficial.',
-  },
-  {
-    title: 'Endereço e contato',
-    subtitle: 'O CEP preenche parte do endereço automaticamente.',
-  },
-  {
-    title: 'Saúde',
-    subtitle: 'Usamos apenas em emergências nos eventos.',
-  },
-  {
-    title: 'Experiência',
-    subtitle: 'Conte sua relação com highline e segurança.',
-  },
-  {
-    title: 'Contato de emergência',
-    subtitle: 'Uma pessoa para acionarmos se algo acontecer.',
-  },
-] as const;
-
 export const maritalStatusOptions = [
   { label: 'Solteiro(a)', value: 'single' },
   { label: 'Casado(a)', value: 'married' },
@@ -224,26 +197,33 @@ export const createInitialForm = ({
   acceptedTermsAt,
   application,
   email,
+  phone,
   profileBirthday,
   profileName,
 }: {
   acceptedTermsAt?: string;
   application: MembershipApplication | null;
   email?: string | null;
+  phone?: string | null;
   profileBirthday?: string | null;
   profileName?: string | null;
 }): MembershipApplicationForm => ({
-  accepted_terms_at:
-    application?.accepted_terms_at ?? acceptedTermsAt ?? null,
+  accepted_terms_at: application?.accepted_terms_at ?? acceptedTermsAt ?? null,
   address_line: application?.address_line ?? '',
   allergies: application?.allergies ?? '',
-  allergies_choice: application?.allergies ? 'yes' : 'no',
+  // A brand-new form must not pretend the health questions were answered, so
+  // the choice only starts filled when an application already exists.
+  allergies_choice: application ? (application.allergies ? 'yes' : 'no') : null,
   birth_date: dateToDisplay(application?.birth_date ?? profileBirthday),
   birthplace: application?.birthplace ?? '',
   blood_type: application?.blood_type ?? null,
   city: application?.city ?? '',
   cpf: maskCpf(application?.cpf ?? ''),
-  dietary_choice: application?.dietary_restrictions ? 'yes' : 'no',
+  dietary_choice: application
+    ? application.dietary_restrictions
+      ? 'yes'
+      : 'no'
+    : null,
   dietary_restrictions: application?.dietary_restrictions ?? '',
   email: application?.email ?? email ?? '',
   emergency_contact_name: application?.emergency_contact_name ?? '',
@@ -260,7 +240,10 @@ export const createInitialForm = ({
   id_document_number: application?.id_document_number ?? '',
   marital_status: application?.marital_status ?? null,
   nationality: application?.nationality ?? 'Brasileira',
-  phone: maskPhone(application?.phone ?? ''),
+  // iOS gives apps no access to the SIM's own number, so the only prefill
+  // sources are the saved application and a phone-authenticated session. The
+  // `telephoneNumber` content type lets iOS AutoFill offer it otherwise.
+  phone: maskPhone(application?.phone ?? phone ?? ''),
   postal_code: maskCep(application?.postal_code ?? ''),
   profession: application?.profession ?? '',
   state: application?.state ?? '',
@@ -273,6 +256,7 @@ export const formToDraft = (
 ) => ({
   accepted_terms_at: form.accepted_terms_at,
   address_line: form.address_line.trim() || null,
+  has_allergies: form.allergies_choice === 'yes',
   allergies:
     form.allergies_choice === 'yes' ? form.allergies.trim() || null : null,
   birth_date: displayDateToIso(form.birth_date),
@@ -280,6 +264,7 @@ export const formToDraft = (
   blood_type: form.blood_type,
   city: form.city.trim() || null,
   cpf: digitsOnly(form.cpf) || null,
+  has_dietary_restrictions: form.dietary_choice === 'yes',
   dietary_restrictions:
     form.dietary_choice === 'yes'
       ? form.dietary_restrictions.trim() || null
@@ -305,101 +290,524 @@ export const formToDraft = (
   user_id: userId,
 });
 
-const requiredText = (
-  errors: FormErrors,
-  field: FormField,
-  value: string | null | undefined,
-  message = 'Campo obrigatório.',
-) => {
-  if (!value?.trim()) errors[field] = message;
+export type FieldKind = 'cards' | 'chips' | 'choice' | 'text' | 'textarea';
+
+export type QuestionField = {
+  /**
+   * True when the underlying field stores a boolean instead of a YesNoValue.
+   */
+  asBoolean?: boolean;
+  autoCapitalize?: 'characters' | 'none' | 'sentences';
+  /**
+   * Written by an external lookup (ViaCEP) rather than by typing. Native text
+   * state is captured on mount, so these fields must remount to show new values.
+   */
+  autofilled?: boolean;
+  /**
+   * Long-form option rows, used when each choice needs an explanation.
+   */
+  cards?: { description?: string; title: string; value: string }[];
+  /**
+   * Compact option pills, used when the labels speak for themselves.
+   */
+  chips?: { label: string; value: string }[];
+  columns?: 2 | 4;
+  id: FormField;
+  keyboardType?: 'default' | 'email-address' | 'number-pad';
+  kind: FieldKind;
+  /**
+   * Shown above the control. Omitted on single-field steps, where the step
+   * prompt already names what is being asked.
+   */
+  label?: string;
+  mask?: (value: string) => string;
+  /**
+   * Optional fields never block the step.
+   */
+  optional?: boolean;
+  placeholder?: string;
+  /**
+   * Shown when the field is empty and the user tries to continue.
+   */
+  requiredMessage?: string;
+  /**
+   * Row label on the review screen, where the step prompt is too long.
+   */
+  reviewLabel: string;
+  textContentType?: 'emailAddress' | 'name' | 'telephoneNumber';
+  /**
+   * Format check, only run once the field has a value.
+   */
+  validate?: (form: MembershipApplicationForm) => string | null;
+  /**
+   * Conditional fields appear on the same step as the answer that reveals them.
+   */
+  visible?: (form: MembershipApplicationForm) => boolean;
 };
 
-export const getStepErrors = (
+/**
+ * One screen of the flow. Most hold a single field; fields that only make sense
+ * together (a full address, an emergency contact) share one.
+ */
+export type Question = {
+  fields: QuestionField[];
+  id: string;
+  prompt: string;
+  section: string;
+  supporting?: string;
+};
+
+const yesNoCards = [
+  { title: 'Sim', value: 'yes' },
+  { title: 'Não', value: 'no' },
+];
+
+const requiredPhone = (value: string) =>
+  [10, 11].includes(digitsOnly(value).length)
+    ? null
+    : 'Informe um telefone com DDD.';
+
+export const questions: Question[] = [
+  {
+    fields: [
+      {
+        id: 'full_name',
+        kind: 'text',
+        reviewLabel: 'Nome completo',
+        textContentType: 'name',
+      },
+    ],
+    id: 'full_name',
+    prompt: 'Como devemos chamar você?',
+    section: 'Sobre você',
+    supporting: 'Use seu nome completo, como aparece nos seus documentos.',
+  },
+  {
+    fields: [
+      {
+        id: 'birth_date',
+        keyboardType: 'number-pad',
+        kind: 'text',
+        mask: maskDate,
+        placeholder: 'DD/MM/AAAA',
+        reviewLabel: 'Data de nascimento',
+        validate: (form) =>
+          displayDateToIso(form.birth_date) ? null : 'Informe uma data válida.',
+      },
+    ],
+    id: 'birth_date',
+    prompt: 'Qual é a sua data de nascimento?',
+    section: 'Sobre você',
+    supporting: 'Precisamos dela para o cadastro oficial da associação.',
+  },
+  {
+    fields: [
+      {
+        id: 'birthplace',
+        kind: 'text',
+        placeholder: 'Cidade e Estado',
+        reviewLabel: 'Local de nascimento',
+      },
+    ],
+    id: 'birthplace',
+    prompt: 'Onde você nasceu?',
+    section: 'Sobre você',
+    supporting: 'Informe a cidade e o estado.',
+  },
+  {
+    fields: [{ id: 'nationality', kind: 'text', reviewLabel: 'Nacionalidade' }],
+    id: 'nationality',
+    prompt: 'Qual é a sua nacionalidade?',
+    section: 'Sobre você',
+  },
+  {
+    fields: [
+      {
+        chips: maritalStatusOptions,
+        id: 'marital_status',
+        kind: 'chips',
+        requiredMessage: 'Selecione uma opção.',
+        reviewLabel: 'Estado civil',
+      },
+    ],
+    id: 'marital_status',
+    prompt: 'Qual é o seu estado civil?',
+    section: 'Sobre você',
+  },
+  {
+    fields: [{ id: 'profession', kind: 'text', reviewLabel: 'Profissão' }],
+    id: 'profession',
+    prompt: 'Qual é a sua profissão?',
+    section: 'Sobre você',
+    supporting: 'O que você faz hoje, mesmo que não seja formalizado.',
+  },
+  {
+    fields: [
+      {
+        id: 'cpf',
+        keyboardType: 'number-pad',
+        kind: 'text',
+        mask: maskCpf,
+        placeholder: '000.000.000-00',
+        reviewLabel: 'CPF',
+        validate: (form) =>
+          isValidCpf(form.cpf) ? null : 'Informe um CPF válido.',
+      },
+    ],
+    id: 'cpf',
+    prompt: 'Qual é o seu CPF?',
+    section: 'Documentos',
+  },
+  {
+    fields: [
+      {
+        id: 'id_document_number',
+        kind: 'text',
+        label: 'Número',
+        reviewLabel: 'RG/CIN',
+      },
+      {
+        autoCapitalize: 'characters',
+        id: 'id_document_issuer',
+        kind: 'text',
+        label: 'Órgão expedidor',
+        placeholder: 'Ex.: SSP/MG',
+        reviewLabel: 'Órgão expedidor',
+      },
+    ],
+    id: 'id_document',
+    prompt: 'Qual é o seu RG ou CIN?',
+    section: 'Documentos',
+    supporting: 'O número e o órgão expedidor aparecem no próprio documento.',
+  },
+  {
+    fields: [
+      {
+        id: 'postal_code',
+        keyboardType: 'number-pad',
+        kind: 'text',
+        label: 'CEP',
+        mask: maskCep,
+        placeholder: '00000-000',
+        reviewLabel: 'CEP',
+        validate: (form) =>
+          digitsOnly(form.postal_code).length === 8
+            ? null
+            : 'Informe um CEP com 8 dígitos.',
+      },
+      {
+        autofilled: true,
+        id: 'address_line',
+        kind: 'text',
+        label: 'Endereço',
+        placeholder: 'Rua, número, bairro',
+        reviewLabel: 'Endereço',
+      },
+      {
+        autofilled: true,
+        id: 'city',
+        kind: 'text',
+        label: 'Cidade',
+        reviewLabel: 'Cidade',
+      },
+      {
+        autoCapitalize: 'characters',
+        autofilled: true,
+        id: 'state',
+        kind: 'text',
+        label: 'UF',
+        mask: (value) => value.slice(0, 2).toUpperCase(),
+        placeholder: 'MG',
+        reviewLabel: 'UF',
+        validate: (form) =>
+          form.state.trim().length === 2 ? null : 'Informe a UF.',
+      },
+    ],
+    id: 'address',
+    prompt: 'Onde você mora?',
+    section: 'Endereço e contato',
+    supporting: 'Informe o CEP e preenchemos o resto para você.',
+  },
+  {
+    fields: [
+      {
+        autoCapitalize: 'none',
+        id: 'email',
+        keyboardType: 'email-address',
+        kind: 'text',
+        reviewLabel: 'E-mail',
+        textContentType: 'emailAddress',
+        validate: (form) =>
+          /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
+            ? null
+            : 'Informe um e-mail válido.',
+      },
+    ],
+    id: 'email',
+    prompt: 'Qual é o melhor e-mail para contato?',
+    section: 'Endereço e contato',
+    supporting: 'Enviaremos avisos importantes da associação por aqui.',
+  },
+  {
+    fields: [
+      {
+        id: 'phone',
+        keyboardType: 'number-pad',
+        kind: 'text',
+        mask: maskPhone,
+        placeholder: '(31) 99999-9999',
+        reviewLabel: 'Celular',
+        textContentType: 'telephoneNumber',
+        validate: (form) => requiredPhone(form.phone),
+      },
+    ],
+    id: 'phone',
+    prompt: 'Qual é o seu celular?',
+    section: 'Endereço e contato',
+  },
+  {
+    fields: [
+      {
+        chips: bloodTypeOptions,
+        columns: 4,
+        id: 'blood_type',
+        kind: 'chips',
+        optional: true,
+        reviewLabel: 'Tipo sanguíneo',
+      },
+    ],
+    id: 'blood_type',
+    prompt: 'Qual é o seu tipo sanguíneo?',
+    section: 'Saúde',
+    supporting: 'Opcional — pule se não souber de cabeça.',
+  },
+  {
+    fields: [
+      {
+        cards: yesNoCards,
+        id: 'allergies_choice',
+        kind: 'choice',
+        requiredMessage: 'Escolha uma opção.',
+        reviewLabel: 'Tem alergias',
+      },
+      {
+        id: 'allergies',
+        kind: 'textarea',
+        label: 'Descreva suas alergias',
+        placeholder: 'Ex.: alergia grave a dipirona…',
+        requiredMessage: 'Descreva as alergias.',
+        reviewLabel: 'Alergias',
+        visible: (form) => form.allergies_choice === 'yes',
+      },
+    ],
+    id: 'allergies',
+    prompt: 'Você tem alguma alergia?',
+    section: 'Saúde',
+    supporting: 'Considere medicamentos, alimentos e picadas.',
+  },
+  {
+    fields: [
+      {
+        cards: yesNoCards,
+        id: 'dietary_choice',
+        kind: 'choice',
+        requiredMessage: 'Escolha uma opção.',
+        reviewLabel: 'Tem restrição alimentar',
+      },
+      {
+        id: 'dietary_restrictions',
+        kind: 'textarea',
+        label: 'Descreva sua restrição',
+        placeholder: 'Ex.: vegetariano, intolerância a lactose…',
+        requiredMessage: 'Descreva a restrição alimentar.',
+        reviewLabel: 'Restrição alimentar',
+        visible: (form) => form.dietary_choice === 'yes',
+      },
+    ],
+    id: 'dietary',
+    prompt: 'Você tem alguma restrição alimentar?',
+    section: 'Saúde',
+    supporting: 'Vale para dietas, intolerâncias e alimentos proibidos.',
+  },
+  {
+    fields: [
+      {
+        cards: highlineExperienceOptions,
+        id: 'highline_experience',
+        kind: 'cards',
+        requiredMessage: 'Selecione seu nível.',
+        reviewLabel: 'Nível de highline',
+      },
+    ],
+    id: 'highline_experience',
+    prompt: 'Como você descreve sua experiência?',
+    section: 'Experiência',
+    supporting: 'Isso ajuda a associação a preparar atividades adequadas.',
+  },
+  {
+    fields: [
+      {
+        asBoolean: true,
+        cards: yesNoCards,
+        id: 'has_rescue_course',
+        kind: 'choice',
+        requiredMessage: 'Escolha uma opção.',
+        reviewLabel: 'Curso de resgate',
+      },
+    ],
+    id: 'has_rescue_course',
+    prompt: 'Você já fez curso de resgate?',
+    section: 'Experiência',
+    supporting: 'Escolha uma resposta — "Não" também conclui esta pergunta.',
+  },
+  {
+    fields: [
+      {
+        cards: firstAidOptions,
+        id: 'first_aid_course',
+        kind: 'cards',
+        requiredMessage: 'Selecione uma opção.',
+        reviewLabel: 'Primeiros socorros',
+      },
+    ],
+    id: 'first_aid_course',
+    prompt: 'Como está seu conhecimento de primeiros socorros?',
+    section: 'Experiência',
+    supporting: 'Escolha a opção que representa seu momento atual.',
+  },
+  {
+    fields: [
+      {
+        id: 'emergency_contact_name',
+        kind: 'text',
+        label: 'Nome',
+        placeholder: 'Nome do contato',
+        reviewLabel: 'Contato de emergência',
+        textContentType: 'name',
+      },
+      {
+        chips: relationshipOptions,
+        id: 'emergency_contact_relationship',
+        kind: 'chips',
+        label: 'Relação com você',
+        requiredMessage: 'Selecione uma opção.',
+        reviewLabel: 'Parentesco',
+      },
+      {
+        id: 'emergency_contact_phone',
+        keyboardType: 'number-pad',
+        kind: 'text',
+        label: 'Telefone',
+        mask: maskPhone,
+        placeholder: '(31) 99999-9999',
+        reviewLabel: 'Telefone de emergência',
+        textContentType: 'telephoneNumber',
+        validate: (form) => requiredPhone(form.emergency_contact_phone),
+      },
+    ],
+    id: 'emergency_contact',
+    prompt: 'Quem devemos chamar em uma emergência?',
+    section: 'Contato de emergência',
+    supporting: 'Informe alguém próximo, com DDD no telefone.',
+  },
+];
+
+const isBlank = (value: MembershipApplicationForm[FormField]) =>
+  value === null || value === undefined || value.toString().trim() === '';
+
+export const getVisibleFields = (
   form: MembershipApplicationForm,
-  step: number,
+  question: Question,
+) => question.fields.filter((field) => field.visible?.(form) ?? true);
+
+export const getFieldError = (
+  form: MembershipApplicationForm,
+  field: QuestionField,
 ) => {
+  if (isBlank(form[field.id])) {
+    return field.optional
+      ? null
+      : (field.requiredMessage ?? 'Responda para continuar.');
+  }
+
+  return field.validate?.(form) ?? null;
+};
+
+export const getQuestionError = (
+  form: MembershipApplicationForm,
+  question: Question,
+) => {
+  for (const field of getVisibleFields(form, question)) {
+    const error = getFieldError(form, field);
+    if (error) return error;
+  }
+
+  return null;
+};
+
+/**
+ * Index of the first step holding an unanswered field, or the step count when
+ * everything is answered — which is exactly the review position.
+ */
+export const getFirstIncompleteIndex = (form: MembershipApplicationForm) => {
+  const index = questions.findIndex(
+    (question) => getQuestionError(form, question) !== null,
+  );
+
+  return index === -1 ? questions.length : index;
+};
+
+export const getFormErrors = (form: MembershipApplicationForm) => {
   const errors: FormErrors = {};
 
-  if (step === 0) {
-    requiredText(errors, 'full_name', form.full_name);
-    if (!displayDateToIso(form.birth_date)) {
-      errors.birth_date = 'Informe uma data válida.';
-    }
-    requiredText(errors, 'birthplace', form.birthplace);
-    requiredText(errors, 'nationality', form.nationality);
-    if (!form.marital_status) errors.marital_status = 'Selecione uma opção.';
-    requiredText(errors, 'profession', form.profession);
-  }
-
-  if (step === 1) {
-    if (!isValidCpf(form.cpf)) errors.cpf = 'Informe um CPF válido.';
-    requiredText(errors, 'id_document_number', form.id_document_number);
-    requiredText(errors, 'id_document_issuer', form.id_document_issuer);
-  }
-
-  if (step === 2) {
-    if (digitsOnly(form.postal_code).length !== 8) {
-      errors.postal_code = 'Informe um CEP com 8 dígitos.';
-    }
-    requiredText(errors, 'address_line', form.address_line);
-    requiredText(errors, 'city', form.city);
-    if (form.state.trim().length !== 2) errors.state = 'Informe a UF.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      errors.email = 'Informe um e-mail válido.';
-    }
-    if (![10, 11].includes(digitsOnly(form.phone).length)) {
-      errors.phone = 'Informe um celular com DDD.';
-    }
-  }
-
-  if (step === 3) {
-    if (form.allergies_choice === 'yes') {
-      requiredText(
-        errors,
-        'allergies',
-        form.allergies,
-        'Descreva as alergias.',
-      );
-    }
-    if (form.dietary_choice === 'yes') {
-      requiredText(
-        errors,
-        'dietary_restrictions',
-        form.dietary_restrictions,
-        'Descreva a restrição alimentar.',
-      );
-    }
-  }
-
-  if (step === 4) {
-    if (!form.highline_experience) {
-      errors.highline_experience = 'Selecione seu nível.';
-    }
-    if (form.has_rescue_course === null) {
-      errors.has_rescue_course = 'Escolha uma opção.';
-    }
-    if (!form.first_aid_course) {
-      errors.first_aid_course = 'Selecione uma opção.';
-    }
-  }
-
-  if (step === 5) {
-    requiredText(errors, 'emergency_contact_name', form.emergency_contact_name);
-    if (!form.emergency_contact_relationship) {
-      errors.emergency_contact_relationship = 'Selecione uma opção.';
-    }
-    if (![10, 11].includes(digitsOnly(form.emergency_contact_phone).length)) {
-      errors.emergency_contact_phone = 'Informe um telefone com DDD.';
-    }
-  }
+  questions.forEach((question) => {
+    getVisibleFields(form, question).forEach((field) => {
+      const error = getFieldError(form, field);
+      if (error) errors[field.id] = error;
+    });
+  });
 
   return errors;
 };
 
-export const isStepValid = (form: MembershipApplicationForm, step: number) =>
-  Object.keys(getStepErrors(form, step)).length === 0;
+export const getAnswerLabel = (
+  form: MembershipApplicationForm,
+  field: QuestionField,
+): string | null => {
+  const value = form[field.id];
+  if (isBlank(value)) return null;
 
-export const getFirstIncompleteStep = (form: MembershipApplicationForm) => {
-  const firstInvalid = steps.findIndex((_, index) => !isStepValid(form, index));
-  return firstInvalid === -1 ? 0 : firstInvalid;
+  if (field.kind === 'choice') {
+    return value === 'yes' || value === true ? 'Sim' : 'Não';
+  }
+
+  const option =
+    field.chips?.find((chip) => chip.value === value) ??
+    field.cards?.find((card) => card.value === value);
+
+  return option
+    ? 'label' in option
+      ? option.label
+      : option.title
+    : `${value}`;
 };
+
+export type ReviewRow = {
+  error: string | null;
+  /** Step to jump to when the row is tapped. */
+  index: number;
+  label: string;
+  section: string;
+  value: string | null;
+};
+
+export const getReviewRows = (form: MembershipApplicationForm): ReviewRow[] =>
+  questions.flatMap((question, index) =>
+    getVisibleFields(form, question).map((field) => ({
+      error: getFieldError(form, field),
+      index,
+      label: field.reviewLabel,
+      section: question.section,
+      value: getAnswerLabel(form, field),
+    })),
+  );
