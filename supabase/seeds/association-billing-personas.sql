@@ -40,7 +40,7 @@ select
   'authenticated',
   'authenticated',
   persona.email,
-  crypt('LocalTest123!', gen_salt('bf')),
+  extensions.crypt('LocalTest123!', extensions.gen_salt('bf')),
   timezone('utc'::text, now()),
   '{"provider":"email","providers":["email"]}'::jsonb,
   jsonb_build_object('full_name', persona.display_name),
