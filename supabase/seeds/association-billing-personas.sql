@@ -43,7 +43,7 @@ select
   extensions.crypt('LocalTest123!', extensions.gen_salt('bf')),
   timezone('utc'::text, now()),
   '{"provider":"email","providers":["email"]}'::jsonb,
-  jsonb_build_object('full_name', persona.display_name),
+  jsonb_build_object('full_name', persona.display_name, 'username', persona.username),
   timezone('utc'::text, now()),
   timezone('utc'::text, now()),
   '',
@@ -52,18 +52,18 @@ select
   ''
 from (
   values
-    ('c1fe0000-0000-4000-8000-000000000001'::uuid, 'admin@chooselife.local', 'Admin SL.A.C'),
-    ('c1fe0000-0000-4000-8000-000000000002'::uuid, 'new@chooselife.local', 'Novo Sem Cadastro'),
-    ('c1fe0000-0000-4000-8000-000000000003'::uuid, 'draft@chooselife.local', 'Aplicação Rascunho'),
-    ('c1fe0000-0000-4000-8000-000000000004'::uuid, 'awaiting-payment@chooselife.local', 'Aguardando Pagamento'),
-    ('c1fe0000-0000-4000-8000-000000000005'::uuid, 'initial-review@chooselife.local', 'Pagamento Em Análise'),
-    ('c1fe0000-0000-4000-8000-000000000006'::uuid, 'claim-rejected@chooselife.local', 'Pagamento Rejeitado'),
-    ('c1fe0000-0000-4000-8000-000000000007'::uuid, 'monthly-current@chooselife.local', 'Mensal Em Dia'),
-    ('c1fe0000-0000-4000-8000-000000000008'::uuid, 'monthly-overdue@chooselife.local', 'Mensal Em Atraso'),
-    ('c1fe0000-0000-4000-8000-000000000009'::uuid, 'annual-current@chooselife.local', 'Anual Em Dia'),
-    ('c1fe0000-0000-4000-8000-000000000010'::uuid, 'recurring-review@chooselife.local', 'Recorrência Em Análise'),
-    ('c1fe0000-0000-4000-8000-000000000011'::uuid, 'ex-member@chooselife.local', 'Ex Membro')
-) as persona(id, email, display_name);
+    ('c1fe0000-0000-4000-8000-000000000001'::uuid, 'admin@chooselife.local', 'Admin SL.A.C', '@seed_admin_slac'),
+    ('c1fe0000-0000-4000-8000-000000000002'::uuid, 'new@chooselife.local', 'Novo Sem Cadastro', '@seed_novo'),
+    ('c1fe0000-0000-4000-8000-000000000003'::uuid, 'draft@chooselife.local', 'Aplicação Rascunho', '@seed_rascunho'),
+    ('c1fe0000-0000-4000-8000-000000000004'::uuid, 'awaiting-payment@chooselife.local', 'Aguardando Pagamento', '@seed_aguarda_pix'),
+    ('c1fe0000-0000-4000-8000-000000000005'::uuid, 'initial-review@chooselife.local', 'Pagamento Em Análise', '@seed_analise_inicial'),
+    ('c1fe0000-0000-4000-8000-000000000006'::uuid, 'claim-rejected@chooselife.local', 'Pagamento Rejeitado', '@seed_rejeitado'),
+    ('c1fe0000-0000-4000-8000-000000000007'::uuid, 'monthly-current@chooselife.local', 'Mensal Em Dia', '@seed_mensal_em_dia'),
+    ('c1fe0000-0000-4000-8000-000000000008'::uuid, 'monthly-overdue@chooselife.local', 'Mensal Em Atraso', '@seed_mensal_atraso'),
+    ('c1fe0000-0000-4000-8000-000000000009'::uuid, 'annual-current@chooselife.local', 'Anual Em Dia', '@seed_anual_em_dia'),
+    ('c1fe0000-0000-4000-8000-000000000010'::uuid, 'recurring-review@chooselife.local', 'Recorrência Em Análise', '@seed_recorrencia'),
+    ('c1fe0000-0000-4000-8000-000000000011'::uuid, 'ex-member@chooselife.local', 'Ex Membro', '@seed_ex_membro')
+) as persona(id, email, display_name, username);
 
 insert into auth.identities (
   id,

@@ -26,7 +26,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { signInWithEmailPassword } from "@/utils/auth/sign-in";
+import {
+  refreshAfterPasswordSignIn,
+  signInWithEmailPassword,
+} from "@/utils/auth/sign-in";
 import { supabaseBrowser } from "@/utils/supabase/client";
 import { useLoginModal } from "@/utils/useLoginModal";
 
@@ -77,8 +80,10 @@ function SignUp() {
 
     form.reset();
     setStep("initial");
-    toggleLoginModal("closed");
-    router.refresh();
+    await refreshAfterPasswordSignIn({
+      closeLoginModal: () => toggleLoginModal("closed"),
+      refresh: router.refresh,
+    });
   }
 
   const dialogContentInitial = () => (

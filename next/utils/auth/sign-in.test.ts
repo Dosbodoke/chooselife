@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 // Node's native TypeScript runner requires an explicit extension.
+// prettier-ignore
 // @ts-expect-error TypeScript resolves the same source file for the web build.
-import { signInWithEmailPassword } from "./sign-in.ts";
+import { refreshAfterPasswordSignIn, signInWithEmailPassword } from "./sign-in.ts";
 
 test("signs in with an email and password instead of sending an OTP", async () => {
   const calls: Array<{ email: string; password: string }> = [];
@@ -62,4 +63,31 @@ test("does not expose unexpected Supabase errors to the login form", async () =>
   });
 
   assert.deepEqual(result, { success: false, reason: "unknown" });
+});
+
+test("waits for the login modal URL update before refreshing authenticated content", async () => {
+  const calls: string[] = [];
+  let finishClosingModal: (() => void) | undefined;
+  const modalClosed = new Promise<void>((resolve) => {
+    finishClosingModal = resolve;
+  });
+
+  const refreshPromise = refreshAfterPasswordSignIn({
+    closeLoginModal: async () => {
+      calls.push("close-started");
+      await modalClosed;
+      calls.push("close-finished");
+    },
+    refresh: () => {
+      calls.push("refresh");
+    },
+  });
+
+  await Promise.resolve();
+  assert.deepEqual(calls, ["close-started"]);
+
+  finishClosingModal?.();
+  await refreshPromise;
+
+  assert.deepEqual(calls, ["close-started", "close-finished", "refresh"]);
 });

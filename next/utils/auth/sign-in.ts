@@ -13,9 +13,14 @@ type PasswordSignInResult =
   | { success: true }
   | { success: false; reason: "invalid_credentials" | "unknown" };
 
+type RefreshAfterPasswordSignInOptions = {
+  closeLoginModal: () => Promise<unknown>;
+  refresh: () => void;
+};
+
 export async function signInWithEmailPassword(
   auth: PasswordAuthClient,
-  credentials: PasswordCredentials
+  credentials: PasswordCredentials,
 ): Promise<PasswordSignInResult> {
   try {
     const { error } = await auth.signInWithPassword(credentials);
@@ -27,9 +32,19 @@ export async function signInWithEmailPassword(
     return {
       success: false,
       reason:
-        error.code === "invalid_credentials" ? "invalid_credentials" : "unknown",
+        error.code === "invalid_credentials"
+          ? "invalid_credentials"
+          : "unknown",
     };
   } catch {
     return { success: false, reason: "unknown" };
   }
+}
+
+export async function refreshAfterPasswordSignIn({
+  closeLoginModal,
+  refresh,
+}: RefreshAfterPasswordSignInOptions): Promise<void> {
+  await closeLoginModal();
+  refresh();
 }
