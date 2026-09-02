@@ -1,13 +1,13 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useFocusEffect, useRouter } from 'expo-router';
 import {
   AlertCircle,
-  ArrowRight,
+  ArrowUpRight,
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   Clock3,
   RefreshCw,
-  ShieldCheck,
 } from 'lucide-react-native';
 import React from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
@@ -16,72 +16,38 @@ import { useAuth } from '~/context/auth';
 import { getPaymentObligationRouteParams } from '~/lib/manual-payment';
 import {
   fetchMembershipBillingLedger,
-  type LedgerFinancialStanding,
   type LedgerObligation,
   type MembershipBillingLedger,
 } from '~/lib/membership-ledger';
+import {
+  formatLedgerAmount,
+  formatLedgerDate,
+  getHistoryCountLabel,
+  getMembershipDescription,
+  getMembershipTitle,
+  getNextStepDescription,
+  getObligationMeta,
+  getObligationStatusLabel,
+  getObligationTitle,
+  getPaymentActionLabel,
+  getPaymentSectionLabel,
+  getRejectedClaimReason,
+  isApplicantWithDraft,
+  isRefusedApplicant,
+} from '~/lib/membership-ledger-copy';
 import { queryKeys } from '~/lib/query-keys';
 
+import { BecomeMemberCard } from '~/components/organizations/become-member-card';
 import { Button } from '~/components/ui/button';
 import { Text } from '~/components/ui/text';
 
-const formatAmount = (amount: number, currency: string) =>
-  new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency,
-  }).format(amount / 100);
-
-const ledgerDateFormatter = new Intl.DateTimeFormat('pt-BR', {
-  day: '2-digit',
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
-
-const formatDate = (date: string) => {
-  const parsed = new Date(`${date}T00:00:00Z`);
-  if (Number.isNaN(parsed.getTime())) return date;
-
-  return ledgerDateFormatter.format(parsed);
-};
-
-const financialCopy: Record<
-  LedgerFinancialStanding,
-  { description: string; label: string; tone: string }
-> = {
-  up_to_date: {
-    description:
-      'Sua próxima contribuição ficará disponível antes do vencimento.',
-    label: 'Contribuições em dia',
-    tone: 'emerald',
-  },
-  payment_available: {
-    description: 'Há uma contribuição pronta para pagamento no Ledger.',
-    label: 'Pagamento disponível',
-    tone: 'blue',
-  },
-  under_review: {
-    description:
-      'Seu aviso foi recebido e está aguardando conferência da associação.',
-    label: 'Pagamento em análise',
-    tone: 'violet',
-  },
-  overdue: {
-    description:
-      'Sua associação continua ativa. Regularize o período em atraso quando puder.',
-    label: 'Contribuição em atraso',
-    tone: 'amber',
-  },
-};
-
-const obligationStatusCopy: Record<string, string> = {
-  available: 'Disponível',
-  overdue: 'Em atraso',
-  scheduled: 'Agendado',
-  settled: 'Confirmado',
-  under_review: 'Em análise',
-  void: 'Cancelado',
-};
+function LedgerSectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <Text className="text-xs font-bold uppercase tracking-[1.4px] text-zinc-500">
+      {children}
+    </Text>
+  );
+}
 
 function ObligationIcon({ status }: { status: LedgerObligation['status'] }) {
   if (status === 'settled') return <CheckCircle2 color="#047857" size={18} />;
@@ -90,46 +56,44 @@ function ObligationIcon({ status }: { status: LedgerObligation['status'] }) {
   return <CalendarDays color="#52525B" size={18} />;
 }
 
+const getObligationIconBackground = (status: LedgerObligation['status']) => {
+  if (status === 'settled') return 'bg-emerald-50';
+  if (status === 'under_review') return 'bg-violet-50';
+  if (status === 'overdue') return 'bg-amber-50';
+  return 'bg-zinc-100';
+};
+
 function ObligationRow({ obligation }: { obligation: LedgerObligation }) {
+  const rejectedReason = getRejectedClaimReason(obligation);
+
   return (
-    <View className="gap-2 border-t border-zinc-100 px-4 py-4">
-      <View className="flex-row items-center gap-3">
-        <View className="h-9 w-9 items-center justify-center rounded-xl bg-zinc-100">
-          <ObligationIcon status={obligation.status} />
-        </View>
-        <View className="min-w-0 flex-1 gap-1">
-          <Text className="font-bold text-zinc-900">
-            Período {obligation.period_key}
-          </Text>
-          <Text className="text-xs text-zinc-500">
-            Vencimento: {formatDate(obligation.due_on)}
-          </Text>
-        </View>
-        <View className="items-end gap-1">
-          <Text className="font-bold text-zinc-900">
-            {formatAmount(obligation.amount, obligation.currency)}
-          </Text>
-          <Text className="text-xs font-semibold text-zinc-500">
-            {obligationStatusCopy[obligation.status] ?? obligation.status}
-          </Text>
-        </View>
+    <View className="flex-row items-start gap-3 border-t border-zinc-100 px-5 py-4">
+      <View
+        className={`mt-0.5 h-9 w-9 items-center justify-center rounded-full ${getObligationIconBackground(obligation.status)}`}
+      >
+        <ObligationIcon status={obligation.status} />
       </View>
-      {obligation.claims?.length ? (
-        <View className="gap-1 pl-12">
-          {obligation.claims.map((claim) => (
-            <Text
-              key={claim.claim_id}
-              className="text-right text-[11px] leading-4 text-zinc-500"
-            >
-              {claim.status === 'rejected'
-                ? `Aviso rejeitado${claim.decision_reason ? `: ${claim.decision_reason}` : ''}`
-                : claim.status === 'under_review'
-                  ? 'Aviso aguardando conferência'
-                  : 'Pagamento conferido'}
-            </Text>
-          ))}
-        </View>
-      ) : null}
+      <View className="min-w-0 flex-1 gap-1">
+        <Text className="font-bold text-zinc-900">
+          {getObligationTitle(obligation)}
+        </Text>
+        <Text className="text-xs leading-4 text-zinc-500">
+          {getObligationMeta(obligation)}
+        </Text>
+        {rejectedReason ? (
+          <Text className="text-xs leading-4 text-amber-700">
+            Motivo: {rejectedReason}
+          </Text>
+        ) : null}
+      </View>
+      <View className="items-end gap-1">
+        <Text className="font-bold text-zinc-900" selectable>
+          {formatLedgerAmount(obligation.amount, obligation.currency)}
+        </Text>
+        <Text className="text-xs font-semibold text-zinc-500">
+          {getObligationStatusLabel(obligation.status)}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -147,18 +111,13 @@ function ActionButton({
   if (!obligation.obligation_id) return null;
 
   const isApplicant = ledger.legal_membership_state === 'applicant';
-  const label =
-    obligation.status === 'under_review'
-      ? 'Ver pagamento em análise'
-      : isApplicant
-        ? 'Ver PIX e avisar pagamento'
-        : 'Abrir PIX da contribuição';
+  const label = getPaymentActionLabel(ledger, obligation);
 
   return (
     <Button
       accessibilityLabel={label}
-      accessibilityHint="Abre os dados oficiais desta obrigação"
-      className="min-h-11 flex-row items-center justify-center gap-2 rounded-xl bg-zinc-950"
+      accessibilityHint="Abre os dados oficiais desta contribuição"
+      className="min-h-12 flex-row items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-4 py-3"
       onPress={() =>
         router.push({
           pathname: '/payment',
@@ -172,124 +131,152 @@ function ActionButton({
         })
       }
     >
-      <ArrowRight color="#FFFFFF" size={18} />
-      <Text className="font-bold text-white">{label}</Text>
+      <ArrowUpRight color="#FFFFFF" size={18} strokeWidth={2.4} />
+      <Text className="text-sm font-bold text-white">{label}</Text>
+    </Button>
+  );
+}
+
+function ApplicationActionButton({
+  label,
+  slug,
+}: {
+  label: string;
+  slug: string;
+}) {
+  const router = useRouter();
+
+  return (
+    <Button
+      accessibilityLabel={label}
+      accessibilityHint="Abre o cadastro para continuar sua associação"
+      className="mt-3 min-h-11 flex-row items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-4 py-3"
+      onPress={() => router.push(`/organizations/${slug}/member`)}
+    >
+      <ArrowUpRight color="#FFFFFF" size={18} strokeWidth={2.4} />
+      <Text className="text-sm font-bold text-white">{label}</Text>
     </Button>
   );
 }
 
 function LedgerContent({
+  hasMoreHistory,
+  history,
+  isLoadingMoreHistory,
   ledger,
+  onLoadMoreHistory,
   slug,
 }: {
+  hasMoreHistory: boolean;
+  history: LedgerObligation[];
+  isLoadingMoreHistory: boolean;
   ledger: MembershipBillingLedger;
+  onLoadMoreHistory: () => void;
   slug: string;
 }) {
-  const financial = financialCopy[ledger.financial_standing];
   const attention = ledger.attention_obligation;
   const next = ledger.next_contribution;
   const isApplicant = ledger.legal_membership_state === 'applicant';
+  const showApplicationAction =
+    isApplicantWithDraft(ledger) || isRefusedApplicant(ledger);
+  const applicationActionLabel = isApplicantWithDraft(ledger)
+    ? 'Continuar cadastro'
+    : 'Enviar nova candidatura';
+  const showNextStep = isApplicant || Boolean(attention);
+  const showNextContribution = !isApplicant && Boolean(next);
+  const historyCountLabel = getHistoryCountLabel(
+    history.length,
+    hasMoreHistory,
+  );
 
   return (
-    <View className="gap-4 rounded-2xl border border-zinc-200 bg-white p-4">
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="min-w-0 flex-1 gap-1">
-          <Text className="text-xs font-bold uppercase tracking-widest text-zinc-500">
-            {isApplicant ? 'Admissão' : 'Ledger da associação'}
-          </Text>
-          <Text
-            accessibilityRole="header"
-            className="text-xl font-black text-zinc-950"
-          >
-            {isApplicant ? 'Candidatura em andamento' : 'Associado ativo'}
-          </Text>
-        </View>
-        <View className="flex-row items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-2">
-          <ShieldCheck color="#047857" size={15} />
-          <Text className="text-xs font-bold text-emerald-700">
-            {isApplicant ? 'Em análise' : 'Vínculo ativo'}
-          </Text>
-        </View>
-      </View>
-
-      <View
-        className={`gap-2 rounded-2xl border p-4 ${
-          financial.tone === 'amber'
-            ? 'border-amber-200 bg-amber-50'
-            : financial.tone === 'violet'
-              ? 'border-violet-200 bg-violet-50'
-              : financial.tone === 'blue'
-                ? 'border-blue-200 bg-blue-50'
-                : 'border-emerald-200 bg-emerald-50'
-        }`}
-      >
-        <Text className="text-xs font-bold uppercase tracking-wide text-zinc-600">
-          Situação financeira
+    <View className="overflow-hidden rounded-3xl bg-white">
+      <View className="gap-1 px-5 pb-5 pt-5">
+        <LedgerSectionLabel>Minha associação</LedgerSectionLabel>
+        <Text
+          accessibilityRole="header"
+          className="text-2xl font-black text-zinc-950"
+          selectable
+        >
+          {getMembershipTitle(ledger)}
         </Text>
-        <Text className="text-lg font-black text-zinc-950">
-          {isApplicant && ledger.financial_standing === 'payment_available'
-            ? 'Primeira contribuição disponível'
-            : isApplicant && ledger.financial_standing === 'under_review'
-              ? 'Admissão em análise'
-              : financial.label}
-        </Text>
-        <Text className="text-sm leading-5 text-zinc-700">
-          {isApplicant && ledger.financial_standing === 'under_review'
-            ? 'Seu PIX foi informado. A associação ainda precisa verificar o pagamento e admitir você.'
-            : isApplicant
-              ? 'Complete a primeira contribuição para que a associação possa verificar sua admissão.'
-              : financial.description}
+        <Text className="text-sm leading-5 text-zinc-600">
+          {getMembershipDescription(ledger)}
         </Text>
       </View>
 
       {attention ? (
-        <View className="gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-          <View className="flex-row items-center justify-between gap-3">
-            <Text className="text-xs font-bold uppercase tracking-wide text-zinc-500">
-              Precisa de atenção
-            </Text>
-            <Text className="text-xs font-bold text-zinc-600">
-              {formatDate(attention.due_on)}
-            </Text>
-          </View>
-          <View className="flex-row items-end justify-between gap-3">
-            <Text className="text-lg font-black text-zinc-950">
-              {formatAmount(attention.amount, attention.currency)}
-            </Text>
-            <Text className="text-sm font-semibold text-zinc-600">
-              {obligationStatusCopy[attention.status] ?? attention.status}
-            </Text>
+        <View className="gap-4 border-y border-zinc-200 px-5 py-4">
+          <View className="flex-row items-start justify-between gap-4">
+            <View className="min-w-0 flex-1 gap-1">
+              <LedgerSectionLabel>
+                {getPaymentSectionLabel(ledger, attention)}
+              </LedgerSectionLabel>
+              <Text className="text-sm text-zinc-600">
+                Vencimento em {formatLedgerDate(attention.due_on)}
+              </Text>
+            </View>
+            <View className="items-end gap-1">
+              <Text className="text-xl font-black text-zinc-950" selectable>
+                {formatLedgerAmount(attention.amount, attention.currency)}
+              </Text>
+              <Text className="text-xs font-semibold text-zinc-500">
+                {getObligationStatusLabel(attention.status)}
+              </Text>
+            </View>
           </View>
           <ActionButton ledger={ledger} obligation={attention} slug={slug} />
         </View>
       ) : null}
 
-      {!isApplicant && next ? (
-        <View className="flex-row items-center gap-3 rounded-2xl bg-zinc-50 p-4">
+      {showNextStep ? (
+        <View className="flex-row items-center gap-3 px-5 py-4">
           <CalendarDays color="#52525B" size={22} />
           <View className="min-w-0 flex-1 gap-1">
-            <Text className="text-xs font-bold uppercase tracking-wide text-zinc-500">
-              Próxima contribuição
+            <LedgerSectionLabel>
+              {isRefusedApplicant(ledger) ? 'Como continuar' : 'Próximo passo'}
+            </LedgerSectionLabel>
+            <Text className="text-sm leading-5 text-zinc-600">
+              {getNextStepDescription(ledger, attention)}
             </Text>
+            {showApplicationAction ? (
+              <ApplicationActionButton
+                label={applicationActionLabel}
+                slug={slug}
+              />
+            ) : null}
+          </View>
+        </View>
+      ) : null}
+
+      {showNextContribution && next ? (
+        <View
+          className={`flex-row items-center gap-3 px-5 py-4 ${attention || showNextStep ? 'border-t border-zinc-200' : 'border-y border-zinc-200'}`}
+        >
+          <CalendarDays color="#52525B" size={22} />
+          <View className="min-w-0 flex-1 gap-1">
+            <LedgerSectionLabel>Próxima contribuição</LedgerSectionLabel>
             <Text className="font-bold text-zinc-950">
-              {formatAmount(next.amount, next.currency)} ·{' '}
-              {formatDate(next.due_on)}
+              {formatLedgerAmount(next.amount, next.currency)} ·{' '}
+              {formatLedgerDate(next.due_on)}
             </Text>
           </View>
         </View>
       ) : null}
 
-      <View className="overflow-hidden rounded-2xl border border-zinc-200">
-        <View className="flex-row items-center justify-between px-4 py-4">
+      <View className="border-t border-zinc-200">
+        <View className="flex-row items-center justify-between gap-3 px-5 py-4">
           <Text className="font-black text-zinc-950">
             Histórico de contribuições
           </Text>
-          <Text className="text-xs font-semibold text-zinc-500">
-            {ledger.history.length} períodos
-          </Text>
+          {historyCountLabel ? (
+            <Text className="text-xs font-semibold text-zinc-500">
+              {historyCountLabel}
+            </Text>
+          ) : null}
         </View>
-        {ledger.history.length > 0 ? (
-          ledger.history.map((obligation) => (
+        {history.length > 0 ? (
+          history.map((obligation) => (
             <ObligationRow
               key={
                 obligation.obligation_id ??
@@ -299,10 +286,30 @@ function LedgerContent({
             />
           ))
         ) : (
-          <Text className="border-t border-zinc-100 px-4 py-5 text-sm text-zinc-500">
-            Ainda não há períodos no histórico.
+          <Text className="border-t border-zinc-100 px-5 py-5 text-sm text-zinc-500">
+            Ainda não há contribuições registradas.
           </Text>
         )}
+        {hasMoreHistory ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Ver contribuições anteriores"
+            className="min-h-12 flex-row items-center justify-center gap-2 border-t border-zinc-100 px-5 py-4"
+            disabled={isLoadingMoreHistory}
+            onPress={onLoadMoreHistory}
+          >
+            {isLoadingMoreHistory ? (
+              <ActivityIndicator color="#18181B" size="small" />
+            ) : (
+              <ChevronDown color="#18181B" size={16} strokeWidth={2.4} />
+            )}
+            <Text className="text-sm font-bold text-zinc-950">
+              {isLoadingMoreHistory
+                ? 'Carregando...'
+                : 'Ver contribuições anteriores'}
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );
@@ -319,9 +326,13 @@ export function MembershipLedger({
   const queryClient = useQueryClient();
   const userId = session?.user.id;
   const queryKey = queryKeys.membershipBilling.byOrg(organizationId, userId);
-  const ledgerQuery = useQuery({
+  const ledgerQuery = useInfiniteQuery({
     queryKey,
-    queryFn: () => fetchMembershipBillingLedger(organizationId),
+    queryFn: ({ pageParam }) =>
+      fetchMembershipBillingLedger(organizationId, pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) =>
+      lastPage?.history_has_more ? lastPage.history_next_cursor : null,
     enabled: Boolean(userId && organizationId),
     staleTime: 15_000,
     refetchOnWindowFocus: true,
@@ -340,21 +351,25 @@ export function MembershipLedger({
     return (
       <View className="items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white p-8">
         <ActivityIndicator color="#18181B" />
-        <Text className="text-sm text-zinc-500">Carregando seu Ledger...</Text>
+        <Text className="text-sm text-zinc-500">
+          Carregando sua situação...
+        </Text>
       </View>
     );
   }
 
-  if (ledgerQuery.isError || !ledgerQuery.data) {
+  const pages = ledgerQuery.data?.pages;
+
+  if (ledgerQuery.isError || pages === undefined) {
     return (
       <View className="items-center gap-3 rounded-2xl border border-red-200 bg-white p-6">
         <AlertCircle color="#DC2626" size={32} />
         <Text className="text-center text-base font-bold text-zinc-950">
-          Não foi possível carregar o Ledger
+          Não foi possível carregar sua situação
         </Text>
         <Text className="text-center text-sm leading-5 text-zinc-600">
           O perfil público e as notícias continuam disponíveis. Tente consultar
-          sua situação financeira novamente.
+          suas contribuições novamente.
         </Text>
         <Pressable
           accessibilityRole="button"
@@ -369,5 +384,18 @@ export function MembershipLedger({
     );
   }
 
-  return <LedgerContent ledger={ledgerQuery.data} slug={slug} />;
+  const ledger = pages[0];
+
+  if (!ledger) return <BecomeMemberCard slug={slug} />;
+
+  return (
+    <LedgerContent
+      hasMoreHistory={ledgerQuery.hasNextPage}
+      history={pages.flatMap((page) => page?.history ?? [])}
+      isLoadingMoreHistory={ledgerQuery.isFetchingNextPage}
+      ledger={ledger}
+      onLoadMoreHistory={() => void ledgerQuery.fetchNextPage()}
+      slug={slug}
+    />
+  );
 }

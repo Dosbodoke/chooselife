@@ -1,7 +1,9 @@
 import { queryKeys, SupabaseProvider, useOrganization } from '@chooselife/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Linking from 'expo-linking';
 import {
   ChevronRightIcon,
+  ExternalLinkIcon,
   MapPinIcon,
   UsersIcon,
   type LucideIcon,
@@ -60,6 +62,9 @@ function OrganizationDetailsPage() {
       queryClient.invalidateQueries({
         queryKey: appQueryKeys.membershipBilling.all,
       }),
+      queryClient.invalidateQueries({
+        queryKey: appQueryKeys.organizations.all,
+      }),
     ]);
     setRefreshing(false);
   };
@@ -107,7 +112,10 @@ function OrganizationDetailsPage() {
 
         {/* Info Group */}
         <View className="bg-white rounded-xl overflow-hidden">
-          <OrganizationStatsGroup slug={organization.slug} />
+          <OrganizationStatsGroup
+            organizationId={organization.id}
+            slug={organization.slug}
+          />
         </View>
 
         {/* Private membership and financial state stays behind one server read model. */}
@@ -152,11 +160,43 @@ const fetchMemberCount = async (slug: string) => {
   return count || 0;
 };
 
-const OrganizationStatsGroup = ({ slug }: { slug: string }) => {
+const fetchIsOrganizationAdmin = async (
+  organizationId: string,
+  userId: string,
+) => {
+  const { data, error } = await supabase
+    .from('organization_members')
+    .select('role')
+    .eq('organization_id', organizationId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching organization role:', error);
+    return false;
+  }
+
+  return data?.role === 'admin';
+};
+
+const OrganizationStatsGroup = ({
+  organizationId,
+  slug,
+}: {
+  organizationId: string;
+  slug: string;
+}) => {
+  const { session } = useAuth();
+  const userId = session?.user.id;
   const { data: memberCount, isLoading } = useQuery({
     queryKey: queryKeys.organizations.memberCount(slug),
     queryFn: () => fetchMemberCount(slug),
     enabled: !!slug,
+  });
+  const { data: isAdmin } = useQuery({
+    queryKey: appQueryKeys.organizations.adminRole(organizationId, userId),
+    queryFn: () => fetchIsOrganizationAdmin(organizationId, userId!),
+    enabled: Boolean(organizationId && userId),
   });
 
   return (
@@ -180,8 +220,26 @@ const OrganizationStatsGroup = ({ slug }: { slug: string }) => {
         rightElement={
           <Text className="text-gray-500 font-medium">Anápolis</Text>
         }
-        isLast
+        isLast={!isAdmin}
       />
+      {isAdmin ? (
+        <SettingsItem
+          icon={ExternalLinkIcon}
+          iconColor="#7C3AED"
+          label="Administração"
+          rightElement={
+            <Text className="text-gray-500 font-medium">Abrir</Text>
+          }
+          onPress={() => {
+            void Linking.openURL('https://chooselife.club/admin').catch(
+              (error: unknown) => {
+                console.error('Error opening administration:', error);
+              },
+            );
+          }}
+          isLast
+        />
+      ) : null}
     </>
   );
 };
@@ -208,6 +266,8 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
 }) => {
   return (
     <Pressable
+      accessibilityLabel={onPress ? label : undefined}
+      accessibilityRole={onPress ? 'button' : undefined}
       onPress={onPress}
       disabled={!onPress}
       className={cn(
