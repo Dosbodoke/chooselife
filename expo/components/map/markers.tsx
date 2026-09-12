@@ -1,6 +1,7 @@
 import MapboxGL from '@rnmapbox/maps';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMapStore } from '~/store/map-store';
+import type { FeatureCollection, LineString } from 'geojson';
 import React, { useCallback, useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import SuperclusterClass, {
@@ -32,6 +33,16 @@ interface PointProperties {
   status: RigStatuses;
 }
 
+/** A highline whose two anchors are both known, ready to draw. */
+type HighlineDetail = {
+  highline: Highline;
+  distance: number;
+  midpoint: [number, number];
+  anchorA: [number, number];
+  anchorB: [number, number];
+  isHighlighted: boolean;
+};
+
 const statusColor: Record<RigStatuses, string> = {
   planned: 'bg-amber-300',
   rigged: 'bg-green-500',
@@ -53,6 +64,38 @@ const lineStatusColor: Record<RigStatuses, string> = {
   planned: '#ffd54f',
   rigged: '#22C55E',
   unrigged: '#f44336',
+};
+
+/**
+ * Last zoom at which highlines are grouped into clusters. Supercluster keeps a
+ * tree per level up to this one and the raw points at `MAX_CLUSTER_ZOOM + 1`,
+ * so querying past it hands back every point individually.
+ */
+const MAX_CLUSTER_ZOOM = 15;
+
+/**
+ * From here on nothing is clustered: every highline in view draws its own
+ * anchors and line, which is what makes a spot readable once you are close
+ * enough to care about the individual lines.
+ */
+const UNCLUSTERED_ZOOM = MAX_CLUSTER_ZOOM + 1;
+
+type LineProperties = {
+  color: string;
+  highlighted: boolean;
+};
+
+/**
+ * Data-driven so every line shares a single layer: `color` and `highlighted`
+ * are read off each feature instead of baking a layer per highline.
+ */
+const LINE_LAYER_STYLE: React.ComponentProps<
+  typeof MapboxGL.LineLayer
+>['style'] = {
+  lineColor: ['get', 'color'],
+  lineWidth: ['case', ['get', 'highlighted'], 3, 1.5],
+  lineOpacity: ['case', ['get', 'highlighted'], 0.9, 0.4],
+  lineCap: 'round',
 };
 
 const AnchorMarker: React.FC<{
@@ -189,7 +232,7 @@ const MarkersComponent: React.FC<{
   const supercluster = useMemo(() => {
     return new SuperclusterClass<PointProperties>({
       radius: 40,
-      maxZoom: 25,
+      maxZoom: MAX_CLUSTER_ZOOM,
     }).load(points);
   }, [points]);
 
@@ -258,12 +301,84 @@ const MarkersComponent: React.FC<{
     return highlightedMarker;
   }, [highlightedMarker, visibleAnchorAHighlineIds]);
 
+  /**
+   * Everything that needs both anchors - the line, its length label and the B
+   * marker - is resolved once here, so the render pass does no trigonometry
+   * and the line collection below is built from the same validated list.
+   */
+  const detailFeatures = useMemo<HighlineDetail[]>(() => {
+    const details: HighlineDetail[] = [];
+
+    detailHighlines.forEach((highline) => {
+      const { anchor_a_lat, anchor_a_long, anchor_b_lat, anchor_b_long } =
+        highline;
+
+      if (
+        typeof anchor_a_lat !== 'number' ||
+        typeof anchor_a_long !== 'number' ||
+        typeof anchor_b_lat !== 'number' ||
+        typeof anchor_b_long !== 'number'
+      ) {
+        return;
+      }
+
+      const distance = haversineDistance(
+        anchor_a_lat,
+        anchor_a_long,
+        anchor_b_lat,
+        anchor_b_long,
+      );
+
+      if (distance < 5) return;
+
+      details.push({
+        highline,
+        distance,
+        midpoint: calculateMidpoint(
+          anchor_a_lat,
+          anchor_a_long,
+          anchor_b_lat,
+          anchor_b_long,
+        ),
+        anchorA: [anchor_a_long, anchor_a_lat],
+        anchorB: [anchor_b_long, anchor_b_lat],
+        isHighlighted: highlightedMarker?.id === highline.id,
+      });
+    });
+
+    return details;
+  }, [detailHighlines, highlightedMarker?.id]);
+
+  const lineFeatures = useMemo<FeatureCollection<LineString, LineProperties>>(
+    () => ({
+      type: 'FeatureCollection',
+      features: detailFeatures.map(
+        ({ highline, anchorA, anchorB, isHighlighted }) => ({
+          type: 'Feature',
+          id: highline.id,
+          properties: {
+            color: highline.status
+              ? lineStatusColor[highline.status as RigStatuses]
+              : '#000000',
+            highlighted: isHighlighted,
+          },
+          geometry: {
+            type: 'LineString',
+            coordinates: [anchorA, anchorB],
+          },
+        }),
+      ),
+    }),
+    [detailFeatures],
+  );
+
   const handleClusterPress = useCallback(
     (cluster_id: number): void => {
       const expansionZoom =
         supercluster.getClusterExpansionZoom(cluster_id) || 20;
 
-      const clampedZoom = Math.min(expansionZoom, 17);
+      // Never fly past the point where the cluster is gone anyway.
+      const clampedZoom = Math.min(expansionZoom, UNCLUSTERED_ZOOM);
 
       const cluster = clusters.find(
         (c) =>
@@ -340,69 +455,31 @@ const MarkersComponent: React.FC<{
 
   return (
     <>
-      {/* 
+      {/*
         Low-priority details first.
 
         Distance labels should never win visually over clusters or Anchor A.
         They are only rendered for visible individual highlines or highlighted one.
+
+        Past UNCLUSTERED_ZOOM every highline in view draws its own line, so the
+        lines live in one source styled from feature properties rather than a
+        source and a layer per highline.
       */}
-      {detailHighlines.map((highline) => {
-        if (
-          typeof highline.anchor_a_lat !== 'number' ||
-          typeof highline.anchor_a_long !== 'number' ||
-          typeof highline.anchor_b_lat !== 'number' ||
-          typeof highline.anchor_b_long !== 'number'
-        ) {
-          return null;
-        }
+      {lineFeatures.features.length > 0 ? (
+        <MapboxGL.ShapeSource id="highline-lines" shape={lineFeatures}>
+          <MapboxGL.LineLayer
+            id="highline-lines-layer"
+            style={LINE_LAYER_STYLE}
+          />
+        </MapboxGL.ShapeSource>
+      ) : null}
 
-        const distance = haversineDistance(
-          highline.anchor_a_lat,
-          highline.anchor_a_long,
-          highline.anchor_b_lat,
-          highline.anchor_b_long,
-        );
-
-        if (distance < 5) return null;
-
-        const isHighlighted = highlightedMarker?.id === highline.id;
-
-        return (
+      {detailFeatures.map(
+        ({ highline, distance, midpoint, anchorB, isHighlighted }) => (
           <React.Fragment key={`details-${highline.id}`}>
-            <MapboxGL.ShapeSource
-              id={`line-${highline.id}`}
-              shape={{
-                type: 'Feature',
-                geometry: {
-                  type: 'LineString',
-                  coordinates: [
-                    [highline.anchor_a_long, highline.anchor_a_lat],
-                    [highline.anchor_b_long, highline.anchor_b_lat],
-                  ],
-                },
-                properties: {},
-              }}
-            >
-              <MapboxGL.LineLayer
-                id={`line-layer-${highline.id}`}
-                style={{
-                  lineColor: highline.status
-                    ? lineStatusColor[highline.status as RigStatuses]
-                    : '#000000',
-                  lineWidth: isHighlighted ? 3 : 1.5,
-                  lineOpacity: isHighlighted ? 0.9 : 0.4,
-                }}
-              />
-            </MapboxGL.ShapeSource>
-
             <MapboxGL.MarkerView
               id={`length-${highline.id}`}
-              coordinate={calculateMidpoint(
-                highline.anchor_a_lat,
-                highline.anchor_a_long,
-                highline.anchor_b_lat,
-                highline.anchor_b_long,
-              )}
+              coordinate={midpoint}
               anchor={{ x: 0.5, y: 0.5 }}
               {...NEVER_COLLIDE}
             >
@@ -411,7 +488,7 @@ const MarkersComponent: React.FC<{
 
             <MapboxGL.MarkerView
               id={`marker-B-${highline.id}`}
-              coordinate={[highline.anchor_b_long, highline.anchor_b_lat]}
+              coordinate={anchorB}
               {...NEVER_COLLIDE}
             >
               <Pressable onPress={() => handleMarkerSelect(highline.id)}>
@@ -423,8 +500,8 @@ const MarkersComponent: React.FC<{
               </Pressable>
             </MapboxGL.MarkerView>
           </React.Fragment>
-        );
-      })}
+        ),
+      )}
 
       {/* 
   High-priority markers second.
