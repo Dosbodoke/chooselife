@@ -123,7 +123,7 @@ export default function ExploreMap() {
     });
     cameraRef.current?.setCamera({
       centerCoordinate: [region.longitude, region.latitude],
-      zoomLevel: 5,
+      zoomLevel: 16,
       animationDuration: 1000,
       animationMode: 'flyTo',
     });

@@ -1,4 +1,3 @@
-import { useMapStore } from '~/store/map-store';
 import {
   LocateFixedIcon,
   LocateIcon,
