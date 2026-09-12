@@ -12,6 +12,7 @@ import Animated, {
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withSpring,
 } from 'react-native-reanimated';
 
@@ -36,6 +37,17 @@ const statusColor: Record<RigStatuses, string> = {
   rigged: 'bg-green-500',
   unrigged: 'bg-red-500',
 };
+
+/**
+ * `MarkerView` defaults both of these to false, which makes Mapbox drop any
+ * marker that collides with a neighbour or with the LocationPuck - so the pins
+ * closest to the user, the ones that matter most, were the first to disappear.
+ * Every marker here is deliberately exempt from collision culling.
+ */
+const NEVER_COLLIDE = {
+  allowOverlap: true,
+  allowOverlapWithPuck: true,
+} as const;
 
 const lineStatusColor: Record<RigStatuses, string> = {
   planned: '#ffd54f',
@@ -98,9 +110,12 @@ const AnimatedCluster: React.FC<{
   });
 
   const handlePress = () => {
-    animation.value = withSpring(1, {}, () => {
-      animation.value = withSpring(0);
-    });
+    // Sequenced rather than re-assigned from the completion callback: writing to
+    // the same shared value inside its own callback cancels the in-flight spring,
+    // which fires the callback again, which writes again - unbounded recursion on
+    // the UI thread ("Maximum call stack size exceeded") that takes the whole map
+    // down with it.
+    animation.value = withSequence(withSpring(1), withSpring(0));
 
     onPress();
   };
@@ -132,13 +147,13 @@ const ClusteredMarker = React.memo(
     size: number;
     onPress: () => void;
   }) => (
-    <MapboxGL.MarkerView coordinate={coordinate}>
+    <MapboxGL.MarkerView coordinate={coordinate} {...NEVER_COLLIDE}>
       <AnimatedCluster pointCount={pointCount} size={size} onPress={onPress} />
     </MapboxGL.MarkerView>
   ),
 );
 
-export const Markers: React.FC<{
+const MarkersComponent: React.FC<{
   cameraRef: React.RefObject<MapboxGL.Camera | null>;
   highlines: Highline[] | null;
   updateMarkers: (highlines: Highline[], focused: Highline) => void;
@@ -146,7 +161,11 @@ export const Markers: React.FC<{
   const { profile } = useAuth();
   const queryClient = useQueryClient();
 
-  const camera = useMapStore((state) => state.camera);
+  // Subscribed separately so a pure zoom change does not invalidate anything
+  // keyed on the viewport, and vice versa. The store hands back the same array
+  // reference whenever the underlying values did not move.
+  const cameraBounds = useMapStore((state) => state.camera.bounds);
+  const cameraZoom = useMapStore((state) => state.camera.zoom);
   const highlightedMarker = useMapStore((state) => state.highlightedMarker);
 
   const points = useMemo<Supercluster.PointFeature<PointProperties>[]>(() => {
@@ -174,9 +193,13 @@ export const Markers: React.FC<{
     }).load(points);
   }, [points]);
 
+  // Supercluster buckets on whole zoom levels, so flooring before the memo
+  // means a fractional zoom inside the same level costs nothing.
+  const clusterZoom = Math.floor(cameraZoom);
+
   const clusters = useMemo(() => {
-    return supercluster.getClusters(camera.bounds, Math.floor(camera.zoom));
-  }, [supercluster, camera.bounds, camera.zoom]);
+    return supercluster.getClusters(cameraBounds, clusterZoom);
+  }, [supercluster, cameraBounds, clusterZoom]);
 
   /**
    * These are the highlines whose Anchor A is actually visible as an individual
@@ -252,7 +275,7 @@ export const Markers: React.FC<{
 
       const [lng, lat] = cluster.geometry.coordinates;
 
-      const zoomDifference = clampedZoom - camera.zoom;
+      const zoomDifference = clampedZoom - cameraZoom;
       const shouldHighlightCards = zoomDifference < 0.5;
 
       if (shouldHighlightCards) {
@@ -292,7 +315,7 @@ export const Markers: React.FC<{
     [
       queryClient,
       supercluster,
-      camera.zoom,
+      cameraZoom,
       cameraRef,
       updateMarkers,
       clusters,
@@ -381,6 +404,7 @@ export const Markers: React.FC<{
                 highline.anchor_b_long,
               )}
               anchor={{ x: 0.5, y: 0.5 }}
+              {...NEVER_COLLIDE}
             >
               <LengthLabel distance={distance} isHighlighted={isHighlighted} />
             </MapboxGL.MarkerView>
@@ -388,6 +412,7 @@ export const Markers: React.FC<{
             <MapboxGL.MarkerView
               id={`marker-B-${highline.id}`}
               coordinate={[highline.anchor_b_long, highline.anchor_b_lat]}
+              {...NEVER_COLLIDE}
             >
               <Pressable onPress={() => handleMarkerSelect(highline.id)}>
                 <AnchorMarker
@@ -449,6 +474,7 @@ export const Markers: React.FC<{
             key={`marker-A-${point.properties.highID}`}
             id={`marker-A-${point.properties.highID}`}
             coordinate={[longitude, latitude]}
+            {...NEVER_COLLIDE}
           >
             <Pressable
               onPress={() => handleMarkerSelect(point.properties.highID)}
@@ -471,6 +497,7 @@ export const Markers: React.FC<{
             forcedHighlightedAnchorA.anchor_a_long,
             forcedHighlightedAnchorA.anchor_a_lat,
           ]}
+          {...NEVER_COLLIDE}
         >
           <Pressable
             onPress={() => handleMarkerSelect(forcedHighlightedAnchorA.id)}
@@ -486,3 +513,7 @@ export const Markers: React.FC<{
     </>
   );
 };
+
+export const Markers = React.memo(MarkersComponent);
+
+Markers.displayName = 'Markers';

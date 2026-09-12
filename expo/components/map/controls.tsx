@@ -4,7 +4,7 @@ import {
   MapIcon,
   SatelliteIcon,
 } from 'lucide-react-native';
-import type React from 'react';
+import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,7 +17,7 @@ const MapControls: React.FC<{
   isOnMyLocation: boolean;
   goToMyLocation: () => void;
   setMapType: (newMapType: MapType) => Promise<void>;
-}> = ({ mapType, isOnMyLocation, goToMyLocation, setMapType }) => {
+}> = React.memo(({ mapType, isOnMyLocation, goToMyLocation, setMapType }) => {
   const insetTop = useSafeAreaInsets().top;
 
   return (
@@ -52,6 +52,8 @@ const MapControls: React.FC<{
       </TouchableOpacity>
     </View>
   );
-};
+});
+
+MapControls.displayName = 'MapControls';
 
 export default MapControls;

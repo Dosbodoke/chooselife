@@ -1,5 +1,4 @@
 import Mapbox from '@rnmapbox/maps';
-import { BBox, Position } from 'geojson';
 import { create } from 'zustand';
 
 import { Highline, HighlineCategory } from '~/hooks/use-highline';
@@ -12,12 +11,10 @@ import {
 
 import { regionToBoundingBox } from '~/components/map/utils';
 
+import { nextCameraState, type CameraState } from './camera-state';
+
 type State = {
-  camera: {
-    zoom: number;
-    center: Position;
-    bounds: BBox;
-  };
+  camera: CameraState;
   userLocation: {
     latitude: number;
     longitude: number;
@@ -58,16 +55,13 @@ export const useMapStore = create<State & Actions>((set) => ({
   searchQuery: '',
   activeCategory: null,
   setCamera: (state: Mapbox.MapState) => {
-    set(() => {
-      const { sw, ne } = state.properties.bounds;
+    // `nextCameraState` returns the previous slice verbatim when the camera did
+    // not really move, which is what keeps `onCameraChanged` from re-rendering
+    // the entire map subtree a few times a second while the map sits still.
+    set((current) => {
+      const camera = nextCameraState(current.camera, state);
 
-      return {
-        camera: {
-          center: state.properties.center,
-          zoom: state.properties.zoom,
-          bounds: [sw[0], sw[1], ne[0], ne[1]],
-        },
-      };
+      return camera === current.camera ? {} : { camera };
     });
   },
   setUserLocation: (location) => {

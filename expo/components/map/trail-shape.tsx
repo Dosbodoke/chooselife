@@ -2,11 +2,17 @@ import Mapbox from '@rnmapbox/maps';
 import { useQuery } from '@tanstack/react-query';
 import { useMapStore } from '~/store/map-store';
 import type { LineString, Position } from 'geojson';
+import React, { useMemo } from 'react';
 import { View } from 'react-native';
 
 import { supabase } from '~/lib/supabase';
 
 import { Text } from '~/components/ui/text';
+
+const CHOOSELIFE_TRAILS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10];
+
+/** Zoom at which a trail is close enough to be worth naming on the map. */
+const TRAIL_LABEL_MIN_ZOOM = 14;
 
 export type TTrailShape = GeoJSON.Feature<
   LineString,
@@ -18,8 +24,12 @@ export type TTrailShape = GeoJSON.Feature<
 
 export const TrailShape: React.FC<{
   shape: TTrailShape;
-}> = ({ shape }) => {
-  const camera = useMapStore((state) => state.camera);
+}> = React.memo(({ shape }) => {
+  // Selecting the predicate rather than the camera keeps these ten components
+  // out of every camera event; the boolean only flips when crossing the zoom.
+  const showTrailLabel = useMapStore(
+    (state) => state.camera.zoom >= TRAIL_LABEL_MIN_ZOOM,
+  );
 
   const trailMiddleCoordinates =
     shape.geometry.coordinates[
@@ -44,11 +54,12 @@ export const TrailShape: React.FC<{
         />
       </Mapbox.ShapeSource>
 
-      {trailMiddleCoordinates && camera.zoom >= 14 && (
+      {trailMiddleCoordinates && showTrailLabel && (
         <Mapbox.MarkerView
           coordinate={[trailMiddleCoordinates[0], trailMiddleCoordinates[1]]}
           anchor={{ x: 0.5, y: 1 }} // Anchor slightly above the point (adjust y)
-          allowOverlap={true} // Allow tooltip to overlap markers/other elements
+          allowOverlap // Allow tooltip to overlap markers/other elements
+          allowOverlapWithPuck // ...and not vanish next to the location puck
         >
           <View className="relative overflow-hidden rounded-md px-2 py-1">
             <View className="absolute inset-0 opacity-50 bg-slate-950"></View>
@@ -58,10 +69,11 @@ export const TrailShape: React.FC<{
       )}
     </>
   );
-};
+});
 
-export const ChooselifeTrails = () => {
-  const CHOOSELIFE_TRAILS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10];
+TrailShape.displayName = 'TrailShape';
+
+export const ChooselifeTrails = React.memo(() => {
   const { data: trails } = useQuery({
     queryKey: ['trails'],
     queryFn: async () => {
@@ -76,27 +88,34 @@ export const ChooselifeTrails = () => {
     gcTime: Infinity, // keep in memory
   });
 
-  if (!trails || trails.length === 0) return null;
+  // Built once per query result. Rebuilding these objects per render would
+  // hand Mapbox a new `shape` every time and make it re-upload each source.
+  const shapes = useMemo<TTrailShape[]>(
+    () =>
+      (trails ?? []).map((t) => ({
+        id: t.id,
+        type: 'Feature',
+        properties: {
+          name: t.name,
+          color: t.color,
+        },
+        geometry: {
+          type: 'LineString',
+          coordinates: t.coordinates as unknown as Position[],
+        },
+      })),
+    [trails],
+  );
+
+  if (shapes.length === 0) return null;
 
   return (
     <>
-      {trails.map((t) => (
-        <TrailShape
-          key={t.id}
-          shape={{
-            id: t.id,
-            type: 'Feature',
-            properties: {
-              name: t.name,
-              color: t.color,
-            },
-            geometry: {
-              type: 'LineString',
-              coordinates: t.coordinates as unknown as Position[],
-            },
-          }}
-        />
+      {shapes.map((shape) => (
+        <TrailShape key={shape.id} shape={shape} />
       ))}
     </>
   );
-};
+});
+
+ChooselifeTrails.displayName = 'ChooselifeTrails';
