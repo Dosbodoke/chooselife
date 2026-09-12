@@ -25,6 +25,13 @@ interface HighlineCardProps {
   distanceFromUserMeters?: number | null;
   showFavorite?: boolean;
   showStatus?: boolean;
+  /**
+   * Fade the card in/out when it mounts and unmounts. Must be disabled inside
+   * virtualized lists: an exiting card stays mounted inside the recycled row
+   * container, so the row measures taller than it really is and the list
+   * recalculates every position below it.
+   */
+  animateMount?: boolean;
 }
 
 interface CardContentProps {
@@ -183,6 +190,7 @@ export const HighlineCard: React.FC<HighlineCardProps> = ({
   isFocused,
   distanceFromUserMeters,
   showStatus = true,
+  animateMount = true,
 }) => {
   const content = (
     <ReanimatedSquircleView
@@ -192,8 +200,8 @@ export const HighlineCard: React.FC<HighlineCardProps> = ({
         className,
       )}
       cornerSmoothing={1}
-      entering={FadeInRight}
-      exiting={FadeOutLeft}
+      entering={animateMount ? FadeInRight : undefined}
+      exiting={animateMount ? FadeOutLeft : undefined}
     >
       <CardContent
         item={item}
