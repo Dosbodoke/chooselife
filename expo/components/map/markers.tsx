@@ -1,7 +1,7 @@
 import MapboxGL from '@rnmapbox/maps';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMapStore } from '~/store/map-store';
-import type { FeatureCollection, LineString } from 'geojson';
+import type { Feature, FeatureCollection, LineString, Point } from 'geojson';
 import React, { useCallback, useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import SuperclusterClass, {
@@ -43,12 +43,6 @@ type HighlineDetail = {
   isHighlighted: boolean;
 };
 
-const statusColor: Record<RigStatuses, string> = {
-  planned: 'bg-amber-300',
-  rigged: 'bg-green-500',
-  unrigged: 'bg-red-500',
-};
-
 /**
  * `MarkerView` defaults both of these to false, which makes Mapbox drop any
  * marker that collides with a neighbour or with the LocationPuck - so the pins
@@ -81,49 +75,104 @@ const MAX_CLUSTER_ZOOM = 15;
 const UNCLUSTERED_ZOOM = MAX_CLUSTER_ZOOM + 1;
 
 type LineProperties = {
+  highID: string;
   color: string;
+  status: RigStatuses;
   highlighted: boolean;
 };
 
+type AnchorProperties = {
+  highID: string;
+  color: string;
+  end: 'a' | 'b';
+  highlighted: boolean;
+};
+
+type LineStyle = React.ComponentProps<typeof MapboxGL.LineLayer>['style'];
+type CircleStyle = React.ComponentProps<typeof MapboxGL.CircleLayer>['style'];
+
+/** Shape of the tap payload rnmapbox hands a ShapeSource's `onPress`. */
+type ShapeSourcePressEvent = {
+  features?: { properties?: { highID?: string } | null }[];
+};
+
 /**
- * Data-driven so every line shares a single layer: `color` and `highlighted`
- * are read off each feature instead of baking a layer per highline.
+ * A dark casing under every coloured line. Satellite imagery has no consistent
+ * luminance, so a thin saturated stroke on its own disappears over pale rock
+ * and bright water - the casing is what lets one line width work everywhere.
  */
-const LINE_LAYER_STYLE: React.ComponentProps<
-  typeof MapboxGL.LineLayer
->['style'] = {
-  lineColor: ['get', 'color'],
-  lineWidth: ['case', ['get', 'highlighted'], 3, 1.5],
-  lineOpacity: ['case', ['get', 'highlighted'], 0.9, 0.4],
+const LINE_CASING_STYLE: LineStyle = {
+  lineColor: '#0A0A0A',
+  lineOpacity: 0.55,
+  lineWidth: ['case', ['get', 'highlighted'], 8, 5],
   lineCap: 'round',
 };
 
-const AnchorMarker: React.FC<{
-  label: 'A' | 'B';
-  isHighlighted: boolean;
-  status?: RigStatuses;
-}> = ({ label, isHighlighted, status }) => {
-  const bgColor = status ? statusColor[status] : 'bg-blue-500';
-
-  return (
-    <View
-      style={{ opacity: isHighlighted ? 1 : 0.85 }}
-      className={`${bgColor} size-6 rounded-full flex items-center justify-center border-2 border-white shadow-lg`}
-    >
-      <Text className="text-white font-bold text-xs">{label}</Text>
-    </View>
-  );
+/**
+ * Data-driven so every line shares one layer: `color` and `highlighted` are
+ * read off each feature instead of baking a layer per highline.
+ */
+const LINE_STROKE_STYLE: LineStyle = {
+  lineColor: ['get', 'color'],
+  lineWidth: ['case', ['get', 'highlighted'], 5, 3],
+  lineCap: 'round',
 };
 
-const LengthLabel: React.FC<{ distance: number; isHighlighted: boolean }> = ({
-  distance,
-  isHighlighted,
-}) => (
-  <View
-    pointerEvents="none"
-    style={{ opacity: isHighlighted ? 1 : 0.7 }}
-    className="bg-black/60 rounded-md px-2 py-1"
-  >
+/**
+ * Status is carried by dash as well as colour. Red and green is the one pair
+ * deuteranopes cannot separate - roughly one man in twelve - so rigged reads
+ * solid and unrigged reads broken even when the hue does not land.
+ *
+ * `lineDasharray` takes no data expression, which is why this is a second
+ * layer over the same source rather than another `case`.
+ */
+const LINE_DASHED_STYLE: LineStyle = {
+  ...LINE_STROKE_STYLE,
+  lineDasharray: [2.2, 1.4],
+};
+
+const SOLID_LINE_FILTER = ['!=', ['get', 'status'], 'unrigged'];
+const DASHED_LINE_FILTER = ['==', ['get', 'status'], 'unrigged'];
+
+/**
+ * Anchors are one native CircleLayer rather than two `MarkerView`s per
+ * highline: one layer draws every anchor on screen at any count, it is
+ * z-ordered against the location puck like real map furniture, and there are
+ * no React views to keep in sync with the camera. A is filled with the status
+ * colour, B is hollow - the shape says which end you are looking at, so the
+ * pins no longer need to carry a letter each.
+ */
+const ANCHOR_LAYER_STYLE: CircleStyle = {
+  circleRadius: [
+    'case',
+    ['all', ['==', ['get', 'end'], 'a'], ['get', 'highlighted']],
+    7.5,
+    ['==', ['get', 'end'], 'a'],
+    6,
+    ['get', 'highlighted'],
+    6,
+    4.5,
+  ],
+  circleColor: [
+    'case',
+    ['==', ['get', 'end'], 'a'],
+    ['get', 'color'],
+    '#FFFFFF',
+  ],
+  circleStrokeColor: [
+    'case',
+    ['==', ['get', 'end'], 'a'],
+    '#FFFFFF',
+    ['get', 'color'],
+  ],
+  circleStrokeWidth: 2,
+  circlePitchAlignment: 'map',
+};
+
+const PRESS_HITBOX = { width: 36, height: 36 } as const;
+
+const LengthLabel: React.FC<{ distance: number }> = ({ distance }) => (
+  <View pointerEvents="none" className="bg-black/70 rounded-md px-2 py-1">
     <Text className="text-white font-semibold text-xs">
       {`${Math.round(distance)}m`}
     </Text>
@@ -357,9 +406,11 @@ const MarkersComponent: React.FC<{
           type: 'Feature',
           id: highline.id,
           properties: {
+            highID: highline.id,
             color: highline.status
               ? lineStatusColor[highline.status as RigStatuses]
               : '#000000',
+            status: highline.status as RigStatuses,
             highlighted: isHighlighted,
           },
           geometry: {
@@ -369,6 +420,97 @@ const MarkersComponent: React.FC<{
         }),
       ),
     }),
+    [detailFeatures],
+  );
+
+  /**
+   * Every anchor on screen in one collection: the A ends that survived
+   * clustering plus the B ends of whatever is drawn in detail. The old code
+   * mounted two React views per highline for this; a single source means the
+   * count no longer costs anything.
+   */
+  const anchorFeatures = useMemo<FeatureCollection<Point, AnchorProperties>>(
+    () => {
+      const features: Feature<Point, AnchorProperties>[] = [];
+
+      const push = (
+        highID: string,
+        end: 'a' | 'b',
+        coordinates: [number, number],
+        status: RigStatuses | null,
+        highlighted: boolean,
+      ) => {
+        features.push({
+          type: 'Feature',
+          id: `${highID}-${end}`,
+          properties: {
+            highID,
+            color: status ? lineStatusColor[status] : '#000000',
+            end,
+            highlighted,
+          },
+          geometry: { type: 'Point', coordinates },
+        });
+      };
+
+      clusters.forEach((point) => {
+        if (isClusterFeature<PointProperties, Supercluster.AnyProps>(point)) {
+          return;
+        }
+
+        const [longitude, latitude] = point.geometry.coordinates;
+
+        if (typeof longitude !== 'number' || typeof latitude !== 'number') {
+          return;
+        }
+
+        // While a highline is focused only its own Anchor A stays on the map.
+        if (
+          highlightedMarker &&
+          highlightedMarker.id !== point.properties.highID
+        ) {
+          return;
+        }
+
+        push(
+          point.properties.highID,
+          'a',
+          [longitude, latitude],
+          point.properties.status,
+          highlightedMarker?.id === point.properties.highID,
+        );
+      });
+
+      if (forcedHighlightedAnchorA) {
+        push(
+          forcedHighlightedAnchorA.id,
+          'a',
+          [
+            forcedHighlightedAnchorA.anchor_a_long,
+            forcedHighlightedAnchorA.anchor_a_lat,
+          ],
+          forcedHighlightedAnchorA.status as RigStatuses,
+          true,
+        );
+      }
+
+      detailFeatures.forEach(({ highline, anchorB, isHighlighted }) => {
+        push(
+          highline.id,
+          'b',
+          anchorB,
+          highline.status as RigStatuses,
+          isHighlighted,
+        );
+      });
+
+      return { type: 'FeatureCollection', features };
+    },
+    [clusters, detailFeatures, forcedHighlightedAnchorA, highlightedMarker],
+  );
+
+  const focusedDetail = useMemo(
+    () => detailFeatures.find((detail) => detail.isHighlighted) ?? null,
     [detailFeatures],
   );
 
@@ -453,140 +595,106 @@ const MarkersComponent: React.FC<{
     [queryClient, updateMarkers, profile?.id],
   );
 
+  /** Anchors and lines both open the same highline card the pins used to. */
+  const handleFeaturePress = useCallback(
+    (event: ShapeSourcePressEvent) => {
+      const highID = event?.features?.[0]?.properties?.highID;
+
+      if (highID) handleMarkerSelect(highID);
+    },
+    [handleMarkerSelect],
+  );
+
   return (
     <>
       {/*
-        Low-priority details first.
-
-        Distance labels should never win visually over clusters or Anchor A.
-        They are only rendered for visible individual highlines or highlighted one.
-
-        Past UNCLUSTERED_ZOOM every highline in view draws its own line, so the
-        lines live in one source styled from feature properties rather than a
-        source and a layer per highline.
+        The line is the object. Both anchors and every line live in two native
+        sources, so what used to be three React views per highline - two pins
+        and a length label, all fighting for the same few pixels around a
+        shared anchor - is now map furniture that cannot pile up.
       */}
       {lineFeatures.features.length > 0 ? (
-        <MapboxGL.ShapeSource id="highline-lines" shape={lineFeatures}>
+        <MapboxGL.ShapeSource
+          id="highline-lines"
+          shape={lineFeatures}
+          hitbox={PRESS_HITBOX}
+          onPress={handleFeaturePress}
+        >
           <MapboxGL.LineLayer
-            id="highline-lines-layer"
-            style={LINE_LAYER_STYLE}
+            id="highline-lines-casing"
+            style={LINE_CASING_STYLE}
+          />
+          <MapboxGL.LineLayer
+            id="highline-lines-solid"
+            filter={SOLID_LINE_FILTER as never}
+            style={LINE_STROKE_STYLE}
+          />
+          <MapboxGL.LineLayer
+            id="highline-lines-dashed"
+            filter={DASHED_LINE_FILTER as never}
+            style={LINE_DASHED_STYLE}
           />
         </MapboxGL.ShapeSource>
       ) : null}
 
-      {detailFeatures.map(
-        ({ highline, distance, midpoint, anchorB, isHighlighted }) => (
-          <React.Fragment key={`details-${highline.id}`}>
-            <MapboxGL.MarkerView
-              id={`length-${highline.id}`}
-              coordinate={midpoint}
-              anchor={{ x: 0.5, y: 0.5 }}
-              {...NEVER_COLLIDE}
-            >
-              <LengthLabel distance={distance} isHighlighted={isHighlighted} />
-            </MapboxGL.MarkerView>
+      {anchorFeatures.features.length > 0 ? (
+        <MapboxGL.ShapeSource
+          id="highline-anchors"
+          shape={anchorFeatures}
+          hitbox={PRESS_HITBOX}
+          onPress={handleFeaturePress}
+        >
+          <MapboxGL.CircleLayer
+            id="highline-anchors-circle"
+            style={ANCHOR_LAYER_STYLE}
+          />
+        </MapboxGL.ShapeSource>
+      ) : null}
 
-            <MapboxGL.MarkerView
-              id={`marker-B-${highline.id}`}
-              coordinate={anchorB}
-              {...NEVER_COLLIDE}
-            >
-              <Pressable onPress={() => handleMarkerSelect(highline.id)}>
-                <AnchorMarker
-                  label="B"
-                  isHighlighted={isHighlighted}
-                  status={highline.status as RigStatuses}
-                />
-              </Pressable>
-            </MapboxGL.MarkerView>
-          </React.Fragment>
-        ),
-      )}
+      {/*
+        Only the focused highline spends label space. Everything else about it
+        is in the card, and one label on screen can never collide with another.
+      */}
+      {focusedDetail ? (
+        <MapboxGL.MarkerView
+          id={`length-${focusedDetail.highline.id}`}
+          coordinate={focusedDetail.midpoint}
+          anchor={{ x: 0.5, y: 0.5 }}
+          {...NEVER_COLLIDE}
+        >
+          <LengthLabel distance={focusedDetail.distance} />
+        </MapboxGL.MarkerView>
+      ) : null}
 
-      {/* 
-  High-priority markers second.
-
-  When a highline is highlighted, only its own Anchor A should render.
-  All other Anchor A markers must be hidden.
-*/}
+      {/* Clusters stay React views - there are only ever a handful on screen. */}
       {clusters.map((point) => {
+        if (!isClusterFeature<PointProperties, Supercluster.AnyProps>(point)) {
+          return null;
+        }
+
+        if (highlightedMarker) return null;
+
         const [longitude, latitude] = point.geometry.coordinates;
 
         if (typeof longitude !== 'number' || typeof latitude !== 'number') {
           return null;
         }
 
-        if (isClusterFeature<PointProperties, Supercluster.AnyProps>(point)) {
-          if (highlightedMarker) {
-            return null;
-          }
-
-          const size = Math.max(
-            (point.properties.point_count * 40) / (points.length || 1),
-            MIN_CLUSTER_SIZE,
-          );
-
-          return (
-            <ClusteredMarker
-              key={`cluster-${point.properties.cluster_id}`}
-              size={size}
-              coordinate={[longitude, latitude]}
-              pointCount={point.properties.point_count}
-              onPress={() => handleClusterPress(point.properties.cluster_id)}
-            />
-          );
-        }
-
-        if (
-          highlightedMarker &&
-          highlightedMarker.id !== point.properties.highID
-        ) {
-          return null;
-        }
-
-        const isHighlighted = highlightedMarker?.id === point.properties.highID;
+        const size = Math.max(
+          (point.properties.point_count * 40) / (points.length || 1),
+          MIN_CLUSTER_SIZE,
+        );
 
         return (
-          <MapboxGL.MarkerView
-            key={`marker-A-${point.properties.highID}`}
-            id={`marker-A-${point.properties.highID}`}
+          <ClusteredMarker
+            key={`cluster-${point.properties.cluster_id}`}
+            size={size}
             coordinate={[longitude, latitude]}
-            {...NEVER_COLLIDE}
-          >
-            <Pressable
-              onPress={() => handleMarkerSelect(point.properties.highID)}
-            >
-              <AnchorMarker
-                label="A"
-                isHighlighted={isHighlighted}
-                status={point.properties.status}
-              />
-            </Pressable>
-          </MapboxGL.MarkerView>
+            pointCount={point.properties.point_count}
+            onPress={() => handleClusterPress(point.properties.cluster_id)}
+          />
         );
       })}
-
-      {forcedHighlightedAnchorA ? (
-        <MapboxGL.MarkerView
-          key={`marker-A-highlighted-${forcedHighlightedAnchorA.id}`}
-          id={`marker-A-highlighted-${forcedHighlightedAnchorA.id}`}
-          coordinate={[
-            forcedHighlightedAnchorA.anchor_a_long,
-            forcedHighlightedAnchorA.anchor_a_lat,
-          ]}
-          {...NEVER_COLLIDE}
-        >
-          <Pressable
-            onPress={() => handleMarkerSelect(forcedHighlightedAnchorA.id)}
-          >
-            <AnchorMarker
-              label="A"
-              isHighlighted
-              status={forcedHighlightedAnchorA.status as RigStatuses}
-            />
-          </Pressable>
-        </MapboxGL.MarkerView>
-      ) : null}
     </>
   );
 };

@@ -4,8 +4,11 @@ import { useMapStore } from '~/store/map-store';
 import type { Position } from 'geojson';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import throttle from 'lodash.throttle';
+import { ChevronLeftIcon } from 'lucide-react-native';
 import React, { Activity, useCallback, useMemo, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useHighline, type Highline } from '~/hooks/use-highline';
@@ -24,6 +27,7 @@ import { MapCardList } from '~/components/map/map-card';
 import { Markers } from '~/components/map/markers';
 import { ChooselifeTrails } from '~/components/map/trail-shape';
 import WeatherCrosshair from '~/components/map/weather-crosshair';
+import { Icon } from '~/components/ui/icon';
 
 import { getHighlineBounds, getMyLocation } from '../utils';
 
@@ -71,6 +75,8 @@ function FocusedMarkerController({
 
 export default function ExploreMap() {
   useOfflineRegion();
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const mapRef = useRef<Mapbox.MapView>(null);
   const cameraRef = useRef<Mapbox.Camera>(null);
@@ -272,6 +278,28 @@ export default function ExploreMap() {
       ) : null}
 
       <WeatherCrosshair />
+
+      {highlightedMarker ? (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={t('components.onboard.goBack')}
+          testID="map-clear-selection"
+          onPress={handleMapPress}
+          style={{
+            position: 'absolute',
+            top: insets.top + 16,
+            left: insets.left + 8,
+            width: 48,
+            height: 48,
+            borderRadius: 8,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'white',
+          }}
+        >
+          <Icon as={ChevronLeftIcon} size={24} color="black" />
+        </TouchableOpacity>
+      ) : null}
 
       <MapControls
         isOnMyLocation={isOnMyLocation}
