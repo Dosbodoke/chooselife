@@ -240,10 +240,6 @@
         "homeTitle": "Início"
       },
       "home": {
-        "banner": {
-          "title": "Festival dos Monstros",
-          "description": "Clique para ver os Highlines do festival e agendar seu rolê"
-        },
         "quickActions": {
           "setupSimulator": "Simulador de Setup",
           "learn": "Aprenda"
