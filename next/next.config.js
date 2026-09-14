@@ -2,8 +2,12 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
+  // `eslint` config option removed in Next.js 16 — lint via `pnpm lint` / ESLint CLI
+  // leaflet-defaulticon-compatibility uses webpack-style `~package` CSS urls
+  turbopack: {
+    resolveAlias: {
+      "~*": "*",
+    },
   },
   images: {
     remotePatterns: [

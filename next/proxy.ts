@@ -1,12 +1,11 @@
 import { type NextRequest } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 
-import { updateSession } from "@/utils/supabase/middleware"
+import { updateSession } from "@/utils/supabase/middleware";
 
 import { routing } from "./i18n/routing";
 
-
-export default async function middleware(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
   const handleI18nRouting = createIntlMiddleware(routing);
   const res = handleI18nRouting(req);
 
@@ -16,7 +15,7 @@ export default async function middleware(req: NextRequest) {
     return res;
   }
 
-  return await updateSession(req, res)
+  return await updateSession(req, res);
 }
 
 export const config = {
