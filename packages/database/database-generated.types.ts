@@ -27,6 +27,162 @@ export type Database = {
         }
         Relationships: []
       }
+      association_people: {
+        Row: {
+          account_user_id: string | null
+          anonymized_at: string | null
+          created_at: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          account_user_id?: string | null
+          anonymized_at?: string | null
+          created_at?: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          account_user_id?: string | null
+          anonymized_at?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "association_people_account_user_id_fkey"
+            columns: ["account_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "association_people_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contribution_plan_assignments: {
+        Row: {
+          amount: number
+          billing_timezone: string | null
+          created_at: string
+          currency: string
+          due_day: number | null
+          effective_period_start: string
+          id: string
+          lead_days: number | null
+          pix_copy_paste: string | null
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          schedule_id: string
+        }
+        Insert: {
+          amount: number
+          billing_timezone?: string | null
+          created_at?: string
+          currency: string
+          due_day?: number | null
+          effective_period_start: string
+          id?: string
+          lead_days?: number | null
+          pix_copy_paste?: string | null
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          schedule_id: string
+        }
+        Update: {
+          amount?: number
+          billing_timezone?: string | null
+          created_at?: string
+          currency?: string
+          due_day?: number | null
+          effective_period_start?: string
+          id?: string
+          lead_days?: number | null
+          pix_copy_paste?: string | null
+          plan_type?: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          schedule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contribution_plan_assignments_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "contribution_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contribution_schedules: {
+        Row: {
+          active: boolean
+          admission_date: string
+          association_person_id: string
+          billing_timezone: string
+          cadence: Database["public"]["Enums"]["contribution_cadence_enum"]
+          created_at: string
+          currency: string
+          due_day: number
+          id: string
+          lead_days: number
+          organization_id: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          admission_date: string
+          association_person_id: string
+          billing_timezone: string
+          cadence: Database["public"]["Enums"]["contribution_cadence_enum"]
+          created_at?: string
+          currency: string
+          due_day: number
+          id?: string
+          lead_days: number
+          organization_id: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          admission_date?: string
+          association_person_id?: string
+          billing_timezone?: string
+          cadence?: Database["public"]["Enums"]["contribution_cadence_enum"]
+          created_at?: string
+          currency?: string
+          due_day?: number
+          id?: string
+          lead_days?: number
+          organization_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contribution_schedules_association_person_id_fkey"
+            columns: ["association_person_id"]
+            isOneToOne: false
+            referencedRelation: "association_people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_schedules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contribution_schedules_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entry: {
         Row: {
           cadenas: number | null
@@ -546,6 +702,342 @@ export type Database = {
           },
         ]
       }
+      membership_application_revisions: {
+        Row: {
+          accepted_terms_at: string
+          address_line: string | null
+          allergies: string | null
+          application_id: string
+          association_person_id: string
+          birth_date: string | null
+          birthplace: string | null
+          blood_type: Database["public"]["Enums"]["blood_type_enum"] | null
+          city: string | null
+          cpf: string | null
+          created_at: string
+          currency: string
+          dietary_restrictions: string | null
+          draft_version: number
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
+          first_aid_course:
+            | Database["public"]["Enums"]["first_aid_course_enum"]
+            | null
+          full_name: string | null
+          has_allergies: boolean
+          has_dietary_restrictions: boolean
+          has_rescue_course: boolean | null
+          highline_experience:
+            | Database["public"]["Enums"]["highline_experience_enum"]
+            | null
+          id: string
+          id_document_issuer: string | null
+          id_document_number: string | null
+          marital_status:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
+          nationality: string | null
+          organization_id: string
+          phone: string | null
+          pix_copy_paste: string
+          plan_amount: number
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          postal_code: string | null
+          profession: string | null
+          revision_number: number
+          state: string | null
+          submitted_at: string
+          terms_version: string
+          user_id: string | null
+        }
+        Insert: {
+          accepted_terms_at: string
+          address_line?: string | null
+          allergies?: string | null
+          application_id: string
+          association_person_id: string
+          birth_date?: string | null
+          birthplace?: string | null
+          blood_type?: Database["public"]["Enums"]["blood_type_enum"] | null
+          city?: string | null
+          cpf?: string | null
+          created_at?: string
+          currency: string
+          dietary_restrictions?: string | null
+          draft_version: number
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          first_aid_course?:
+            | Database["public"]["Enums"]["first_aid_course_enum"]
+            | null
+          full_name?: string | null
+          has_allergies: boolean
+          has_dietary_restrictions: boolean
+          has_rescue_course?: boolean | null
+          highline_experience?:
+            | Database["public"]["Enums"]["highline_experience_enum"]
+            | null
+          id?: string
+          id_document_issuer?: string | null
+          id_document_number?: string | null
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
+          nationality?: string | null
+          organization_id: string
+          phone?: string | null
+          pix_copy_paste: string
+          plan_amount: number
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          postal_code?: string | null
+          profession?: string | null
+          revision_number: number
+          state?: string | null
+          submitted_at: string
+          terms_version: string
+          user_id?: string | null
+        }
+        Update: {
+          accepted_terms_at?: string
+          address_line?: string | null
+          allergies?: string | null
+          application_id?: string
+          association_person_id?: string
+          birth_date?: string | null
+          birthplace?: string | null
+          blood_type?: Database["public"]["Enums"]["blood_type_enum"] | null
+          city?: string | null
+          cpf?: string | null
+          created_at?: string
+          currency?: string
+          dietary_restrictions?: string | null
+          draft_version?: number
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          first_aid_course?:
+            | Database["public"]["Enums"]["first_aid_course_enum"]
+            | null
+          full_name?: string | null
+          has_allergies?: boolean
+          has_dietary_restrictions?: boolean
+          has_rescue_course?: boolean | null
+          highline_experience?:
+            | Database["public"]["Enums"]["highline_experience_enum"]
+            | null
+          id?: string
+          id_document_issuer?: string | null
+          id_document_number?: string | null
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
+          nationality?: string | null
+          organization_id?: string
+          phone?: string | null
+          pix_copy_paste?: string
+          plan_amount?: number
+          plan_type?: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          postal_code?: string | null
+          profession?: string | null
+          revision_number?: number
+          state?: string | null
+          submitted_at?: string
+          terms_version?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_application_revisions_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "membership_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_application_revisions_association_person_id_fkey"
+            columns: ["association_person_id"]
+            isOneToOne: false
+            referencedRelation: "association_people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_application_revisions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_application_revisions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      membership_applications: {
+        Row: {
+          accepted_terms_at: string | null
+          address_line: string | null
+          allergies: string | null
+          association_person_id: string
+          birth_date: string | null
+          birthplace: string | null
+          blood_type: Database["public"]["Enums"]["blood_type_enum"] | null
+          city: string | null
+          cpf: string | null
+          created_at: string
+          dietary_restrictions: string | null
+          draft_version: number
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
+          first_aid_course:
+            | Database["public"]["Enums"]["first_aid_course_enum"]
+            | null
+          full_name: string | null
+          has_allergies: boolean
+          has_dietary_restrictions: boolean
+          has_rescue_course: boolean | null
+          highline_experience:
+            | Database["public"]["Enums"]["highline_experience_enum"]
+            | null
+          id: string
+          id_document_issuer: string | null
+          id_document_number: string | null
+          marital_status:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
+          nationality: string | null
+          organization_id: string
+          phone: string | null
+          postal_code: string | null
+          profession: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["membership_application_status_enum"]
+          submitted_at: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          accepted_terms_at?: string | null
+          address_line?: string | null
+          allergies?: string | null
+          association_person_id: string
+          birth_date?: string | null
+          birthplace?: string | null
+          blood_type?: Database["public"]["Enums"]["blood_type_enum"] | null
+          city?: string | null
+          cpf?: string | null
+          created_at?: string
+          dietary_restrictions?: string | null
+          draft_version?: number
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          first_aid_course?:
+            | Database["public"]["Enums"]["first_aid_course_enum"]
+            | null
+          full_name?: string | null
+          has_allergies?: boolean
+          has_dietary_restrictions?: boolean
+          has_rescue_course?: boolean | null
+          highline_experience?:
+            | Database["public"]["Enums"]["highline_experience_enum"]
+            | null
+          id?: string
+          id_document_issuer?: string | null
+          id_document_number?: string | null
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
+          nationality?: string | null
+          organization_id: string
+          phone?: string | null
+          postal_code?: string | null
+          profession?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["membership_application_status_enum"]
+          submitted_at?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          accepted_terms_at?: string | null
+          address_line?: string | null
+          allergies?: string | null
+          association_person_id?: string
+          birth_date?: string | null
+          birthplace?: string | null
+          blood_type?: Database["public"]["Enums"]["blood_type_enum"] | null
+          city?: string | null
+          cpf?: string | null
+          created_at?: string
+          dietary_restrictions?: string | null
+          draft_version?: number
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          first_aid_course?:
+            | Database["public"]["Enums"]["first_aid_course_enum"]
+            | null
+          full_name?: string | null
+          has_allergies?: boolean
+          has_dietary_restrictions?: boolean
+          has_rescue_course?: boolean | null
+          highline_experience?:
+            | Database["public"]["Enums"]["highline_experience_enum"]
+            | null
+          id?: string
+          id_document_issuer?: string | null
+          id_document_number?: string | null
+          marital_status?:
+            | Database["public"]["Enums"]["marital_status_enum"]
+            | null
+          nationality?: string | null
+          organization_id?: string
+          phone?: string | null
+          postal_code?: string | null
+          profession?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["membership_application_status_enum"]
+          submitted_at?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_applications_association_person_id_fkey"
+            columns: ["association_person_id"]
+            isOneToOne: false
+            referencedRelation: "association_people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_applications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       news: {
         Row: {
           content: string
@@ -720,137 +1212,64 @@ export type Database = {
           },
         ]
       }
-      membership_applications: {
+      organization_membership_departures: {
         Row: {
-          accepted_terms_at: string | null
-          address_line: string | null
-          allergies: string | null
-          birth_date: string | null
-          birthplace: string | null
-          blood_type: Database["public"]["Enums"]["blood_type_enum"] | null
-          city: string | null
-          cpf: string | null
-          created_at: string
-          dietary_restrictions: string | null
-          email: string | null
-          emergency_contact_name: string | null
-          emergency_contact_phone: string | null
-          emergency_contact_relationship: string | null
-          first_aid_course:
-            | Database["public"]["Enums"]["first_aid_course_enum"]
-            | null
-          full_name: string | null
-          has_rescue_course: boolean | null
-          highline_experience:
-            | Database["public"]["Enums"]["highline_experience_enum"]
-            | null
+          actor_user_id: string | null
+          association_person_id: string
+          departed_at: string
+          departed_role: Database["public"]["Enums"]["organization_role_enum"]
           id: string
-          id_document_issuer: string | null
-          id_document_number: string | null
-          marital_status:
-            | Database["public"]["Enums"]["marital_status_enum"]
-            | null
-          nationality: string | null
+          joined_at: string
           organization_id: string
-          phone: string | null
-          postal_code: string | null
-          profession: string | null
-          state: string | null
-          status: Database["public"]["Enums"]["membership_application_status_enum"]
-          submitted_at: string | null
-          updated_at: string
-          user_id: string
+          reason: string | null
+          user_id: string | null
         }
         Insert: {
-          accepted_terms_at?: string | null
-          address_line?: string | null
-          allergies?: string | null
-          birth_date?: string | null
-          birthplace?: string | null
-          blood_type?: Database["public"]["Enums"]["blood_type_enum"] | null
-          city?: string | null
-          cpf?: string | null
-          created_at?: string
-          dietary_restrictions?: string | null
-          email?: string | null
-          emergency_contact_name?: string | null
-          emergency_contact_phone?: string | null
-          emergency_contact_relationship?: string | null
-          first_aid_course?:
-            | Database["public"]["Enums"]["first_aid_course_enum"]
-            | null
-          full_name?: string | null
-          has_rescue_course?: boolean | null
-          highline_experience?:
-            | Database["public"]["Enums"]["highline_experience_enum"]
-            | null
+          actor_user_id?: string | null
+          association_person_id: string
+          departed_at?: string
+          departed_role: Database["public"]["Enums"]["organization_role_enum"]
           id?: string
-          id_document_issuer?: string | null
-          id_document_number?: string | null
-          marital_status?:
-            | Database["public"]["Enums"]["marital_status_enum"]
-            | null
-          nationality?: string | null
+          joined_at: string
           organization_id: string
-          phone?: string | null
-          postal_code?: string | null
-          profession?: string | null
-          state?: string | null
-          status?: Database["public"]["Enums"]["membership_application_status_enum"]
-          submitted_at?: string | null
-          updated_at?: string
-          user_id: string
+          reason?: string | null
+          user_id?: string | null
         }
         Update: {
-          accepted_terms_at?: string | null
-          address_line?: string | null
-          allergies?: string | null
-          birth_date?: string | null
-          birthplace?: string | null
-          blood_type?: Database["public"]["Enums"]["blood_type_enum"] | null
-          city?: string | null
-          cpf?: string | null
-          created_at?: string
-          dietary_restrictions?: string | null
-          email?: string | null
-          emergency_contact_name?: string | null
-          emergency_contact_phone?: string | null
-          emergency_contact_relationship?: string | null
-          first_aid_course?:
-            | Database["public"]["Enums"]["first_aid_course_enum"]
-            | null
-          full_name?: string | null
-          has_rescue_course?: boolean | null
-          highline_experience?:
-            | Database["public"]["Enums"]["highline_experience_enum"]
-            | null
+          actor_user_id?: string | null
+          association_person_id?: string
+          departed_at?: string
+          departed_role?: Database["public"]["Enums"]["organization_role_enum"]
           id?: string
-          id_document_issuer?: string | null
-          id_document_number?: string | null
-          marital_status?:
-            | Database["public"]["Enums"]["marital_status_enum"]
-            | null
-          nationality?: string | null
+          joined_at?: string
           organization_id?: string
-          phone?: string | null
-          postal_code?: string | null
-          profession?: string | null
-          state?: string | null
-          status?: Database["public"]["Enums"]["membership_application_status_enum"]
-          submitted_at?: string | null
-          updated_at?: string
-          user_id?: string
+          reason?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "membership_applications_organization_id_fkey"
+            foreignKeyName: "organization_membership_departures_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_membership_departures_association_person_id_fkey"
+            columns: ["association_person_id"]
+            isOneToOne: false
+            referencedRelation: "association_people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_membership_departures_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "membership_applications_user_id_fkey"
+            foreignKeyName: "organization_membership_departures_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -860,96 +1279,330 @@ export type Database = {
       }
       organizations: {
         Row: {
-          annual_price_amount: number | null
           annual_pix_copy_paste: string | null
+          annual_price_amount: number | null
+          billing_currency: string
+          billing_due_day: number
+          billing_lead_days: number
+          billing_timezone: string
           created_at: string
           id: string
-          monthly_price_amount: number | null
+          membership_terms_version: string
           monthly_pix_copy_paste: string | null
+          monthly_price_amount: number | null
           name: string
+          organization_type: Database["public"]["Enums"]["organization_type_enum"]
           slug: string
         }
         Insert: {
-          annual_price_amount?: number | null
           annual_pix_copy_paste?: string | null
+          annual_price_amount?: number | null
+          billing_currency?: string
+          billing_due_day?: number
+          billing_lead_days?: number
+          billing_timezone?: string
           created_at?: string
           id?: string
-          monthly_price_amount?: number | null
+          membership_terms_version?: string
           monthly_pix_copy_paste?: string | null
+          monthly_price_amount?: number | null
           name: string
+          organization_type?: Database["public"]["Enums"]["organization_type_enum"]
           slug: string
         }
         Update: {
-          annual_price_amount?: number | null
           annual_pix_copy_paste?: string | null
+          annual_price_amount?: number | null
+          billing_currency?: string
+          billing_due_day?: number
+          billing_lead_days?: number
+          billing_timezone?: string
           created_at?: string
           id?: string
-          monthly_price_amount?: number | null
+          membership_terms_version?: string
           monthly_pix_copy_paste?: string | null
+          monthly_price_amount?: number | null
           name?: string
+          organization_type?: Database["public"]["Enums"]["organization_type_enum"]
           slug?: string
         }
         Relationships: []
       }
-      payments: {
+      payment_claim_audit_events: {
         Row: {
-          abacate_pay_charge_id: string | null
-          amount: number
+          actor_user_id: string | null
+          association_person_id: string
+          claim_id: string
           created_at: string
           id: string
+          next_state: string
+          obligation_id: string
           organization_id: string
-          paid_at: string | null
-          payment_provider: string | null
-          provider_payment_id: string | null
-          settlement_applied_at: string | null
-          status: Database["public"]["Enums"]["payment_status_enum"]
-          subscription_id: string
-          user_marked_paid_at: string | null
-          user_id: string
+          previous_state: string
+          reason: string | null
         }
         Insert: {
-          abacate_pay_charge_id?: string | null
-          amount: number
+          actor_user_id?: string | null
+          association_person_id: string
+          claim_id: string
           created_at?: string
           id?: string
+          next_state: string
+          obligation_id: string
           organization_id: string
-          paid_at?: string | null
-          payment_provider?: string | null
-          provider_payment_id?: string | null
-          settlement_applied_at?: string | null
-          status?: Database["public"]["Enums"]["payment_status_enum"]
-          subscription_id: string
-          user_marked_paid_at?: string | null
-          user_id: string
+          previous_state: string
+          reason?: string | null
         }
         Update: {
-          abacate_pay_charge_id?: string | null
-          amount?: number
+          actor_user_id?: string | null
+          association_person_id?: string
+          claim_id?: string
           created_at?: string
           id?: string
+          next_state?: string
+          obligation_id?: string
           organization_id?: string
-          paid_at?: string | null
-          payment_provider?: string | null
-          provider_payment_id?: string | null
-          settlement_applied_at?: string | null
-          status?: Database["public"]["Enums"]["payment_status_enum"]
-          subscription_id?: string
-          user_marked_paid_at?: string | null
-          user_id?: string
+          previous_state?: string
+          reason?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "payments_organization_id_fkey"
+            foreignKeyName: "payment_claim_audit_events_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_claim_audit_events_association_person_id_fkey"
+            columns: ["association_person_id"]
+            isOneToOne: false
+            referencedRelation: "association_people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_claim_audit_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "payment_claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_claim_audit_events_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "payment_obligations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_claim_audit_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_claims: {
+        Row: {
+          association_person_id: string
+          claimant_user_id: string | null
+          created_at: string
+          decided_at: string | null
+          decision_reason: string | null
+          id: string
+          obligation_id: string
+          organization_id: string
+          payer_name: string | null
+          payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
+          status: Database["public"]["Enums"]["payment_claim_status_enum"]
+        }
+        Insert: {
+          association_person_id: string
+          claimant_user_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decision_reason?: string | null
+          id?: string
+          obligation_id: string
+          organization_id: string
+          payer_name?: string | null
+          payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
+          status?: Database["public"]["Enums"]["payment_claim_status_enum"]
+        }
+        Update: {
+          association_person_id?: string
+          claimant_user_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decision_reason?: string | null
+          id?: string
+          obligation_id?: string
+          organization_id?: string
+          payer_name?: string | null
+          payer_type?: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
+          status?: Database["public"]["Enums"]["payment_claim_status_enum"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_claims_association_person_id_fkey"
+            columns: ["association_person_id"]
+            isOneToOne: false
+            referencedRelation: "association_people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_claims_claimant_user_id_fkey"
+            columns: ["claimant_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_claims_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "payment_obligations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_claims_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_obligations: {
+        Row: {
+          amount: number
+          application_revision_id: string | null
+          association_person_id: string
+          available_at: string
+          available_on: string
+          billing_due_day: number | null
+          billing_lead_days: number | null
+          billing_timezone: string | null
+          created_at: string
+          currency: string
+          due_on: string
+          id: string
+          organization_id: string
+          organization_name_snapshot: string | null
+          organization_slug_snapshot: string | null
+          payment_method: string
+          period_end: string
+          period_key: string
+          period_start: string
+          pix_copy_paste: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          schedule_id: string | null
+          schedule_term_id: string | null
+          settled_at: string | null
+          status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          application_revision_id?: string | null
+          association_person_id: string
+          available_at: string
+          available_on?: string
+          billing_due_day?: number | null
+          billing_lead_days?: number | null
+          billing_timezone?: string | null
+          created_at?: string
+          currency: string
+          due_on?: string
+          id?: string
+          organization_id: string
+          organization_name_snapshot?: string | null
+          organization_slug_snapshot?: string | null
+          payment_method?: string
+          period_end?: string
+          period_key?: string
+          period_start?: string
+          pix_copy_paste: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          purpose?: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          schedule_id?: string | null
+          schedule_term_id?: string | null
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["payment_obligation_status_enum"]
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          application_revision_id?: string | null
+          association_person_id?: string
+          available_at?: string
+          available_on?: string
+          billing_due_day?: number | null
+          billing_lead_days?: number | null
+          billing_timezone?: string | null
+          created_at?: string
+          currency?: string
+          due_on?: string
+          id?: string
+          organization_id?: string
+          organization_name_snapshot?: string | null
+          organization_slug_snapshot?: string | null
+          payment_method?: string
+          period_end?: string
+          period_key?: string
+          period_start?: string
+          pix_copy_paste?: string
+          plan_type?: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          purpose?: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          schedule_id?: string | null
+          schedule_term_id?: string | null
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["payment_obligation_status_enum"]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_obligations_application_revision_id_fkey"
+            columns: ["application_revision_id"]
+            isOneToOne: false
+            referencedRelation: "membership_application_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_obligations_association_person_id_fkey"
+            columns: ["association_person_id"]
+            isOneToOne: false
+            referencedRelation: "association_people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_obligations_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payments_subscription_id_fkey"
-            columns: ["subscription_id"]
+            foreignKeyName: "payment_obligations_schedule_id_fkey"
+            columns: ["schedule_id"]
             isOneToOne: false
-            referencedRelation: "subscriptions"
+            referencedRelation: "contribution_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_obligations_schedule_term_id_fkey"
+            columns: ["schedule_term_id"]
+            isOneToOne: false
+            referencedRelation: "contribution_plan_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_obligations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1120,41 +1773,6 @@ export type Database = {
         }
         Relationships: []
       }
-      subscriptions: {
-        Row: {
-          current_period_end: string | null
-          id: string
-          organization_id: string
-          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
-          status: Database["public"]["Enums"]["subscription_status_enum"]
-          user_id: string
-        }
-        Insert: {
-          current_period_end?: string | null
-          id?: string
-          organization_id: string
-          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
-          status?: Database["public"]["Enums"]["subscription_status_enum"]
-          user_id: string
-        }
-        Update: {
-          current_period_end?: string | null
-          id?: string
-          organization_id?: string
-          plan_type?: Database["public"]["Enums"]["subscription_plan_type_enum"]
-          status?: Database["public"]["Enums"]["subscription_status_enum"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       trails: {
         Row: {
           color: string
@@ -1267,9 +1885,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      apply_payment_settlement_effects: {
-        Args: { p_payment_id: string }
-        Returns: boolean
+      approve_initial_claim: {
+        Args: { p_claim_id: string }
+        Returns: {
+          assignment_id: string
+          audit_event_id: string
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          decision_applied_now: boolean
+          membership_user_id: string
+          obligation_id: string
+          obligation_status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+          schedule_id: string
+        }[]
+      }
+      approve_recurring_payment_claim: {
+        Args: { p_claim_id: string }
+        Returns: {
+          audit_event_id: string
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          decision_applied_now: boolean
+          obligation_id: string
+          obligation_status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+        }[]
       }
       book_festival_schedule_slot: {
         Args: {
@@ -1332,9 +1971,286 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      claim_initial_payment: {
+        Args: {
+          p_obligation_id: string
+          p_paid_by_applicant: boolean
+          p_payer_name?: string
+        }
+        Returns: {
+          audit_event_id: string
+          claim_created_at: string
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          obligation_id: string
+          payer_name: string
+          payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
+        }[]
+      }
+      claim_recurring_payment: {
+        Args: {
+          p_obligation_id: string
+          p_paid_by_applicant: boolean
+          p_payer_name?: string
+        }
+        Returns: {
+          audit_event_id: string
+          claim_created_at: string
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          obligation_id: string
+          payer_name: string
+          payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
+        }[]
+      }
+      clamped_billing_date: {
+        Args: { p_day: number; p_month: number; p_year: number }
+        Returns: string
+      }
+      end_association_membership: {
+        Args: {
+          p_organization_id: string
+          p_reason?: string
+          p_user_id?: string
+        }
+        Returns: {
+          departed_at: string
+          departed_role: Database["public"]["Enums"]["organization_role_enum"]
+          departure_id: string
+          organization_id: string
+          user_id: string
+        }[]
+      }
       enqueue_festival_schedule_open_notifications: {
         Args: never
         Returns: number
+      }
+      ensure_contribution_schedule: {
+        Args: {
+          p_admission_date?: string
+          p_organization_id: string
+          p_plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          p_user_id: string
+        }
+        Returns: {
+          assignment_id: string
+          schedule_id: string
+        }[]
+      }
+      first_recurring_due_date: {
+        Args: {
+          p_admission_date: string
+          p_cadence: Database["public"]["Enums"]["contribution_cadence_enum"]
+          p_due_day: number
+        }
+        Returns: string
+      }
+      generate_membership_billing_obligations: {
+        Args: never
+        Returns: {
+          failure_reason: string
+          obligation_id: string
+          period_key: string
+          result: string
+          schedule_id: string
+        }[]
+      }
+      generate_membership_billing_obligations_at: {
+        Args: { p_as_of: string }
+        Returns: {
+          failure_reason: string
+          obligation_id: string
+          period_key: string
+          result: string
+          schedule_id: string
+        }[]
+      }
+      get_association_member_detail: {
+        Args: { p_organization_id: string; p_user_id: string }
+        Returns: {
+          accepted_terms_at: string
+          address_line: string
+          allergies: string
+          application_id: string
+          application_revision_id: string
+          birth_date: string
+          birthplace: string
+          blood_type: Database["public"]["Enums"]["blood_type_enum"]
+          city: string
+          cpf: string
+          departed_at: string
+          departure_reason: string
+          dietary_restrictions: string
+          email: string
+          emergency_contact_name: string
+          emergency_contact_phone: string
+          emergency_contact_relationship: string
+          first_aid_course: Database["public"]["Enums"]["first_aid_course_enum"]
+          full_name: string
+          has_allergies: boolean
+          has_dietary_restrictions: boolean
+          has_rescue_course: boolean
+          highline_experience: Database["public"]["Enums"]["highline_experience_enum"]
+          id_document_issuer: string
+          id_document_number: string
+          joined_at: string
+          lifecycle_status: string
+          marital_status: Database["public"]["Enums"]["marital_status_enum"]
+          member_handle: string
+          member_name: string
+          member_profile_picture: string
+          member_role: Database["public"]["Enums"]["organization_role_enum"]
+          member_user_id: string
+          nationality: string
+          next_charge_amount: number
+          next_charge_currency: string
+          next_charge_due_on: string
+          next_charge_period_key: string
+          phone: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          postal_code: string
+          profession: string
+          revision_number: number
+          state: string
+          submitted_at: string
+          terms_version: string
+        }[]
+      }
+      get_billing_workspace_claim_detail: {
+        Args: { p_claim_id: string }
+        Returns: {
+          amount: number
+          approve_command: string
+          attempt_count: number
+          audit_history: Json
+          available_on: string
+          claim_created_at: string
+          claim_decided_at: string
+          claim_decision_reason: string
+          claim_history: Json
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          currency: string
+          due_on: string
+          member_handle: string
+          member_name: string
+          member_profile_picture: string
+          member_user_id: string
+          obligation_id: string
+          organization_id: string
+          organization_name: string
+          organization_slug: string
+          payer_name: string
+          payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
+          period_end: string
+          period_key: string
+          period_start: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          reject_command: string
+        }[]
+      }
+      get_billing_workspace_members: {
+        Args: { p_organization_id: string }
+        Returns: {
+          financial_standing: string
+          joined_at: string
+          last_verified_contribution_at: string
+          member_handle: string
+          member_name: string
+          member_profile_picture: string
+          member_role: Database["public"]["Enums"]["organization_role_enum"]
+          member_user_id: string
+          next_due_on: string
+          oldest_attention_due_on: string
+          overdue_count: number
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+        }[]
+      }
+      get_billing_workspace_organizations: {
+        Args: never
+        Returns: {
+          organization_id: string
+          organization_name: string
+          organization_slug: string
+        }[]
+      }
+      get_billing_workspace_payments: {
+        Args: { p_organization_id: string }
+        Returns: {
+          amount: number
+          audit_history: Json
+          available_on: string
+          claim_history: Json
+          currency: string
+          due_on: string
+          effective_payment_state: string
+          last_decision_actor_name: string
+          last_decision_actor_user_id: string
+          last_decision_at: string
+          latest_claim_created_at: string
+          latest_claim_decided_at: string
+          latest_claim_decision_reason: string
+          latest_claim_id: string
+          latest_claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          member_handle: string
+          member_name: string
+          member_user_id: string
+          obligation_id: string
+          obligation_status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+          organization_id: string
+          period_end: string
+          period_key: string
+          period_start: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          settled_at: string
+        }[]
+      }
+      get_billing_workspace_people: {
+        Args: { p_organization_id: string }
+        Returns: {
+          application_status: Database["public"]["Enums"]["membership_application_status_enum"]
+          joined_at: string
+          last_verified_contribution_at: string
+          lifecycle_status: string
+          member_handle: string
+          member_name: string
+          member_profile_picture: string
+          member_role: Database["public"]["Enums"]["organization_role_enum"]
+          member_user_id: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+        }[]
+      }
+      get_billing_workspace_queue: {
+        Args: { p_organization_id: string }
+        Returns: {
+          amount: number
+          approve_command: string
+          attempt_count: number
+          available_on: string
+          claim_created_at: string
+          claim_decided_at: string
+          claim_decision_reason: string
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          currency: string
+          due_on: string
+          member_handle: string
+          member_name: string
+          member_profile_picture: string
+          member_user_id: string
+          obligation_id: string
+          organization_id: string
+          payer_name: string
+          payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
+          period_end: string
+          period_key: string
+          period_start: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
+          reject_command: string
+        }[]
       }
       get_crossing_time: {
         Args: { highline_id: string; page_number: number; page_size: number }
@@ -1344,6 +2260,15 @@ export type Database = {
           profile_picture: string
         }[]
       }
+      get_festival_schedule_booking_cooldown_ends_at: {
+        Args: { target_festival_id: string }
+        Returns: string
+      }
+      get_festival_schedule_booking_cooldown_seconds: {
+        Args: never
+        Returns: number
+      }
+      get_festival_schedule_booking_limit: { Args: never; Returns: number }
       get_festival_schedule_bookings: {
         Args: { target_festival_id: string }
         Returns: {
@@ -1357,57 +2282,6 @@ export type Database = {
           participant_secondary_text: string
           slot_id: string
           status: Database["public"]["Enums"]["festival_schedule_booking_status_enum"]
-        }[]
-      }
-      get_festival_schedule_booking_cooldown_ends_at: {
-        Args: { target_festival_id: string }
-        Returns: string | null
-      }
-      get_festival_schedule_booking_cooldown_seconds: {
-        Args: never
-        Returns: number
-      }
-      get_festival_schedule_booking_limit: {
-        Args: never
-        Returns: number
-      }
-      get_manual_payment_instructions: {
-        Args: { p_payment_id: string }
-        Returns: {
-          amount: number
-          payment_id: string
-          pix_copy_paste: string | null
-          status: Database["public"]["Enums"]["payment_status_enum"]
-          user_marked_paid_at: string | null
-        }[]
-      }
-      mark_payment_succeeded_manually: {
-        Args: { p_paid_at?: string; p_payment_id: string }
-        Returns: {
-          applied_effects_now: boolean
-          paid_at: string
-          payment_id: string
-          previous_status: Database["public"]["Enums"]["payment_status_enum"]
-          settlement_applied_at: string | null
-          status: Database["public"]["Enums"]["payment_status_enum"]
-        }[]
-      }
-      mark_manual_payment_paid_by_user: {
-        Args: { p_payment_id: string }
-        Returns: {
-          payment_id: string
-          status: Database["public"]["Enums"]["payment_status_enum"]
-          user_marked_paid_at: string | null
-        }[]
-      }
-      submit_membership_application: {
-        Args: { p_application_id: string }
-        Returns: {
-          id: string
-          organization_id: string
-          status: Database["public"]["Enums"]["membership_application_status_enum"]
-          submitted_at: string | null
-          user_id: string
         }[]
       }
       get_highline: {
@@ -1432,6 +2306,119 @@ export type Database = {
           length: number
           name: string
           sector_id: number
+          status: string
+        }[]
+      }
+      get_initial_payment_claim_detail: {
+        Args: { p_claim_id: string }
+        Returns: {
+          accepted_terms_at: string
+          address_line: string
+          allergies: string
+          amount: number
+          applicant_handle: string
+          applicant_name: string
+          applicant_profile_picture: string
+          application_id: string
+          application_revision_id: string
+          attempt_count: number
+          audit_history: Json
+          birth_date: string
+          birthplace: string
+          blood_type: Database["public"]["Enums"]["blood_type_enum"]
+          city: string
+          claim_created_at: string
+          claim_history: Json
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          claimant_user_id: string
+          cpf: string
+          currency: string
+          decided_at: string
+          decision_reason: string
+          dietary_restrictions: string
+          draft_version: number
+          email: string
+          emergency_contact_name: string
+          emergency_contact_phone: string
+          emergency_contact_relationship: string
+          first_aid_course: Database["public"]["Enums"]["first_aid_course_enum"]
+          full_name: string
+          has_allergies: boolean
+          has_dietary_restrictions: boolean
+          has_rescue_course: boolean
+          highline_experience: Database["public"]["Enums"]["highline_experience_enum"]
+          id_document_issuer: string
+          id_document_number: string
+          marital_status: Database["public"]["Enums"]["marital_status_enum"]
+          nationality: string
+          obligation_id: string
+          organization_id: string
+          organization_name: string
+          organization_slug: string
+          payer_name: string
+          payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
+          phone: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          postal_code: string
+          profession: string
+          revision_number: number
+          state: string
+          submitted_at: string
+          terms_version: string
+        }[]
+      }
+      get_initial_payment_claim_queue: {
+        Args: never
+        Returns: {
+          amount: number
+          applicant_handle: string
+          applicant_name: string
+          applicant_profile_picture: string
+          application_revision_id: string
+          attempt_count: number
+          claim_created_at: string
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          claimant_user_id: string
+          currency: string
+          obligation_id: string
+          organization_id: string
+          organization_name: string
+          payer_name: string
+          payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+        }[]
+      }
+      get_membership_billing_ledger: {
+        Args: {
+          p_history_cursor?: string
+          p_history_limit?: number
+          p_organization_id: string
+        }
+        Returns: Json
+      }
+      get_payment_obligation_instructions: {
+        Args: { p_obligation_id: string }
+        Returns: {
+          amount: number
+          available_at: string
+          available_on: string
+          claim_created_at: string
+          claim_decision_reason: string
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          currency: string
+          due_on: string
+          obligation_id: string
+          organization_id: string
+          payer_name: string
+          payer_type: Database["public"]["Enums"]["payment_claim_payer_type_enum"]
+          payment_method: string
+          period_key: string
+          pix_copy_paste: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          purpose: Database["public"]["Enums"]["payment_obligation_purpose_enum"]
           status: string
         }[]
       }
@@ -1504,9 +2491,30 @@ export type Database = {
         Args: { target_festival_id: string; target_profile_id: string }
         Returns: boolean
       }
+      is_person_link_maintenance: {
+        Args: { p_new: Json; p_old: Json }
+        Returns: boolean
+      }
+      is_valid_billing_timezone: {
+        Args: { p_timezone: string }
+        Returns: boolean
+      }
+      next_recurring_due_date: {
+        Args: {
+          p_cadence: Database["public"]["Enums"]["contribution_cadence_enum"]
+          p_due_date: string
+          p_due_day: number
+        }
+        Returns: string
+      }
       normalize_festival_instagram_username: {
         Args: { value: string }
         Returns: string
+      }
+      normalize_profile_username: { Args: { value: string }; Returns: string }
+      prepare_association_account_deletion: {
+        Args: { p_user_id: string }
+        Returns: undefined
       }
       profile_stats: {
         Args: { username: string }
@@ -1516,6 +2524,10 @@ export type Database = {
           total_full_lines: number
         }[]
       }
+      profile_username_disambiguated: {
+        Args: { normalized_username: string; profile_id: string }
+        Returns: string
+      }
       reconcile_festival_schedule: {
         Args: { festival_slug?: string }
         Returns: undefined
@@ -1524,10 +2536,84 @@ export type Database = {
         Args: { target_festival_id?: string }
         Returns: undefined
       }
+      recurring_due_date_on_or_after: {
+        Args: {
+          p_admission_date: string
+          p_cadence: Database["public"]["Enums"]["contribution_cadence_enum"]
+          p_due_day: number
+          p_from_date: string
+        }
+        Returns: string
+      }
+      recurring_period_key: {
+        Args: {
+          p_cadence: Database["public"]["Enums"]["contribution_cadence_enum"]
+          p_due_date: string
+        }
+        Returns: string
+      }
       regenerate_festival_schedule_window: {
         Args: { target_window_id: string }
         Returns: number
       }
+      register_push_token: {
+        Args: {
+          p_language?: Database["public"]["Enums"]["language"]
+          p_token: string
+        }
+        Returns: string
+      }
+      reject_initial_claim: {
+        Args: { p_claim_id: string; p_reason: string }
+        Returns: {
+          application_id: string
+          application_status: Database["public"]["Enums"]["membership_application_status_enum"]
+          audit_event_id: string
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          decision_applied_now: boolean
+          decision_reason: string
+          obligation_id: string
+          obligation_status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+        }[]
+      }
+      reject_recurring_payment_claim: {
+        Args: { p_claim_id: string; p_reason: string }
+        Returns: {
+          audit_event_id: string
+          claim_id: string
+          claim_status: Database["public"]["Enums"]["payment_claim_status_enum"]
+          decision_applied_now: boolean
+          decision_reason: string
+          obligation_id: string
+          obligation_status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+        }[]
+      }
+      resolve_association_person: {
+        Args: { p_organization_id: string; p_user_id: string }
+        Returns: string
+      }
+      submit_association_application: {
+        Args: {
+          p_application_id: string
+          p_draft_version: number
+          p_organization_id: string
+          p_plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+          p_terms_version: string
+        }
+        Returns: {
+          amount: number
+          application_revision_id: string
+          available_at: string
+          currency: string
+          obligation_id: string
+          obligation_status: Database["public"]["Enums"]["payment_obligation_status_enum"]
+          organization_id: string
+          payment_method: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type_enum"]
+        }[]
+      }
+      unregister_push_token: { Args: { p_token: string }; Returns: boolean }
       validate_locale_keys: { Args: { json_data: Json }; Returns: boolean }
     }
     Enums: {
@@ -1540,6 +2626,7 @@ export type Database = {
         | "ab_neg"
         | "o_pos"
         | "o_neg"
+      contribution_cadence_enum: "monthly" | "annual"
       festival_schedule_booking_cancellation_source_enum:
         | "user"
         | "staff"
@@ -1560,12 +2647,19 @@ export type Database = {
         | "legally_separated"
         | "common_law"
       material_enum: "nylon" | "dyneema" | "polyester"
-      membership_application_status_enum: "draft" | "submitted"
+      membership_application_status_enum:
+        | "draft"
+        | "submitted"
+        | "admitted"
+        | "refused"
       organization_role_enum: "admin" | "member"
-      payment_status_enum: "pending" | "succeeded" | "failed"
+      organization_type_enum: "group" | "association"
+      payment_claim_payer_type_enum: "applicant" | "other"
+      payment_claim_status_enum: "under_review" | "approved" | "rejected"
+      payment_obligation_purpose_enum: "initial_admission" | "recurring"
+      payment_obligation_status_enum: "available" | "settled" | "void"
       strength_class_enum: "A+" | "A" | "B" | "C"
       subscription_plan_type_enum: "monthly" | "annual"
-      subscription_status_enum: "pending_payment" | "active" | "canceled"
       weave_enum: "flat" | "tubular"
       webbing_type: "main" | "backup"
     }
@@ -1790,7 +2884,6 @@ export type Database = {
           created_at: string | null
           id: string
           last_accessed_at: string | null
-          level: number | null
           metadata: Json | null
           name: string | null
           owner: string | null
@@ -1805,7 +2898,6 @@ export type Database = {
           created_at?: string | null
           id?: string
           last_accessed_at?: string | null
-          level?: number | null
           metadata?: Json | null
           name?: string | null
           owner?: string | null
@@ -1820,7 +2912,6 @@ export type Database = {
           created_at?: string | null
           id?: string
           last_accessed_at?: string | null
-          level?: number | null
           metadata?: Json | null
           name?: string | null
           owner?: string | null
@@ -1833,38 +2924,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "objects_bucketId_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      prefixes: {
-        Row: {
-          bucket_id: string
-          created_at: string | null
-          level: number
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          bucket_id: string
-          created_at?: string | null
-          level?: number
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          bucket_id?: string
-          created_at?: string | null
-          level?: number
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "prefixes_bucketId_fkey"
             columns: ["bucket_id"]
             isOneToOne: false
             referencedRelation: "buckets"
@@ -2019,28 +3078,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      add_prefixes: {
-        Args: { _bucket_id: string; _name: string }
-        Returns: undefined
-      }
       can_insert_object: {
         Args: { bucketid: string; metadata: Json; name: string; owner: string }
         Returns: undefined
       }
-      delete_leaf_prefixes: {
-        Args: { bucket_ids: string[]; names: string[] }
-        Returns: undefined
-      }
-      delete_prefix: {
-        Args: { _bucket_id: string; _name: string }
-        Returns: boolean
-      }
       extension: { Args: { name: string }; Returns: string }
       filename: { Args: { name: string }; Returns: string }
       foldername: { Args: { name: string }; Returns: string[] }
-      get_level: { Args: { name: string }; Returns: number }
-      get_prefix: { Args: { name: string }; Returns: string }
-      get_prefixes: { Args: { name: string }; Returns: string[] }
+      get_common_prefix: {
+        Args: { p_delimiter: string; p_key: string; p_prefix: string }
+        Returns: string
+      }
       get_size_by_bucket: {
         Args: never
         Returns: {
@@ -2065,23 +3113,22 @@ export type Database = {
       }
       list_objects_with_delimiter: {
         Args: {
-          bucket_id: string
+          _bucket_id: string
           delimiter_param: string
           max_keys?: number
           next_token?: string
           prefix_param: string
+          sort_order?: string
           start_after?: string
         }
         Returns: {
+          created_at: string
           id: string
+          last_accessed_at: string
           metadata: Json
           name: string
           updated_at: string
         }[]
-      }
-      lock_top_prefixes: {
-        Args: { bucket_ids: string[]; names: string[] }
-        Returns: undefined
       }
       operation: { Args: never; Returns: string }
       search: {
@@ -2104,40 +3151,21 @@ export type Database = {
           updated_at: string
         }[]
       }
-      search_legacy_v1: {
+      search_by_timestamp: {
         Args: {
-          bucketname: string
-          levels?: number
-          limits?: number
-          offsets?: number
-          prefix: string
-          search?: string
-          sortcolumn?: string
-          sortorder?: string
+          p_bucket_id: string
+          p_level: number
+          p_limit: number
+          p_prefix: string
+          p_sort_column: string
+          p_sort_column_after: string
+          p_sort_order: string
+          p_start_after: string
         }
         Returns: {
           created_at: string
           id: string
-          last_accessed_at: string
-          metadata: Json
-          name: string
-          updated_at: string
-        }[]
-      }
-      search_v1_optimised: {
-        Args: {
-          bucketname: string
-          levels?: number
-          limits?: number
-          offsets?: number
-          prefix: string
-          search?: string
-          sortcolumn?: string
-          sortorder?: string
-        }
-        Returns: {
-          created_at: string
-          id: string
+          key: string
           last_accessed_at: string
           metadata: Json
           name: string
@@ -2305,6 +3333,7 @@ export const Constants = {
         "o_pos",
         "o_neg",
       ],
+      contribution_cadence_enum: ["monthly", "annual"],
       festival_schedule_booking_cancellation_source_enum: [
         "user",
         "staff",
@@ -2328,12 +3357,20 @@ export const Constants = {
         "common_law",
       ],
       material_enum: ["nylon", "dyneema", "polyester"],
-      membership_application_status_enum: ["draft", "submitted"],
+      membership_application_status_enum: [
+        "draft",
+        "submitted",
+        "admitted",
+        "refused",
+      ],
       organization_role_enum: ["admin", "member"],
-      payment_status_enum: ["pending", "succeeded", "failed"],
+      organization_type_enum: ["group", "association"],
+      payment_claim_payer_type_enum: ["applicant", "other"],
+      payment_claim_status_enum: ["under_review", "approved", "rejected"],
+      payment_obligation_purpose_enum: ["initial_admission", "recurring"],
+      payment_obligation_status_enum: ["available", "settled", "void"],
       strength_class_enum: ["A+", "A", "B", "C"],
       subscription_plan_type_enum: ["monthly", "annual"],
-      subscription_status_enum: ["pending_payment", "active", "canceled"],
       weave_enum: ["flat", "tubular"],
       webbing_type: ["main", "backup"],
     },
@@ -2344,3 +3381,4 @@ export const Constants = {
     },
   },
 } as const
+

@@ -1,5 +1,4 @@
 import { ENABLE_MEMBERSHIP_REGISTRATION } from '@chooselife/ui';
-import type { StartSubscriptionResponse } from '@packages/database/functions.types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -8,7 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
-  TouchableOpacity,
+  Pressable,
   View,
 } from 'react-native';
 import Animated, {
@@ -20,19 +19,20 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { useAuth } from '~/context/auth';
-import { getManualPaymentRouteParams } from '~/lib/manual-payment';
+import { getPaymentObligationRouteParams } from '~/lib/manual-payment';
 import {
   fetchMembershipApplication,
+  submitAssociationApplication,
   type MembershipApplication,
 } from '~/lib/membership-application';
 import { queryKeys } from '~/lib/query-keys';
 import { getR2PublicUrl } from '~/lib/r2';
-import { supabase } from '~/lib/supabase';
 import { formatCurrency } from '~/utils';
 import { _layoutAnimation } from '~/utils/constants';
 import { Tables } from '~/utils/database.types';
 
 import { BgBlob } from '~/components/bg-blog';
+import { PlanCard } from '~/components/organizations/showcase-carousel/plan-card';
 import { Text } from '~/components/ui/text';
 
 type PlanType = 'monthly' | 'annual';
@@ -80,53 +80,54 @@ export function BecomeMemberForm({
 
   const mutation = useMutation({
     mutationFn: async (values: { plan_type: PlanType }) => {
-      const { data: charge, error } =
-        await supabase.functions.invoke<StartSubscriptionResponse>(
-          'start-subscription',
-          {
-            body: {
-              plan_type: values.plan_type,
-              slug: org.slug,
-            },
-          },
-        );
+      const application =
+        queryClient.getQueryData<MembershipApplication | null>(
+          queryKeys.membershipApplication.byOrgUser(org.id, session?.user.id),
+        ) ?? membershipApplication;
 
-      if (error) {
-        const errorContext = error.context;
-        if (errorContext && typeof errorContext.json === 'function') {
-          const errorData = await errorContext.json();
-          throw new Error(errorData?.error || error.message);
-        }
-        throw error;
+      if (!application || application.status !== 'submitted') {
+        throw new Error('A submitted association application is required.');
       }
 
-      if (!charge) {
-        throw new Error('Invalid response from start-subscription function');
-      }
-
-      return {
-        amount: 'amount' in charge ? charge.amount : undefined,
-        paymentId: charge.paymentId,
-      };
+      return submitAssociationApplication({
+        applicationId: application.id,
+        draftVersion: application.draft_version,
+        organizationId: org.id,
+        planType: values.plan_type,
+        termsVersion: org.membership_terms_version,
+      });
     },
     onSuccess: (data) => {
+      if (!data) {
+        setErrorMessage(
+          'Não foi possível abrir a obrigação. Tente novamente mais tarde.',
+        );
+        return;
+      }
+
       router.push({
         pathname: '/payment',
-        params: getManualPaymentRouteParams({
+        params: getPaymentObligationRouteParams({
           amount: data.amount,
-          paymentId: data.paymentId,
-          paymentContext: 'new_member',
+          currency: data.currency,
+          obligationId: data.obligation_id,
           slug: org.slug,
         }),
       });
     },
     onError: (error) => {
-      console.error('Error starting subscription:', error);
+      console.error('Error submitting association application:', error);
       setErrorMessage(
         'Não foi possível iniciar a inscrição. Tente novamente mais tarde.',
       );
     },
   });
+
+  const handleSelectPlan = (plan: PlanType) => {
+    setSelectedPlan(plan);
+    setErrorMessage(null);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
 
   const handleOpenEstatuto = async () => {
     const url = getR2PublicUrl('documents', 'estatuto-slac.pdf');
@@ -163,6 +164,7 @@ export function BecomeMemberForm({
         accepted_terms_at: new Date().toISOString(),
         plan_type: selectedPlan,
         slug: org.slug,
+        terms_version: org.membership_terms_version,
       },
     });
   };
@@ -231,8 +233,8 @@ export function BecomeMemberForm({
             entering={FadeInDown.delay(350).duration(400)}
             className="text-white/80 text-center text-base max-w-md leading-6 font-medium px-4"
           >
-            Cada membro fortalece o slackline brasileiro e apoia a preservação
-            dos nossos espaços naturais
+            Cada associado fortalece o slackline brasileiro e apoia a
+            preservação dos nossos espaços naturais
           </Animated.Text>
         </View>
 
@@ -251,76 +253,37 @@ export function BecomeMemberForm({
           </Animated.View>
         ) : (
           <>
-            {/* Plan Cards - Simplified */}
-            <View className="gap-4">
-              {/* Monthly Plan */}
-              <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-                <TouchableOpacity
-                  onPress={() => {
-                    setSelectedPlan('monthly');
-                    setErrorMessage(null);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }}
+            {/* Plan Cards - side by side */}
+            <View className="flex-row items-stretch gap-3">
+              <Animated.View
+                entering={FadeInDown.delay(300).duration(400)}
+                className="flex-1"
+              >
+                <PlanCard
+                  label="Mensal"
+                  price={formatCurrency(org.monthly_price_amount)}
+                  period="/mês"
+                  selected={selectedPlan === 'monthly'}
                   disabled={mutation.isPending}
-                  activeOpacity={0.8}
-                  className={`bg-white/10 backdrop-blur-xl p-5 rounded-2xl border-2 ${
-                    selectedPlan === 'monthly'
-                      ? 'border-white'
-                      : 'border-white/20'
-                  }`}
-                >
-                  <View className="flex-row justify-between items-center">
-                    <View className="flex-1">
-                      <Text className="text-white text-xl font-bold">
-                        Mensal
-                      </Text>
-                      <Text className="text-white/60 text-sm">Flexível</Text>
-                    </View>
-                    <View className="items-end">
-                      <Text className="text-white text-3xl font-bold">
-                        {formatCurrency(org.monthly_price_amount)}
-                      </Text>
-                      <Text className="text-white/70 text-xs">/mês</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
+                  onPress={() => handleSelectPlan('monthly')}
+                />
               </Animated.View>
 
-              {/* Annual Plan */}
-              <Animated.View entering={FadeInDown.delay(400).duration(400)}>
-                <TouchableOpacity
-                  onPress={() => {
-                    setSelectedPlan('annual');
-                    setErrorMessage(null);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }}
+              <Animated.View
+                entering={FadeInDown.delay(400).duration(400)}
+                className="flex-1"
+              >
+                <PlanCard
+                  label="Anual"
+                  price={formatCurrency(org.annual_price_amount)}
+                  period="/ano"
+                  selected={selectedPlan === 'annual'}
                   disabled={mutation.isPending}
-                  activeOpacity={0.8}
-                  className={`bg-white/10 backdrop-blur-xl p-5 rounded-2xl border-2 ${
-                    selectedPlan === 'annual'
-                      ? 'border-emerald-400'
-                      : 'border-white/20'
-                  } relative`}
-                >
-                  <View className="flex-row justify-between items-center">
-                    <View className="flex-1">
-                      <Text className="text-white text-xl font-bold">
-                        Anual
-                      </Text>
-                      {!!annualDiscountPercentage && (
-                        <Text className="text-emerald-300 text-sm font-medium">
-                          Economia de {annualDiscountPercentage}%
-                        </Text>
-                      )}
-                    </View>
-                    <View className="items-end">
-                      <Text className="text-white text-3xl font-bold">
-                        {formatCurrency(org.annual_price_amount)}
-                      </Text>
-                      <Text className="text-white/70 text-xs">/ano</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
+                  badge={
+                    annualDiscountPercentage ? '2 meses grátis' : undefined
+                  }
+                  onPress={() => handleSelectPlan('annual')}
+                />
               </Animated.View>
             </View>
 
@@ -340,7 +303,7 @@ export function BecomeMemberForm({
                 entering={FadeInDown.delay(500).duration(400)}
                 layout={_layoutAnimation}
               >
-                <TouchableOpacity
+                <Pressable
                   onPress={() => {
                     handleSubmit();
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -352,10 +315,10 @@ export function BecomeMemberForm({
                     <ActivityIndicator color="#000" />
                   ) : (
                     <Text className="text-black text-xl font-bold">
-                      Tornar-me membro
+                      Tornar-me associado
                     </Text>
                   )}
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
 
               {/* Footer Note */}
@@ -366,13 +329,13 @@ export function BecomeMemberForm({
               >
                 <Text className="text-white/50 text-center text-sm leading-5 max-w-xs">
                   Ao clicar nesse botão você deve realizar o primeiro pagamento
-                  para se tornar membro.
+                  para se tornar associado.
                 </Text>
-                <TouchableOpacity onPress={handleOpenEstatuto}>
+                <Pressable onPress={handleOpenEstatuto}>
                   <Text className="text-white/70 text-center text-sm mt-2 underline">
                     Ver Estatuto da Associação
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
             </View>
           </>

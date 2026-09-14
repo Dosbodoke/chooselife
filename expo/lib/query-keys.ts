@@ -2,11 +2,6 @@ export const queryKeys = {
   profile: {
     all: ['profile'] as const,
   },
-  subscription: {
-    all: ['subscription'] as const,
-    byOrgUser: (organizationId: string, userId: string | undefined) =>
-      [...queryKeys.subscription.all, organizationId, userId] as const,
-  },
   membershipApplication: {
     all: ['membership-application'] as const,
     byOrgUser: (
@@ -14,6 +9,11 @@ export const queryKeys = {
       userId: string | undefined,
     ) =>
       [...queryKeys.membershipApplication.all, organizationId, userId] as const,
+  },
+  membershipBilling: {
+    all: ['membership-billing'] as const,
+    byOrg: (organizationId: string, userId: string | undefined) =>
+      [...queryKeys.membershipBilling.all, organizationId, userId] as const,
   },
   organizations: {
     all: ['organizations'] as const,

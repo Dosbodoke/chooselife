@@ -74,13 +74,14 @@ export default function MemberShowcaseScreen() {
     <View className="flex-1 bg-white">
       <Pressable
         onPress={router.back}
-        className="absolute right-6 p-2.5 rounded-full bg-foreground/10 z-50"
+        accessibilityLabel="Fechar"
+        className="absolute right-5 z-50 h-11 w-11 items-center justify-center rounded-full bg-white"
         style={{
-          top: insets.top + 12,
+          top: insets.top + 8,
         }}
-        hitSlop={12}
+        hitSlop={8}
       >
-        <Icon as={XIcon} size={20} className="fill-muted" />
+        <Icon as={XIcon} size={20} color="#18181B" />
       </Pressable>
 
       <Carousel

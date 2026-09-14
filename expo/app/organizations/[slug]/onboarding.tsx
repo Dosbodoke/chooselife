@@ -1,9 +1,8 @@
 import { useOrganization } from '@chooselife/ui';
-import type { StartSubscriptionResponse } from '@packages/database/functions.types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
+import { useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -15,68 +14,68 @@ import {
 import Animated, {
   Easing,
   FadeIn,
-  FadeInDown,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
 import { useMountEffect } from '~/hooks/use-mount-effect';
-import { getManualPaymentRouteParams } from '~/lib/manual-payment';
+import { getPaymentObligationRouteParams } from '~/lib/manual-payment';
 import {
   fetchAddressByCep,
   fetchMembershipApplication,
-  submitMembershipApplication,
+  submitAssociationApplication,
   upsertMembershipApplicationDraft,
   type MembershipApplication,
 } from '~/lib/membership-application';
 import { queryKeys } from '~/lib/query-keys';
-import { supabase } from '~/lib/supabase';
 
 import {
-  animatedLayout,
+  FocusedHeader,
   FooterCta,
-  GlassField,
-  NativeSwitchRow,
-  ProgressHeader,
-  SelectCards,
-  SelectChips,
+  ReviewList,
   SuccessInterstitial,
 } from '~/components/organizations/onboarding/controls';
 import {
-  bloodTypeOptions,
   createInitialForm,
-  firstAidOptions,
   formToDraft,
-  getFirstIncompleteStep,
-  getStepErrors,
-  highlineExperienceOptions,
-  isStepValid,
-  maritalStatusOptions,
+  getAnswerLabel,
+  getFirstIncompleteIndex,
+  getQuestionError,
+  getReviewRows,
   maskCep,
-  maskCpf,
-  maskDate,
-  maskPhone,
-  relationshipOptions,
-  steps,
+  questions,
   unmask,
-  type FormErrors,
   type FormField,
   type MembershipApplicationForm,
   type PlanType,
-  type YesNoValue,
 } from '~/components/organizations/onboarding/form';
+import { QuestionCard } from '~/components/organizations/onboarding/question-card';
 import { Text } from '~/components/ui/text';
+
+type SettledResult<T> = { ok: true; value: T } | { ok: false; error: unknown };
+
+const settle = <T,>(promise: Promise<T>): Promise<SettledResult<T>> =>
+  promise.then(
+    (value) => ({ ok: true, value }),
+    (error: unknown) => ({ ok: false, error }),
+  );
+
+const errorHaptic = () =>
+  void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
+    () => undefined,
+  );
 
 export default function OnboardingScreen() {
   const { session, sessionLoading, profile } = useAuth();
-  const { accepted_terms_at, plan_type, slug } = useLocalSearchParams<{
-    accepted_terms_at?: string;
-    plan_type?: PlanType;
-    slug: string;
-  }>();
+  const { accepted_terms_at, plan_type, slug, terms_version } =
+    useLocalSearchParams<{
+      accepted_terms_at?: string;
+      plan_type?: PlanType;
+      slug: string;
+      terms_version?: string;
+    }>();
   const {
     data: organization,
     isLoading,
@@ -110,7 +109,7 @@ export default function OnboardingScreen() {
         href={{
           pathname: '/(modals)/login',
           params: {
-            redirect_to: `/organizations/${slug}/onboarding?plan_type=${plan_type ?? 'monthly'}`,
+            redirect_to: `/organizations/${slug}/onboarding?plan_type=${plan_type ?? 'monthly'}${terms_version ? `&terms_version=${encodeURIComponent(terms_version)}` : ''}`,
           },
         }}
       />
@@ -131,110 +130,224 @@ export default function OnboardingScreen() {
 
   return (
     <OnboardingWizard
-      key={applicationQuery.data?.id ?? 'new-application'}
+      // Stable for the org+user session. Using application id remounted the
+      // wizard on the first draft save and reset question/CTA state mid-flow.
+      key={`${organization.id}-${userId}`}
       acceptedTermsAt={accepted_terms_at}
       application={applicationQuery.data ?? null}
       email={session.user.email}
       organizationId={organization.id}
+      phone={session.user.phone}
       planType={plan_type ?? 'monthly'}
       profileBirthday={profile?.birthday}
       profileName={profile?.name}
       slug={slug}
+      termsVersion={terms_version ?? organization.membership_terms_version}
       userId={session.user.id}
     />
   );
 }
+
+type OnboardingWizardProps = {
+  acceptedTermsAt?: string;
+  application: MembershipApplication | null;
+  email?: string | null;
+  organizationId: string;
+  phone?: string | null;
+  planType: PlanType;
+  profileBirthday?: string | null;
+  profileName?: string | null;
+  slug: string;
+  termsVersion: string;
+  userId: string;
+};
 
 function OnboardingWizard({
   acceptedTermsAt,
   application,
   email,
   organizationId,
+  phone,
   planType,
   profileBirthday,
   profileName,
   slug,
+  termsVersion,
   userId,
-}: {
-  acceptedTermsAt?: string;
-  application: MembershipApplication | null;
-  email?: string | null;
-  organizationId: string;
-  planType: PlanType;
-  profileBirthday?: string | null;
-  profileName?: string | null;
-  slug: string;
-  userId: string;
-}) {
+}: OnboardingWizardProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const insets = useSafeAreaInsets();
-  const initialForm = React.useMemo(
-    () =>
-      createInitialForm({
-        acceptedTermsAt,
-        application,
-        email,
-        profileBirthday,
-        profileName,
-      }),
-    [acceptedTermsAt, application, email, profileBirthday, profileName],
+  const scrollRef = useRef<ScrollView>(null);
+
+  const [initialForm] = useState<MembershipApplicationForm>(() =>
+    createInitialForm({
+      acceptedTermsAt,
+      application,
+      email,
+      phone,
+      profileBirthday,
+      profileName,
+    }),
   );
-  const [form, setForm] =
-    React.useState<MembershipApplicationForm>(initialForm);
-  const [step, setStep] = React.useState(() =>
+  const [form, setForm] = useState(initialForm);
+  const [index, setIndex] = useState(() =>
     application?.status === 'submitted'
-      ? steps.length - 1
+      ? questions.length
       : application?.status === 'draft'
-        ? getFirstIncompleteStep(initialForm)
+        ? getFirstIncompleteIndex(initialForm)
         : 0,
   );
-  const [errors, setErrors] = React.useState<FormErrors>({});
-  const [applicationId, setApplicationId] = React.useState(application?.id);
-  const [submittedApplicationId, setSubmittedApplicationId] = React.useState(
-    application?.status === 'submitted' ? application.id : undefined,
-  );
-  const [savedVisible, setSavedVisible] = React.useState(false);
-  const [cepLoading, setCepLoading] = React.useState(false);
-  const [cepFailed, setCepFailed] = React.useState(false);
-  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const [continuing, setContinuing] = React.useState(false);
-  const [success, setSuccess] = React.useState(false);
-  const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const savedTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const scrollRef = React.useRef<ScrollView>(null);
-  // Continuous stepper position: step + 1 pills' worth of fill.
-  const progress = useSharedValue(step + 1);
-  // 0 → 1 on every step change; drives the step slide-in deterministically so
-  // an interrupted transition can never leave a residual horizontal offset.
-  const stepTransition = useSharedValue(1);
-  const stepDirection = useSharedValue(1);
-  const stepAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: stepTransition.value,
-    transform: [
-      { translateX: (1 - stepTransition.value) * 32 * stepDirection.value },
-    ],
-  }));
-  const stepValid = isStepValid(form, step);
+  const reviewing = index === questions.length;
+  const question = reviewing ? null : questions[index];
+
+  // Set by a failed Continue; every field on the step then shows its error.
+  const [showErrors, setShowErrors] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [returnToReview, setReturnToReview] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepFailed, setCepFailed] = useState(false);
+  // Bumped when ViaCEP fills the address fields, so they remount with the new
+  // value — native text state is only captured on mount.
+  const [autofillKey, setAutofillKey] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const submitLockRef = useRef(false);
+  const lastCepLookupRef = useRef<string | null>(null);
+
   const applicationQueryKey = queryKeys.membershipApplication.byOrgUser(
     organizationId,
     userId,
   );
-  const getSubmittedApplicationId = () => {
-    const cachedApplication =
-      queryClient.getQueryData<MembershipApplication | null>(
-        applicationQueryKey,
-      );
 
-    return (
-      submittedApplicationId ??
-      (cachedApplication?.status === 'submitted'
-        ? cachedApplication.id
-        : undefined) ??
-      (application?.status === 'submitted' ? application.id : undefined)
+  const progress = useSharedValue((index + 1) / (questions.length + 1));
+  // 0 → 1 on every question change; drives the slide-in deterministically so an
+  // interrupted transition can never leave a residual horizontal offset.
+  const transition = useSharedValue(1);
+  const direction = useSharedValue(1);
+  const cardStyle = useAnimatedStyle(() => ({
+    opacity: transition.get(),
+    transform: [{ translateX: (1 - transition.get()) * 28 * direction.get() }],
+  }));
+
+  useMountEffect(() => {
+    AccessibilityInfo.announceForAccessibility(
+      reviewing
+        ? 'Revisão do cadastro'
+        : `Pergunta ${index + 1} de ${questions.length}`,
     );
+  });
+
+  const goToIndex = (next: number, movement: 'back' | 'forward') => {
+    const total = questions.length;
+    const target = Math.max(0, Math.min(next, total));
+
+    progress.set(
+      withTiming((target + 1) / (total + 1), {
+        duration: 280,
+        easing: Easing.out(Easing.cubic),
+      }),
+    );
+    direction.set(movement === 'forward' ? 1 : -1);
+    transition.set(0);
+    transition.set(
+      withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) }),
+    );
+
+    setIndex(target);
+    setShowErrors(false);
+    setErrorMessage(null);
+    scrollRef.current?.scrollTo({ animated: false, y: 0 });
+    AccessibilityInfo.announceForAccessibility(
+      target === total
+        ? 'Revisão do cadastro'
+        : `Pergunta ${target + 1} de ${total}`,
+    );
+  };
+
+  const handleCepChange = (value: unknown) => {
+    const nextPostalCode = maskCep(typeof value === 'string' ? value : '');
+    const digits = unmask(nextPostalCode);
+    setForm((current) => ({ ...current, postal_code: nextPostalCode }));
+    setShowErrors(false);
+
+    if (digits.length !== 8 || lastCepLookupRef.current === digits) return;
+
+    lastCepLookupRef.current = digits;
+    setCepFailed(false);
+    setCepLoading(true);
+    fetchAddressByCep(digits)
+      .then((address) => {
+        if (!address) {
+          setCepFailed(true);
+          return;
+        }
+        setForm((current) => ({
+          ...current,
+          address_line: address.address_line,
+          city: address.city,
+          state: address.state,
+        }));
+        setAutofillKey((key) => key + 1);
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        ).catch(() => undefined);
+      })
+      .catch(() => setCepFailed(true))
+      .finally(() => setCepLoading(false));
+  };
+
+  const setField = (field: FormField, value: unknown) => {
+    // The CEP drives the rest of the address, so it owns its own handler.
+    if (field === 'postal_code') {
+      handleCepChange(value);
+      return;
+    }
+    setForm((current) => ({ ...current, [field]: value }));
+    setShowErrors(false);
+  };
+
+  const handleBack = () => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+      () => undefined,
+    );
+
+    if (returnToReview) {
+      setReturnToReview(false);
+      goToIndex(questions.length, 'forward');
+      return;
+    }
+
+    goToIndex(index - 1, 'back');
+  };
+
+  const handleAdvance = () => {
+    if (!question) return;
+
+    const error = getQuestionError(form, question);
+    if (error) {
+      setShowErrors(true);
+      AccessibilityInfo.announceForAccessibility(error);
+      errorHaptic();
+      return;
+    }
+
+    Keyboard.dismiss();
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+      () => undefined,
+    );
+
+    if (returnToReview) {
+      setReturnToReview(false);
+      goToIndex(questions.length, 'forward');
+      return;
+    }
+
+    goToIndex(index + 1, 'forward');
+  };
+
+  const handleEdit = (target: number) => {
+    setReturnToReview(true);
+    goToIndex(target, 'back');
   };
 
   const saveMutation = useMutation({
@@ -243,226 +356,187 @@ function OnboardingWizard({
         formToDraft(nextForm, organizationId, userId),
       ),
     onSuccess: (data) => {
-      setApplicationId(data.id);
       queryClient.setQueryData(applicationQueryKey, data);
-      setSavedVisible(true);
-      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-      savedTimerRef.current = setTimeout(() => setSavedVisible(false), 1500);
     },
+    retry: 1,
   });
 
   const submitMutation = useMutation({
-    mutationFn: submitMembershipApplication,
-    onSuccess: async (data) => {
-      setSubmittedApplicationId(data?.id ?? applicationId);
-      await queryClient.invalidateQueries({
-        queryKey: applicationQueryKey,
-      });
-    },
+    mutationFn: submitAssociationApplication,
+    retry: 1,
+    retryDelay: 500,
   });
 
-  const startSubscriptionMutation = useMutation({
-    mutationFn: async () => {
-      const { data: charge, error } =
-        await supabase.functions.invoke<StartSubscriptionResponse>(
-          'start-subscription',
-          {
-            body: {
-              plan_type: planType,
-              slug,
-            },
-          },
+  const getSubmittedApplicationId = () => {
+    const cachedApplication =
+      queryClient.getQueryData<MembershipApplication | null>(
+        applicationQueryKey,
+      );
+
+    return cachedApplication?.status === 'submitted'
+      ? cachedApplication.id
+      : application?.status === 'submitted'
+        ? application.id
+        : undefined;
+  };
+
+  const handleSubmit = async () => {
+    if (submitLockRef.current) return;
+
+    const incompleteIndex = getFirstIncompleteIndex(form);
+    if (incompleteIndex < questions.length) {
+      errorHaptic();
+      // `handleEdit` clears the banner, so the message is set afterwards.
+      handleEdit(incompleteIndex);
+      setErrorMessage('Faltam respostas. Vamos voltar para completá-las.');
+      return;
+    }
+
+    if (!form.accepted_terms_at) {
+      setErrorMessage(
+        'Não encontramos o aceite dos termos. Feche o cadastro e confirme os termos novamente.',
+      );
+      errorHaptic();
+      return;
+    }
+
+    submitLockRef.current = true;
+    setSubmitting(true);
+    setErrorMessage(null);
+
+    const fail = (message: string) => {
+      setErrorMessage(message);
+      setSubmitting(false);
+      submitLockRef.current = false;
+      errorHaptic();
+    };
+
+    let applicationForSubmission =
+      queryClient.getQueryData<MembershipApplication | null>(
+        applicationQueryKey,
+      );
+
+    if (!getSubmittedApplicationId()) {
+      const saved = await settle(saveMutation.mutateAsync(form));
+      if (!saved.ok) {
+        console.error('Error saving membership application:', saved.error);
+        fail(
+          'Não foi possível salvar seu cadastro. Verifique a conexão e tente novamente.',
         );
-
-      if (error) {
-        const errorContext = error.context;
-        if (errorContext && typeof errorContext.json === 'function') {
-          const errorData = await errorContext.json();
-          throw new Error(errorData?.error || error.message);
-        }
-        throw error;
+        return;
       }
 
-      if (!charge) {
-        throw new Error('Invalid response from start-subscription function');
+      applicationForSubmission = saved.value;
+    }
+
+    if (!applicationForSubmission) {
+      applicationForSubmission = await queryClient.fetchQuery({
+        queryKey: applicationQueryKey,
+        queryFn: () => fetchMembershipApplication(organizationId, userId),
+      });
+    }
+
+    if (!applicationForSubmission?.draft_version) {
+      fail(
+        'Não foi possível identificar a versão atual do cadastro. Atualize e tente novamente.',
+      );
+      return;
+    }
+
+    const submission = await settle(
+      submitMutation.mutateAsync({
+        applicationId: applicationForSubmission.id,
+        draftVersion: applicationForSubmission.draft_version,
+        organizationId,
+        planType,
+        termsVersion,
+      }),
+    );
+    if (!submission.ok || !submission.value) {
+      // A lost response can happen after the command committed. Re-read the
+      // draft and retry with the same optimistic version; the server returns
+      // the original revision and obligation rather than creating another.
+      const reconciled = await settle(
+        fetchMembershipApplication(organizationId, userId),
+      );
+      if (!reconciled.ok || reconciled.value?.status !== 'submitted') {
+        console.error(
+          'Error submitting membership application:',
+          submission.ok ? 'empty response' : submission.error,
+        );
+        fail(
+          'Não foi possível concluir seu cadastro. Verifique a conexão e tente novamente.',
+        );
+        return;
       }
 
-      return {
-        amount: 'amount' in charge ? charge.amount : undefined,
-        paymentId: charge.paymentId,
-      };
-    },
-    onSuccess: async (data) => {
+      const retriedSubmission = await settle(
+        submitMutation.mutateAsync({
+          applicationId: reconciled.value.id,
+          draftVersion: reconciled.value.draft_version,
+          organizationId,
+          planType,
+          termsVersion,
+        }),
+      );
+      if (!retriedSubmission.ok || !retriedSubmission.value) {
+        console.error(
+          'Error reconciling membership application submission:',
+          retriedSubmission.ok ? 'empty response' : retriedSubmission.error,
+        );
+        fail(
+          'Não foi possível concluir seu cadastro. Verifique a conexão e tente novamente.',
+        );
+        return;
+      }
+
+      const authoritativeSubmission = retriedSubmission.value;
+      queryClient.setQueryData(applicationQueryKey, reconciled.value);
       setSuccess(true);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      void Haptics.notificationAsync(
+        Haptics.NotificationFeedbackType.Success,
+      ).catch(() => undefined);
       setTimeout(() => {
         router.replace({
           pathname: '/payment',
-          params: getManualPaymentRouteParams({
-            amount: data.amount,
-            paymentId: data.paymentId,
-            paymentContext: 'new_member',
+          params: getPaymentObligationRouteParams({
+            amount: authoritativeSubmission.amount,
+            currency: authoritativeSubmission.currency,
+            obligationId: authoritativeSubmission.obligation_id,
             slug,
           }),
         });
       }, 1600);
-    },
-  });
-
-  useMountEffect(() => {
-    AccessibilityInfo.announceForAccessibility(
-      `Passo ${step + 1} de ${steps.length}, ${steps[step].title}`,
-    );
-
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-    };
-  });
-
-  const saveNow = async (nextForm: MembershipApplicationForm) => {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    return saveMutation.mutateAsync(nextForm);
-  };
-
-  const scheduleSave = (nextForm: MembershipApplicationForm) => {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      saveMutation.mutate(nextForm);
-    }, 800);
-  };
-
-  const patchForm = (
-    patch:
-      | Partial<MembershipApplicationForm>
-      | ((
-          current: MembershipApplicationForm,
-        ) => Partial<MembershipApplicationForm>),
-    options: { save?: boolean } = { save: true },
-  ) => {
-    setForm((current) => {
-      const resolved = typeof patch === 'function' ? patch(current) : patch;
-      const next = { ...current, ...resolved };
-
-      if (options.save && !getSubmittedApplicationId()) scheduleSave(next);
-      if (Object.keys(errors).length > 0) {
-        setErrors(getStepErrors(next, step));
-      }
-
-      return next;
-    });
-  };
-
-  const setField = <T extends FormField>(
-    field: T,
-    value: MembershipApplicationForm[T],
-  ) => {
-    patchForm({ [field]: value } as Partial<MembershipApplicationForm>);
-  };
-
-  const handleCepChange = (value: string) => {
-    const nextPostalCode = maskCep(value);
-    const nextDigits = unmask(nextPostalCode);
-    const previousDigits = unmask(form.postal_code);
-    setField('postal_code', nextPostalCode);
-
-    if (nextDigits.length === 8 && previousDigits.length !== 8) {
-      setCepFailed(false);
-      setCepLoading(true);
-      fetchAddressByCep(nextDigits)
-        .then((address) => {
-          if (!address) {
-            setCepFailed(true);
-            return;
-          }
-          patchForm({
-            address_line: address.address_line,
-            city: address.city,
-            state: address.state,
-          });
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        })
-        .catch(() => setCepFailed(true))
-        .finally(() => setCepLoading(false));
-    }
-  };
-
-  const goToStep = (nextStep: number, nextDirection: 'back' | 'forward') => {
-    progress.value = withTiming(nextStep + 1, {
-      duration: 300,
-      easing: Easing.out(Easing.cubic),
-    });
-    stepDirection.value = nextDirection === 'forward' ? 1 : -1;
-    stepTransition.value = 0;
-    stepTransition.value = withTiming(1, {
-      duration: 250,
-      easing: Easing.out(Easing.cubic),
-    });
-    setStep(nextStep);
-    setErrors({});
-    scrollRef.current?.scrollTo({ animated: true, y: 0 });
-    AccessibilityInfo.announceForAccessibility(
-      `Passo ${nextStep + 1} de ${steps.length}, ${steps[nextStep].title}`,
-    );
-  };
-
-  const handleBack = async () => {
-    if (step === 0) return;
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    goToStep(step - 1, 'back');
-  };
-
-  const handleContinue = async () => {
-    setErrorMessage(null);
-
-    const nextErrors = getStepErrors(form, step);
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
-      scrollRef.current?.scrollTo({ animated: true, y: 0 });
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setSubmitting(false);
+      submitLockRef.current = false;
       return;
     }
 
-    let stage: 'payment' | 'save' = 'save';
+    const authoritativeSubmission = submission.value;
+    setSuccess(true);
+    void Haptics.notificationAsync(
+      Haptics.NotificationFeedbackType.Success,
+    ).catch(() => undefined);
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.membershipApplication.byOrgUser(
+        organizationId,
+        userId,
+      ),
+    });
+    setTimeout(() => {
+      router.replace({
+        pathname: '/payment',
+        params: getPaymentObligationRouteParams({
+          amount: authoritativeSubmission.amount,
+          currency: authoritativeSubmission.currency,
+          obligationId: authoritativeSubmission.obligation_id,
+          slug,
+        }),
+      });
+    }, 1600);
 
-    setContinuing(true);
-    try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-      if (step < steps.length - 1) {
-        if (!getSubmittedApplicationId()) {
-          await saveNow(form);
-        }
-        goToStep(step + 1, 'forward');
-        return;
-      }
-
-      const existingSubmittedId = getSubmittedApplicationId();
-
-      if (!existingSubmittedId) {
-        const saved = await saveNow(form);
-        const submitted = await submitMutation.mutateAsync(
-          applicationId ?? saved.id,
-        );
-        setSubmittedApplicationId(submitted?.id ?? applicationId ?? saved.id);
-      }
-
-      stage = 'payment';
-      await startSubscriptionMutation.mutateAsync();
-    } catch (error) {
-      const message =
-        stage === 'payment'
-          ? error instanceof Error
-            ? error.message ||
-              'Não foi possível iniciar o pagamento. Tente novamente.'
-            : 'Não foi possível iniciar o pagamento. Tente novamente.'
-          : 'Não foi possível salvar seu cadastro. Verifique a conexão e tente novamente.';
-
-      setErrorMessage(message);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } finally {
-      setContinuing(false);
-    }
+    setSubmitting(false);
+    submitLockRef.current = false;
   };
 
   if (success) {
@@ -473,17 +547,20 @@ function OnboardingWizard({
     );
   }
 
+  // A step with a single optional field (blood type) offers to skip instead.
+  const skippable =
+    question?.fields.length === 1 &&
+    question.fields[0].optional === true &&
+    !getAnswerLabel(form, question.fields[0]);
+
   return (
     <View className="flex-1 bg-white">
-      <ProgressHeader
-        canGoBack={step > 0}
-        currentStep={step}
+      <FocusedHeader
         onBack={handleBack}
         onClose={() => router.replace('/(tabs)/organizations')}
         progress={progress}
-        subtitle={steps[step].subtitle}
-        title={steps[step].title}
-        totalSteps={steps.length}
+        sectionLabel={reviewing ? 'Revisão' : (question?.section ?? '')}
+        showBack={index > 0 || returnToReview}
       />
       <KeyboardAvoidingView
         behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined}
@@ -492,475 +569,74 @@ function OnboardingWizard({
         <ScrollView
           ref={scrollRef}
           className="flex-1"
-          contentContainerClassName="px-6 gap-5"
           contentContainerStyle={{
             flexGrow: 1,
-            justifyContent: 'flex-end',
-            paddingBottom: insets.bottom + 112,
-            paddingTop: insets.top + 196,
+            justifyContent: 'flex-start',
+            paddingBottom: 32,
+            paddingHorizontal: 24,
+            paddingTop: 28,
           }}
           keyboardShouldPersistTaps="handled"
-          onScrollBeginDrag={Keyboard.dismiss}
           showsVerticalScrollIndicator={false}
         >
           <Animated.View
-            key={`step-${step}`}
-            className="gap-5"
-            style={stepAnimatedStyle}
+            key={reviewing ? 'review' : `question-${question?.id}`}
+            style={cardStyle}
           >
-            <StepFields
-              cepFailed={cepFailed}
-              cepLoading={cepLoading}
-              errors={errors}
-              form={form}
-              onCepChange={handleCepChange}
-              setField={setField}
-              step={step}
-            />
+            {reviewing ? (
+              <View>
+                <Text className="text-blue-600 text-xs font-extrabold tracking-widest mb-3">
+                  CONFIRA ANTES DE ENVIAR
+                </Text>
+                <Text
+                  accessibilityRole="header"
+                  className="text-zinc-950 text-3xl font-extrabold leading-9"
+                >
+                  Está tudo certo?
+                </Text>
+                <Text className="text-zinc-500 text-base leading-6 mt-2.5">
+                  Toque em uma resposta para corrigir. Seu cadastro é enviado
+                  uma única vez, na confirmação.
+                </Text>
+                <ReviewList items={getReviewRows(form)} onEdit={handleEdit} />
+              </View>
+            ) : question ? (
+              <QuestionCard
+                autofillKey={autofillKey}
+                cepFailed={cepFailed}
+                cepLoading={cepLoading}
+                counterLabel={`PERGUNTA ${index + 1} DE ${questions.length}`}
+                form={form}
+                onChange={setField}
+                onSubmitEditing={handleAdvance}
+                question={question}
+                showErrors={showErrors}
+              />
+            ) : null}
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
       {errorMessage ? (
         <Animated.Text
           entering={FadeIn.duration(180)}
-          className="absolute left-6 right-6 text-red-600 text-sm text-center"
-          style={{ bottom: insets.bottom + 86 }}
+          className="px-6 pb-2 text-red-600 text-sm text-center"
         >
           {errorMessage}
         </Animated.Text>
       ) : null}
       <FooterCta
-        disabled={!stepValid}
-        label={step === steps.length - 1 ? 'Ir para o pagamento' : 'Continuar'}
-        loading={continuing}
-        onPress={handleContinue}
-        saved={savedVisible && !continuing}
+        label={
+          reviewing
+            ? 'Confirmar e ir para o pagamento'
+            : returnToReview
+              ? 'Salvar e voltar à revisão'
+              : skippable
+                ? 'Pular'
+                : 'Continuar'
+        }
+        loading={submitting}
+        onPress={reviewing ? handleSubmit : handleAdvance}
       />
     </View>
-  );
-}
-
-function StepFields({
-  cepFailed,
-  cepLoading,
-  errors,
-  form,
-  onCepChange,
-  setField,
-  step,
-}: {
-  cepFailed: boolean;
-  cepLoading: boolean;
-  errors: FormErrors;
-  form: MembershipApplicationForm;
-  onCepChange: (value: string) => void;
-  setField: <T extends FormField>(
-    field: T,
-    value: MembershipApplicationForm[T],
-  ) => void;
-  step: number;
-}) {
-  const wrap = (index: number, children: React.ReactNode) => (
-    <Animated.View
-      key={index}
-      entering={FadeInDown.delay(250 + index * 60).duration(300)}
-      layout={animatedLayout}
-    >
-      {children}
-    </Animated.View>
-  );
-
-  if (step === 0) {
-    return (
-      <View className="gap-4">
-        {wrap(
-          0,
-          <GlassField
-            accessibilityLabel="Nome completo"
-            error={errors.full_name}
-            label="Nome completo"
-            onChangeText={(value) => setField('full_name', value)}
-            required
-            textContentType="name"
-            value={form.full_name}
-          />,
-        )}
-        {wrap(
-          1,
-          <GlassField
-            accessibilityLabel="Data de nascimento"
-            error={errors.birth_date}
-            keyboardType="number-pad"
-            label="Data de nascimento"
-            mask={maskDate}
-            onChangeText={(value) => setField('birth_date', value)}
-            placeholder="DD/MM/AAAA"
-            required
-            value={form.birth_date}
-          />,
-        )}
-        {wrap(
-          2,
-          <GlassField
-            accessibilityLabel="Local de nascimento"
-            error={errors.birthplace}
-            label="Local de nascimento"
-            onChangeText={(value) => setField('birthplace', value)}
-            placeholder="Cidade e Estado"
-            required
-            value={form.birthplace}
-          />,
-        )}
-        {wrap(
-          3,
-          <GlassField
-            accessibilityLabel="Nacionalidade"
-            error={errors.nationality}
-            label="Nacionalidade"
-            onChangeText={(value) => setField('nationality', value)}
-            required
-            value={form.nationality}
-          />,
-        )}
-        {wrap(
-          4,
-          <SelectChips
-            error={errors.marital_status}
-            label="Estado civil"
-            onChange={(value) => setField('marital_status', value)}
-            options={maritalStatusOptions}
-            required
-            value={form.marital_status}
-          />,
-        )}
-        {wrap(
-          5,
-          <GlassField
-            accessibilityLabel="Profissão"
-            error={errors.profession}
-            label="Profissão"
-            onChangeText={(value) => setField('profession', value)}
-            required
-            value={form.profession}
-          />,
-        )}
-      </View>
-    );
-  }
-
-  if (step === 1) {
-    return (
-      <View className="gap-4">
-        {wrap(
-          0,
-          <GlassField
-            accessibilityLabel="CPF"
-            error={errors.cpf}
-            keyboardType="number-pad"
-            label="CPF"
-            mask={maskCpf}
-            onChangeText={(value) => setField('cpf', value)}
-            required
-            value={form.cpf}
-          />,
-        )}
-        {wrap(
-          1,
-          <GlassField
-            accessibilityLabel="RG ou CIN"
-            error={errors.id_document_number}
-            label="RG/CIN"
-            onChangeText={(value) => setField('id_document_number', value)}
-            required
-            value={form.id_document_number}
-          />,
-        )}
-        {wrap(
-          2,
-          <GlassField
-            accessibilityLabel="Órgão expedidor"
-            autoCapitalize="characters"
-            error={errors.id_document_issuer}
-            label="Órgão expedidor"
-            onChangeText={(value) => setField('id_document_issuer', value)}
-            required
-            value={form.id_document_issuer}
-          />,
-        )}
-      </View>
-    );
-  }
-
-  if (step === 2) {
-    return (
-      <View className="gap-4">
-        {wrap(
-          0,
-          <GlassField
-            accessibilityLabel="CEP"
-            error={errors.postal_code}
-            keyboardType="number-pad"
-            label="CEP"
-            mask={maskCep}
-            onChangeText={onCepChange}
-            required
-            rightSlot={
-              cepLoading ? <ActivityIndicator color="#6D28D9" /> : null
-            }
-            value={form.postal_code}
-          />,
-        )}
-        {cepFailed ? (
-          <Text className="text-amber-700 text-xs">
-            CEP não encontrado — preencha manualmente
-          </Text>
-        ) : null}
-        {wrap(
-          1,
-          <GlassField
-            accessibilityLabel="Endereço"
-            error={errors.address_line}
-            label="Endereço"
-            onChangeText={(value) => setField('address_line', value)}
-            placeholder="Rua, número, bairro"
-            required
-            value={form.address_line}
-          />,
-        )}
-        {wrap(
-          2,
-          <GlassField
-            accessibilityLabel="Cidade"
-            error={errors.city}
-            label="Cidade"
-            onChangeText={(value) => setField('city', value)}
-            required
-            value={form.city}
-          />,
-        )}
-        {wrap(
-          3,
-          <GlassField
-            accessibilityLabel="UF"
-            autoCapitalize="characters"
-            error={errors.state}
-            label="UF"
-            mask={(value) => value.slice(0, 2).toUpperCase()}
-            onChangeText={(value) => setField('state', value)}
-            required
-            value={form.state}
-          />,
-        )}
-        {wrap(
-          4,
-          <GlassField
-            accessibilityLabel="E-mail"
-            autoCapitalize="none"
-            error={errors.email}
-            keyboardType="email-address"
-            label="E-mail"
-            onChangeText={(value) => setField('email', value)}
-            required
-            textContentType="emailAddress"
-            value={form.email}
-          />,
-        )}
-        {wrap(
-          5,
-          <GlassField
-            accessibilityLabel="Celular"
-            error={errors.phone}
-            keyboardType="number-pad"
-            label="Celular"
-            mask={maskPhone}
-            onChangeText={(value) => setField('phone', value)}
-            required
-            value={form.phone}
-          />,
-        )}
-      </View>
-    );
-  }
-
-  if (step === 3) {
-    return (
-      <View className="gap-4">
-        {wrap(
-          0,
-          <SelectChips
-            columns={4}
-            label="Tipo sanguíneo"
-            onChange={(value) => setField('blood_type', value)}
-            options={bloodTypeOptions}
-            value={form.blood_type}
-          />,
-        )}
-        {wrap(
-          1,
-          <SwitchQuestion
-            choice={form.allergies_choice}
-            description="Alergias a medicamentos, alimentos ou picadas."
-            error={errors.allergies_choice}
-            label="Alergias"
-            onChange={(choice) => setField('allergies_choice', choice)}
-          />,
-        )}
-        {form.allergies_choice === 'yes'
-          ? wrap(
-              2,
-              <GlassField
-                accessibilityLabel="Descrição das alergias"
-                error={errors.allergies}
-                label="Descreva"
-                multiline
-                onChangeText={(value) => setField('allergies', value)}
-                placeholder="Descreva..."
-                required
-                value={form.allergies}
-              />,
-            )
-          : null}
-        {wrap(
-          3,
-          <SwitchQuestion
-            choice={form.dietary_choice}
-            error={errors.dietary_choice}
-            label="Restrição alimentar"
-            onChange={(choice) => setField('dietary_choice', choice)}
-          />,
-        )}
-        {form.dietary_choice === 'yes'
-          ? wrap(
-              4,
-              <GlassField
-                accessibilityLabel="Descrição da restrição alimentar"
-                error={errors.dietary_restrictions}
-                label="Descreva"
-                multiline
-                onChangeText={(value) =>
-                  setField('dietary_restrictions', value)
-                }
-                placeholder="Descreva..."
-                required
-                value={form.dietary_restrictions}
-              />,
-            )
-          : null}
-      </View>
-    );
-  }
-
-  if (step === 4) {
-    return (
-      <View className="gap-4">
-        {wrap(
-          0,
-          <View className="gap-3">
-            <Text className="text-zinc-500 text-xs font-medium">
-              Nível de highline <Text className="text-red-600">*</Text>
-            </Text>
-            <SelectCards
-              error={errors.highline_experience}
-              onChange={(value) => setField('highline_experience', value)}
-              options={highlineExperienceOptions}
-              value={form.highline_experience}
-            />
-          </View>,
-        )}
-        {wrap(
-          1,
-          <NativeSwitchRow
-            error={errors.has_rescue_course}
-            label="Curso de resgate"
-            description="Ative se você já fez um curso de resgate."
-            onChange={(value) => setField('has_rescue_course', value)}
-            value={form.has_rescue_course}
-          />,
-        )}
-        {wrap(
-          2,
-          <View className="gap-3">
-            <Text className="text-zinc-500 text-xs font-medium">
-              Primeiros socorros <Text className="text-red-600">*</Text>
-            </Text>
-            <SelectCards
-              error={errors.first_aid_course}
-              onChange={(value) => setField('first_aid_course', value)}
-              options={firstAidOptions}
-              value={form.first_aid_course}
-            />
-          </View>,
-        )}
-      </View>
-    );
-  }
-
-  return (
-    <View className="gap-4">
-      {wrap(
-        0,
-        <GlassField
-          accessibilityLabel="Nome do contato de emergência"
-          error={errors.emergency_contact_name}
-          label="Nome"
-          onChangeText={(value) => setField('emergency_contact_name', value)}
-          required
-          textContentType="name"
-          value={form.emergency_contact_name}
-        />,
-      )}
-      {wrap(
-        1,
-        <SelectChips
-          error={errors.emergency_contact_relationship}
-          label="Parentesco"
-          onChange={(value) =>
-            setField('emergency_contact_relationship', value)
-          }
-          options={relationshipOptions}
-          required
-          value={form.emergency_contact_relationship}
-        />,
-      )}
-      {wrap(
-        2,
-        <GlassField
-          accessibilityLabel="Telefone do contato de emergência"
-          error={errors.emergency_contact_phone}
-          keyboardType="number-pad"
-          label="Telefone"
-          mask={maskPhone}
-          onChangeText={(value) =>
-            setField('emergency_contact_phone', value)
-          }
-          required
-          value={form.emergency_contact_phone}
-        />,
-      )}
-    </View>
-  );
-}
-
-function SwitchQuestion({
-  choice,
-  description,
-  error,
-  label,
-  onChange,
-}: {
-  choice: YesNoValue;
-  description?: string;
-  error?: string;
-  label: string;
-  onChange: (value: YesNoValue) => void;
-}) {
-  return (
-    <NativeSwitchRow
-      description={description}
-      error={error}
-      label={label}
-      onChange={(value) => onChange(value ? 'yes' : 'no')}
-      value={choice === 'yes'}
-    />
   );
 }

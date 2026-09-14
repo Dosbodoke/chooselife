@@ -126,13 +126,13 @@ function DropdownMenuContent({
     <DropdownMenuPrimitive.Portal hostName={portalHost}>
       <FullWindowOverlay>
         <DropdownMenuPrimitive.Overlay
-          style={Platform.select({
-            web: overlayStyle ?? undefined,
+          style={Platform.select<ViewStyle | undefined>({
+            web: (overlayStyle as ViewStyle | undefined) ?? undefined,
             native: overlayStyle
-              ? StyleSheet.flatten([
+              ? (StyleSheet.flatten([
                   StyleSheet.absoluteFill,
                   overlayStyle as typeof StyleSheet.absoluteFill,
-                ])
+                ]) as ViewStyle)
               : StyleSheet.absoluteFill,
           })}
           className={overlayClassName}

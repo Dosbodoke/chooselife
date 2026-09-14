@@ -1,14 +1,13 @@
-import { AnimatedFlashList, FlashListProps } from '@shopify/flash-list';
+import { AnimatedLegendList } from '@legendapp/list/reanimated';
 import * as Haptics from 'expo-haptics';
-import type { Component } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import Animated, {
   useAnimatedReaction,
-  useAnimatedRef,
   useAnimatedStyle,
   useDerivedValue,
-  useScrollOffset,
+  useSharedValue,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
@@ -47,6 +46,45 @@ export const showcaseData: ShowcaseItemData[] = [
 
 const carouselData = [...showcaseData, { type: 'form' }];
 
+function CarouselSlide({
+  height,
+  index,
+  item,
+  membershipApplication,
+  org,
+  scrollY,
+  width,
+}: {
+  height: number;
+  index: number;
+  item: (typeof carouselData)[number];
+  membershipApplication: MembershipApplication | null;
+  org: Tables<'organizations'>;
+  scrollY: SharedValue<number>;
+  width: number;
+}) {
+  return (
+    <View style={{ width, height }}>
+      {'title' in item ? (
+        <ShowcaseItem
+          item={item}
+          index={index}
+          scrollY={scrollY}
+          itemSize={height}
+        />
+      ) : (
+        <BecomeMemberForm
+          scrollY={scrollY}
+          itemIndex={index}
+          itemHeight={height}
+          membershipApplication={membershipApplication}
+          org={org}
+        />
+      )}
+    </View>
+  );
+}
+
 export function Carousel({
   membershipApplication,
   org,
@@ -56,10 +94,7 @@ export function Carousel({
 }) {
   const { width, height } = useWindowDimensions();
 
-  const animatedRef =
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    useAnimatedRef<Component<FlashListProps<any>, any, any>>();
-  const scrollY = useScrollOffset(animatedRef);
+  const scrollY = useSharedValue(0);
 
   const currentIndex = useDerivedValue(() => {
     return Math.round(scrollY.value / height);
@@ -88,41 +123,27 @@ export function Carousel({
 
   return (
     <>
-      <AnimatedFlashList
-        ref={animatedRef}
+      <AnimatedLegendList
         data={carouselData}
         keyExtractor={(_, index) => String(index)}
         snapToInterval={height}
         decelerationRate="fast"
         renderItem={({ item, index }) => (
-          <View
-            style={{
-              width,
-              height,
-            }}
-          >
-            {'title' in item ? (
-              <ShowcaseItem
-                item={item}
-                index={index}
-                scrollY={scrollY}
-                itemSize={height}
-              />
-            ) : (
-              <BecomeMemberForm
-                scrollY={scrollY}
-                itemIndex={index}
-                itemHeight={height}
-                membershipApplication={membershipApplication}
-                org={org}
-              />
-            )}
-          </View>
+          <CarouselSlide
+            height={height}
+            index={index}
+            item={item}
+            membershipApplication={membershipApplication}
+            org={org}
+            scrollY={scrollY}
+            width={width}
+          />
         )}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         bounces={false}
         drawDistance={height * 2}
+        sharedValues={{ scrollOffset: scrollY }}
       />
 
       <Animated.View

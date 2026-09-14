@@ -14,7 +14,9 @@ CREATE SCHEMA IF NOT EXISTS "gis";
 
 ALTER SCHEMA "gis" OWNER TO "postgres";
 
-CREATE EXTENSION IF NOT EXISTS "pgsodium" WITH SCHEMA "pgsodium";
+-- pgsodium was deprecated by Supabase and is no longer pre-provisioned by the
+-- Postgres base image. Nothing in this database depends on it; supabase_vault
+-- installs independently. Removed so a fresh `db reset` can replay.
 
 COMMENT ON SCHEMA "public" IS 'standard public schema';
 

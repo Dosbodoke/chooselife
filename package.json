@@ -9,11 +9,14 @@
     "deploy:functions": "./deploy-functions.sh"
   },
   "devDependencies": {
-    "next": "16.3.0-preview.5",
+    "next": "16.3.5",
     "prettier": "^3.0.0",
     "react": "19.2.5",
     "react-dom": "19.2.5",
     "turbo": "^2.6.1"
+  },
+  "engines": {
+    "node": "24.18.0"
   },
   "packageManager": "pnpm@11.10.0"
 }

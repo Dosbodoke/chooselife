@@ -5,7 +5,7 @@ export function useLoginModal() {
   const open = loginModal === "open";
 
   function toggleLoginModal(status: "open" | "closed") {
-    setLoginModal(status);
+    return setLoginModal(status);
   }
 
   return { open, toggleLoginModal };

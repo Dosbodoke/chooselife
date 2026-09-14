@@ -17,17 +17,24 @@ export default async function Festival({ params }: Props) {
   const { locale, slug } = await params;
 
   setRequestLocale(locale);
-  const t = await getTranslations("festival");
-  const supabase = await createSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [t, supabase] = await Promise.all([
+    getTranslations("festival"),
+    createSupabaseClient(),
+  ]);
 
-  const { data: festival } = await supabase
-    .from("festival")
-    .select("slug, name")
-    .eq("slug", slug)
-    .maybeSingle();
+  const [
+    {
+      data: { user },
+    },
+    { data: festival },
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from("festival")
+      .select("slug, name")
+      .eq("slug", slug)
+      .maybeSingle(),
+  ]);
 
   if (!festival) {
     notFound();
@@ -38,6 +45,7 @@ export default async function Festival({ params }: Props) {
       <Image
         src="/festival-hero.png"
         fill
+        sizes="100vw"
         className="absolute -z-10 h-full max-h-screen w-full object-cover opacity-70"
         alt="Illustration of a someone walking a Highline"
       />

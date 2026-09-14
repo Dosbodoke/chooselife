@@ -19,6 +19,7 @@ import { z } from 'zod';
 
 import { useMountEffect } from '~/hooks/use-mount-effect';
 import { useProfile, type Profile } from '~/hooks/use-profile';
+import { unregisterActivePushToken } from '~/lib/push-token-registration';
 import { supabase } from '~/lib/supabase';
 
 type AuthMethodResponse = Promise<
@@ -211,6 +212,12 @@ export function AuthProvider(props: React.PropsWithChildren) {
 
   const logout = useCallback(async (): AuthMethodResponse => {
     try {
+      try {
+        await unregisterActivePushToken();
+      } catch (error) {
+        console.warn('Failed to unregister the push token on logout:', error);
+      }
+
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       invalidateProfile();
