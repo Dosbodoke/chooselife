@@ -5,3 +5,5 @@ node_modules/
 .vercel/
 .DS_Store
 supabase/.temp/
+.pnpm-store/
+.maestro/
