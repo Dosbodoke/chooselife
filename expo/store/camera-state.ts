@@ -42,8 +42,15 @@ const ON_LOCATION_TOLERANCE = 2e-4;
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
-const isPosition = (value: unknown): value is Position =>
-  Array.isArray(value) && isFiniteNumber(value[0]) && isFiniteNumber(value[1]);
+const isPosition = (value: unknown): value is Position => {
+  if (!Array.isArray(value) || value.length < 2) return false;
+
+  for (const coordinate of value) {
+    if (!isFiniteNumber(coordinate)) return false;
+  }
+
+  return true;
+};
 
 const positionsEqual = (a: Position, b: Position) =>
   Math.abs(a[0] - b[0]) < COORDINATE_EPSILON &&
@@ -95,7 +102,10 @@ export function nextCameraState(
     ? previous.center
     : center;
   const nextZoom =
-    Math.abs(previous.zoom - zoom) < ZOOM_EPSILON ? previous.zoom : zoom;
+    Math.abs(previous.zoom - zoom) < ZOOM_EPSILON &&
+    Math.floor(previous.zoom) === Math.floor(zoom)
+      ? previous.zoom
+      : zoom;
   const resolvedBounds = boundsEqual(previous.bounds, nextBounds)
     ? previous.bounds
     : nextBounds;

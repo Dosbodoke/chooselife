@@ -1,8 +1,8 @@
 import Mapbox from '@rnmapbox/maps';
 import { isCameraOnLocation } from '~/store/camera-state';
 import { useMapStore } from '~/store/map-store';
-import type { Position } from 'geojson';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import type { Position } from 'geojson';
 import throttle from 'lodash.throttle';
 import { ChevronLeftIcon } from 'lucide-react-native';
 import React, { Activity, useCallback, useMemo, useRef, useState } from 'react';
@@ -46,6 +46,21 @@ const DEFAULT_CAMERA_SETTINGS: Mapbox.CameraStop = {
 };
 
 const MY_LOCATION_ANIMATION_DURATION = 1000;
+
+function useThrottledCameraUpdate(callback: (state: Mapbox.MapState) => void) {
+  const throttled = useMemo(
+    () => throttle(callback, 500, { leading: true, trailing: true }),
+    [callback],
+  );
+
+  useMountEffect(() => {
+    return () => {
+      throttled.cancel();
+    };
+  });
+
+  return throttled;
+}
 
 function FocusedMarkerController({
   highline,
@@ -162,30 +177,21 @@ export default function ExploreMap() {
     setIsOnMyLocation(true);
   }, [setUserLocation]);
 
-  const throttledCameraUpdate = useMemo(
-    () =>
-      throttle(
-        (state: Mapbox.MapState) => {
-          setIsOnMyLocation(
-            isCameraOnLocation(
-              state.properties.center,
-              myLocationTargetRef.current,
-            ),
-          );
+  const cameraCallback = useCallback(
+    (state: Mapbox.MapState) => {
+      setIsOnMyLocation(
+        isCameraOnLocation(
+          state.properties.center,
+          myLocationTargetRef.current,
+        ),
+      );
 
-          setCamera(state);
-        },
-        500,
-        { leading: true, trailing: true },
-      ),
+      setCamera(state);
+    },
     [setCamera],
   );
 
-  useMountEffect(() => {
-    return () => {
-      throttledCameraUpdate.cancel();
-    };
-  });
+  const throttledCameraUpdate = useThrottledCameraUpdate(cameraCallback);
 
   const handleCameraChanged = useCallback(
     (state: Mapbox.MapState) => {

@@ -61,7 +61,7 @@ export const useMapStore = create<State & Actions>((set) => ({
     set((current) => {
       const camera = nextCameraState(current.camera, state);
 
-      return camera === current.camera ? {} : { camera };
+      return camera === current.camera ? current : { camera };
     });
   },
   setUserLocation: (location) => {

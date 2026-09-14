@@ -7,8 +7,8 @@ import {
   type CameraState,
 } from './camera-state';
 
-const buildPrevious = (): CameraState => ({
-  zoom: 12,
+const buildPrevious = (zoom = 12): CameraState => ({
+  zoom,
   center: [-47.93371, -15.7782081] as Position,
   bounds: [-48, -16, -47.8, -15.6] as BBox,
 });
@@ -30,6 +30,9 @@ const buildEvent = (
     },
   },
 });
+
+const sparseCenter: number[] = [10, 20, 300];
+delete sparseCenter[2];
 
 describe('nextCameraState', () => {
   describe('referential stability', () => {
@@ -63,6 +66,33 @@ describe('nextCameraState', () => {
       );
 
       expect(noisy).toBe(previous);
+    });
+
+    it.each([
+      ['upward crossing at 14', 14 - 4e-4, 14 + 5e-4],
+      ['downward crossing at 14', 14 + 4e-4, 14 - 5e-4],
+      ['upward crossing at 16', 16 - 4e-4, 16 + 5e-4],
+      ['downward crossing at 16', 16 + 4e-4, 16 - 5e-4],
+    ])(
+      'keeps zoom bucket crossings under the epsilon threshold: %s',
+      (_label, previousZoom, nextZoom) => {
+        const previous = buildPrevious(previousZoom);
+
+        const next = nextCameraState(previous, buildEvent({ zoom: nextZoom }));
+
+        expect(next).not.toBe(previous);
+        expect(next.zoom).toBe(nextZoom);
+        expect(next.center).toBe(previous.center);
+        expect(next.bounds).toBe(previous.bounds);
+      },
+    );
+
+    it('returns the previous object for same-bucket jitter', () => {
+      const previous = buildPrevious(14 + 4e-4);
+
+      expect(nextCameraState(previous, buildEvent({ zoom: 14 + 5e-4 }))).toBe(
+        previous,
+      );
     });
 
     it('keeps the previous center array when only the zoom moved', () => {
@@ -157,13 +187,46 @@ describe('nextCameraState', () => {
   describe('malformed payloads', () => {
     it.each([
       ['a missing properties bag', {} as CameraChangeEvent],
-      [
-        'a NaN zoom',
-        { properties: { ...buildEvent().properties, zoom: NaN } },
-      ],
+      ['a NaN zoom', { properties: { ...buildEvent().properties, zoom: NaN } }],
       [
         'a NaN center',
         { properties: { ...buildEvent().properties, center: [NaN, 1] } },
+      ],
+      [
+        'a NaN extra center coordinate',
+        {
+          properties: {
+            ...buildEvent().properties,
+            center: [10, 20, NaN],
+          },
+        },
+      ],
+      [
+        'an infinite extra center coordinate',
+        {
+          properties: {
+            ...buildEvent().properties,
+            center: [10, 20, Infinity],
+          },
+        },
+      ],
+      [
+        'a nonnumeric extra center coordinate',
+        {
+          properties: {
+            ...buildEvent().properties,
+            center: [10, 20, '300'],
+          },
+        } as unknown as CameraChangeEvent,
+      ],
+      [
+        'a sparse extra center coordinate',
+        {
+          properties: {
+            ...buildEvent().properties,
+            center: sparseCenter,
+          },
+        },
       ],
       [
         'missing bounds',
@@ -182,6 +245,18 @@ describe('nextCameraState', () => {
             bounds: { sw: [], ne: [-47.8, -15.6] },
           },
         } as unknown as CameraChangeEvent,
+      ],
+      [
+        'a malformed extra bounds coordinate',
+        {
+          properties: {
+            ...buildEvent().properties,
+            bounds: {
+              sw: [-40, -10, NaN],
+              ne: [-47.8, -15.6],
+            },
+          },
+        },
       ],
     ])('discards %s and keeps the previous camera', (_label, event) => {
       const previous = buildPrevious();
