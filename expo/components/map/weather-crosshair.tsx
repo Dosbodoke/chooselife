@@ -9,7 +9,7 @@ import { Icon } from '~/components/ui/icon';
  * WeatherCrosshair - A centered crosshair that indicates where the weather data is coming from.
  * Similar to Windy app's center pointer.
  */
-const WeatherCrosshair: React.FC = () => {
+const WeatherCrosshair: React.FC = React.memo(() => {
   const bottomSheetHandlerHeight = useMapStore(
     (state) => state.bottomSheetHandlerHeight,
   );
@@ -28,6 +28,8 @@ const WeatherCrosshair: React.FC = () => {
       </View>
     </View>
   );
-};
+});
+
+WeatherCrosshair.displayName = 'WeatherCrosshair';
 
 export default WeatherCrosshair;

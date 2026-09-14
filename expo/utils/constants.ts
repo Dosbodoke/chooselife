@@ -39,7 +39,7 @@ export const INITIAL_REGION = {
 };
 export const DEFAULT_LATITUDE = INITIAL_REGION.latitude;
 export const DEFAULT_LONGITUDE = INITIAL_REGION.longitude;
-export const DEFAULT_ZOOM = 5;
+export const DEFAULT_ZOOM = 7;
 export const MIN_CLUSTER_SIZE = 30;
 
 // For Supabase Storage
