@@ -3,10 +3,12 @@ import BottomSheet, {
 } from '@gorhom/bottom-sheet';
 import { LegendList } from '@legendapp/list/react-native';
 import { useMapStore } from '~/store/map-store';
+import type { Position } from 'geojson';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useDeferredValue } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useShallow } from 'zustand/react/shallow';
 
 import { useHighline, type Highline } from '~/hooks/use-highline';
 
@@ -55,18 +57,22 @@ const ListingsBottomSheet: React.FC = () => {
   );
   const searchQuery = useMapStore((state) => state.searchQuery);
   const activeCategory = useMapStore((state) => state.activeCategory);
-  const browseOrigin = useMapStore((state) => state.camera.center);
   const userLocation = useMapStore((state) => state.userLocation);
+
+  // The user's own position wins whenever we have it, and only then does the
+  // map centre matter. Selecting the resolved origin under `useShallow` means
+  // that once we have a fix, panning the map stops re-rendering this sheet and
+  // re-sorting every highline behind it.
+  const sortOrigin = useMapStore(
+    useShallow((state): Position =>
+      state.userLocation
+        ? [state.userLocation.longitude, state.userLocation.latitude]
+        : state.camera.center,
+    ),
+  );
 
   const bottomSheetRef = React.useRef<BottomSheet>(null);
   const BottomSheetScrollView = useBottomSheetScrollableCreator();
-  const sortOrigin = React.useMemo(
-    () =>
-      userLocation
-        ? ([userLocation.longitude, userLocation.latitude] as const)
-        : browseOrigin,
-    [browseOrigin, userLocation],
-  );
   const deferredSortOrigin = useDeferredValue(sortOrigin);
 
   const { highlines } = useHighline({

@@ -1,9 +1,14 @@
 import Mapbox from '@rnmapbox/maps';
+import { isCameraOnLocation } from '~/store/camera-state';
 import { useMapStore } from '~/store/map-store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import type { Position } from 'geojson';
 import throttle from 'lodash.throttle';
+import { ChevronLeftIcon } from 'lucide-react-native';
 import React, { Activity, useCallback, useMemo, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useHighline, type Highline } from '~/hooks/use-highline';
@@ -22,8 +27,40 @@ import { MapCardList } from '~/components/map/map-card';
 import { Markers } from '~/components/map/markers';
 import { ChooselifeTrails } from '~/components/map/trail-shape';
 import WeatherCrosshair from '~/components/map/weather-crosshair';
+import { Icon } from '~/components/ui/icon';
 
 import { getHighlineBounds, getMyLocation } from '../utils';
+
+const FILL_STYLE = { flex: 1 } as const;
+
+/**
+ * The camera is uncontrolled: every intentional move goes through
+ * `cameraRef.current.setCamera(...)`. Passing `centerCoordinate`/`zoomLevel` as
+ * props instead would put it in controlled mode, where rnmapbox rebuilds its
+ * native camera stop from the prop identity on every render and can fight an
+ * in-flight animation.
+ */
+const DEFAULT_CAMERA_SETTINGS: Mapbox.CameraStop = {
+  centerCoordinate: [DEFAULT_LONGITUDE, DEFAULT_LATITUDE],
+  zoomLevel: DEFAULT_ZOOM,
+};
+
+const MY_LOCATION_ANIMATION_DURATION = 1000;
+
+function useThrottledCameraUpdate(callback: (state: Mapbox.MapState) => void) {
+  const throttled = useMemo(
+    () => throttle(callback, 500, { leading: true, trailing: true }),
+    [callback],
+  );
+
+  useMountEffect(() => {
+    return () => {
+      throttled.cancel();
+    };
+  });
+
+  return throttled;
+}
 
 function FocusedMarkerController({
   highline,
@@ -53,12 +90,20 @@ function FocusedMarkerController({
 
 export default function ExploreMap() {
   useOfflineRegion();
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const mapRef = useRef<Mapbox.MapView>(null);
   const cameraRef = useRef<Mapbox.Camera>(null);
 
   const [isOnMyLocation, setIsOnMyLocation] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
+
+  // Where `goToMyLocation` last aimed. The locate control latches on the camera
+  // reaching it rather than on a timer, so the throttled camera handler cannot
+  // clear the flag mid-flight and anything that later moves the camera away
+  // releases it on its own.
+  const myLocationTargetRef = useRef<Position | null>(null);
   const searchQuery = useMapStore((state) => state.searchQuery);
   const activeCategory = useMapStore((state) => state.activeCategory);
   const setCamera = useMapStore((state) => state.setCamera);
@@ -121,33 +166,32 @@ export default function ExploreMap() {
       latitude: region.latitude,
       longitude: region.longitude,
     });
+    myLocationTargetRef.current = [region.longitude, region.latitude];
+
     cameraRef.current?.setCamera({
       centerCoordinate: [region.longitude, region.latitude],
       zoomLevel: 16,
-      animationDuration: 1000,
+      animationDuration: MY_LOCATION_ANIMATION_DURATION,
       animationMode: 'flyTo',
     });
     setIsOnMyLocation(true);
   }, [setUserLocation]);
 
-  const throttledCameraUpdate = useMemo(
-    () =>
-      throttle(
-        (state: Mapbox.MapState) => {
-          setIsOnMyLocation(false);
-          setCamera(state);
-        },
-        500,
-        { leading: true, trailing: true },
-      ),
+  const cameraCallback = useCallback(
+    (state: Mapbox.MapState) => {
+      setIsOnMyLocation(
+        isCameraOnLocation(
+          state.properties.center,
+          myLocationTargetRef.current,
+        ),
+      );
+
+      setCamera(state);
+    },
     [setCamera],
   );
 
-  useMountEffect(() => {
-    return () => {
-      throttledCameraUpdate.cancel();
-    };
-  });
+  const throttledCameraUpdate = useThrottledCameraUpdate(cameraCallback);
 
   const handleCameraChanged = useCallback(
     (state: Mapbox.MapState) => {
@@ -155,6 +199,17 @@ export default function ExploreMap() {
     },
     [throttledCameraUpdate],
   );
+
+  const handleDidFinishLoadingMap = useCallback(() => {
+    setIsMapReady(true);
+    if (!focusedMarker) {
+      goToMyLocation();
+    }
+  }, [focusedMarker, goToMyLocation]);
+
+  const handleClearFocusedMarker = useCallback(() => {
+    router.setParams({ focusedMarker: undefined });
+  }, [router]);
 
   const handleMapPress = useCallback(() => {
     if (highlightedMarker) {
@@ -181,34 +236,26 @@ export default function ExploreMap() {
   );
 
   if (isMapStyleLoading) {
-    return <View style={{ flex: 1 }} />;
+    return <View style={FILL_STYLE} />;
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={FILL_STYLE}>
       <Mapbox.MapView
         ref={mapRef}
-        style={{ flex: 1 }}
+        style={FILL_STYLE}
         styleURL={mapStyle}
         scaleBarEnabled={false}
         onCameraChanged={handleCameraChanged}
         onMapIdle={handleCameraChanged}
-        onDidFinishLoadingMap={() => {
-          setIsMapReady(true);
-          if (!focusedMarker) {
-            goToMyLocation();
-          }
-        }}
+        onDidFinishLoadingMap={handleDidFinishLoadingMap}
         onPress={handleMapPress}
       >
         <Mapbox.Camera
           ref={cameraRef}
-          zoomLevel={DEFAULT_ZOOM}
           maxZoomLevel={20}
-          centerCoordinate={[DEFAULT_LONGITUDE, DEFAULT_LATITUDE]}
+          defaultSettings={DEFAULT_CAMERA_SETTINGS}
         />
-        <Mapbox.LocationPuck puckBearingEnabled puckBearing="heading" />
-
         <ChooselifeTrails />
 
         <Markers
@@ -216,6 +263,13 @@ export default function ExploreMap() {
           highlines={highlinesWithLocation}
           updateMarkers={handleMarkerUpdate}
         />
+
+        {/*
+          Declared last so the puck draws above the markers. Markers opt out of
+          puck collision (`allowOverlapWithPuck`), so this only affects stacking
+          - it can never hide a pin or a cluster.
+        */}
+        <Mapbox.LocationPuck puckBearingEnabled puckBearing="heading" />
       </Mapbox.MapView>
 
       {isMapReady && focusedHighline ? (
@@ -223,15 +277,35 @@ export default function ExploreMap() {
           key={focusedHighline.id}
           highline={focusedHighline}
           focusHighline={focusHighline}
-          clearFocusedMarker={() =>
-            router.setParams({ focusedMarker: undefined })
-          }
+          clearFocusedMarker={handleClearFocusedMarker}
           setClusteredMarkers={setClusteredMarkers}
           setHighlightedMarker={setHighlightedMarker}
         />
       ) : null}
 
       <WeatherCrosshair />
+
+      {highlightedMarker ? (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={t('components.onboard.goBack')}
+          testID="map-clear-selection"
+          onPress={handleMapPress}
+          style={{
+            position: 'absolute',
+            top: insets.top + 16,
+            left: insets.left + 8,
+            width: 48,
+            height: 48,
+            borderRadius: 8,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'white',
+          }}
+        >
+          <Icon as={ChevronLeftIcon} size={24} color="black" />
+        </TouchableOpacity>
+      ) : null}
 
       <MapControls
         isOnMyLocation={isOnMyLocation}

@@ -240,10 +240,6 @@
         "homeTitle": "Home"
       },
       "home": {
-        "banner": {
-          "title": "Festival dos Monstros",
-          "description": "Click to see the festival highlines and schedule your walk"
-        },
         "quickActions": {
           "setupSimulator": "Setup Simulator",
           "learn": "Learn"
