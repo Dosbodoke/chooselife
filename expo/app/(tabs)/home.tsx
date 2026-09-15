@@ -1,5 +1,5 @@
 import { useEvents } from '@chooselife/ui';
-import { Link, useRouter } from 'expo-router';
+import { Link, useRouter, type Href } from 'expo-router';
 import { StatusBar, StatusBarStyle } from 'expo-status-bar';
 import { BookIcon, CalendarIcon, PencilRulerIcon } from 'lucide-react-native';
 import React from 'react';
@@ -75,11 +75,12 @@ export default function HomeScreen() {
                 label={t('app.(tabs).home.quickActions.setupSimulator')}
               />
             </Link>
-            <QuickAction
-              icon={<Icon as={BookIcon} className="text-primary" />}
-              label={t('app.(tabs).home.quickActions.learn')}
-              isComingSoon
-            />
+            <Link asChild href={'/learn' as Href}>
+              <QuickAction
+                icon={<Icon as={BookIcon} className="text-primary" />}
+                label={t('app.(tabs).home.quickActions.learn')}
+              />
+            </Link>
           </View>
 
           <UpcomingEvents />
