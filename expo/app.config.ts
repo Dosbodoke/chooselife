@@ -7,7 +7,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "ChooseLife",
   slug: "chooselife",
-  version: "1.8.5",
+  version: "1.8.6",
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
@@ -33,6 +33,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: "com.bodok.chooselife",
     googleServicesFile,
+    blockedPermissions: [
+      "android.permission.READ_EXTERNAL_STORAGE",
+      "android.permission.WRITE_EXTERNAL_STORAGE",
+      "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION",
+    ],
     intentFilters: [
       {
         action: "VIEW",
@@ -87,6 +92,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-router",
     "expo-localization",
     "expo-secure-store",
+    "@config-plugins/react-native-blob-util",
+    "@config-plugins/react-native-pdf",
     [
       "expo-notifications",
       {
