@@ -467,6 +467,24 @@
         "placeholder": "Enter highline length"
       }
     },
+    "learn": {
+      "title": "Beginner Highline Guide",
+      "loading": "Preparing your guide...",
+      "signInTitle": "Sign in to access the guide",
+      "signInDescription": "Sign in to check your access to the Beginner Highline Guide.",
+      "signIn": "Sign in",
+      "lockedTitle": "Access not granted yet",
+      "lockedDescription": "Once access is granted to your account, the guide will appear here automatically.",
+      "backHome": "Back to home",
+      "offlineTitle": "Connection required",
+      "offlineDescription": "The guide is available online only. Connect to the internet and try again.",
+      "errorTitle": "We couldn't open the guide",
+      "errorDescription": "The content couldn't be loaded right now. Please try again.",
+      "retry": "Try again",
+      "readerErrorTitle": "Reading was interrupted",
+      "readerErrorDescription": "We'll reconnect and load the guide again.",
+      "pageIndicator": "Page {{page}} of {{pageCount}}"
+    },
     "organizations": {
       "title": "Organizations",
       "cardTitle": "Organizations",

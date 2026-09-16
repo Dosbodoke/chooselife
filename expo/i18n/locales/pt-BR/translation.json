@@ -467,6 +467,24 @@
         "placeholder": "comprimento do Highline"
       }
     },
+    "learn": {
+      "title": "Guia do Highline Iniciante",
+      "loading": "Preparando seu guia...",
+      "signInTitle": "Entre para acessar o guia",
+      "signInDescription": "Faça login para verificar o acesso ao Guia do Highline Iniciante.",
+      "signIn": "Entrar",
+      "lockedTitle": "Acesso ainda não liberado",
+      "lockedDescription": "Quando o acesso for concedido à sua conta, o guia aparecerá aqui automaticamente.",
+      "backHome": "Voltar ao início",
+      "offlineTitle": "Conexão necessária",
+      "offlineDescription": "O guia só pode ser visualizado online. Conecte-se à internet e tente novamente.",
+      "errorTitle": "Não foi possível abrir o guia",
+      "errorDescription": "Não foi possível carregar o conteúdo agora. Tente novamente.",
+      "retry": "Tentar novamente",
+      "readerErrorTitle": "A leitura foi interrompida",
+      "readerErrorDescription": "Vamos reconectar e carregar o guia novamente.",
+      "pageIndicator": "Página {{page}} de {{pageCount}}"
+    },
     "organizations": {
       "title": "Organizações",
       "cardTitle": "Organizações",
