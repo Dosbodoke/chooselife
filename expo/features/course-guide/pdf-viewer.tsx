@@ -6,8 +6,9 @@ import Pdf from 'react-native-pdf';
 
 import { useMountEffect } from '~/hooks/use-mount-effect';
 
-import { CourseGuideErrorState } from '~/components/course-guide/course-guide-states';
 import { Text } from '~/components/ui/text';
+
+import { CourseGuideErrorState } from './states';
 
 type CoursePdfViewerProps = {
   uri: string;

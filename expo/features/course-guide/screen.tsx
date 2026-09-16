@@ -1,14 +1,13 @@
 import { useTranslation } from 'react-i18next';
 
-import type { CourseGuideViewState } from '~/lib/course-guide-state';
-
+import { CoursePdfViewer } from './pdf-viewer';
+import type { CourseGuideViewState } from './state';
 import {
   CourseGuideCenteredState,
   CourseGuideErrorState,
   CourseGuideLoadingState,
   CourseGuideLockedState,
-} from '~/components/course-guide/course-guide-states';
-import { CoursePdfViewer } from '~/components/course-pdf-viewer';
+} from './states';
 
 type CourseGuideScreenProps = {
   onBack: () => void;

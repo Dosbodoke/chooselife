@@ -1,4 +1,4 @@
-import { CourseAccessError } from './course-access';
+import { CourseAccessError } from './access';
 
 export type CourseGuideViewState =
   | { kind: 'loading' }

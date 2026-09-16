@@ -1,5 +1,5 @@
-import { CourseAccessError } from './course-access';
-import { resolveCourseGuideState } from './course-guide-state';
+import { CourseAccessError } from './access';
+import { resolveCourseGuideState } from './state';
 
 const READY_INPUT = {
   accessError: null,

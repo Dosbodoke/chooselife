@@ -13,7 +13,7 @@ import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 
-import { CourseGuideCover } from './course-guide-cover';
+import { CourseGuideCover } from './cover';
 
 type Action = () => void;
 

@@ -1,7 +1,7 @@
 import {
   fetchHighlineBeginnerGuideAccess,
   mapCourseAccessResponse,
-} from './course-access';
+} from './access';
 
 describe('course access client', () => {
   it('maps an authorized response to the native reader source', () => {
