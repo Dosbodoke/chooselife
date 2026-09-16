@@ -1,6 +1,12 @@
-import GuideCover from '~/assets/images/highline-beginner-guide-cover.jpg';
 import { Image } from 'expo-image';
 import { View } from 'react-native';
+
+import { getR2PublicUrl } from '~/lib/r2';
+
+const GUIDE_COVER_URL = getR2PublicUrl(
+  'promo',
+  'highline-beginner-guide-cover-v1.jpg',
+);
 
 export function CourseGuideCover() {
   return (
@@ -14,7 +20,8 @@ export function CourseGuideCover() {
       >
         <Image
           accessibilityLabel="Capa do Guia da Universidade do Highline"
-          source={GuideCover}
+          source={{ uri: GUIDE_COVER_URL }}
+          cachePolicy="memory-disk"
           contentFit="contain"
           style={{ height: '100%', width: '100%' }}
         />
