@@ -6,7 +6,7 @@ import Pdf from 'react-native-pdf';
 
 import { useMountEffect } from '~/hooks/use-mount-effect';
 
-import { Button } from '~/components/ui/button';
+import { CourseGuideErrorState } from '~/components/course-guide/course-guide-states';
 import { Text } from '~/components/ui/text';
 
 type CoursePdfViewerProps = {
@@ -41,16 +41,11 @@ export function CoursePdfViewer({ uri, onRetry }: CoursePdfViewerProps) {
 
   if (loadError) {
     return (
-      <View className="flex-1 items-center justify-center gap-4 px-6">
-        <Text className="text-center" selectable>
-          {t('app.learn.readerError')}
-        </Text>
-        {onRetry ? (
-          <Button onPress={handleRetry} variant="outline">
-            <Text>{t('app.learn.retry')}</Text>
-          </Button>
-        ) : null}
-      </View>
+      <CourseGuideErrorState
+        title={t('app.learn.readerErrorTitle')}
+        description={t('app.learn.readerErrorDescription')}
+        onRetry={handleRetry}
+      />
     );
   }
 
