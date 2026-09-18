@@ -1,13 +1,21 @@
 import { cva } from 'class-variance-authority';
 import { Link } from 'expo-router';
 import { CrownIcon } from 'lucide-react-native';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  Easing,
+  FadeInDown,
+  useReducedMotion,
+} from 'react-native-reanimated';
 
 import { cn } from '~/lib/utils';
 
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Icon } from '~/components/ui/icon';
+
+import { PodiumStep } from './podium-step';
+import { podiumSteps, type PodiumVariant } from './podium-step.shared';
 
 interface PodiumProps {
   username: string;
@@ -30,8 +38,6 @@ export const podiumVariants = cva('', {
   },
 });
 
-type PodiumVariant = 'gold' | 'silver' | 'bronze';
-
 const RankingPosition = ({ position }: { position: number }) => (
   <View className="flex-row items-center justify-center gap-1">
     <Text className="text-xs text-neutral-400 dark:text-neutral-600">#</Text>
@@ -40,56 +46,102 @@ const RankingPosition = ({ position }: { position: number }) => (
 );
 
 const Podium = ({ username, value, position, profilePicture }: PodiumProps) => {
+  const reduceMotion = useReducedMotion();
   const variant: PodiumVariant =
     position === 1 ? 'gold' : position === 2 ? 'silver' : 'bronze';
+  const step = podiumSteps[variant];
+  const entering = useMemo(
+    () =>
+      reduceMotion || !username
+        ? undefined
+        : FadeInDown.duration(283)
+            .delay(step.delay)
+            .easing(Easing.bezier(0.23, 1, 0.32, 1)),
+    [reduceMotion, username, step.delay],
+  );
+
+  const content = (
+    <View collapsable={false} className="items-center">
+      <Animated.View
+        collapsable={false}
+        entering={entering}
+        className="w-full items-center gap-3 px-2 py-4"
+      >
+        <View className="items-center gap-1">
+          <Icon
+            as={CrownIcon}
+            className={cn('size-6', podiumVariants({ text: variant }))}
+          />
+          <View className="relative size-16 overflow-hidden rounded-full">
+            <SupabaseAvatar URL={profilePicture} />
+          </View>
+        </View>
+        <View className="w-full items-center gap-0.5">
+          <Text
+            numberOfLines={1}
+            className="max-w-full text-xs font-normal text-neutral-800 dark:text-neutral-50"
+          >
+            {username || '—'}
+          </Text>
+          <Text
+            numberOfLines={1}
+            className={cn(
+              'max-w-full text-xs',
+              podiumVariants({ text: variant }),
+            )}
+          >
+            {value || '—'}
+          </Text>
+        </View>
+      </Animated.View>
+      <View
+        pointerEvents="none"
+        accessible={false}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        className="w-full overflow-hidden"
+        style={{ height: step.height }}
+      >
+        <PodiumStep
+          variant={variant}
+          reduceMotion={reduceMotion || !username}
+        />
+        <Animated.View
+          collapsable={false}
+          entering={entering}
+          className="absolute inset-x-0 top-4 items-center"
+        >
+          <Text
+            style={{ color: variant === 'silver' ? '#374151' : '#78350F' }}
+            className="text-2xl font-bold"
+          >
+            {position}
+          </Text>
+        </Animated.View>
+      </View>
+    </View>
+  );
+
+  if (!username)
+    return (
+      <View className="w-1/3" style={{ opacity: 0.45 }}>
+        {content}
+      </View>
+    );
 
   return (
     <Link
-      href={{
-        pathname: '/profile/[username]',
-        params: { username: username },
-      }}
+      href={{ pathname: '/profile/[username]', params: { username } }}
       push
       asChild
     >
-      <TouchableOpacity className="w-1/3">
-        <View className="flex items-center">
-          <View className="flex-row w-full items-center justify-center border-b-4 border-neutral-200 dark:border-neutral-600">
-            <View
-              className={cn('flex w-[96%] flex-col items-center gap-3 py-4')}
-            >
-              <View className="flex flex-col items-center gap-1">
-                <Icon
-                  as={CrownIcon}
-                  className={cn('size-6', podiumVariants({ text: variant }))}
-                />
-                <View className="relative overflow-hidden size-16">
-                  <SupabaseAvatar URL={profilePicture} />
-                </View>
-              </View>
-              <View className="flex flex-col items-center gap-0.5">
-                <Text className="text-xs font-normal text-neutral-800 dark:text-neutral-50">
-                  {username}
-                </Text>
-                <Text
-                  className={cn('text-xs', podiumVariants({ text: variant }))}
-                >
-                  {value}
-                </Text>
-              </View>
-            </View>
-          </View>
-          <View
-            className={cn(
-              'flex-row w-full items-start justify-center bg-neutral-100 dark:bg-neutral-900/75',
-              podiumVariants({
-                size: variant === 'gold' ? 'large' : 'small',
-              }),
-            )}
-          >
-            <RankingPosition position={position} />
-          </View>
-        </View>
+      <TouchableOpacity
+        className="w-1/3"
+        accessibilityRole="link"
+        accessibilityLabel={`${position}. ${username}, ${value}`}
+        activeOpacity={0.8}
+      >
+        {content}
       </TouchableOpacity>
     </Link>
   );
@@ -135,7 +187,7 @@ interface LeaderboardProps {
 
 const Leaderboard = ({ entries }: LeaderboardProps) => (
   <>
-    <View className="flex-row items-end justify-center border-t border-neutral-100 bg-center">
+    <View className="flex-row items-end justify-center pt-2">
       <Podium
         username={entries[1]?.name || ''}
         value={entries[1]?.value || ''}

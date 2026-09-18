@@ -1,0 +1,4 @@
+name: ranking-podium
+main: Gold
+output:
+  dir: build

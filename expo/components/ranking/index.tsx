@@ -68,6 +68,7 @@ export const Ranking: React.FC<Props> = ({
         visibleCategories={visibleCategories}
       />
       <CategoryRenderer
+        key={selectedCategory}
         category={selectedCategory}
         highlines_ids={highlines_ids}
         visibleCategories={visibleCategories}
