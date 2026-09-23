@@ -2,41 +2,41 @@
   <Artboard name="Gold" id="0:2" x="0" width="120" height="112" defaultStateMachineId="0:7" styleId="0:3">
     <LayoutComponentStyle id="0:3" name="Artboard style"/>
     <Node name="Step" id="0:14">
-      <Shape name="Top edge" x="60" y="3">
-        <Rectangle width="116" height="6" cornerRadiusTL="3"/>
-        <Fill><SolidColor colorValue="FFFFF0BF"/></Fill>
+      <Shape name="Top edge" x="60" y="3" id="0:215">
+        <Rectangle width="116" height="6" cornerRadiusTL="3" id="0:216"/>
+        <Fill id="0:217"><SolidColor colorValue="FFFFF0BF" id="0:218"/></Fill>
       </Shape>
-      <Shape name="Podium block" x="60" y="56.0">
-        <Rectangle width="116" height="112" cornerRadiusTL="8" linkCornerRadius="false" cornerRadiusTR="8"/>
-        <Fill><LinearGradient startX="0" startY="-56.0" endX="0" endY="56.0">
-          <GradientStop colorValue="FFFFE39B" position="0"/>
-          <GradientStop colorValue="FFE5AD2E" position="1"/>
+      <Shape name="Podium block" x="60" y="56.0" id="0:219">
+        <Rectangle width="116" height="112" cornerRadiusTL="8" linkCornerRadius="false" cornerRadiusTR="8" id="0:220"/>
+        <Fill id="0:221"><LinearGradient startX="0" startY="-56.0" endX="0" endY="56.0" id="0:222">
+          <GradientStop colorValue="FFFFE39B" position="0" id="0:223"/>
+          <GradientStop colorValue="FFE5AD2E" position="1" id="0:224"/>
         </LinearGradient></Fill>
       </Shape>
     </Node>
     <LinearAnimation name="Reveal" id="0:6" duration="27" fps="60" loopValue="oneShot">
-      <KeyedObject objectId="0:14">
-        <KeyedProperty propertyKey="14">
-          <KeyFrameDouble frame="0" value="20" interpolationType="hold"/>
-          <KeyFrameDouble frame="10" value="20" interpolationType="cubic">
-            <CubicEaseInterpolator x1="0.23" y1="1" x2="0.32" y2="1"/>
+      <KeyedObject objectId="0:14" id="0:225">
+        <KeyedProperty propertyKey="14" id="0:226">
+          <KeyFrameDouble frame="0" value="20" interpolationType="hold" id="0:227"/>
+          <KeyFrameDouble frame="10" value="20" interpolationType="cubic" id="0:228">
+            <CubicEaseInterpolator x1="0.23" y1="1" x2="0.32" y2="1" id="0:229"/>
           </KeyFrameDouble>
-          <KeyFrameDouble frame="27" value="0"/>
+          <KeyFrameDouble frame="27" value="0" id="0:230"/>
         </KeyedProperty>
-        <KeyedProperty propertyKey="18">
-          <KeyFrameDouble frame="0" value="0" interpolationType="hold"/>
-          <KeyFrameDouble frame="10" value="0" interpolationType="cubic">
-            <CubicEaseInterpolator x1="0.23" y1="1" x2="0.32" y2="1"/>
+        <KeyedProperty propertyKey="18" id="0:231">
+          <KeyFrameDouble frame="0" value="0" interpolationType="hold" id="0:232"/>
+          <KeyFrameDouble frame="10" value="0" interpolationType="cubic" id="0:233">
+            <CubicEaseInterpolator x1="0.23" y1="1" x2="0.32" y2="1" id="0:234"/>
           </KeyFrameDouble>
-          <KeyFrameDouble frame="27" value="1"/>
+          <KeyFrameDouble frame="27" value="1" id="0:235"/>
         </KeyedProperty>
       </KeyedObject>
     </LinearAnimation>
     <StateMachine name="Podium" id="0:7">
       <StateMachineLayer name="Entrance" id="0:8">
-        <AnyState x="200" y="-120"/>
-        <ExitState x="400" y="-120"/>
-        <EntryState x="0" y="0"><StateTransition stateToId="0:12"/></EntryState>
+        <AnyState x="200" y="-120" id="0:236"/>
+        <ExitState x="400" y="-120" id="0:237"/>
+        <EntryState x="0" y="0" id="0:238"><StateTransition stateToId="0:12" id="0:239"/></EntryState>
         <AnimationState x="200" y="0" animationId="0:6" id="0:12"/>
       </StateMachineLayer>
     </StateMachine>
@@ -44,41 +44,41 @@
   <Artboard name="Silver" id="0:102" x="180" width="120" height="80" defaultStateMachineId="0:107" styleId="0:103">
     <LayoutComponentStyle id="0:103" name="Artboard style"/>
     <Node name="Step" id="0:114">
-      <Shape name="Top edge" x="60" y="3">
-        <Rectangle width="116" height="6" cornerRadiusTL="3"/>
-        <Fill><SolidColor colorValue="FFF9FAFB"/></Fill>
+      <Shape name="Top edge" x="60" y="3" id="0:240">
+        <Rectangle width="116" height="6" cornerRadiusTL="3" id="0:241"/>
+        <Fill id="0:242"><SolidColor colorValue="FFF9FAFB" id="0:243"/></Fill>
       </Shape>
-      <Shape name="Podium block" x="60" y="40.0">
-        <Rectangle width="116" height="80" cornerRadiusTL="8" linkCornerRadius="false" cornerRadiusTR="8"/>
-        <Fill><LinearGradient startX="0" startY="-40.0" endX="0" endY="40.0">
-          <GradientStop colorValue="FFE5E7EB" position="0"/>
-          <GradientStop colorValue="FF9CA3AF" position="1"/>
+      <Shape name="Podium block" x="60" y="40.0" id="0:244">
+        <Rectangle width="116" height="80" cornerRadiusTL="8" linkCornerRadius="false" cornerRadiusTR="8" id="0:245"/>
+        <Fill id="0:246"><LinearGradient startX="0" startY="-40.0" endX="0" endY="40.0" id="0:247">
+          <GradientStop colorValue="FFE5E7EB" position="0" id="0:248"/>
+          <GradientStop colorValue="FF9CA3AF" position="1" id="0:249"/>
         </LinearGradient></Fill>
       </Shape>
     </Node>
     <LinearAnimation name="Reveal" id="0:106" duration="22" fps="60" loopValue="oneShot">
-      <KeyedObject objectId="0:114">
-        <KeyedProperty propertyKey="14">
-          <KeyFrameDouble frame="0" value="20" interpolationType="hold"/>
-          <KeyFrameDouble frame="5" value="20" interpolationType="cubic">
-            <CubicEaseInterpolator x1="0.23" y1="1" x2="0.32" y2="1"/>
+      <KeyedObject objectId="0:114" id="0:250">
+        <KeyedProperty propertyKey="14" id="0:251">
+          <KeyFrameDouble frame="0" value="20" interpolationType="hold" id="0:252"/>
+          <KeyFrameDouble frame="5" value="20" interpolationType="cubic" id="0:253">
+            <CubicEaseInterpolator x1="0.23" y1="1" x2="0.32" y2="1" id="0:254"/>
           </KeyFrameDouble>
-          <KeyFrameDouble frame="22" value="0"/>
+          <KeyFrameDouble frame="22" value="0" id="0:255"/>
         </KeyedProperty>
-        <KeyedProperty propertyKey="18">
-          <KeyFrameDouble frame="0" value="0" interpolationType="hold"/>
-          <KeyFrameDouble frame="5" value="0" interpolationType="cubic">
-            <CubicEaseInterpolator x1="0.23" y1="1" x2="0.32" y2="1"/>
+        <KeyedProperty propertyKey="18" id="0:256">
+          <KeyFrameDouble frame="0" value="0" interpolationType="hold" id="0:257"/>
+          <KeyFrameDouble frame="5" value="0" interpolationType="cubic" id="0:258">
+            <CubicEaseInterpolator x1="0.23" y1="1" x2="0.32" y2="1" id="0:259"/>
           </KeyFrameDouble>
-          <KeyFrameDouble frame="22" value="1"/>
+          <KeyFrameDouble frame="22" value="1" id="0:260"/>
         </KeyedProperty>
       </KeyedObject>
     </LinearAnimation>
     <StateMachine name="Podium" id="0:107">
       <StateMachineLayer name="Entrance" id="0:108">
-        <AnyState x="200" y="-120"/>
-        <ExitState x="400" y="-120"/>
-        <EntryState x="0" y="0"><StateTransition stateToId="0:112"/></EntryState>
+        <AnyState x="200" y="-120" id="0:261"/>
+        <ExitState x="400" y="-120" id="0:262"/>
+        <EntryState x="0" y="0" id="0:263"><StateTransition stateToId="0:112" id="0:264"/></EntryState>
         <AnimationState x="200" y="0" animationId="0:106" id="0:112"/>
       </StateMachineLayer>
     </StateMachine>
@@ -86,39 +86,39 @@
   <Artboard name="Bronze" id="0:202" x="360" width="120" height="64" defaultStateMachineId="0:207" styleId="0:203">
     <LayoutComponentStyle id="0:203" name="Artboard style"/>
     <Node name="Step" id="0:214">
-      <Shape name="Top edge" x="60" y="3">
-        <Rectangle width="116" height="6" cornerRadiusTL="3"/>
-        <Fill><SolidColor colorValue="FFFFDFC4"/></Fill>
+      <Shape name="Top edge" x="60" y="3" id="0:265">
+        <Rectangle width="116" height="6" cornerRadiusTL="3" id="0:266"/>
+        <Fill id="0:267"><SolidColor colorValue="FFFFDFC4" id="0:268"/></Fill>
       </Shape>
-      <Shape name="Podium block" x="60" y="32.0">
-        <Rectangle width="116" height="64" cornerRadiusTL="8" linkCornerRadius="false" cornerRadiusTR="8"/>
-        <Fill><LinearGradient startX="0" startY="-32.0" endX="0" endY="32.0">
-          <GradientStop colorValue="FFF0C4A1" position="0"/>
-          <GradientStop colorValue="FFB87543" position="1"/>
+      <Shape name="Podium block" x="60" y="32.0" id="0:269">
+        <Rectangle width="116" height="64" cornerRadiusTL="8" linkCornerRadius="false" cornerRadiusTR="8" id="0:270"/>
+        <Fill id="0:271"><LinearGradient startX="0" startY="-32.0" endX="0" endY="32.0" id="0:272">
+          <GradientStop colorValue="FFF0C4A1" position="0" id="0:273"/>
+          <GradientStop colorValue="FFB87543" position="1" id="0:274"/>
         </LinearGradient></Fill>
       </Shape>
     </Node>
     <LinearAnimation name="Reveal" id="0:206" duration="17" fps="60" loopValue="oneShot">
-      <KeyedObject objectId="0:214">
-        <KeyedProperty propertyKey="14">
-          <KeyFrameDouble frame="0" value="20" interpolationType="cubic">
-            <CubicEaseInterpolator x1="0.23" y1="1" x2="0.32" y2="1"/>
+      <KeyedObject objectId="0:214" id="0:275">
+        <KeyedProperty propertyKey="14" id="0:276">
+          <KeyFrameDouble frame="0" value="20" interpolationType="cubic" id="0:277">
+            <CubicEaseInterpolator x1="0.23" y1="1" x2="0.32" y2="1" id="0:278"/>
           </KeyFrameDouble>
-          <KeyFrameDouble frame="17" value="0"/>
+          <KeyFrameDouble frame="17" value="0" id="0:279"/>
         </KeyedProperty>
-        <KeyedProperty propertyKey="18">
-          <KeyFrameDouble frame="0" value="0" interpolationType="cubic">
-            <CubicEaseInterpolator x1="0.23" y1="1" x2="0.32" y2="1"/>
+        <KeyedProperty propertyKey="18" id="0:280">
+          <KeyFrameDouble frame="0" value="0" interpolationType="cubic" id="0:281">
+            <CubicEaseInterpolator x1="0.23" y1="1" x2="0.32" y2="1" id="0:282"/>
           </KeyFrameDouble>
-          <KeyFrameDouble frame="17" value="1"/>
+          <KeyFrameDouble frame="17" value="1" id="0:283"/>
         </KeyedProperty>
       </KeyedObject>
     </LinearAnimation>
     <StateMachine name="Podium" id="0:207">
       <StateMachineLayer name="Entrance" id="0:208">
-        <AnyState x="200" y="-120"/>
-        <ExitState x="400" y="-120"/>
-        <EntryState x="0" y="0"><StateTransition stateToId="0:212"/></EntryState>
+        <AnyState x="200" y="-120" id="0:284"/>
+        <ExitState x="400" y="-120" id="0:285"/>
+        <EntryState x="0" y="0" id="0:286"><StateTransition stateToId="0:212" id="0:287"/></EntryState>
         <AnimationState x="200" y="0" animationId="0:206" id="0:212"/>
       </StateMachineLayer>
     </StateMachine>

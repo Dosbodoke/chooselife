@@ -2,3 +2,6 @@ name: ranking-podium
 main: Gold
 output:
   dir: build
+push:
+  projectId: 432760
+  fileId: 2593523
