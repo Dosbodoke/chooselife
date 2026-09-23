@@ -504,7 +504,7 @@
     },
     "members": {
       "title": "Membros",
-      "description": "Lista legal de membros ativos com situação financeira calculada a partir do livro-caixa.",
+      "description": "Lista de associados ativos com situação financeira calculada a partir das contribuições.",
       "searchLabel": "Buscar membros",
       "searchPlaceholder": "Buscar membros",
       "stateFilterLabel": "Filtrar situação financeira dos membros",
@@ -522,7 +522,7 @@
       "periodLabel": "Período de cobrança",
       "lifecycleLabel": "Ciclo",
       "financialLabel": "Situação financeira",
-      "tableLabel": "Livro-caixa de membros da associação",
+      "tableLabel": "Associados e contribuições",
       "showing": "Mostrando {shown} de {total} pessoas",
       "previousPage": "Página anterior",
       "nextPage": "Próxima página",
@@ -560,7 +560,7 @@
         "scheduled": "Agendado",
         "noObligation": "Sem cobrança"
       },
-      "loadedAnnouncement": "Livro-caixa carregado com {count} pessoas.",
+      "loadedAnnouncement": "Lista de associados carregada com {count} pessoas.",
       "reviewPerson": "Revisar {name}"
     },
     "ledgerReview": {

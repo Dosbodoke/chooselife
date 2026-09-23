@@ -1,5 +1,11 @@
-import { queryKeys, SupabaseProvider, useOrganization } from '@chooselife/ui';
+import {
+  queryKeys,
+  SupabaseProvider,
+  useIsMember,
+  useOrganization,
+} from '@chooselife/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useFocusEffect } from 'expo-router';
 import {
   ChevronRightIcon,
   MapPinIcon,
@@ -10,6 +16,8 @@ import React from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
+import { fetchMembershipApplication } from '~/lib/membership-application';
+import { resolveMembershipEntryState } from '~/lib/membership-entry-state';
 import { queryKeys as appQueryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
@@ -42,8 +50,52 @@ function OrganizationDetailsPage() {
   const queryClient = useQueryClient();
   const { session } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
+  const userId = session?.user.id;
 
   const { data: organization, isLoading } = useOrganization(ORG_SLUG);
+  const membershipQuery = useIsMember(ORG_SLUG);
+  const applicationQuery = useQuery({
+    queryKey: appQueryKeys.membershipApplication.byOrgUser(
+      organization?.id,
+      userId,
+    ),
+    queryFn: () => fetchMembershipApplication(organization!.id, userId!),
+    enabled: Boolean(organization?.id && userId && membershipQuery.data === false),
+  });
+
+  const membershipEntryState = resolveMembershipEntryState({
+    isSignedIn: Boolean(userId),
+    membership: {
+      status: membershipQuery.status,
+      data: membershipQuery.data,
+    },
+    application: {
+      status: applicationQuery.status,
+      data:
+        applicationQuery.data === undefined
+          ? undefined
+          : (applicationQuery.data?.status ?? null),
+    },
+  });
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!userId) return;
+
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.organizations.isMember(ORG_SLUG, userId),
+      });
+
+      if (organization?.id) {
+        void queryClient.invalidateQueries({
+          queryKey: appQueryKeys.membershipApplication.byOrgUser(
+            organization.id,
+            userId,
+          ),
+        });
+      }
+    }, [organization?.id, queryClient, userId]),
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -52,7 +104,13 @@ function OrganizationDetailsPage() {
         queryKey: queryKeys.organizations.bySlug(ORG_SLUG),
       }),
       queryClient.invalidateQueries({
-        queryKey: queryKeys.organizations.isMember(ORG_SLUG, session?.user.id),
+        queryKey: queryKeys.organizations.isMember(ORG_SLUG, userId),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: appQueryKeys.membershipApplication.byOrgUser(
+          organization?.id,
+          userId,
+        ),
       }),
       queryClient.invalidateQueries({
         queryKey: queryKeys.organizations.memberCount(ORG_SLUG),
@@ -110,14 +168,45 @@ function OrganizationDetailsPage() {
           <OrganizationStatsGroup slug={organization.slug} />
         </View>
 
-        {/* Private membership and financial state stays behind one server read model. */}
-        {session?.user ? (
+        {/* Check membership before opening private contribution details. */}
+        {membershipEntryState === 'loading' ? (
+          <Skeleton className="h-[200px] w-full rounded-xl bg-gray-200" />
+        ) : membershipEntryState === 'error' ? (
+          <View className="gap-3 rounded-xl border border-red-200 bg-white p-6">
+            <Text className="text-lg font-bold text-gray-900">
+              Não foi possível verificar sua associação
+            </Text>
+            <Text className="text-gray-600">
+              Tente novamente para consultar sua situação.
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Tentar novamente"
+              onPress={() => {
+                if (
+                  membershipQuery.status !== 'success' ||
+                  membershipQuery.data !== false
+                ) {
+                  void membershipQuery.refetch();
+                } else {
+                  void applicationQuery.refetch();
+                }
+              }}
+              className="items-center rounded-lg bg-gray-900 px-4 py-3"
+            >
+              <Text className="font-bold text-white">Tentar novamente</Text>
+            </Pressable>
+          </View>
+        ) : membershipEntryState === 'contributions' ? (
           <MembershipLedger
             organizationId={organization.id}
             slug={organization.slug}
           />
         ) : (
-          <BecomeMemberCard slug={organization.slug} />
+          <BecomeMemberCard
+            slug={organization.slug}
+            resumeDraft={membershipEntryState === 'resume_draft'}
+          />
         )}
 
         {/* Activities / Content */}

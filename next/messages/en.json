@@ -504,7 +504,7 @@
     },
     "members": {
       "title": "Members",
-      "description": "Active legal roster with financial standing derived from the billing ledger.",
+      "description": "Active members with payment status based on their contributions.",
       "searchLabel": "Search members",
       "searchPlaceholder": "Search members",
       "stateFilterLabel": "Filter member financial standing",
@@ -522,7 +522,7 @@
       "periodLabel": "Billing period",
       "lifecycleLabel": "Lifecycle",
       "financialLabel": "Financial status",
-      "tableLabel": "Association member ledger",
+      "tableLabel": "Association members and contributions",
       "showing": "Showing {shown} of {total} people",
       "previousPage": "Previous page",
       "nextPage": "Next page",
@@ -560,7 +560,7 @@
         "scheduled": "Scheduled",
         "noObligation": "No charge"
       },
-      "loadedAnnouncement": "Ledger loaded with {count} people.",
+      "loadedAnnouncement": "Member list loaded with {count} people.",
       "reviewPerson": "Review {name}"
     },
     "ledgerReview": {
