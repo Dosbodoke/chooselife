@@ -49,6 +49,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { useAuth } from '~/context/auth';
 import RegisterWebbingIllustration from '~/lib/icons/register-webbing';
+import { getR2PublicUrl } from '~/lib/r2';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 import { Tables } from '~/utils/database.types';
@@ -485,9 +486,7 @@ const SelectModel: React.FC<{ control: Control<RegisterWebbingFormData> }> = ({
           >
             <Image
               source={{
-                uri: supabase.storage
-                  .from('webbings')
-                  .getPublicUrl(model.image_url).data.publicUrl,
+                uri: getR2PublicUrl('webbings', model.image_url),
               }}
               contentFit="cover"
               alt={`${model.name}`}
