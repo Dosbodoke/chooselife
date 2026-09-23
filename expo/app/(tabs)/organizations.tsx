@@ -53,14 +53,15 @@ function OrganizationDetailsPage() {
   const userId = session?.user.id;
 
   const { data: organization, isLoading } = useOrganization(ORG_SLUG);
+  const organizationId = organization?.id;
   const membershipQuery = useIsMember(ORG_SLUG);
   const applicationQuery = useQuery({
     queryKey: appQueryKeys.membershipApplication.byOrgUser(
-      organization?.id,
+      organizationId,
       userId,
     ),
-    queryFn: () => fetchMembershipApplication(organization!.id, userId!),
-    enabled: Boolean(organization?.id && userId && membershipQuery.data === false),
+    queryFn: () => fetchMembershipApplication(organizationId!, userId!),
+    enabled: Boolean(organizationId && userId && membershipQuery.data === false),
   });
 
   const membershipEntryState = resolveMembershipEntryState({
@@ -86,15 +87,15 @@ function OrganizationDetailsPage() {
         queryKey: queryKeys.organizations.isMember(ORG_SLUG, userId),
       });
 
-      if (organization?.id) {
+      if (organizationId) {
         void queryClient.invalidateQueries({
           queryKey: appQueryKeys.membershipApplication.byOrgUser(
-            organization.id,
+            organizationId,
             userId,
           ),
         });
       }
-    }, [organization?.id, queryClient, userId]),
+    }, [organizationId, queryClient, userId]),
   );
 
   const onRefresh = async () => {
@@ -108,7 +109,7 @@ function OrganizationDetailsPage() {
       }),
       queryClient.invalidateQueries({
         queryKey: appQueryKeys.membershipApplication.byOrgUser(
-          organization?.id,
+          organizationId,
           userId,
         ),
       }),
