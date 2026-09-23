@@ -56,7 +56,7 @@ export type MembershipBillingLedger = {
 
 function asJsonRecord(value: Json): Record<string, Json | undefined> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw new Error('The server returned an invalid Ledger response.');
+    throw new Error('The server returned an invalid contribution response.');
   }
 
   return value as Record<string, Json | undefined>;

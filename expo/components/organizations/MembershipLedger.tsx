@@ -56,7 +56,7 @@ const financialCopy: Record<
     tone: 'emerald',
   },
   payment_available: {
-    description: 'Há uma contribuição pronta para pagamento no Ledger.',
+    description: 'Há uma contribuição pronta para pagamento.',
     label: 'Pagamento disponível',
     tone: 'blue',
   },
@@ -195,7 +195,7 @@ function LedgerContent({
       <View className="flex-row items-start justify-between gap-3">
         <View className="min-w-0 flex-1 gap-1">
           <Text className="text-xs font-bold uppercase tracking-widest text-zinc-500">
-            {isApplicant ? 'Admissão' : 'Ledger da associação'}
+            {isApplicant ? 'Admissão' : 'Suas contribuições'}
           </Text>
           <Text
             accessibilityRole="header"
@@ -327,12 +327,14 @@ export function MembershipLedger({
     refetchOnWindowFocus: true,
   });
 
-  useFocusEffect(() => {
-    if (!userId) return;
-    void queryClient.invalidateQueries({
-      queryKey: queryKeys.membershipBilling.byOrg(organizationId, userId),
-    });
-  });
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!userId) return;
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.membershipBilling.byOrg(organizationId, userId),
+      });
+    }, [organizationId, queryClient, userId]),
+  );
 
   if (!userId) return null;
 
@@ -340,7 +342,9 @@ export function MembershipLedger({
     return (
       <View className="items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white p-8">
         <ActivityIndicator color="#18181B" />
-        <Text className="text-sm text-zinc-500">Carregando seu Ledger...</Text>
+        <Text className="text-sm text-zinc-500">
+          Carregando suas contribuições...
+        </Text>
       </View>
     );
   }
@@ -350,11 +354,11 @@ export function MembershipLedger({
       <View className="items-center gap-3 rounded-2xl border border-red-200 bg-white p-6">
         <AlertCircle color="#DC2626" size={32} />
         <Text className="text-center text-base font-bold text-zinc-950">
-          Não foi possível carregar o Ledger
+          Não foi possível consultar suas contribuições
         </Text>
         <Text className="text-center text-sm leading-5 text-zinc-600">
           O perfil público e as notícias continuam disponíveis. Tente consultar
-          sua situação financeira novamente.
+          sua situação e seus pagamentos novamente.
         </Text>
         <Pressable
           accessibilityRole="button"

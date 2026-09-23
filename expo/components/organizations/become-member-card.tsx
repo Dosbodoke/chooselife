@@ -9,10 +9,15 @@ import { Text } from '~/components/ui/text';
 
 type BecomeMemberCardProps = {
   slug: string;
+  resumeDraft?: boolean;
 };
 
-export function BecomeMemberCard({ slug }: BecomeMemberCardProps) {
+export function BecomeMemberCard({
+  slug,
+  resumeDraft = false,
+}: BecomeMemberCardProps) {
   const router = useRouter();
+  const buttonLabel = resumeDraft ? 'Continuar cadastro' : 'Quero me associar';
 
   return (
     <View
@@ -51,20 +56,21 @@ export function BecomeMemberCard({ slug }: BecomeMemberCardProps) {
 
       <View className="z-10 gap-2">
         <Text className="text-2xl font-black text-white">
-          Torne-se um associado
+          {resumeDraft ? 'Continue seu cadastro' : 'Torne-se um associado'}
         </Text>
         <Text className="text-base font-medium leading-6 text-zinc-400">
-          Junte-se à associação e apoie o desenvolvimento do slackline no
-          Cerrado.
+          {resumeDraft
+            ? 'Seu cadastro está salvo. Continue de onde parou para solicitar sua associação.'
+            : 'Junte-se à associação e apoie o desenvolvimento do slackline no Cerrado.'}
         </Text>
       </View>
 
       <Button
-        accessibilityLabel="Quero me associar"
+        accessibilityLabel={buttonLabel}
         onPress={() => router.push(`/organizations/${slug}/member`)}
         className="w-full bg-white active:bg-gray-100 active:scale-[0.98]"
       >
-        <Text className="font-bold text-black">Quero me associar</Text>
+        <Text className="font-bold text-black">{buttonLabel}</Text>
       </Button>
     </View>
   );
