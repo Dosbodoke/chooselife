@@ -1,11 +1,13 @@
 import {
+  BoxIcon,
   LocateFixedIcon,
   LocateIcon,
   MapIcon,
   SatelliteIcon,
 } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '~/components/ui/icon';
@@ -19,6 +21,7 @@ const MapControls: React.FC<{
   setMapType: (newMapType: MapType) => Promise<void>;
 }> = React.memo(({ mapType, isOnMyLocation, goToMyLocation, setMapType }) => {
   const insetTop = useSafeAreaInsets().top;
+  const router = useRouter();
 
   return (
     <View
@@ -49,6 +52,18 @@ const MapControls: React.FC<{
           className="size-6 text-black"
           strokeWidth={2}
         />
+      </TouchableOpacity>
+
+      <View className="w-full h-px bg-muted-foreground" />
+
+      <TouchableOpacity
+        className="p-1 items-center justify-center pt-2"
+        accessibilityRole="button"
+        accessibilityLabel="View Morro do Macaco in 3D"
+        onPress={() => router.push('/morro-do-macaco')}
+      >
+        <Icon as={BoxIcon} className="size-6 text-black" strokeWidth={2} />
+        <Text className="text-xs text-black">3D</Text>
       </TouchableOpacity>
     </View>
   );

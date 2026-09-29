@@ -33,6 +33,7 @@
     "@config-plugins/react-native-pdf": "14.0.2",
     "@expo/dom-webview": "~57.0.1",
     "@expo/ui": "57.0.3",
+    "@google/model-viewer": "^4.3.1",
     "@gorhom/bottom-sheet": "^5.2.10",
     "@hookform/resolvers": "^3.9.0",
     "@legendapp/list": "^3.3.11",
