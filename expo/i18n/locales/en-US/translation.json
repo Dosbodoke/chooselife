@@ -529,8 +529,8 @@
       "location-weather-card": {
         "noLocation": "No Location Set",
         "addLocationHint": "Tap to add coordinates for this highline",
-        "viewOnMap": "View on Map",
-        "openInExplorer": "Open in the explorer"
+        "explorer": "Explorer",
+        "directions": "Directions"
       },
       "not-found": {
         "title": "Highline doesn't exist",
