@@ -76,9 +76,10 @@ export default function HighlinePage() {
             )?.highlinesID?.includes(highlineID) === true,
         }),
       ]);
-    } finally {
-      setRefreshing(false);
+    } catch (error) {
+      console.error('Failed to refresh highline:', error);
     }
+    setRefreshing(false);
   };
 
   const { scrollY, scrollHandler, refreshControl } = usePullToRefresh({
@@ -112,8 +113,8 @@ export default function HighlinePage() {
     [highline?.id, t],
   );
 
-  // Padding for FAB
-  const paddingBottom = useMemo(() => insets.bottom + 100, [insets.bottom]);
+  // Room under the content so the FAB never covers it
+  const fabClearance = insets.bottom + 100;
 
   if (isPending) {
     return <HighlineSkeleton />;
@@ -137,7 +138,6 @@ export default function HighlinePage() {
           onScroll={scrollHandler}
           scrollEventThrottle={16}
           refreshControl={refreshControl}
-          contentContainerStyle={{ paddingBottom }}
         >
           <View style={{ height: COVER_HEIGHT - SHEET_OVERLAP }} />
           {/* Content sheet over the cover */}
@@ -169,6 +169,9 @@ export default function HighlinePage() {
                 </TabsContent>
               ))}
             </Tabs>
+            {/* A spacer rather than contentContainerStyle padding: padding
+                changes re-lay out the whole list, and contentInset is iOS-only. */}
+            <View style={{ height: fabClearance }} />
           </View>
         </Animated.ScrollView>
 

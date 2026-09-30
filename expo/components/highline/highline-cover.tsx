@@ -38,7 +38,7 @@ export const HighlineCover: React.FC<{
   scrollY: SharedValue<number>;
 }> = ({ coverImageId, scrollY }) => {
   const style = useAnimatedStyle(() => {
-    const y = scrollY.value;
+    const y = scrollY.get();
     if (y < 0) {
       return {
         transform: [{ translateY: -y / 2 }, { scale: 1 - y / COVER_HEIGHT }],
@@ -79,10 +79,10 @@ export const usePullToRefresh = ({
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (e) => {
-      scrollY.value = e.contentOffset.y;
+      scrollY.set(e.contentOffset.y);
       const past = e.contentOffset.y < -PULL_THRESHOLD;
-      if (past !== armed.value) {
-        armed.value = past;
+      if (past !== armed.get()) {
+        armed.set(past);
         if (past) scheduleOnRN(haptic);
       }
     },
@@ -117,7 +117,7 @@ export const PullToRefreshRing: React.FC<{
 }> = ({ scrollY, refreshing, top }) => {
   const containerStyle = useAnimatedStyle(() => ({
     opacity: interpolate(
-      scrollY.value,
+      scrollY.get(),
       [-PULL_THRESHOLD * 0.3, -PULL_THRESHOLD * 0.6],
       [0, 1],
       Extrapolation.CLAMP,
@@ -125,7 +125,7 @@ export const PullToRefreshRing: React.FC<{
     transform: [
       {
         scale: interpolate(
-          scrollY.value,
+          scrollY.get(),
           [-PULL_THRESHOLD, -PULL_THRESHOLD - 20],
           [1, 1.15],
           Extrapolation.CLAMP,
@@ -139,7 +139,7 @@ export const PullToRefreshRing: React.FC<{
       RING_C *
       (1 -
         interpolate(
-          -scrollY.value,
+          -scrollY.get(),
           [PULL_THRESHOLD * 0.3, PULL_THRESHOLD],
           [0, 1],
           Extrapolation.CLAMP,

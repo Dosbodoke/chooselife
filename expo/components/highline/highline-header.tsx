@@ -65,7 +65,7 @@ export const HighlineHeader: React.FC<{
   const iconClassName = cn(collapsed ? 'text-foreground' : 'text-white');
 
   useAnimatedReaction(
-    () => scrollY.value > collapseAt,
+    () => scrollY.get() > collapseAt,
     (now, prev) => {
       if (now !== prev) scheduleOnRN(setCollapsed, now);
     },
@@ -73,7 +73,7 @@ export const HighlineHeader: React.FC<{
 
   const barStyle = useAnimatedStyle(() => ({
     opacity: interpolate(
-      scrollY.value,
+      scrollY.get(),
       [collapseAt - 60, collapseAt],
       [0, 1],
       Extrapolation.CLAMP,
@@ -82,7 +82,7 @@ export const HighlineHeader: React.FC<{
 
   const titleStyle = useAnimatedStyle(() => ({
     opacity: interpolate(
-      scrollY.value,
+      scrollY.get(),
       [collapseAt - 10, collapseAt + 20],
       [0, 1],
       Extrapolation.CLAMP,
@@ -90,7 +90,7 @@ export const HighlineHeader: React.FC<{
     transform: [
       {
         translateY: interpolate(
-          scrollY.value,
+          scrollY.get(),
           [collapseAt - 10, collapseAt + 20],
           [8, 0],
           Extrapolation.CLAMP,
