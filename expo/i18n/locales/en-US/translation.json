@@ -542,7 +542,9 @@
         "directions": "Directions",
         "chooseMapApp": "Choose a map app",
         "noMapApps": "No compatible map apps are available on this device.",
-        "directionsError": "Could not open directions. Please try again."
+        "directionsError": "Could not open directions. Please try again.",
+        "editLocation": "Edit location",
+        "offlineEdit": "Reconnect to add or edit this location."
       },
       "not-found": {
         "title": "Highline doesn't exist",
@@ -577,6 +579,19 @@
       },
       "explore-header": {
         "searchPlaceholder": "Highline name",
+        "addHighline": "Add highline",
+        "continueHighline": "Continue highline",
+        "needsAttention": "Needs attention",
+        "needsAttentionCount": "Needs attention ({{count}})",
+        "pendingSyncCount": "Pending sync ({{count}})",
+        "resolveDraftFirst": "Finish the current highline before editing a failed submission.",
+        "retry": "Retry",
+        "edit": "Edit",
+        "discard": "Discard",
+        "cancel": "Cancel",
+        "unnamedHighline": "Unnamed highline",
+        "highline": "highline",
+        "highlines": "highlines",
         "categories": {
           "favorites": "Favorites",
           "bigLine": "Big Line",
@@ -593,7 +608,19 @@
         "setB": "Set anchor B",
         "confirm": "Confirm"
       },
+      "location-picker": {
+        "existingHighlines": "Existing highlines",
+        "review": "Review line",
+        "undo": "Undo",
+        "undoAnchorB": "Undo anchor B",
+        "adjustA": "Adjust A",
+        "adjustB": "Adjust B",
+        "continue": "Continue",
+        "save": "Save location",
+        "offlineEdit": "Reconnect to edit an existing highline location."
+      },
       "register-modal": {
+        "offlineEdit": "Reconnect to edit an existing highline.",
         "name": {
           "min": "Must be at least 3 characters",
           "label": "Route Name"

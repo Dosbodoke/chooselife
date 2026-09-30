@@ -133,7 +133,7 @@ const LengthLabel: React.FC<{ distance: number }> = ({ distance }) => (
 const AnimatedCluster: React.FC<{
   pointCount: number;
   size: number;
-  onPress: () => void;
+  onPress?: () => void;
 }> = ({ pointCount, size, onPress }) => {
   const animation = useSharedValue(0);
 
@@ -153,6 +153,8 @@ const AnimatedCluster: React.FC<{
   });
 
   const handlePress = () => {
+    if (!onPress) return;
+
     // Sequenced rather than re-assigned from the completion callback: writing to
     // the same shared value inside its own callback cancels the in-flight spring,
     // which fires the callback again, which writes again - unbounded recursion on
@@ -164,7 +166,7 @@ const AnimatedCluster: React.FC<{
   };
 
   return (
-    <Pressable onPress={handlePress}>
+    <Pressable onPress={handlePress} disabled={!onPress}>
       <Animated.View
         style={[
           { width: size, height: size, borderRadius: size / 2 },
@@ -188,7 +190,7 @@ const ClusteredMarker = React.memo(
     coordinate: [number, number];
     pointCount: number;
     size: number;
-    onPress: () => void;
+    onPress?: () => void;
   }) => (
     <MapboxGL.MarkerView coordinate={coordinate} {...NEVER_COLLIDE}>
       <AnimatedCluster pointCount={pointCount} size={size} onPress={onPress} />
@@ -200,7 +202,7 @@ type MarkerShapeLayersProps = Pick<
   MarkerData,
   'lineFeatures' | 'anchorFeatures'
 > & {
-  onPress: (event: ShapeSourcePressEvent) => void;
+  onPress?: (event: ShapeSourcePressEvent) => void;
 };
 
 /** Native line and anchor sources, isolated from viewport derivation. */
@@ -273,7 +275,7 @@ type ClusterMarkersProps = {
   clusters: MarkerClusterList;
   pointCount: number;
   hasHighlightedMarker: boolean;
-  onPress: (clusterId: number) => void;
+  onPress?: (clusterId: number) => void;
 };
 
 /** Renders the small, bounded set of React cluster views over native layers. */
@@ -309,7 +311,9 @@ const ClusterMarkers = React.memo(
             size={size}
             coordinate={[longitude, latitude]}
             pointCount={point.properties.point_count}
-            onPress={() => onPress(point.properties.cluster_id)}
+            onPress={
+              onPress ? () => onPress(point.properties.cluster_id) : undefined
+            }
           />
         );
       })}
@@ -437,7 +441,15 @@ const MarkersComponent: React.FC<{
   cameraRef: React.RefObject<MapboxGL.Camera | null>;
   highlines: Highline[] | null;
   updateMarkers: (highlines: Highline[], focused: Highline) => void;
-}> = ({ cameraRef, highlines, updateMarkers }) => {
+  interactive?: boolean;
+  visible?: boolean;
+}> = ({
+  cameraRef,
+  highlines,
+  updateMarkers,
+  interactive = true,
+  visible = true,
+}) => {
   const { profile } = useAuth();
 
   // Keep bounds and zoom as separate subscriptions: each change invalidates
@@ -461,19 +473,23 @@ const MarkersComponent: React.FC<{
     updateMarkers,
   });
 
+  if (!visible) return null;
+
   return (
     <>
       <MarkerShapeLayers
         lineFeatures={markerData.lineFeatures}
         anchorFeatures={markerData.anchorFeatures}
-        onPress={handleFeaturePress}
+        onPress={interactive ? handleFeaturePress : undefined}
       />
-      <FocusedLengthMarker detail={markerData.focusedDetail} />
+      {interactive ? (
+        <FocusedLengthMarker detail={markerData.focusedDetail} />
+      ) : null}
       <ClusterMarkers
         clusters={markerData.clusters}
         pointCount={markerData.points.length}
         hasHighlightedMarker={Boolean(highlightedMarker)}
-        onPress={handleClusterPress}
+        onPress={interactive ? handleClusterPress : undefined}
       />
     </>
   );

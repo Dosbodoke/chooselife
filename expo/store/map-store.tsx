@@ -1,4 +1,6 @@
 import Mapbox from '@rnmapbox/maps';
+import type { AnchorPosition } from '~/features/highline-registration/state/model';
+import type { PendingMapLineProjection } from '~/features/highline-registration/state/selectors';
 import { create } from 'zustand';
 
 import { Highline, HighlineCategory } from '~/hooks/use-highline';
@@ -25,6 +27,34 @@ type State = {
   // Search/filter state
   searchQuery: string;
   activeCategory: HighlineCategory | null;
+  locationPickerRequest: LocationPickerRequest | null;
+  locationPickerSession: LocationPickerSession | null;
+};
+
+export type LocationPickerRequest =
+  | {
+      requestId: string;
+      kind: 'new';
+      center?: AnchorPosition;
+      zoom?: number;
+    }
+  | {
+      requestId: string;
+      kind: 'edit';
+      highlineId: string;
+      anchorA: AnchorPosition | null;
+      anchorB: AnchorPosition | null;
+    };
+
+export type LocationPickerStage = 'place-a' | 'place-b' | 'review' | 'adjust';
+
+export type LocationPickerSession = {
+  stage: LocationPickerStage;
+  adjustingAnchor: 'a' | 'b' | null;
+  anchorA: AnchorPosition | null;
+  anchorB: AnchorPosition | null;
+  pendingLines: PendingMapLineProjection[];
+  existingHighlinesVisible: boolean;
 };
 
 type Actions = {
@@ -40,7 +70,25 @@ type Actions = {
   setClusteredMarkers: (markers: Highline[]) => void;
   setSearchQuery: (query: string) => void;
   setActiveCategory: (category: HighlineCategory | null) => void;
+  requestLocationPicker: (request: LocationPickerRequestInput) => void;
+  clearLocationPickerRequest: () => void;
+  setLocationPickerSession: (session: LocationPickerSession | null) => void;
 };
+
+export type LocationPickerRequestInput =
+  | {
+      requestId?: string;
+      kind: 'new';
+      center?: AnchorPosition;
+      zoom?: number;
+    }
+  | {
+      requestId?: string;
+      kind: 'edit';
+      highlineId: string;
+      anchorA: AnchorPosition | null;
+      anchorB: AnchorPosition | null;
+    };
 
 export const useMapStore = create<State & Actions>((set) => ({
   camera: {
@@ -54,6 +102,8 @@ export const useMapStore = create<State & Actions>((set) => ({
   bottomSheetHandlerHeight: 0,
   searchQuery: '',
   activeCategory: null,
+  locationPickerRequest: null,
+  locationPickerSession: null,
   setCamera: (state: Mapbox.MapState) => {
     // `nextCameraState` returns the previous slice verbatim when the camera did
     // not really move, which is what keeps `onCameraChanged` from re-rendering
@@ -92,6 +142,25 @@ export const useMapStore = create<State & Actions>((set) => ({
   setActiveCategory: (category: HighlineCategory | null) => {
     set(() => ({
       activeCategory: category,
+    }));
+  },
+  requestLocationPicker: (request) => {
+    set(() => ({
+      locationPickerRequest: {
+        ...request,
+        requestId: request.requestId ?? `${Date.now()}-${Math.random()}`,
+      } as LocationPickerRequest,
+    }));
+  },
+  clearLocationPickerRequest: () => {
+    set(() => ({
+      locationPickerRequest: null,
+      locationPickerSession: null,
+    }));
+  },
+  setLocationPickerSession: (session) => {
+    set(() => ({
+      locationPickerSession: session,
     }));
   },
 }));

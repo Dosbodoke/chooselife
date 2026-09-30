@@ -1,36 +1,58 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Mapbox from '@rnmapbox/maps';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  removeStagedHighlineImage,
+  stageHighlineImage,
+} from '~/features/highline-registration/image-storage';
+import type {
+  AnchorPosition,
+  QueuedHighlineSubmission,
+  RegistrationForm,
+  RegistrationImage,
+} from '~/features/highline-registration/state';
+import { useRegistrationState } from '~/features/highline-registration/state/store';
+import {
+  createSubmissionIdentifiers,
+  serializeSubmissionVariables,
+  submitHighlineRegistrationMutationKey,
+  type SerializedSubmissionVariables,
+  type SubmissionResult,
+} from '~/features/highline-registration/submission';
+import { submitHighlineRegistrationOnline } from '~/features/highline-registration/submission-runtime';
 import { decode } from 'base64-arraybuffer';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Position } from 'geojson';
+import type { Position } from 'geojson';
 import i18next from 'i18next';
 import { MapPinIcon, UploadIcon, XIcon } from 'lucide-react-native';
 import React, { memo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Dimensions, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Dimensions,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
+import { useOnlineStatus } from '~/context/react-query';
 import { Highline, highlineKeyFactory } from '~/hooks/use-highline';
+import { useMountEffect } from '~/hooks/use-mount-effect';
+import { deleteFromR2, getR2PublicUrl, uploadToR2 } from '~/lib/r2';
 import { supabase } from '~/lib/supabase';
-import { getR2PublicUrl, uploadToR2, deleteFromR2 } from '~/lib/r2';
 import { cn } from '~/lib/utils';
 import { ACCEPTED_IMAGE_TYPES, MAX_FILE_SIZE } from '~/utils/constants';
 import { requestReview } from '~/utils/request-review';
 
 import SuccessAnimation from '~/components/animations/success-animation';
-import {
-  haversineDistance,
-  positionToPostGISPoint,
-} from '~/components/map/utils';
+import { haversineDistance } from '~/components/map/utils';
 import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
 import { Input } from '~/components/ui/input';
@@ -86,101 +108,161 @@ type FormSchema = z.infer<typeof formSchema>;
 export const HighlineForm: React.FC<{ highline?: Highline }> = ({
   highline,
 }) => {
-  const { profile } = useAuth();
+  const { profile, session, sessionLoading } = useAuth();
+
+  if (sessionLoading) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  const ownerId = session?.user.id ?? profile?.id;
+  if (!ownerId) return <RegistrationAuthGate />;
+
+  return (
+    <HighlineFormForOwner key={ownerId} highline={highline} ownerId={ownerId} />
+  );
+};
+
+const RegistrationAuthGate: React.FC = () => {
+  const router = useRouter();
+  const { t } = useTranslation();
+
+  return (
+    <View className="flex-1 items-center justify-center gap-4 px-6">
+      <Text variant="h3" className="text-center">
+        {t('app.(modals).register-webbing.authRequired.title')}
+      </Text>
+      <Button onPress={() => router.push('/(modals)/login')}>
+        <Text>{t('app.(modals).register-webbing.authRequired.action')}</Text>
+      </Button>
+    </View>
+  );
+};
+
+const HighlineFormForOwner: React.FC<{
+  highline?: Highline;
+  ownerId: string;
+}> = ({ highline, ownerId }) => {
+  const registration = useRegistrationState(ownerId);
+
+  if (!registration.isLoaded) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  return (
+    <LoadedHighlineForm
+      key={`${ownerId}:${highline?.id ?? 'new'}`}
+      highline={highline}
+      ownerId={ownerId}
+      registration={registration}
+    />
+  );
+};
+
+const LoadedHighlineForm: React.FC<{
+  highline?: Highline;
+  ownerId: string;
+  registration: ReturnType<typeof useRegistrationState>;
+}> = ({ highline, ownerId, registration }) => {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const { t } = useTranslation();
+  const isOnline = useOnlineStatus();
   const [newHighlineUUID, setNewHighlineUUID] = React.useState<string | null>(
+    null,
+  );
+  const [submissionError, setSubmissionError] = React.useState<string | null>(
     null,
   );
   const params = useLocalSearchParams<{
     anchorA?: string;
     anchorB?: string;
+    draftId?: string;
   }>();
-  // Parse the anchors from route params
-  const anchorA = params.anchorA ? JSON.parse(params.anchorA) : undefined;
-  const anchorB = params.anchorB ? JSON.parse(params.anchorB) : undefined;
+  const routeAnchorA = parseAnchorParam(params.anchorA);
+  const routeAnchorB = parseAnchorParam(params.anchorB);
+  const activeDraft = highline ? null : registration.state.activeDraft;
+  const anchorA = highline ? undefined : (activeDraft?.anchorA ?? routeAnchorA);
+  const anchorB = highline ? undefined : (activeDraft?.anchorB ?? routeAnchorB);
+  const draftForm = highline ? null : activeDraft?.form;
 
   const highlineForm = useForm<FormSchema>({
     mode: 'onTouched',
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: highline?.name || '',
-      height: highline?.height || 0,
+      name: highline?.name ?? draftForm?.name ?? '',
+      height: highline?.height ?? draftForm?.height ?? 0,
       length:
-        highline?.length ||
-        Number(
-          haversineDistance(
-            anchorA[1],
-            anchorA[0],
-            anchorB[1],
-            anchorB[0],
-          ).toFixed(),
-        ),
-      description: highline?.description || '',
+        highline?.length ??
+        draftForm?.length ??
+        (anchorA && anchorB
+          ? Number(
+              haversineDistance(
+                anchorA[1],
+                anchorA[0],
+                anchorB[1],
+                anchorB[0],
+              ).toFixed(),
+            )
+          : 0),
+      description: highline?.description ?? draftForm?.description ?? '',
       image: highline?.cover_image
         ? {
             uri: getR2PublicUrl('images', highline.cover_image),
           }
-        : null,
+        : registrationImageToPicker(draftForm?.image ?? null),
     },
   });
 
-  const mutation = useMutation<
+  const updateMutation = useMutation<
     { newHighlineID: string },
     Error,
     FormSchema,
     { previousHighlines: Highline[] | undefined }
   >({
     onMutate: async (form) => {
+      if (!highline) return { previousHighlines: undefined };
+
       await queryClient.cancelQueries({ queryKey: highlineKeyFactory.list() });
       const previousHighlines = queryClient.getQueryData<Highline[]>(
         highlineKeyFactory.list(),
       );
-
-      const isUpdate = !!highline;
       const optimisticHighline: Highline = {
-        id: highline ? highline.id : uuidv4(),
+        ...highline,
         name: form.name,
         height: form.height,
         length: form.length,
         description: form.description || '',
-        cover_image: highline ? highline.cover_image : '',
-        anchor_a_long: highline ? highline.anchor_a_long : anchorA[0],
-        anchor_a_lat: highline ? highline.anchor_a_lat : anchorA[1],
-        anchor_b_long: highline ? highline.anchor_b_long : anchorB[0],
-        anchor_b_lat: highline ? highline.anchor_b_lat : anchorB[1],
-        is_favorite: highline ? highline.is_favorite : false,
-        status: highline ? highline.status : 'unrigged',
-        created_at: highline ? highline.created_at : new Date().toISOString(),
-        sector_id: highline ? highline.sector_id : 0,
       };
 
       queryClient.setQueryData<Highline[]>(highlineKeyFactory.list(), (old) =>
-        isUpdate
-          ? old?.map((h) =>
-              h.id === optimisticHighline.id ? optimisticHighline : h,
-            )
-          : old
-            ? [...old, optimisticHighline]
-            : [optimisticHighline],
+        old?.map((item) =>
+          item.id === optimisticHighline.id ? optimisticHighline : item,
+        ),
       );
 
       return { previousHighlines };
     },
     mutationFn: async (formData: FormSchema) => {
-      // If it's a new Highline, require anchor to be defined
-      if (!highline && (!anchorA || !anchorB))
-        throw new Error('Anchors not defined');
-      let imageID: string | null = highline?.cover_image || null;
+      if (!highline?.id)
+        throw new Error('Cannot update an unregistered highline');
+      if (!isOnline)
+        throw new Error(t('components.map.register-modal.offlineEdit'));
+
+      let imageID: string | null = highline.cover_image || null;
       let shouldDeleteExisting = false;
 
-      // Upload new image if provided (converted to base64)
       if (formData.image && formData.image.base64 && formData.image.mimeType) {
-        // If there is already an image for this highline and the user is uploading a new one,
         if (imageID) shouldDeleteExisting = true;
-        const extension = formData.image.mimeType.split('/')[1];
-        imageID = `${uuidv4()}.${extension}`;
+        imageID = createImageKey(formData.image.mimeType);
         await uploadToR2(
           'images',
           imageID,
@@ -189,72 +271,43 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
         );
       }
 
-      // Update Highline
-      if (highline?.id) {
-        // Delete old image
-        if (highline.cover_image && shouldDeleteExisting) {
-          await deleteFromR2('images', highline.cover_image);
-        }
-
-        const { data: updatedHighline, error } = await supabase
-          .from('highline')
-          .update({
-            name: formData.name.trim(),
-            height: formData.height,
-            length: formData.length,
-            description: formData.description,
-            cover_image: imageID,
-          })
-          .eq('id', highline.id)
-          .select()
-          .single();
-
-        if (error || !updatedHighline) {
-          throw new Error('Error when updating the highline');
-        }
-
-        return { newHighlineID: updatedHighline.id };
+      if (highline.cover_image && shouldDeleteExisting) {
+        await deleteFromR2('images', highline.cover_image);
       }
 
-      // Create Highline
-      const { data: newHighline, error } = await supabase
+      const { data: updatedHighline, error } = await supabase
         .from('highline')
-        .insert([
-          {
-            name: formData.name.trim(),
-            height: formData.height,
-            length: formData.length,
-            description: formData.description,
-            cover_image: imageID,
-            anchor_a: positionToPostGISPoint(anchorA),
-            anchor_b: positionToPostGISPoint(anchorB),
-          },
-        ])
+        .update({
+          name: formData.name.trim(),
+          height: formData.height,
+          length: formData.length,
+          description: formData.description,
+          cover_image: imageID,
+        })
+        .eq('id', highline.id)
         .select()
         .single();
 
-      if (error || !newHighline) {
-        throw new Error('Error when creating the highline');
+      if (error || !updatedHighline) {
+        throw new Error('Error when updating the highline');
       }
 
-      return { newHighlineID: newHighline.id };
+      return { newHighlineID: updatedHighline.id };
     },
     onSuccess: async ({ newHighlineID }) => {
       setNewHighlineUUID(newHighlineID);
-
-      queryClient.invalidateQueries({
-        queryKey: highlineKeyFactory.list(profile?.id),
+      await queryClient.invalidateQueries({
+        queryKey: highlineKeyFactory.list(ownerId),
       });
-      queryClient.invalidateQueries({
-        queryKey: highlineKeyFactory.detail(newHighlineID, profile?.id),
+      await queryClient.invalidateQueries({
+        queryKey: highlineKeyFactory.detail(newHighlineID, ownerId),
       });
-      queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({
         queryKey: highlineKeyFactory.favorite(newHighlineID),
       });
-
       await requestReview();
     },
-    onError: (_, _newHighlineID, context) => {
+    onError: (_, _form, context) => {
       if (context?.previousHighlines) {
         queryClient.setQueryData(
           highlineKeyFactory.list(),
@@ -264,12 +317,198 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
     },
   });
 
-  const handleValidForm = (data: FormSchema) => {
-    mutation.mutate(data);
+  const submissionMutation = useMutation<
+    SubmissionResult,
+    Error,
+    SerializedSubmissionVariables
+  >({
+    mutationKey: submitHighlineRegistrationMutationKey,
+    mutationFn: submitHighlineRegistrationOnline,
+  });
+
+  const persistForm = React.useCallback(
+    (form: Partial<RegistrationForm>) => {
+      if (highline) return;
+      void registration.store.dispatch({ type: 'update-form', form });
+    },
+    [highline, registration.store],
+  );
+
+  const handleImageChange = React.useCallback(
+    async (
+      image: ImagePicker.ImagePickerAsset | null,
+      onChange: (value: ImagePicker.ImagePickerAsset | null) => void,
+    ) => {
+      if (highline) {
+        onChange(image);
+        return;
+      }
+
+      const previousImage = registration.state.activeDraft?.form.image ?? null;
+      if (!image) {
+        onChange(null);
+        void removeStagedHighlineImage(previousImage);
+        persistForm({ image: null });
+        return;
+      }
+
+      try {
+        const staged = await stageHighlineImage(image);
+        onChange(registrationImageToPicker(staged));
+        await registration.store.dispatch({
+          type: 'update-form',
+          form: { image: staged },
+        });
+        if (previousImage && previousImage.localUri !== staged.localUri) {
+          await removeStagedHighlineImage(previousImage);
+        }
+      } catch (error) {
+        setSubmissionError(
+          error instanceof Error
+            ? error.message
+            : 'The selected image could not be saved on this device.',
+        );
+      }
+    },
+    [highline, persistForm, registration.state.activeDraft, registration.store],
+  );
+
+  const ensureRegistrationDraft = React.useCallback(async () => {
+    let state = await registration.store.load();
+    if (!state.activeDraft) {
+      state = await registration.store.dispatch({
+        type: 'start',
+        draftId: params.draftId,
+      });
+    }
+
+    let draft = state.activeDraft;
+    if (!draft) return state;
+
+    if (!draft.anchorA && routeAnchorA && draft.stage === 'place-a') {
+      state = await registration.store.dispatch({
+        type: 'place-a',
+        position: routeAnchorA,
+      });
+    }
+    draft = state.activeDraft;
+    if (!draft) return state;
+    if (
+      !draft.anchorB &&
+      routeAnchorB &&
+      draft.anchorA &&
+      draft.stage === 'place-b'
+    ) {
+      state = await registration.store.dispatch({
+        type: 'place-b',
+        position: routeAnchorB,
+      });
+    }
+    draft = state.activeDraft;
+    if (draft?.anchorA && draft.anchorB && draft.stage !== 'review') {
+      state = await registration.store.dispatch({ type: 'review' });
+    }
+    return state;
+  }, [params.draftId, registration.store, routeAnchorA, routeAnchorB]);
+
+  useMountEffect(() => {
+    if (!highline) void ensureRegistrationDraft();
+  });
+
+  const handleValidForm = async (data: FormSchema) => {
+    if (highline) {
+      if (!isOnline) {
+        setSubmissionError(t('components.map.register-modal.offlineEdit'));
+        return;
+      }
+      updateMutation.mutate(data);
+      return;
+    }
+
+    setSubmissionError(null);
+    try {
+      let image = data.image;
+      if (image && !pickerImageId(image)) {
+        const staged = await stageHighlineImage(image);
+        image = registrationImageToPicker(staged);
+      }
+
+      await ensureRegistrationDraft();
+      const form: RegistrationForm = {
+        name: data.name,
+        height: data.height,
+        length: data.length,
+        description: data.description ?? '',
+        image: pickerToRegistrationImage(image),
+      };
+      await registration.store.dispatch({ type: 'update-form', form });
+
+      const draft = registration.store.getState().activeDraft;
+      if (!draft?.anchorA || !draft.anchorB || draft.stage !== 'review') {
+        setSubmissionError(
+          'Please choose both highline anchors before submitting.',
+        );
+        return;
+      }
+
+      const submissionId = `submission-${draft.draftId}`;
+      const seed: QueuedHighlineSubmission = {
+        submissionId,
+        sourceDraftId: draft.draftId,
+        ownerId,
+        status: 'pending',
+        anchorA: draft.anchorA,
+        anchorB: draft.anchorB,
+        form: draft.form,
+        highlineId: null,
+        imageId: null,
+        createdAt: draft.createdAt,
+        updatedAt: draft.updatedAt,
+        submittedAt: null,
+        attemptCount: 0,
+        lastAttemptAt: null,
+        nextAttemptAt: null,
+        lastError: null,
+      };
+      const identifiers = createSubmissionIdentifiers(seed);
+
+      // The reducer persists these IDs as part of the queue transition. Only
+      // after that write completes do we hand variables to React Query, so a
+      // crash cannot leave a replay needing to invent a different key.
+      await registration.store.dispatch({
+        type: 'queue',
+        submissionId,
+        highlineId: identifiers.highlineId,
+        imageId: identifiers.imageId,
+      });
+      const queued = registration.store
+        .getState()
+        .submissions.find((item) => item.submissionId === submissionId);
+      if (!queued) {
+        setSubmissionError('The submission could not be saved for retry.');
+        return;
+      }
+
+      submissionMutation.mutate(serializeSubmissionVariables(queued));
+      // The draft/outbox is durable now. Return to the live map immediately;
+      // the shared registration store renders the pending line while React
+      // Query retries in the background, including after a restart.
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)');
+      }
+    } catch (error) {
+      setSubmissionError(
+        error instanceof Error
+          ? error.message
+          : 'The submission could not be saved for retry.',
+      );
+    }
   };
 
   const handleInvalidForm = () => {
-    console.log('INVALID FORM');
+    setSubmissionError(null);
   };
 
   if (newHighlineUUID) {
@@ -281,13 +520,12 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
       contentContainerStyle={{
         flexGrow: 1,
         justifyContent: 'center',
-        paddingBottom: 32 + insets.bottom + insets.top, // pb-8 === 32px
+        paddingBottom: 32 + insets.bottom + insets.top,
       }}
       keyboardShouldPersistTaps="handled"
       removeClippedSubviews={false}
     >
       <View className="flex flex-col gap-4">
-        {/* Map Card if Highline is already registered and has coordinates */}
         {highline?.anchor_a_lat ? (
           <MapCard
             anchorA={[highline.anchor_a_long, highline.anchor_a_lat]}
@@ -296,7 +534,6 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
           />
         ) : null}
 
-        {/* Map Card if Highline is being registered */}
         {anchorA && anchorB ? (
           <MapCard anchorA={anchorA} anchorB={anchorB} canChangeLocation />
         ) : null}
@@ -312,7 +549,10 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
                 </Label>
                 <Input
                   value={field.value}
-                  onChangeText={field.onChange}
+                  onChangeText={(value) => {
+                    field.onChange(value);
+                    persistForm({ name: value });
+                  }}
                   className={fieldState.error && 'border-destructive'}
                   aria-labelledby="name"
                 />
@@ -336,7 +576,11 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
                 </Label>
                 <Input
                   value={field.value.toString()}
-                  onChangeText={(text) => field.onChange(+text || 0)}
+                  onChangeText={(text) => {
+                    const value = +text || 0;
+                    field.onChange(value);
+                    persistForm({ height: value });
+                  }}
                   keyboardType="number-pad"
                   className={fieldState.error && 'border-destructive'}
                   aria-labelledby="height"
@@ -360,7 +604,11 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
                 </Label>
                 <Input
                   value={field.value.toString()}
-                  onChangeText={(text) => field.onChange(+text || 0)}
+                  onChangeText={(text) => {
+                    const value = +text || 0;
+                    field.onChange(value);
+                    persistForm({ length: value });
+                  }}
                   contextMenuHidden={true}
                   editable={false}
                   keyboardType="number-pad"
@@ -391,9 +639,11 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
                   placeholder={t(
                     'components.map.register-modal.description.placeholder',
                   )}
-                  {...field}
                   submitBehavior="blurAndSubmit"
-                  onChangeText={(text) => field.onChange(text)}
+                  onChangeText={(value) => {
+                    field.onChange(value);
+                    persistForm({ description: value });
+                  }}
                   value={field.value}
                   className={fieldState.error && 'border-destructive'}
                   aria-labelledby="description"
@@ -414,24 +664,40 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
               <View className="w-full">
                 <HighlineImageUploader
                   value={field.value}
-                  onChange={field.onChange}
+                  onChange={(value) =>
+                    void handleImageChange(value, field.onChange)
+                  }
                   hasError={!!fieldState.error}
                 />
-                {fieldState.error && (
+                {fieldState.error ? (
                   <Text className="text-destructive text-sm mt-1">
                     {fieldState.error.message}
                   </Text>
-                )}
+                ) : null}
               </View>
             )}
           />
+
+          {submissionError ? (
+            <Text className="text-destructive">{submissionError}</Text>
+          ) : null}
+
+          {highline && !isOnline ? (
+            <Text className="text-center text-sm text-amber-700">
+              {t('components.map.register-modal.offlineEdit')}
+            </Text>
+          ) : null}
 
           <Button
             onPress={highlineForm.handleSubmit(
               handleValidForm,
               handleInvalidForm,
             )}
-            disabled={mutation.isPending}
+            disabled={
+              updateMutation.isPending ||
+              submissionMutation.isPending ||
+              Boolean(highline && !isOnline)
+            }
           >
             <Text>
               {t(
@@ -444,6 +710,89 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
     </KeyboardAwareScrollView>
   );
 };
+
+function parseAnchorParam(
+  value: string | undefined,
+): AnchorPosition | undefined {
+  if (!value) return undefined;
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (
+      Array.isArray(parsed) &&
+      parsed.length >= 2 &&
+      typeof parsed[0] === 'number' &&
+      typeof parsed[1] === 'number' &&
+      Number.isFinite(parsed[0]) &&
+      Number.isFinite(parsed[1])
+    ) {
+      return [parsed[0], parsed[1]];
+    }
+  } catch {
+    // A malformed legacy deep link simply falls back to the durable draft.
+  }
+
+  return undefined;
+}
+
+function pickerImageId(image: ImagePicker.ImagePickerAsset): string | null {
+  const value = (
+    image as ImagePicker.ImagePickerAsset & {
+      imageId?: unknown;
+    }
+  ).imageId;
+  return typeof value === 'string' && value ? value : null;
+}
+
+function pickerToRegistrationImage(
+  image: ImagePicker.ImagePickerAsset | null,
+): RegistrationImage | null {
+  if (!image) return null;
+
+  const imageId = pickerImageId(image);
+  if (!imageId) return null;
+
+  return {
+    imageId,
+    localUri: image.uri,
+    mimeType: image.mimeType ?? null,
+    fileName: image.fileName ?? null,
+    fileSize: image.fileSize ?? null,
+    width: image.width ?? null,
+    height: image.height ?? null,
+    base64: null,
+    remoteKey: null,
+  };
+}
+
+function registrationImageToPicker(
+  image: RegistrationImage | null,
+): ImagePicker.ImagePickerAsset | null {
+  if (!image) return null;
+
+  return {
+    assetId: null,
+    uri: image.localUri,
+    width: image.width ?? 0,
+    height: image.height ?? 0,
+    fileName: image.fileName ?? undefined,
+    fileSize: image.fileSize ?? undefined,
+    type: 'image',
+    mimeType: image.mimeType ?? undefined,
+    base64: undefined,
+    duration: null,
+    exif: null,
+    pairedVideoAsset: null,
+    imageId: image.imageId,
+  } as ImagePicker.ImagePickerAsset;
+}
+
+function createImageKey(mimeType: string): string {
+  const extension = mimeType.split('/')[1] || 'jpg';
+  const cryptoApi = globalThis.crypto as Crypto | undefined;
+  const id = cryptoApi?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+  return `${id}.${extension}`;
+}
 
 const SuccessMessage: React.FC<{ id: string; isUpdate: boolean }> = ({
   id,

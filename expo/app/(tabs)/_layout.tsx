@@ -21,10 +21,17 @@ export default function TabLayout() {
 
   // Get the clustered markers from the same store used by ExploreMap
   const clusteredMarkers = useMapStore((state) => state.clusteredMarkers);
+  const isPickerActive = useMapStore(
+    (state) => state.locationPickerRequest !== null,
+  );
   const isCardVisible = clusteredMarkers.length > 0;
 
+  const hiddenTabBarStyle = {
+    display: isPickerActive ? ('none' as const) : ('flex' as const),
+  };
+
   return (
-    <Tabs>
+    <Tabs screenOptions={{ tabBarStyle: hiddenTabBarStyle }}>
       <Tabs.Screen
         name="home"
         options={{
@@ -47,8 +54,11 @@ export default function TabLayout() {
         options={{
           title: t('app.(tabs)._layout.indexTitle'),
           tabBarHideOnKeyboard: true,
-          // Hide the tab bar only when cards are visible
-          tabBarStyle: { display: isCardVisible ? 'none' : 'flex' },
+          // Hide the tab bar while cards are visible or location picking is
+          // active. The map remains mounted beneath the picker overlay.
+          tabBarStyle: {
+            display: isPickerActive || isCardVisible ? 'none' : 'flex',
+          },
           tabBarIcon: ({ focused }) => (
             <Icon
               as={EarthIcon}
