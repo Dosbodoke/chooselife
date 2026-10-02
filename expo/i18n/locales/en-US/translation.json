@@ -572,7 +572,8 @@
       },
       "info": {
         "height": "Height",
-        "length": "Length"
+        "length": "Length",
+        "whatsappGroup": "WhatsApp group"
       },
       "location-weather-card": {
         "noLocation": "No Location Set",
@@ -648,6 +649,11 @@
           "invalid": "Please enter a number",
           "positive": "Length cannot be negative",
           "label": "Length (in meters)"
+        },
+        "whatsappGroup": {
+          "label": "WhatsApp group link",
+          "placeholder": "https://chat.whatsapp.com/...",
+          "invalid": "Paste a WhatsApp group invite link (https://chat.whatsapp.com/...)"
         },
         "description": {
           "label": "Description",

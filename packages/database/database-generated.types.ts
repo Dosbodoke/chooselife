@@ -667,6 +667,7 @@ export type Database = {
           length: number
           name: string
           sector_id: number | null
+          whatsapp_group_url: string | null
         }
         Insert: {
           anchor_a?: unknown
@@ -679,6 +680,7 @@ export type Database = {
           length: number
           name: string
           sector_id?: number | null
+          whatsapp_group_url?: string | null
         }
         Update: {
           anchor_a?: unknown
@@ -691,6 +693,7 @@ export type Database = {
           length?: number
           name?: string
           sector_id?: number | null
+          whatsapp_group_url?: string | null
         }
         Relationships: [
           {
@@ -2307,6 +2310,7 @@ export type Database = {
           name: string
           sector_id: number
           status: string
+          whatsapp_group_url: string
         }[]
       }
       get_initial_payment_claim_detail: {

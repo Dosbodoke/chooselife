@@ -8,6 +8,7 @@ import { Text } from '~/components/ui/text';
 
 import { HighlineHistory } from './history';
 import { LocationWeatherCard } from './location-weather-card';
+import { WhatsAppGroupLink } from './whatsapp-group-link';
 
 /** Name, description and dimensions; shown above the page's tabs. */
 export const HighlineSummary: React.FC<{ highline: Highline }> = ({
@@ -22,6 +23,9 @@ export const HighlineSummary: React.FC<{ highline: Highline }> = ({
         <Text className="text-base text-muted-foreground leading-relaxed">
           {highline.description}
         </Text>
+      ) : null}
+      {highline.whatsapp_group_url ? (
+        <WhatsAppGroupLink url={highline.whatsapp_group_url} />
       ) : null}
     </View>
 

@@ -572,7 +572,8 @@
       },
       "info": {
         "height": "Altura",
-        "length": "Comprimento"
+        "length": "Comprimento",
+        "whatsappGroup": "Grupo do WhatsApp"
       },
       "location-weather-card": {
         "noLocation": "Sem Localização",
@@ -648,6 +649,11 @@
           "invalid": "Insira um número",
           "positive": "Comprimento não pode ser negativo",
           "label": "Comprimento (em metros)"
+        },
+        "whatsappGroup": {
+          "label": "Link do grupo do WhatsApp",
+          "placeholder": "https://chat.whatsapp.com/...",
+          "invalid": "Cole um link de convite de grupo do WhatsApp (https://chat.whatsapp.com/...)"
         },
         "description": {
           "label": "Descrição",

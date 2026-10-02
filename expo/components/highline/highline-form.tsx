@@ -20,13 +20,17 @@ import { z } from 'zod';
 
 import { useAuth } from '~/context/auth';
 import { Highline, highlineKeyFactory } from '~/hooks/use-highline';
-import { supabase } from '~/lib/supabase';
 import { getR2PublicUrl, uploadToR2, deleteFromR2 } from '~/lib/r2';
+import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 import { ACCEPTED_IMAGE_TYPES, MAX_FILE_SIZE } from '~/utils/constants';
 import { requestReview } from '~/utils/request-review';
 
 import SuccessAnimation from '~/components/animations/success-animation';
+import {
+  isWhatsAppGroupUrl,
+  normalizeWhatsAppGroupUrl,
+} from '~/components/highline/whatsapp-group-link';
 import {
   haversineDistance,
   positionToPostGISPoint,
@@ -64,6 +68,13 @@ const formSchema = z.object({
     })
     .positive(i18next.t('components.map.register-modal.length.positive')),
   description: z.string().optional(),
+  whatsappGroupUrl: z
+    .string()
+    .optional()
+    .refine(
+      isWhatsAppGroupUrl,
+      i18next.t('components.map.register-modal.whatsappGroup.invalid'),
+    ),
   image: z
     .custom<ImagePicker.ImagePickerAsset>()
     .nullable()
@@ -118,6 +129,7 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
           ).toFixed(),
         ),
       description: highline?.description || '',
+      whatsappGroupUrl: highline?.whatsapp_group_url || '',
       image: highline?.cover_image
         ? {
             uri: getR2PublicUrl('images', highline.cover_image),
@@ -145,6 +157,8 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
         height: form.height,
         length: form.length,
         description: form.description || '',
+        whatsapp_group_url:
+          normalizeWhatsAppGroupUrl(form.whatsappGroupUrl) ?? '',
         cover_image: highline ? highline.cover_image : '',
         anchor_a_long: highline ? highline.anchor_a_long : anchorA[0],
         anchor_a_lat: highline ? highline.anchor_a_lat : anchorA[1],
@@ -203,6 +217,9 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
             height: formData.height,
             length: formData.length,
             description: formData.description,
+            whatsapp_group_url: normalizeWhatsAppGroupUrl(
+              formData.whatsappGroupUrl,
+            ),
             cover_image: imageID,
           })
           .eq('id', highline.id)
@@ -225,6 +242,9 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
             height: formData.height,
             length: formData.length,
             description: formData.description,
+            whatsapp_group_url: normalizeWhatsAppGroupUrl(
+              formData.whatsappGroupUrl,
+            ),
             cover_image: imageID,
             anchor_a: positionToPostGISPoint(anchorA),
             anchor_b: positionToPostGISPoint(anchorB),
@@ -397,6 +417,37 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
                   value={field.value}
                   className={fieldState.error && 'border-destructive'}
                   aria-labelledby="description"
+                />
+                {fieldState.error ? (
+                  <Text variant="small" className="text-destructive">
+                    {fieldState.error.message}
+                  </Text>
+                ) : null}
+              </View>
+            )}
+          />
+
+          <Controller
+            control={highlineForm.control}
+            name="whatsappGroupUrl"
+            render={({ field, fieldState }) => (
+              <View className="gap-2">
+                <Label nativeID="whatsappGroupUrl">
+                  {t('components.map.register-modal.whatsappGroup.label')}{' '}
+                  <Text variant="muted">{t('common.optional')}</Text>
+                </Label>
+                <Input
+                  placeholder={t(
+                    'components.map.register-modal.whatsappGroup.placeholder',
+                  )}
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  keyboardType="url"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  className={fieldState.error && 'border-destructive'}
+                  aria-labelledby="whatsappGroupUrl"
                 />
                 {fieldState.error ? (
                   <Text variant="small" className="text-destructive">
