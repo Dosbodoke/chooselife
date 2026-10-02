@@ -525,10 +525,49 @@
           "edit": "edit",
           "rig": "rig"
         },
-        "timeline": {
-          "riggedSince": "Rigged since",
-          "rigPeriod": "Rig period",
-          "plannedFor": "Planned for"
+        "days": {
+          "rigged": {
+            "zero": "Rigged today",
+            "one": "Rigged 1 day ago",
+            "many": "Rigged {{count}} days ago"
+          },
+          "unrigged": {
+            "zero": "Unrigged the same day",
+            "one": "Stayed up 1 day",
+            "many": "Stayed up {{count}} days"
+          },
+          "planned": {
+            "zero": "Today",
+            "one": "Tomorrow",
+            "many": "In {{count}} days",
+            "overdue": "Was planned for {{date}}"
+          }
+        },
+        "status": {
+          "rigged": "Rigged",
+          "unrigged": "Unrigged",
+          "planned": "Planned"
+        },
+        "summary": "Main {{main}} m · Backup {{backup}} m",
+        "riggers": {
+          "none": "No riggers recorded",
+          "one": "1 rigger",
+          "many": "{{count}} riggers"
+        },
+        "details": {
+          "webbing": "Webbing",
+          "main": "Main",
+          "backup": "Backup",
+          "unregistered": "Unregistered webbing",
+          "empty": "No webbing data",
+          "highlineLength": "Highline length",
+          "riggers": "Riggers",
+          "loops": {
+            "both": "Loops on both ends",
+            "left": "Left loop",
+            "right": "Right loop",
+            "none": "No loops"
+          }
         }
       },
       "info": {
