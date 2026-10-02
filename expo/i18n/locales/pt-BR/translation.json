@@ -241,8 +241,17 @@
       },
       "home": {
         "quickActions": {
-          "setupSimulator": "Simulador de Setup",
-          "learn": "Aprenda"
+          "open": "Abrir",
+          "setupSimulator": {
+            "eyebrow": "Ferramenta",
+            "title": "Simulador de Setup",
+            "description": "Planeje fitas e equipamentos para qualquer tamanho de highline"
+          },
+          "learn": {
+            "eyebrow": "Guia",
+            "title": "Aprenda",
+            "description": "O guia de highline para iniciantes, passo a passo"
+          }
         },
         "sections": {
           "UpcomingEvents": {
