@@ -572,7 +572,8 @@
       },
       "info": {
         "height": "Altura",
-        "length": "Comprimento"
+        "length": "Comprimento",
+        "whatsappGroup": "Grupo do WhatsApp"
       },
       "location-weather-card": {
         "noLocation": "Sem Localização",

@@ -145,6 +145,7 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
         height: form.height,
         length: form.length,
         description: form.description || '',
+        whatsapp_group_url: highline ? highline.whatsapp_group_url : '',
         cover_image: highline ? highline.cover_image : '',
         anchor_a_long: highline ? highline.anchor_a_long : anchorA[0],
         anchor_a_lat: highline ? highline.anchor_a_lat : anchorA[1],

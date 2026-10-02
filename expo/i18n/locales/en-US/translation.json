@@ -572,7 +572,8 @@
       },
       "info": {
         "height": "Height",
-        "length": "Length"
+        "length": "Length",
+        "whatsappGroup": "WhatsApp group"
       },
       "location-weather-card": {
         "noLocation": "No Location Set",
