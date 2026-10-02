@@ -1,5 +1,4 @@
 import { ENABLE_MEMBERSHIP_REGISTRATION } from '@chooselife/ui';
-import type { StartSubscriptionResponse } from '@packages/database/functions.types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -20,14 +19,14 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { useAuth } from '~/context/auth';
-import { getManualPaymentRouteParams } from '~/lib/manual-payment';
+import { getPaymentObligationRouteParams } from '~/lib/manual-payment';
 import {
   fetchMembershipApplication,
+  submitAssociationApplication,
   type MembershipApplication,
 } from '~/lib/membership-application';
 import { queryKeys } from '~/lib/query-keys';
 import { getR2PublicUrl } from '~/lib/r2';
-import { supabase } from '~/lib/supabase';
 import { formatCurrency } from '~/utils';
 import { _layoutAnimation } from '~/utils/constants';
 import { Tables } from '~/utils/database.types';
@@ -81,48 +80,43 @@ export function BecomeMemberForm({
 
   const mutation = useMutation({
     mutationFn: async (values: { plan_type: PlanType }) => {
-      const { data: charge, error } =
-        await supabase.functions.invoke<StartSubscriptionResponse>(
-          'start-subscription',
-          {
-            body: {
-              plan_type: values.plan_type,
-              slug: org.slug,
-            },
-          },
-        );
+      const application =
+        queryClient.getQueryData<MembershipApplication | null>(
+          queryKeys.membershipApplication.byOrgUser(org.id, session?.user.id),
+        ) ?? membershipApplication;
 
-      if (error) {
-        const errorContext = error.context;
-        if (errorContext && typeof errorContext.json === 'function') {
-          const errorData = await errorContext.json();
-          throw new Error(errorData?.error || error.message);
-        }
-        throw error;
+      if (!application || application.status !== 'submitted') {
+        throw new Error('A submitted association application is required.');
       }
 
-      if (!charge) {
-        throw new Error('Invalid response from start-subscription function');
-      }
-
-      return {
-        amount: 'amount' in charge ? charge.amount : undefined,
-        paymentId: charge.paymentId,
-      };
+      return submitAssociationApplication({
+        applicationId: application.id,
+        draftVersion: application.draft_version,
+        organizationId: org.id,
+        planType: values.plan_type,
+        termsVersion: org.membership_terms_version,
+      });
     },
     onSuccess: (data) => {
+      if (!data) {
+        setErrorMessage(
+          'Não foi possível abrir a obrigação. Tente novamente mais tarde.',
+        );
+        return;
+      }
+
       router.push({
         pathname: '/payment',
-        params: getManualPaymentRouteParams({
+        params: getPaymentObligationRouteParams({
           amount: data.amount,
-          paymentId: data.paymentId,
-          paymentContext: 'new_member',
+          currency: data.currency,
+          obligationId: data.obligation_id,
           slug: org.slug,
         }),
       });
     },
     onError: (error) => {
-      console.error('Error starting subscription:', error);
+      console.error('Error submitting association application:', error);
       setErrorMessage(
         'Não foi possível iniciar a inscrição. Tente novamente mais tarde.',
       );
@@ -170,6 +164,7 @@ export function BecomeMemberForm({
         accepted_terms_at: new Date().toISOString(),
         plan_type: selectedPlan,
         slug: org.slug,
+        terms_version: org.membership_terms_version,
       },
     });
   };
@@ -284,7 +279,9 @@ export function BecomeMemberForm({
                   period="/ano"
                   selected={selectedPlan === 'annual'}
                   disabled={mutation.isPending}
-                  badge={annualDiscountPercentage ? '2 meses grátis' : undefined}
+                  badge={
+                    annualDiscountPercentage ? '2 meses grátis' : undefined
+                  }
                   onPress={() => handleSelectPlan('annual')}
                 />
               </Animated.View>

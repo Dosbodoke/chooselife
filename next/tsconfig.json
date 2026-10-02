@@ -12,7 +12,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
       {
@@ -20,10 +20,18 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@chooselife/database": ["../packages/database"],
-      "@chooselife/ui": ["../packages/ui/src"],
-      "@chooselife/ui/*": ["../packages/ui/src/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@chooselife/database": [
+        "../packages/database"
+      ],
+      "@chooselife/ui": [
+        "../packages/ui/src"
+      ],
+      "@chooselife/ui/*": [
+        "../packages/ui/src/*"
+      ]
     }
   },
   "include": [
@@ -31,7 +39,10 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "utils/supabase/loader.js"
+    "utils/supabase/loader.js",
+    ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

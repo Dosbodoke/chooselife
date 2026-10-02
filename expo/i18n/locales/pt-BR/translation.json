@@ -240,10 +240,6 @@
         "homeTitle": "Início"
       },
       "home": {
-        "banner": {
-          "title": "Festival dos Monstros",
-          "description": "Clique para ver os Highlines do festival e agendar seu rolê"
-        },
         "quickActions": {
           "setupSimulator": "Simulador de Setup",
           "learn": "Aprenda"
@@ -263,7 +259,7 @@
         "delete": {
           "label": "Deletar Conta",
           "alertLabel": "Deletar sua Conta",
-          "alertDescription": "Isto irá excluir permanentemente sua conta e seus dados pessoais dos sistemas ativos. Cópias de backup e logs do sistema são removidos ou anonimizados em até 30 dias, salvo quando formos legalmente obrigados a mantê-los por mais tempo. Esta ação não pode ser desfeita.",
+          "alertDescription": "Isto irá excluir permanentemente sua conta Choose Life e seus dados pessoais dos sistemas ativos. Cópias de backup e logs do sistema são removidos ou anonimizados em até 30 dias, salvo quando formos legalmente obrigados a mantê-los por mais tempo. Os registros formais da associação são mantidos: as fichas de associação que você enviou, seus períodos de filiação e os registros de pagamento e auditoria relacionados são preservados e, após a exclusão da conta, ficam visíveis apenas para administradores autorizados da associação. Esta ação não pode ser desfeita.",
           "alertCancel": "Cancelar",
           "alertConfirm": "Deletar Conta",
           "alertError": "Não foi possível deletar a conta. Por favor, tente novamente."
@@ -471,6 +467,24 @@
         "placeholder": "comprimento do Highline"
       }
     },
+    "learn": {
+      "title": "Guia do Highline Iniciante",
+      "loading": "Preparando seu guia...",
+      "signInTitle": "Entre para acessar o guia",
+      "signInDescription": "Faça login para verificar o acesso ao Guia do Highline Iniciante.",
+      "signIn": "Entrar",
+      "lockedTitle": "Acesso ainda não liberado",
+      "lockedDescription": "Quando o acesso for concedido à sua conta, o guia aparecerá aqui automaticamente.",
+      "backHome": "Voltar ao início",
+      "offlineTitle": "Conexão necessária",
+      "offlineDescription": "O guia só pode ser visualizado online. Conecte-se à internet e tente novamente.",
+      "errorTitle": "Não foi possível abrir o guia",
+      "errorDescription": "Não foi possível carregar o conteúdo agora. Tente novamente.",
+      "retry": "Tentar novamente",
+      "readerErrorTitle": "A leitura foi interrompida",
+      "readerErrorDescription": "Vamos reconectar e carregar o guia novamente.",
+      "pageIndicator": "Página {{page}} de {{pageCount}}"
+    },
     "organizations": {
       "title": "Organizações",
       "cardTitle": "Organizações",
@@ -515,8 +529,8 @@
       "location-weather-card": {
         "noLocation": "Sem Localização",
         "addLocationHint": "Toque para adicionar coordenadas para este highline",
-        "viewOnMap": "Ver no Mapa",
-        "openInExplorer": "Abrir no explorador"
+        "explorer": "Explorar",
+        "directions": "Como chegar"
       },
       "not-found": {
         "title": "Highline não existe",

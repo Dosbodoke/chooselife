@@ -2,6 +2,7 @@
 
 import { AvatarIcon, ExitIcon } from "@radix-ui/react-icons";
 import { User } from "@supabase/supabase-js";
+import { ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,7 @@ export default function ProfileMenu({ user }: { user: User }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" className="bg-background">
           <AvatarIcon className="h-6 w-6" />
         </Button>
       </DropdownMenuTrigger>
@@ -50,6 +51,12 @@ export default function ProfileMenu({ user }: { user: User }) {
           <DropdownMenuItem asChild>
             <Link href={`/profile/${username.replace("@", "")}`}>
               {t("myProfile")}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/admin">
+              <ShieldCheck className="mr-2 size-4" aria-hidden="true" />
+              {t("billingWorkspace")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={signOut}>

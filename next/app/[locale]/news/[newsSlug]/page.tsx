@@ -8,11 +8,11 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { ShareButton } from "@/components/ShareButton";
-import { createSupabaseClient } from "@/utils/supabase/server";
 
 export const revalidate = 300; // Revalidate every 5 minutes (ISR)
 
-// Initialize Supabase client for static generation (no cookies needed)
+// Public client — news content does not need the user session. Using cookies()
+// here previously threw DYNAMIC_SERVER_USAGE under static/ISR generation.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 const supabaseStatic = createClient<Database>(supabaseUrl, supabaseKey);
@@ -35,9 +35,7 @@ export async function generateStaticParams() {
 }
 
 const getNewsItem = cache(async (slug: string) => {
-  // This function runs at request time (or revalidation time), so cookies() is available
-  const supabase = await createSupabaseClient();
-  const { data, error } = await supabase
+  const { data, error } = await supabaseStatic
     .from("news")
     .select(
       "*, organizations(slug), comments:news_comments(*, user:profiles(*))"

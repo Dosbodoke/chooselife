@@ -7,8 +7,9 @@ export type * from "./database-generated.types";
 
 export type Locales = Enums<"language">;
 export type Functions = Database["public"]["Functions"];
-// Supabase does not generate types for non defaul SQL data types, this type represent a postgis POINT
-// Notice that it should be called as POINT(longitude latitude)
+
+// Supabase does not generate types for non-default SQL data types. This type
+// represents the PostGIS POINT shape used by the existing highline tables.
 export type Point = `POINT(${number} ${number})`;
 
 type NotificationSchema = Partial<Record<Locales, string>>;

@@ -1,5 +1,5 @@
 import { SupabaseProvider, useIsMember } from '@chooselife/ui';
-import { FlashList } from '@shopify/flash-list';
+import { LegendList } from '@legendapp/list/react-native';
 import { QueryData } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
 import { Image as ExpoImage } from 'expo-image';
@@ -429,13 +429,12 @@ const LastWalks: React.FC<{ username: string }> = ({ username }) => {
         <CardTitle>{t('app.profile.[username].LastWalks.title')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <FlashList
-          data={data}
+        <LegendList
+          data={data ?? []}
           renderItem={renderWalkItem}
           keyExtractor={(item) => item.id.toString()}
           ItemSeparatorComponent={renderSeparator}
           ListEmptyComponent={renderEmptyComponent}
-          removeClippedSubviews={false}
         />
       </CardContent>
     </Card>

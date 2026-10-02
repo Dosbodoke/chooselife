@@ -1,18 +1,21 @@
-export function getManualPaymentRouteParams({
+export function getPaymentObligationRouteParams({
   amount,
-  paymentId,
-  paymentContext,
+  currency,
+  obligationId,
+  paymentContext = 'new_member',
   slug,
 }: {
-  amount?: number;
-  paymentId: string;
-  paymentContext: 'new_member' | 'subscription_renewal';
-  slug?: string;
+  amount: number;
+  currency: string;
+  obligationId: string;
+  paymentContext?: 'new_member' | 'subscription_renewal';
+  slug: string;
 }) {
   return {
-    amount: amount == null ? undefined : String(amount),
+    amount: String(amount),
+    currency,
+    obligationId,
     paymentContext,
-    paymentId,
     slug,
   };
 }

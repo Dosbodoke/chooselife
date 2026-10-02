@@ -164,6 +164,10 @@ export default Sentry.wrap(function RootLayout() {
                             options={{ headerShown: false }}
                           />
                           <Stack.Screen
+                            name="learn"
+                            options={{ title: 'Guia do Highline Iniciante' }}
+                          />
+                          <Stack.Screen
                             name="register-highline"
                             options={{ header: () => <OfflineBanner /> }}
                           />

@@ -5,4 +5,6 @@ export * from './feature/flags';
 export * from './feature/calendar';
 export * from './feature/webbing';
 export * from './feature/festival';
+export * from './feature/rig-setup';
+export * from './feature/weather';
 export * from './constants';

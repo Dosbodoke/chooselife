@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   Drawer,
@@ -9,6 +9,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 
+import { getAppUrl } from "./app-link";
 import HighlineCard from "./HighlineCard";
 
 function isIOS(): boolean {
@@ -36,7 +37,7 @@ export default function OpenInAPP({ highline }: { highline: HighlineData }) {
   const appScheme = process.env.NEXT_PUBLIC_APP_SCHEME;
   const appleAppId = process.env.NEXT_PUBLIC_APPLE_APP_ID;
 
-  const appUrl = `${appScheme}://highline/${highline.id}`;
+  const appUrl = getAppUrl(`highline/${highline.id}`);
   const appStoreUrl = `https://apps.apple.com/app/id${appleAppId}`;
   const playStoreUrl = `https://play.google.com/store/apps/details?id=${appScheme}`;
 

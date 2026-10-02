@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
+import Script from "next/script";
 import { hasLocale } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 
@@ -98,6 +99,11 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
+// NavBar reads auth cookies on every request. Without this, Next may try to
+// statically render locale shells (via generateStaticParams) and then throw
+// DYNAMIC_SERVER_USAGE at runtime when cookies() is reached.
+export const dynamic = "force-dynamic";
+
 export default async function RootLayout({
   children,
   params,
@@ -110,7 +116,7 @@ export default async function RootLayout({
     notFound();
   }
 
-  // Enable static rendering
+  // Ensure next-intl uses the active locale for this request
   setRequestLocale(locale);
   const messages = await getMessages();
 
@@ -118,11 +124,20 @@ export default async function RootLayout({
     // suppressHydrationWarning because of `next-themes`
     // refer to https://github.com/pacocoursey/next-themes#with-app
     <html lang={locale} suppressHydrationWarning>
+      <head>
+        {process.env.NODE_ENV === "development" && (
+          <Script
+            src="//unpkg.com/react-grab/dist/index.global.js"
+            crossOrigin="anonymous"
+            strategy="beforeInteractive"
+          />
+        )}
+      </head>
       <body className={`min-h-screen md:px-0 ${GeistSans.variable} font-sans`}>
         <Providers locale={locale as Locales} messages={messages}>
           <div className="relative flex h-full min-h-screen flex-col">
             <NavBar />
-            <main className="flex-1">
+            <main className="flex min-h-0 flex-1 flex-col">
               <UsernameDialog />
               {children}
             </main>

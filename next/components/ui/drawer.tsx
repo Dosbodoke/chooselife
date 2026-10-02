@@ -22,6 +22,25 @@ const DrawerPortal = DrawerPrimitive.Portal;
 
 const DrawerClose = DrawerPrimitive.Close;
 
+type DrawerDirection = NonNullable<
+  React.ComponentProps<typeof DrawerPrimitive.Root>["direction"]
+>;
+
+type DrawerContentProps =
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & {
+    direction?: DrawerDirection;
+  };
+
+const drawerPositionClasses: Record<DrawerDirection, string> = {
+  bottom:
+    "scrollbar fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[96%] flex-col rounded-t-[10px] border bg-background",
+  left:
+    "scrollbar fixed inset-y-0 left-0 z-50 flex h-full w-full max-w-lg flex-col rounded-r-[10px] border bg-background",
+  right:
+    "scrollbar fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-lg flex-col rounded-l-[10px] border bg-background",
+  top: "scrollbar fixed inset-x-0 top-0 z-50 flex h-auto max-h-[96%] flex-col rounded-b-[10px] border bg-background",
+};
+
 const DrawerOverlay = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
@@ -36,19 +55,21 @@ DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  DrawerContentProps
+>(({ className, children, direction = "bottom", ...props }, ref) => (
   <DrawerPortal>
     <DrawerOverlay />
     <DrawerPrimitive.Content
       ref={ref}
-      className={cn(
-        "scrollbar fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[96%] flex-col rounded-t-[10px] border bg-background",
-        className
-      )}
+      className={cn(drawerPositionClasses[direction], className)}
       {...props}
     >
-      <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+      <div
+        className={cn(
+          "mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted",
+          direction === "left" || direction === "right" ? "hidden" : null,
+        )}
+      />
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>

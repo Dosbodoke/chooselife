@@ -1,15 +1,16 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
 
 export function Footer() {
+  const pathname = usePathname();
   const t = useTranslations("footer");
   const searchParams = useSearchParams();
 
-  if (searchParams.get("view") === "map") {
+  if (pathname?.includes("/admin") || searchParams.get("view") === "map") {
     return null;
   }
 

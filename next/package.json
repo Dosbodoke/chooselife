@@ -12,7 +12,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test:agent-readiness": "node --test tests/agent-readiness.test.mjs"
+    "test:agent-readiness": "node --test tests/agent-readiness.test.mjs",
+    "test": "node --test utils/auth/sign-in.test.ts lib/billing-workspace-ledger.test.ts lib/billing-workspace.test.ts lib/courses/highline-beginner-access.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1013.0",
@@ -37,6 +38,7 @@
     "@tailwindcss/postcss": "^4.2.2",
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-query": "^5.48.0",
+    "@tanstack/react-table": "^8.21.3",
     "@vercel/analytics": "^1.0.1",
     "@vercel/speed-insights": "^1.0.10",
     "class-variance-authority": "^0.7.0",
@@ -51,7 +53,7 @@
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.340.0",
     "motion": "^12.0.3",
-    "next": "^15.2.4",
+    "next": "16.3.5",
     "next-intl": "^4.4.0",
     "next-themes": "^0.4.6",
     "nuqs": "^2.7.2",
@@ -90,7 +92,7 @@
     "@typescript-eslint/parser": "^8.48.0",
     "encoding": "^0.1.13",
     "eslint": "^9",
-    "eslint-config-next": "^15.2.4",
+    "eslint-config-next": "16.3.5",
     "eslint-plugin-import": "^2.28.1",
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "geojson": "^0.5.0",

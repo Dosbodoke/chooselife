@@ -37,6 +37,43 @@ import { Icon } from '../ui/icon';
 import { Text } from '../ui/text';
 import { WeatherSummary } from './weather-info-card';
 
+/** Hold the camera still for this long before asking for new weather. */
+const WEATHER_SETTLE_DELAY = 2000;
+
+/**
+ * Owns the camera subscription on its own so a pan re-renders this one label
+ * instead of the whole sheet handle (title, search field and category strip).
+ */
+const HeaderWeatherSummary: React.FC = React.memo(() => {
+  const center = useMapStore(useShallow((state) => state.camera.center));
+
+  const latitude = center?.[1] ?? DEFAULT_LATITUDE;
+  const longitude = center?.[0] ?? DEFAULT_LONGITUDE;
+
+  const [weatherCoords, setWeatherCoords] = useState(() => ({
+    latitude,
+    longitude,
+  }));
+
+  useEffect(() => {
+    const timeoutId = setTimeout(
+      () => setWeatherCoords({ latitude, longitude }),
+      WEATHER_SETTLE_DELAY,
+    );
+
+    return () => clearTimeout(timeoutId);
+  }, [latitude, longitude]);
+
+  return (
+    <WeatherSummary
+      latitude={weatherCoords.latitude}
+      longitude={weatherCoords.longitude}
+    />
+  );
+});
+
+HeaderWeatherSummary.displayName = 'HeaderWeatherSummary';
+
 // Categories config
 const CATEGORIES: { category: HighlineCategory; icon: typeof HeartIcon }[] = [
   { category: 'favorites', icon: HeartIcon },
@@ -88,21 +125,6 @@ const ExploreHeader = React.memo(() => {
   useEffect(() => {
     setLocalInput(searchQuery);
   }, [searchQuery]);
-  
-  const camera = useMapStore(useShallow((state) => state.camera));
-  const [weatherCoords, setWeatherCoords] = useState({
-    latitude: camera?.center?.[1] ?? DEFAULT_LATITUDE,
-    longitude: camera?.center?.[0] ?? DEFAULT_LONGITUDE,
-  });
-  
-  useEffect(() => {
-    const latitude = camera?.center?.[1] ?? DEFAULT_LATITUDE;
-    const longitude = camera?.center?.[0] ?? DEFAULT_LONGITUDE;
-    const timeoutId = setTimeout(() => {
-      setWeatherCoords({ latitude, longitude });
-    }, 2000); // Only update after 2s of no camera changes
-    return () => clearTimeout(timeoutId);
-  }, [camera?.center]);
   
   const { highlines, isLoading } = useHighline({ searchTerm: searchQuery, category: activeCategory });
 
@@ -174,10 +196,7 @@ const ExploreHeader = React.memo(() => {
           </Animated.Text>
         </View>
         <View className="flex-row items-center gap-3">
-          <WeatherSummary
-            latitude={weatherCoords.latitude}
-            longitude={weatherCoords.longitude}
-          />
+          <HeaderWeatherSummary />
           <AddHighlineButton />
         </View>
       </View>
@@ -259,23 +278,26 @@ const ExploreHeader = React.memo(() => {
 ExploreHeader.displayName = 'ExploreHeader';
 
 // Add Highline Button
-const AddHighlineButton: React.FC = () => {
+const AddHighlineButton: React.FC = React.memo(() => {
   const router = useRouter();
-  const camera = useMapStore((state) => state.camera);
+
+  // Read on press rather than subscribe: the camera is only ever needed at the
+  // moment of navigation, and subscribing re-rendered this button on every pan.
+  const handlePress = useCallback(() => {
+    const { camera } = useMapStore.getState();
+
+    router.push(
+      `/location-picker?lat=${camera.center[1]}&lng=${camera.center[0]}&zoom=${camera.zoom}`,
+    );
+  }, [router]);
 
   return (
-    <Button
-      size="icon"
-      className="rounded-full"
-      onPress={() => {
-        router.push(
-          `/location-picker?lat=${camera.center[1]}&lng=${camera.center[0]}&zoom=${camera.zoom}`,
-        );
-      }}
-    >
+    <Button size="icon" className="rounded-full" onPress={handlePress}>
       <Icon as={PlusIcon} className="size-5 text-primary-foreground" />
     </Button>
   );
-};
+});
+
+AddHighlineButton.displayName = 'AddHighlineButton';
 
 export default ExploreHeader;

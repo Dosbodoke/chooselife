@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -25,11 +26,16 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  refreshAfterPasswordSignIn,
+  signInWithEmailPassword,
+} from "@/utils/auth/sign-in";
 import { supabaseBrowser } from "@/utils/supabase/client";
 import { useLoginModal } from "@/utils/useLoginModal";
 
 const formSchema = z.object({
   email: z.string().email(),
+  password: z.string().min(1),
 });
 
 type FormSchema = z.infer<typeof formSchema>;
@@ -37,13 +43,15 @@ type FormSchema = z.infer<typeof formSchema>;
 function SignUp() {
   const supabase = supabaseBrowser();
   const t = useTranslations("login");
+  const router = useRouter();
   const { open, toggleLoginModal } = useLoginModal();
 
-  const [step, setStep] = useState<"initial" | "email" | "inbox">("initial");
+  const [step, setStep] = useState<"initial" | "email">("initial");
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
+      password: "",
     },
   });
 
@@ -56,18 +64,26 @@ function SignUp() {
     });
   }
 
-  async function signInWithOtp(data: FormSchema) {
-    const { error } = await supabase.auth.signInWithOtp({
-      email: data.email,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: `${location.origin}/auth/callback?redirect_to=${location.href}`,
-      },
-    });
+  async function signInWithPassword(data: FormSchema) {
+    form.clearErrors("root");
+    const result = await signInWithEmailPassword(supabase.auth, data);
 
-    if (!error) {
-      setStep("inbox");
+    if (!result.success) {
+      form.setError("root", {
+        message:
+          result.reason === "invalid_credentials"
+            ? t("email.invalidCredentials")
+            : t("email.loginError"),
+      });
+      return;
     }
+
+    form.reset();
+    setStep("initial");
+    await refreshAfterPasswordSignIn({
+      closeLoginModal: () => toggleLoginModal("closed"),
+      refresh: router.refresh,
+    });
   }
 
   const dialogContentInitial = () => (
@@ -95,7 +111,10 @@ function SignUp() {
         <DialogDescription>{t("email.description")}</DialogDescription>
       </DialogHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(signInWithOtp)} className="space-y-4">
+        <form
+          onSubmit={form.handleSubmit(signInWithPassword)}
+          className="space-y-4"
+        >
           <FormField
             control={form.control}
             name="email"
@@ -105,6 +124,8 @@ function SignUp() {
                   <Input
                     placeholder={t("email.placeholder")}
                     type="email"
+                    autoComplete="email"
+                    disabled={form.formState.isSubmitting}
                     {...field}
                   />
                 </FormControl>
@@ -112,38 +133,55 @@ function SignUp() {
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Input
+                    placeholder={t("email.passwordPlaceholder")}
+                    type="password"
+                    autoComplete="current-password"
+                    disabled={form.formState.isSubmitting}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage translatedMessage={t("email.passwordRequired")} />
+              </FormItem>
+            )}
+          />
+          {form.formState.errors.root?.message ? (
+            <p role="alert" className="text-sm font-medium text-destructive">
+              {form.formState.errors.root.message}
+            </p>
+          ) : null}
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
-              onClick={() => setStep("initial")}
+              disabled={form.formState.isSubmitting}
+              onClick={() => {
+                form.reset();
+                setStep("initial");
+              }}
             >
               {t("email.back")}
             </Button>
-            <Button type="submit">{t("email.submit")}</Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting
+                ? t("email.submitting")
+                : t("email.submit")}
+            </Button>
           </DialogFooter>
         </form>
       </Form>
     </>
   );
 
-  const dialogContentInbox = () => (
-    <>
-      <DialogHeader>
-        <DialogTitle>{t("inbox.title")}</DialogTitle>
-        <DialogDescription>
-          {t("inbox.preDescription")}
-          <span className="font-bold"> {form.getValues("email")} </span>
-          {t("inbox.postDescription")}
-        </DialogDescription>
-      </DialogHeader>
-    </>
-  );
-
   const dialogContent = {
     initial: dialogContentInitial,
     email: dialogContentEmail,
-    inbox: dialogContentInbox,
   };
 
   return (
@@ -152,6 +190,7 @@ function SignUp() {
       onOpenChange={(open) => {
         if (!open) {
           setStep("initial");
+          form.reset();
           toggleLoginModal("closed");
         }
       }}

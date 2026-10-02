@@ -6,6 +6,10 @@ INSERT INTO public.organizations (
   id,
   name,
   slug,
+  billing_currency,
+  billing_timezone,
+  billing_due_day,
+  billing_lead_days,
   monthly_price_amount,
   annual_price_amount
 )
@@ -13,6 +17,10 @@ VALUES (
   '2c9c5c8a-4e4d-4322-bb48-adf6231d2bb1'::uuid,
   'SL.A.C',
   'slac',
+  'BRL',
+  'America/Sao_Paulo',
+  10,
+  7,
   3500,
   36000
 )
@@ -20,6 +28,10 @@ ON CONFLICT (id) DO UPDATE
 SET
   name = EXCLUDED.name,
   slug = EXCLUDED.slug,
+  billing_currency = EXCLUDED.billing_currency,
+  billing_timezone = EXCLUDED.billing_timezone,
+  billing_due_day = EXCLUDED.billing_due_day,
+  billing_lead_days = EXCLUDED.billing_lead_days,
   monthly_price_amount = EXCLUDED.monthly_price_amount,
   annual_price_amount = EXCLUDED.annual_price_amount;
 

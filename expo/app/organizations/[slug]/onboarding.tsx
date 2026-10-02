@@ -1,10 +1,8 @@
 import { useOrganization } from '@chooselife/ui';
-import type { StartSubscriptionResponse } from '@packages/database/functions.types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -20,41 +18,40 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
 import { useMountEffect } from '~/hooks/use-mount-effect';
-import { getManualPaymentRouteParams } from '~/lib/manual-payment';
+import { getPaymentObligationRouteParams } from '~/lib/manual-payment';
 import {
   fetchAddressByCep,
   fetchMembershipApplication,
-  submitMembershipApplication,
+  submitAssociationApplication,
   upsertMembershipApplicationDraft,
   type MembershipApplication,
 } from '~/lib/membership-application';
 import { queryKeys } from '~/lib/query-keys';
-import { supabase } from '~/lib/supabase';
 
 import {
+  FocusedHeader,
   FooterCta,
-  ProgressHeader,
+  ReviewList,
   SuccessInterstitial,
 } from '~/components/organizations/onboarding/controls';
 import {
   createInitialForm,
   formToDraft,
-  getFirstIncompleteStep,
-  getStepErrors,
-  isStepValid,
+  getAnswerLabel,
+  getFirstIncompleteIndex,
+  getQuestionError,
+  getReviewRows,
   maskCep,
-  steps,
+  questions,
   unmask,
-  type FormErrors,
   type FormField,
   type MembershipApplicationForm,
   type PlanType,
 } from '~/components/organizations/onboarding/form';
-import { StepFields } from '~/components/organizations/onboarding/step-fields';
+import { QuestionCard } from '~/components/organizations/onboarding/question-card';
 import { Text } from '~/components/ui/text';
 
 type SettledResult<T> = { ok: true; value: T } | { ok: false; error: unknown };
@@ -65,13 +62,20 @@ const settle = <T,>(promise: Promise<T>): Promise<SettledResult<T>> =>
     (error: unknown) => ({ ok: false, error }),
   );
 
+const errorHaptic = () =>
+  void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
+    () => undefined,
+  );
+
 export default function OnboardingScreen() {
   const { session, sessionLoading, profile } = useAuth();
-  const { accepted_terms_at, plan_type, slug } = useLocalSearchParams<{
-    accepted_terms_at?: string;
-    plan_type?: PlanType;
-    slug: string;
-  }>();
+  const { accepted_terms_at, plan_type, slug, terms_version } =
+    useLocalSearchParams<{
+      accepted_terms_at?: string;
+      plan_type?: PlanType;
+      slug: string;
+      terms_version?: string;
+    }>();
   const {
     data: organization,
     isLoading,
@@ -105,7 +109,7 @@ export default function OnboardingScreen() {
         href={{
           pathname: '/(modals)/login',
           params: {
-            redirect_to: `/organizations/${slug}/onboarding?plan_type=${plan_type ?? 'monthly'}`,
+            redirect_to: `/organizations/${slug}/onboarding?plan_type=${plan_type ?? 'monthly'}${terms_version ? `&terms_version=${encodeURIComponent(terms_version)}` : ''}`,
           },
         }}
       />
@@ -127,16 +131,18 @@ export default function OnboardingScreen() {
   return (
     <OnboardingWizard
       // Stable for the org+user session. Using application id remounted the
-      // wizard on the first draft save and reset step/CTA state mid-flow.
+      // wizard on the first draft save and reset question/CTA state mid-flow.
       key={`${organization.id}-${userId}`}
       acceptedTermsAt={accepted_terms_at}
       application={applicationQuery.data ?? null}
       email={session.user.email}
       organizationId={organization.id}
+      phone={session.user.phone}
       planType={plan_type ?? 'monthly'}
       profileBirthday={profile?.birthday}
       profileName={profile?.name}
       slug={slug}
+      termsVersion={terms_version ?? organization.membership_terms_version}
       userId={session.user.id}
     />
   );
@@ -147,114 +153,201 @@ type OnboardingWizardProps = {
   application: MembershipApplication | null;
   email?: string | null;
   organizationId: string;
+  phone?: string | null;
   planType: PlanType;
   profileBirthday?: string | null;
   profileName?: string | null;
   slug: string;
+  termsVersion: string;
   userId: string;
 };
 
-type OnboardingWorkflowProps = OnboardingWizardProps & {
-  onScrollToTop: () => void;
-};
-
-function useOnboardingWizard({
+function OnboardingWizard({
   acceptedTermsAt,
   application,
   email,
   organizationId,
+  phone,
   planType,
   profileBirthday,
   profileName,
-  onScrollToTop,
   slug,
+  termsVersion,
   userId,
-}: OnboardingWorkflowProps) {
+}: OnboardingWizardProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const insets = useSafeAreaInsets();
-  const initialForm = createInitialForm({
-    acceptedTermsAt,
-    application,
-    email,
-    profileBirthday,
-    profileName,
-  });
-  const form = useForm<MembershipApplicationForm>({
-    defaultValues: initialForm,
-    mode: 'onChange',
-  });
-  const currentForm = useWatch({
-    control: form.control,
-    defaultValue: initialForm,
-  }) as MembershipApplicationForm;
-  const [step, setStep] = useState(() =>
+  const scrollRef = useRef<ScrollView>(null);
+
+  const [initialForm] = useState<MembershipApplicationForm>(() =>
+    createInitialForm({
+      acceptedTermsAt,
+      application,
+      email,
+      phone,
+      profileBirthday,
+      profileName,
+    }),
+  );
+  const [form, setForm] = useState(initialForm);
+  const [index, setIndex] = useState(() =>
     application?.status === 'submitted'
-      ? steps.length - 1
+      ? questions.length
       : application?.status === 'draft'
-        ? getFirstIncompleteStep(initialForm)
+        ? getFirstIncompleteIndex(initialForm)
         : 0,
   );
+  const reviewing = index === questions.length;
+  const question = reviewing ? null : questions[index];
+
+  // Set by a failed Continue; every field on the step then shows its error.
   const [showErrors, setShowErrors] = useState(false);
-  const [createdApplicationId, setCreatedApplicationId] = useState<
-    string | undefined
-  >();
-  const [createdSubmittedId, setCreatedSubmittedId] = useState<
-    string | undefined
-  >();
-  const applicationId = createdApplicationId ?? application?.id;
-  const submittedApplicationId =
-    createdSubmittedId ??
-    (application?.status === 'submitted' ? application.id : undefined);
-  const [savedVisible, setSavedVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [returnToReview, setReturnToReview] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [cepFailed, setCepFailed] = useState(false);
-  // Bumps when ViaCEP fills address fields so GlassField remounts with new
-  // native state (useNativeState only captures the initial value once).
-  const [addressAutofillKey, setAddressAutofillKey] = useState(0);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [continuing, setContinuing] = useState(false);
+  // Bumped when ViaCEP fills the address fields, so they remount with the new
+  // value — native text state is only captured on mount.
+  const [autofillKey, setAutofillKey] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  // Continuous stepper position: step + 1 pills' worth of fill.
-  const progress = useSharedValue(step + 1);
-  // 0 → 1 on every step change; drives the step slide-in deterministically so
-  // an interrupted transition can never leave a residual horizontal offset.
-  const stepTransition = useSharedValue(1);
-  const stepDirection = useSharedValue(1);
-  const stepAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: stepTransition.get(),
-    transform: [
-      { translateX: (1 - stepTransition.get()) * 32 * stepDirection.get() },
-    ],
-  }));
-  const stepValid = isStepValid(currentForm, step);
-  const errors: FormErrors = showErrors
-    ? getStepErrors(currentForm, step)
-    : {};
+  const submitLockRef = useRef(false);
+  const lastCepLookupRef = useRef<string | null>(null);
+
   const applicationQueryKey = queryKeys.membershipApplication.byOrgUser(
     organizationId,
     userId,
   );
 
-  const getSubmittedApplicationId = () => {
-    const cachedApplication =
-      queryClient.getQueryData<MembershipApplication | null>(
-        applicationQueryKey,
-      );
+  const progress = useSharedValue((index + 1) / (questions.length + 1));
+  // 0 → 1 on every question change; drives the slide-in deterministically so an
+  // interrupted transition can never leave a residual horizontal offset.
+  const transition = useSharedValue(1);
+  const direction = useSharedValue(1);
+  const cardStyle = useAnimatedStyle(() => ({
+    opacity: transition.get(),
+    transform: [{ translateX: (1 - transition.get()) * 28 * direction.get() }],
+  }));
 
-    return (
-      submittedApplicationId ??
-      (cachedApplication?.status === 'submitted'
-        ? cachedApplication.id
-        : undefined) ??
-      (application?.status === 'submitted'
-        ? application?.id
-        : undefined)
+  useMountEffect(() => {
+    AccessibilityInfo.announceForAccessibility(
+      reviewing
+        ? 'Revisão do cadastro'
+        : `Pergunta ${index + 1} de ${questions.length}`,
     );
+  });
+
+  const goToIndex = (next: number, movement: 'back' | 'forward') => {
+    const total = questions.length;
+    const target = Math.max(0, Math.min(next, total));
+
+    progress.set(
+      withTiming((target + 1) / (total + 1), {
+        duration: 280,
+        easing: Easing.out(Easing.cubic),
+      }),
+    );
+    direction.set(movement === 'forward' ? 1 : -1);
+    transition.set(0);
+    transition.set(
+      withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) }),
+    );
+
+    setIndex(target);
+    setShowErrors(false);
+    setErrorMessage(null);
+    scrollRef.current?.scrollTo({ animated: false, y: 0 });
+    AccessibilityInfo.announceForAccessibility(
+      target === total
+        ? 'Revisão do cadastro'
+        : `Pergunta ${target + 1} de ${total}`,
+    );
+  };
+
+  const handleCepChange = (value: unknown) => {
+    const nextPostalCode = maskCep(typeof value === 'string' ? value : '');
+    const digits = unmask(nextPostalCode);
+    setForm((current) => ({ ...current, postal_code: nextPostalCode }));
+    setShowErrors(false);
+
+    if (digits.length !== 8 || lastCepLookupRef.current === digits) return;
+
+    lastCepLookupRef.current = digits;
+    setCepFailed(false);
+    setCepLoading(true);
+    fetchAddressByCep(digits)
+      .then((address) => {
+        if (!address) {
+          setCepFailed(true);
+          return;
+        }
+        setForm((current) => ({
+          ...current,
+          address_line: address.address_line,
+          city: address.city,
+          state: address.state,
+        }));
+        setAutofillKey((key) => key + 1);
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        ).catch(() => undefined);
+      })
+      .catch(() => setCepFailed(true))
+      .finally(() => setCepLoading(false));
+  };
+
+  const setField = (field: FormField, value: unknown) => {
+    // The CEP drives the rest of the address, so it owns its own handler.
+    if (field === 'postal_code') {
+      handleCepChange(value);
+      return;
+    }
+    setForm((current) => ({ ...current, [field]: value }));
+    setShowErrors(false);
+  };
+
+  const handleBack = () => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+      () => undefined,
+    );
+
+    if (returnToReview) {
+      setReturnToReview(false);
+      goToIndex(questions.length, 'forward');
+      return;
+    }
+
+    goToIndex(index - 1, 'back');
+  };
+
+  const handleAdvance = () => {
+    if (!question) return;
+
+    const error = getQuestionError(form, question);
+    if (error) {
+      setShowErrors(true);
+      AccessibilityInfo.announceForAccessibility(error);
+      errorHaptic();
+      return;
+    }
+
+    Keyboard.dismiss();
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+      () => undefined,
+    );
+
+    if (returnToReview) {
+      setReturnToReview(false);
+      goToIndex(questions.length, 'forward');
+      return;
+    }
+
+    goToIndex(index + 1, 'forward');
+  };
+
+  const handleEdit = (target: number) => {
+    setReturnToReview(true);
+    goToIndex(target, 'back');
   };
 
   const saveMutation = useMutation({
@@ -262,305 +355,191 @@ function useOnboardingWizard({
       upsertMembershipApplicationDraft(
         formToDraft(nextForm, organizationId, userId),
       ),
-    onSuccess: async (data) => {
-      setCreatedApplicationId(data.id);
+    onSuccess: (data) => {
       queryClient.setQueryData(applicationQueryKey, data);
-      await queryClient.invalidateQueries({ queryKey: applicationQueryKey });
-      setSavedVisible(true);
-      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-      savedTimerRef.current = setTimeout(() => setSavedVisible(false), 1500);
     },
+    retry: 1,
   });
 
   const submitMutation = useMutation({
-    mutationFn: submitMembershipApplication,
-    onSuccess: async (data) => {
-      setCreatedSubmittedId(data?.id ?? applicationId);
-      await queryClient.invalidateQueries({
-        queryKey: applicationQueryKey,
-      });
-    },
+    mutationFn: submitAssociationApplication,
+    retry: 1,
+    retryDelay: 500,
   });
 
-  const startSubscriptionMutation = useMutation({
-    mutationFn: async () => {
-      const { data: charge, error } =
-        await supabase.functions.invoke<StartSubscriptionResponse>(
-          'start-subscription',
-          {
-            body: {
-              plan_type: planType,
-              slug,
-            },
-          },
+  const getSubmittedApplicationId = () => {
+    const cachedApplication =
+      queryClient.getQueryData<MembershipApplication | null>(
+        applicationQueryKey,
+      );
+
+    return cachedApplication?.status === 'submitted'
+      ? cachedApplication.id
+      : application?.status === 'submitted'
+        ? application.id
+        : undefined;
+  };
+
+  const handleSubmit = async () => {
+    if (submitLockRef.current) return;
+
+    const incompleteIndex = getFirstIncompleteIndex(form);
+    if (incompleteIndex < questions.length) {
+      errorHaptic();
+      // `handleEdit` clears the banner, so the message is set afterwards.
+      handleEdit(incompleteIndex);
+      setErrorMessage('Faltam respostas. Vamos voltar para completá-las.');
+      return;
+    }
+
+    if (!form.accepted_terms_at) {
+      setErrorMessage(
+        'Não encontramos o aceite dos termos. Feche o cadastro e confirme os termos novamente.',
+      );
+      errorHaptic();
+      return;
+    }
+
+    submitLockRef.current = true;
+    setSubmitting(true);
+    setErrorMessage(null);
+
+    const fail = (message: string) => {
+      setErrorMessage(message);
+      setSubmitting(false);
+      submitLockRef.current = false;
+      errorHaptic();
+    };
+
+    let applicationForSubmission =
+      queryClient.getQueryData<MembershipApplication | null>(
+        applicationQueryKey,
+      );
+
+    if (!getSubmittedApplicationId()) {
+      const saved = await settle(saveMutation.mutateAsync(form));
+      if (!saved.ok) {
+        console.error('Error saving membership application:', saved.error);
+        fail(
+          'Não foi possível salvar seu cadastro. Verifique a conexão e tente novamente.',
         );
-
-      if (error) {
-        const errorContext = error.context;
-        if (errorContext && typeof errorContext.json === 'function') {
-          const errorData = await errorContext.json();
-          throw new Error(errorData?.error || error.message);
-        }
-        throw error;
+        return;
       }
 
-      if (!charge) {
-        throw new Error('Invalid response from start-subscription function');
-      }
+      applicationForSubmission = saved.value;
+    }
 
-      return {
-        amount: 'amount' in charge ? charge.amount : undefined,
-        paymentId: charge.paymentId,
-      };
-    },
-    onSuccess: async (data) => {
-      setSuccess(true);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.subscription.all,
+    if (!applicationForSubmission) {
+      applicationForSubmission = await queryClient.fetchQuery({
+        queryKey: applicationQueryKey,
+        queryFn: () => fetchMembershipApplication(organizationId, userId),
       });
+    }
+
+    if (!applicationForSubmission?.draft_version) {
+      fail(
+        'Não foi possível identificar a versão atual do cadastro. Atualize e tente novamente.',
+      );
+      return;
+    }
+
+    const submission = await settle(
+      submitMutation.mutateAsync({
+        applicationId: applicationForSubmission.id,
+        draftVersion: applicationForSubmission.draft_version,
+        organizationId,
+        planType,
+        termsVersion,
+      }),
+    );
+    if (!submission.ok || !submission.value) {
+      // A lost response can happen after the command committed. Re-read the
+      // draft and retry with the same optimistic version; the server returns
+      // the original revision and obligation rather than creating another.
+      const reconciled = await settle(
+        fetchMembershipApplication(organizationId, userId),
+      );
+      if (!reconciled.ok || reconciled.value?.status !== 'submitted') {
+        console.error(
+          'Error submitting membership application:',
+          submission.ok ? 'empty response' : submission.error,
+        );
+        fail(
+          'Não foi possível concluir seu cadastro. Verifique a conexão e tente novamente.',
+        );
+        return;
+      }
+
+      const retriedSubmission = await settle(
+        submitMutation.mutateAsync({
+          applicationId: reconciled.value.id,
+          draftVersion: reconciled.value.draft_version,
+          organizationId,
+          planType,
+          termsVersion,
+        }),
+      );
+      if (!retriedSubmission.ok || !retriedSubmission.value) {
+        console.error(
+          'Error reconciling membership application submission:',
+          retriedSubmission.ok ? 'empty response' : retriedSubmission.error,
+        );
+        fail(
+          'Não foi possível concluir seu cadastro. Verifique a conexão e tente novamente.',
+        );
+        return;
+      }
+
+      const authoritativeSubmission = retriedSubmission.value;
+      queryClient.setQueryData(applicationQueryKey, reconciled.value);
+      setSuccess(true);
+      void Haptics.notificationAsync(
+        Haptics.NotificationFeedbackType.Success,
+      ).catch(() => undefined);
       setTimeout(() => {
         router.replace({
           pathname: '/payment',
-          params: getManualPaymentRouteParams({
-            amount: data.amount,
-            paymentId: data.paymentId,
-            paymentContext: 'new_member',
+          params: getPaymentObligationRouteParams({
+            amount: authoritativeSubmission.amount,
+            currency: authoritativeSubmission.currency,
+            obligationId: authoritativeSubmission.obligation_id,
             slug,
           }),
         });
       }, 1600);
-    },
-  });
+      setSubmitting(false);
+      submitLockRef.current = false;
+      return;
+    }
 
-  const saveNow = async (nextForm: MembershipApplicationForm) => {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    return saveMutation.mutateAsync(nextForm);
-  };
-
-  const scheduleSave = (nextForm: MembershipApplicationForm) => {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      saveMutation.mutate(nextForm);
-    }, 800);
-  };
-
-  useMountEffect(() => {
-    AccessibilityInfo.announceForAccessibility(
-      `Passo ${step + 1} de ${steps.length}, ${steps[step].title}`,
-    );
-
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-    };
-  });
-
-  // `subscribe` is react-hook-form's compiler-safe, non-rendering subscription
-  // API; its legacy `watch(callback)` overload prevents React Compiler output.
-  useMountEffect(() =>
-    form.subscribe({
-      formState: { values: true },
-      callback: ({ values, name }) => {
-        if (!name) return;
-
-        const cachedApplication =
-          queryClient.getQueryData<MembershipApplication | null>(
-            applicationQueryKey,
-          );
-        const isSubmitted =
-          cachedApplication?.status === 'submitted' ||
-          application?.status === 'submitted';
-
-        if (!isSubmitted) {
-          scheduleSave(values as MembershipApplicationForm);
-        }
-      },
-    }),
-  );
-
-  const setField = <T extends FormField>(
-    field: T,
-    value: MembershipApplicationForm[T],
-  ) => {
-    form.setValue(field, value as never, {
-      shouldDirty: true,
-      shouldTouch: true,
+    const authoritativeSubmission = submission.value;
+    setSuccess(true);
+    void Haptics.notificationAsync(
+      Haptics.NotificationFeedbackType.Success,
+    ).catch(() => undefined);
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.membershipApplication.byOrgUser(
+        organizationId,
+        userId,
+      ),
     });
-  };
-
-  const patchForm = (patch: Partial<MembershipApplicationForm>) => {
-    (
-      Object.entries(patch) as [
-        FormField,
-        MembershipApplicationForm[FormField],
-      ][]
-    ).forEach(([field, value]) => {
-      form.setValue(field, value as never, {
-        shouldDirty: true,
-        shouldTouch: true,
+    setTimeout(() => {
+      router.replace({
+        pathname: '/payment',
+        params: getPaymentObligationRouteParams({
+          amount: authoritativeSubmission.amount,
+          currency: authoritativeSubmission.currency,
+          obligationId: authoritativeSubmission.obligation_id,
+          slug,
+        }),
       });
-    });
+    }, 1600);
+
+    setSubmitting(false);
+    submitLockRef.current = false;
   };
 
-  const handleCepChange = (value: string) => {
-    const nextPostalCode = maskCep(value);
-    const nextDigits = unmask(nextPostalCode);
-    const previousDigits = unmask(form.getValues('postal_code'));
-    setField('postal_code', nextPostalCode);
-
-    if (nextDigits.length === 8 && previousDigits.length !== 8) {
-      setCepFailed(false);
-      setCepLoading(true);
-      fetchAddressByCep(nextDigits)
-        .then((address) => {
-          if (!address) {
-            setCepFailed(true);
-            return;
-          }
-          patchForm({
-            address_line: address.address_line,
-            city: address.city,
-            state: address.state,
-          });
-          setAddressAutofillKey((key) => key + 1);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        })
-        .catch(() => setCepFailed(true))
-        .finally(() => setCepLoading(false));
-    }
-  };
-
-  const goToStep = (nextStep: number, nextDirection: 'back' | 'forward') => {
-    progress.set(
-      withTiming(nextStep + 1, {
-        duration: 300,
-        easing: Easing.out(Easing.cubic),
-      }),
-    );
-    stepDirection.set(nextDirection === 'forward' ? 1 : -1);
-    stepTransition.set(0);
-    stepTransition.set(
-      withTiming(1, {
-        duration: 250,
-        easing: Easing.out(Easing.cubic),
-      }),
-    );
-    setStep(nextStep);
-    setShowErrors(false);
-    onScrollToTop();
-    AccessibilityInfo.announceForAccessibility(
-      `Passo ${nextStep + 1} de ${steps.length}, ${steps[nextStep].title}`,
-    );
-  };
-
-  const handleBack = async () => {
-    if (step === 0) return;
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    goToStep(step - 1, 'back');
-  };
-
-  const handleContinue = async () => {
-    setErrorMessage(null);
-
-    const values = form.getValues();
-    const nextErrors = getStepErrors(values, step);
-    if (Object.keys(nextErrors).length > 0) {
-      setShowErrors(true);
-      onScrollToTop();
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return;
-    }
-
-    setContinuing(true);
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    const saveErrorMessage =
-      'Não foi possível salvar seu cadastro. Verifique a conexão e tente novamente.';
-
-    const reportError = async (message: string) => {
-      setErrorMessage(message);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setContinuing(false);
-    };
-
-    if (step < steps.length - 1) {
-      if (!getSubmittedApplicationId()) {
-        const saved = await settle(saveNow(values));
-        if (!saved.ok) {
-          await reportError(saveErrorMessage);
-          return;
-        }
-      }
-      goToStep(step + 1, 'forward');
-      setContinuing(false);
-      return;
-    }
-
-    if (!getSubmittedApplicationId()) {
-      const saved = await settle(saveNow(values));
-      if (!saved.ok) {
-        await reportError(saveErrorMessage);
-        return;
-      }
-
-      const submitted = await settle(
-        submitMutation.mutateAsync(applicationId ?? saved.value.id),
-      );
-      if (!submitted.ok) {
-        await reportError(saveErrorMessage);
-        return;
-      }
-
-      setCreatedSubmittedId(
-        submitted.value?.id ?? applicationId ?? saved.value.id,
-      );
-    }
-
-    const payment = await settle(startSubscriptionMutation.mutateAsync());
-    if (!payment.ok) {
-      const message =
-        payment.error instanceof Error
-          ? payment.error.message ||
-            'Não foi possível iniciar o pagamento. Tente novamente.'
-          : 'Não foi possível iniciar o pagamento. Tente novamente.';
-      await reportError(message);
-      return;
-    }
-
-    setContinuing(false);
-  };
-
-  return {
-    addressAutofillKey,
-    cepFailed,
-    cepLoading,
-    continuing,
-    errorMessage,
-    errors,
-    form,
-    handleBack,
-    handleCepChange,
-    handleContinue,
-    insets,
-    progress,
-    router,
-    savedVisible,
-    step,
-    stepAnimatedStyle,
-    stepValid,
-    success,
-  };
-}
-
-function OnboardingWizard(props: OnboardingWizardProps) {
-  const scrollRef = useRef<ScrollView>(null);
-  const scrollToTop = () => {
-    scrollRef.current?.scrollTo({ animated: true, y: 0 });
-  };
-  const wizard = useOnboardingWizard({ ...props, onScrollToTop: scrollToTop });
-
-  if (wizard.success) {
+  if (success) {
     return (
       <View className="flex-1 bg-white">
         <SuccessInterstitial />
@@ -568,78 +547,96 @@ function OnboardingWizard(props: OnboardingWizardProps) {
     );
   }
 
+  // A step with a single optional field (blood type) offers to skip instead.
+  const skippable =
+    question?.fields.length === 1 &&
+    question.fields[0].optional === true &&
+    !getAnswerLabel(form, question.fields[0]);
+
   return (
-    <FormProvider {...wizard.form}>
-      <View className="flex-1 bg-white">
-        <ProgressHeader
-          canGoBack={wizard.step > 0}
-          currentStep={wizard.step}
-          onBack={wizard.handleBack}
-          onClose={() => wizard.router.replace('/(tabs)/organizations')}
-          progress={wizard.progress}
-          subtitle={steps[wizard.step].subtitle}
-          title={steps[wizard.step].title}
-          totalSteps={steps.length}
-        />
-        <KeyboardAvoidingView
-          behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined}
+    <View className="flex-1 bg-white">
+      <FocusedHeader
+        onBack={handleBack}
+        onClose={() => router.replace('/(tabs)/organizations')}
+        progress={progress}
+        sectionLabel={reviewing ? 'Revisão' : (question?.section ?? '')}
+        showBack={index > 0 || returnToReview}
+      />
+      <KeyboardAvoidingView
+        behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined}
+        className="flex-1"
+      >
+        <ScrollView
+          ref={scrollRef}
           className="flex-1"
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'flex-start',
+            paddingBottom: 32,
+            paddingHorizontal: 24,
+            paddingTop: 28,
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <ScrollView
-            ref={scrollRef}
-            className="flex-1"
-            contentInset={{
-              bottom: wizard.insets.bottom,
-              top: wizard.insets.top,
-            }}
-            contentContainerClassName="px-6 gap-5"
-            contentContainerStyle={{
-              flexGrow: 1,
-              justifyContent: 'flex-end',
-              paddingBottom: 112,
-              paddingTop: 196,
-            }}
-            keyboardShouldPersistTaps="handled"
-            onScrollBeginDrag={Keyboard.dismiss}
-            showsVerticalScrollIndicator={false}
+          <Animated.View
+            key={reviewing ? 'review' : `question-${question?.id}`}
+            style={cardStyle}
           >
-            <Animated.View
-              key={`step-${wizard.step}`}
-              className="gap-5"
-              style={wizard.stepAnimatedStyle}
-            >
-              <StepFields
-                addressAutofillKey={wizard.addressAutofillKey}
-                cepFailed={wizard.cepFailed}
-                cepLoading={wizard.cepLoading}
-                errors={wizard.errors}
-                onCepChange={wizard.handleCepChange}
-                step={wizard.step}
+            {reviewing ? (
+              <View>
+                <Text className="text-blue-600 text-xs font-extrabold tracking-widest mb-3">
+                  CONFIRA ANTES DE ENVIAR
+                </Text>
+                <Text
+                  accessibilityRole="header"
+                  className="text-zinc-950 text-3xl font-extrabold leading-9"
+                >
+                  Está tudo certo?
+                </Text>
+                <Text className="text-zinc-500 text-base leading-6 mt-2.5">
+                  Toque em uma resposta para corrigir. Seu cadastro é enviado
+                  uma única vez, na confirmação.
+                </Text>
+                <ReviewList items={getReviewRows(form)} onEdit={handleEdit} />
+              </View>
+            ) : question ? (
+              <QuestionCard
+                autofillKey={autofillKey}
+                cepFailed={cepFailed}
+                cepLoading={cepLoading}
+                counterLabel={`PERGUNTA ${index + 1} DE ${questions.length}`}
+                form={form}
+                onChange={setField}
+                onSubmitEditing={handleAdvance}
+                question={question}
+                showErrors={showErrors}
               />
-            </Animated.View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-        {wizard.errorMessage ? (
-          <Animated.Text
-            entering={FadeIn.duration(180)}
-            className="absolute left-6 right-6 text-red-600 text-sm text-center"
-            style={{ bottom: wizard.insets.bottom + 86 }}
-          >
-            {wizard.errorMessage}
-          </Animated.Text>
-        ) : null}
-        <FooterCta
-          disabled={!wizard.stepValid}
-          label={
-            wizard.step === steps.length - 1
-              ? 'Ir para o pagamento'
-              : 'Continuar'
-          }
-          loading={wizard.continuing}
-          onPress={wizard.handleContinue}
-          saved={wizard.savedVisible && !wizard.continuing}
-        />
-      </View>
-    </FormProvider>
+            ) : null}
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+      {errorMessage ? (
+        <Animated.Text
+          entering={FadeIn.duration(180)}
+          className="px-6 pb-2 text-red-600 text-sm text-center"
+        >
+          {errorMessage}
+        </Animated.Text>
+      ) : null}
+      <FooterCta
+        label={
+          reviewing
+            ? 'Confirmar e ir para o pagamento'
+            : returnToReview
+              ? 'Salvar e voltar à revisão'
+              : skippable
+                ? 'Pular'
+                : 'Continuar'
+        }
+        loading={submitting}
+        onPress={reviewing ? handleSubmit : handleAdvance}
+      />
+    </View>
   );
 }

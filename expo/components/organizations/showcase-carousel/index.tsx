@@ -1,14 +1,13 @@
-import { AnimatedFlashList, FlashListProps } from '@shopify/flash-list';
+import { AnimatedLegendList } from '@legendapp/list/reanimated';
 import * as Haptics from 'expo-haptics';
-import type { Component } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import Animated, {
   useAnimatedReaction,
-  useAnimatedRef,
   useAnimatedStyle,
   useDerivedValue,
-  useScrollOffset,
+  useSharedValue,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
@@ -61,7 +60,7 @@ function CarouselSlide({
   item: (typeof carouselData)[number];
   membershipApplication: MembershipApplication | null;
   org: Tables<'organizations'>;
-  scrollY: ReturnType<typeof useScrollOffset>;
+  scrollY: SharedValue<number>;
   width: number;
 }) {
   return (
@@ -95,10 +94,7 @@ export function Carousel({
 }) {
   const { width, height } = useWindowDimensions();
 
-  const animatedRef =
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    useAnimatedRef<Component<FlashListProps<any>, any, any>>();
-  const scrollY = useScrollOffset(animatedRef);
+  const scrollY = useSharedValue(0);
 
   const currentIndex = useDerivedValue(() => {
     return Math.round(scrollY.value / height);
@@ -127,8 +123,7 @@ export function Carousel({
 
   return (
     <>
-      <AnimatedFlashList
-        ref={animatedRef}
+      <AnimatedLegendList
         data={carouselData}
         keyExtractor={(_, index) => String(index)}
         snapToInterval={height}
@@ -148,6 +143,7 @@ export function Carousel({
         showsVerticalScrollIndicator={false}
         bounces={false}
         drawDistance={height * 2}
+        sharedValues={{ scrollOffset: scrollY }}
       />
 
       <Animated.View
