@@ -59,9 +59,20 @@ export const HighlineHeader: React.FC<{
   paddingTop: number;
   onBack: () => void;
   onShare: () => void;
-}> = ({ highline, scrollY, collapseAt, paddingTop, onBack, onShare }) => {
+  /** Extra height for the blur bar so a control pinned under it shares the material. */
+  blurExtension?: number;
+}> = ({
+  highline,
+  scrollY,
+  collapseAt,
+  paddingTop,
+  onBack,
+  onShare,
+  blurExtension = 0,
+}) => {
   const [collapsed, setCollapsed] = useState(false);
   const barHeight = paddingTop + HEADER_BUTTON_SIZE + 12;
+  const blurHeight = barHeight + blurExtension + 24;
   const iconClassName = cn(collapsed ? 'text-foreground' : 'text-white');
 
   useAnimatedReaction(
@@ -106,11 +117,14 @@ export const HighlineHeader: React.FC<{
       <Animated.View
         pointerEvents="none"
         className="absolute top-0 left-0 right-0"
-        style={[{ height: barHeight + 24 }, barStyle]}
+        style={[{ height: blurHeight }, barStyle]}
       >
         <ProgressiveBlurView
           edge="top"
-          startOffset={0.6}
+          // Fully blurred down to the bottom of any pinned control, then fade.
+          startOffset={
+            blurExtension ? (barHeight + blurExtension) / blurHeight : 0.6
+          }
           intensity={70}
           style={{ flex: 1 }}
         />

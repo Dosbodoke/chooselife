@@ -1,56 +1,55 @@
 import type { RigStatuses } from '@chooselife/ui';
-import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
-import { useHighline } from '~/hooks/use-highline';
+import type { Highline } from '~/hooks/use-highline';
 
 import { Text } from '~/components/ui/text';
 
 import { HighlineHistory } from './history';
 import { LocationWeatherCard } from './location-weather-card';
 
-export default function Info() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { highline } = useHighline({ id });
-
-  if (!highline) return null;
-
-  return (
-    <View className="flex-1 gap-6">
-      {/* Title & Description */}
-      <View className="gap-2">
-        <Text className="text-3xl font-bold tracking-tight text-foreground">
-          {highline.name}
+/** Name, description and dimensions; shown above the page's tabs. */
+export const HighlineSummary: React.FC<{ highline: Highline }> = ({
+  highline,
+}) => (
+  <View className="gap-6">
+    <View className="gap-2">
+      <Text className="text-3xl font-bold tracking-tight text-foreground">
+        {highline.name}
+      </Text>
+      {highline.description ? (
+        <Text className="text-base text-muted-foreground leading-relaxed">
+          {highline.description}
         </Text>
-        {highline.description ? (
-          <Text className="text-base text-muted-foreground leading-relaxed">
-            {highline.description}
-          </Text>
-        ) : null}
-      </View>
-
-      {/* Dimensions Card */}
-      <HighlineDimensions height={highline.height} distance={highline.length} />
-
-      <LocationWeatherCard
-        hasLocation={!!highline.anchor_a_lat}
-        latitude={highline.anchor_a_lat ?? undefined}
-        longitude={highline.anchor_a_long ?? undefined}
-        anchorB={
-          highline.anchor_b_lat && highline.anchor_b_long
-            ? [highline.anchor_b_long, highline.anchor_b_lat]
-            : undefined
-        }
-        name={highline.name}
-        status={(highline.status as RigStatuses | null) ?? null}
-      />
-
-      {/* History */}
-      <HighlineHistory highline={highline} />
+      ) : null}
     </View>
-  );
-}
+
+    <HighlineDimensions height={highline.height} distance={highline.length} />
+  </View>
+);
+
+/** Content of the "Details" tab. */
+export const HighlineDetails: React.FC<{ highline: Highline }> = ({
+  highline,
+}) => (
+  <View className="gap-6">
+    <LocationWeatherCard
+      hasLocation={!!highline.anchor_a_lat}
+      latitude={highline.anchor_a_lat ?? undefined}
+      longitude={highline.anchor_a_long ?? undefined}
+      anchorB={
+        highline.anchor_b_lat && highline.anchor_b_long
+          ? [highline.anchor_b_long, highline.anchor_b_lat]
+          : undefined
+      }
+      name={highline.name}
+      status={(highline.status as RigStatuses | null) ?? null}
+    />
+
+    <HighlineHistory highline={highline} />
+  </View>
+);
 
 const HighlineDimensions: React.FC<{
   distance: number;
