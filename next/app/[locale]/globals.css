@@ -124,9 +124,24 @@
 
 @utility corner-squircle {
   border-radius: 16px;
-  mask-image: paint(squircle);
-  --squircle-radius: 16px;
-  --squircle-smooth: 1;
+}
+
+.hero-bottom-fade {
+  /* Smoothstep samples keep the fade gentle at both ends. */
+  background-image: linear-gradient(
+    to top,
+    hsl(var(--background) / 1) 0%,
+    hsl(var(--background) / 0.972) 10%,
+    hsl(var(--background) / 0.896) 20%,
+    hsl(var(--background) / 0.784) 30%,
+    hsl(var(--background) / 0.648) 40%,
+    hsl(var(--background) / 0.5) 50%,
+    hsl(var(--background) / 0.352) 60%,
+    hsl(var(--background) / 0.216) 70%,
+    hsl(var(--background) / 0.104) 80%,
+    hsl(var(--background) / 0.028) 90%,
+    hsl(var(--background) / 0) 100%
+  );
 }
 
 @layer base {
