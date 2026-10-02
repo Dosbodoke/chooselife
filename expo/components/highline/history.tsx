@@ -1,3 +1,9 @@
+import {
+  getRigSetupStatus,
+  useRigSetup,
+  type RigStatuses,
+  type Setup,
+} from '@chooselife/ui';
 import { useRouter } from 'expo-router';
 import { CalendarRangeIcon, FrownIcon, UsersIcon } from 'lucide-react-native';
 import React, { useMemo } from 'react';
@@ -6,11 +12,6 @@ import { TouchableOpacity, View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
 import { Highline } from '~/hooks/use-highline';
-import {
-  useRigSetup,
-  type RigStatuses,
-  type Setup,
-} from '~/hooks/use-rig-setup';
 import { cn } from '~/lib/utils';
 
 import { StyledSquircle } from '~/components/styled';
@@ -194,44 +195,34 @@ const TimelineItem: React.FC<{
   const { t } = useTranslation();
   const rigDate = new Date(setup.rig_date);
 
-  const getTimelineData = () => {
-    if (setup.is_rigged) {
-      return {
-        status: 'rigged' as RigStatuses,
-        content: (
-          <TimelineContent
-            label={t('components.highline.history.timeline.riggedSince')}
-            date={rigDate.toLocaleDateString('pt-BR')}
-          />
-        ),
-      };
-    }
+  const status = getRigSetupStatus(setup);
+  const date = rigDate.toLocaleDateString('pt-BR');
 
-    if (setup.unrigged_at) {
-      return {
-        status: 'unrigged' as RigStatuses,
-        content: (
-          <TimelineContent
-            label={t('components.highline.history.timeline.rigPeriod')}
-            date={rigDate.toLocaleDateString('pt-BR')}
-            endDate={new Date(setup.unrigged_at).toLocaleDateString('pt-BR')}
-          />
-        ),
-      };
-    }
-
-    return {
-      status: 'planned' as RigStatuses,
-      content: (
-        <TimelineContent
-          label={t('components.highline.history.timeline.plannedFor')}
-          date={rigDate.toLocaleDateString('pt-BR')}
-        />
-      ),
-    };
-  };
-
-  const { status, content } = getTimelineData();
+  const content = {
+    rigged: (
+      <TimelineContent
+        label={t('components.highline.history.timeline.riggedSince')}
+        date={date}
+      />
+    ),
+    unrigged: (
+      <TimelineContent
+        label={t('components.highline.history.timeline.rigPeriod')}
+        date={date}
+        endDate={
+          setup.unrigged_at
+            ? new Date(setup.unrigged_at).toLocaleDateString('pt-BR')
+            : undefined
+        }
+      />
+    ),
+    planned: (
+      <TimelineContent
+        label={t('components.highline.history.timeline.plannedFor')}
+        date={date}
+      />
+    ),
+  }[status];
 
   const dotStyles: Record<RigStatuses, string> = {
     planned: 'bg-amber-400 border-amber-200',

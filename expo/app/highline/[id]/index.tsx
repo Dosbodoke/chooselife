@@ -1,3 +1,4 @@
+import { weatherKeyFactory } from '@chooselife/ui';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -10,7 +11,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { highlineKeyFactory, useHighline } from '~/hooks/use-highline';
 import { useShare } from '~/hooks/use-share';
-import { weatherKeyFactory } from '~/hooks/use-weather';
 
 import {
   COVER_HEIGHT,

@@ -1,3 +1,4 @@
+import { RigStatuses } from '@chooselife/ui';
 import { Link } from 'expo-router';
 import { MoveHorizontalIcon, MoveVerticalIcon } from 'lucide-react-native';
 import React from 'react';
@@ -6,7 +7,6 @@ import { Pressable, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 
 import type { Highline } from '~/hooks/use-highline';
-import { RigStatuses } from '~/hooks/use-rig-setup';
 import { cn } from '~/lib/utils';
 
 import { StyledSquircle } from '~/components/styled';

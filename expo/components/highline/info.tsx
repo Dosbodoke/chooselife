@@ -1,9 +1,9 @@
+import type { RigStatuses } from '@chooselife/ui';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { useHighline } from '~/hooks/use-highline';
-import type { RigStatuses } from '~/hooks/use-rig-setup';
 
 import { Text } from '~/components/ui/text';
 

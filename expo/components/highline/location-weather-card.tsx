@@ -1,10 +1,9 @@
+import type { RigStatuses } from '@chooselife/ui';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { MapPinIcon } from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
-
-import type { RigStatuses } from '~/hooks/use-rig-setup';
 
 import { WeatherInfoCard } from '~/components/map/weather-info-card';
 import { Icon } from '~/components/ui/icon';
