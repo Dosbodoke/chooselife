@@ -241,8 +241,17 @@
       },
       "home": {
         "quickActions": {
-          "setupSimulator": "Setup Simulator",
-          "learn": "Learn"
+          "open": "Open",
+          "setupSimulator": {
+            "eyebrow": "Tool",
+            "title": "Setup Simulator",
+            "description": "Plan your webbing and gear for any highline length"
+          },
+          "learn": {
+            "eyebrow": "Guide",
+            "title": "Learn",
+            "description": "The beginner highline guide, step by step"
+          }
         },
         "sections": {
           "UpcomingEvents": {
