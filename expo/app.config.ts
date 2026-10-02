@@ -7,7 +7,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "ChooseLife",
   slug: "chooselife",
-  version: "1.9.0",
+  version: "1.9.1",
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
@@ -87,6 +87,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-status-bar",
     "expo-image",
     "expo-sharing",
+    "./plugins/with-map-app-queries.cjs",
     "expo-apple-authentication",
     "expo-sqlite",
     "expo-router",

@@ -3,7 +3,7 @@ import React from 'react';
 import { View } from 'react-native';
 
 import { Cadenas, Distance, FullLine, Speedline } from './categories';
-import { CategoryDropdown } from './category-dropdown';
+import { CategoryChips } from './category-chips';
 
 interface Props {
   highlines_ids: string[];
@@ -54,7 +54,7 @@ const CategoryRenderer: React.FC<
 
 export const Ranking: React.FC<Props> = ({
   highlines_ids,
-  visibleCategories = ['cadenas', 'distance', 'fullLine', 'speedline'], // All categories visible by default,
+  visibleCategories = ['distance', 'cadenas', 'fullLine', 'speedline'], // All visible by default; distance (the default) leads the chips
   startDate,
   endDate,
 }) => {
@@ -62,8 +62,8 @@ export const Ranking: React.FC<Props> = ({
   const selectedCategory = category || 'distance';
 
   return (
-    <View className="w-full rounded-lg">
-      <CategoryDropdown
+    <View className="w-full gap-4">
+      <CategoryChips
         selectedCategory={selectedCategory}
         visibleCategories={visibleCategories}
       />

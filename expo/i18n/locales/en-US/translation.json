@@ -530,7 +530,10 @@
         "noLocation": "No Location Set",
         "addLocationHint": "Tap to add coordinates for this highline",
         "explorer": "Explorer",
-        "directions": "Directions"
+        "directions": "Directions",
+        "chooseMapApp": "Choose a map app",
+        "noMapApps": "No compatible map apps are available on this device.",
+        "directionsError": "Could not open directions. Please try again."
       },
       "not-found": {
         "title": "Highline doesn't exist",

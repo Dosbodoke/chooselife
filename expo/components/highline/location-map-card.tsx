@@ -5,12 +5,21 @@ import type { Position } from 'geojson';
 import { MapIcon, NavigationIcon } from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Linking, Platform, TouchableOpacity, View } from 'react-native';
+import {
+  ActionSheetIOS,
+  Alert,
+  Platform,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { getApps, type GetAppsResponse } from 'react-native-map-link';
 
 import { lineStatusColor } from '~/components/map/marker-data';
 import { StyledSquircle } from '~/components/styled';
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
+
+import { MapAppChooser } from './map-app-chooser';
 
 const MAP_HEIGHT = 240;
 const CAMERA_PADDING = 60;
@@ -26,14 +35,6 @@ interface LocationMapCardProps {
   anchorB?: Position;
   status: RigStatuses | null;
 }
-
-const openDirections = ([longitude, latitude]: Position, name: string) => {
-  const url =
-    Platform.OS === 'ios'
-      ? `https://maps.apple.com/?daddr=${latitude},${longitude}&q=${encodeURIComponent(name)}`
-      : `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
-  Linking.openURL(url);
-};
 
 const HighlineCamera: React.FC<{ anchorA: Position; anchorB?: Position }> = ({
   anchorA,
@@ -155,7 +156,7 @@ const HighlineShape: React.FC<{
 
 /**
  * Non-interactive map preview of the highline with its two actions: jump to
- * the line in the explorer, or hand off to the platform maps app for
+ * the line in the explorer, or hand off to the user's chosen maps app for
  * directions.
  *
  * Always satellite, regardless of the explorer's map-type preference: at the
@@ -170,6 +171,69 @@ export const LocationMapCard: React.FC<LocationMapCardProps> = ({
   status,
 }) => {
   const { t } = useTranslation();
+  const [mapApps, setMapApps] = React.useState<GetAppsResponse[]>([]);
+  const [isFindingMapApps, setIsFindingMapApps] = React.useState(false);
+
+  const showDirectionsError = () => {
+    Alert.alert(
+      t('components.highline.location-weather-card.directions'),
+      t('components.highline.location-weather-card.directionsError'),
+    );
+  };
+
+  const openMapApp = async (app: GetAppsResponse) => {
+    setMapApps([]);
+    try {
+      await app.open();
+    } catch {
+      showDirectionsError();
+    }
+  };
+
+  const openDirections = async (
+    [longitude, latitude]: Position,
+    title: string,
+  ) => {
+    setIsFindingMapApps(true);
+    try {
+      const apps = await getApps({
+        latitude,
+        longitude,
+        title,
+        directionsMode: 'car',
+        googleForceLatLon: true,
+        naverCallerName: 'com.bodok.chooselife',
+        appsBlackList: ['uber', 'lyft', 'yandex-taxi', 'gett', 'liftago'],
+      });
+
+      if (apps.length === 0) {
+        Alert.alert(
+          t('components.highline.location-weather-card.directions'),
+          t('components.highline.location-weather-card.noMapApps'),
+        );
+        return;
+      }
+
+      if (Platform.OS === 'ios') {
+        ActionSheetIOS.showActionSheetWithOptions(
+          {
+            title: t('components.highline.location-weather-card.chooseMapApp'),
+            options: [...apps.map((app) => app.name), t('common.cancel')],
+            cancelButtonIndex: apps.length,
+          },
+          (index) => {
+            if (index < apps.length) void openMapApp(apps[index]);
+          },
+        );
+      } else {
+        setMapApps(apps);
+      }
+    } catch {
+      showDirectionsError();
+    } finally {
+      setIsFindingMapApps(false);
+    }
+  };
 
   return (
     <StyledSquircle
@@ -209,6 +273,7 @@ export const LocationMapCard: React.FC<LocationMapCardProps> = ({
         </Link>
         <TouchableOpacity
           activeOpacity={0.8}
+          disabled={isFindingMapApps}
           onPress={() => openDirections(anchorA, name)}
           className="flex-1 flex-row items-center justify-center gap-2 bg-blue-500 rounded-full py-2.5 shadow"
         >
@@ -218,6 +283,15 @@ export const LocationMapCard: React.FC<LocationMapCardProps> = ({
           </Text>
         </TouchableOpacity>
       </View>
+      {mapApps.length > 0 ? (
+        <MapAppChooser
+          apps={mapApps}
+          title={t('components.highline.location-weather-card.chooseMapApp')}
+          cancelText={t('common.cancel')}
+          onSelect={(app) => void openMapApp(app)}
+          onDismiss={() => setMapApps([])}
+        />
+      ) : null}
     </StyledSquircle>
   );
 };
