@@ -87,6 +87,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-status-bar",
     "expo-image",
     "expo-sharing",
+    "./plugins/with-map-app-queries.cjs",
     "expo-apple-authentication",
     "expo-sqlite",
     "expo-router",
