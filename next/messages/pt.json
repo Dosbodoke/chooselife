@@ -39,6 +39,18 @@
       },
       "submit": "Registrar"
     },
+    "browse": {
+      "eyebrow": "Comece a explorar",
+      "title": "Encontre seu próximo highline",
+      "viewMap": "Ver o mapa",
+      "navigationLabel": "Destinos da página inicial",
+      "explore": "Explorar",
+      "map": "Mapa",
+      "events": "Eventos",
+      "app": "O app",
+      "summary": "Mapa de highline, rolês da comunidade e eventos em um só lugar.",
+      "download": "Baixe o app"
+    },
     "seeDetails": "Ver detalhes"
   },
   "map": {
