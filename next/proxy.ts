@@ -53,7 +53,10 @@ function getBaseUrl(request: NextRequest) {
 
 export default async function proxy(req: NextRequest) {
   const isRscRequest = req.headers.has("RSC");
-  if (isHomepage(req.nextUrl.pathname) && !isRscRequest) {
+  const isPageRequest = req.method === "GET" || req.method === "HEAD";
+  // Server Actions POST text/x-component requests without the RSC header.
+  // Let Next handle those instead of negotiating a homepage representation.
+  if (isPageRequest && isHomepage(req.nextUrl.pathname) && !isRscRequest) {
     const representation = negotiateRepresentation(req.headers.get("accept"));
 
     if (representation === "markdown") {
