@@ -22,7 +22,7 @@ import type {
 import { validateConnections, validateSectionLoops } from './validate';
 import { WebPathGestureHandler, WebSection } from './webbing-sections';
 
-const CANVA_PADDING = 50;
+export const CANVA_PADDING = 50;
 
 export type WebbingValidationErrors = {
   main?: string;
@@ -187,8 +187,8 @@ export const SetupCanva: React.FC<{
   );
 };
 
-function computeWebbingSectionData(
-  sections: WebbingWithId[],
+export function computeWebbingSectionData(
+  sections: Pick<WebbingWithId, 'length' | 'leftLoop' | 'rightLoop'>[],
   type: 'main' | 'backup',
 ) {
   const SQUARE_SIZE = 10;
