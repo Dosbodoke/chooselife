@@ -3,17 +3,9 @@
 
 import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
-import {
-  useAnimatedScrollHandler,
-  useSharedValue,
-} from 'react-native-reanimated';
 
-import {
-  CANVA_PADDING,
-  CanvasGrid,
-  computeWebbingSectionData,
-  ScrollableCanvas,
-} from './setup-canvas';
+import { CanvasGrid, ScrollableCanvas } from './setup-canvas';
+import { CANVA_PADDING, computeWebbingSectionData } from './setup-paths';
 import { WebSection } from './webbing-sections';
 
 export type ReadOnlySection = {
@@ -26,13 +18,8 @@ export const ReadOnlySetupCanvas: React.FC<{
   main: ReadOnlySection[];
   backup: ReadOnlySection[];
 }> = ({ main, backup }) => {
+  // No tap targets to keep in sync with the scroll, so no scroll handler.
   const [size, setSize] = useState({ width: 0, height: 0 });
-  const scrollX = useSharedValue(0);
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollX.value = event.contentOffset.x;
-    },
-  });
 
   const paths = useMemo(() => {
     const toFormShape = (section: ReadOnlySection) => ({
@@ -65,7 +52,6 @@ export const ReadOnlySetupCanvas: React.FC<{
         height={size.height}
         containerWidth={size.width}
         containerHeight={size.height}
-        scrollHandler={scrollHandler}
         onTapEnd={() => {}}
       >
         <WebSection

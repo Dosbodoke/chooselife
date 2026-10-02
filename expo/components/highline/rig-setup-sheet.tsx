@@ -17,21 +17,20 @@ import { SegmentedControl } from '~/components/ui/segmented-control';
 import { Text } from '~/components/ui/text';
 import { ReadOnlySetupCanvas } from '~/components/webbing-setup/read-only-setup-canvas';
 
+import { RiggerAvatars, StatusPill } from './rig-setup-display';
 import {
   BACKUP_WEBBING_COLOR,
   formatMeters,
   formatUsername,
   MAIN_WEBBING_COLOR,
-  RiggerAvatars,
   splitWebbing,
-  StatusPill,
   useRiggerCountLabel,
   useSetupDays,
   useWebbingLabels,
   type RiggerProfiles,
   type RigSetup,
   type SetupWebbing,
-} from './rig-setup-display';
+} from './rig-setup-utils';
 
 /** Opens the details sheet through the `setupDetailsID` URL param. */
 export function useOpenRigSetupSheet() {

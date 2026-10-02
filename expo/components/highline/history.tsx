@@ -25,16 +25,16 @@ import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 
+import { RiggerAvatars } from './rig-setup-display';
+import { RigSetupSheet, useOpenRigSetupSheet } from './rig-setup-sheet';
 import {
-  RiggerAvatars,
   splitWebbing,
   STATUS_DOT,
   useRiggerCountLabel,
   useSetupDays,
   type RiggerProfiles,
   type RigSetup,
-} from './rig-setup-display';
-import { RigSetupSheet, useOpenRigSetupSheet } from './rig-setup-sheet';
+} from './rig-setup-utils';
 
 export const HighlineHistory: React.FC<{ highline: Highline }> = ({
   highline,
