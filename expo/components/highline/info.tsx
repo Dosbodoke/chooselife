@@ -1,3 +1,4 @@
+import type { RigStatuses } from '@chooselife/ui';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
@@ -36,6 +37,13 @@ export default function Info() {
         hasLocation={!!highline.anchor_a_lat}
         latitude={highline.anchor_a_lat ?? undefined}
         longitude={highline.anchor_a_long ?? undefined}
+        anchorB={
+          highline.anchor_b_lat && highline.anchor_b_long
+            ? [highline.anchor_b_long, highline.anchor_b_lat]
+            : undefined
+        }
+        name={highline.name}
+        status={(highline.status as RigStatuses | null) ?? null}
       />
 
       {/* History */}

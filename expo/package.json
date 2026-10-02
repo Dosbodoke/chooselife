@@ -1,7 +1,7 @@
 {
   "name": "chooselife-mobile",
   "main": "expo-router/entry",
-  "version": "1.8.6",
+  "version": "1.9.0",
   "private": true,
   "engines": {
     "node": "24.18.0"
@@ -67,6 +67,7 @@
     "expo-apple-authentication": "~57.0.0",
     "expo-asset": "~57.0.3",
     "expo-auth-session": "~57.0.1",
+    "expo-backdrop": "^0.1.1",
     "expo-blur": "~57.0.0",
     "expo-clipboard": "~57.0.0",
     "expo-constants": "~57.0.3",

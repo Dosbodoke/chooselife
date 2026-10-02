@@ -107,10 +107,43 @@
     },
     "tabs": {
       "informations": {
-        "label": "Informations",
+        "label": "Details",
         "height": "Height",
         "length": "Length",
-        "meters": "meters"
+        "location": {
+          "noLocation": "No location set",
+          "addLocationHint": "Click to add coordinates for this highline",
+          "explorer": "Explorer",
+          "directions": "Directions",
+          "mapAlt": "Satellite map of {name}"
+        },
+        "weather": {
+          "title": "Weather Forecast",
+          "wind": "Wind",
+          "humidity": "Humidity",
+          "precipitation": "Precipitation",
+          "gusts": "Gusts",
+          "elevation": "Elevation",
+          "dataSource": "Data: Open-Meteo"
+        },
+        "history": {
+          "title": "Rig History",
+          "description": "Recording your setup not only preserves the higline history but also shows you care about safety.",
+          "empty": "No setup records",
+          "noRiggers": "No riggers assigned",
+          "riggers": "{count, plural, one {# rigger} other {# riggers}}",
+          "appHint": "Rigging is managed in the ChooseLife app",
+          "action": {
+            "unrig": "Unrig in the app",
+            "edit": "Edit in the app",
+            "rig": "Rig in the app"
+          },
+          "timeline": {
+            "riggedSince": "Rigged since",
+            "rigPeriod": "Rig period",
+            "plannedFor": "Planned for"
+          }
+        }
       },
       "comments": "Comments",
       "ranking": {
@@ -504,7 +537,7 @@
     },
     "members": {
       "title": "Members",
-      "description": "Active legal roster with financial standing derived from the billing ledger.",
+      "description": "Active members with payment status based on their contributions.",
       "searchLabel": "Search members",
       "searchPlaceholder": "Search members",
       "stateFilterLabel": "Filter member financial standing",
@@ -522,7 +555,7 @@
       "periodLabel": "Billing period",
       "lifecycleLabel": "Lifecycle",
       "financialLabel": "Financial status",
-      "tableLabel": "Association member ledger",
+      "tableLabel": "Association members and contributions",
       "showing": "Showing {shown} of {total} people",
       "previousPage": "Previous page",
       "nextPage": "Next page",
@@ -560,7 +593,7 @@
         "scheduled": "Scheduled",
         "noObligation": "No charge"
       },
-      "loadedAnnouncement": "Ledger loaded with {count} people.",
+      "loadedAnnouncement": "Member list loaded with {count} people.",
       "reviewPerson": "Review {name}"
     },
     "ledgerReview": {

@@ -107,10 +107,43 @@
     },
     "tabs": {
       "informations": {
-        "label": "Informações",
+        "label": "Detalhes",
         "height": "Altura",
         "length": "Comprimento",
-        "meters": "metros"
+        "location": {
+          "noLocation": "Sem localização",
+          "addLocationHint": "Clique para adicionar coordenadas para este highline",
+          "explorer": "Explorar",
+          "directions": "Como chegar",
+          "mapAlt": "Mapa de satélite de {name}"
+        },
+        "weather": {
+          "title": "Previsão do Tempo",
+          "wind": "Vento",
+          "humidity": "Umidade",
+          "precipitation": "Precipitação",
+          "gusts": "Rajadas",
+          "elevation": "Elevação",
+          "dataSource": "Dados: Open-Meteo"
+        },
+        "history": {
+          "title": "Histórico de montagem",
+          "description": "Registrar a montagem é mais do que manter o histórico da via, é se preocupar com a segurança.",
+          "empty": "Nenhum registro de montagem",
+          "noRiggers": "Nenhum montador registrado",
+          "riggers": "{count, plural, one {# montador} other {# montadores}}",
+          "appHint": "A montagem é gerenciada no app ChooseLife",
+          "action": {
+            "unrig": "Desmontar no app",
+            "edit": "Editar no app",
+            "rig": "Montar no app"
+          },
+          "timeline": {
+            "riggedSince": "Montada desde",
+            "rigPeriod": "Período de montagem",
+            "plannedFor": "Planejado para"
+          }
+        }
       },
       "comments": "Comentários",
       "ranking": {
@@ -504,7 +537,7 @@
     },
     "members": {
       "title": "Membros",
-      "description": "Lista legal de membros ativos com situação financeira calculada a partir do livro-caixa.",
+      "description": "Lista de associados ativos com situação financeira calculada a partir das contribuições.",
       "searchLabel": "Buscar membros",
       "searchPlaceholder": "Buscar membros",
       "stateFilterLabel": "Filtrar situação financeira dos membros",
@@ -522,7 +555,7 @@
       "periodLabel": "Período de cobrança",
       "lifecycleLabel": "Ciclo",
       "financialLabel": "Situação financeira",
-      "tableLabel": "Livro-caixa de membros da associação",
+      "tableLabel": "Associados e contribuições",
       "showing": "Mostrando {shown} de {total} pessoas",
       "previousPage": "Página anterior",
       "nextPage": "Próxima página",
@@ -560,7 +593,7 @@
         "scheduled": "Agendado",
         "noObligation": "Sem cobrança"
       },
-      "loadedAnnouncement": "Livro-caixa carregado com {count} pessoas.",
+      "loadedAnnouncement": "Lista de associados carregada com {count} pessoas.",
       "reviewPerson": "Revisar {name}"
     },
     "ledgerReview": {

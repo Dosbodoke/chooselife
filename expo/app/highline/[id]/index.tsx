@@ -1,21 +1,28 @@
+import { weatherKeyFactory } from '@chooselife/ui';
 import { useNetInfo } from '@react-native-community/netinfo';
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import {
-  ChevronLeftIcon,
-  FootprintsIcon,
-  PencilIcon,
-  ShareIcon,
-} from 'lucide-react-native';
+import { useQueryClient } from '@tanstack/react-query';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { FootprintsIcon } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, TouchableOpacity, View } from 'react-native';
+import { View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useHighline } from '~/hooks/use-highline';
+import { highlineKeyFactory, useHighline } from '~/hooks/use-highline';
 import { useShare } from '~/hooks/use-share';
 
-import { FavoriteHighline } from '~/components/highline/favorite-button';
-import { HighlineImage } from '~/components/highline/highline-image';
+import {
+  COVER_HEIGHT,
+  HighlineCover,
+  PullToRefreshRing,
+  SHEET_OVERLAP,
+  usePullToRefresh,
+} from '~/components/highline/highline-cover';
+import {
+  HEADER_BUTTON_SIZE,
+  HighlineHeader,
+} from '~/components/highline/highline-header';
 import Info from '~/components/highline/info';
 import { HighlineNotFound } from '~/components/highline/not-found';
 import { RigModal } from '~/components/highline/rig-confirmations';
@@ -23,7 +30,6 @@ import { HighlineSkeleton } from '~/components/highline/skeleton';
 import { OfflineBanner } from '~/components/offline-banner';
 import { Ranking } from '~/components/ranking';
 import { FAB } from '~/components/ui/fab';
-import { Icon } from '~/components/ui/icon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { Text } from '~/components/ui/text';
 
@@ -42,6 +48,44 @@ export default function HighlinePage() {
   const router = useRouter();
   const { highline, isPending } = useHighline({ id: highlineID });
   const { share } = useShare();
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Refetch only what this page shows: everything keyed under the highline,
+  // its weather, and leaderboards that include it.
+  const refresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        queryClient.refetchQueries({
+          queryKey: highlineKeyFactory.detail(highlineID).slice(0, 2),
+        }),
+        highline?.anchor_a_lat && highline.anchor_a_long
+          ? queryClient.refetchQueries({
+              queryKey: weatherKeyFactory.current(
+                highline.anchor_a_lat,
+                highline.anchor_a_long,
+              ),
+            })
+          : undefined,
+        queryClient.refetchQueries({
+          predicate: ({ queryKey }) =>
+            queryKey[0] === 'leaderboard' &&
+            (
+              queryKey[1] as { highlinesID?: string[] } | undefined
+            )?.highlinesID?.includes(highlineID) === true,
+        }),
+      ]);
+    } catch (error) {
+      console.error('Failed to refresh highline:', error);
+    }
+    setRefreshing(false);
+  };
+
+  const { scrollY, scrollHandler, refreshControl } = usePullToRefresh({
+    refreshing,
+    onRefresh: refresh,
+  });
 
   const shareListing = async () => {
     if (!highline) return;
@@ -69,8 +113,8 @@ export default function HighlinePage() {
     [highline?.id, t],
   );
 
-  // Padding for FAB
-  const paddingBottom = useMemo(() => insets.bottom + 100, [insets.bottom]);
+  // Room under the content so the FAB never covers it
+  const fabClearance = insets.bottom + 100;
 
   if (isPending) {
     return <HighlineSkeleton />;
@@ -80,86 +124,78 @@ export default function HighlinePage() {
     return <HighlineNotFound />;
   }
 
+  // The offline banner covers the status bar, so push the actions below it.
+  const headerTop = isConnected ? insets.top + 8 : insets.top * 2;
+  const collapseAt =
+    COVER_HEIGHT - SHEET_OVERLAP - (headerTop + HEADER_BUTTON_SIZE + 12);
+
   return (
     <>
-      <ScrollView
-        className="bg-gray-100"
-        contentContainerStyle={{
-          paddingBottom,
-        }}
-      >
-        <OfflineBanner />
-        {/* Header Actions (overlay on image) */}
-        <View
-          className="absolute px-4 flex-row justify-between w-full top-0 z-50"
-          style={{
-            paddingTop: isConnected ? insets.top + 8 : insets.top * 2,
-          }}
+      <View className="flex-1 bg-gray-100">
+        <HighlineCover coverImageId={highline.cover_image} scrollY={scrollY} />
+
+        <Animated.ScrollView
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
+          refreshControl={refreshControl}
         >
-          <TouchableOpacity
-            className="p-2 rounded-full bg-black/60 items-center justify-center"
-            onPress={() =>
-              router.canGoBack() ? router.back() : router.replace('/(tabs)')
-            }
-          >
-            <Icon as={ChevronLeftIcon} className="text-white size-6" />
-          </TouchableOpacity>
-          <View className="flex-row items-center justify-center gap-3">
-            <Link href={`/highline/${highlineID}/edit`} asChild>
-              <TouchableOpacity className="p-2 rounded-full bg-black/60 items-center justify-center">
-                <Icon as={PencilIcon} className="text-white size-6" />
-              </TouchableOpacity>
-            </Link>
-            <TouchableOpacity
-              className="p-2 rounded-full bg-black/60 items-center justify-center"
-              onPress={shareListing}
+          <View style={{ height: COVER_HEIGHT - SHEET_OVERLAP }} />
+          {/* Content sheet over the cover */}
+          <View className="bg-gray-100 rounded-t-3xl px-4 pt-6 gap-6 flex-1 min-h-screen">
+            {/* Tabs */}
+            <Tabs
+              className="flex-1"
+              value={tab}
+              onValueChange={(val) => setTab(val as HighlineTabs)}
             >
-              <Icon as={ShareIcon} className="text-white size-6" />
-            </TouchableOpacity>
-            <FavoriteHighline
-              isFavorite={!!highline?.is_favorite}
-              id={highline?.id}
-            />
-          </View>
-        </View>
-
-        {/* Cover Image */}
-        <HighlineImage
-          coverImageId={highline.cover_image}
-          className="w-full h-80"
-        />
-
-        {/* Content */}
-        <View className="px-4 pt-6 gap-6 flex-1">
-          {/* Tabs */}
-          <Tabs
-            className="flex-1"
-            value={tab}
-            onValueChange={(val) => setTab(val as HighlineTabs)}
-          >
-            <TabsList className="flex-row bg-gray-200">
+              <TabsList className="flex-row bg-gray-200">
+                {tabs.map((tabItem) => (
+                  <TabsTrigger
+                    key={tabItem.id}
+                    className="rounded-lg flex-1"
+                    value={tabItem.id as HighlineTabs}
+                  >
+                    <Text>{tabItem.label}</Text>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
               {tabs.map((tabItem) => (
-                <TabsTrigger
+                <TabsContent
                   key={tabItem.id}
-                  className="rounded-lg flex-1"
+                  className="flex-1 mt-6"
                   value={tabItem.id as HighlineTabs}
                 >
-                  <Text>{tabItem.label}</Text>
-                </TabsTrigger>
+                  {tabItem.content}
+                </TabsContent>
               ))}
-            </TabsList>
-            {tabs.map((tabItem) => (
-              <TabsContent
-                key={tabItem.id}
-                className="flex-1 mt-6"
-                value={tabItem.id as HighlineTabs}
-              >
-                {tabItem.content}
-              </TabsContent>
-            ))}
-          </Tabs>
+            </Tabs>
+            {/* A spacer rather than contentContainerStyle padding: padding
+                changes re-lay out the whole list, and contentInset is iOS-only. */}
+            <View style={{ height: fabClearance }} />
+          </View>
+        </Animated.ScrollView>
+
+        <View pointerEvents="none" className="absolute top-0 left-0 right-0">
+          <OfflineBanner />
         </View>
-      </ScrollView>
+
+        <HighlineHeader
+          highline={highline}
+          scrollY={scrollY}
+          collapseAt={collapseAt}
+          paddingTop={headerTop}
+          onBack={() =>
+            router.canGoBack() ? router.back() : router.replace('/(tabs)')
+          }
+          onShare={shareListing}
+        />
+
+        <PullToRefreshRing
+          scrollY={scrollY}
+          refreshing={refreshing}
+          top={headerTop + HEADER_BUTTON_SIZE + 12}
+        />
+      </View>
 
       {/* Floating Action Button - Register Walk */}
       {tab === 'details' && (

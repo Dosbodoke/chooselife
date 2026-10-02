@@ -338,12 +338,14 @@ export function MembershipLedger({
     refetchOnWindowFocus: true,
   });
 
-  useFocusEffect(() => {
-    if (!userId) return;
-    void queryClient.invalidateQueries({
-      queryKey: queryKeys.membershipBilling.byOrg(organizationId, userId),
-    });
-  });
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!userId) return;
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.membershipBilling.byOrg(organizationId, userId),
+      });
+    }, [organizationId, queryClient, userId]),
+  );
 
   if (!userId) return null;
 

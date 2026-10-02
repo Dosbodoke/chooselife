@@ -1,3 +1,5 @@
+import { rigSetupKeyFactory, useRigSetup } from '@chooselife/ui';
+import DateTimePicker from '@expo/ui/community/datetime-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import i18next from 'i18next';
@@ -11,13 +13,7 @@ import {
 import React, { useMemo, useState } from 'react';
 import { Controller, type SubmitHandler } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import DateTimePicker from '@expo/ui/community/datetime-picker';
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Platform, Pressable, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
   FadeInDown,
@@ -37,7 +33,6 @@ import {
   type WebbingSchemaWithPreffiled,
 } from '~/context/rig-form';
 import { useHighline } from '~/hooks/use-highline';
-import { rigSetupKeyFactory, useRigSetup } from '~/hooks/use-rig-setup';
 import { getWebbingName } from '~/hooks/use-webbings';
 import { HighlineRigIllustration } from '~/lib/icons/highline-rig';
 import { supabase } from '~/lib/supabase';
@@ -524,7 +519,9 @@ const DateForm: React.FC<{
                   minimumDate={new Date()}
                   timeZoneName="UTC"
                   themeVariant={colorScheme}
-                  onValueChange={(_event, selectedDate) => onChange(selectedDate)}
+                  onValueChange={(_event, selectedDate) =>
+                    onChange(selectedDate)
+                  }
                 />
               )}
             />
