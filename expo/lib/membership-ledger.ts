@@ -3,10 +3,18 @@ import type { Json } from '~/utils/database.types';
 import { supabase } from './supabase';
 
 export type LedgerFinancialStanding =
-  'up_to_date' | 'payment_available' | 'under_review' | 'overdue';
+  | 'up_to_date'
+  | 'payment_available'
+  | 'under_review'
+  | 'overdue';
 
 export type LedgerObligationStatus =
-  'scheduled' | 'available' | 'under_review' | 'overdue' | 'settled' | 'void';
+  | 'scheduled'
+  | 'available'
+  | 'under_review'
+  | 'overdue'
+  | 'settled'
+  | 'void';
 
 export type LedgerAction = { type: 'open_obligation' } | { type: 'open_claim' };
 
@@ -41,7 +49,7 @@ export type MembershipBillingLedger = {
   organization_slug: string;
   organization_name: string;
   legal_membership_state: 'applicant' | 'active';
-  application_status: 'draft' | 'submitted' | null;
+  application_status: 'draft' | 'submitted' | 'admitted' | 'refused' | null;
   application_correction_reason: string | null;
   financial_standing: LedgerFinancialStanding;
   evaluated_at: string;
@@ -65,11 +73,18 @@ function asJsonRecord(value: Json): Record<string, Json | undefined> {
 export async function fetchMembershipBillingLedger(
   organizationId: string,
   historyCursor?: string | null,
-): Promise<MembershipBillingLedger> {
+): Promise<MembershipBillingLedger | null> {
   const { data, error } = await supabase.rpc('get_membership_billing_ledger', {
     p_organization_id: organizationId,
     p_history_cursor: historyCursor ?? undefined,
   });
+
+  if (
+    error?.code === '42501' &&
+    error.message === 'Membership Ledger was not found.'
+  ) {
+    return null;
+  }
 
   if (error) throw error;
 
