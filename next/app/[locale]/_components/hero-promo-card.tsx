@@ -31,8 +31,8 @@ export const HeroPromoCard = () => {
       {/* Top Gradient for Navigation visibility */}
       <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/80 to-transparent" />
 
-      {/* Ease the image into the page background without a dark midpoint. */}
-      <div className="hero-bottom-fade absolute inset-x-0 bottom-0 h-[60vh]" />
+      {/* Bottom Gradient - Crucial for blending into the list below */}
+      <div className="absolute inset-x-0 bottom-0 h-[60vh] bg-gradient-to-t from-background via-stone-950/80 to-transparent" />
 
       <div className="relative z-10 flex h-full w-full flex-col items-center justify-center px-4 pb-32 text-center text-white">
         {/* Action Buttons Row */}

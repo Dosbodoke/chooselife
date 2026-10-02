@@ -25,9 +25,9 @@ export default function Search() {
   return (
     <form
       onSubmit={onSubmit}
-      className="group relative mx-auto w-full max-w-2xl rounded-full shadow-[0_2px_8px_rgb(0_0_0/0.08),0_12px_32px_-8px_rgb(0_0_0/0.18)] transition-transform duration-300 ease-out hover:scale-[1.01]"
+      className="group relative mx-auto w-full max-w-2xl transition-all duration-300 ease-out hover:scale-[1.01]"
     >
-      <div className="relative flex h-14 items-center overflow-hidden rounded-full border border-white/20 bg-black/40 backdrop-blur-md transition-colors focus-within:bg-black/60 hover:border-white/30 hover:bg-black/50">
+      <div className="relative flex h-14 items-center overflow-hidden rounded-full border border-white/20 bg-black/40 shadow-2xl backdrop-blur-md transition-colors corner-squircle focus-within:bg-black/60 hover:border-white/30 hover:bg-black/50">
         <span className="flex h-full w-14 items-center justify-center pl-2">
           <SearchIcon className="h-5 w-5 text-white/70" />
         </span>
@@ -38,7 +38,7 @@ export default function Search() {
           placeholder={t("searchPlaceholder")}
           autoComplete="off"
           defaultValue={search || ""}
-          className="h-full w-full rounded-none border-0 bg-transparent pr-4 text-lg text-white shadow-none placeholder:text-white/60 focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="h-full w-full border-0 bg-transparent pr-4 text-lg text-white placeholder:text-white/60 focus-visible:ring-0 focus-visible:ring-offset-0"
         />
 
         {/* Submit Button */}
