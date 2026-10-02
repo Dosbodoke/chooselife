@@ -107,10 +107,43 @@
     },
     "tabs": {
       "informations": {
-        "label": "Informations",
+        "label": "Details",
         "height": "Height",
         "length": "Length",
-        "meters": "meters"
+        "location": {
+          "noLocation": "No location set",
+          "addLocationHint": "Click to add coordinates for this highline",
+          "explorer": "Explorer",
+          "directions": "Directions",
+          "mapAlt": "Satellite map of {name}"
+        },
+        "weather": {
+          "title": "Weather Forecast",
+          "wind": "Wind",
+          "humidity": "Humidity",
+          "precipitation": "Precipitation",
+          "gusts": "Gusts",
+          "elevation": "Elevation",
+          "dataSource": "Data: Open-Meteo"
+        },
+        "history": {
+          "title": "Rig History",
+          "description": "Recording your setup not only preserves the higline history but also shows you care about safety.",
+          "empty": "No setup records",
+          "noRiggers": "No riggers assigned",
+          "riggers": "{count, plural, one {# rigger} other {# riggers}}",
+          "appHint": "Rigging is managed in the ChooseLife app",
+          "action": {
+            "unrig": "Unrig in the app",
+            "edit": "Edit in the app",
+            "rig": "Rig in the app"
+          },
+          "timeline": {
+            "riggedSince": "Rigged since",
+            "rigPeriod": "Rig period",
+            "plannedFor": "Planned for"
+          }
+        }
       },
       "comments": "Comments",
       "ranking": {

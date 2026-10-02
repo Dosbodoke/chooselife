@@ -1,3 +1,4 @@
+import { RigStatuses } from '@chooselife/ui';
 import type {
   BBox,
   Feature,
@@ -12,7 +13,6 @@ import SuperclusterClass, {
 } from 'react-native-clusterer';
 
 import type { Highline } from '~/hooks/use-highline';
-import { RigStatuses } from '~/hooks/use-rig-setup';
 
 import { calculateMidpoint, haversineDistance } from './utils';
 

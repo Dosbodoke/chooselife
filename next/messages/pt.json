@@ -107,10 +107,43 @@
     },
     "tabs": {
       "informations": {
-        "label": "Informações",
+        "label": "Detalhes",
         "height": "Altura",
         "length": "Comprimento",
-        "meters": "metros"
+        "location": {
+          "noLocation": "Sem localização",
+          "addLocationHint": "Clique para adicionar coordenadas para este highline",
+          "explorer": "Explorar",
+          "directions": "Como chegar",
+          "mapAlt": "Mapa de satélite de {name}"
+        },
+        "weather": {
+          "title": "Previsão do Tempo",
+          "wind": "Vento",
+          "humidity": "Umidade",
+          "precipitation": "Precipitação",
+          "gusts": "Rajadas",
+          "elevation": "Elevação",
+          "dataSource": "Dados: Open-Meteo"
+        },
+        "history": {
+          "title": "Histórico de montagem",
+          "description": "Registrar a montagem é mais do que manter o histórico da via, é se preocupar com a segurança.",
+          "empty": "Nenhum registro de montagem",
+          "noRiggers": "Nenhum montador registrado",
+          "riggers": "{count, plural, one {# montador} other {# montadores}}",
+          "appHint": "A montagem é gerenciada no app ChooseLife",
+          "action": {
+            "unrig": "Desmontar no app",
+            "edit": "Editar no app",
+            "rig": "Montar no app"
+          },
+          "timeline": {
+            "riggedSince": "Montada desde",
+            "rigPeriod": "Período de montagem",
+            "plannedFor": "Planejado para"
+          }
+        }
       },
       "comments": "Comentários",
       "ranking": {

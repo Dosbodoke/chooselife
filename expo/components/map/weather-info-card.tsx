@@ -1,17 +1,15 @@
-import type { LucideIcon } from 'lucide-react-native';
+import { getWindDirection, useWeather, type WeatherData } from '@chooselife/ui';
 import {
   CloudIcon,
   DropletIcon,
   ThermometerIcon,
   WindIcon,
+  type LucideIcon,
 } from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-
-import { useWeather } from '~/hooks/use-weather';
-import { getWindDirection, type WeatherData } from '~/types/weather';
 
 import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
@@ -83,23 +81,30 @@ const WeatherCardSkeleton: React.FC = () => (
   </View>
 );
 
-const WeatherDataDisplay: React.FC<{ weather: WeatherData; compact?: boolean }> = ({ weather, compact = false }) => {
+const WeatherDataDisplay: React.FC<{
+  weather: WeatherData;
+  compact?: boolean;
+}> = ({ weather, compact = false }) => {
   const { t } = useTranslation();
-  
+
   return (
-    <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(200)}>
+    <Animated.View
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(200)}
+    >
       {/* Main weather info - hidden in compact mode */}
       {!compact && (
         <View className="flex-row items-center mb-4">
           <Text className="text-5xl mr-2">{weather.weatherIcon}</Text>
           <View className="flex-1">
             <Text className="text-3xl font-bold">
-              {Math.round(weather.temperature)}{weather.temperatureUnit}
+              {Math.round(weather.temperature)}
+              {weather.temperatureUnit}
             </Text>
             <Text className="text-sm text-muted-foreground">
               {weather.weatherDescription}
             </Text>
-          </View> 
+          </View>
         </View>
       )}
 
@@ -131,7 +136,8 @@ const WeatherDataDisplay: React.FC<{ weather: WeatherData; compact?: boolean }> 
       {/* Elevation info - hidden in compact mode */}
       {!compact && (
         <Text className="text-xs text-muted-foreground mt-3 text-center">
-          {t('components.weather-card.elevation')}: {weather.elevation}m • {t('components.weather-card.dataSource')}
+          {t('components.weather-card.elevation')}: {weather.elevation}m •{' '}
+          {t('components.weather-card.dataSource')}
         </Text>
       )}
     </Animated.View>
@@ -152,9 +158,13 @@ const WeatherCardContent: React.FC<WeatherCardContentProps> = ({
   compact = false,
 }) => {
   const { t } = useTranslation();
-  
+
   return (
-    <View className={compact ? "py-2" : "bg-card rounded-2xl p-4 border border-border"}>
+    <View
+      className={
+        compact ? 'py-2' : 'bg-card rounded-2xl p-4 border border-border'
+      }
+    >
       {/* Header - hidden in compact mode */}
       {!compact && (
         <View className="flex-row items-center justify-between mb-3">
@@ -192,7 +202,11 @@ export const WeatherSummary: React.FC<WeatherSummaryProps> = ({
   latitude,
   longitude,
 }) => {
-  const { data: weather, isLoading, error } = useWeather({ latitude, longitude });
+  const {
+    data: weather,
+    isLoading,
+    error,
+  } = useWeather({ latitude, longitude });
 
   if (error) {
     return null;
@@ -212,13 +226,14 @@ export const WeatherSummary: React.FC<WeatherSummaryProps> = ({
   }
 
   return (
-    <Animated.View 
-      entering={FadeIn.duration(200)} 
+    <Animated.View
+      entering={FadeIn.duration(200)}
       className="flex-row items-center gap-1"
     >
       <Text className="text-xl">{weather.weatherIcon}</Text>
       <Text className="text-lg font-semibold">
-        {Math.round(weather.temperature)}{weather.temperatureUnit}
+        {Math.round(weather.temperature)}
+        {weather.temperatureUnit}
       </Text>
     </Animated.View>
   );
@@ -235,7 +250,11 @@ export const WeatherInfoCard: React.FC<WeatherInfoCardProps> = ({
   locationName,
   compact = false,
 }) => {
-  const { data: weather, isLoading, error } = useWeather({ latitude, longitude });
+  const {
+    data: weather,
+    isLoading,
+    error,
+  } = useWeather({ latitude, longitude });
 
   if (error) {
     return null;

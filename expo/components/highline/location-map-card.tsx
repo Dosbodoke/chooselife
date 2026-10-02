@@ -1,3 +1,4 @@
+import type { RigStatuses } from '@chooselife/ui';
 import Mapbox from '@rnmapbox/maps';
 import { Link } from 'expo-router';
 import type { Position } from 'geojson';
@@ -5,8 +6,6 @@ import { MapIcon, NavigationIcon } from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, Platform, TouchableOpacity, View } from 'react-native';
-
-import type { RigStatuses } from '~/hooks/use-rig-setup';
 
 import { lineStatusColor } from '~/components/map/marker-data';
 import { StyledSquircle } from '~/components/styled';

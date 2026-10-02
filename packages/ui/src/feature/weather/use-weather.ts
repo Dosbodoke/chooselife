@@ -1,16 +1,18 @@
-import { useQuery } from '@tanstack/react-query';
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
 
 import {
   parseOpenMeteoResponse,
   type OpenMeteoResponse,
   type WeatherData,
-} from '~/types/weather';
+} from "./types";
 
-const OPEN_METEO_BASE_URL = 'https://api.open-meteo.com/v1/forecast';
+const OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast";
 
 export const weatherKeyFactory = {
   current: (lat: number, lng: number) =>
-    ['weather', 'current', lat.toFixed(2), lng.toFixed(2)] as const,
+    ["weather", "current", lat.toFixed(2), lng.toFixed(2)] as const,
 };
 
 interface UseWeatherParams {
@@ -27,15 +29,15 @@ async function fetchCurrentWeather(
     latitude: latitude.toString(),
     longitude: longitude.toString(),
     current: [
-      'temperature_2m',
-      'relative_humidity_2m',
-      'precipitation',
-      'weather_code',
-      'wind_speed_10m',
-      'wind_direction_10m',
-      'wind_gusts_10m',
-    ].join(','),
-    wind_speed_unit: 'kmh',
+      "temperature_2m",
+      "relative_humidity_2m",
+      "precipitation",
+      "weather_code",
+      "wind_speed_10m",
+      "wind_direction_10m",
+      "wind_gusts_10m",
+    ].join(","),
+    wind_speed_unit: "kmh",
   });
 
   const response = await fetch(`${OPEN_METEO_BASE_URL}?${params.toString()}`);
@@ -52,7 +54,11 @@ async function fetchCurrentWeather(
  * Hook to fetch current weather data for a specific location
  * Uses Open-Meteo free API (no API key required)
  */
-export function useWeather({ latitude, longitude, enabled = true }: UseWeatherParams) {
+export function useWeather({
+  latitude,
+  longitude,
+  enabled = true,
+}: UseWeatherParams) {
   return useQuery<WeatherData>({
     queryKey: weatherKeyFactory.current(latitude, longitude),
     queryFn: () => fetchCurrentWeather(latitude, longitude),

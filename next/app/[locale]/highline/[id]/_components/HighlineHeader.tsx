@@ -1,14 +1,13 @@
 "use client";
 
-import { MapPinIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 import { RegistryEntry } from "@/app/[locale]/highline/[id]/_components/RegistryEntry";
 import type { Highline } from "@/app/actions/getHighline";
+import { ShareButton } from "@/components/ShareButton";
 import { Button } from "@/components/ui/button";
 import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 export const HighlineHeader = ({ highline }: { highline: Highline }) => {
@@ -30,7 +29,9 @@ export const HighlineHeader = ({ highline }: { highline: Highline }) => {
   return (
     <CardHeader className="space-y-4 pb-3">
       <div>
-        <CardTitle className="text-xl">{highline.name}</CardTitle>
+        <CardTitle className="text-3xl font-bold tracking-tight">
+          {highline.name}
+        </CardTitle>
         {highline.description ? (
           <div className="relative">
             <CardDescription
@@ -60,19 +61,7 @@ export const HighlineHeader = ({ highline }: { highline: Highline }) => {
           highlineId={highline.id}
           highlineDistance={highline.length}
         />
-        <Button variant="outline" className="border-dashed" asChild>
-          {highline.anchor_a_lat && highline.anchor_b_lat ? (
-            <Link href={`/?view=map&focusedMarker=${highline.id}`}>
-              <MapPinIcon className="mr-2 h-4 w-4" /> {t("seeOnMap")}
-            </Link>
-          ) : (
-            <Link
-              href={`/?view=map&focusedMarker=${highline.id}&location=picking`}
-            >
-              <MapPinIcon className="mr-2 h-4 w-4" /> {t("addToMap")}
-            </Link>
-          )}
-        </Button>
+        <ShareButton title={highline.name} />
       </div>
     </CardHeader>
   );

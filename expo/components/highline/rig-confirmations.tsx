@@ -1,3 +1,4 @@
+import { rigSetupKeyFactory, Setup, useRigSetupById } from '@chooselife/ui';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -15,11 +16,6 @@ import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { highlineKeyFactory, type Highline } from '~/hooks/use-highline';
-import {
-  rigSetupKeyFactory,
-  Setup,
-  useRigSetupById,
-} from '~/hooks/use-rig-setup';
 import RigCarabiner from '~/lib/icons/rig-carabiner';
 import { supabase } from '~/lib/supabase';
 
