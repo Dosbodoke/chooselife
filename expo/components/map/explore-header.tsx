@@ -10,6 +10,7 @@ import { useRegistrationState } from '~/features/highline-registration/state/sto
 import { replayPendingHighlineSubmissions } from '~/features/highline-registration/submission-queue';
 import { useMapStore } from '~/store/map-store';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import {
   ActivityIcon,
   AlertCircleIcon,
@@ -140,8 +141,8 @@ const ExploreHeader = React.memo(() => {
   const indicatorX = useSharedValue(0);
   const indicatorWidth = useSharedValue(0);
   const animatedIndicatorStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: indicatorX.value }],
-    width: indicatorWidth.value,
+    transform: [{ translateX: indicatorX.get() }],
+    width: indicatorWidth.get(),
   }));
 
   const handleCategoryPress = useCallback(
@@ -151,12 +152,12 @@ const ExploreHeader = React.memo(() => {
 
       if (activeCategory === category) {
         setActiveCategory(null);
-        indicatorWidth.value = withTiming(0, { duration: 250 });
+        indicatorWidth.set(withTiming(0, { duration: 250 }));
       } else {
         setActiveCategory(category);
         if (layout) {
-          indicatorX.value = withTiming(layout.x, { duration: 250 });
-          indicatorWidth.value = withTiming(layout.width, { duration: 250 });
+          indicatorX.set(withTiming(layout.x, { duration: 250 }));
+          indicatorWidth.set(withTiming(layout.width, { duration: 250 }));
           scrollRef.current?.scrollTo({
             x: layout.x - 16,
             y: 0,
@@ -407,10 +408,29 @@ const AddHighlineButton: React.FC = React.memo(() => {
   const { profile, session, sessionLoading } = useAuth();
   const ownerId = session?.user.id ?? profile?.id;
 
-  if (sessionLoading || !ownerId) return null;
+  if (sessionLoading) return null;
+  if (!ownerId) return <SignedOutAddHighlineButton />;
 
   return <AddHighlineButtonForOwner key={ownerId} ownerId={ownerId} />;
 });
+
+/** Registration needs an owner for the durable draft, so sign in first. */
+const SignedOutAddHighlineButton: React.FC = () => {
+  const { t } = useTranslation();
+  const router = useRouter();
+
+  return (
+    <Button
+      size="icon"
+      className="rounded-full"
+      onPress={() => router.push('/(modals)/login')}
+      accessibilityRole="button"
+      accessibilityLabel={t('components.map.explore-header.addHighline')}
+    >
+      <Icon as={PlusIcon} className="size-5 text-primary-foreground" />
+    </Button>
+  );
+};
 
 const AddHighlineButtonForOwner: React.FC<{ ownerId: string }> = React.memo(
   ({ ownerId }) => {

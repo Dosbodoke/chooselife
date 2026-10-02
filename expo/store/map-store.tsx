@@ -164,3 +164,12 @@ export const useMapStore = create<State & Actions>((set) => ({
     }));
   },
 }));
+
+/**
+ * Non-hook snapshot of the camera center, for seeding refs during render
+ * without referencing `useMapStore` as a value (which the React Compiler
+ * rejects).
+ */
+export function getMapCameraCenter() {
+  return useMapStore.getState().camera.center;
+}

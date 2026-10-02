@@ -104,6 +104,178 @@ const PickerCenter: React.FC<{
   );
 };
 
+const PickerTopBar: React.FC<{
+  existingHighlinesVisible: boolean;
+  onBack: () => void;
+  onToggleExistingHighlines: () => void;
+}> = ({ existingHighlinesVisible, onBack, onToggleExistingHighlines }) => {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View
+      className="absolute left-0 right-0 flex-row items-center justify-between px-4"
+      style={{ top: insets.top + 12 }}
+    >
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={t('components.onboard.goBack')}
+        onPress={onBack}
+        className="size-11 items-center justify-center rounded-full bg-white shadow-lg"
+      >
+        <Icon as={ChevronLeftIcon} className="size-6 text-black" />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        accessibilityRole="switch"
+        accessibilityState={{ checked: existingHighlinesVisible }}
+        accessibilityLabel={t(
+          'components.map.location-picker.existingHighlines',
+        )}
+        onPress={onToggleExistingHighlines}
+        className="flex-row items-center gap-2 rounded-full bg-white px-3 py-2 shadow-lg"
+      >
+        <Icon
+          as={existingHighlinesVisible ? EyeIcon : EyeOffIcon}
+          className="size-5 text-black"
+        />
+        <Text className="text-sm font-semibold text-black">
+          {t('components.map.location-picker.existingHighlines')}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const PickerAdjustButton: React.FC<{
+  label: string;
+  onPress: () => void;
+}> = ({ label, onPress }) => (
+  <TouchableOpacity
+    accessibilityRole="button"
+    accessibilityLabel={label}
+    onPress={onPress}
+    className="flex-1 flex-row items-center justify-center gap-1 rounded-xl bg-white/15 px-2 py-3"
+  >
+    <Icon as={PencilIcon} className="size-4 text-white" />
+    <Text className="text-sm font-semibold text-white">{label}</Text>
+  </TouchableOpacity>
+);
+
+const PickerReviewPanel: React.FC<{
+  editing: boolean;
+  isSaving: boolean;
+  isOffline: boolean;
+  onUndo: () => void;
+  onAdjust: (anchor: 'a' | 'b') => void;
+  onContinue: () => void;
+}> = ({ editing, isSaving, isOffline, onUndo, onAdjust, onContinue }) => {
+  const { t } = useTranslation();
+  const continueLabel = t(
+    editing
+      ? 'components.map.location-picker.save'
+      : 'components.map.location-picker.continue',
+  );
+
+  return (
+    <View className="absolute bottom-7 left-4 right-4 gap-2 rounded-2xl bg-black/85 p-3">
+      <View className="flex-row items-center justify-between">
+        <Text className="text-base font-bold text-white">
+          {t('components.map.location-picker.review')}
+        </Text>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={t('components.map.location-picker.undoAnchorB')}
+          onPress={onUndo}
+          className="flex-row items-center gap-1 rounded-full bg-white/15 px-3 py-2"
+        >
+          <Icon as={RotateCcwIcon} className="size-4 text-white" />
+          <Text className="text-sm font-semibold text-white">
+            {t('components.map.location-picker.undo')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <View className="flex-row gap-2">
+        <PickerAdjustButton
+          label={t('components.map.location-picker.adjustA')}
+          onPress={() => onAdjust('a')}
+        />
+        <PickerAdjustButton
+          label={t('components.map.location-picker.adjustB')}
+          onPress={() => onAdjust('b')}
+        />
+      </View>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={continueLabel}
+        onPress={onContinue}
+        disabled={isSaving || isOffline}
+        className="flex-row items-center justify-center gap-2 rounded-xl bg-blue-500 px-3 py-3 disabled:opacity-50"
+      >
+        {isSaving ? <ActivityIndicator color="white" /> : null}
+        <Icon as={CheckIcon} className="size-5 text-white" />
+        <Text className="font-bold text-white">{continueLabel}</Text>
+      </TouchableOpacity>
+      {isOffline && editing ? (
+        <Text className="text-center text-xs text-amber-200">
+          {t('components.map.location-picker.offlineEdit')}
+        </Text>
+      ) : null}
+    </View>
+  );
+};
+
+const PickerPlacementBar: React.FC<{
+  label: string;
+  canUndo: boolean;
+  isSaving: boolean;
+  onUndo: () => void;
+  onPick: () => void;
+}> = ({ label, canUndo, isSaving, onUndo, onPick }) => {
+  const { t } = useTranslation();
+
+  return (
+    <View className="absolute bottom-7 left-4 right-4 flex-row items-center rounded-2xl bg-black/85 p-2">
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={t('components.map.location-picker.undo')}
+        onPress={onUndo}
+        disabled={!canUndo}
+        className="size-12 items-center justify-center rounded-xl disabled:opacity-30"
+      >
+        <Icon as={RotateCcwIcon} className="size-6 text-white" />
+      </TouchableOpacity>
+      <Text className="flex-1 text-center text-base font-semibold text-white">
+        {label}
+      </Text>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        onPress={onPick}
+        disabled={isSaving}
+        className="size-12 items-center justify-center rounded-xl bg-blue-500 disabled:opacity-50"
+      >
+        {isSaving ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Icon as={MapPinIcon} className="size-6 text-white" />
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+function placementLabelKey(
+  stage: PickerStage,
+  adjustingAnchor: 'a' | 'b' | null,
+) {
+  if (adjustingAnchor === 'a') return 'components.map.location-picker.adjustA';
+  if (adjustingAnchor === 'b') return 'components.map.location-picker.adjustB';
+  if (stage === 'place-a') return 'components.map.picker-buttons.setA';
+  if (stage === 'place-b') return 'components.map.picker-buttons.setB';
+  return 'components.map.picker-buttons.confirm';
+}
+
 const PickerChrome: React.FC<PickerChromeProps> = ({
   stage,
   adjustingAnchor,
@@ -122,53 +294,14 @@ const PickerChrome: React.FC<PickerChromeProps> = ({
   onToggleExistingHighlines,
 }) => {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
-  const canUndo = stage !== 'place-a' && !adjustingAnchor;
-  const primaryLabel = adjustingAnchor
-    ? t(
-        adjustingAnchor === 'a'
-          ? 'components.map.location-picker.adjustA'
-          : 'components.map.location-picker.adjustB',
-      )
-    : stage === 'place-a'
-      ? t('components.map.picker-buttons.setA')
-      : stage === 'place-b'
-        ? t('components.map.picker-buttons.setB')
-        : t('components.map.picker-buttons.confirm');
 
   return (
     <>
-      <View
-        className="absolute left-0 right-0 flex-row items-center justify-between px-4"
-        style={{ top: insets.top + 12 }}
-      >
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={t('components.onboard.goBack')}
-          onPress={onBack}
-          className="size-11 items-center justify-center rounded-full bg-white shadow-lg"
-        >
-          <Icon as={ChevronLeftIcon} className="size-6 text-black" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          accessibilityRole="switch"
-          accessibilityState={{ checked: existingHighlinesVisible }}
-          accessibilityLabel={t(
-            'components.map.location-picker.existingHighlines',
-          )}
-          onPress={onToggleExistingHighlines}
-          className="flex-row items-center gap-2 rounded-full bg-white px-3 py-2 shadow-lg"
-        >
-          <Icon
-            as={existingHighlinesVisible ? EyeIcon : EyeOffIcon}
-            className="size-5 text-black"
-          />
-          <Text className="text-sm font-semibold text-black">
-            {t('components.map.location-picker.existingHighlines')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <PickerTopBar
+        existingHighlinesVisible={existingHighlinesVisible}
+        onBack={onBack}
+        onToggleExistingHighlines={onToggleExistingHighlines}
+      />
 
       <PickerCenter
         stage={stage}
@@ -179,104 +312,22 @@ const PickerChrome: React.FC<PickerChromeProps> = ({
       />
 
       {stage === 'review' ? (
-        <View className="absolute bottom-7 left-4 right-4 gap-2 rounded-2xl bg-black/85 p-3">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-base font-bold text-white">
-              {t('components.map.location-picker.review')}
-            </Text>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={t(
-                'components.map.location-picker.undoAnchorB',
-              )}
-              onPress={onUndo}
-              className="flex-row items-center gap-1 rounded-full bg-white/15 px-3 py-2"
-            >
-              <Icon as={RotateCcwIcon} className="size-4 text-white" />
-              <Text className="text-sm font-semibold text-white">
-                {t('components.map.location-picker.undo')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <View className="flex-row gap-2">
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={t('components.map.location-picker.adjustA')}
-              onPress={() => onAdjust('a')}
-              className="flex-1 flex-row items-center justify-center gap-1 rounded-xl bg-white/15 px-2 py-3"
-            >
-              <Icon as={PencilIcon} className="size-4 text-white" />
-              <Text className="text-sm font-semibold text-white">
-                {t('components.map.location-picker.adjustA')}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={t('components.map.location-picker.adjustB')}
-              onPress={() => onAdjust('b')}
-              className="flex-1 flex-row items-center justify-center gap-1 rounded-xl bg-white/15 px-2 py-3"
-            >
-              <Icon as={PencilIcon} className="size-4 text-white" />
-              <Text className="text-sm font-semibold text-white">
-                {t('components.map.location-picker.adjustB')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={t(
-              editing
-                ? 'components.map.location-picker.save'
-                : 'components.map.location-picker.continue',
-            )}
-            onPress={onContinue}
-            disabled={isSaving || isOffline}
-            className="flex-row items-center justify-center gap-2 rounded-xl bg-blue-500 px-3 py-3 disabled:opacity-50"
-          >
-            {isSaving ? <ActivityIndicator color="white" /> : null}
-            <Icon as={CheckIcon} className="size-5 text-white" />
-            <Text className="font-bold text-white">
-              {t(
-                editing
-                  ? 'components.map.location-picker.save'
-                  : 'components.map.location-picker.continue',
-              )}
-            </Text>
-          </TouchableOpacity>
-          {isOffline && editing ? (
-            <Text className="text-center text-xs text-amber-200">
-              {t('components.map.location-picker.offlineEdit')}
-            </Text>
-          ) : null}
-        </View>
+        <PickerReviewPanel
+          editing={editing}
+          isSaving={isSaving}
+          isOffline={isOffline}
+          onUndo={onUndo}
+          onAdjust={onAdjust}
+          onContinue={onContinue}
+        />
       ) : (
-        <View className="absolute bottom-7 left-4 right-4 flex-row items-center rounded-2xl bg-black/85 p-2">
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={t('components.map.location-picker.undo')}
-            onPress={onUndo}
-            disabled={!canUndo}
-            className="size-12 items-center justify-center rounded-xl disabled:opacity-30"
-          >
-            <Icon as={RotateCcwIcon} className="size-6 text-white" />
-          </TouchableOpacity>
-          <Text className="flex-1 text-center text-base font-semibold text-white">
-            {primaryLabel}
-          </Text>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={primaryLabel}
-            onPress={onPick}
-            disabled={isSaving}
-            className="size-12 items-center justify-center rounded-xl bg-blue-500 disabled:opacity-50"
-          >
-            {isSaving ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Icon as={MapPinIcon} className="size-6 text-white" />
-            )}
-          </TouchableOpacity>
-        </View>
+        <PickerPlacementBar
+          label={t(placementLabelKey(stage, adjustingAnchor))}
+          canUndo={stage !== 'place-a' && !adjustingAnchor}
+          isSaving={isSaving}
+          onUndo={onUndo}
+          onPick={onPick}
+        />
       )}
     </>
   );
@@ -340,10 +391,57 @@ const NewHighlinePicker: React.FC<NewHighlinePickerProps> = (props) => {
     );
   }
 
-  if (!ownerId) return null;
+  if (!ownerId) return <SignedOutPicker onBack={props.onBack} />;
 
   return (
     <NewHighlinePickerForOwner key={ownerId} {...props} ownerId={ownerId} />
+  );
+};
+
+/**
+ * A signed-out user can still reach the picker through a legacy deep link.
+ * There is nothing to draft without an owner, so offer sign-in instead of
+ * leaving the map with no chrome. Navigation waits for a tap: pushing the
+ * login modal from a mount effect races the deep link's own transition.
+ */
+const SignedOutPicker: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+
+  const handleSignIn = useCallback(() => {
+    onBack();
+    router.push('/(modals)/login');
+  }, [onBack, router]);
+
+  return (
+    <>
+      <View className="absolute left-4" style={{ top: insets.top + 12 }}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={t('components.onboard.goBack')}
+          onPress={onBack}
+          className="size-11 items-center justify-center rounded-full bg-white shadow-lg"
+        >
+          <Icon as={ChevronLeftIcon} className="size-6 text-black" />
+        </TouchableOpacity>
+      </View>
+
+      <View className="absolute bottom-7 left-4 right-4 gap-3 rounded-2xl bg-black/85 p-4">
+        <Text className="text-center text-base font-bold text-white">
+          {t('app.(modals).register-webbing.authRequired.title')}
+        </Text>
+        <TouchableOpacity
+          accessibilityRole="button"
+          onPress={handleSignIn}
+          className="items-center justify-center rounded-xl bg-blue-500 px-3 py-3"
+        >
+          <Text className="font-bold text-white">
+            {t('app.(modals).register-webbing.authRequired.action')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </>
   );
 };
 

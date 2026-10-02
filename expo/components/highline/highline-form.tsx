@@ -29,7 +29,12 @@ import type { Position } from 'geojson';
 import i18next from 'i18next';
 import { MapPinIcon, UploadIcon, XIcon } from 'lucide-react-native';
 import React, { memo } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import {
+  Controller,
+  useForm,
+  type Control,
+  type DefaultValues,
+} from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -166,22 +171,17 @@ const HighlineFormForOwner: React.FC<{
   );
 };
 
-const LoadedHighlineForm: React.FC<{
-  highline?: Highline;
-  ownerId: string;
-  registration: ReturnType<typeof useRegistrationState>;
-}> = ({ highline, ownerId, registration }) => {
-  const insets = useSafeAreaInsets();
-  const queryClient = useQueryClient();
-  const router = useRouter();
-  const { t } = useTranslation();
-  const isOnline = useOnlineStatus();
-  const [newHighlineUUID, setNewHighlineUUID] = React.useState<string | null>(
-    null,
-  );
-  const [submissionError, setSubmissionError] = React.useState<string | null>(
-    null,
-  );
+type RegistrationHandle = ReturnType<typeof useRegistrationState>;
+
+/**
+ * Anchors for a new registration: the durable draft wins over the route
+ * params (which only seed a draft from a legacy deep link). Edits of an
+ * existing highline have no draft anchors.
+ */
+function useFormAnchors(
+  highline: Highline | undefined,
+  registration: RegistrationHandle,
+) {
   const params = useLocalSearchParams<{
     anchorA?: string;
     anchorB?: string;
@@ -189,40 +189,83 @@ const LoadedHighlineForm: React.FC<{
   }>();
   const routeAnchorA = parseAnchorParam(params.anchorA);
   const routeAnchorB = parseAnchorParam(params.anchorB);
-  const activeDraft = highline ? null : registration.state.activeDraft;
-  const anchorA = highline ? undefined : (activeDraft?.anchorA ?? routeAnchorA);
-  const anchorB = highline ? undefined : (activeDraft?.anchorB ?? routeAnchorB);
-  const draftForm = highline ? null : activeDraft?.form;
 
-  const highlineForm = useForm<FormSchema>({
-    mode: 'onTouched',
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: highline?.name ?? draftForm?.name ?? '',
-      height: highline?.height ?? draftForm?.height ?? 0,
-      length:
-        highline?.length ??
-        draftForm?.length ??
-        (anchorA && anchorB
-          ? Number(
-              haversineDistance(
-                anchorA[1],
-                anchorA[0],
-                anchorB[1],
-                anchorB[0],
-              ).toFixed(),
-            )
-          : 0),
-      description: highline?.description ?? draftForm?.description ?? '',
-      image: highline?.cover_image
-        ? {
-            uri: getR2PublicUrl('images', highline.cover_image),
-          }
-        : registrationImageToPicker(draftForm?.image ?? null),
-    },
-  });
+  if (highline) {
+    return {
+      draftId: params.draftId,
+      routeAnchorA,
+      routeAnchorB,
+      activeDraft: null,
+      anchorA: undefined,
+      anchorB: undefined,
+    };
+  }
 
-  const updateMutation = useMutation<
+  const activeDraft = registration.state.activeDraft;
+  return {
+    draftId: params.draftId,
+    routeAnchorA,
+    routeAnchorB,
+    activeDraft,
+    anchorA: activeDraft?.anchorA ?? routeAnchorA,
+    anchorB: activeDraft?.anchorB ?? routeAnchorB,
+  };
+}
+
+function defaultFormValues({
+  highline,
+  draftForm,
+  anchorA,
+  anchorB,
+}: {
+  highline?: Highline;
+  draftForm?: RegistrationForm | null;
+  anchorA?: AnchorPosition;
+  anchorB?: AnchorPosition;
+}): DefaultValues<FormSchema> {
+  if (highline) {
+    return {
+      name: highline.name ?? '',
+      height: highline.height ?? 0,
+      length: highline.length ?? 0,
+      description: highline.description ?? '',
+      image: highline.cover_image
+        ? { uri: getR2PublicUrl('images', highline.cover_image) }
+        : null,
+    };
+  }
+
+  return {
+    name: draftForm?.name ?? '',
+    height: draftForm?.height ?? 0,
+    length: draftForm?.length ?? anchorDistance(anchorA, anchorB),
+    description: draftForm?.description ?? '',
+    image: registrationImageToPicker(draftForm?.image ?? null),
+  };
+}
+
+function anchorDistance(anchorA?: AnchorPosition, anchorB?: AnchorPosition) {
+  if (!anchorA || !anchorB) return 0;
+  return Number(
+    haversineDistance(anchorA[1], anchorA[0], anchorB[1], anchorB[0]).toFixed(),
+  );
+}
+
+function useHighlineUpdateMutation({
+  highline,
+  ownerId,
+  isOnline,
+  onUpdated,
+}: {
+  highline?: Highline;
+  ownerId: string;
+  isOnline: boolean;
+  onUpdated: (highlineId: string) => void;
+}) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation<
     { newHighlineID: string },
     Error,
     FormSchema,
@@ -295,7 +338,7 @@ const LoadedHighlineForm: React.FC<{
       return { newHighlineID: updatedHighline.id };
     },
     onSuccess: async ({ newHighlineID }) => {
-      setNewHighlineUUID(newHighlineID);
+      onUpdated(newHighlineID);
       await queryClient.invalidateQueries({
         queryKey: highlineKeyFactory.list(ownerId),
       });
@@ -316,7 +359,31 @@ const LoadedHighlineForm: React.FC<{
       }
     },
   });
+}
 
+/**
+ * Durable, offline-first registration: the draft is written to the outbox
+ * before React Query sees it, so a crash or restart can replay the exact same
+ * submission.
+ */
+function useQueueHighlineRegistration({
+  ownerId,
+  store,
+  draftId,
+  routeAnchorA,
+  routeAnchorB,
+}: {
+  ownerId: string;
+  store: RegistrationHandle['store'];
+  draftId?: string;
+  routeAnchorA?: AnchorPosition;
+  routeAnchorB?: AnchorPosition;
+}) {
+  // Cache invalidation for this key lives in the global MutationCache
+  // `onSuccess` (context/react-query.tsx): it must also run for submissions
+  // replayed after a restart, when no component is mounted, and only after the
+  // outbox entry is acknowledged.
+  // react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation
   const submissionMutation = useMutation<
     SubmissionResult,
     Error,
@@ -326,15 +393,124 @@ const LoadedHighlineForm: React.FC<{
     mutationFn: submitHighlineRegistrationOnline,
   });
 
-  const persistForm = React.useCallback(
-    (form: Partial<RegistrationForm>) => {
-      if (highline) return;
-      void registration.store.dispatch({ type: 'update-form', form });
-    },
-    [highline, registration.store],
-  );
+  const ensureRegistrationDraft = React.useCallback(async () => {
+    let state = await store.load();
+    if (!state.activeDraft) {
+      state = await store.dispatch({ type: 'start', draftId });
+    }
 
-  const handleImageChange = React.useCallback(
+    let draft = state.activeDraft;
+    if (!draft) return state;
+
+    if (!draft.anchorA && routeAnchorA && draft.stage === 'place-a') {
+      state = await store.dispatch({ type: 'place-a', position: routeAnchorA });
+    }
+    draft = state.activeDraft;
+    if (!draft) return state;
+    if (
+      !draft.anchorB &&
+      routeAnchorB &&
+      draft.anchorA &&
+      draft.stage === 'place-b'
+    ) {
+      state = await store.dispatch({ type: 'place-b', position: routeAnchorB });
+    }
+    draft = state.activeDraft;
+    if (draft?.anchorA && draft.anchorB && draft.stage !== 'review') {
+      state = await store.dispatch({ type: 'review' });
+    }
+    return state;
+  }, [draftId, store, routeAnchorA, routeAnchorB]);
+
+  /** Resolves to an error message, or `null` once the submission is queued. */
+  const queueRegistration = async (
+    data: FormSchema,
+  ): Promise<string | null> => {
+    let image = data.image;
+    if (image && !pickerImageId(image)) {
+      const staged = await stageHighlineImage(image);
+      image = registrationImageToPicker(staged);
+    }
+
+    await ensureRegistrationDraft();
+    const form: RegistrationForm = {
+      name: data.name,
+      height: data.height,
+      length: data.length,
+      description: data.description ?? '',
+      image: pickerToRegistrationImage(image),
+    };
+    await store.dispatch({ type: 'update-form', form });
+
+    const draft = store.getState().activeDraft;
+    if (!draft?.anchorA || !draft.anchorB || draft.stage !== 'review') {
+      return 'Please choose both highline anchors before submitting.';
+    }
+
+    const submissionId = `submission-${draft.draftId}`;
+    const seed: QueuedHighlineSubmission = {
+      submissionId,
+      sourceDraftId: draft.draftId,
+      ownerId,
+      status: 'pending',
+      anchorA: draft.anchorA,
+      anchorB: draft.anchorB,
+      form: draft.form,
+      highlineId: null,
+      imageId: null,
+      createdAt: draft.createdAt,
+      updatedAt: draft.updatedAt,
+      submittedAt: null,
+      attemptCount: 0,
+      lastAttemptAt: null,
+      nextAttemptAt: null,
+      lastError: null,
+    };
+    const identifiers = createSubmissionIdentifiers(seed);
+
+    // The reducer persists these IDs as part of the queue transition. Only
+    // after that write completes do we hand variables to React Query, so a
+    // crash cannot leave a replay needing to invent a different key.
+    await store.dispatch({
+      type: 'queue',
+      submissionId,
+      highlineId: identifiers.highlineId,
+      imageId: identifiers.imageId,
+    });
+    const queued = store
+      .getState()
+      .submissions.find((item) => item.submissionId === submissionId);
+    if (!queued) {
+      return 'The submission could not be saved for retry.';
+    }
+
+    submissionMutation.mutate(serializeSubmissionVariables(queued));
+    return null;
+  };
+
+  return {
+    ensureRegistrationDraft,
+    queueRegistration,
+    isPending: submissionMutation.isPending,
+  };
+}
+
+/**
+ * New registrations stage the picked image on device so the draft survives a
+ * restart; edits keep the picker asset in memory until submit.
+ */
+function useDraftImageChange({
+  highline,
+  registration,
+  persistForm,
+  onError,
+}: {
+  highline?: Highline;
+  registration: RegistrationHandle;
+  persistForm: (form: Partial<RegistrationForm>) => void;
+  onError: (message: string) => void;
+}) {
+  return React.useCallback(
     async (
       image: ImagePicker.ImagePickerAsset | null,
       onChange: (value: ImagePicker.ImagePickerAsset | null) => void,
@@ -363,53 +539,82 @@ const LoadedHighlineForm: React.FC<{
           await removeStagedHighlineImage(previousImage);
         }
       } catch (error) {
-        setSubmissionError(
+        onError(
           error instanceof Error
             ? error.message
             : 'The selected image could not be saved on this device.',
         );
       }
     },
-    [highline, persistForm, registration.state.activeDraft, registration.store],
+    [
+      highline,
+      onError,
+      persistForm,
+      registration.state.activeDraft,
+      registration.store,
+    ],
+  );
+}
+
+const LoadedHighlineForm: React.FC<{
+  highline?: Highline;
+  ownerId: string;
+  registration: RegistrationHandle;
+}> = ({ highline, ownerId, registration }) => {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { t } = useTranslation();
+  const isOnline = useOnlineStatus();
+  const [newHighlineUUID, setNewHighlineUUID] = React.useState<string | null>(
+    null,
+  );
+  const [submissionError, setSubmissionError] = React.useState<string | null>(
+    null,
+  );
+  const { draftId, routeAnchorA, routeAnchorB, activeDraft, anchorA, anchorB } =
+    useFormAnchors(highline, registration);
+
+  const highlineForm = useForm<FormSchema>({
+    mode: 'onTouched',
+    resolver: zodResolver(formSchema),
+    defaultValues: defaultFormValues({
+      highline,
+      draftForm: activeDraft?.form,
+      anchorA,
+      anchorB,
+    }),
+  });
+
+  const updateMutation = useHighlineUpdateMutation({
+    highline,
+    ownerId,
+    isOnline,
+    onUpdated: setNewHighlineUUID,
+  });
+
+  const { ensureRegistrationDraft, queueRegistration, isPending } =
+    useQueueHighlineRegistration({
+      ownerId,
+      store: registration.store,
+      draftId,
+      routeAnchorA,
+      routeAnchorB,
+    });
+
+  const persistForm = React.useCallback(
+    (form: Partial<RegistrationForm>) => {
+      if (highline) return;
+      void registration.store.dispatch({ type: 'update-form', form });
+    },
+    [highline, registration.store],
   );
 
-  const ensureRegistrationDraft = React.useCallback(async () => {
-    let state = await registration.store.load();
-    if (!state.activeDraft) {
-      state = await registration.store.dispatch({
-        type: 'start',
-        draftId: params.draftId,
-      });
-    }
-
-    let draft = state.activeDraft;
-    if (!draft) return state;
-
-    if (!draft.anchorA && routeAnchorA && draft.stage === 'place-a') {
-      state = await registration.store.dispatch({
-        type: 'place-a',
-        position: routeAnchorA,
-      });
-    }
-    draft = state.activeDraft;
-    if (!draft) return state;
-    if (
-      !draft.anchorB &&
-      routeAnchorB &&
-      draft.anchorA &&
-      draft.stage === 'place-b'
-    ) {
-      state = await registration.store.dispatch({
-        type: 'place-b',
-        position: routeAnchorB,
-      });
-    }
-    draft = state.activeDraft;
-    if (draft?.anchorA && draft.anchorB && draft.stage !== 'review') {
-      state = await registration.store.dispatch({ type: 'review' });
-    }
-    return state;
-  }, [params.draftId, registration.store, routeAnchorA, routeAnchorB]);
+  const handleImageChange = useDraftImageChange({
+    highline,
+    registration,
+    persistForm,
+    onError: setSubmissionError,
+  });
 
   useMountEffect(() => {
     if (!highline) void ensureRegistrationDraft();
@@ -427,69 +632,12 @@ const LoadedHighlineForm: React.FC<{
 
     setSubmissionError(null);
     try {
-      let image = data.image;
-      if (image && !pickerImageId(image)) {
-        const staged = await stageHighlineImage(image);
-        image = registrationImageToPicker(staged);
-      }
-
-      await ensureRegistrationDraft();
-      const form: RegistrationForm = {
-        name: data.name,
-        height: data.height,
-        length: data.length,
-        description: data.description ?? '',
-        image: pickerToRegistrationImage(image),
-      };
-      await registration.store.dispatch({ type: 'update-form', form });
-
-      const draft = registration.store.getState().activeDraft;
-      if (!draft?.anchorA || !draft.anchorB || draft.stage !== 'review') {
-        setSubmissionError(
-          'Please choose both highline anchors before submitting.',
-        );
+      const error = await queueRegistration(data);
+      if (error) {
+        setSubmissionError(error);
         return;
       }
 
-      const submissionId = `submission-${draft.draftId}`;
-      const seed: QueuedHighlineSubmission = {
-        submissionId,
-        sourceDraftId: draft.draftId,
-        ownerId,
-        status: 'pending',
-        anchorA: draft.anchorA,
-        anchorB: draft.anchorB,
-        form: draft.form,
-        highlineId: null,
-        imageId: null,
-        createdAt: draft.createdAt,
-        updatedAt: draft.updatedAt,
-        submittedAt: null,
-        attemptCount: 0,
-        lastAttemptAt: null,
-        nextAttemptAt: null,
-        lastError: null,
-      };
-      const identifiers = createSubmissionIdentifiers(seed);
-
-      // The reducer persists these IDs as part of the queue transition. Only
-      // after that write completes do we hand variables to React Query, so a
-      // crash cannot leave a replay needing to invent a different key.
-      await registration.store.dispatch({
-        type: 'queue',
-        submissionId,
-        highlineId: identifiers.highlineId,
-        imageId: identifiers.imageId,
-      });
-      const queued = registration.store
-        .getState()
-        .submissions.find((item) => item.submissionId === submissionId);
-      if (!queued) {
-        setSubmissionError('The submission could not be saved for retry.');
-        return;
-      }
-
-      submissionMutation.mutate(serializeSubmissionVariables(queued));
       // The draft/outbox is durable now. Return to the live map immediately;
       // the shared registration store renders the pending line while React
       // Query retries in the background, including after a restart.
@@ -515,6 +663,8 @@ const LoadedHighlineForm: React.FC<{
     return <SuccessMessage id={newHighlineUUID} isUpdate={!!highline} />;
   }
 
+  const isEditingOffline = Boolean(highline && !isOnline);
+
   return (
     <KeyboardAwareScrollView
       contentContainerStyle={{
@@ -539,150 +689,17 @@ const LoadedHighlineForm: React.FC<{
         ) : null}
 
         <View className="px-2 gap-4">
-          <Controller
+          <HighlineFormFields
             control={highlineForm.control}
-            name="name"
-            render={({ field, fieldState }) => (
-              <View className="gap-2">
-                <Label nativeID="name">
-                  {t('components.map.register-modal.name.label')}
-                </Label>
-                <Input
-                  value={field.value}
-                  onChangeText={(value) => {
-                    field.onChange(value);
-                    persistForm({ name: value });
-                  }}
-                  className={fieldState.error && 'border-destructive'}
-                  aria-labelledby="name"
-                />
-                {fieldState.error ? (
-                  <Text variant="small" className="text-destructive">
-                    {fieldState.error.message}
-                  </Text>
-                ) : null}
-              </View>
-            )}
-          />
-
-          <Controller
-            control={highlineForm.control}
-            name="height"
-            render={({ field, fieldState }) => (
-              <View className="gap-2">
-                <Label nativeID="height">
-                  {t('components.map.register-modal.height.label')}{' '}
-                  <Text variant="muted">{t('common.optional')}</Text>
-                </Label>
-                <Input
-                  value={field.value.toString()}
-                  onChangeText={(text) => {
-                    const value = +text || 0;
-                    field.onChange(value);
-                    persistForm({ height: value });
-                  }}
-                  keyboardType="number-pad"
-                  className={fieldState.error && 'border-destructive'}
-                  aria-labelledby="height"
-                />
-                {fieldState.error ? (
-                  <Text variant="small" className="text-destructive">
-                    {fieldState.error.message}
-                  </Text>
-                ) : null}
-              </View>
-            )}
-          />
-
-          <Controller
-            control={highlineForm.control}
-            name="length"
-            render={({ field, fieldState }) => (
-              <View className="gap-2">
-                <Label nativeID="length">
-                  {t('components.map.register-modal.length.label')}
-                </Label>
-                <Input
-                  value={field.value.toString()}
-                  onChangeText={(text) => {
-                    const value = +text || 0;
-                    field.onChange(value);
-                    persistForm({ length: value });
-                  }}
-                  contextMenuHidden={true}
-                  editable={false}
-                  keyboardType="number-pad"
-                  className={fieldState.error && 'border-destructive'}
-                  aria-labelledby="length"
-                />
-                {fieldState.error ? (
-                  <Text variant="small" className="text-destructive">
-                    {fieldState.error.message}
-                  </Text>
-                ) : null}
-              </View>
-            )}
-          />
-
-          <Controller
-            control={highlineForm.control}
-            name="description"
-            render={({ field, fieldState }) => (
-              <View className="gap-2">
-                <Label nativeID="description">
-                  {t('components.map.register-modal.description.label')}{' '}
-                  <Text variant="muted">{t('common.optional')}</Text>
-                </Label>
-                <Textarea
-                  keyboardType="default"
-                  returnKeyType="done"
-                  placeholder={t(
-                    'components.map.register-modal.description.placeholder',
-                  )}
-                  submitBehavior="blurAndSubmit"
-                  onChangeText={(value) => {
-                    field.onChange(value);
-                    persistForm({ description: value });
-                  }}
-                  value={field.value}
-                  className={fieldState.error && 'border-destructive'}
-                  aria-labelledby="description"
-                />
-                {fieldState.error ? (
-                  <Text variant="small" className="text-destructive">
-                    {fieldState.error.message}
-                  </Text>
-                ) : null}
-              </View>
-            )}
-          />
-
-          <Controller
-            control={highlineForm.control}
-            name="image"
-            render={({ field, fieldState }) => (
-              <View className="w-full">
-                <HighlineImageUploader
-                  value={field.value}
-                  onChange={(value) =>
-                    void handleImageChange(value, field.onChange)
-                  }
-                  hasError={!!fieldState.error}
-                />
-                {fieldState.error ? (
-                  <Text className="text-destructive text-sm mt-1">
-                    {fieldState.error.message}
-                  </Text>
-                ) : null}
-              </View>
-            )}
+            persistForm={persistForm}
+            onImageChange={handleImageChange}
           />
 
           {submissionError ? (
             <Text className="text-destructive">{submissionError}</Text>
           ) : null}
 
-          {highline && !isOnline ? (
+          {isEditingOffline ? (
             <Text className="text-center text-sm text-amber-700">
               {t('components.map.register-modal.offlineEdit')}
             </Text>
@@ -693,11 +710,7 @@ const LoadedHighlineForm: React.FC<{
               handleValidForm,
               handleInvalidForm,
             )}
-            disabled={
-              updateMutation.isPending ||
-              submissionMutation.isPending ||
-              Boolean(highline && !isOnline)
-            }
+            disabled={updateMutation.isPending || isPending || isEditingOffline}
           >
             <Text>
               {t(
@@ -708,6 +721,149 @@ const LoadedHighlineForm: React.FC<{
         </View>
       </View>
     </KeyboardAwareScrollView>
+  );
+};
+
+const FieldError: React.FC<{ message?: string }> = ({ message }) =>
+  message ? (
+    <Text variant="small" className="text-destructive">
+      {message}
+    </Text>
+  ) : null;
+
+const HighlineFormFields: React.FC<{
+  control: Control<FormSchema>;
+  persistForm: (form: Partial<RegistrationForm>) => void;
+  onImageChange: (
+    image: ImagePicker.ImagePickerAsset | null,
+    onChange: (value: ImagePicker.ImagePickerAsset | null) => void,
+  ) => Promise<void>;
+}> = ({ control, persistForm, onImageChange }) => {
+  const { t } = useTranslation();
+
+  return (
+    <>
+      <Controller
+        control={control}
+        name="name"
+        render={({ field, fieldState }) => (
+          <View className="gap-2">
+            <Label nativeID="name">
+              {t('components.map.register-modal.name.label')}
+            </Label>
+            <Input
+              value={field.value}
+              onChangeText={(value) => {
+                field.onChange(value);
+                persistForm({ name: value });
+              }}
+              className={fieldState.error && 'border-destructive'}
+              aria-labelledby="name"
+            />
+            <FieldError message={fieldState.error?.message} />
+          </View>
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="height"
+        render={({ field, fieldState }) => (
+          <View className="gap-2">
+            <Label nativeID="height">
+              {t('components.map.register-modal.height.label')}{' '}
+              <Text variant="muted">{t('common.optional')}</Text>
+            </Label>
+            <Input
+              value={field.value.toString()}
+              onChangeText={(text) => {
+                const value = +text || 0;
+                field.onChange(value);
+                persistForm({ height: value });
+              }}
+              keyboardType="number-pad"
+              className={fieldState.error && 'border-destructive'}
+              aria-labelledby="height"
+            />
+            <FieldError message={fieldState.error?.message} />
+          </View>
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="length"
+        render={({ field, fieldState }) => (
+          <View className="gap-2">
+            <Label nativeID="length">
+              {t('components.map.register-modal.length.label')}
+            </Label>
+            <Input
+              value={field.value.toString()}
+              onChangeText={(text) => {
+                const value = +text || 0;
+                field.onChange(value);
+                persistForm({ length: value });
+              }}
+              contextMenuHidden={true}
+              editable={false}
+              keyboardType="number-pad"
+              className={fieldState.error && 'border-destructive'}
+              aria-labelledby="length"
+            />
+            <FieldError message={fieldState.error?.message} />
+          </View>
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="description"
+        render={({ field, fieldState }) => (
+          <View className="gap-2">
+            <Label nativeID="description">
+              {t('components.map.register-modal.description.label')}{' '}
+              <Text variant="muted">{t('common.optional')}</Text>
+            </Label>
+            <Textarea
+              keyboardType="default"
+              returnKeyType="done"
+              placeholder={t(
+                'components.map.register-modal.description.placeholder',
+              )}
+              submitBehavior="blurAndSubmit"
+              onChangeText={(value) => {
+                field.onChange(value);
+                persistForm({ description: value });
+              }}
+              value={field.value}
+              className={fieldState.error && 'border-destructive'}
+              aria-labelledby="description"
+            />
+            <FieldError message={fieldState.error?.message} />
+          </View>
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="image"
+        render={({ field, fieldState }) => (
+          <View className="w-full">
+            <HighlineImageUploader
+              value={field.value}
+              onChange={(value) => void onImageChange(value, field.onChange)}
+              hasError={!!fieldState.error}
+            />
+            {fieldState.error ? (
+              <Text className="text-destructive text-sm mt-1">
+                {fieldState.error.message}
+              </Text>
+            ) : null}
+          </View>
+        )}
+      />
+    </>
   );
 };
 
