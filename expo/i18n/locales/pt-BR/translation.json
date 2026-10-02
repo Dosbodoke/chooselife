@@ -530,7 +530,10 @@
         "noLocation": "Sem Localização",
         "addLocationHint": "Toque para adicionar coordenadas para este highline",
         "explorer": "Explorar",
-        "directions": "Como chegar"
+        "directions": "Como chegar",
+        "chooseMapApp": "Escolha um app de mapas",
+        "noMapApps": "Nenhum app de mapas compatível está disponível neste aparelho.",
+        "directionsError": "Não foi possível abrir as direções. Tente novamente."
       },
       "not-found": {
         "title": "Highline não existe",
