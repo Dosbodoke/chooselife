@@ -1,11 +1,21 @@
 import HighlineImage from "@/components/HighlineImage";
+import { cn } from "@/lib/utils";
 
-export function HighlineListSkeleton() {
+type HighlineListSkeletonProps = {
+  layout?: "grid" | "rail";
+};
+
+export function HighlineListSkeleton({
+  layout = "grid",
+}: HighlineListSkeletonProps) {
   return (
     <>
       {Array.from(Array(8)).map((_, idx) => (
         <div
-          className="flex w-full max-w-[24rem] animate-pulse flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow dark:border-gray-700 dark:bg-gray-800 md:w-96"
+          className={cn(
+            "flex w-full max-w-[24rem] animate-pulse flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow dark:border-gray-700 dark:bg-gray-800 md:w-96",
+            layout === "rail" && "min-w-[18rem] shrink-0 md:min-w-[20rem]",
+          )}
           key={`high-skeleton-${idx}`}
         >
           <div className="relative block h-72 w-full opacity-25">

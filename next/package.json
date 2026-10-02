@@ -12,6 +12,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test:agent-readiness": "node --test tests/agent-readiness.test.mjs",
     "test": "node --test utils/auth/sign-in.test.ts lib/billing-workspace-ledger.test.ts lib/billing-workspace.test.ts lib/courses/highline-beginner-access.test.ts"
   },
   "dependencies": {

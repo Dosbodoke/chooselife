@@ -1,0 +1,13 @@
+# Chooselife
+
+> Chooselife is a highline app and community hub for discovering highlines, exploring their locations, recording walks, and finding events.
+
+Chooselife is the product name used by this website and its mobile app. The homepage is the canonical public entry point and supports `Accept: text/markdown` content negotiation for agents.
+
+## Core pages
+
+- [Homepage](https://chooselife.club/): Discover highlines and community resources.
+- [Events](https://chooselife.club/events): Browse upcoming highline and slackline events.
+- [Download the app](https://chooselife.club/download): Find the current iOS and Android app links.
+- [Privacy policy](https://chooselife.club/privacy): Read the site's privacy policy.
+- [Sitemap](https://chooselife.club/sitemap.xml): Find the site's indexed URLs.
