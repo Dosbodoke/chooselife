@@ -28,20 +28,3 @@ export const WhatsAppGroupLink: React.FC<{ url: string }> = ({ url }) => {
     </TouchableOpacity>
   );
 };
-
-// Mirrors the `highline_whatsapp_group_url_check` constraint.
-const WHATSAPP_GROUP_URL = /^https:\/\/chat\.whatsapp\.com\/[A-Za-z0-9]+$/;
-
-/**
- * Trims a pasted invite link and drops the query string WhatsApp appends when
- * sharing (e.g. `?mode=ems_copy_t`). Empty input becomes `null`.
- */
-export const normalizeWhatsAppGroupUrl = (value?: string | null) => {
-  const url = value?.trim().split(/[?#]/)[0];
-  return url ? url : null;
-};
-
-export const isWhatsAppGroupUrl = (value?: string | null) => {
-  const url = normalizeWhatsAppGroupUrl(value);
-  return url === null || WHATSAPP_GROUP_URL.test(url);
-};

@@ -650,11 +650,6 @@
           "positive": "Comprimento não pode ser negativo",
           "label": "Comprimento (em metros)"
         },
-        "whatsappGroup": {
-          "label": "Link do grupo do WhatsApp",
-          "placeholder": "https://chat.whatsapp.com/...",
-          "invalid": "Cole um link de convite de grupo do WhatsApp (https://chat.whatsapp.com/...)"
-        },
         "description": {
           "label": "Descrição",
           "placeholder": "Fale um pouco sobre este Highline. Aqui é o lugar perfeito para dar informações de acesso, segurança, dica para montagem ou rolê, etc..."

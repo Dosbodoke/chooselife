@@ -650,11 +650,6 @@
           "positive": "Length cannot be negative",
           "label": "Length (in meters)"
         },
-        "whatsappGroup": {
-          "label": "WhatsApp group link",
-          "placeholder": "https://chat.whatsapp.com/...",
-          "invalid": "Paste a WhatsApp group invite link (https://chat.whatsapp.com/...)"
-        },
         "description": {
           "label": "Description",
           "placeholder": "Tell us about this Highline. This is the perfect place to provide access information, safety tips, setup hints, etc..."
