@@ -1,6 +1,11 @@
 import Mapbox from '@rnmapbox/maps';
+import type { AnchorPosition } from '~/features/highline-registration/state/model';
 import { isCameraOnLocation } from '~/store/camera-state';
-import { useMapStore } from '~/store/map-store';
+import {
+  getMapCameraCenter,
+  useMapStore,
+  type LocationPickerRequest,
+} from '~/store/map-store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { Position } from 'geojson';
 import throttle from 'lodash.throttle';
@@ -23,6 +28,8 @@ import {
 
 import ListingsBottomSheet from '~/components/map/bottom-sheet';
 import MapControls from '~/components/map/controls';
+import { HighlinePickerMapLayers } from '~/components/map/highline-picker-map-layers';
+import { HighlinePickerOverlay } from '~/components/map/highline-picker-overlay';
 import { MapCardList } from '~/components/map/map-card';
 import { Markers } from '~/components/map/markers';
 import { ChooselifeTrails } from '~/components/map/trail-shape';
@@ -88,75 +95,102 @@ function FocusedMarkerController({
   return null;
 }
 
-export default function ExploreMap() {
-  useOfflineRegion();
+/** Whether opening the picker for `request` aims the camera somewhere. */
+function pickerMovesCamera(request: LocationPickerRequest | null): boolean {
+  if (!request) return false;
+  if (request.kind === 'edit') {
+    return Boolean(request.anchorA && request.anchorB);
+  }
+  return Boolean(request.center);
+}
+
+/**
+ * Aims the camera at the picker's starting point. Mounted only once the map
+ * has loaded, so a request that arrives before the style is ready is applied
+ * then instead of being dropped by the native camera.
+ */
+function PickerCameraController({
+  request,
+  cameraRef,
+}: {
+  request: LocationPickerRequest;
+  cameraRef: React.RefObject<Mapbox.Camera | null>;
+}) {
+  useMountEffect(() => {
+    if (request.kind === 'new') {
+      if (!request.center) return;
+
+      cameraRef.current?.setCamera({
+        centerCoordinate: request.center,
+        zoomLevel: request.zoom,
+        animationDuration: 0,
+      });
+      return;
+    }
+
+    const { anchorA, anchorB } = request;
+    if (!anchorA || !anchorB) return;
+
+    const northEast: Position = [
+      Math.max(anchorA[0], anchorB[0]),
+      Math.max(anchorA[1], anchorB[1]),
+    ];
+    const southWest: Position = [
+      Math.min(anchorA[0], anchorB[0]),
+      Math.min(anchorA[1], anchorB[1]),
+    ];
+
+    cameraRef.current?.fitBounds(northEast, southWest, [100, 80, 260, 80], 700);
+  });
+
+  return null;
+}
+
+function ClearSelectionButton({ onPress }: { onPress: () => void }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
-  const mapRef = useRef<Mapbox.MapView>(null);
-  const cameraRef = useRef<Mapbox.Camera>(null);
+  return (
+    <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={t('components.onboard.goBack')}
+      testID="map-clear-selection"
+      onPress={onPress}
+      style={{
+        position: 'absolute',
+        top: insets.top + 16,
+        left: insets.left + 8,
+        width: 48,
+        height: 48,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'white',
+      }}
+    >
+      <Icon as={ChevronLeftIcon} size={24} color="black" />
+    </TouchableOpacity>
+  );
+}
 
+/**
+ * Tracks the camera for the locate control and the picker crosshair. The
+ * latest center is kept in a ref (updated on every frame) while the store only
+ * receives throttled updates.
+ */
+function useCameraTracking(cameraRef: React.RefObject<Mapbox.Camera | null>) {
+  const setCamera = useMapStore((state) => state.setCamera);
+  const setUserLocation = useMapStore((state) => state.setUserLocation);
   const [isOnMyLocation, setIsOnMyLocation] = useState(false);
-  const [isMapReady, setIsMapReady] = useState(false);
+  // Seeded lazily from the store so the first read before any camera event
+  // still has a real center.
+  const latestCameraCenterRef = useRef<AnchorPosition | null>(null);
 
   // Where `goToMyLocation` last aimed. The locate control latches on the camera
   // reaching it rather than on a timer, so the throttled camera handler cannot
   // clear the flag mid-flight and anything that later moves the camera away
   // releases it on its own.
   const myLocationTargetRef = useRef<Position | null>(null);
-  const searchQuery = useMapStore((state) => state.searchQuery);
-  const activeCategory = useMapStore((state) => state.activeCategory);
-  const setCamera = useMapStore((state) => state.setCamera);
-  const setUserLocation = useMapStore((state) => state.setUserLocation);
-  const [highlightedMarker, setHighlightedMarker] = useMapStore(
-    useShallow((state) => [
-      state.highlightedMarker,
-      state.setHighlightedMarker,
-    ]),
-  );
-  const [clusteredMarkers, setClusteredMarkers] = useMapStore(
-    useShallow((state) => [state.clusteredMarkers, state.setClusteredMarkers]),
-  );
-
-  const { focusedMarker } = useLocalSearchParams<{ focusedMarker?: string }>();
-  const router = useRouter();
-
-  const isMapCardVisible = clusteredMarkers.length > 0;
-  const isSheetAvailable = !isMapCardVisible && !focusedMarker;
-
-  const { highlines, isLoading } = useHighline({
-    searchTerm: searchQuery,
-    category: activeCategory,
-  });
-  const {
-    mapType,
-    setMapType,
-    mapStyle,
-    isLoading: isMapStyleLoading,
-  } = useMapStyle();
-
-  const highlinesWithLocation = useMemo(() => {
-    return highlines.filter(
-      (h) =>
-        h.anchor_a_lat && h.anchor_a_long && h.anchor_b_lat && h.anchor_b_long,
-    );
-  }, [highlines]);
-
-  const focusedHighline = useMemo(() => {
-    if (!focusedMarker || isLoading || highlines.length === 0) {
-      return null;
-    }
-
-    return highlines.find((highline) => highline.id === focusedMarker) ?? null;
-  }, [focusedMarker, highlines, isLoading]);
-
-  const focusHighline = useCallback(
-    (highline: Highline, padding: [number, number, number, number]) => {
-      const { ne, sw } = getHighlineBounds(highline);
-      cameraRef.current?.fitBounds(ne, sw, padding, 1000);
-    },
-    [],
-  );
 
   const goToMyLocation = useCallback(async () => {
     const region = await getMyLocation();
@@ -175,7 +209,7 @@ export default function ExploreMap() {
       animationMode: 'flyTo',
     });
     setIsOnMyLocation(true);
-  }, [setUserLocation]);
+  }, [cameraRef, setUserLocation]);
 
   const cameraCallback = useCallback(
     (state: Mapbox.MapState) => {
@@ -195,28 +229,156 @@ export default function ExploreMap() {
 
   const handleCameraChanged = useCallback(
     (state: Mapbox.MapState) => {
+      latestCameraCenterRef.current = [
+        state.properties.center[0],
+        state.properties.center[1],
+      ];
       throttledCameraUpdate(state);
     },
     [throttledCameraUpdate],
   );
 
+  const getCurrentCameraCenter = useCallback(() => {
+    if (!latestCameraCenterRef.current) {
+      latestCameraCenterRef.current = getMapCameraCenter() as AnchorPosition;
+    }
+    return latestCameraCenterRef.current;
+  }, []);
+
+  return {
+    isOnMyLocation,
+    goToMyLocation,
+    handleCameraChanged,
+    getCurrentCameraCenter,
+  };
+}
+
+/** Highlines that can be drawn on the map, plus the deep-linked one if any. */
+function useMapHighlines(focusedMarker: string | undefined) {
+  const searchQuery = useMapStore((state) => state.searchQuery);
+  const activeCategory = useMapStore((state) => state.activeCategory);
+  const { highlines, isLoading } = useHighline({
+    searchTerm: searchQuery,
+    category: activeCategory,
+  });
+
+  const highlinesWithLocation = useMemo(() => {
+    return highlines.filter(
+      (h) =>
+        h.anchor_a_lat && h.anchor_a_long && h.anchor_b_lat && h.anchor_b_long,
+    );
+  }, [highlines]);
+
+  const focusedHighline = useMemo(() => {
+    if (!focusedMarker || isLoading || highlines.length === 0) {
+      return null;
+    }
+
+    return highlines.find((highline) => highline.id === focusedMarker) ?? null;
+  }, [focusedMarker, highlines, isLoading]);
+
+  return { highlinesWithLocation, focusedHighline };
+}
+
+/** Crosshair and clear-selection control shown while browsing the map. */
+function BrowseOverlay({
+  hasSelection,
+  onClearSelection,
+}: {
+  hasSelection: boolean;
+  onClearSelection: () => void;
+}) {
+  return (
+    <>
+      <WeatherCrosshair />
+      {hasSelection ? (
+        <ClearSelectionButton onPress={onClearSelection} />
+      ) : null}
+    </>
+  );
+}
+
+export default function ExploreMap() {
+  useOfflineRegion();
+
+  const mapRef = useRef<Mapbox.MapView>(null);
+  const cameraRef = useRef<Mapbox.Camera>(null);
+  const [isMapReady, setIsMapReady] = useState(false);
+  const {
+    isOnMyLocation,
+    goToMyLocation,
+    handleCameraChanged,
+    getCurrentCameraCenter,
+  } = useCameraTracking(cameraRef);
+
+  const locationPickerRequest = useMapStore(
+    (state) => state.locationPickerRequest,
+  );
+  const locationPickerSession = useMapStore(
+    (state) => state.locationPickerSession,
+  );
+  const clearLocationPickerRequest = useMapStore(
+    (state) => state.clearLocationPickerRequest,
+  );
+  const [highlightedMarker, setHighlightedMarker] = useMapStore(
+    useShallow((state) => [
+      state.highlightedMarker,
+      state.setHighlightedMarker,
+    ]),
+  );
+  const [clusteredMarkers, setClusteredMarkers] = useMapStore(
+    useShallow((state) => [state.clusteredMarkers, state.setClusteredMarkers]),
+  );
+
+  const { focusedMarker } = useLocalSearchParams<{ focusedMarker?: string }>();
+  const router = useRouter();
+
+  const isMapCardVisible = clusteredMarkers.length > 0;
+  const isPickerActive = locationPickerRequest !== null;
+  const isSheetAvailable =
+    !isPickerActive && !isMapCardVisible && !focusedMarker;
+
+  const { highlinesWithLocation, focusedHighline } =
+    useMapHighlines(focusedMarker);
+  const {
+    mapType,
+    setMapType,
+    mapStyle,
+    isLoading: isMapStyleLoading,
+  } = useMapStyle();
+
+  const focusHighline = useCallback(
+    (highline: Highline, padding: [number, number, number, number]) => {
+      const { ne, sw } = getHighlineBounds(highline);
+      cameraRef.current?.fitBounds(ne, sw, padding, 1000);
+    },
+    [],
+  );
+
   const handleDidFinishLoadingMap = useCallback(() => {
     setIsMapReady(true);
-    if (!focusedMarker) {
+    // A focused marker or an open picker owns the first camera move.
+    if (!focusedMarker && !pickerMovesCamera(locationPickerRequest)) {
       goToMyLocation();
     }
-  }, [focusedMarker, goToMyLocation]);
+  }, [focusedMarker, goToMyLocation, locationPickerRequest]);
 
   const handleClearFocusedMarker = useCallback(() => {
     router.setParams({ focusedMarker: undefined });
   }, [router]);
 
   const handleMapPress = useCallback(() => {
+    if (isPickerActive) return;
     if (highlightedMarker) {
       setHighlightedMarker(null);
       setClusteredMarkers([]);
     }
-  }, [highlightedMarker, setClusteredMarkers, setHighlightedMarker]);
+  }, [
+    highlightedMarker,
+    isPickerActive,
+    setClusteredMarkers,
+    setHighlightedMarker,
+  ]);
 
   const handleMarkerUpdate = useCallback(
     (highlines: Highline[], focused: Highline) => {
@@ -226,6 +388,13 @@ export default function ExploreMap() {
     },
     [focusHighline, setClusteredMarkers, setHighlightedMarker],
   );
+
+  const handlePickerBack = useCallback(() => {
+    clearLocationPickerRequest();
+    if (locationPickerRequest?.kind === 'edit' && router.canGoBack()) {
+      router.back();
+    }
+  }, [clearLocationPickerRequest, locationPickerRequest, router]);
 
   const handleChangeFocusedMarker = useCallback(
     (high: Highline) => {
@@ -249,7 +418,7 @@ export default function ExploreMap() {
         onCameraChanged={handleCameraChanged}
         onMapIdle={handleCameraChanged}
         onDidFinishLoadingMap={handleDidFinishLoadingMap}
-        onPress={handleMapPress}
+        onPress={isPickerActive ? undefined : handleMapPress}
       >
         <Mapbox.Camera
           ref={cameraRef}
@@ -258,10 +427,17 @@ export default function ExploreMap() {
         />
         <ChooselifeTrails />
 
+        <HighlinePickerMapLayers />
+
         <Markers
           cameraRef={cameraRef}
           highlines={highlinesWithLocation}
           updateMarkers={handleMarkerUpdate}
+          interactive={!isPickerActive}
+          visible={
+            !isPickerActive ||
+            locationPickerSession?.existingHighlinesVisible !== false
+          }
         />
 
         {/*
@@ -283,29 +459,20 @@ export default function ExploreMap() {
         />
       ) : null}
 
-      <WeatherCrosshair />
-
-      {highlightedMarker ? (
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={t('components.onboard.goBack')}
-          testID="map-clear-selection"
-          onPress={handleMapPress}
-          style={{
-            position: 'absolute',
-            top: insets.top + 16,
-            left: insets.left + 8,
-            width: 48,
-            height: 48,
-            borderRadius: 8,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'white',
-          }}
-        >
-          <Icon as={ChevronLeftIcon} size={24} color="black" />
-        </TouchableOpacity>
+      {isMapReady && locationPickerRequest ? (
+        <PickerCameraController
+          key={`camera-${locationPickerRequest.requestId}`}
+          request={locationPickerRequest}
+          cameraRef={cameraRef}
+        />
       ) : null}
+
+      {isPickerActive ? null : (
+        <BrowseOverlay
+          hasSelection={highlightedMarker !== null}
+          onClearSelection={handleMapPress}
+        />
+      )}
 
       <MapControls
         isOnMyLocation={isOnMyLocation}
@@ -318,12 +485,21 @@ export default function ExploreMap() {
         <ListingsBottomSheet />
       </Activity>
 
-      {isMapCardVisible ? (
+      {!isPickerActive && isMapCardVisible ? (
         <MapCardList
           highlines={clusteredMarkers}
           focusedMarker={highlightedMarker}
           changeFocusedMarker={handleChangeFocusedMarker}
           dark={mapType === 'satellite'}
+        />
+      ) : null}
+
+      {locationPickerRequest ? (
+        <HighlinePickerOverlay
+          key={locationPickerRequest.requestId}
+          request={locationPickerRequest}
+          getCurrentCenter={getCurrentCameraCenter}
+          onBack={handlePickerBack}
         />
       ) : null}
     </View>

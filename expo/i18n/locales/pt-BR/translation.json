@@ -542,7 +542,9 @@
         "directions": "Como chegar",
         "chooseMapApp": "Escolha um app de mapas",
         "noMapApps": "Nenhum app de mapas compatível está disponível neste aparelho.",
-        "directionsError": "Não foi possível abrir as direções. Tente novamente."
+        "directionsError": "Não foi possível abrir as direções. Tente novamente.",
+        "editLocation": "Editar localização",
+        "offlineEdit": "Conecte-se para adicionar ou editar esta localização."
       },
       "not-found": {
         "title": "Highline não existe",
@@ -577,6 +579,19 @@
       },
       "explore-header": {
         "searchPlaceholder": "Nome do Highline",
+        "addHighline": "Adicionar highline",
+        "continueHighline": "Continuar highline",
+        "needsAttention": "Precisa de atenção",
+        "needsAttentionCount": "Precisa de atenção ({{count}})",
+        "pendingSyncCount": "Aguardando sincronização ({{count}})",
+        "resolveDraftFirst": "Finalize o highline atual antes de editar um envio com falha.",
+        "retry": "Tentar novamente",
+        "edit": "Editar",
+        "discard": "Descartar",
+        "cancel": "Cancelar",
+        "unnamedHighline": "Highline sem nome",
+        "highline": "highline",
+        "highlines": "highlines",
         "categories": {
           "favorites": "Favoritos",
           "bigLine": "Big Line",
@@ -593,7 +608,19 @@
         "setB": "Definir ancoragem B",
         "confirm": "Confirmar"
       },
+      "location-picker": {
+        "existingHighlines": "Highlines existentes",
+        "review": "Revisar linha",
+        "undo": "Desfazer",
+        "undoAnchorB": "Desfazer ancoragem B",
+        "adjustA": "Ajustar A",
+        "adjustB": "Ajustar B",
+        "continue": "Continuar",
+        "save": "Salvar localização",
+        "offlineEdit": "Conecte-se para editar a localização de um highline existente."
+      },
       "register-modal": {
+        "offlineEdit": "Reconecte-se para editar um highline existente.",
         "name": {
           "min": "Deve conter ao menos 3 caracteres",
           "label": "Nome da via"

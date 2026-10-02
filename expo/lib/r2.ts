@@ -52,7 +52,10 @@ export async function uploadToR2(
 
   if (!presignRes.ok) {
     const error = await presignRes.text();
-    throw new Error(`Failed to get presigned URL: ${error}`);
+    throw withHttpStatus(
+      new Error(`Failed to get presigned URL: ${error}`),
+      presignRes.status,
+    );
   }
 
   const { presignedUrl, key: resolvedKey } = await presignRes.json();
@@ -67,19 +70,29 @@ export async function uploadToR2(
   });
 
   if (!uploadRes.ok) {
-    throw new Error('Failed to upload file to R2');
+    throw withHttpStatus(
+      new Error('Failed to upload file to R2'),
+      uploadRes.status,
+    );
   }
 
   return resolvedKey;
 }
 
+function withHttpStatus<T extends Error>(
+  error: T,
+  status: number,
+): T & {
+  status: number;
+} {
+  Object.assign(error, { status });
+  return error as T & { status: number };
+}
+
 /**
  * Deletes a file from R2 via the API.
  */
-export async function deleteFromR2(
-  bucket: string,
-  key: string,
-): Promise<void> {
+export async function deleteFromR2(bucket: string, key: string): Promise<void> {
   const session = await supabase.auth.getSession();
   const token = session.data.session?.access_token;
 
