@@ -41,7 +41,7 @@ Before setting up the project, ensure you have the following installed:
 - An Expo account
 - A Mapbox account
 
-Also, you need to follow the [Supabase setup instructions.](../README.md)
+Also, you need to follow the [Supabase setup instructions](../supabase/README.md).
 
 ### Connecting to Expo
 

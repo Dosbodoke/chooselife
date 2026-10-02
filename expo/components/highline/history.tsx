@@ -1,21 +1,18 @@
-import {
-  getRigSetupStatus,
-  useRigSetup,
-  type RigStatuses,
-  type Setup,
-} from '@chooselife/ui';
+import { useRiggerProfiles, useRigSetup } from '@chooselife/ui';
 import { useRouter } from 'expo-router';
-import { CalendarRangeIcon, FrownIcon, UsersIcon } from 'lucide-react-native';
+import {
+  CalendarRangeIcon,
+  ChevronRightIcon,
+  FrownIcon,
+} from 'lucide-react-native';
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { TouchableOpacity, View } from 'react-native';
+import { Pressable, TouchableOpacity, View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
 import { Highline } from '~/hooks/use-highline';
 import { cn } from '~/lib/utils';
 
-import { StyledSquircle } from '~/components/styled';
-import { SupabaseAvatar } from '~/components/supabase-avatar';
 import {
   Card,
   CardContent,
@@ -28,18 +25,35 @@ import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 
+import { RiggerAvatars } from './rig-setup-display';
+import { RigSetupSheet, useOpenRigSetupSheet } from './rig-setup-sheet';
+import {
+  splitWebbing,
+  STATUS_DOT,
+  useRiggerCountLabel,
+  useSetupDays,
+  type RiggerProfiles,
+  type RigSetup,
+} from './rig-setup-utils';
+
 export const HighlineHistory: React.FC<{ highline: Highline }> = ({
   highline,
 }) => {
   const { t } = useTranslation();
   const { session } = useAuth();
   const router = useRouter();
+  const openSetupSheet = useOpenRigSetupSheet();
   const {
     query: { data, isPending },
     latestSetup,
   } = useRigSetup({
     highlineID: highline.id,
   });
+  const riggerIDs = useMemo(
+    () => (data ?? []).flatMap((setup) => setup.riggers),
+    [data],
+  );
+  const { data: profiles } = useRiggerProfiles(riggerIDs);
 
   const actionButton = useMemo(() => {
     const baseRoute = `/highline/${highline.id}/rig` as const;
@@ -121,8 +135,10 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
               <TimelineItem
                 key={setup.id}
                 setup={setup}
-                isLast={index === data.length - 1}
+                profiles={profiles}
                 isFirst={index === 0}
+                isLast={index === data.length - 1}
+                onPress={() => openSetupSheet(setup)}
               />
             ))}
           </View>
@@ -139,6 +155,12 @@ export const HighlineHistory: React.FC<{ highline: Highline }> = ({
           actionButton
         )}
       </CardFooter>
+
+      <RigSetupSheet
+        setups={data}
+        profiles={profiles}
+        highlineLength={highline.length}
+      />
     </Card>
   );
 };
@@ -188,147 +210,77 @@ const EmptyState: React.FC<{ text: string }> = ({ text }) => (
 );
 
 const TimelineItem: React.FC<{
-  setup: Setup[number];
-  isLast: boolean;
+  setup: RigSetup;
+  profiles: RiggerProfiles;
   isFirst: boolean;
-}> = ({ setup, isLast, isFirst }) => {
+  isLast: boolean;
+  onPress: () => void;
+}> = ({ setup, profiles, isFirst, isLast, onPress }) => {
   const { t } = useTranslation();
-  const rigDate = new Date(setup.rig_date);
-
-  const status = getRigSetupStatus(setup);
-  const date = rigDate.toLocaleDateString('pt-BR');
-
-  const content = {
-    rigged: (
-      <TimelineContent
-        label={t('components.highline.history.timeline.riggedSince')}
-        date={date}
-      />
-    ),
-    unrigged: (
-      <TimelineContent
-        label={t('components.highline.history.timeline.rigPeriod')}
-        date={date}
-        endDate={
-          setup.unrigged_at
-            ? new Date(setup.unrigged_at).toLocaleDateString('pt-BR')
-            : undefined
-        }
-      />
-    ),
-    planned: (
-      <TimelineContent
-        label={t('components.highline.history.timeline.plannedFor')}
-        date={date}
-      />
-    ),
-  }[status];
-
-  const dotStyles: Record<RigStatuses, string> = {
-    planned: 'bg-amber-400 border-amber-200',
-    rigged: 'bg-green-500 border-green-200',
-    unrigged: 'bg-muted border-muted-foreground',
-  };
+  const { status, label, dateText } = useSetupDays(setup);
+  const riggerCount = useRiggerCountLabel(setup.riggers.length);
+  const { mainTotal, backupTotal, hasWebbing } = splitWebbing(setup);
 
   return (
-    <View className="flex-row gap-3">
+    <Pressable
+      onPress={onPress}
+      className="flex-row gap-3 rounded-xl active:bg-muted/60"
+    >
       {/* Timeline connector */}
       <View className="items-center w-6">
         <View
           className={cn('h-3 w-0.5', isFirst ? 'bg-transparent' : 'bg-border')}
         />
         <View
-          className={cn('size-3 rounded-full border-2', dotStyles[status])}
+          className={cn('size-3 rounded-full border-2', STATUS_DOT[status])}
         />
         {!isLast && <View className="flex-1 w-0.5 bg-border mt-1" />}
       </View>
 
       {/* Content */}
-      <View className="flex-1 pb-6">
-        <View className="mb-3">{content}</View>
-        <Riggers riggers={setup.riggers} />
-      </View>
-    </View>
-  );
-};
-
-const TimelineContent: React.FC<{
-  label: string;
-  date: string;
-  endDate?: string;
-}> = ({ label, date, endDate }) => (
-  <View className="gap-2">
-    <Text className="text-foreground font-semibold text-base">{label}</Text>
-    <CalendarBadge date={date} endDate={endDate} />
-  </View>
-);
-
-export const Riggers: React.FC<{ riggers: string[] }> = ({ riggers }) => {
-  const displayIds = riggers.slice(0, 5);
-  const extraCount = riggers.length > 5 ? riggers.length - 5 : 0;
-
-  if (riggers.length === 0) {
-    return (
-      <View className="flex-row items-center gap-2">
-        <Icon as={UsersIcon} className="text-muted-foreground size-4" />
-        <Text className="text-muted-foreground text-sm">
-          No riggers assigned
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <View className="flex-row items-center">
-      <View className="flex-row mr-2">
-        {displayIds.map((id, index) => (
-          <View
-            key={id}
-            style={{ marginLeft: index === 0 ? 0 : -8 }}
-            className="border-2 border-background rounded-full shadow-sm"
-          >
-            <View className="relative overflow-hidden size-9">
-              <SupabaseAvatar profileID={id} />
+      <View className="flex-1 gap-2 pb-6">
+        <View className="gap-0.5">
+          <Text className="text-foreground font-semibold text-base">
+            {label}
+          </Text>
+          {dateText ? (
+            <View className="flex-row items-center gap-1.5">
+              <Icon
+                as={CalendarRangeIcon}
+                className="size-3.5 text-muted-foreground"
+              />
+              <Text className="text-muted-foreground text-sm">{dateText}</Text>
             </View>
-          </View>
-        ))}
+          ) : null}
+        </View>
 
-        {extraCount > 0 && (
-          <View
-            className="flex items-center justify-center rounded-full bg-muted size-9 border-2 border-background shadow-sm"
-            style={{ marginLeft: -8 }}
-          >
-            <Text className="text-xs font-bold text-muted-foreground">
-              +{extraCount}
+        {/* Safety first: what is up there right now, without a tap. */}
+        {status === 'rigged' && hasWebbing && (
+          <View className="self-start rounded-lg border border-sky-100 bg-sky-50 px-2.5 py-1">
+            <Text className="text-sm font-semibold text-sky-700">
+              {t('components.highline.history.summary', {
+                main: mainTotal,
+                backup: backupTotal,
+              })}
             </Text>
           </View>
         )}
+
+        <View className="flex-row items-center gap-2">
+          {setup.riggers.length > 0 && (
+            <RiggerAvatars
+              riggers={setup.riggers}
+              profiles={profiles}
+              size={32}
+            />
+          )}
+          <Text className="text-muted-foreground text-sm">{riggerCount}</Text>
+        </View>
       </View>
 
-      <Text className="text-muted-foreground text-sm">
-        {riggers.length} rigger{riggers.length !== 1 ? 's' : ''}
-      </Text>
-    </View>
+      <View className="justify-center pb-6">
+        <Icon as={ChevronRightIcon} className="size-5 text-muted-foreground" />
+      </View>
+    </Pressable>
   );
 };
-
-const CalendarBadge: React.FC<{ date: string; endDate?: string }> = ({
-  date,
-  endDate,
-}) => (
-  <StyledSquircle
-    className="self-start flex-row gap-1.5 items-center bg-sky-50 border border-sky-100 rounded-xl px-3 py-1.5 shadow-sm"
-    cornerSmoothing={0.2}
-    style={{ borderRadius: 12 }}
-  >
-    <Icon
-      as={CalendarRangeIcon}
-      className="text-sky-500"
-      size={14}
-      strokeWidth={2.5}
-    />
-    <Text className="text-sky-600 font-bold text-sm">
-      {endDate ? `${date} - ${endDate}` : date}
-    </Text>
-  </StyledSquircle>
-);

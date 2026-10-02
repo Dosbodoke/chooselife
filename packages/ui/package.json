@@ -6,7 +6,8 @@
   "license": "MIT",
   "scripts": {
     "lint": "eslint .",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "jest"
   },
   "dependencies": {
     "@chooselife/database": "workspace:*",
@@ -22,8 +23,11 @@
   "devDependencies": {
     "@supabase/supabase-js": "^2.86.0",
     "@tanstack/react-query": "^5.48.0",
-    "react": "19.2.5",
+    "@types/jest": "^29.5.14",
     "@typescript/native": "npm:typescript@^7.0.2",
+    "jest": "^29.7.0",
+    "react": "19.2.5",
+    "ts-jest": "^29.4.6",
     "typescript": "npm:@typescript/typescript6@^6.0.2"
   }
 }

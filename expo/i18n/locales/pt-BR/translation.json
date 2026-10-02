@@ -525,15 +525,55 @@
           "edit": "editar",
           "rig": "montar"
         },
-        "timeline": {
-          "riggedSince": "Montada desde",
-          "rigPeriod": "Período de montagem",
-          "plannedFor": "Planejado para"
+        "days": {
+          "rigged": {
+            "zero": "Montada hoje",
+            "one": "Montada há 1 dia",
+            "many": "Montada há {{count}} dias"
+          },
+          "unrigged": {
+            "zero": "Desmontada no mesmo dia",
+            "one": "Ficou 1 dia",
+            "many": "Ficou {{count}} dias"
+          },
+          "planned": {
+            "zero": "Hoje",
+            "one": "Amanhã",
+            "many": "Em {{count}} dias",
+            "overdue": "Estava planejada para {{date}}"
+          }
+        },
+        "status": {
+          "rigged": "Montada",
+          "unrigged": "Desmontada",
+          "planned": "Planejada"
+        },
+        "summary": "Principal {{main}} m · Backup {{backup}} m",
+        "riggers": {
+          "none": "Nenhum rigger registrado",
+          "one": "1 rigger",
+          "many": "{{count}} riggers"
+        },
+        "details": {
+          "webbing": "Fitas",
+          "main": "Principal",
+          "backup": "Backup",
+          "unregistered": "Fita sem cadastro",
+          "empty": "Sem dados das fitas",
+          "highlineLength": "Comprimento da via",
+          "riggers": "Riggers",
+          "loops": {
+            "both": "Loop nas duas pontas",
+            "left": "Loop à esquerda",
+            "right": "Loop à direita",
+            "none": "Sem loops"
+          }
         }
       },
       "info": {
         "height": "Altura",
-        "length": "Comprimento"
+        "length": "Comprimento",
+        "whatsappGroup": "Grupo do WhatsApp"
       },
       "location-weather-card": {
         "noLocation": "Sem Localização",
