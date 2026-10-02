@@ -2,12 +2,10 @@
 
 import dynamic from "next/dynamic";
 import { useQueryState } from "nuqs";
+import type { ReactNode } from "react";
 
 import CreateHighline from "@/components/CreateHighline";
 import MapToggle from "@/components/Map/MapToggle";
-
-import { HomeBrowseFirst } from "./HomeBrowseFirst";
-import { QrCodeBadge } from "./qr-code-badge";
 
 const Map = dynamic(() => import("@/components/Map/Map"), {
   ssr: false,
@@ -33,7 +31,9 @@ const Map = dynamic(() => import("@/components/Map/Map"), {
   ),
 });
 
-export default function HomeInteractive() {
+// Keep server-rendered browse content under the same query state as the map.
+// nuqs updates are shallow, so the server page does not rerender on a toggle.
+export default function HomeInteractive({ children }: { children: ReactNode }) {
   const [view] = useQueryState("view");
   const [location] = useQueryState("location");
   const [focusedMarker] = useQueryState("focusedMarker");
@@ -50,10 +50,7 @@ export default function HomeInteractive() {
           focusedMarker={focusedMarker}
         />
       ) : (
-        <>
-          <QrCodeBadge />
-          <HomeBrowseFirst />
-        </>
+        children
       )}
       <CreateHighline
         mapIsOpen={mapOpen}

@@ -1,12 +1,11 @@
+import { HomeBrowseFirst } from "./_components/HomeBrowseFirst";
+import { QrCodeBadge } from "./_components/qr-code-badge";
 import { HomeAgentContent } from "./_components/HomeAgentContent";
 import HomeInteractive from "./_components/HomeInteractive";
 import { HeroPromoCard } from "./_components/hero-promo-card";
 
 type HomePageProps = {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{
-    [key: string]: string | string[] | undefined;
-  }>;
 };
 
 const BASE_URL = (
@@ -60,16 +59,8 @@ function createStructuredData(locale: string) {
   };
 }
 
-export default async function HomePage({
-  params,
-  searchParams,
-}: HomePageProps) {
-  const [{ locale }, resolvedSearchParams] = await Promise.all([
-    params,
-    searchParams,
-  ]);
-  const view = resolvedSearchParams.view;
-  const mapOpen = Array.isArray(view) ? view[0] === "map" : view === "map";
+export default async function HomePage({ params }: HomePageProps) {
+  const { locale } = await params;
   const structuredData = JSON.stringify(createStructuredData(locale)).replace(
     /</g,
     "\\u003c",
@@ -81,9 +72,12 @@ export default async function HomePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: structuredData }}
       />
-      {!mapOpen ? <HeroPromoCard /> : null}
-      <HomeInteractive />
-      {!mapOpen ? <HomeAgentContent locale={locale} /> : null}
+      <HomeInteractive>
+        <HeroPromoCard />
+        <QrCodeBadge />
+        <HomeBrowseFirst />
+        <HomeAgentContent locale={locale} />
+      </HomeInteractive>
     </>
   );
 }
