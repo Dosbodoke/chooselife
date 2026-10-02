@@ -35,12 +35,16 @@ const Map = dynamic(() => import("@/components/Map/Map"), {
 // nuqs updates are shallow, so the server page does not rerender on a toggle.
 export default function HomeInteractive({ children }: { children: ReactNode }) {
   const [view] = useQueryState("view");
+  const [prototypeVariant] = useQueryState("variant");
   const [location] = useQueryState("location");
   const [focusedMarker] = useQueryState("focusedMarker");
 
   const mapOpen = view === "map";
   const isPickingLocation = location === "picking";
-  const showActionButtons = !isPickingLocation && !focusedMarker && !location;
+  const isPrototype =
+    process.env.NODE_ENV !== "production" && !!prototypeVariant;
+  const showActionButtons =
+    !isPrototype && !isPickingLocation && !focusedMarker && !location;
 
   return (
     <>

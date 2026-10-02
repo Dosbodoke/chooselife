@@ -1,10 +1,12 @@
 "use client";
 
 import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { useQueryState } from "nuqs";
 import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
 
+import { HighlineLayoutsPrototype } from "./HighlineLayouts.prototype";
 import { HighlineList } from "./HighlineList";
 import Search from "./search";
 
@@ -17,6 +19,7 @@ const destinations = [
 
 export function HomeBrowseFirst() {
   const t = useTranslations("home.browse");
+  const [variant] = useQueryState("variant");
 
   return (
     <div
@@ -70,7 +73,11 @@ export function HomeBrowseFirst() {
         </nav>
 
         <div className="mt-7">
-          <HighlineList layout="rail" />
+          {process.env.NODE_ENV !== "production" && variant ? (
+            <HighlineLayoutsPrototype />
+          ) : (
+            <HighlineList layout="rail" />
+          )}
         </div>
 
         <div className="mt-8 flex flex-col gap-4 border-t border-border/70 pt-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
