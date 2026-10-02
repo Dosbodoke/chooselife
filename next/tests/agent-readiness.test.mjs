@@ -197,3 +197,24 @@ test("machine-readable discovery files are public and canonical", async () => {
     await response.json();
   }
 });
+
+// An unknown action is deliberate: Next must reject it, rather than the homepage
+// content negotiator swallowing the POST before the action handler runs.
+test("homepage server-action POST bypasses HTML/Markdown negotiation", async () => {
+  const response = await fetch(`${baseUrl}/en`, {
+    method: "POST",
+    headers: {
+      Accept: "text/x-component",
+      "Next-Action": "diagnostic-unknown-action",
+      "Content-Type": "text/plain;charset=UTF-8",
+    },
+    body: "[]",
+  });
+
+  assert.equal(response.status, 404);
+  assert.doesNotMatch(
+    response.headers.get("content-type") || "",
+    /text\/markdown/,
+  );
+  assert.match(await response.text(), /Server action not found/i);
+});
