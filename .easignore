@@ -1,0 +1,47 @@
+# Workspace dependencies and local build outputs.
+node_modules/
+.turbo/
+.next/
+.expo/
+.vercel/
+.pnpm-store/
+.maestro/
+supabase/.temp/
+
+# Repository metadata, agent worktrees, and local media are not build inputs.
+/.git
+/.claude/
+/.codex/
+/plans/
+/promo/
+/rive/
+/next/public/
+
+# Expo-generated native projects and local artifacts.
+/expo/android/
+/expo/ios/
+/expo/dist/
+/expo/web-build/
+/expo/build-*
+/expo/ChooseLife.app/
+/expo/coverage/
+expo-env.d.ts
+*.tsbuildinfo
+.metro-health-check*
+*.orig.*
+.DS_Store
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Keep local secrets out of uploads; Firebase app configuration is required.
+.env
+.env.local
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+/expo/credentials/*
+!/expo/credentials/google-services.json
