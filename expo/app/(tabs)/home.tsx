@@ -1,7 +1,7 @@
 import { useEvents } from '@chooselife/ui';
-import { Link, useRouter, type Href } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { StatusBar, StatusBarStyle } from 'expo-status-bar';
-import { BookIcon, CalendarIcon, PencilRulerIcon } from 'lucide-react-native';
+import { CalendarIcon } from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -15,11 +15,11 @@ import Animated from 'react-native-reanimated';
 
 import { useOnlineStatus } from '~/context/react-query';
 import { getR2PublicUrl } from '~/lib/r2';
-import { cn } from '~/lib/utils';
 import { _layoutAnimation } from '~/utils/constants';
 
 import { EventCard, EventCardSkeleton } from '~/components/event-card';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
+import { QuickActions } from '~/components/quick-actions';
 import { Card, CardContent } from '~/components/ui/card';
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
@@ -28,7 +28,6 @@ import { Widget, WIDGET_HERO_BASE_HEIGHT } from '~/components/widget';
 const STATUS_BAR_SWITCH_OFFSET = WIDGET_HERO_BASE_HEIGHT - 48;
 
 export default function HomeScreen() {
-  const { t } = useTranslation();
   const router = useRouter();
   const isOnline = useOnlineStatus();
   const [statusBarStyle, setStatusBarStyle] =
@@ -68,20 +67,7 @@ export default function HomeScreen() {
         />
 
         <View className="flex-1 px-4 mt-4">
-          <View className="flex-row justify-around my-6">
-            <Link asChild href="/setup-simulator">
-              <QuickAction
-                icon={<Icon as={PencilRulerIcon} className="text-primary" />}
-                label={t('app.(tabs).home.quickActions.setupSimulator')}
-              />
-            </Link>
-            <Link asChild href={'/learn' as Href}>
-              <QuickAction
-                icon={<Icon as={BookIcon} className="text-primary" />}
-                label={t('app.(tabs).home.quickActions.learn')}
-              />
-            </Link>
-          </View>
+          <QuickActions />
 
           <UpcomingEvents />
           <Ranking />
@@ -90,41 +76,6 @@ export default function HomeScreen() {
     </SafeAreaOfflineView>
   );
 }
-
-const QuickAction: React.FC<{
-  ref?: React.RefObject<View | null>;
-  onPress?: () => void;
-  label: string;
-  icon: React.ReactNode;
-  isComingSoon?: boolean;
-}> = ({ ref, onPress, label, icon, isComingSoon = false }) => {
-  const { t } = useTranslation();
-  return (
-    <Pressable
-      ref={ref}
-      className="max-w-24 flex-col items-center gap-1"
-      onPress={onPress}
-      disabled={isComingSoon}
-    >
-      {isComingSoon && (
-        <View className="absolute -top-1 -right-1 rounded-md bg-gray-800 z-10 p-1 px-2">
-          <Text className="font-bold text-white text-[8px]">
-            {t('common.soon')}
-          </Text>
-        </View>
-      )}
-      <View
-        className={cn(
-          'items-center justify-center border border-input bg-background h-14 w-14 rounded-md',
-          isComingSoon ? 'opacity-50' : 'opacity-100',
-        )}
-      >
-        {icon}
-      </View>
-      <Text className="text-xs text-center font-medium">{label}</Text>
-    </Pressable>
-  );
-};
 
 // const FeaturedSpot: React.FC = () => {
 //   return (
