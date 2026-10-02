@@ -1,12 +1,16 @@
 import { weatherKeyFactory } from '@chooselife/ui';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FootprintsIcon } from 'lucide-react-native';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, {
+  useAnimatedRef,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { highlineKeyFactory, useHighline } from '~/hooks/use-highline';
@@ -23,17 +27,21 @@ import {
   HEADER_BUTTON_SIZE,
   HighlineHeader,
 } from '~/components/highline/highline-header';
-import Info from '~/components/highline/info';
+import {
+  HIGHLINE_TABS_BAR_HEIGHT,
+  HighlineTabContent,
+  HighlineTabsBar,
+  PinnedHighlineTabsBar,
+  useHighlineTabsPinned,
+  type HighlineTab,
+} from '~/components/highline/highline-tabs';
+import { HighlineDetails, HighlineSummary } from '~/components/highline/info';
 import { HighlineNotFound } from '~/components/highline/not-found';
 import { RigModal } from '~/components/highline/rig-confirmations';
 import { HighlineSkeleton } from '~/components/highline/skeleton';
 import { OfflineBanner } from '~/components/offline-banner';
 import { Ranking } from '~/components/ranking';
 import { FAB } from '~/components/ui/fab';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Text } from '~/components/ui/text';
-
-type HighlineTabs = 'details' | 'ranking';
 
 export default function HighlinePage() {
   const { t } = useTranslation();
@@ -42,7 +50,7 @@ export default function HighlinePage() {
     id: string;
     setupID?: string;
   }>();
-  const [tab, setTab] = useState<HighlineTabs>('details');
+  const [tab, setTab] = useState<HighlineTab>('details');
 
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -87,6 +95,27 @@ export default function HighlinePage() {
     onRefresh: refresh,
   });
 
+  // The offline banner covers the status bar, so push the actions below it.
+  const headerTop = isConnected ? insets.top + 8 : insets.top * 2;
+  const headerBarHeight = headerTop + HEADER_BUTTON_SIZE + 12;
+  const collapseAt = COVER_HEIGHT - SHEET_OVERLAP - headerBarHeight;
+
+  // Tabs pin under the header once their inline bar scrolls up to it.
+  const scrollRef = useAnimatedRef<Animated.ScrollView>();
+  const tabsBarY = useSharedValue(0);
+  const tabsPinned = useHighlineTabsPinned(scrollY, tabsBarY, headerBarHeight);
+
+  const changeTab = (next: HighlineTab) => {
+    if (next === tab) return;
+    Haptics.selectionAsync();
+    // While pinned, start the new tab at its top instead of mid-way down.
+    const pinnedAt = tabsBarY.get() - headerBarHeight;
+    if (scrollY.get() > pinnedAt) {
+      scrollRef.current?.scrollTo({ y: pinnedAt, animated: false });
+    }
+    setTab(next);
+  };
+
   const shareListing = async () => {
     if (!highline) return;
     const url = `${process.env.EXPO_PUBLIC_WEB_URL}/highline/${highline.id}`;
@@ -96,22 +125,6 @@ export default function HighlinePage() {
       type: 'highline',
     });
   };
-
-  const tabs = useMemo(
-    () => [
-      {
-        id: 'details',
-        label: t('app.highline.index.tabs.details'),
-        content: <Info />,
-      },
-      {
-        id: 'ranking',
-        label: 'Ranking',
-        content: <Ranking highlines_ids={[highline?.id || '']} />,
-      },
-    ],
-    [highline?.id, t],
-  );
 
   // Room under the content so the FAB never covers it
   const fabClearance = insets.bottom + 100;
@@ -124,17 +137,13 @@ export default function HighlinePage() {
     return <HighlineNotFound />;
   }
 
-  // The offline banner covers the status bar, so push the actions below it.
-  const headerTop = isConnected ? insets.top + 8 : insets.top * 2;
-  const collapseAt =
-    COVER_HEIGHT - SHEET_OVERLAP - (headerTop + HEADER_BUTTON_SIZE + 12);
-
   return (
     <>
       <View className="flex-1 bg-gray-100">
         <HighlineCover coverImageId={highline.cover_image} scrollY={scrollY} />
 
         <Animated.ScrollView
+          ref={scrollRef}
           onScroll={scrollHandler}
           scrollEventThrottle={16}
           refreshControl={refreshControl}
@@ -142,33 +151,20 @@ export default function HighlinePage() {
           <View style={{ height: COVER_HEIGHT - SHEET_OVERLAP }} />
           {/* Content sheet over the cover */}
           <View className="bg-gray-100 rounded-t-3xl px-4 pt-6 gap-6 flex-1 min-h-screen">
-            {/* Tabs */}
-            <Tabs
-              className="flex-1"
-              value={tab}
-              onValueChange={(val) => setTab(val as HighlineTabs)}
-            >
-              <TabsList className="flex-row bg-gray-200">
-                {tabs.map((tabItem) => (
-                  <TabsTrigger
-                    key={tabItem.id}
-                    className="rounded-lg flex-1"
-                    value={tabItem.id as HighlineTabs}
-                  >
-                    <Text>{tabItem.label}</Text>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              {tabs.map((tabItem) => (
-                <TabsContent
-                  key={tabItem.id}
-                  className="flex-1 mt-6"
-                  value={tabItem.id as HighlineTabs}
-                >
-                  {tabItem.content}
-                </TabsContent>
-              ))}
-            </Tabs>
+            <HighlineSummary highline={highline} />
+            <HighlineTabsBar
+              tab={tab}
+              onTabChange={changeTab}
+              offsetY={COVER_HEIGHT - SHEET_OVERLAP}
+              barY={tabsBarY}
+            />
+            <HighlineTabContent tab={tab} onTabChange={changeTab}>
+              {tab === 'details' ? (
+                <HighlineDetails highline={highline} />
+              ) : (
+                <Ranking highlines_ids={[highline.id]} />
+              )}
+            </HighlineTabContent>
             {/* A spacer rather than contentContainerStyle padding: padding
                 changes re-lay out the whole list, and contentInset is iOS-only. */}
             <View style={{ height: fabClearance }} />
@@ -188,23 +184,30 @@ export default function HighlinePage() {
             router.canGoBack() ? router.back() : router.replace('/(tabs)')
           }
           onShare={shareListing}
+          blurExtension={tabsPinned ? HIGHLINE_TABS_BAR_HEIGHT : 0}
         />
+
+        {tabsPinned && (
+          <PinnedHighlineTabsBar
+            top={headerBarHeight}
+            tab={tab}
+            onTabChange={changeTab}
+          />
+        )}
 
         <PullToRefreshRing
           scrollY={scrollY}
           refreshing={refreshing}
-          top={headerTop + HEADER_BUTTON_SIZE + 12}
+          top={headerBarHeight}
         />
       </View>
 
       {/* Floating Action Button - Register Walk */}
-      {tab === 'details' && (
-        <FAB
-          icon={FootprintsIcon}
-          label={t('app.highline.index.BottomActions.register')}
-          href={`/highline/${highlineID}/register`}
-        />
-      )}
+      <FAB
+        icon={FootprintsIcon}
+        label={t('app.highline.index.BottomActions.register')}
+        href={`/highline/${highlineID}/register`}
+      />
 
       <RigModal highlineID={highlineID} setupID={setupID} />
     </>
