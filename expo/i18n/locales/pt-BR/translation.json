@@ -235,6 +235,7 @@
     },
     "(tabs)": {
       "_layout": {
+        "addHighline": "Adicionar highline",
         "indexTitle": "Explorar",
         "settingsTitle": "Perfil",
         "homeTitle": "Início"

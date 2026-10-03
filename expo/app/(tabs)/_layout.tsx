@@ -1,4 +1,3 @@
-import { useMapStore } from '~/store/map-store';
 import { Tabs } from 'expo-router';
 import {
   EarthIcon,
@@ -12,6 +11,7 @@ import { View } from 'react-native';
 import { useAuth } from '~/context/auth';
 import { cn } from '~/lib/utils';
 
+import { FloatingTabBar } from '~/components/floating-tab-bar';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Icon } from '~/components/ui/icon';
 
@@ -19,23 +19,20 @@ export default function TabLayout() {
   const { t } = useTranslation();
   const { profile } = useAuth();
 
-  // Get the clustered markers from the same store used by ExploreMap
-  const clusteredMarkers = useMapStore((state) => state.clusteredMarkers);
-  const isCardVisible = clusteredMarkers.length > 0;
-
+  // The floating bar owns its own visibility (keyboard, Explore's highline
+  // cards), so the screens below only declare titles and icons.
   return (
-    <Tabs>
+    <Tabs tabBar={(props) => <FloatingTabBar {...props} />}>
       <Tabs.Screen
         name="home"
         options={{
           title: t('app.(tabs)._layout.homeTitle'),
-          tabBarHideOnKeyboard: true,
           tabBarIcon: ({ focused }) => (
             <Icon
               as={TentTreeIcon}
               className={cn(
                 'size-6',
-                focused ? 'text-blue-500' : 'text-muted-foreground',
+                focused ? 'text-blue-500' : 'text-foreground',
               )}
             />
           ),
@@ -46,15 +43,12 @@ export default function TabLayout() {
         name="index"
         options={{
           title: t('app.(tabs)._layout.indexTitle'),
-          tabBarHideOnKeyboard: true,
-          // Hide the tab bar only when cards are visible
-          tabBarStyle: { display: isCardVisible ? 'none' : 'flex' },
           tabBarIcon: ({ focused }) => (
             <Icon
               as={EarthIcon}
               className={cn(
                 'size-6',
-                focused ? 'text-blue-500' : 'text-muted-foreground',
+                focused ? 'text-blue-500' : 'text-foreground',
               )}
             />
           ),
@@ -72,7 +66,7 @@ export default function TabLayout() {
               as={UsersRoundIcon}
               className={cn(
                 'size-6',
-                focused ? 'text-blue-500' : 'text-muted-foreground',
+                focused ? 'text-blue-500' : 'text-foreground',
               )}
             />
           ),
@@ -98,7 +92,7 @@ export default function TabLayout() {
                 as={UserCircleIcon}
                 className={cn(
                   'size-6',
-                  focused ? 'text-blue-500' : 'text-muted-foreground',
+                  focused ? 'text-blue-500' : 'text-foreground',
                 )}
               />
             ),

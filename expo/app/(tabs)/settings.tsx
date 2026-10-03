@@ -35,6 +35,7 @@ import {
   profileInfoSchema,
   type ProfileInfoSchema,
 } from '~/components/edit-profile-info';
+import { useFloatingTabBarHeight } from '~/components/floating-tab-bar';
 import { LanguageSwitcher } from '~/components/language-switcher';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { MyWebbings } from '~/components/settings/my-webbing';
@@ -47,11 +48,15 @@ export default function SettingsPage() {
   const { t } = useTranslation();
   const { profile, logout, isLoginPending } = useAuth();
   const isOnline = useOnlineStatus();
+  const tabBarHeight = useFloatingTabBarHeight();
 
   if (profile && profile.username) {
     return (
       <SafeAreaOfflineView className="h-full w-full bg-gray-100">
-        <ScrollView contentContainerClassName="py-8 px-4 gap-6">
+        <ScrollView
+          contentContainerClassName="py-8 px-4 gap-6"
+          contentContainerStyle={{ paddingBottom: tabBarHeight + 32 }}
+        >
           {/* Profile Header */}
           <Link
             href={{
@@ -111,7 +116,10 @@ export default function SettingsPage() {
 
   return (
     <SafeAreaOfflineView className="flex-1 bg-gray-100">
-      <View className="flex-1 justify-end gap-4 p-4">
+      <View
+        className="flex-1 justify-end gap-4 p-4"
+        style={{ paddingBottom: tabBarHeight + 16 }}
+      >
         <View className="bg-white rounded-xl overflow-hidden">
           <ChangeLanguage isLast />
         </View>
