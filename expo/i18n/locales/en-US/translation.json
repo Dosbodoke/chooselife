@@ -423,6 +423,29 @@
           "distanceWalked": "Distance walked",
           "bestTime": "Best time",
           "empty": "You haven't registered any walk yet"
+        },
+        "Achievements": {
+          "title": "Achievements",
+          "viewAll": "View all",
+          "progress": "{{earned}} of {{total}} unlocked",
+          "items": {
+            "slac-member": {
+              "title": "SLAC member",
+              "description": "Member of Slackliners Associados do Cerrado, supporting slackline in the Cerrado."
+            },
+            "first-walk": {
+              "title": "First walk",
+              "description": "Registered the first walk on a highline."
+            },
+            "first-full-line": {
+              "title": "Full line",
+              "description": "Walked a highline end to end without falling."
+            },
+            "one-km-walked": {
+              "title": "1 km walked",
+              "description": "Walked a total of 1 kilometer on highlines."
+            }
+          }
         }
       }
     },
