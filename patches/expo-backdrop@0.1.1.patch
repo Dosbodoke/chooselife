@@ -1,0 +1,39 @@
+diff --git a/android/src/main/java/expo/modules/blurview/BlurViewModule.kt b/android/src/main/java/expo/modules/blurview/BlurViewModule.kt
+index 117c2e05c8926ffb537c5039014faa296d5c471e..8bd8ff3cf402c44e23896c55509a88c2425fda9b 100644
+--- a/android/src/main/java/expo/modules/blurview/BlurViewModule.kt
++++ b/android/src/main/java/expo/modules/blurview/BlurViewModule.kt
+@@ -10,7 +10,6 @@ import expo.modules.blurview.views.GaussianBlurView
+ import expo.modules.blurview.views.ProgressiveBlurView
+ import expo.modules.kotlin.modules.Module
+ import expo.modules.kotlin.modules.ModuleDefinition
+-import expo.modules.kotlin.types.ColorCompat
+ 
+ class BlurViewModule : Module() {
+   override fun definition() = ModuleDefinition {
+@@ -60,7 +59,7 @@ class BlurViewModule : Module() {
+       }
+ 
+       Prop("tintColor") { view: BlurView, tintColor: Color? ->
+-        view.tintColor = tintColor?.let { ColorCompat.toArgb(it) } ?: Color.TRANSPARENT
++        view.tintColor = tintColor?.let { it.toArgb() } ?: Color.TRANSPARENT
+       }
+ 
+       Prop("blurEnabled") { view: BlurView, enabled: Boolean? ->
+@@ -132,7 +131,7 @@ class BlurViewModule : Module() {
+       }
+ 
+       Prop("tintColor") { view: ProgressiveBlurView, tintColor: Color? ->
+-        view.blurTintColor = tintColor?.let { ColorCompat.toArgb(it) }
++        view.blurTintColor = tintColor?.let { it.toArgb() }
+       }
+ 
+       Prop("edge") { view: ProgressiveBlurView, edge: ProgressiveBlurEdge? ->
+@@ -148,7 +147,7 @@ class BlurViewModule : Module() {
+       }
+ 
+       Prop("fallbackColor") { view: ProgressiveBlurView, color: Color? ->
+-        view.fallbackColor = color?.let { ColorCompat.toArgb(it) }
++        view.fallbackColor = color?.let { it.toArgb() }
+       }
+     }
+   }
