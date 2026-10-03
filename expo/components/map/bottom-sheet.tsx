@@ -12,6 +12,8 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { useHighline, type Highline } from '~/hooks/use-highline';
 
+import { useFloatingTabBarHeight } from '~/components/floating-tab-bar';
+
 import { HighlineCard } from '../highline/highline-card';
 import ExploreHeader from './explore-header';
 import { MapToggle } from './map-toggle';
@@ -28,16 +30,13 @@ import {
 // from where the rows actually are, leaving cards past the end of the scroll.
 const LISTING_ITEM_HEIGHT = 204;
 
-// Keep the final card above the floating map control (80dp from the bottom).
+// Keep the final card above the floating map control (80dp above the tab bar).
 const LISTINGS_BOTTOM_PADDING = 144;
+
+const SHEET_RADIUS = 24;
 
 // Stable identities: LegendList caches layout per key, and BottomSheetScrollView
 // is memoized, so re-created prop objects would throw both away on each render.
-const listContentContainerStyle = {
-  paddingHorizontal: 16,
-  paddingBottom: LISTINGS_BOTTOM_PADDING,
-} as const;
-
 const listingItemStyle = { height: LISTING_ITEM_HEIGHT } as const;
 
 type NearbyHighlineItem = {
@@ -52,6 +51,9 @@ const getListingItemSize = () => LISTING_ITEM_HEIGHT;
 const ListingsBottomSheet: React.FC = () => {
   const { height: windowHeight } = useWindowDimensions();
   const { top } = useSafeAreaInsets();
+  // The tab bar floats over the bottom of the sheet, so the collapsed sheet,
+  // the end of the list and the "Map" toggle all sit above it.
+  const tabBarHeight = useFloatingTabBarHeight();
   const bottomSheetHandlerHeight = useMapStore(
     (state) => state.bottomSheetHandlerHeight,
   );
@@ -146,8 +148,13 @@ const ListingsBottomSheet: React.FC = () => {
   ]);
 
   const snapPoints = React.useMemo(() => {
-    return [bottomSheetHandlerHeight || '35%', '100%'];
-  }, [bottomSheetHandlerHeight]);
+    return [
+      bottomSheetHandlerHeight
+        ? bottomSheetHandlerHeight + tabBarHeight
+        : '35%',
+      '100%',
+    ];
+  }, [bottomSheetHandlerHeight, tabBarHeight]);
 
   // gorhom sizes BottomSheetContent through a Reanimated animated style, so its
   // height never reaches Yoga during layout: `flex: 1` inside it resolves against
@@ -158,6 +165,13 @@ const ListingsBottomSheet: React.FC = () => {
   // the height the content area actually gets.
   const listHeight = Math.max(windowHeight - top - bottomSheetHandlerHeight, 1);
   const listStyle = React.useMemo(() => ({ height: listHeight }), [listHeight]);
+  const listContentContainerStyle = React.useMemo(
+    () => ({
+      paddingHorizontal: 16,
+      paddingBottom: LISTINGS_BOTTOM_PADDING + tabBarHeight,
+    }),
+    [tabBarHeight],
+  );
 
   const onShowMap = () => bottomSheetRef.current?.collapse();
 
@@ -193,12 +207,13 @@ const ListingsBottomSheet: React.FC = () => {
       onChange={onSnapChange}
       style={{
         overflow: 'hidden',
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        shadowOffset: { width: 1, height: 1 },
-        borderRadius: 16,
+        boxShadow: '1px 1px 4px rgba(0, 0, 0, 0.3)',
+        borderTopLeftRadius: SHEET_RADIUS,
+        borderTopRightRadius: SHEET_RADIUS,
+      }}
+      backgroundStyle={{
+        borderTopLeftRadius: SHEET_RADIUS,
+        borderTopRightRadius: SHEET_RADIUS,
       }}
       containerStyle={{ marginTop: top }}
     >
@@ -219,7 +234,18 @@ const ListingsBottomSheet: React.FC = () => {
           />
         ) : null}
       </View>
-      <MapToggle onPress={onShowMap} />
+      <View
+        pointerEvents="box-none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: tabBarHeight,
+        }}
+      >
+        <MapToggle onPress={onShowMap} />
+      </View>
     </BottomSheet>
   );
 };

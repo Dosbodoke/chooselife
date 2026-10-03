@@ -18,6 +18,7 @@ import { getR2PublicUrl } from '~/lib/r2';
 import { _layoutAnimation } from '~/utils/constants';
 
 import { EventCard, EventCardSkeleton } from '~/components/event-card';
+import { FloatingTabBarSpacer } from '~/components/floating-tab-bar';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { QuickActions } from '~/components/quick-actions';
 import { Card, CardContent } from '~/components/ui/card';
@@ -72,6 +73,7 @@ export default function HomeScreen() {
           <UpcomingEvents />
           <Ranking />
         </View>
+        <FloatingTabBarSpacer />
       </ScrollView>
     </SafeAreaOfflineView>
   );
