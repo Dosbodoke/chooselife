@@ -81,6 +81,17 @@ export function useFloatingTabBarHeight() {
 }
 
 /**
+ * Last child of a tab screen's scroll content, so its final rows can scroll
+ * clear of the floating tab bar. A trailing spacer rather than
+ * `contentContainerStyle.paddingBottom` (which re-lays out the whole list when
+ * it changes) or `contentInset` (iOS only).
+ */
+export function FloatingTabBarSpacer() {
+  const height = useFloatingTabBarHeight();
+  return <View style={{ height }} />;
+}
+
+/**
  * Liquid glass on iOS 26+. Elsewhere there is no glass to blur through, so the
  * surface becomes a solid card with an edge and a shadow of its own - without
  * them it disappears into white screens.
@@ -217,7 +228,7 @@ export function FloatingTabBar({
       transform: [
         {
           translateX: withSpring(
-            (activeIndex * rowWidth.value) / tabCount,
+            (activeIndex * rowWidth.get()) / tabCount,
             SPRING,
           ),
         },
@@ -255,7 +266,7 @@ export function FloatingTabBar({
             accessibilityRole="tablist"
             className="flex-1 flex-row"
             onLayout={(e) => {
-              rowWidth.value = e.nativeEvent.layout.width;
+              rowWidth.set(e.nativeEvent.layout.width);
             }}
           >
             <Animated.View

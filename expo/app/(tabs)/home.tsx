@@ -18,7 +18,7 @@ import { getR2PublicUrl } from '~/lib/r2';
 import { _layoutAnimation } from '~/utils/constants';
 
 import { EventCard, EventCardSkeleton } from '~/components/event-card';
-import { useFloatingTabBarHeight } from '~/components/floating-tab-bar';
+import { FloatingTabBarSpacer } from '~/components/floating-tab-bar';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { QuickActions } from '~/components/quick-actions';
 import { Card, CardContent } from '~/components/ui/card';
@@ -31,7 +31,6 @@ const STATUS_BAR_SWITCH_OFFSET = WIDGET_HERO_BASE_HEIGHT - 48;
 export default function HomeScreen() {
   const router = useRouter();
   const isOnline = useOnlineStatus();
-  const tabBarHeight = useFloatingTabBarHeight();
   const [statusBarStyle, setStatusBarStyle] =
     React.useState<StatusBarStyle>('light');
 
@@ -52,11 +51,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaOfflineView edges={['left', 'right']}>
       <StatusBar style={isOnline ? statusBarStyle : 'dark'} />
-      <ScrollView
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        contentContainerStyle={{ paddingBottom: tabBarHeight }}
-      >
+      <ScrollView onScroll={handleScroll} scrollEventThrottle={16}>
         <Widget
           items={[
             {
@@ -78,6 +73,7 @@ export default function HomeScreen() {
           <UpcomingEvents />
           <Ranking />
         </View>
+        <FloatingTabBarSpacer />
       </ScrollView>
     </SafeAreaOfflineView>
   );

@@ -24,7 +24,7 @@ import { queryKeys as appQueryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 
-import { useFloatingTabBarHeight } from '~/components/floating-tab-bar';
+import { FloatingTabBarSpacer } from '~/components/floating-tab-bar';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { AssembleiaCard } from '~/components/organizations/assembleia-card';
 import { BecomeMemberCard } from '~/components/organizations/become-member-card';
@@ -54,7 +54,6 @@ function OrganizationDetailsPage() {
   const { session } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
   const userId = session?.user.id;
-  const tabBarHeight = useFloatingTabBarHeight();
 
   const { data: organization, isLoading } = useOrganization(ORG_SLUG);
   const organizationId = organization?.id;
@@ -145,7 +144,6 @@ function OrganizationDetailsPage() {
       <ScrollView
         className="flex-1"
         contentContainerClassName="py-8 px-4 gap-6"
-        contentContainerStyle={{ paddingBottom: tabBarHeight + 32 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -234,6 +232,7 @@ function OrganizationDetailsPage() {
         <Text className="text-center text-muted-foreground text-xs mt-4">
           Organization ID: {organization.slug}
         </Text>
+        <FloatingTabBarSpacer />
       </ScrollView>
     </SafeAreaOfflineView>
   );

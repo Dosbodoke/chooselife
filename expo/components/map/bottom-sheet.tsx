@@ -207,11 +207,7 @@ const ListingsBottomSheet: React.FC = () => {
       onChange={onSnapChange}
       style={{
         overflow: 'hidden',
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        shadowOffset: { width: 1, height: 1 },
+        boxShadow: '1px 1px 4px rgba(0, 0, 0, 0.3)',
         borderTopLeftRadius: SHEET_RADIUS,
         borderTopRightRadius: SHEET_RADIUS,
       }}
