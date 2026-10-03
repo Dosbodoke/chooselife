@@ -1,6 +1,6 @@
 // Create a visual representation of a highline setup on a Skia Canvas
 
-import { Canvas, Path, Skia } from '@shopify/react-native-skia';
+import { Canvas, Path, Skia } from 'react-native-skia';
 import React, { useEffect, useMemo, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { View } from 'react-native';
@@ -293,7 +293,7 @@ export const CanvasGrid: React.FC<{ width: number; height: number }> = ({
   const DOT_COLOR = '#CCCCCC';
 
   const path = useMemo(() => {
-    const p = Skia.Path.Make();
+    const p = Skia.PathBuilder.Make();
 
     // Create a single path containing all dots
     for (let x = 0; x <= width; x += DOT_SPACING) {
@@ -302,7 +302,7 @@ export const CanvasGrid: React.FC<{ width: number; height: number }> = ({
       }
     }
 
-    return p;
+    return p.detach();
   }, [width, height]);
 
   return (

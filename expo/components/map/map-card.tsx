@@ -7,7 +7,7 @@ import {
   Paint,
   Rect,
   vec,
-} from '@shopify/react-native-skia';
+} from 'react-native-skia';
 import { useMapStore } from '~/store/map-store';
 import { useRouter } from 'expo-router';
 import React from 'react';

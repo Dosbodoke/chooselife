@@ -84,6 +84,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     favicon: "./assets/icons/favicon.png",
   },
   plugins: [
+    [
+      "expo-build-properties",
+      {
+        android: {
+          // Skia 3 Graphite requires Android API 26 or newer.
+          minSdkVersion: 26,
+        },
+      },
+    ],
     "expo-status-bar",
     "expo-image",
     "expo-sharing",

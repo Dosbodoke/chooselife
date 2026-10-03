@@ -1,4 +1,4 @@
-import { Path, SkPath } from '@shopify/react-native-skia';
+import { Path, SkPath } from 'react-native-skia';
 import type { WebType } from '~/context/rig-form';
 import React from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';

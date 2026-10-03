@@ -9,7 +9,7 @@ import {
   RoundedRect,
   Skia,
   vec,
-} from '@shopify/react-native-skia';
+} from 'react-native-skia';
 import {
   CalendarDaysIcon,
   MapPinIcon,
@@ -270,7 +270,7 @@ function LicenseCardCanvas({
 }) {
   const wavePaths = React.useMemo(() => {
     return Array.from({ length: 20 }, (_, index) => {
-      const path = Skia.Path.Make();
+      const path = Skia.PathBuilder.Make();
       const y = 62 + index * 12;
 
       path.moveTo(-24, y);
@@ -278,12 +278,12 @@ function LicenseCardCanvas({
         path.quadTo(x + 11, y + (index % 2 === 0 ? 6 : -6), x + 22, y);
       }
 
-      return path;
+      return path.detach();
     });
   }, [width]);
 
   const grainPath = React.useMemo(() => {
-    const path = Skia.Path.Make();
+    const path = Skia.PathBuilder.Make();
 
     for (let index = 0; index < 90; index += 1) {
       const x = (index * 47) % width;
@@ -291,7 +291,7 @@ function LicenseCardCanvas({
       path.addCircle(x, y, index % 3 === 0 ? 0.8 : 0.45);
     }
 
-    return path;
+    return path.detach();
   }, [height, width]);
 
   return (
