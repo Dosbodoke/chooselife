@@ -5,7 +5,7 @@ import {
   Group,
   Path,
   Skia,
-} from '@shopify/react-native-skia';
+} from 'react-native-skia';
 import {
   Easing,
   useDerivedValue,
@@ -86,12 +86,12 @@ export default function SuccessAnimation({
 
   // Memoized path for performance
   const checkmarkPath = useMemo(() => {
-    const p = Skia.Path.Make();
+    const p = Skia.PathBuilder.Make();
     // Centered checkmark within the size
     p.moveTo(size * 0.32, size * 0.52);
     p.lineTo(size * 0.45, size * 0.65);
     p.lineTo(size * 0.72, size * 0.38);
-    return p;
+    return p.detach();
   }, [size]);
 
   // Pre-calculate particle directions

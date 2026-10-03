@@ -7,7 +7,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "ChooseLife",
   slug: "chooselife",
-  version: "1.9.2",
+  version: "1.9.3",
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
@@ -84,6 +84,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     favicon: "./assets/icons/favicon.png",
   },
   plugins: [
+    [
+      "expo-build-properties",
+      {
+        android: {
+          // Skia 3 Graphite requires Android API 26 or newer.
+          minSdkVersion: 26,
+        },
+      },
+    ],
     "expo-status-bar",
     "expo-image",
     "expo-sharing",
