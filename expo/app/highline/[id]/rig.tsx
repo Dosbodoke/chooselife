@@ -396,7 +396,9 @@ const RigTypeSelection: React.FC<{
 
   return (
     <>
-      <HighlineRigIllustration mode={colorScheme} className="w-full h-auto" />
+      <View className="w-full" style={{ aspectRatio: 400 / 199 }}>
+        <HighlineRigIllustration mode={colorScheme} width="100%" height="100%" />
+      </View>
 
       <View className="w-full">
         <Text variant="h3" className="text-left mb-2">
@@ -487,7 +489,9 @@ const DateForm: React.FC<{
 
   return (
     <>
-      <HighlineRigIllustration mode={colorScheme} className="w-full h-auto" />
+      <View className="w-full" style={{ aspectRatio: 400 / 199 }}>
+        <HighlineRigIllustration mode={colorScheme} width="100%" height="100%" />
+      </View>
 
       {isLoading ? (
         <ActivityIndicator size="large" />
@@ -512,9 +516,11 @@ const DateForm: React.FC<{
               name="rigDate"
               render={({ field: { value, onChange } }) => (
                 <DateTimePicker
+                  style={{ width: '100%' }}
                   mode="date"
                   locale={i18next.language}
                   display="inline"
+                  presentation="inline"
                   value={value}
                   minimumDate={new Date()}
                   timeZoneName="UTC"
