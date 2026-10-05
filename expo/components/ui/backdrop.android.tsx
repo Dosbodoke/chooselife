@@ -1,9 +1,44 @@
-import type { ProgressiveBlurViewProps } from 'expo-backdrop';
+import type { BlurViewProps, ProgressiveBlurViewProps } from 'expo-backdrop';
 import React, { useId } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
-export { BlurView } from 'expo-backdrop';
+// Android backdrop capture can wash out the entire React Native canvas.
+// Keep the material confined to this view without capturing the window.
+export const BlurView: React.FC<BlurViewProps> = ({
+  style,
+  children,
+  tint,
+  tintColor,
+  cornerRadius,
+  cornerRadii,
+}) => {
+  const light =
+    tint?.toString().includes('Light') ||
+    tint === 'light' ||
+    tint === 'extraLight';
+
+  return (
+    <View
+      style={[
+        {
+          overflow: 'hidden',
+          backgroundColor:
+            tintColor ??
+            (light ? 'rgba(243,244,246,0.9)' : 'rgba(24,24,27,0.65)'),
+          borderRadius: cornerRadius,
+          borderTopLeftRadius: cornerRadii?.topLeft ?? cornerRadius,
+          borderTopRightRadius: cornerRadii?.topRight ?? cornerRadius,
+          borderBottomRightRadius: cornerRadii?.bottomRight ?? cornerRadius,
+          borderBottomLeftRadius: cornerRadii?.bottomLeft ?? cornerRadius,
+        },
+        style,
+      ]}
+    >
+      {children}
+    </View>
+  );
+};
 
 // Native progressive blur washes out the screen and can receive a null
 // PixelCopy bitmap during Android navigation. Use a tint gradient instead.
