@@ -1,8 +1,7 @@
-import { SupabaseProvider, useIsMember } from '@chooselife/ui';
+import { SupabaseProvider } from '@chooselife/ui';
 import { LegendList } from '@legendapp/list/react-native';
 import { QueryData } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
-import { Image as ExpoImage } from 'expo-image';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { CalendarIcon, ChevronLeftIcon, FrownIcon } from 'lucide-react-native';
 import React from 'react';
@@ -16,12 +15,12 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EnduranceIcon, SpeedlineIcon } from '~/lib/icons';
-import { getR2PublicUrl } from '~/lib/r2';
 import { supabase } from '~/lib/supabase';
 import { transformSecondsToTimeString } from '~/utils';
 import { Tables } from '~/utils/database.types';
 
 import { SafeAreaOfflineView } from '~/components/offline-banner';
+import { AchievementsCard } from '~/components/profile/achievements-card';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
@@ -109,7 +108,7 @@ export default function Profile() {
         </Pressable>
         <SupabaseProvider supabase={supabase} userId={profile.id}>
           <UserHeader profile={profile} />
-          <ProfileMembership />
+          <AchievementsCard stats={stats} />
         </SupabaseProvider>
         <Stats
           total_cadenas={stats?.total_cadenas || 0}
@@ -121,70 +120,6 @@ export default function Profile() {
     </SafeAreaOfflineView>
   );
 }
-
-const ProfileMembership = () => {
-  const router = useRouter();
-  const { data: isSlacMember } = useIsMember('slac');
-
-  if (!isSlacMember) return null;
-
-  return (
-    <Pressable
-      onPress={() => router.push('/(tabs)/organizations')}
-      accessibilityRole="button"
-      accessibilityLabel="Membro da Slackliners Associados do Cerrado"
-      className="relative min-h-[104px] justify-end overflow-hidden rounded-xl bg-zinc-900 p-4 active:scale-[0.98]"
-      style={{ borderCurve: 'continuous' }}
-    >
-      {/* Spotlight */}
-      <View
-        className="absolute left-0 top-0 h-full w-full"
-        style={{
-          experimental_backgroundImage:
-            'radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.55) 0%, rgba(24, 24, 27, 0) 58%)',
-        }}
-      />
-
-      {/* Badge watermark */}
-      <ExpoImage
-        source={{
-          uri: getR2PublicUrl('promo', 'slac-badge.png'),
-        }}
-        contentFit="contain"
-        style={{
-          position: 'absolute',
-          top: -12,
-          right: -8,
-          width: 120,
-          height: 120,
-          transform: [{ rotate: '12deg' }],
-          opacity: 0.55,
-        }}
-      />
-
-      {/* Gradient for text readability */}
-      <View
-        className="absolute inset-0"
-        style={{
-          experimental_backgroundImage:
-            'linear-gradient(to top, rgba(24, 24, 27, 1) 18%, rgba(24, 24, 27, 0.35) 100%)',
-        }}
-      />
-
-      <View className="z-10 gap-1 pr-16">
-        <Text className="text-[11px] font-bold uppercase tracking-widest text-violet-300">
-          Membro
-        </Text>
-        <Text className="text-base font-black leading-5 text-white">
-          Slackliners Associados do Cerrado
-        </Text>
-        <Text className="text-sm font-medium leading-5 text-zinc-400">
-          Apoia o desenvolvimento do slackline no Cerrado
-        </Text>
-      </View>
-    </Pressable>
-  );
-};
 
 const UserHeader: React.FC<{
   profile: Tables<'profiles'>;
