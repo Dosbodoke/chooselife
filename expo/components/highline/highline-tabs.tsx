@@ -7,6 +7,8 @@ import Animated, {
   FadeInRight,
   LayoutAnimationConfig,
   useAnimatedReaction,
+  useAnimatedStyle,
+  useDerivedValue,
   type SharedValue,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -46,6 +48,7 @@ const HighlineTabsControl: React.FC<{
 /**
  * The inline control. Reports its top edge in scroll-content coordinates
  * (`offsetY` + its layout y) so the page knows when it reaches the header.
+ * Hidden while pinned, so only the pinned copy shows through the header.
  */
 export const HighlineTabsBar: React.FC<{
   tab: HighlineTab;
@@ -53,47 +56,67 @@ export const HighlineTabsBar: React.FC<{
   /** Where the bar's parent starts in scroll-content coordinates. */
   offsetY: number;
   barY: SharedValue<number>;
-}> = ({ tab, onTabChange, offsetY, barY }) => (
-  <View
-    style={{ paddingVertical: BAR_PADDING }}
-    onLayout={(e) => barY.set(offsetY + e.nativeEvent.layout.y)}
-  >
-    <HighlineTabsControl tab={tab} onTabChange={onTabChange} />
-  </View>
-);
+  pinned: SharedValue<boolean>;
+}> = ({ tab, onTabChange, offsetY, barY, pinned }) => {
+  const style = useAnimatedStyle(() => ({ opacity: pinned.get() ? 0 : 1 }));
+  return (
+    <Animated.View
+      style={[{ paddingVertical: BAR_PADDING }, style]}
+      onLayout={(e) => barY.set(offsetY + e.nativeEvent.layout.y)}
+    >
+      <HighlineTabsControl tab={tab} onTabChange={onTabChange} />
+    </Animated.View>
+  );
+};
 
-/** True once the inline bar has scrolled up to `top` (the header's bottom edge). */
+/**
+ * Whether the inline bar has scrolled up to `top` (the header's bottom edge).
+ * `pinned` flips on the UI thread, in the same frame as the scroll, so the
+ * inline bar and its pinned copy swap without a gap or overlap; `isPinned`
+ * mirrors it for React (blur extension, touch handling).
+ */
 export const useHighlineTabsPinned = (
   scrollY: SharedValue<number>,
   barY: SharedValue<number>,
   top: number,
 ) => {
-  const [pinned, setPinned] = useState(false);
-  useAnimatedReaction(
+  const pinned = useDerivedValue(
     () => barY.get() > 0 && scrollY.get() + top >= barY.get(),
+  );
+  const [isPinned, setIsPinned] = useState(false);
+  useAnimatedReaction(
+    () => pinned.get(),
     (now, prev) => {
-      if (now !== prev) scheduleOnRN(setPinned, now);
+      if (now !== prev) scheduleOnRN(setIsPinned, now);
     },
   );
-  return pinned;
+  return { pinned, isPinned };
 };
 
 /**
- * Copy of the bar pinned under the header. Transparent: it sits inside the
- * header's blur (grown via `blurExtension`), so header and tabs read as one bar.
+ * Copy of the bar pinned under the header. Always mounted, so the native
+ * control has already drawn when it takes over from the inline bar, and
+ * shown only while pinned. Transparent: it sits inside the header's blur
+ * (grown via `blurExtension`), so header and tabs read as one bar.
  */
 export const PinnedHighlineTabsBar: React.FC<{
   top: number;
   tab: HighlineTab;
   onTabChange: (tab: HighlineTab) => void;
-}> = ({ top, tab, onTabChange }) => (
-  <View
-    className="absolute left-0 right-0 px-4"
-    style={{ top, paddingVertical: BAR_PADDING }}
-  >
-    <HighlineTabsControl tab={tab} onTabChange={onTabChange} />
-  </View>
-);
+  pinned: SharedValue<boolean>;
+  isPinned: boolean;
+}> = ({ top, tab, onTabChange, pinned, isPinned }) => {
+  const style = useAnimatedStyle(() => ({ opacity: pinned.get() ? 1 : 0 }));
+  return (
+    <Animated.View
+      pointerEvents={isPinned ? 'auto' : 'none'}
+      className="absolute left-0 right-0 px-4"
+      style={[{ top, paddingVertical: BAR_PADDING }, style]}
+    >
+      <HighlineTabsControl tab={tab} onTabChange={onTabChange} />
+    </Animated.View>
+  );
+};
 
 /**
  * Renders the active tab; a horizontal swipe moves to the neighbouring tab and
