@@ -1,12 +1,10 @@
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useMapStore } from '~/store/map-store';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
 import {
   ActivityIcon,
   CalendarClockIcon,
   HeartIcon,
-  PlusIcon,
   PowerOffIcon,
   RulerIcon,
   SearchIcon,
@@ -32,7 +30,6 @@ import { type HighlineCategory, useHighline } from '~/hooks/use-highline';
 import { cn } from '~/lib/utils';
 import { DEFAULT_LATITUDE, DEFAULT_LONGITUDE, _layoutAnimation } from '~/utils/constants';
 
-import { Button } from '../ui/button';
 import { Icon } from '../ui/icon';
 import { Text } from '../ui/text';
 import { WeatherSummary } from './weather-info-card';
@@ -195,10 +192,7 @@ const ExploreHeader = React.memo(() => {
             highline{highlines.length === 1 ? '' : 's'}
           </Animated.Text>
         </View>
-        <View className="flex-row items-center gap-3">
-          <HeaderWeatherSummary />
-          <AddHighlineButton />
-        </View>
+        <HeaderWeatherSummary />
       </View>
 
       {/* Search Bar */}
@@ -276,28 +270,5 @@ const ExploreHeader = React.memo(() => {
 });
 
 ExploreHeader.displayName = 'ExploreHeader';
-
-// Add Highline Button
-const AddHighlineButton: React.FC = React.memo(() => {
-  const router = useRouter();
-
-  // Read on press rather than subscribe: the camera is only ever needed at the
-  // moment of navigation, and subscribing re-rendered this button on every pan.
-  const handlePress = useCallback(() => {
-    const { camera } = useMapStore.getState();
-
-    router.push(
-      `/location-picker?lat=${camera.center[1]}&lng=${camera.center[0]}&zoom=${camera.zoom}`,
-    );
-  }, [router]);
-
-  return (
-    <Button size="icon" className="rounded-full" onPress={handlePress}>
-      <Icon as={PlusIcon} className="size-5 text-primary-foreground" />
-    </Button>
-  );
-});
-
-AddHighlineButton.displayName = 'AddHighlineButton';
 
 export default ExploreHeader;

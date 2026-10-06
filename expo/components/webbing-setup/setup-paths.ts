@@ -1,7 +1,7 @@
 // Skia paths for a setup drawing, shared by the rig form canvas and the
 // read-only canvas. Kept out of the component files so Fast Refresh works.
 
-import { Skia, SkPath } from '@shopify/react-native-skia';
+import { Skia, SkPath } from 'react-native-skia';
 
 import type { WebbingWithId } from '~/context/rig-form';
 
@@ -68,7 +68,7 @@ export function computeWebbingSectionData(
         : i < sections.length - 1 && effectiveLoops[i + 1].effectiveLeft;
 
       return {
-        path: Skia.Path.Make().addRect(
+        path: Skia.Path.Rect(
           Skia.XYWHRect(
             x - SQUARE_SIZE / 2,
             startY - SQUARE_SIZE / 2,
@@ -80,7 +80,7 @@ export function computeWebbingSectionData(
       };
     };
 
-    const linePath = Skia.Path.Make();
+    const linePath = Skia.PathBuilder.Make();
     linePath.moveTo(currentX, startY);
 
     if (type === 'main') {
@@ -90,7 +90,7 @@ export function computeWebbingSectionData(
     }
 
     webbings.push({
-      path: linePath,
+      path: linePath.detach(),
       leftLoopPath: effectiveLeft ? createLoop(currentX, true) : null,
       rightLoopPath: effectiveRight ? createLoop(endX, false) : null,
     });

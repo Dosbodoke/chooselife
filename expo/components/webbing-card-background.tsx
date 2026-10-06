@@ -5,7 +5,7 @@ import {
   Mask,
   RadialGradient,
   vec,
-} from '@shopify/react-native-skia';
+} from 'react-native-skia';
 import { useUniwind } from 'uniwind';
 import React from 'react';
 import { View, Dimensions } from 'react-native';

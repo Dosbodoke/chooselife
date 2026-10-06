@@ -235,6 +235,7 @@
     },
     "(tabs)": {
       "_layout": {
+        "addHighline": "Adicionar highline",
         "indexTitle": "Explorar",
         "settingsTitle": "Perfil",
         "homeTitle": "Início"
@@ -422,6 +423,29 @@
           "distanceWalked": "Distância caminhada",
           "bestTime": "Melhor tempo",
           "empty": "Você ainda não registrou nenhum rolê"
+        },
+        "Achievements": {
+          "title": "Conquistas",
+          "viewAll": "Ver todas",
+          "progress": "{{earned}} de {{total}} desbloqueadas",
+          "items": {
+            "slac-member": {
+              "title": "Membro SLAC",
+              "description": "Membro da Slackliners Associados do Cerrado, apoiando o slackline no Cerrado."
+            },
+            "first-walk": {
+              "title": "Primeiro rolê",
+              "description": "Registrou o primeiro rolê em um highline."
+            },
+            "first-full-line": {
+              "title": "Full line",
+              "description": "Atravessou um highline de ponta a ponta sem cair."
+            },
+            "one-km-walked": {
+              "title": "1 km caminhado",
+              "description": "Caminhou 1 quilômetro no total em highlines."
+            }
+          }
         }
       }
     },

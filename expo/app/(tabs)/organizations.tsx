@@ -24,6 +24,7 @@ import { queryKeys as appQueryKeys } from '~/lib/query-keys';
 import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
 
+import { FloatingTabBarSpacer } from '~/components/floating-tab-bar';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { AssembleiaCard } from '~/components/organizations/assembleia-card';
 import { BecomeMemberCard } from '~/components/organizations/become-member-card';
@@ -231,6 +232,7 @@ function OrganizationDetailsPage() {
         <Text className="text-center text-muted-foreground text-xs mt-4">
           Organization ID: {organization.slug}
         </Text>
+        <FloatingTabBarSpacer />
       </ScrollView>
     </SafeAreaOfflineView>
   );

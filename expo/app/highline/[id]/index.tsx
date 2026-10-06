@@ -103,7 +103,11 @@ export default function HighlinePage() {
   // Tabs pin under the header once their inline bar scrolls up to it.
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const tabsBarY = useSharedValue(0);
-  const tabsPinned = useHighlineTabsPinned(scrollY, tabsBarY, headerBarHeight);
+  const { pinned: tabsPinned, isPinned: tabsIsPinned } = useHighlineTabsPinned(
+    scrollY,
+    tabsBarY,
+    headerBarHeight,
+  );
 
   const changeTab = (next: HighlineTab) => {
     if (next === tab) return;
@@ -157,6 +161,7 @@ export default function HighlinePage() {
               onTabChange={changeTab}
               offsetY={COVER_HEIGHT - SHEET_OVERLAP}
               barY={tabsBarY}
+              pinned={tabsPinned}
             />
             <HighlineTabContent tab={tab} onTabChange={changeTab}>
               {tab === 'details' ? (
@@ -184,16 +189,17 @@ export default function HighlinePage() {
             router.canGoBack() ? router.back() : router.replace('/(tabs)')
           }
           onShare={shareListing}
-          blurExtension={tabsPinned ? HIGHLINE_TABS_BAR_HEIGHT : 0}
+          blurExtension={HIGHLINE_TABS_BAR_HEIGHT}
+          blurExtended={tabsPinned}
         />
 
-        {tabsPinned && (
-          <PinnedHighlineTabsBar
-            top={headerBarHeight}
-            tab={tab}
-            onTabChange={changeTab}
-          />
-        )}
+        <PinnedHighlineTabsBar
+          top={headerBarHeight}
+          tab={tab}
+          onTabChange={changeTab}
+          pinned={tabsPinned}
+          isPinned={tabsIsPinned}
+        />
 
         <PullToRefreshRing
           scrollY={scrollY}

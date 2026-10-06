@@ -7,10 +7,14 @@ nodeLinker: hoisted
 allowBuilds:
   '@parcel/watcher': true
   '@sentry/cli': true
-  '@shopify/react-native-skia': true
   '@swc/core': true
   sharp: true
   supabase: true
   unrs-resolver: true
 patchedDependencies:
   expo-backdrop@0.1.1: patches/expo-backdrop@0.1.1.patch
+minimumReleaseAgeExclude:
+  - react-native-skia-graphite-android@154.0.1
+  - react-native-skia-graphite-apple-ios@154.0.1
+  - react-native-skia-graphite-apple-macos@154.0.1
+  - react-native-skia@3.0.1

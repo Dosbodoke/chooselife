@@ -16,7 +16,7 @@ const colors = {
   activeContainerColor: '#E4E4E7',
   activeContentColor: '#09090B',
   activeBorderColor: '#D4D4D8',
-  inactiveContainerColor: 'transparent',
+  inactiveContainerColor: '#FFFFFF',
   inactiveContentColor: '#3F3F46',
   inactiveBorderColor: '#D4D4D8',
 };
