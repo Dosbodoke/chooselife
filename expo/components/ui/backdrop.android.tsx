@@ -55,7 +55,9 @@ export const ProgressiveBlurView: React.FC<ProgressiveBlurViewProps> = ({
   const reversed = edge === 'bottom' || edge === 'right';
   const start = reversed ? '100%' : '0%';
   const end = reversed ? '0%' : '100%';
-  const opacity = Math.min(100, Math.max(0, intensity)) / 100;
+  // Nothing is blurred behind the tint, so it has to hide the content on its
+  // own: run it stronger than `intensity` alone (70 -> ~0.9).
+  const opacity = Math.min(1, (Math.max(0, intensity) / 100) * 1.3);
 
   return (
     <View style={style}>

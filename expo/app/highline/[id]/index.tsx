@@ -189,7 +189,8 @@ export default function HighlinePage() {
             router.canGoBack() ? router.back() : router.replace('/(tabs)')
           }
           onShare={shareListing}
-          blurExtension={tabsIsPinned ? HIGHLINE_TABS_BAR_HEIGHT : 0}
+          blurExtension={HIGHLINE_TABS_BAR_HEIGHT}
+          blurExtended={tabsPinned}
         />
 
         <PinnedHighlineTabsBar

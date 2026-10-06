@@ -61,6 +61,11 @@ export const HighlineHeader: React.FC<{
   onShare: () => void;
   /** Extra height for the blur bar so a control pinned under it shares the material. */
   blurExtension?: number;
+  /**
+   * Whether the extension shows. Read on the UI thread, so the blur grows in
+   * the same frame the control pins instead of after a React render.
+   */
+  blurExtended?: SharedValue<boolean>;
 }> = ({
   highline,
   scrollY,
@@ -69,6 +74,7 @@ export const HighlineHeader: React.FC<{
   onBack,
   onShare,
   blurExtension = 0,
+  blurExtended,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
   const barHeight = paddingTop + HEADER_BUTTON_SIZE + 12;
@@ -82,6 +88,8 @@ export const HighlineHeader: React.FC<{
     },
   );
 
+  // The blur is always laid out at its extended height and slides up by the
+  // extension while unpinned, leaving only the bar and its fade on screen.
   const barStyle = useAnimatedStyle(() => ({
     opacity: interpolate(
       scrollY.get(),
@@ -89,6 +97,7 @@ export const HighlineHeader: React.FC<{
       [0, 1],
       Extrapolation.CLAMP,
     ),
+    transform: [{ translateY: blurExtended?.get() ? 0 : -blurExtension }],
   }));
 
   const titleStyle = useAnimatedStyle(() => ({
