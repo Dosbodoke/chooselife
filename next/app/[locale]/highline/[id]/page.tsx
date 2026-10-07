@@ -70,8 +70,8 @@ export async function generateMetadata(
         {
           url: imageUrl,
           secureUrl: imageUrl,
-          width: 400,
-          height: 210,
+          width: 1200,
+          height: 630,
           alt: highline.name || `Highline: ${id}`,
           type: "image/png",
         },

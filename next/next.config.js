@@ -9,6 +9,9 @@ const nextConfig = {
       "~*": "*",
     },
   },
+  outputFileTracingIncludes: {
+    "/**/opengraph-image": ["./assets/og/*.ttf", "./public/highline-og.jpg"],
+  },
   images: {
     remotePatterns: [
       {
