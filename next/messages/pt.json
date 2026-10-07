@@ -112,6 +112,7 @@
       "submit": "Registrar"
     },
     "header": {
+      "whatsappGroup": "Grupo do WhatsApp",
       "expandDescription": "Ver mais...",
       "shrinkDescription": "Ver menos...",
       "seeOnMap": "Ver no mapa",
