@@ -112,6 +112,7 @@
       "submit": "Register"
     },
     "header": {
+      "whatsappGroup": "WhatsApp group",
       "expandDescription": "See more...",
       "shrinkDescription": "See less...",
       "seeOnMap": "See on map",
