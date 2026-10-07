@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
+import { WhatsAppGroupLink } from "./whatsapp-group-link";
+
 export const HighlineHeader = ({ highline }: { highline: Highline }) => {
   const t = useTranslations("highline.header");
 
@@ -55,6 +57,7 @@ export const HighlineHeader = ({ highline }: { highline: Highline }) => {
             </Button>
           </div>
         ) : null}
+        <WhatsAppGroupLink url={highline.whatsapp_group_url} />
       </div>
       <div className="flex gap-2">
         <RegistryEntry
