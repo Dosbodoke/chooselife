@@ -1,12 +1,12 @@
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import SlacCabeMaisImage from '~/assets/images/slac-cabe-mais.png';
+import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import {
   AlertCircle,
-  ArrowUpRight,
-  CalendarDays,
-  CheckCircle2,
-  ChevronDown,
-  Clock3,
+  Check,
+  ChevronRight,
   RefreshCw,
 } from 'lucide-react-native';
 import React from 'react';
@@ -21,298 +21,494 @@ import {
 } from '~/lib/membership-ledger';
 import {
   formatLedgerAmount,
-  formatLedgerDate,
-  getHistoryCountLabel,
-  getMembershipDescription,
-  getMembershipTitle,
-  getNextStepDescription,
-  getObligationMeta,
-  getObligationStatusLabel,
-  getObligationTitle,
-  getPaymentActionLabel,
-  getPaymentSectionLabel,
+  formatLedgerShortDate,
+  getLedgerStatus,
+  getMemberSince,
+  getObligationPeriodName,
+  getPlanLabel,
   getRejectedClaimReason,
   isApplicantWithDraft,
   isRefusedApplicant,
+  type LedgerStatusAction,
+  type LedgerTone,
 } from '~/lib/membership-ledger-copy';
 import { queryKeys } from '~/lib/query-keys';
 
 import { BecomeMemberCard } from '~/components/organizations/become-member-card';
-import { Button } from '~/components/ui/button';
+import { ContributionHistorySheet } from '~/components/organizations/contribution-history-sheet';
+import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Text } from '~/components/ui/text';
 
-function LedgerSectionLabel({ children }: { children: React.ReactNode }) {
+const tabular = { fontVariant: ['tabular-nums' as const] };
+
+const TONE: Record<LedgerTone, { fg: string; bg: string; solid: string }> = {
+  ok: { fg: '#047857', bg: '#ECFDF5', solid: '#10B981' },
+  due: { fg: '#1D4ED8', bg: '#EFF6FF', solid: '#2563EB' },
+  review: { fg: '#6D28D9', bg: '#F5F3FF', solid: '#7C3AED' },
+  late: { fg: '#B45309', bg: '#FFFBEB', solid: '#D97706' },
+  neutral: { fg: '#3F3F46', bg: '#F4F4F5', solid: '#52525B' },
+  refused: { fg: '#B91C1C', bg: '#FEF2F2', solid: '#DC2626' },
+};
+
+const TONE_LABEL: Record<LedgerTone, string> = {
+  ok: 'Em dia',
+  due: 'A pagar',
+  review: 'Em conferência',
+  late: 'Em atraso',
+  neutral: 'Incompleta',
+  refused: 'Não aprovada',
+};
+
+function useLedgerAction(ledger: MembershipBillingLedger, slug: string) {
+  const router = useRouter();
+
+  return (action: LedgerStatusAction) => {
+    if (action.kind === 'application') {
+      router.push(`/organizations/${slug}/member`);
+      return;
+    }
+
+    const obligation = ledger.attention_obligation;
+    if (!obligation?.obligation_id) return;
+
+    router.push({
+      pathname: '/payment',
+      params: getPaymentObligationRouteParams({
+        amount: obligation.amount,
+        currency: obligation.currency,
+        obligationId: obligation.obligation_id,
+        paymentContext:
+          ledger.legal_membership_state === 'applicant'
+            ? 'new_member'
+            : 'subscription_renewal',
+        slug,
+      }),
+    });
+  };
+}
+
+function ActionButton({
+  action,
+  onPress,
+  inline = false,
+}: {
+  action: LedgerStatusAction;
+  onPress: (action: LedgerStatusAction) => void;
+  /** Sized to its label inside the timeline instead of full width. */
+  inline?: boolean;
+}) {
+  const primary = action.emphasis === 'primary';
+
   return (
-    <Text className="text-xs font-bold uppercase tracking-[1.4px] text-zinc-500">
-      {children}
-    </Text>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={action.label}
+      onPress={() => onPress(action)}
+      className={`h-11 items-center justify-center rounded-full ${inline ? 'mt-3 self-start px-5' : ''} ${
+        primary
+          ? 'bg-gray-900 active:bg-gray-700'
+          : 'bg-white active:bg-gray-100'
+      }`}
+      style={!primary && inline ? { backgroundColor: '#F4F4F5' } : undefined}
+    >
+      <Text
+        className={`text-[15px] font-semibold ${primary ? 'text-white' : 'text-gray-900'}`}
+      >
+        {action.label}
+      </Text>
+    </Pressable>
   );
 }
 
-function ObligationIcon({ status }: { status: LedgerObligation['status'] }) {
-  if (status === 'settled') return <CheckCircle2 color="#047857" size={18} />;
-  if (status === 'under_review') return <Clock3 color="#6D28D9" size={18} />;
-  if (status === 'overdue') return <AlertCircle color="#B45309" size={18} />;
-  return <CalendarDays color="#52525B" size={18} />;
-}
-
-const getObligationIconBackground = (status: LedgerObligation['status']) => {
-  if (status === 'settled') return 'bg-emerald-50';
-  if (status === 'under_review') return 'bg-violet-50';
-  if (status === 'overdue') return 'bg-amber-50';
-  return 'bg-zinc-100';
-};
-
-function ObligationRow({ obligation }: { obligation: LedgerObligation }) {
-  const rejectedReason = getRejectedClaimReason(obligation);
-
+function CardField({ label, value }: { label: string; value: string }) {
   return (
-    <View className="flex-row items-start gap-3 border-t border-zinc-100 px-5 py-4">
-      <View
-        className={`mt-0.5 h-9 w-9 items-center justify-center rounded-full ${getObligationIconBackground(obligation.status)}`}
-      >
-        <ObligationIcon status={obligation.status} />
-      </View>
-      <View className="min-w-0 flex-1 gap-1">
-        <Text className="font-bold text-zinc-900">
-          {getObligationTitle(obligation)}
-        </Text>
-        <Text className="text-xs leading-4 text-zinc-500">
-          {getObligationMeta(obligation)}
-        </Text>
-        {rejectedReason ? (
-          <Text className="text-xs leading-4 text-amber-700">
-            Motivo: {rejectedReason}
-          </Text>
-        ) : null}
-      </View>
-      <View className="items-end gap-1">
-        <Text className="font-bold text-zinc-900" selectable>
-          {formatLedgerAmount(obligation.amount, obligation.currency)}
-        </Text>
-        <Text className="text-xs font-semibold text-zinc-500">
-          {getObligationStatusLabel(obligation.status)}
-        </Text>
-      </View>
+    <View>
+      <Text className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+        {label}
+      </Text>
+      <Text className="text-[13px] font-semibold text-white">{value}</Text>
     </View>
   );
 }
 
-function ActionButton({
+/**
+ * Active members carry a membership card that never changes colour, so it
+ * reads as identity rather than a warning. What needs doing lives in the
+ * band attached to its bottom.
+ */
+function MemberCard({
   ledger,
-  obligation,
   slug,
-}: {
-  ledger: MembershipBillingLedger;
-  obligation: LedgerObligation;
-  slug: string;
-}) {
-  const router = useRouter();
-  if (!obligation.obligation_id) return null;
-
-  const isApplicant = ledger.legal_membership_state === 'applicant';
-  const label = getPaymentActionLabel(ledger, obligation);
-
-  return (
-    <Button
-      accessibilityLabel={label}
-      accessibilityHint="Abre os dados oficiais desta contribuição"
-      className="min-h-12 flex-row items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-4 py-3"
-      onPress={() =>
-        router.push({
-          pathname: '/payment',
-          params: getPaymentObligationRouteParams({
-            amount: obligation.amount,
-            currency: obligation.currency,
-            obligationId: obligation.obligation_id!,
-            paymentContext: isApplicant ? 'new_member' : 'subscription_renewal',
-            slug,
-          }),
-        })
-      }
-    >
-      <ArrowUpRight color="#FFFFFF" size={18} strokeWidth={2.4} />
-      <Text className="text-sm font-bold text-white">{label}</Text>
-    </Button>
-  );
-}
-
-function ApplicationActionButton({
-  label,
-  slug,
-}: {
-  label: string;
-  slug: string;
-}) {
-  const router = useRouter();
-
-  return (
-    <Button
-      accessibilityLabel={label}
-      accessibilityHint="Abre o cadastro para continuar sua associação"
-      className="mt-3 min-h-11 flex-row items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-4 py-3"
-      onPress={() => router.push(`/organizations/${slug}/member`)}
-    >
-      <ArrowUpRight color="#FFFFFF" size={18} strokeWidth={2.4} />
-      <Text className="text-sm font-bold text-white">{label}</Text>
-    </Button>
-  );
-}
-
-function LedgerContent({
-  hasMoreHistory,
   history,
-  isLoadingMoreHistory,
-  ledger,
-  onLoadMoreHistory,
-  slug,
 }: {
-  hasMoreHistory: boolean;
-  history: LedgerObligation[];
-  isLoadingMoreHistory: boolean;
   ledger: MembershipBillingLedger;
-  onLoadMoreHistory: () => void;
   slug: string;
+  history: {
+    items: LedgerObligation[];
+    hasMore: boolean;
+    isLoadingMore: boolean;
+    onLoadMore: () => void;
+  };
 }) {
+  const historySheetRef = React.useRef<BottomSheetModal>(null);
+  const { profile, session } = useAuth();
+  const onAction = useLedgerAction(ledger, slug);
+  const status = getLedgerStatus(ledger);
+  const tone = TONE[status.tone];
   const attention = ledger.attention_obligation;
   const next = ledger.next_contribution;
-  const isApplicant = ledger.legal_membership_state === 'applicant';
-  const showApplicationAction =
-    isApplicantWithDraft(ledger) || isRefusedApplicant(ledger);
-  const applicationActionLabel = isApplicantWithDraft(ledger)
-    ? 'Continuar cadastro'
-    : 'Enviar nova candidatura';
-  const showNextStep = isApplicant || Boolean(attention);
-  const showNextContribution = !isApplicant && Boolean(next);
-  const historyCountLabel = getHistoryCountLabel(
-    history.length,
-    hasMoreHistory,
-  );
+  const rejectedReason = attention ? getRejectedClaimReason(attention) : null;
+  const plan = getPlanLabel(ledger);
+  const since = getMemberSince(ledger);
+  const name = profile?.name?.trim() || profile?.username || 'Associado';
+  const username = profile?.username
+    ? `@${profile.username.replace(/^@/, '')}`
+    : null;
 
   return (
-    <View className="overflow-hidden rounded-3xl bg-white">
-      <View className="gap-1 px-5 pb-5 pt-5">
-        <LedgerSectionLabel>Minha associação</LedgerSectionLabel>
-        <Text
-          accessibilityRole="header"
-          className="text-2xl font-black text-zinc-950"
-          selectable
+    <View className="gap-3">
+      <View
+        className="overflow-hidden rounded-2xl bg-zinc-900"
+        style={{
+          borderCurve: 'continuous',
+          boxShadow: '0 10px 28px rgba(0,0,0,0.22)',
+        }}
+      >
+        <View
+          className="gap-6 p-5"
+          style={{
+            experimental_backgroundImage:
+              'radial-gradient(circle at 0% 0%, rgba(16,185,129,0.45) 0%, rgba(24,24,27,0) 60%)',
+          }}
         >
-          {getMembershipTitle(ledger)}
-        </Text>
-        <Text className="text-sm leading-5 text-zinc-600">
-          {getMembershipDescription(ledger)}
-        </Text>
-      </View>
+          <Image
+            source={SlacCabeMaisImage}
+            style={{
+              position: 'absolute',
+              bottom: -70,
+              right: -60,
+              width: 220,
+              height: 220,
+              transform: [{ rotate: '25deg' }],
+              opacity: 0.06,
+            }}
+            contentFit="contain"
+          />
 
-      {attention ? (
-        <View className="gap-4 border-y border-zinc-200 px-5 py-4">
-          <View className="flex-row items-start justify-between gap-4">
-            <View className="min-w-0 flex-1 gap-1">
-              <LedgerSectionLabel>
-                {getPaymentSectionLabel(ledger, attention)}
-              </LedgerSectionLabel>
-              <Text className="text-sm text-zinc-600">
-                Vencimento em {formatLedgerDate(attention.due_on)}
-              </Text>
+          <View className="flex-row items-center justify-between">
+            <Text className="text-base font-black tracking-wide text-white">
+              {ledger.organization_name}
+            </Text>
+            <Text className="text-[11px] font-semibold uppercase tracking-[2px] text-zinc-400">
+              Carteira de associado
+            </Text>
+          </View>
+
+          <View className="flex-row items-center gap-3">
+            <View
+              className="size-[52px] overflow-hidden rounded-full"
+              style={{ borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)' }}
+            >
+              <SupabaseAvatar profileID={session?.user.id} />
             </View>
-            <View className="items-end gap-1">
-              <Text className="text-xl font-black text-zinc-950" selectable>
-                {formatLedgerAmount(attention.amount, attention.currency)}
+            <View className="min-w-0 flex-1">
+              <Text
+                accessibilityRole="header"
+                className="text-xl font-bold text-white"
+                numberOfLines={1}
+              >
+                {name}
               </Text>
-              <Text className="text-xs font-semibold text-zinc-500">
-                {getObligationStatusLabel(attention.status)}
-              </Text>
+              {username ? (
+                <Text className="text-[13px] text-zinc-400">{username}</Text>
+              ) : null}
             </View>
           </View>
-          <ActionButton ledger={ledger} obligation={attention} slug={slug} />
-        </View>
-      ) : null}
 
-      {showNextStep ? (
-        <View className="flex-row items-center gap-3 px-5 py-4">
-          <CalendarDays color="#52525B" size={22} />
-          <View className="min-w-0 flex-1 gap-1">
-            <LedgerSectionLabel>
-              {isRefusedApplicant(ledger) ? 'Como continuar' : 'Próximo passo'}
-            </LedgerSectionLabel>
-            <Text className="text-sm leading-5 text-zinc-600">
-              {getNextStepDescription(ledger, attention)}
-            </Text>
-            {showApplicationAction ? (
-              <ApplicationActionButton
-                label={applicationActionLabel}
-                slug={slug}
+          <View className="flex-row gap-6">
+            {plan ? <CardField label="Plano" value={plan} /> : null}
+            {since ? <CardField label="Desde" value={since} /> : null}
+            {!attention && next ? (
+              <CardField
+                label="Válida até"
+                value={formatLedgerShortDate(next.due_on)}
               />
             ) : null}
           </View>
         </View>
-      ) : null}
 
-      {showNextContribution && next ? (
-        <View
-          className={`flex-row items-center gap-3 px-5 py-4 ${attention || showNextStep ? 'border-t border-zinc-200' : 'border-y border-zinc-200'}`}
-        >
-          <CalendarDays color="#52525B" size={22} />
-          <View className="min-w-0 flex-1 gap-1">
-            <LedgerSectionLabel>Próxima contribuição</LedgerSectionLabel>
-            <Text className="font-bold text-zinc-950">
-              {formatLedgerAmount(next.amount, next.currency)} ·{' '}
-              {formatLedgerDate(next.due_on)}
-            </Text>
+        {attention ? (
+          <View
+            className="gap-3 px-5 py-4"
+            style={{ backgroundColor: tone.bg }}
+          >
+            <View className="flex-row items-center gap-3">
+              <View className="min-w-0 flex-1">
+                <Text
+                  className="text-[13px] font-semibold"
+                  style={{ color: tone.fg }}
+                >
+                  {status.headline}
+                </Text>
+                <Text className="text-[13px] text-gray-600">
+                  {getObligationPeriodName(attention)}
+                  {attention.status === 'under_review'
+                    ? ' · aviso enviado'
+                    : ` · vence ${formatLedgerShortDate(attention.due_on)}`}
+                </Text>
+              </View>
+              <Text
+                className="text-xl font-bold text-gray-900"
+                selectable
+                style={tabular}
+              >
+                {formatLedgerAmount(attention.amount, attention.currency)}
+              </Text>
+            </View>
+            {rejectedReason ? (
+              <Text className="text-[13px] leading-[18px] text-amber-800">
+                Aviso recusado: {rejectedReason}
+              </Text>
+            ) : null}
+            {status.action ? (
+              <ActionButton action={status.action} onPress={onAction} />
+            ) : null}
           </View>
-        </View>
-      ) : null}
-
-      <View className="border-t border-zinc-200">
-        <View className="flex-row items-center justify-between gap-3 px-5 py-4">
-          <Text className="font-black text-zinc-950">
-            Histórico de contribuições
-          </Text>
-          {historyCountLabel ? (
-            <Text className="text-xs font-semibold text-zinc-500">
-              {historyCountLabel}
+        ) : (
+          <View className="flex-row items-center gap-2 bg-emerald-50 px-5 py-3">
+            <View className="size-2 rounded-full bg-emerald-500" />
+            <Text className="flex-1 text-[13px] font-semibold text-emerald-800">
+              Em dia
             </Text>
+            {next ? (
+              <Text className="text-[13px] text-emerald-800" style={tabular}>
+                Próxima {formatLedgerShortDate(next.due_on)} ·{' '}
+                {formatLedgerAmount(next.amount, next.currency)}
+              </Text>
+            ) : null}
+          </View>
+        )}
+      </View>
+
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => historySheetRef.current?.present()}
+        className="flex-row items-center justify-center gap-0.5 py-1 active:opacity-60"
+      >
+        <Text className="text-[15px] font-medium text-blue-600">
+          Histórico de contribuições
+        </Text>
+        <ChevronRight color="#2563EB" size={16} />
+      </Pressable>
+
+      <ContributionHistorySheet
+        ref={historySheetRef}
+        history={history.items}
+        hasMore={history.hasMore}
+        isLoadingMore={history.isLoadingMore}
+        onLoadMore={history.onLoadMore}
+      />
+    </View>
+  );
+}
+
+type StepState = 'done' | 'current' | 'upcoming';
+
+const RAIL = 28;
+
+function TimelineStep({
+  state,
+  tone,
+  isFirst,
+  isLast,
+  children,
+}: {
+  state: StepState;
+  tone: LedgerTone;
+  isFirst: boolean;
+  isLast: boolean;
+  children: React.ReactNode;
+}) {
+  const colors = TONE[tone];
+  const dot = state === 'done' ? 16 : state === 'current' ? 14 : 10;
+
+  return (
+    <View className="flex-row">
+      <View style={{ width: RAIL }} className="items-center">
+        <View
+          style={{
+            width: 2,
+            height: 18 - dot / 2,
+            backgroundColor: isFirst ? 'transparent' : '#E4E4E7',
+          }}
+        />
+        <View
+          className="items-center justify-center rounded-full"
+          style={{
+            width: dot,
+            height: dot,
+            backgroundColor: state === 'upcoming' ? '#FFFFFF' : colors.solid,
+            borderWidth: state === 'upcoming' ? 2 : 0,
+            borderColor: '#D4D4D8',
+            boxShadow:
+              state === 'current' ? `0 0 0 4px ${colors.bg}` : undefined,
+          }}
+        >
+          {state === 'done' ? (
+            <Check color="#FFFFFF" size={10} strokeWidth={3.5} />
           ) : null}
         </View>
-        {history.length > 0 ? (
-          history.map((obligation) => (
-            <ObligationRow
-              key={
-                obligation.obligation_id ??
-                `${obligation.period_key}:${obligation.due_on}`
-              }
-              obligation={obligation}
-            />
-          ))
-        ) : (
-          <Text className="border-t border-zinc-100 px-5 py-5 text-sm text-zinc-500">
-            Ainda não há contribuições registradas.
-          </Text>
+        {isLast ? null : (
+          <View style={{ width: 2, flex: 1, backgroundColor: '#E4E4E7' }} />
         )}
-        {hasMoreHistory ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Ver contribuições anteriores"
-            className="min-h-12 flex-row items-center justify-center gap-2 border-t border-zinc-100 px-5 py-4"
-            disabled={isLoadingMoreHistory}
-            onPress={onLoadMoreHistory}
-          >
-            {isLoadingMoreHistory ? (
-              <ActivityIndicator color="#18181B" size="small" />
-            ) : (
-              <ChevronDown color="#18181B" size={16} strokeWidth={2.4} />
-            )}
-            <Text className="text-sm font-bold text-zinc-950">
-              {isLoadingMoreHistory
-                ? 'Carregando...'
-                : 'Ver contribuições anteriores'}
-            </Text>
-          </Pressable>
-        ) : null}
+      </View>
+      <View className="min-w-0 flex-1 pb-4 pl-2 pt-2.5">{children}</View>
+    </View>
+  );
+}
+
+/** Applicants follow their admission as a vertical stepper. */
+function AdmissionTimeline({
+  ledger,
+  slug,
+}: {
+  ledger: MembershipBillingLedger;
+  slug: string;
+}) {
+  const onAction = useLedgerAction(ledger, slug);
+  const status = getLedgerStatus(ledger);
+  const tone = TONE[status.tone];
+  const attention = ledger.attention_obligation;
+  const rejectedReason = attention ? getRejectedClaimReason(attention) : null;
+  const current = isApplicantWithDraft(ledger)
+    ? 0
+    : isRefusedApplicant(ledger) || ledger.financial_standing === 'under_review'
+      ? 2
+      : 1;
+
+  const steps = [
+    { title: 'Cadastro', done: 'Candidatura enviada' },
+    {
+      title: 'Primeira contribuição',
+      done: attention
+        ? `Aviso de ${formatLedgerAmount(attention.amount, attention.currency)} enviado`
+        : 'Pagamento informado',
+    },
+    { title: 'Conferência da associação', done: 'Aprovada' },
+    { title: 'Associado', done: '' },
+  ];
+
+  return (
+    <View
+      className="gap-2 rounded-xl bg-white px-4 pb-2 pt-4"
+      style={{ borderCurve: 'continuous' }}
+    >
+      <View className="flex-row items-center justify-between">
+        <Text
+          accessibilityRole="header"
+          className="text-base font-bold text-gray-900"
+        >
+          Sua candidatura
+        </Text>
+        <View
+          className="rounded-full px-2.5 py-1"
+          style={{ backgroundColor: tone.bg }}
+        >
+          <Text className="text-xs font-semibold" style={{ color: tone.fg }}>
+            {TONE_LABEL[status.tone]}
+          </Text>
+        </View>
+      </View>
+
+      <View>
+        {steps.map((step, index) => {
+          const state: StepState =
+            index < current
+              ? 'done'
+              : index === current
+                ? 'current'
+                : 'upcoming';
+
+          return (
+            <TimelineStep
+              key={step.title}
+              state={state}
+              tone={
+                state === 'done'
+                  ? 'ok'
+                  : state === 'current'
+                    ? status.tone
+                    : 'neutral'
+              }
+              isFirst={index === 0}
+              isLast={index === steps.length - 1}
+            >
+              <Text
+                className={
+                  state === 'current'
+                    ? 'text-lg font-bold text-gray-900'
+                    : state === 'upcoming'
+                      ? 'text-[15px] text-gray-400'
+                      : 'text-[15px] text-gray-900'
+                }
+              >
+                {state === 'current' ? status.headline : step.title}
+              </Text>
+              {state === 'done' && step.done ? (
+                <Text className="text-[13px] text-gray-500">{step.done}</Text>
+              ) : null}
+              {state === 'current' ? (
+                <>
+                  {attention && attention.status !== 'under_review' ? (
+                    <Text
+                      className="mt-0.5 text-2xl font-bold text-gray-900"
+                      selectable
+                      style={tabular}
+                    >
+                      {formatLedgerAmount(attention.amount, attention.currency)}
+                    </Text>
+                  ) : null}
+                  <Text className="mt-0.5 text-[15px] leading-5 text-gray-600">
+                    {status.body}
+                  </Text>
+                  {rejectedReason ? (
+                    <Text className="mt-1 text-[13px] leading-[18px] text-amber-700">
+                      Aviso recusado: {rejectedReason}
+                    </Text>
+                  ) : null}
+                  {status.action ? (
+                    <ActionButton
+                      action={status.action}
+                      onPress={onAction}
+                      inline
+                    />
+                  ) : null}
+                </>
+              ) : null}
+            </TimelineStep>
+          );
+        })}
       </View>
     </View>
   );
+}
+
+function useMembershipLedgerQuery(organizationId: string | undefined) {
+  const { session } = useAuth();
+  const userId = session?.user.id;
+
+  return useInfiniteQuery({
+    // Disabled until the organization resolves, so the empty key never fetches.
+    queryKey: queryKeys.membershipBilling.byOrg(organizationId ?? '', userId),
+    queryFn: ({ pageParam }) =>
+      fetchMembershipBillingLedger(organizationId!, pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) =>
+      lastPage?.history_has_more ? lastPage.history_next_cursor : null,
+    enabled: Boolean(userId && organizationId),
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
+  });
 }
 
 export function MembershipLedger({
@@ -325,18 +521,7 @@ export function MembershipLedger({
   const { session } = useAuth();
   const queryClient = useQueryClient();
   const userId = session?.user.id;
-  const queryKey = queryKeys.membershipBilling.byOrg(organizationId, userId);
-  const ledgerQuery = useInfiniteQuery({
-    queryKey,
-    queryFn: ({ pageParam }) =>
-      fetchMembershipBillingLedger(organizationId, pageParam),
-    initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) =>
-      lastPage?.history_has_more ? lastPage.history_next_cursor : null,
-    enabled: Boolean(userId && organizationId),
-    staleTime: 15_000,
-    refetchOnWindowFocus: true,
-  });
+  const ledgerQuery = useMembershipLedgerQuery(organizationId);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -390,14 +575,18 @@ export function MembershipLedger({
 
   if (!ledger) return <BecomeMemberCard slug={slug} />;
 
-  return (
-    <LedgerContent
-      hasMoreHistory={ledgerQuery.hasNextPage}
-      history={pages.flatMap((page) => page?.history ?? [])}
-      isLoadingMoreHistory={ledgerQuery.isFetchingNextPage}
+  return ledger.legal_membership_state === 'active' ? (
+    <MemberCard
       ledger={ledger}
-      onLoadMoreHistory={() => void ledgerQuery.fetchNextPage()}
       slug={slug}
+      history={{
+        items: pages.flatMap((page) => page?.history ?? []),
+        hasMore: ledgerQuery.hasNextPage,
+        isLoadingMore: ledgerQuery.isFetchingNextPage,
+        onLoadMore: () => void ledgerQuery.fetchNextPage(),
+      }}
     />
+  ) : (
+    <AdmissionTimeline ledger={ledger} slug={slug} />
   );
 }

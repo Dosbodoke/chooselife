@@ -6,15 +6,16 @@ import type {
 import {
   formatLedgerAmount,
   formatLedgerDate,
+  formatLedgerShortDate,
   getHistoryCountLabel,
-  getMembershipDescription,
-  getMembershipTitle,
-  getNextStepDescription,
+  getLedgerStatus,
+  getMemberSince,
   getObligationMeta,
+  getObligationPeriodName,
   getObligationStatusLabel,
   getObligationTitle,
   getPaymentActionLabel,
-  getPaymentSectionLabel,
+  getPlanLabel,
   getRejectedClaimReason,
 } from './membership-ledger-copy';
 
@@ -245,84 +246,6 @@ describe('getObligationStatusLabel', () => {
   });
 });
 
-describe('membership headline', () => {
-  it('covers every membership state', () => {
-    const states: [MembershipBillingLedger, string][] = [
-      [ledger(), 'Associado ativo'],
-      [
-        ledger({
-          legal_membership_state: 'applicant',
-          application_status: 'draft',
-        }),
-        'Cadastro incompleto',
-      ],
-      [
-        ledger({
-          legal_membership_state: 'applicant',
-          application_status: 'refused',
-        }),
-        'Candidatura não aprovada',
-      ],
-      [
-        ledger({
-          legal_membership_state: 'applicant',
-          application_status: 'submitted',
-          financial_standing: 'under_review',
-        }),
-        'Candidatura em análise',
-      ],
-      [
-        ledger({
-          legal_membership_state: 'applicant',
-          application_status: 'submitted',
-          financial_standing: 'payment_available',
-        }),
-        'Candidatura em andamento',
-      ],
-    ];
-
-    for (const [state, title] of states) {
-      expect(getMembershipTitle(state)).toBe(title);
-      expect(getMembershipDescription(state).length).toBeGreaterThan(0);
-    }
-  });
-
-  it('describes an active member by financial standing', () => {
-    expect(
-      getMembershipDescription(ledger({ financial_standing: 'overdue' })),
-    ).toContain('Regularize a contribuição em atraso');
-  });
-});
-
-describe('getPaymentSectionLabel', () => {
-  it('labels the section by what the person has to do', () => {
-    const active = ledger();
-    const applicant = ledger({
-      legal_membership_state: 'applicant',
-      application_status: 'submitted',
-    });
-
-    expect(
-      getPaymentSectionLabel(active, obligation({ status: 'under_review' })),
-    ).toBe('Pagamento informado');
-    expect(
-      getPaymentSectionLabel(active, obligation({ status: 'overdue' })),
-    ).toBe('Contribuição em atraso');
-    expect(
-      getPaymentSectionLabel(
-        applicant,
-        obligation({ purpose: 'initial_admission' }),
-      ),
-    ).toBe('Primeira contribuição');
-    expect(getPaymentSectionLabel(applicant, obligation())).toBe(
-      'Contribuição pendente',
-    );
-    expect(getPaymentSectionLabel(active, obligation())).toBe(
-      'Próxima contribuição',
-    );
-  });
-});
-
 describe('getPaymentActionLabel', () => {
   it('sends a reviewed payment to its details instead of a new payment', () => {
     expect(
@@ -346,70 +269,6 @@ describe('getPaymentActionLabel', () => {
   });
 });
 
-describe('getNextStepDescription', () => {
-  it('tells a draft applicant to finish signing up', () => {
-    expect(
-      getNextStepDescription(
-        ledger({
-          legal_membership_state: 'applicant',
-          application_status: 'draft',
-        }),
-        null,
-      ),
-    ).toBe('Complete seu cadastro para enviar a candidatura.');
-  });
-
-  it('keeps the reason a candidacy was refused', () => {
-    expect(
-      getNextStepDescription(
-        ledger({
-          legal_membership_state: 'applicant',
-          application_status: 'refused',
-          application_correction_reason: '  Documento faltando  ',
-        }),
-        null,
-      ),
-    ).toBe('Motivo informado: Documento faltando');
-  });
-
-  it('offers a new candidacy when no reason was given', () => {
-    expect(
-      getNextStepDescription(
-        ledger({
-          legal_membership_state: 'applicant',
-          application_status: 'refused',
-        }),
-        null,
-      ),
-    ).toBe('Você pode enviar uma nova candidatura.');
-  });
-
-  it('waits with the applicant while the payment is checked', () => {
-    expect(
-      getNextStepDescription(
-        ledger({
-          legal_membership_state: 'applicant',
-          application_status: 'submitted',
-          financial_standing: 'under_review',
-        }),
-        null,
-      ),
-    ).toBe('A associação confere o pagamento informado.');
-  });
-
-  it('asks an active member to regularize an overdue contribution', () => {
-    expect(
-      getNextStepDescription(ledger(), obligation({ status: 'overdue' })),
-    ).toBe('Regularize a contribuição para manter sua associação em dia.');
-  });
-
-  it('asks an active member to pay an available contribution', () => {
-    expect(getNextStepDescription(ledger(), obligation())).toBe(
-      'Abra os dados de pagamento e avise quando concluir.',
-    );
-  });
-});
-
 describe('getHistoryCountLabel', () => {
   it('says nothing when the history is empty', () => {
     expect(getHistoryCountLabel(0, false)).toBeNull();
@@ -422,5 +281,179 @@ describe('getHistoryCountLabel', () => {
 
   it('never claims a total while older records are unread', () => {
     expect(getHistoryCountLabel(24, true)).toBe('mais de 24 registros');
+  });
+});
+
+describe('formatLedgerShortDate', () => {
+  const today = new Date('2026-10-07T12:00:00Z');
+
+  it('drops the year within the current year', () => {
+    expect(formatLedgerShortDate('2026-11-10', today)).toBe('10 de nov.');
+  });
+
+  it('keeps the year when it is not the current one', () => {
+    expect(formatLedgerShortDate('2027-04-10', today)).toBe(
+      '10 de abr. de 2027',
+    );
+  });
+});
+
+describe('getObligationPeriodName', () => {
+  it('names a monthly period by month and year', () => {
+    expect(getObligationPeriodName(obligation())).toBe('Setembro de 2026');
+  });
+
+  it('names an annual period by its year', () => {
+    expect(
+      getObligationPeriodName(
+        obligation({
+          period_key: 'annual:2026-04-10',
+          period_start: '2026-04-10',
+        }),
+      ),
+    ).toBe('Anual 2026');
+  });
+
+  it('names the admission contribution', () => {
+    expect(
+      getObligationPeriodName(obligation({ purpose: 'initial_admission' })),
+    ).toBe('Primeira contribuição');
+  });
+});
+
+describe('getLedgerStatus', () => {
+  const applicant = (overrides: Partial<MembershipBillingLedger> = {}) =>
+    ledger({
+      legal_membership_state: 'applicant',
+      application_status: 'submitted',
+      ...overrides,
+    });
+
+  it('covers every membership state with a headline and next step', () => {
+    const cases: [MembershipBillingLedger, string][] = [
+      [ledger(), 'Em dia'],
+      [
+        ledger({ financial_standing: 'payment_available' }),
+        'Contribuição disponível',
+      ],
+      [
+        ledger({ financial_standing: 'under_review' }),
+        'Pagamento em conferência',
+      ],
+      [ledger({ financial_standing: 'overdue' }), 'Contribuição em atraso'],
+      [applicant({ application_status: 'draft' }), 'Cadastro incompleto'],
+      [
+        applicant({ application_status: 'refused' }),
+        'Candidatura não aprovada',
+      ],
+      [
+        applicant({ financial_standing: 'under_review' }),
+        'Candidatura em análise',
+      ],
+      [
+        applicant({ financial_standing: 'payment_available' }),
+        'Falta a primeira contribuição',
+      ],
+    ];
+
+    for (const [state, headline] of cases) {
+      const status = getLedgerStatus(state);
+      expect(status.headline).toBe(headline);
+      expect(status.body.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('asks nothing of a member who is up to date', () => {
+    expect(getLedgerStatus(ledger()).action).toBeNull();
+  });
+
+  it('opens the payment of the obligation that needs attention', () => {
+    const status = getLedgerStatus(
+      ledger({
+        financial_standing: 'payment_available',
+        attention_obligation: obligation(),
+      }),
+    );
+
+    expect(status.action).toEqual({
+      label: 'Abrir PIX da contribuição',
+      kind: 'payment',
+      emphasis: 'primary',
+    });
+  });
+
+  it('demotes the action to details while a notice is under review', () => {
+    const status = getLedgerStatus(
+      ledger({
+        financial_standing: 'under_review',
+        attention_obligation: obligation({ status: 'under_review' }),
+      }),
+    );
+
+    expect(status.action?.emphasis).toBe('secondary');
+  });
+
+  it('asks for a new receipt when an overdue notice was refused', () => {
+    const status = getLedgerStatus(
+      ledger({
+        financial_standing: 'overdue',
+        attention_obligation: obligation({
+          status: 'overdue',
+          claims: [claim({ status: 'rejected', decision_reason: 'Ilegível' })],
+        }),
+      }),
+    );
+
+    expect(status.body).toContain('Envie um novo comprovante');
+  });
+
+  it('sends draft and refused applicants back to the application', () => {
+    expect(
+      getLedgerStatus(applicant({ application_status: 'draft' })).action,
+    ).toMatchObject({ kind: 'application', label: 'Continuar cadastro' });
+    expect(
+      getLedgerStatus(applicant({ application_status: 'refused' })).action,
+    ).toMatchObject({ kind: 'application', label: 'Enviar nova candidatura' });
+  });
+
+  it('keeps the reason a candidacy was refused', () => {
+    expect(
+      getLedgerStatus(
+        applicant({
+          application_status: 'refused',
+          application_correction_reason: '  CPF divergente  ',
+        }),
+      ).body,
+    ).toBe('CPF divergente');
+  });
+});
+
+describe('getPlanLabel', () => {
+  it('names the plan cadence', () => {
+    expect(getPlanLabel(ledger({ plan_type: 'monthly' }))).toBe('Mensal');
+    expect(getPlanLabel(ledger({ plan_type: 'annual' }))).toBe('Anual');
+    expect(getPlanLabel(ledger({ plan_type: null }))).toBeNull();
+  });
+});
+
+describe('getMemberSince', () => {
+  it('reads the month the admission was confirmed', () => {
+    expect(
+      getMemberSince(
+        ledger({
+          history: [
+            obligation({
+              purpose: 'initial_admission',
+              status: 'settled',
+              settled_at: '2026-04-12T15:00:00Z',
+            }),
+          ],
+        }),
+      ),
+    ).toBe('abr. de 2026');
+  });
+
+  it('stays silent while the admission is not loaded', () => {
+    expect(getMemberSince(ledger({ history: [obligation()] }))).toBeNull();
   });
 });
