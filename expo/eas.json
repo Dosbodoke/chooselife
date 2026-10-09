@@ -29,7 +29,7 @@
       "node": "24.18.0",
       "pnpm": "11.10.0",
       "android": {
-        "gradleCommand": ":app:bundleRelease --max-workers=2 --no-parallel"
+        "gradleCommand": ":app:bundleRelease --max-workers=1 --no-parallel"
       }
     }
   },
