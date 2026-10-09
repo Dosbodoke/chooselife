@@ -667,6 +667,7 @@ export type Database = {
           length: number
           name: string
           sector_id: number | null
+          slug: string
           whatsapp_group_url: string | null
         }
         Insert: {
@@ -680,6 +681,7 @@ export type Database = {
           length: number
           name: string
           sector_id?: number | null
+          slug?: string
           whatsapp_group_url?: string | null
         }
         Update: {
@@ -693,6 +695,7 @@ export type Database = {
           length?: number
           name?: string
           sector_id?: number | null
+          slug?: string
           whatsapp_group_url?: string | null
         }
         Relationships: [
@@ -2048,6 +2051,10 @@ export type Database = {
         }
         Returns: string
       }
+      generate_highline_slug: {
+        Args: { highline_id: string; highline_name: string }
+        Returns: string
+      }
       generate_membership_billing_obligations: {
         Args: never
         Returns: {
@@ -2293,6 +2300,7 @@ export type Database = {
           pagesize?: number
           searchid?: string[]
           searchname?: string
+          searchslug?: string
           userid?: string
         }
         Returns: {
@@ -2309,6 +2317,7 @@ export type Database = {
           length: number
           name: string
           sector_id: number
+          slug: string
           status: string
           whatsapp_group_url: string
         }[]
@@ -2597,6 +2606,7 @@ export type Database = {
         Args: { p_organization_id: string; p_user_id: string }
         Returns: string
       }
+      slugify: { Args: { value: string }; Returns: string }
       submit_association_application: {
         Args: {
           p_application_id: string

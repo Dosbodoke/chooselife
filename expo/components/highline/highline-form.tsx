@@ -155,6 +155,8 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
         status: highline ? highline.status : 'unrigged',
         created_at: highline ? highline.created_at : new Date().toISOString(),
         sector_id: highline ? highline.sector_id : 0,
+        // The database generates the slug on insert.
+        slug: highline ? highline.slug : '',
       };
 
       queryClient.setQueryData<Highline[]>(highlineKeyFactory.list(), (old) =>

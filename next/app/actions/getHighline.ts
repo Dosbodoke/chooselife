@@ -7,6 +7,7 @@ import type { Database, Functions } from "@/utils/supabase/database.types";
 
 type Props = {
   id?: string[];
+  slug?: string;
   searchValue?: string;
   pageParam?: number;
   pageSize?: number;
@@ -19,6 +20,7 @@ export const getHighline = async ({
   searchValue,
   pageSize,
   id,
+  slug,
 }: Props) => {
   const cookieStore = await cookies();
   const supabase = createServerClient<Database>(
@@ -45,6 +47,7 @@ export const getHighline = async ({
 
   const result = await supabase.rpc("get_highline", {
     ...(id && id.length > 0 ? { searchid: id } : {}),
+    ...(slug ? { searchslug: slug } : {}),
     ...(user?.id ? { userid: user.id } : {}),
     ...(searchValue ? { searchname: searchValue } : {}),
     ...(pageParam && pageSize
