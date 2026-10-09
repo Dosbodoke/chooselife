@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 
 import { EnduranceIcon, SpeedlineIcon } from "@/assets";
 import { Button } from "@/components/ui/button";
+import { highlinePath } from "@/lib/highline-url";
 import {
   Card,
   CardContent,
@@ -97,7 +98,9 @@ function LastWalksContent({ entries }: ContentProps) {
                     </p>
                   </div>
                   <Button className="w-full" variant={"outline"} asChild>
-                    <Link href={`/highline/${entry.highline?.id}`}>
+                    <Link
+                      href={entry.highline ? highlinePath(entry.highline) : "#"}
+                    >
                       {t("popover.buttonLabel")}{" "}
                       <ChevronRightIcon
                         className="ml-1.5 h-3 w-3"

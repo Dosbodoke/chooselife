@@ -3,6 +3,8 @@ import type { Metadata, ResolvingMetadata } from "next/types";
 import { cache } from "react";
 
 import { getHighline } from "@/app/actions/getHighline";
+import { permanentRedirect } from "@/i18n/navigation";
+import { highlinePath, isUuid } from "@/lib/highline-url";
 import { getR2PublicUrl } from "@/lib/storage/r2";
 
 import OpenInAPP from "./_components/open-in-app";
@@ -22,8 +24,11 @@ type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
+// `id` is the highline slug, or its UUID for links shared before slugs existed.
 const getHigh = cache(async ({ id }: { id: string }) => {
-  const result = await getHighline({ id: [id] });
+  const result = isUuid(id)
+    ? await getHighline({ id: [id] })
+    : await getHighline({ slug: decodeURIComponent(id).toLowerCase() });
   return result.data;
 });
 
@@ -42,7 +47,7 @@ export async function generateMetadata(
 
   const baseUrl = getBaseUrl();
   const localePrefix = locale === "pt" ? "" : `/${locale}`;
-  const canonicalPath = `${localePrefix}/highline/${id}`;
+  const canonicalPath = `${localePrefix}${highlinePath(highline)}`;
   const imageSource = highline.cover_image
     ? getR2PublicUrl("images", highline.cover_image)
     : `${baseUrl}/highline-og.jpg`;
@@ -88,14 +93,25 @@ export async function generateMetadata(
   };
 }
 
-export default async function Highline({ params }: Props) {
-  const { id } = await params;
+export default async function Highline({ params, searchParams }: Props) {
+  const { id, locale } = await params;
   const highlines = await getHigh({ id });
 
   if (!highlines || highlines.length === 0) {
     return notFound();
   }
   const highline = highlines[0];
+
+  // Old UUID links (and differently cased slugs) move to the canonical URL.
+  if (highline.slug && id !== highline.slug) {
+    const query = await searchParams;
+    permanentRedirect({
+      href: Object.keys(query).length
+        ? { pathname: highlinePath(highline), query }
+        : highlinePath(highline),
+      locale,
+    });
+  }
 
   return <OpenInAPP highline={highline} />;
 }
