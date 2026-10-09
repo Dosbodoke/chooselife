@@ -11,6 +11,7 @@ import React from "react";
 
 import { getHighline } from "@/app/actions/getHighline";
 import { Link } from "@/i18n/navigation";
+import { highlinePath } from "@/lib/highline-url";
 import { cn } from "@/lib/utils";
 
 import HighlineImage from "../HighlineImage";
@@ -99,7 +100,7 @@ export const Selected = ({
                     >
                       <Link
                         className="pointer-events-auto mt-auto"
-                        href={`/highline/${selected.id}`}
+                        href={highlinePath(selected)}
                       >
                         Ver detalhes
                         <ArrowRightIcon className="ml-2 h-4 w-4" />

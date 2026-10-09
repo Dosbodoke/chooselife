@@ -122,7 +122,7 @@ export default function HighlinePage() {
 
   const shareListing = async () => {
     if (!highline) return;
-    const url = `${process.env.EXPO_PUBLIC_WEB_URL}/highline/${highline.id}`;
+    const url = `${process.env.EXPO_PUBLIC_WEB_URL}/highline/${highline.slug || highline.id}`;
     await share({
       title: highline.name,
       url,

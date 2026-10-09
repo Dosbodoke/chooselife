@@ -2,6 +2,7 @@ import { Database } from "@chooselife/database";
 import { createClient } from "@supabase/supabase-js";
 import { createPhotoFirstImage } from "@/lib/og/photo-first";
 
+import { isUuid } from "@/lib/highline-url";
 import { getR2PublicUrl } from "@/lib/storage/r2";
 
 export const runtime = "nodejs";
@@ -40,9 +41,12 @@ async function getHighlineForOg(id: string): Promise<Highline | null> {
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
   const supabase = createClient<Database>(supabaseUrl, supabaseKey);
-  const { data, error } = await supabase.rpc("get_highline", {
-    searchid: [id],
-  });
+  const { data, error } = await supabase.rpc(
+    "get_highline",
+    isUuid(id)
+      ? { searchid: [id] }
+      : { searchslug: decodeURIComponent(id).toLowerCase() }
+  );
 
   if (error || !data?.length) {
     console.error(`Erro ao buscar highline ${id}:`, error);

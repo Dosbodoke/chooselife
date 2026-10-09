@@ -213,6 +213,46 @@ export function useHighline(
   };
 }
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Highline routes take the UUID in-app, but shared links carry the slug. */
+export function isHighlineUuid(value: string) {
+  return UUID_PATTERN.test(value);
+}
+
+/** Resolves a highline slug (from a shared link) to its UUID. */
+export function useHighlineIdBySlug(slug: string | undefined) {
+  const { session, sessionLoading } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: id, isPending } = useQuery<string | null>({
+    queryKey: ['highline', 'slug', slug],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_highline', {
+        searchslug: slug!.toLowerCase(),
+        userid: session?.user.id,
+      });
+      if (error) throw error;
+      const result = data && data.length > 0 ? data[0] : null;
+      if (!result) return null;
+
+      // Seed the detail query so the screen renders without a second fetch.
+      queryClient.setQueryData(
+        highlineKeyFactory.detail(result.id, session?.user?.id),
+        result,
+      );
+      return result.id;
+    },
+    enabled: !!slug && !sessionLoading,
+    // A slug never changes, so the lookup is valid forever.
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+
+  return { id, isPending };
+}
+
 export type ToggleFavoriteVariables = {
   id: string;
   isFavorite: boolean;

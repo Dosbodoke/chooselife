@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
+import { highlinePath } from "@/lib/highline-url";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -57,7 +58,7 @@ export function Highline({ highline, classname }: Props) {
       ) : null}
       <CardFooter className="mt-auto">
         <Button variant="outline" className="w-full" asChild>
-          <Link href={`/highline/${highline.id}`}>
+          <Link href={highlinePath(highline)}>
             {t("seeDetails")}
             <ArrowRightIcon className="ml-2 h-4 w-4" />
           </Link>
