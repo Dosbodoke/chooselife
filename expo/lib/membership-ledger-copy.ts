@@ -1,5 +1,4 @@
 import type {
-  LedgerFinancialStanding,
   LedgerObligation,
   MembershipBillingLedger,
 } from './membership-ledger';
@@ -45,6 +44,22 @@ export const formatLedgerDate = (value: string, timeZone?: string) => {
   }).format(parsed);
 };
 
+/** "10 de out." — the year only when it isn't the current one. */
+export const formatLedgerShortDate = (value: string, today = new Date()) => {
+  const isDateOnly = DATE_ONLY.test(value);
+  const parsed = new Date(isDateOnly ? `${value}T00:00:00Z` : value);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: 'numeric',
+    month: 'short',
+    ...(parsed.getUTCFullYear() === today.getUTCFullYear()
+      ? {}
+      : { year: 'numeric' }),
+    timeZone: 'UTC',
+  }).format(parsed);
+};
+
 const monthYearFormatter = () =>
   new Intl.DateTimeFormat('pt-BR', {
     month: 'long',
@@ -72,6 +87,22 @@ export const getObligationPeriodLabel = (obligation: LedgerObligation) => {
   if (isAnnual) return `anual de ${anchor.getUTCFullYear()}`;
 
   return `de ${monthYearFormatter().format(anchor)}`;
+};
+
+/** The period on its own: "Outubro de 2026", "Anual 2026". */
+export const getObligationPeriodName = (obligation: LedgerObligation) => {
+  if (obligation.purpose === 'initial_admission') {
+    return 'Primeira contribuição';
+  }
+
+  const anchor = getPeriodAnchor(obligation);
+  if (!anchor) return 'Contribuição';
+  if (obligation.period_key?.startsWith('annual')) {
+    return `Anual ${anchor.getUTCFullYear()}`;
+  }
+
+  const label = monthYearFormatter().format(anchor);
+  return label.charAt(0).toUpperCase() + label.slice(1);
 };
 
 export const getObligationTitle = (obligation: LedgerObligation) => {
@@ -128,14 +159,6 @@ const obligationStatusCopy: Record<string, string> = {
 export const getObligationStatusLabel = (status: string) =>
   obligationStatusCopy[status] ?? status;
 
-const financialDescription: Record<LedgerFinancialStanding, string> = {
-  up_to_date: 'Sua próxima contribuição ficará disponível antes do vencimento.',
-  payment_available: 'Há uma contribuição pronta para pagamento.',
-  under_review: 'Seu aviso foi recebido e aguarda conferência da associação.',
-  overdue:
-    'Sua associação continua ativa. Regularize a contribuição em atraso quando puder.',
-};
-
 export const isApplicantWithDraft = (ledger: MembershipBillingLedger) =>
   ledger.legal_membership_state === 'applicant' &&
   ledger.application_status === 'draft';
@@ -143,51 +166,6 @@ export const isApplicantWithDraft = (ledger: MembershipBillingLedger) =>
 export const isRefusedApplicant = (ledger: MembershipBillingLedger) =>
   ledger.legal_membership_state === 'applicant' &&
   ledger.application_status === 'refused';
-
-export const getMembershipTitle = (ledger: MembershipBillingLedger) => {
-  if (ledger.legal_membership_state === 'active') return 'Associado ativo';
-  if (isApplicantWithDraft(ledger)) return 'Cadastro incompleto';
-  if (isRefusedApplicant(ledger)) return 'Candidatura não aprovada';
-
-  return ledger.financial_standing === 'under_review'
-    ? 'Candidatura em análise'
-    : 'Candidatura em andamento';
-};
-
-export const getMembershipDescription = (ledger: MembershipBillingLedger) => {
-  if (ledger.legal_membership_state === 'active') {
-    return financialDescription[ledger.financial_standing];
-  }
-
-  if (isApplicantWithDraft(ledger)) {
-    return 'Você começou seu cadastro, mas ainda não enviou a candidatura.';
-  }
-
-  if (isRefusedApplicant(ledger)) {
-    return 'Esta candidatura foi encerrada pela associação.';
-  }
-
-  if (ledger.financial_standing === 'under_review') {
-    return 'Seu pagamento foi informado. A associação está conferindo o pagamento antes de confirmar sua entrada.';
-  }
-
-  return 'Complete a primeira contribuição para que a associação possa verificar sua admissão.';
-};
-
-export const getPaymentSectionLabel = (
-  ledger: MembershipBillingLedger,
-  obligation: LedgerObligation,
-) => {
-  if (obligation.status === 'under_review') return 'Pagamento informado';
-  if (obligation.status === 'overdue') return 'Contribuição em atraso';
-  if (obligation.purpose === 'initial_admission') {
-    return 'Primeira contribuição';
-  }
-
-  return ledger.legal_membership_state === 'applicant'
-    ? 'Contribuição pendente'
-    : 'Próxima contribuição';
-};
 
 export const getPaymentActionLabel = (
   ledger: MembershipBillingLedger,
@@ -200,38 +178,6 @@ export const getPaymentActionLabel = (
     : 'Abrir PIX da contribuição';
 };
 
-export const getNextStepDescription = (
-  ledger: MembershipBillingLedger,
-  attention: LedgerObligation | null,
-) => {
-  if (ledger.legal_membership_state === 'applicant') {
-    if (isApplicantWithDraft(ledger)) {
-      return 'Complete seu cadastro para enviar a candidatura.';
-    }
-
-    if (isRefusedApplicant(ledger)) {
-      const reason = ledger.application_correction_reason?.trim();
-      return reason
-        ? `Motivo informado: ${reason}`
-        : 'Você pode enviar uma nova candidatura.';
-    }
-
-    return ledger.financial_standing === 'under_review'
-      ? 'A associação confere o pagamento informado.'
-      : 'Faça a primeira contribuição e avise pelo app.';
-  }
-
-  if (attention?.status === 'under_review') {
-    return 'A associação confere o pagamento informado.';
-  }
-
-  if (attention?.status === 'overdue') {
-    return 'Regularize a contribuição para manter sua associação em dia.';
-  }
-
-  return 'Abra os dados de pagamento e avise quando concluir.';
-};
-
 /**
  * The history is paginated, so the count only claims a total when every record
  * has already been loaded.
@@ -241,4 +187,151 @@ export const getHistoryCountLabel = (count: number, hasMore: boolean) => {
   if (hasMore) return `mais de ${count} registros`;
 
   return count === 1 ? '1 registro' : `${count} registros`;
+};
+
+export type LedgerTone =
+  | 'ok'
+  | 'due'
+  | 'review'
+  | 'late'
+  | 'neutral'
+  | 'refused';
+
+export type LedgerStatusAction = {
+  label: string;
+  /** `payment` opens the obligation; `application` reopens the member form. */
+  kind: 'payment' | 'application';
+  emphasis: 'primary' | 'secondary';
+};
+
+export type LedgerStatus = {
+  tone: LedgerTone;
+  /** What a glance should take away, in a few words. */
+  headline: string;
+  /** One sentence: only what the person needs to do or know next. */
+  body: string;
+  action: LedgerStatusAction | null;
+};
+
+/**
+ * The single read of where a person stands. Every surface (member card,
+ * admission timeline) renders from this, so they never disagree.
+ */
+export const getLedgerStatus = (
+  ledger: MembershipBillingLedger,
+): LedgerStatus => {
+  const attention = ledger.attention_obligation;
+  const isApplicant = ledger.legal_membership_state === 'applicant';
+  const paymentAction: LedgerStatusAction | null = attention?.obligation_id
+    ? {
+        label: getPaymentActionLabel(ledger, attention),
+        kind: 'payment',
+        emphasis: attention.status === 'under_review' ? 'secondary' : 'primary',
+      }
+    : null;
+
+  if (isApplicantWithDraft(ledger)) {
+    return {
+      tone: 'neutral',
+      headline: 'Cadastro incompleto',
+      body: 'Termine o cadastro para enviar sua candidatura.',
+      action: {
+        label: 'Continuar cadastro',
+        kind: 'application',
+        emphasis: 'primary',
+      },
+    };
+  }
+
+  if (isRefusedApplicant(ledger)) {
+    return {
+      tone: 'refused',
+      headline: 'Candidatura não aprovada',
+      body:
+        ledger.application_correction_reason?.trim() ||
+        'A associação encerrou esta candidatura.',
+      action: {
+        label: 'Enviar nova candidatura',
+        kind: 'application',
+        emphasis: 'primary',
+      },
+    };
+  }
+
+  if (isApplicant) {
+    return ledger.financial_standing === 'under_review'
+      ? {
+          tone: 'review',
+          headline: 'Candidatura em análise',
+          body: 'A associação está conferindo seu pagamento. Você será avisado quando for aprovado.',
+          action: paymentAction,
+        }
+      : {
+          tone: 'due',
+          headline: 'Falta a primeira contribuição',
+          body: 'Pague via PIX e avise pelo app para concluir sua entrada.',
+          action: paymentAction,
+        };
+  }
+
+  switch (ledger.financial_standing) {
+    case 'payment_available':
+      return {
+        tone: 'due',
+        headline: 'Contribuição disponível',
+        body: 'Pague via PIX e avise pelo app quando concluir.',
+        action: paymentAction,
+      };
+    case 'under_review':
+      return {
+        tone: 'review',
+        headline: 'Pagamento em conferência',
+        body: 'Recebemos seu aviso. A associação confirma em breve.',
+        action: paymentAction,
+      };
+    case 'overdue':
+      return {
+        tone: 'late',
+        headline: 'Contribuição em atraso',
+        body:
+          attention && getRejectedClaimReason(attention)
+            ? 'Seu aviso foi recusado. Envie um novo comprovante.'
+            : 'Sua associação segue ativa. Regularize quando puder.',
+        action: paymentAction,
+      };
+    default:
+      return {
+        tone: 'ok',
+        headline: 'Em dia',
+        body: 'Nenhuma contribuição pendente.',
+        action: null,
+      };
+  }
+};
+
+export const getPlanLabel = (ledger: MembershipBillingLedger) => {
+  if (ledger.plan_type === 'annual') return 'Anual';
+  if (ledger.plan_type === 'monthly') return 'Mensal';
+  return null;
+};
+
+/**
+ * "abr. de 2026", read from the settled admission. The history is paginated,
+ * so this is null for a member whose admission is not loaded yet.
+ */
+export const getMemberSince = (ledger: MembershipBillingLedger) => {
+  const admission = ledger.history.find(
+    (item) => item.purpose === 'initial_admission' && item.status === 'settled',
+  );
+  if (!admission) return null;
+
+  const value = admission.settled_at ?? admission.due_on;
+  const parsed = new Date(DATE_ONLY.test(value) ? `${value}T00:00:00Z` : value);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(parsed);
 };
