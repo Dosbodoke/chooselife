@@ -1,5 +1,5 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 
 import { captureGrowthEvent, flushGrowthEvents } from './analytics';
@@ -9,7 +9,10 @@ import type { MapDefault, MapType } from './map-default';
 export function useExploreVisit(state: MapDefault, mapReady: boolean) {
   const visitRef = useRef<ExploreVisit | null>(null);
   const stateRef = useRef(state);
-  stateRef.current = state;
+  // External lifecycle callbacks should see committed state, never an abandoned render.
+  useLayoutEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   useFocusEffect(
     useCallback(() => {
