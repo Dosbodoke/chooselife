@@ -714,9 +714,28 @@
     "settings": {
       "my-webbing": {
         "title": "My Webbings",
-        "add": "add",
+        "add": "Add",
         "description": "View and track the history of your webbings.",
-        "empty": "You haven't registered any webbing yet"
+        "empty": "You haven't registered any webbing yet",
+        "gearSection": "My gear",
+        "count_one": "{{count}} webbing",
+        "count_other": "{{count}} webbings",
+        "loginRequired": "Sign in to see your webbings.",
+        "emptyDescription": "Add your first webbing to track its use and choose a personal photo.",
+        "loadError": "Your webbings could not be loaded.",
+        "retry": "Try again",
+        "addPhoto": "Add photo",
+        "addPhotoFor": "Add photo for {{name}}",
+        "changePhotoFor": "Change photo for {{name}}",
+        "removePhotoFor": "Remove personal photo for {{name}}",
+        "photoErrorTitle": "Photo could not be saved",
+        "photoError": "Try again with an image smaller than 10 MB. Your previous photo has been kept.",
+        "viewHistory": "View history for {{name}}",
+        "strength": "Type {{strength}}",
+        "riggedNow": "Rigged now",
+        "daysUsed": "{{used}} / {{total}} days used",
+        "noLifetime": "No lifetime recommendation",
+        "usageError": "Usage is currently unavailable."
       }
     },
     "webbing-detail": {
