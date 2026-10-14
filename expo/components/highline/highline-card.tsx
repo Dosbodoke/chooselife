@@ -21,6 +21,8 @@ interface HighlineCardProps {
   item: Highline;
   className?: string;
   onPress?: () => void;
+  /** Called only for the card's built-in detail navigation. */
+  onOpen?: () => void;
   isFocused?: boolean;
   distanceFromUserMeters?: number | null;
   showFavorite?: boolean;
@@ -191,6 +193,7 @@ export const HighlineCard: React.FC<HighlineCardProps> = ({
   distanceFromUserMeters,
   showStatus = true,
   animateMount = true,
+  onOpen,
 }) => {
   const content = (
     <ReanimatedSquircleView
@@ -217,7 +220,9 @@ export const HighlineCard: React.FC<HighlineCardProps> = ({
 
   return (
     <Link href={`/highline/${item.id}`} asChild>
-      <TouchableOpacity activeOpacity={0.9}>{content}</TouchableOpacity>
+      <TouchableOpacity activeOpacity={0.9} onPress={onOpen}>
+        {content}
+      </TouchableOpacity>
     </Link>
   );
 };

@@ -1,4 +1,5 @@
 import Mapbox from '@rnmapbox/maps';
+import { useExploreVisit } from '~/features/growth/use-explore-visit';
 import { isCameraOnLocation } from '~/store/camera-state';
 import { useMapStore } from '~/store/map-store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -98,6 +99,7 @@ export default function ExploreMap() {
 
   const [isOnMyLocation, setIsOnMyLocation] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
+  const [isMapRendered, setIsMapRendered] = useState(false);
 
   // Where `goToMyLocation` last aimed. The locate control latches on the camera
   // reaching it rather than on a timer, so the throttled camera handler cannot
@@ -130,10 +132,30 @@ export default function ExploreMap() {
   });
   const {
     mapType,
+    assignment,
     setMapType,
     mapStyle,
     isLoading: isMapStyleLoading,
   } = useMapStyle();
+  const { interact, openHighline, changeMapType } = useExploreVisit(
+    { mapType, assignment },
+    isMapReady && isMapRendered && !isMapStyleLoading,
+  );
+  const handleSetMapType = useCallback(
+    async (next: typeof mapType) => {
+      changeMapType(next);
+      await setMapType(next);
+    },
+    [changeMapType, setMapType],
+  );
+  const handleListHighlineOpen = useCallback(
+    () => openHighline('list'),
+    [openHighline],
+  );
+  const handleMapHighlineOpen = useCallback(
+    () => openHighline('map_card'),
+    [openHighline],
+  );
 
   const highlinesWithLocation = useMemo(() => {
     return highlines.filter(
@@ -200,6 +222,14 @@ export default function ExploreMap() {
     [throttledCameraUpdate],
   );
 
+  const handleMapIdle = useCallback(
+    (state: Mapbox.MapState) => {
+      setIsMapRendered(true);
+      throttledCameraUpdate(state);
+    },
+    [throttledCameraUpdate],
+  );
+
   const handleDidFinishLoadingMap = useCallback(() => {
     setIsMapReady(true);
     if (!focusedMarker) {
@@ -240,14 +270,14 @@ export default function ExploreMap() {
   }
 
   return (
-    <View style={FILL_STYLE}>
+    <View style={FILL_STYLE} onTouchStart={interact}>
       <Mapbox.MapView
         ref={mapRef}
         style={FILL_STYLE}
         styleURL={mapStyle}
         scaleBarEnabled={false}
         onCameraChanged={handleCameraChanged}
-        onMapIdle={handleCameraChanged}
+        onMapIdle={handleMapIdle}
         onDidFinishLoadingMap={handleDidFinishLoadingMap}
         onPress={handleMapPress}
       >
@@ -311,11 +341,11 @@ export default function ExploreMap() {
         isOnMyLocation={isOnMyLocation}
         goToMyLocation={goToMyLocation}
         mapType={mapType}
-        setMapType={setMapType}
+        setMapType={handleSetMapType}
       />
 
       <Activity mode={isSheetAvailable ? 'visible' : 'hidden'}>
-        <ListingsBottomSheet />
+        <ListingsBottomSheet onHighlineOpen={handleListHighlineOpen} />
       </Activity>
 
       {isMapCardVisible ? (
@@ -324,6 +354,7 @@ export default function ExploreMap() {
           focusedMarker={highlightedMarker}
           changeFocusedMarker={handleChangeFocusedMarker}
           dark={mapType === 'satellite'}
+          onHighlineOpen={handleMapHighlineOpen}
         />
       ) : null}
     </View>
