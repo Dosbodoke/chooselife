@@ -1,0 +1,153 @@
+{
+  "name": "Explore map default: satellite vs illustrated",
+  "description": "First growth experiment. Hypothesis: illustrated Outdoors increases highline discovery. Unit: anonymous installation. Exclude pre-existing explicit map preferences. Keep original assignment after manual switches. Choose sample target from baseline before launch; allow at least two weeks plus seven-day follow-up. Do not launch before the instrumented app is released.",
+  "feature_flag_key": "explore-map-default-v1",
+  "type": "product",
+  "feature_flag": {
+    "filters": {
+      "groups": [
+        {
+          "properties": [],
+          "rollout_percentage": 100
+        }
+      ],
+      "multivariate": {
+        "variants": [
+          {
+            "key": "control",
+            "name": "Satellite Streets",
+            "rollout_percentage": 50
+          },
+          {
+            "key": "illustrated",
+            "name": "Illustrated Outdoors",
+            "rollout_percentage": 50
+          }
+        ]
+      }
+    }
+  },
+  "exposure_criteria": {
+    "exposure_config": {
+      "kind": "ExperimentEventExposureConfig",
+      "event": "explore_map_experiment_exposed",
+      "properties": [
+        {
+          "key": "experiment_eligible",
+          "type": "event",
+          "operator": "exact",
+          "value": true
+        }
+      ]
+    },
+    "multiple_variant_handling": "exclude",
+    "filterTestAccounts": true
+  },
+  "metrics": [
+    {
+      "kind": "ExperimentMetric",
+      "name": "Highline discovery within 24 hours",
+      "metric_type": "funnel",
+      "series": [
+        {
+          "kind": "EventsNode",
+          "event": "explore_map_experiment_exposed",
+          "properties": [
+            {
+              "key": "experiment_eligible",
+              "type": "event",
+              "operator": "exact",
+              "value": true
+            }
+          ]
+        },
+        {
+          "kind": "EventsNode",
+          "event": "explore_highline_opened",
+          "properties": [
+            {
+              "key": "experiment_eligible",
+              "type": "event",
+              "operator": "exact",
+              "value": true
+            }
+          ]
+        }
+      ],
+      "conversion_window": 24,
+      "conversion_window_unit": "hour"
+    }
+  ],
+  "metrics_secondary": [
+    {
+      "kind": "ExperimentMetric",
+      "name": "Active Explore seconds per installation in 24 hours",
+      "metric_type": "mean",
+      "source": {
+        "kind": "EventsNode",
+        "event": "explore_engagement",
+        "properties": [
+          {
+            "key": "experiment_eligible",
+            "type": "event",
+            "operator": "exact",
+            "value": true
+          }
+        ],
+        "math": "sum",
+        "math_property": "active_seconds"
+      },
+      "conversion_window": 24,
+      "conversion_window_unit": "hour",
+      "ignore_zeros": false
+    },
+    {
+      "kind": "ExperimentMetric",
+      "name": "Return to Explore between day 1 and day 7",
+      "metric_type": "retention",
+      "start_event": {
+        "kind": "ExperimentExposureNode"
+      },
+      "completion_event": {
+        "kind": "EventsNode",
+        "event": "explore_viewed",
+        "properties": [
+          {
+            "key": "experiment_eligible",
+            "type": "event",
+            "operator": "exact",
+            "value": true
+          }
+        ]
+      },
+      "start_handling": "first_seen",
+      "retention_window_start": 1,
+      "retention_window_end": 7,
+      "retention_window_unit": "day"
+    },
+    {
+      "kind": "ExperimentMetric",
+      "name": "Installations switching styles within 24 hours",
+      "metric_type": "mean",
+      "source": {
+        "kind": "EventsNode",
+        "event": "explore_map_style_changed",
+        "properties": [
+          {
+            "key": "experiment_eligible",
+            "type": "event",
+            "operator": "exact",
+            "value": true
+          }
+        ],
+        "math": "total"
+      },
+      "threshold": 1,
+      "conversion_window": 24,
+      "conversion_window_unit": "hour",
+      "ignore_zeros": false
+    }
+  ],
+  "only_count_matured_users": true,
+  "allow_unknown_events": true
+}

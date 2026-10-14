@@ -3,8 +3,8 @@ import BottomSheet, {
 } from '@gorhom/bottom-sheet';
 import { LegendList } from '@legendapp/list/react-native';
 import { useMapStore } from '~/store/map-store';
-import type { Position } from 'geojson';
 import * as Haptics from 'expo-haptics';
+import type { Position } from 'geojson';
 import React, { useCallback, useDeferredValue } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -48,7 +48,9 @@ const keyExtractor = (item: NearbyHighlineItem) => item.highline.id;
 
 const getListingItemSize = () => LISTING_ITEM_HEIGHT;
 
-const ListingsBottomSheet: React.FC = () => {
+const ListingsBottomSheet: React.FC<{ onHighlineOpen?: () => void }> = ({
+  onHighlineOpen,
+}) => {
   const { height: windowHeight } = useWindowDimensions();
   const { top } = useSafeAreaInsets();
   // The tab bar floats over the bottom of the sheet, so the collapsed sheet,
@@ -66,10 +68,11 @@ const ListingsBottomSheet: React.FC = () => {
   // that once we have a fix, panning the map stops re-rendering this sheet and
   // re-sorting every highline behind it.
   const sortOrigin = useMapStore(
-    useShallow((state): Position =>
-      state.userLocation
-        ? [state.userLocation.longitude, state.userLocation.latitude]
-        : state.camera.center,
+    useShallow(
+      (state): Position =>
+        state.userLocation
+          ? [state.userLocation.longitude, state.userLocation.latitude]
+          : state.camera.center,
     ),
   );
 
@@ -182,10 +185,11 @@ const ListingsBottomSheet: React.FC = () => {
           item={item.highline}
           distanceFromUserMeters={item.distanceFromUserMeters}
           animateMount={false}
+          onOpen={onHighlineOpen}
         />
       </View>
     ),
-    [],
+    [onHighlineOpen],
   );
 
   const renderHandle = useCallback(() => <ExploreHeader />, []);
