@@ -14,6 +14,7 @@ import {
   ChevronRightIcon,
   LanguagesIcon,
   LogOutIcon,
+  PackageIcon,
   PencilIcon,
   Trash2Icon,
   type LucideIcon,
@@ -41,7 +42,6 @@ import {
 } from '~/components/floating-tab-bar';
 import { LanguageSwitcher } from '~/components/language-switcher';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
-import { MyWebbings } from '~/components/settings/my-webbing';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
@@ -52,6 +52,7 @@ export default function SettingsPage() {
   const { profile, logout, isLoginPending } = useAuth();
   const isOnline = useOnlineStatus();
   const tabBarHeight = useFloatingTabBarHeight();
+  const router = useRouter();
 
   if (profile && profile.username) {
     return (
@@ -84,9 +85,19 @@ export default function SettingsPage() {
             </Pressable>
           </Link>
 
-          {/* My Webbings */}
-          <View>
-            <MyWebbings />
+          <View className="gap-2">
+            <Text className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              {t('components.settings.my-webbing.gearSection')}
+            </Text>
+            <View className="bg-white rounded-xl overflow-hidden">
+              <SettingsItem
+                icon={PackageIcon}
+                iconColor="#059669"
+                label={t('components.settings.my-webbing.title')}
+                onPress={() => router.push('/my-webbings')}
+                isLast
+              />
+            </View>
           </View>
 
           {/* Settings Group */}

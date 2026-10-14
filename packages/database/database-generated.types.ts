@@ -1802,6 +1802,7 @@ export type Database = {
       }
       webbing: {
         Row: {
+          image_path: string | null
           description: string | null
           id: number
           left_loop: boolean
@@ -1815,6 +1816,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          image_path?: string | null
           description?: string | null
           id?: never
           left_loop: boolean
@@ -1828,6 +1830,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          image_path?: string | null
           description?: string | null
           id?: never
           left_loop?: boolean
