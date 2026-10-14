@@ -25,13 +25,15 @@ export function useWebbingPhoto(webbing: WebbingWithUsage) {
           throw new Error('Photo exceeds 10 MB');
         }
         const response = await fetch(asset.uri);
+        if (!response.ok) throw new Error('Could not read selected photo');
         const body = await response.arrayBuffer();
         if (body.byteLength > MAX_PHOTO_BYTES)
           throw new Error('Photo exceeds 10 MB');
         const contentType = asset.mimeType || 'image/jpeg';
         if (!contentType.startsWith('image/')) throw new Error('Invalid image');
         const extension =
-          contentType.split('/')[1].replace(/[^a-z0-9]/gi, '') || 'jpeg';
+          contentType.slice('image/'.length).replace(/[^a-z0-9]/gi, '') ||
+          'jpeg';
         uploadedPath = await uploadToR2(
           'webbings',
           `${webbing.id}/${uuid()}.${extension}`,

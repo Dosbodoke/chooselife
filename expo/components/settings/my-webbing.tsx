@@ -131,9 +131,8 @@ function WebbingPhoto({ webbing }: { webbing: WebbingWithUsage }) {
         await mutation.mutateAsync(result.assets[0]);
     } catch {
       showError();
-    } finally {
-      setIsPicking(false);
     }
+    setIsPicking(false);
   };
 
   return (

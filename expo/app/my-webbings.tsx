@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ScrollView } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
@@ -32,9 +32,9 @@ export default function MyWebbingsScreen() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerClassName="p-4"
-        contentContainerStyle={{ paddingBottom: bottom + 100 }}
       >
         <MyWebbings />
+        <View style={{ height: bottom + 100 }} />
       </ScrollView>
       <FAB
         label={t('app.(modals).register-webbing.title')}
