@@ -13,6 +13,9 @@
       "pnpm": "11.10.0",
       "ios": {
         "simulator": true
+      },
+      "env": {
+        "APP_VARIANT": "development"
       }
     },
     "preview": {
@@ -20,20 +23,39 @@
       "channel": "preview",
       "environment": "preview",
       "node": "24.18.0",
-      "pnpm": "11.10.0"
+      "pnpm": "11.10.0",
+      "env": {
+        "APP_VARIANT": "preview"
+      }
     },
     "production": {
       "autoIncrement": true,
       "channel": "production",
       "environment": "production",
       "env": {
-        "EAS_UPDATE_EXPERIMENTAL_UPLOAD_EMBEDDED_BUNDLE": "1"
+        "EAS_UPDATE_EXPERIMENTAL_UPLOAD_EMBEDDED_BUNDLE": "1",
+        "APP_VARIANT": "production"
       },
       "node": "24.18.0",
       "pnpm": "11.10.0"
+    },
+    "development-device": {
+      "extends": "development",
+      "ios": {
+        "simulator": false
+      }
+    },
+    "testflight": {
+      "extends": "preview",
+      "distribution": "store",
+      "autoIncrement": true,
+      "ios": {
+        "simulator": false
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {},
+    "testflight": {}
   }
 }

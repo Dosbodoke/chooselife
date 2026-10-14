@@ -1,4 +1,4 @@
-appId: com.bodok.chooselife
+appId: com.bodok.chooselife.dev
 name: OTA Update - Tap Later (Remind Later)
 tags:
   - updates
@@ -8,7 +8,7 @@ tags:
 # Test: Tapping "Later" dismisses the prompt
 # Requires: EXPO_PUBLIC_TEST_OTA=true (pnpm dev:test:ota)
 - launchApp:
-    appId: com.bodok.chooselife
+    appId: com.bodok.chooselife.dev
 
 # Wait for update prompt to appear
 - extendedWaitUntil:
