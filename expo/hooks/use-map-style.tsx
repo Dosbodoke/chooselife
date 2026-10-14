@@ -1,50 +1,58 @@
 import Mapbox from '@rnmapbox/maps';
-import AsyncStorage from 'expo-sqlite/kv-store';
-import { useCallback, useEffect, useState } from 'react';
+import {
+  getMapExperimentVariant,
+  getMapStyleStorage,
+} from '~/features/growth/analytics';
+import {
+  MAP_PREFERENCE_KEY,
+  resolveMapDefault,
+  type MapDefault,
+  type MapType,
+} from '~/features/growth/map-default';
+import { useCallback, useState } from 'react';
 
-export type MapType = 'satellite' | 'standard';
+import { useMountEffect } from '~/hooks/use-mount-effect';
 
-const MAP_TYPE_STORAGE_KEY = 'preferred_map_type';
-const DEFAULT_MAP_TYPE: MapType = 'satellite';
+export type { MapType } from '~/features/growth/map-default';
 
 /**
  * Custom hook to manage map style state with persistent storage
  * @returns Object containing mapType, setMapType function, mapStyle URL, and loading state
  */
 export const useMapStyle = () => {
-  const [mapType, setMapTypeState] = useState<MapType>(DEFAULT_MAP_TYPE);
+  const [storage] = useState(getMapStyleStorage);
+  const [state, setState] = useState<MapDefault>({
+    mapType: 'standard',
+    assignment: null,
+  });
+  const { mapType, assignment } = state;
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const loadMapType = async () => {
-      try {
-        const savedMapType = await AsyncStorage.getItem(MAP_TYPE_STORAGE_KEY);
-        if (
-          savedMapType &&
-          (savedMapType === 'satellite' || savedMapType === 'standard')
-        ) {
-          setMapTypeState(savedMapType as MapType);
-        }
-      } catch (error) {
-        console.error('Error loading map type preference:', error);
-        // Fall back to default if loading fails
-        setMapTypeState(DEFAULT_MAP_TYPE);
-      } finally {
+  useMountEffect(() => {
+    let mounted = true;
+    void resolveMapDefault(storage, getMapExperimentVariant).then(
+      (resolved) => {
+        if (!mounted) return;
+        setState(resolved);
         setIsLoading(false);
-      }
+      },
+    );
+    return () => {
+      mounted = false;
     };
+  });
 
-    loadMapType();
-  }, []);
-
-  const setMapType = useCallback(async (newMapType: MapType) => {
-    try {
-      setMapTypeState(newMapType);
-      await AsyncStorage.setItem(MAP_TYPE_STORAGE_KEY, newMapType);
-    } catch (error) {
-      console.error('Error saving map type preference:', error);
-    }
-  }, []);
+  const setMapType = useCallback(
+    async (newMapType: MapType) => {
+      try {
+        setState((current) => ({ ...current, mapType: newMapType }));
+        await storage.setItem(MAP_PREFERENCE_KEY, newMapType);
+      } catch (error) {
+        console.error('Error saving map type preference:', error);
+      }
+    },
+    [storage],
+  );
 
   const mapStyle =
     mapType === 'satellite'
@@ -53,6 +61,7 @@ export const useMapStyle = () => {
 
   return {
     mapType,
+    assignment,
     setMapType,
     mapStyle,
     isLoading,

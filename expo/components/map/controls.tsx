@@ -40,6 +40,7 @@ const MapControls: React.FC<{
 
       <TouchableOpacity
         className="p-1 items-center justify-center pt-2"
+        testID="explore-map-style-toggle"
         onPress={() =>
           setMapType(mapType === 'standard' ? 'satellite' : 'standard')
         }

@@ -1,13 +1,3 @@
-import {
-  BackdropFilter,
-  Blur,
-  Canvas,
-  Group,
-  LinearGradient,
-  Paint,
-  Rect,
-  vec,
-} from 'react-native-skia';
 import { useMapStore } from '~/store/map-store';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -18,6 +8,16 @@ import {
 } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import Animated, { Easing, FadeIn, FadeOut } from 'react-native-reanimated';
+import {
+  BackdropFilter,
+  Blur,
+  Canvas,
+  Group,
+  LinearGradient,
+  Paint,
+  Rect,
+  vec,
+} from 'react-native-skia';
 
 import type { Highline } from '~/hooks/use-highline';
 
@@ -42,6 +42,7 @@ interface MapCardListProps {
   changeFocusedMarker: (high: Highline) => void;
   /** Set to true for satellite / dark map tiles */
   dark?: boolean;
+  onHighlineOpen?: () => void;
 }
 
 export const MapCardList = ({
@@ -49,6 +50,7 @@ export const MapCardList = ({
   focusedMarker,
   changeFocusedMarker,
   dark = false,
+  onHighlineOpen,
 }: MapCardListProps) => {
   const router = useRouter();
   const { width } = useWindowDimensions();
@@ -113,6 +115,7 @@ export const MapCardList = ({
 
   const handleCardPress = (high: Highline) => {
     if (high.id === focusedMarker?.id) {
+      onHighlineOpen?.();
       router.push(`/highline/${high.id}`);
     } else {
       changeFocusedMarker(high);

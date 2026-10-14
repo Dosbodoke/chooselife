@@ -106,6 +106,7 @@
     "lodash.throttle": "^4.1.1",
     "lucide-react-native": "^0.378.0",
     "patch-package": "^8.0.0",
+    "posthog-react-native": "4.81.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.52.1",
