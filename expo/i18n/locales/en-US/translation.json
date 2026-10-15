@@ -204,11 +204,76 @@
         "finishLabel": "Register",
         "selectModel": {
           "label": "Webbing Model",
-          "placeholder": "E.g., Brasileirinha",
+          "placeholder": "Search SlackData or register manually",
           "clear": "Unselect model",
           "emptyState": {
             "title": "No model available",
             "description": "There are no models that match your criteria"
+          },
+          "searchPlaceholder": "Search brand or model",
+          "loading": "Loading the SlackData catalog…",
+          "unavailable": "The SlackData catalog is unavailable right now. You can still register this webbing manually.",
+          "offline": "You're offline. The catalog loads when you reconnect; you can still fill in the details manually.",
+          "retry": "Try again",
+          "retryIn": "Try again in {{seconds}}s",
+          "retryHint": "Suggested wait before retrying, not a limit.",
+          "refresh": "Refresh",
+          "stale": "Catalog loaded {{time}}. It may be out of date.",
+          "refreshFailed": "Couldn't refresh. Showing the catalog loaded {{time}}.",
+          "incomplete": "Some catalog entries couldn't be read, so the list may be incomplete.",
+          "emptyCatalog": "The SlackData catalog has no webbings.",
+          "noMatches": "No webbings match “{{query}}”.",
+          "manual": "Register manually",
+          "manualHint": "No model selected. Fill in the details yourself.",
+          "legacyTitle": "Previously available models",
+          "legacyUnavailable": "Previously available models couldn't be loaded.",
+          "discontinued": "Discontinued",
+          "selectModelFor": "Select {{name}}",
+          "sort": {
+            "title": "Sort by",
+            "close": "Close sort menu",
+            "a11y": "Sort by {{option}}",
+            "brand": "Brand, A–Z",
+            "strength": "Breaking strength (kN)",
+            "width": "Width (mm)",
+            "weight": "Weight (g/m)",
+            "stretch": "Stretch at 10 kN (%)",
+            "highToLow": "High → low · tap again to flip",
+            "lowToHigh": "Low → high · tap again to flip",
+            "short": {
+              "brand": "Brand",
+              "strength": "kN",
+              "width": "mm",
+              "weight": "g/m",
+              "stretch": "Stretch"
+            }
+          },
+          "filters": {
+            "isaCertified": "ISA certified",
+            "inProduction": "In production"
+          },
+          "count_one": "{{count}} model",
+          "count_other": "{{count}} models",
+          "countFiltered": "{{shown}} of {{total}} models",
+          "source": "Data from",
+          "sourceA11y": "Open slackdata.org, the source of this catalog",
+          "noFilterMatches": "No webbings match these filters.",
+          "clearFilters": "Clear filters",
+          "flags": {
+            "isa": "ISA {{class}}",
+            "isaCertified": "ISA certified",
+            "notForHighline": "Not for highline",
+            "discontinued": "Discontinued"
+          },
+          "card": {
+            "kn": "kN",
+            "mm": "mm",
+            "gramsPerMeter": "g/m",
+            "stretchAt": "% @ {{kn}} kN",
+            "atKn": "@ {{kn}} kN",
+            "stretch": "stretch",
+            "stretchCurve": "stretch curve",
+            "photoOf": "Photo of {{name}}"
           }
         },
         "tagName": {
@@ -223,14 +288,52 @@
         "strengthClass": {
           "label": "Strength Class",
           "lockedHint": "Determined by the selected model",
-          "placeholder": "Select strength class"
+          "placeholder": "Select strength class",
+          "personalHint": "Your own classification, saved as entered by you. Not a certification.",
+          "catalogClass": "SlackData lists ISA class {{value}}"
         },
         "authRequired": {
           "title": "Sign in required",
           "description": "You need to be signed in before registering webbing.",
           "action": "Log in"
         },
-        "recommendedLifetime": "Recommended lifetime: {{days}} days"
+        "recommendedLifetime": "Recommended lifetime: {{days}} days",
+        "catalog": {
+          "attribution": "Gear data from SlackData by the International Slackline Association, CC BY-SA 4.0",
+          "normalized": "Fields were normalized for display.",
+          "site": "slackdata.org",
+          "license": "CC BY-SA 4.0"
+        },
+        "photo": {
+          "label": "Photo",
+          "add": "Add photo",
+          "change": "Change photo",
+          "remove": "Remove photo",
+          "errors": {
+            "unsupported-type": "Choose a JPEG or PNG photo.",
+            "animated": "Animated images aren't supported. Choose a still JPEG or PNG.",
+            "invalid-image": "This file isn't a valid JPEG or PNG.",
+            "too-large": "Choose an image smaller than 10 MB.",
+            "unreadable": "The selected photo couldn't be read.",
+            "upload-failed": "The photo couldn't be uploaded.",
+            "rejected": "The photo couldn't be saved.",
+            "unconfirmed": "We couldn't confirm whether the photo was saved. Retry to check.",
+            "conflict": "This webbing's photo was changed elsewhere. Your new photo wasn't applied."
+          }
+        },
+        "photoPhase": {
+          "uploading": "Uploading photo…",
+          "failedTitle": "Webbing saved, photo not uploaded",
+          "failedDescription": "Your webbing is registered. Retry the photo or continue without it — you can add one later in My Webbings.",
+          "retryPhoto": "Retry photo",
+          "continue": "Continue without photo"
+        },
+        "errors": {
+          "draft-conflict": "This registration was already saved with different details. Close it and start a new registration.",
+          "unconfirmed": "We couldn't confirm whether your webbing was saved. Try again — it won't be duplicated.",
+          "lookup-failed": "Couldn't reach Choose Life. Check your connection and try again.",
+          "offline": "Connect to the internet to save this webbing."
+        }
       }
     },
     "(tabs)": {
@@ -735,7 +838,12 @@
         "riggedNow": "Rigged now",
         "daysUsed": "{{used}} / {{total}} days used",
         "noLifetime": "No lifetime recommendation",
-        "usageError": "Usage is currently unavailable."
+        "usageError": "Usage is currently unavailable.",
+        "rigs_one": "{{count}} rig",
+        "rigs_other": "{{count}} rigs",
+        "usedDays_one": "{{count}} day used",
+        "usedDays_other": "{{count}} days used",
+        "personalStrength": "Type {{strength}} (yours)"
       }
     },
     "webbing-detail": {
@@ -749,19 +857,62 @@
         "learnMore": "Learn about ISA webbing standards",
         "statusGood": "Good",
         "statusInspect": "Inspect",
-        "statusReplace": "Replace"
+        "statusReplace": "Replace",
+        "unknown": "No supported lifetime estimate for this webbing. Its recorded use is still tracked.",
+        "loadError": "Usage couldn't be loaded.",
+        "retry": "Try again"
       },
       "specifications": {
         "title": "Specifications",
         "length": "Length",
         "material": "Material",
         "weave": "Weave",
-        "loops": "Loops"
+        "loops": "Loops",
+        "materials": "Material",
+        "construction": "Construction",
+        "width": "Width",
+        "thickness": "Thickness",
+        "weight": "Weight",
+        "breakingStrength": "Breaking strength",
+        "stretch": "Stretch",
+        "stretchAt": "{{percent}}% at {{kn}} kN",
+        "isaCertified": "ISA certified",
+        "isaClass": "ISA class (SlackData)",
+        "isaCertificate": "ISA certificate",
+        "modelStrength": "Strength class (model)",
+        "personalStrength": "Strength class (entered by you)",
+        "status": "Status",
+        "discontinued": "Discontinued",
+        "active": "In production",
+        "yes": "Yes",
+        "no": "No",
+        "notRecorded": "Not recorded",
+        "productPage": "Product page",
+        "mm": "{{value}} mm",
+        "gramsPerMeter": "{{value}} g/m",
+        "kn": "{{value}} kN"
       },
       "history": {
         "title": "Usage History ({{count}} rigs)",
         "empty": "No usage history yet.\nLink this webbing when rigging a highline.",
-        "days": "{{days}} days"
+        "days": "{{days}} days",
+        "loadError": "History couldn't be loaded."
+      },
+      "usage": {
+        "days_one": "{{count}} day used",
+        "days_other": "{{count}} days used",
+        "rigs_one": "{{count}} rig",
+        "rigs_other": "{{count}} rigs"
+      },
+      "warnings": {
+        "notForHighline": "The manufacturer states this webbing is not for highline use.",
+        "notForHighlineSource": "Source: {{source}}",
+        "isaWarning": "ISA warning"
+      },
+      "source": {
+        "title": "Saved catalog details",
+        "retrievedAt": "Saved from SlackData on {{date}}. These details are not updated automatically and are not a current certification.",
+        "unsupported": "Saved catalog details need a newer app version to display."
       }
     },
     "event-card": {

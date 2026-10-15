@@ -1802,12 +1802,14 @@ export type Database = {
       }
       webbing: {
         Row: {
-          image_path: string | null
+          catalog_snapshot: Json | null
           description: string | null
           id: number
+          image_path: string | null
           left_loop: boolean
           length: number
           model: number | null
+          registration_key: string | null
           right_loop: boolean
           strength_class:
             | Database["public"]["Enums"]["strength_class_enum"]
@@ -1816,12 +1818,14 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          image_path?: string | null
+          catalog_snapshot?: Json | null
           description?: string | null
           id?: never
+          image_path?: string | null
           left_loop: boolean
           length: number
           model?: number | null
+          registration_key?: string | null
           right_loop: boolean
           strength_class?:
             | Database["public"]["Enums"]["strength_class_enum"]
@@ -1830,12 +1834,14 @@ export type Database = {
           user_id: string
         }
         Update: {
-          image_path?: string | null
+          catalog_snapshot?: Json | null
           description?: string | null
           id?: never
+          image_path?: string | null
           left_loop?: boolean
           length?: number
           model?: number | null
+          registration_key?: string | null
           right_loop?: boolean
           strength_class?:
             | Database["public"]["Enums"]["strength_class_enum"]

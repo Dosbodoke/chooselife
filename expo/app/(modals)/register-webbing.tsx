@@ -1,29 +1,44 @@
 import {
-  getMaterialColor,
-  getMaterialIconColor,
-  getRecommendedLifetimeDays,
+  formatCatalogModelName,
   getStrengthClassColor,
-  getWeaveColor,
   STRENGTH_CLASS_OPTIONS,
   useRegisterWebbing,
   type RegisterWebbingFormData,
+  type WebbingCatalogSnapshot,
 } from '@chooselife/ui';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { useQueryClient } from '@tanstack/react-query';
 import {
-  BottomSheetBackdropProps,
-  BottomSheetModal,
-  BottomSheetModalProvider,
-  BottomSheetScrollView,
-} from '@gorhom/bottom-sheet';
-import { useQuery } from '@tanstack/react-query';
+  captureGrowthEvent,
+  flushGrowthEvents,
+} from '~/features/growth/analytics';
+import {
+  captureWebbingRegistered,
+  type WebbingPickerExperiment,
+} from '~/features/growth/webbing-picker-layout';
+import {
+  getStaticPhotoType,
+  saveWebbingPhoto,
+  WebbingPhotoError,
+  type PhotoAsset,
+} from '~/features/webbing/photo-upload';
+import {
+  advanceRegistration,
+  continueWithoutPhoto,
+  initialRegistrationFlow,
+  nextAutoLabel,
+  type RegistrationFlowState,
+} from '~/features/webbing/registration-flow';
 import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import {
   AlertTriangleIcon,
-  ChevronDownIcon,
-  PackagePlusIcon,
-  TorusIcon,
+  CameraIcon,
+  CloudOffIcon,
+  XIcon,
 } from 'lucide-react-native';
-import React, { useCallback, useId, useMemo, useRef } from 'react';
+import React, { useCallback, useId, useRef, useState } from 'react';
 import {
   Control,
   Controller,
@@ -34,25 +49,23 @@ import {
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
-  Dimensions,
-  StyleSheet,
+  Pressable,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import Animated, {
-  interpolate,
-  useAnimatedStyle,
-} from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import { v4 as uuid } from 'uuid';
 
 import { useAuth } from '~/context/auth';
+import { useOnlineStatus } from '~/context/react-query';
+import {
+  createWebbingPhotoDeps,
+  setCachedWebbingPhoto,
+  WEBBING_PHOTO_PICKER_OPTIONS,
+} from '~/hooks/use-webbing-photo';
+import { useWebbingPickerExperiment } from '~/hooks/use-webbing-picker-experiment';
 import RegisterWebbingIllustration from '~/lib/icons/register-webbing';
-import { getR2PublicUrl } from '~/lib/r2';
-import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
-import { Tables } from '~/utils/database.types';
 import { requestReview } from '~/utils/request-review';
 
 import { OnboardHeader, OnboardNavigator } from '~/components/onboard';
@@ -68,26 +81,117 @@ import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
-import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
+import {
+  SelectedCatalogDetails,
+  WebbingCatalogPicker,
+  type LegacyWebbingModel,
+} from '~/components/webbing-catalog-picker';
 import { WebbingInput } from '~/components/webbing-input';
+
+const translationKey = 'app.(modals).register-webbing';
+const ROOT_ERROR_CODES = [
+  'draft-conflict',
+  'unconfirmed',
+  'lookup-failed',
+  'offline',
+];
 
 export default function RegisterWebbing() {
   const { t } = useTranslation();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const isOnline = useOnlineStatus();
   const { session, sessionLoading, isLoginPending } = useAuth();
   const handleLogin = useCallback(() => {
     router.push('/(modals)/login');
   }, [router]);
 
-  const { form, handleSubmit, isLoading } = useRegisterWebbing({
-    onSuccess: () => {
-      requestReview();
-      router.back();
-    },
-  });
-  const submitError = form.formState.errors.root?.message;
+  const { form, submit } = useRegisterWebbing({ createRegistrationKey: uuid });
+  const pickerExperiment = useWebbingPickerExperiment();
+  const [selectedLegacy, setSelectedLegacy] =
+    useState<LegacyWebbingModel | null>(null);
+  const [photo, setPhoto] = useState<PhotoAsset | null>(null);
+  const [flow, setFlow] = useState<RegistrationFlowState>(
+    initialRegistrationFlow,
+  );
+  const finished = useRef(false);
+
+  const rootError = form.formState.errors.root;
+  const rootErrorType = String(rootError?.type ?? '');
+  const submitError = rootError
+    ? ROOT_ERROR_CODES.includes(rootErrorType)
+      ? t(`${translationKey}.errors.${rootErrorType}`)
+      : rootError.message
+    : undefined;
+
+  const finish = () => {
+    // Navigate back and ask for a review exactly once.
+    if (finished.current) return;
+    finished.current = true;
+    requestReview();
+    router.back();
+  };
+
+  const run = async (values: RegisterWebbingFormData | null) => {
+    const userId = session?.user.id;
+    if (!userId) return;
+    const state = await advanceRegistration(
+      flow,
+      photo,
+      {
+        saveItem: async () => {
+          if (!values) return null;
+          const webbing = await submit({
+            ...values,
+            // A legacy model's own class is shown locked, not saved as personal.
+            strengthClass: selectedLegacy?.strength_class
+              ? undefined
+              : values.strengthClass,
+          });
+          if (webbing) {
+            captureWebbingRegistered(captureGrowthEvent, pickerExperiment, {
+              modelSource: values.catalogSnapshot
+                ? 'catalog'
+                : values.modelID
+                  ? 'legacy'
+                  : 'manual',
+              hasPhoto: !!photo,
+            });
+            flushGrowthEvents();
+          }
+          return webbing;
+        },
+        savePhoto: async ({ webbing, asset, pendingPath }) => {
+          const imagePath = await saveWebbingPhoto({
+            webbingId: webbing.id,
+            previousPath: webbing.image_path,
+            asset,
+            pendingPath,
+            deps: createWebbingPhotoDeps(webbing.id, userId),
+          });
+          setCachedWebbingPhoto(queryClient, userId, webbing.id, imagePath);
+          return imagePath;
+        },
+      },
+      setFlow,
+    );
+    if (state.phase === 'completed') finish();
+  };
+
+  const handleFinish = () => {
+    if (!isOnline) {
+      form.setError('root', { type: 'offline', message: 'offline' });
+      return;
+    }
+    void form.handleSubmit((values) => run(values))();
+  };
+
+  const busy = flow.phase === 'savingItem' || flow.phase === 'uploadingPhoto';
+  const photoFailed =
+    flow.phase === 'savedPhotoFailed' ||
+    flow.phase === 'photoCommitUnconfirmed';
 
   if (sessionLoading || !session?.user.id) {
     return (
@@ -156,9 +260,28 @@ export default function RegisterWebbing() {
           keyboardShouldPersistTaps="handled"
         >
           <OnboardHeader total={1} selectedIndex={0} onBack={router.back} />
-          <PrefillForm form={form} />
+          <PrefillForm
+            form={form}
+            selectedLegacy={selectedLegacy}
+            onSelectedLegacyChange={setSelectedLegacy}
+            photo={photo}
+            onPhotoChange={setPhoto}
+            photoLocked={busy || flow.phase === 'completed'}
+            pickerExperiment={pickerExperiment}
+          />
 
-          {submitError ? (
+          {!isOnline && (
+            <Alert variant="default">
+              <AlertIcon icon={CloudOffIcon} />
+              <AlertContent>
+                <AlertDescription>
+                  {t(`${translationKey}.errors.offline`)}
+                </AlertDescription>
+              </AlertContent>
+            </Alert>
+          )}
+
+          {submitError && flow.phase === 'editing' ? (
             <Alert variant="destructive">
               <AlertIcon icon={AlertTriangleIcon} />
               <AlertContent>
@@ -171,16 +294,58 @@ export default function RegisterWebbing() {
             {/* Spacer to push paginator down */}
           </View>
 
-          <OnboardNavigator
-            total={1}
-            selectedIndex={0}
-            onIndexChange={() => {}} // There is only one step
-            onFinish={handleSubmit}
-            goBack={router.back}
-            isLoading={isLoading}
-            finishLabel={t('app.(modals).register-webbing.finishLabel')}
-            showBack={false}
-          />
+          {photoFailed ? (
+            <Alert variant="warning">
+              <AlertIcon icon={AlertTriangleIcon} />
+              <AlertContent className="gap-3">
+                <AlertTitle>
+                  {t(`${translationKey}.photoPhase.failedTitle`)}
+                </AlertTitle>
+                <AlertDescription>
+                  {flow.photoError
+                    ? `${t(`${translationKey}.photo.errors.${flow.photoError}`)} `
+                    : ''}
+                  {t(`${translationKey}.photoPhase.failedDescription`)}
+                </AlertDescription>
+                <Button
+                  disabled={!isOnline || !photo}
+                  onPress={() => void run(null)}
+                >
+                  <Text>{t(`${translationKey}.photoPhase.retryPhoto`)}</Text>
+                </Button>
+                <Button
+                  variant="outline"
+                  onPress={() => {
+                    setFlow(continueWithoutPhoto(flow));
+                    finish();
+                  }}
+                >
+                  <Text>{t(`${translationKey}.photoPhase.continue`)}</Text>
+                </Button>
+              </AlertContent>
+            </Alert>
+          ) : (
+            <>
+              {flow.phase === 'uploadingPhoto' && (
+                <View className="flex-row items-center justify-center gap-2">
+                  <ActivityIndicator />
+                  <Text className="text-sm text-muted-foreground">
+                    {t(`${translationKey}.photoPhase.uploading`)}
+                  </Text>
+                </View>
+              )}
+              <OnboardNavigator
+                total={1}
+                selectedIndex={0}
+                onIndexChange={() => {}} // There is only one step
+                onFinish={handleFinish}
+                goBack={router.back}
+                isLoading={busy || flow.phase === 'completed'}
+                finishLabel={t('app.(modals).register-webbing.finishLabel')}
+                showBack={false}
+              />
+            </>
+          )}
         </KeyboardAwareScrollView>
       </SafeAreaView>
     </BottomSheetModalProvider>
@@ -189,31 +354,53 @@ export default function RegisterWebbing() {
 
 const PrefillForm: React.FC<{
   form: UseFormReturn<RegisterWebbingFormData>;
-}> = ({ form }) => {
+  selectedLegacy: LegacyWebbingModel | null;
+  onSelectedLegacyChange: (model: LegacyWebbingModel | null) => void;
+  photo: PhotoAsset | null;
+  onPhotoChange: (photo: PhotoAsset | null) => void;
+  photoLocked: boolean;
+  pickerExperiment: WebbingPickerExperiment;
+}> = ({
+  form,
+  selectedLegacy,
+  onSelectedLegacyChange,
+  photo,
+  onPhotoChange,
+  photoLocked,
+  pickerExperiment,
+}) => {
   const { t } = useTranslation();
-  const [leftLoop, rightLoop, length, modelID] = useWatch({
+  const labelId = useId();
+  const [leftLoop, rightLoop, length, catalogSnapshot] = useWatch({
     control: form.control,
-    name: ['leftLoop', 'rightLoop', 'length', 'modelID'],
+    name: ['leftLoop', 'rightLoop', 'length', 'catalogSnapshot'],
   });
+  // The label last filled in automatically; user edits are never replaced.
+  const autoLabel = useRef<string | null>(null);
 
-  // Fetch models to get the selected model's strength class
-  const { data: models } = useQuery({
-    queryKey: ['webbingModels'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('webbing_model')
-        .select('*')
-        .order('name');
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // Get selected model's strength class
-  const selectedModel = models?.find((m) => m.id.toString() === modelID);
-  const modelStrengthClass =
-    (selectedModel as { strength_class?: string } | undefined)
-      ?.strength_class ?? null;
+  const applySelection = (
+    snapshot: WebbingCatalogSnapshot | null,
+    legacy: LegacyWebbingModel | null,
+  ) => {
+    // The selection is copied into the draft; catalog refetches never replace it.
+    form.setValue('catalogSnapshot', snapshot, { shouldValidate: true });
+    form.setValue('modelID', legacy ? legacy.id.toString() : '', {
+      shouldValidate: true,
+    });
+    onSelectedLegacyChange(legacy);
+    const suggestion = snapshot
+      ? formatCatalogModelName(snapshot)
+      : (legacy?.name ?? null);
+    const nextLabel = nextAutoLabel(
+      form.getValues('tagName'),
+      autoLabel.current,
+      suggestion,
+    );
+    if (nextLabel !== form.getValues('tagName')) {
+      form.setValue('tagName', nextLabel, { shouldValidate: !!nextLabel });
+    }
+    autoLabel.current = suggestion;
+  };
 
   return (
     <View className="gap-6">
@@ -236,13 +423,35 @@ const PrefillForm: React.FC<{
         length={length}
         onLeftLoopChange={(value) => form.setValue('leftLoop', value)}
         onRightLoopChange={(value) => form.setValue('rightLoop', value)}
-        onLengthChange={(value) => form.setValue('length', value)}
+        onLengthChange={(value) =>
+          form.setValue('length', value, { shouldValidate: true })
+        }
         error={form.formState.errors.length?.message ?? null}
       />
-      <SelectModel control={form.control} />
+
+      <View className="gap-3">
+        <WebbingCatalogPicker
+          labelId={labelId}
+          selectedSnapshot={catalogSnapshot ?? null}
+          selectedLegacy={selectedLegacy}
+          onSelectCatalog={(snapshot) => applySelection(snapshot, null)}
+          onSelectLegacy={(model) => applySelection(null, model)}
+          onClear={() => applySelection(null, null)}
+          experiment={pickerExperiment}
+        />
+        {catalogSnapshot ? (
+          <SelectedCatalogDetails snapshot={catalogSnapshot} />
+        ) : !selectedLegacy ? (
+          <Text variant="muted" className="text-sm">
+            {t(`${translationKey}.selectModel.manualHint`)}
+          </Text>
+        ) : null}
+      </View>
+
       <StrengthClassSelector
         control={form.control}
-        modelStrengthClass={modelStrengthClass}
+        legacyModel={selectedLegacy}
+        catalogClass={catalogSnapshot?.isaClass ?? null}
       />
 
       <Controller
@@ -260,6 +469,7 @@ const PrefillForm: React.FC<{
                 'app.(modals).register-webbing.tagName.placeholder',
               )}
               className={fieldState.error && 'border-destructive'}
+              aria-labelledby="tagname"
             />
             {fieldState.error ? (
               <Text variant="small" className="text-destructive">
@@ -268,6 +478,12 @@ const PrefillForm: React.FC<{
             ) : null}
           </View>
         )}
+      />
+
+      <PhotoField
+        photo={photo}
+        onChange={onPhotoChange}
+        disabled={photoLocked}
       />
 
       <Controller
@@ -302,26 +518,127 @@ const PrefillForm: React.FC<{
   );
 };
 
-// Strength class selector component
+// Personal photo for the physical item, uploaded after the item is saved.
+const PhotoField: React.FC<{
+  photo: PhotoAsset | null;
+  onChange: (photo: PhotoAsset | null) => void;
+  disabled: boolean;
+}> = ({ photo, onChange, disabled }) => {
+  const { t } = useTranslation();
+  const [error, setError] = useState<string | null>(null);
+  const [isPicking, setIsPicking] = useState(false);
+
+  const choose = async () => {
+    if (disabled || isPicking) return;
+    setIsPicking(true);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        ...WEBBING_PHOTO_PICKER_OPTIONS,
+        mediaTypes: [...WEBBING_PHOTO_PICKER_OPTIONS.mediaTypes],
+        aspect: [...WEBBING_PHOTO_PICKER_OPTIONS.aspect],
+      });
+      // Cancelling keeps the previous selection and is not an error.
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        getStaticPhotoType(asset.mimeType);
+        setError(null);
+        onChange({
+          uri: asset.uri,
+          mimeType: asset.mimeType,
+          fileSize: asset.fileSize,
+        });
+      }
+    } catch (cause) {
+      setError(
+        t(
+          `${translationKey}.photo.errors.${
+            cause instanceof WebbingPhotoError ? cause.code : 'unreadable'
+          }`,
+        ),
+      );
+    }
+    setIsPicking(false);
+  };
+
+  return (
+    <View className="gap-2">
+      <Label nativeID="photo">
+        {t(`${translationKey}.photo.label`)}{' '}
+        <Text variant="muted">{t('common.optional')}</Text>
+      </Label>
+      <View className="flex-row items-center gap-3">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t(
+            `${translationKey}.photo.${photo ? 'change' : 'add'}`,
+          )}
+          accessibilityState={{ disabled, busy: isPicking }}
+          disabled={disabled}
+          onPress={() => void choose()}
+          className="h-24 w-32 items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-muted/30"
+        >
+          {photo ? (
+            <Image
+              source={{ uri: photo.uri }}
+              contentFit="cover"
+              style={{ width: '100%', height: '100%' }}
+            />
+          ) : isPicking ? (
+            <ActivityIndicator />
+          ) : (
+            <>
+              <Icon
+                as={CameraIcon}
+                size={22}
+                className="text-muted-foreground"
+              />
+              <Text className="text-xs text-muted-foreground">
+                {t(`${translationKey}.photo.add`)}
+              </Text>
+            </>
+          )}
+        </Pressable>
+        {photo && !disabled && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => onChange(null)}
+            accessibilityLabel={t(`${translationKey}.photo.remove`)}
+          >
+            <Icon as={XIcon} size={16} />
+            <Text>{t(`${translationKey}.photo.remove`)}</Text>
+          </Button>
+        )}
+      </View>
+      {error ? (
+        <Text variant="small" className="text-destructive">
+          {error}
+        </Text>
+      ) : null}
+    </View>
+  );
+};
+
+// Personal strength class. A legacy model's own class is shown locked; a
+// SlackData class is shown separately and never becomes a personal value.
 const StrengthClassSelector: React.FC<{
   control: Control<RegisterWebbingFormData>;
-  modelStrengthClass: string | null;
-}> = ({ control, modelStrengthClass }) => {
+  legacyModel: LegacyWebbingModel | null;
+  catalogClass: string | null;
+}> = ({ control, legacyModel, catalogClass }) => {
   const { t } = useTranslation();
   const { field } = useController({ control, name: 'strengthClass' });
 
-  // Use model's strength class when available, otherwise use form field value
-  const hasModel = !!modelStrengthClass;
-  const displayValue = hasModel ? modelStrengthClass : field.value;
-  const recommendedDays = getRecommendedLifetimeDays(
-    (displayValue as 'A+' | 'A' | 'B' | 'C') ?? null,
-  );
+  const lockedClass = legacyModel?.strength_class ?? null;
+  const isLocked = !!lockedClass;
+  const displayValue = isLocked ? lockedClass : field.value;
+  const recommendedDays = legacyModel?.recommended_lifetime_days ?? null;
 
   return (
     <View className="gap-2">
       <Label nativeID="strengthClass">
         {t('app.(modals).register-webbing.strengthClass.label')}
-        {!hasModel && (
+        {!isLocked && (
           <>
             {' '}
             <Text variant="muted">{t('common.optional')}</Text>
@@ -336,14 +653,16 @@ const StrengthClassSelector: React.FC<{
           return (
             <TouchableOpacity
               key={option}
-              disabled={hasModel}
+              disabled={isLocked}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected, disabled: isLocked }}
               onPress={() => field.onChange(isSelected ? undefined : option)}
               className={cn(
                 'flex-1 py-3 rounded-lg border items-center justify-center',
                 isSelected
                   ? getStrengthClassColor(option)
                   : 'border-border bg-muted/30',
-                hasModel && !isSelected && 'opacity-40',
+                isLocked && !isSelected && 'opacity-40',
               )}
             >
               <Text
@@ -359,309 +678,27 @@ const StrengthClassSelector: React.FC<{
         })}
       </View>
 
-      {/* Recommended lifetime info */}
-      {recommendedDays && (
+      <Text variant="muted" className="text-sm">
+        {isLocked
+          ? t('app.(modals).register-webbing.strengthClass.lockedHint')
+          : t('app.(modals).register-webbing.strengthClass.personalHint')}
+      </Text>
+      {catalogClass && (
+        <Text variant="muted" className="text-sm">
+          {t('app.(modals).register-webbing.strengthClass.catalogClass', {
+            value: catalogClass,
+          })}
+        </Text>
+      )}
+
+      {/* Only a legacy model carries a supported recommended lifetime */}
+      {recommendedDays ? (
         <Text variant="muted" className="text-sm">
           {t('app.(modals).register-webbing.recommendedLifetime', {
             days: recommendedDays,
           })}
         </Text>
-      )}
-    </View>
-  );
-};
-
-// Grid layout constants - 2 columns
-const screenWidth = Dimensions.get('window').width;
-const numColumns = 2;
-const horizontalPadding = 32; // p-4 on each side
-const gap = 12;
-const availableSpace = screenWidth - horizontalPadding - (numColumns - 1) * gap;
-const itemWidth = availableSpace / numColumns;
-
-const EmptyState = () => {
-  const { t } = useTranslation();
-  return (
-    <View className="items-center justify-center py-10 gap-4">
-      <Icon as={PackagePlusIcon} size={48} className="text-muted-foreground" />
-      <Text className="text-center text-lg font-medium">
-        {t('app.(modals).register-webbing.selectModel.emptyState.title')}
-      </Text>
-      <Text className="text-center text-muted-foreground mb-4">
-        {t('app.(modals).register-webbing.selectModel.emptyState.description')}
-      </Text>
-    </View>
-  );
-};
-
-const SelectModel: React.FC<{ control: Control<RegisterWebbingFormData> }> = ({
-  control,
-}) => {
-  const { t } = useTranslation();
-  const { field: modelIDField } = useController({
-    control,
-    name: 'modelID',
-  });
-  const { field: tagNameField } = useController({
-    control,
-    name: 'tagName',
-  });
-  const id = useId();
-  const { isLoading, data: models } = useQuery({
-    queryKey: ['webbingModels'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('webbing_model')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-
-      return data;
-    },
-  });
-  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-
-  const handleSelect = useCallback(
-    (selectedWebbing: Tables<'webbing_model'> | null) => {
-      modelIDField.onChange(
-        selectedWebbing ? selectedWebbing.id.toString() : '',
-      );
-      // Update the label with the webbing name
-      tagNameField.onChange(selectedWebbing?.name ?? '');
-      bottomSheetModalRef.current?.close();
-    },
-    [],
-  );
-
-  const handleOpenPress = useCallback(() => {
-    bottomSheetModalRef.current?.present();
-  }, []);
-
-  // Custom backdrop that blocks all touch gestures from propagating to parent modal
-  const renderBackdrop = useCallback((props: BottomSheetBackdropProps) => {
-    const CustomBackdrop = () => {
-      const animatedStyle = useAnimatedStyle(() => ({
-        opacity: interpolate(props.animatedIndex.value, [-1, 0], [0, 0.5]),
-      }));
-
-      // Pan gesture that captures swipes but does nothing - prevents propagation
-      const panGesture = Gesture.Pan();
-
-      // Tap gesture to close the modal
-      const closeModal = () => bottomSheetModalRef.current?.close();
-      const tapGesture = Gesture.Tap().onEnd(() => {
-        scheduleOnRN(closeModal);
-      });
-
-      // Compose gestures - pan takes priority to block swipes
-      const composedGesture = Gesture.Race(panGesture, tapGesture);
-
-      return (
-        <GestureDetector gesture={composedGesture}>
-          <Animated.View
-            style={[
-              StyleSheet.absoluteFill,
-              { backgroundColor: 'black' },
-              animatedStyle,
-            ]}
-          />
-        </GestureDetector>
-      );
-    };
-
-    return <CustomBackdrop />;
-  }, []);
-
-  const renderWebbingImage = useCallback(
-    (model: Tables<'webbing_model'>, size: 'sm' | 'lg') => {
-      const dimensions = size === 'sm' ? 'h-10 w-10' : 'h-20 w-20';
-      const iconSize = size === 'sm' ? 20 : 40;
-      const borderRadius = size === 'sm' ? 'rounded-lg' : 'rounded-xl';
-
-      if (model.image_url) {
-        return (
-          <View
-            className={`relative ${dimensions} overflow-hidden ${borderRadius} border border-border bg-muted`}
-          >
-            <Image
-              source={{
-                uri: getR2PublicUrl('webbings', model.image_url),
-              }}
-              contentFit="cover"
-              alt={`${model.name}`}
-              style={{ width: '100%', height: '100%' }}
-            />
-          </View>
-        );
-      }
-
-      // Fallback with styled background and icon
-      return (
-        <View
-          className={`${dimensions} flex items-center justify-center ${borderRadius} border border-border bg-muted/50`}
-        >
-          <Icon
-            as={TorusIcon}
-            size={iconSize}
-            className={getMaterialIconColor(model.material)}
-          />
-        </View>
-      );
-    },
-    [],
-  );
-
-  // Memoize the selector button to prevent re-renders
-  const SelectorButton = useMemo(() => {
-    const selectedModel = models?.find(
-      (m) => m.id.toString() === modelIDField.value,
-    );
-
-    return (
-      <TouchableOpacity
-        id={id}
-        onPress={handleOpenPress}
-        className="flex-row justify-between items-center px-4 py-3 rounded-md border border-input bg-background"
-      >
-        {selectedModel ? (
-          <View className="flex flex-row items-center gap-3">
-            {renderWebbingImage(selectedModel, 'sm')}
-            <Text className="text-primary">{selectedModel.name}</Text>
-          </View>
-        ) : (
-          <Text className="text-muted-foreground">
-            {t('app.(modals).register-webbing.selectModel.placeholder')}
-          </Text>
-        )}
-        <Icon as={ChevronDownIcon} className="text-foreground" />
-      </TouchableOpacity>
-    );
-  }, [id, handleOpenPress, renderWebbingImage, modelIDField.value, t]);
-
-  const renderModelItem = useCallback(
-    (item: Tables<'webbing_model'>) => {
-      const isSelected = item.id.toString() === modelIDField.value;
-
-      return (
-        <TouchableOpacity
-          key={item.id}
-          onPress={() => handleSelect(item)}
-          style={{
-            width: itemWidth,
-          }}
-          className={cn(
-            'flex flex-col items-center p-4 rounded-2xl border',
-            isSelected
-              ? 'border-primary bg-primary/5'
-              : 'border-border bg-muted/30',
-          )}
-        >
-          {/* Webbing image */}
-          {renderWebbingImage(item, 'lg')}
-
-          {/* Details */}
-          <View className="flex flex-col items-center gap-2 w-full mt-3">
-            <Text
-              className="font-semibold text-foreground text-sm text-center"
-              numberOfLines={1}
-            >
-              {item.name}
-            </Text>
-            <View className="flex flex-row flex-wrap justify-center gap-1.5">
-              <View
-                className={cn(
-                  'rounded-full px-2.5 py-0.5',
-                  getMaterialColor(item.material),
-                )}
-              >
-                <Text className="text-xs font-medium capitalize">
-                  {item.material}
-                </Text>
-              </View>
-              <View
-                className={cn(
-                  'rounded-full px-2.5 py-0.5',
-                  getWeaveColor(item.weave),
-                )}
-              >
-                <Text className="text-xs font-medium capitalize">
-                  {item.weave}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-      );
-    },
-    [modelIDField.value, renderWebbingImage, handleSelect],
-  );
-
-  return (
-    <View className="gap-2 w-full">
-      <Label htmlFor={id} nativeID={id}>
-        {t('app.(modals).register-webbing.selectModel.label')}
-      </Label>
-
-      {isLoading ? (
-        <Skeleton className="w-full h-12 rounded-md" />
-      ) : (
-        <>
-          {SelectorButton}
-
-          <BottomSheetModal
-            ref={bottomSheetModalRef}
-            snapPoints={['70%']}
-            enablePanDownToClose
-            backdropComponent={renderBackdrop}
-            handleIndicatorStyle={{ backgroundColor: '#ccc', width: 40 }}
-            enableDynamicSizing={false}
-            activeOffsetY={[-10, 10]}
-            failOffsetX={[-5, 5]}
-            backgroundStyle={{ backgroundColor: '#ffffff' }}
-          >
-            <View className="flex-1 px-4 pb-4">
-              {/* Header */}
-              <View className="pb-4 border-b border-border mb-4">
-                <Text className="text-xl font-bold text-center text-foreground">
-                  {t('app.(modals).register-webbing.selectModel.label')}
-                </Text>
-              </View>
-
-              {/* Grid */}
-              <BottomSheetScrollView
-                contentContainerStyle={{
-                  flexDirection: 'row',
-                  flexWrap: 'wrap',
-                  gap: gap,
-                  paddingBottom: 80,
-                }}
-              >
-                {models ? (
-                  models.map((item) => renderModelItem(item))
-                ) : (
-                  <EmptyState />
-                )}
-              </BottomSheetScrollView>
-
-              {/* Clear button */}
-              {modelIDField.value && (
-                <View className="absolute bottom-4 left-4 right-4">
-                  <Button
-                    variant="outline"
-                    onPress={() => handleSelect(null)}
-                    className="bg-background"
-                  >
-                    <Text>
-                      {t('app.(modals).register-webbing.selectModel.clear')}
-                    </Text>
-                  </Button>
-                </View>
-              )}
-            </View>
-          </BottomSheetModal>
-        </>
-      )}
+      ) : null}
     </View>
   );
 };

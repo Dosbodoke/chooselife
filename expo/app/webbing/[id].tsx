@@ -1,5 +1,6 @@
 import {
   getTranslatedStatus,
+  resolveWebbingSpecs,
   useWebbingHistory,
   useWebbingUsage,
 } from '@chooselife/ui';
@@ -25,8 +26,14 @@ import {
 
 import { getWebbingName, useUserWebbings } from '~/hooks/use-webbings';
 
+import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
+import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
+import {
+  CatalogAttribution,
+  CatalogSpecs,
+} from '~/components/webbing-catalog-picker';
 
 export default function WebbingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -37,17 +44,17 @@ export default function WebbingDetailScreen() {
   const { data: webbings, isPending } = useUserWebbings();
   const webbing = webbings?.find((w) => w.id === webbingId);
 
-  // Get recommended lifetime and strength class from model
-  const recommendedDays =
-    (webbing?.model as { recommended_lifetime_days?: number | null } | null)
-      ?.recommended_lifetime_days ?? null;
+  // Saved SlackData snapshot first, then the legacy model, else unknown.
+  const specs = resolveWebbingSpecs(webbing ?? {});
+  const recommendedDays = specs.recommendedLifetimeDays;
   const strengthClass =
-    (webbing?.model as { strength_class?: string | null } | null)
-      ?.strength_class ?? null;
+    specs.modelStrengthClass?.value ?? specs.personalStrengthClass;
 
   // Get usage stats and history from shared hooks
-  const { data: usageData } = useWebbingUsage(webbingId, recommendedDays);
-  const { data: historyData } = useWebbingHistory(webbingId);
+  const usage = useWebbingUsage(webbingId, recommendedDays);
+  const usageData = usage.data;
+  const history = useWebbingHistory(webbingId);
+  const historyData = history.data;
 
   // ISA webbing document URL
   const ISA_WEBBING_PDF_URL =
@@ -88,8 +95,16 @@ export default function WebbingDetailScreen() {
       bar: 'bg-amber-500',
     },
     replace: { bg: 'bg-red-100', text: 'text-red-700', bar: 'bg-red-500' },
+    unknown: {
+      bg: 'bg-slate-100',
+      text: 'text-muted-foreground',
+      bar: 'bg-slate-300',
+    },
   };
-  const statusColor = statusColors[usageData.status];
+  const statusColor = statusColors[usageData?.status ?? 'unknown'];
+  const usageSummary = usageData
+    ? `${t('components.webbing-detail.usage.days', { count: usageData.usageDays })} · ${t('components.webbing-detail.usage.rigs', { count: usageData.rigCount })}`
+    : null;
 
   return (
     <>
@@ -125,102 +140,124 @@ export default function WebbingDetailScreen() {
               >
                 {getWebbingName(webbing)}
               </Text>
-              {webbing.model && (
+              {specs.modelName && (
                 <Text className="text-sm text-muted-foreground">
-                  {webbing.model.name}
+                  {specs.modelName}
                 </Text>
               )}
             </View>
           </View>
         </View>
 
-        {/* Lifetime Card */}
-        {(recommendedDays || strengthClass) && (
-          <View className="mx-4 mt-4 p-4 rounded-2xl bg-card border border-border overflow-hidden">
-            {/* Large decorative strength class text - blends into background */}
-            {strengthClass && (
-              <View
-                className="absolute -top-4 -right-2"
-                style={{ opacity: 0.06 }}
-                pointerEvents="none"
+        {/* Usage & Lifetime Card: always shown for an owned item */}
+        <View className="mx-4 mt-4 p-4 rounded-2xl bg-card border border-border overflow-hidden">
+          {/* Large decorative strength class text - blends into background */}
+          {strengthClass && (
+            <View
+              className="absolute -top-4 -right-2"
+              style={{ opacity: 0.06 }}
+              pointerEvents="none"
+            >
+              <Text
+                style={{
+                  fontSize: 140,
+                  fontWeight: '900',
+                  lineHeight: 140,
+                }}
+                className="text-primary"
               >
-                <Text
-                  style={{
-                    fontSize: 140,
-                    fontWeight: '900',
-                    lineHeight: 140,
-                  }}
-                  className="text-primary"
-                >
-                  {strengthClass}
-                </Text>
-              </View>
-            )}
+                {strengthClass}
+              </Text>
+            </View>
+          )}
 
-            {/* Header with title and status underneath */}
-            <View className="mb-4">
-              <View className="flex-row items-center gap-2">
-                <Icon as={ShieldIcon} size={20} className="text-primary" />
-                <Text className="text-lg font-semibold text-foreground">
-                  {t('components.webbing-detail.lifetime.title')}
-                </Text>
-              </View>
+          {/* Header with title and status underneath */}
+          <View className="mb-4">
+            <View className="flex-row items-center gap-2">
+              <Icon as={ShieldIcon} size={20} className="text-primary" />
+              <Text className="text-lg font-semibold text-foreground">
+                {t('components.webbing-detail.lifetime.title')}
+              </Text>
+            </View>
+            {usageData && recommendedDays ? (
               <Text className={`text-sm mt-1 ${statusColor.text}`}>
                 {t('components.webbing-detail.lifetime.status', {
                   status: getTranslatedStatus(usageData.status, i18n.language),
                 })}
               </Text>
-              {recommendedDays && (
-                <Text className="text-xs text-muted-foreground mt-0.5">
-                  {t('components.webbing-detail.lifetime.recommendedLifetime', {
-                    days: recommendedDays,
-                  })}
-                </Text>
-              )}
-            </View>
+            ) : null}
+            {recommendedDays ? (
+              <Text className="text-xs text-muted-foreground mt-0.5">
+                {t('components.webbing-detail.lifetime.recommendedLifetime', {
+                  days: recommendedDays,
+                })}
+              </Text>
+            ) : (
+              <Text className="text-sm text-muted-foreground mt-1">
+                {t('components.webbing-detail.lifetime.unknown')}
+              </Text>
+            )}
+          </View>
 
-            {recommendedDays && (
-              <>
-                {/* Progress Bar */}
+          {usage.isError ? (
+            <View className="gap-2 mb-3">
+              <Text className="text-sm text-muted-foreground">
+                {t('components.webbing-detail.lifetime.loadError')}
+              </Text>
+              <Button
+                variant="outline"
+                size="sm"
+                className="self-start"
+                onPress={() => void usage.refetch()}
+              >
+                <Text>{t('components.webbing-detail.lifetime.retry')}</Text>
+              </Button>
+            </View>
+          ) : !usageData ? (
+            <Skeleton className="h-4 w-full rounded mb-3" />
+          ) : (
+            <>
+              {/* Progress Bar: only against a supported lifetime */}
+              {usageData.percentageUsed !== null && (
                 <View className="mb-2">
                   <View className="h-3 rounded-full bg-muted overflow-hidden">
                     <View
                       className={`h-full rounded-full ${statusColor.bar}`}
                       style={{
-                        width: `${Math.min(100, usageData.percentageUsed)}%`,
+                        width: `${Math.max(0, Math.min(100, usageData.percentageUsed))}%`,
                       }}
                     />
                   </View>
                 </View>
+              )}
 
-                {/* Stats */}
-                <View className="flex-row justify-between mb-3">
-                  <Text className="text-sm text-muted-foreground">
-                    {t('components.webbing-detail.lifetime.daysUsed', {
-                      days: usageData.usageDays,
-                    })}
-                  </Text>
+              {/* Stats */}
+              <View className="flex-row justify-between mb-3">
+                <Text className="text-sm text-muted-foreground">
+                  {usageSummary}
+                </Text>
+                {usageData.remainingDays !== null && (
                   <Text className="text-sm text-muted-foreground">
                     {t('components.webbing-detail.lifetime.daysRemaining', {
-                      days: recommendedDays - usageData.usageDays,
+                      days: usageData.remainingDays,
                     })}
                   </Text>
-                </View>
-              </>
-            )}
+                )}
+              </View>
+            </>
+          )}
 
-            {/* ISA Document Link */}
-            <TouchableOpacity
-              onPress={() => Linking.openURL(ISA_WEBBING_PDF_URL)}
-              className="flex-row items-center justify-center gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200"
-            >
-              <Icon as={ExternalLinkIcon} size={16} className="text-blue-600" />
-              <Text className="text-sm font-medium text-blue-700">
-                {t('components.webbing-detail.lifetime.learnMore')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          {/* ISA Document Link */}
+          <TouchableOpacity
+            onPress={() => Linking.openURL(ISA_WEBBING_PDF_URL)}
+            className="flex-row items-center justify-center gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200"
+          >
+            <Icon as={ExternalLinkIcon} size={16} className="text-blue-600" />
+            <Text className="text-sm font-medium text-blue-700">
+              {t('components.webbing-detail.lifetime.learnMore')}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Specifications Card */}
         <View className="mx-4 mt-4 p-4 rounded-2xl bg-card border border-border">
@@ -246,7 +283,7 @@ export default function WebbingDetailScreen() {
               </View>
             </View>
 
-            {webbing.model && (
+            {specs.source === 'legacy' && specs.legacyModel && (
               <>
                 {/* Material */}
                 <View className="flex-row items-center gap-3">
@@ -262,7 +299,7 @@ export default function WebbingDetailScreen() {
                       {t('components.webbing-detail.specifications.material')}
                     </Text>
                     <Text className="font-medium capitalize">
-                      {webbing.model.material}
+                      {specs.legacyModel.material}
                     </Text>
                   </View>
                 </View>
@@ -281,11 +318,31 @@ export default function WebbingDetailScreen() {
                       {t('components.webbing-detail.specifications.weave')}
                     </Text>
                     <Text className="font-medium capitalize">
-                      {webbing.model.weave}
+                      {specs.legacyModel.weave}
                     </Text>
                   </View>
                 </View>
               </>
+            )}
+
+            {/* Strength: model class and personal class keep their sources */}
+            {specs.modelStrengthClass && (
+              <SpecRow
+                label={t(
+                  specs.modelStrengthClass.origin === 'slackdata'
+                    ? 'components.webbing-detail.specifications.isaClass'
+                    : 'components.webbing-detail.specifications.modelStrength',
+                )}
+                value={specs.modelStrengthClass.value}
+              />
+            )}
+            {specs.personalStrengthClass && (
+              <SpecRow
+                label={t(
+                  'components.webbing-detail.specifications.personalStrength',
+                )}
+                value={specs.personalStrengthClass}
+              />
             )}
 
             {/* Loops */}
@@ -305,15 +362,55 @@ export default function WebbingDetailScreen() {
           </View>
         </View>
 
+        {/* Saved SlackData details with attribution */}
+        {specs.catalog ? (
+          <View className="mx-4 mt-4 p-4 gap-3 rounded-2xl bg-card border border-border">
+            <Text className="text-lg font-semibold text-foreground">
+              {t('components.webbing-detail.source.title')}
+            </Text>
+            <CatalogSpecs snapshot={specs.catalog} />
+            <Text className="text-xs text-muted-foreground">
+              {t('components.webbing-detail.source.retrievedAt', {
+                date: new Date(specs.catalog.retrievedAt).toLocaleDateString(
+                  i18n.language,
+                ),
+              })}
+            </Text>
+            <CatalogAttribution />
+          </View>
+        ) : specs.source === 'unsupported' ? (
+          <View className="mx-4 mt-4 p-4 rounded-2xl bg-card border border-border">
+            <Text className="text-sm text-muted-foreground">
+              {t('components.webbing-detail.source.unsupported')}
+            </Text>
+          </View>
+        ) : null}
+
         {/* Usage History Card */}
         <View className="mx-4 mt-4 p-4 rounded-2xl bg-card border border-border">
           <Text className="text-lg font-semibold text-foreground mb-3">
             {t('components.webbing-detail.history.title', {
-              count: usageData.rigCount,
+              count: usageData?.rigCount ?? historyData.length,
             })}
           </Text>
 
-          {historyData.length === 0 ? (
+          {history.isError ? (
+            <View className="gap-2 py-2">
+              <Text className="text-sm text-muted-foreground">
+                {t('components.webbing-detail.history.loadError')}
+              </Text>
+              <Button
+                variant="outline"
+                size="sm"
+                className="self-start"
+                onPress={() => void history.refetch()}
+              >
+                <Text>{t('components.webbing-detail.lifetime.retry')}</Text>
+              </Button>
+            </View>
+          ) : history.isPending ? (
+            <Skeleton className="h-16 w-full rounded-lg" />
+          ) : historyData.length === 0 ? (
             <View className="py-6 items-center">
               <Text className="text-muted-foreground text-center">
                 {t('components.webbing-detail.history.empty')}
@@ -363,5 +460,19 @@ export default function WebbingDetailScreen() {
         </View>
       </ScrollView>
     </>
+  );
+}
+
+function SpecRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View className="flex-row items-center gap-3">
+      <View className="w-10 h-10 rounded-lg bg-slate-100 items-center justify-center">
+        <Icon as={ShieldIcon} size={20} className="text-slate-600" />
+      </View>
+      <View>
+        <Text className="text-xs text-muted-foreground">{label}</Text>
+        <Text className="font-medium">{value}</Text>
+      </View>
+    </View>
   );
 }
