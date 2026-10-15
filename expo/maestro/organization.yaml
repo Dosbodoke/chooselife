@@ -1,4 +1,4 @@
-appId: com.bodok.chooselife
+appId: com.bodok.chooselife.dev
 ---
 - launchApp:
     clearState: true

@@ -1,4 +1,4 @@
-appId: com.bodok.chooselife
+appId: com.bodok.chooselife.dev
 name: OTA Update Prompt - Portuguese (pt-BR)
 tags:
   - updates
@@ -11,7 +11,7 @@ tags:
 # - Device/simulator language set to Portuguese (Brazil)
 # Requires: EXPO_PUBLIC_TEST_OTA=true (pnpm dev:test:ota)
 - launchApp:
-    appId: com.bodok.chooselife
+    appId: com.bodok.chooselife.dev
 
 # Wait for the prompt to appear
 - extendedWaitUntil:

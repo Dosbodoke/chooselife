@@ -1,6 +1,6 @@
 import { S3Client } from "@aws-sdk/client-s3";
 
-export const R2_BUCKET = "chooselife";
+export const R2_BUCKET = process.env.R2_BUCKET || "chooselife";
 
 export const r2Client = new S3Client({
   region: "auto",

@@ -714,9 +714,28 @@
     "settings": {
       "my-webbing": {
         "title": "Minhas fitas",
-        "add": "adicionar",
+        "add": "Adicionar",
         "description": "Visualize e acompanhe o histórico de suas fitas.",
-        "empty": "Você ainda não cadastrou nenhuma fita"
+        "empty": "Você ainda não cadastrou nenhuma fita",
+        "gearSection": "Meu equipamento",
+        "count_one": "{{count}} fita",
+        "count_other": "{{count}} fitas",
+        "loginRequired": "Entre para ver suas fitas.",
+        "emptyDescription": "Adicione sua primeira fita para acompanhar o uso e escolher uma foto.",
+        "loadError": "Não foi possível carregar suas fitas.",
+        "retry": "Tentar novamente",
+        "addPhoto": "Adicionar foto",
+        "addPhotoFor": "Adicionar foto de {{name}}",
+        "changePhotoFor": "Trocar foto de {{name}}",
+        "removePhotoFor": "Remover foto pessoal de {{name}}",
+        "photoErrorTitle": "Não foi possível salvar a foto",
+        "photoError": "Tente novamente com uma imagem menor que 10 MB. Sua foto anterior foi mantida.",
+        "viewHistory": "Ver histórico de {{name}}",
+        "strength": "Tipo {{strength}}",
+        "riggedNow": "Montada agora",
+        "daysUsed": "{{used}} / {{total}} dias usados",
+        "noLifetime": "Sem recomendação de vida útil",
+        "usageError": "O uso está indisponível no momento."
       }
     },
     "webbing-detail": {
