@@ -8,9 +8,17 @@ import {
 } from '@gorhom/bottom-sheet';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { isIsaLinkingEnabled } from '~/features/isa/isa-sign-in';
+import {
+  IsaLinkError,
+  useIsaAccount,
+  useLinkIsaAccount,
+  useUnlinkIsaAccount,
+} from '~/features/isa/use-isa-account';
 import Constants from 'expo-constants';
 import { Link, useRouter } from 'expo-router';
 import {
+  BadgeCheckIcon,
   ChevronRightIcon,
   LanguagesIcon,
   LogOutIcon,
@@ -22,7 +30,14 @@ import {
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Alert, Platform, Pressable, ScrollView, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '~/context/auth';
@@ -99,6 +114,17 @@ export default function SettingsPage() {
               />
             </View>
           </View>
+
+          {isIsaLinkingEnabled ? (
+            <View className="gap-2">
+              <Text className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                {t('components.settings.isa.section')}
+              </Text>
+              <View className="bg-white rounded-xl overflow-hidden">
+                <IsaAccount isLast />
+              </View>
+            </View>
+          ) : null}
 
           {/* Settings Group */}
           <View className="bg-white rounded-xl overflow-hidden">
@@ -383,6 +409,72 @@ const EditProfileButton: React.FC = () => {
         </BottomSheetView>
       </BottomSheetModal>
     </>
+  );
+};
+
+const IsaAccount: React.FC<{ isLast?: boolean }> = ({ isLast }) => {
+  const { t } = useTranslation();
+  const { profile } = useAuth();
+  const isaAccount = useIsaAccount(profile?.id);
+  const link = useLinkIsaAccount(profile?.id);
+  const unlink = useUnlinkIsaAccount(profile?.id);
+  const isBusy = isaAccount.isPending || link.isPending || unlink.isPending;
+
+  const handleLink = () => {
+    link.mutate(undefined, {
+      onError: (error) => {
+        const key = error instanceof IsaLinkError ? error.key : 'linkFailed';
+        Alert.alert(
+          t('components.settings.isa.errorTitle'),
+          t(`components.settings.isa.errors.${key}`),
+        );
+      },
+    });
+  };
+
+  const handleUnlink = () => {
+    Alert.alert(
+      t('components.settings.isa.unlinkTitle'),
+      t('components.settings.isa.unlinkDescription'),
+      [
+        { text: t('components.settings.isa.unlinkCancel'), style: 'cancel' },
+        {
+          text: t('components.settings.isa.unlinkConfirm'),
+          style: 'destructive',
+          onPress: () =>
+            unlink.mutate(undefined, {
+              onError: () =>
+                Alert.alert(
+                  t('components.settings.isa.errorTitle'),
+                  t('components.settings.isa.errors.unlinkFailed'),
+                ),
+            }),
+        },
+      ],
+    );
+  };
+
+  const linkedAccount = isaAccount.data;
+
+  return (
+    <SettingsItem
+      icon={BadgeCheckIcon}
+      iconColor="#0A4D8C"
+      label={
+        linkedAccount
+          ? t('components.settings.isa.linked')
+          : t('components.settings.isa.connect')
+      }
+      onPress={isBusy ? undefined : linkedAccount ? handleUnlink : handleLink}
+      rightElement={
+        isBusy ? (
+          <ActivityIndicator size="small" />
+        ) : linkedAccount ? (
+          <Text className="text-muted-foreground">{linkedAccount.isa_id}</Text>
+        ) : null
+      }
+      isLast={isLast}
+    />
   );
 };
 

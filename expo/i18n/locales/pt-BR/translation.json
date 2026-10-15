@@ -446,7 +446,8 @@
               "description": "Caminhou 1 quilômetro no total em highlines."
             }
           }
-        }
+        },
+        "isaMember": "Membro ISA {{isaId}}"
       }
     },
     "+not-found": {
@@ -736,6 +737,22 @@
         "daysUsed": "{{used}} / {{total}} dias usados",
         "noLifetime": "Sem recomendação de vida útil",
         "usageError": "O uso está indisponível no momento."
+      },
+      "isa": {
+        "section": "International Slackline Association",
+        "connect": "Conectar conta ISA",
+        "linked": "Conta ISA",
+        "unlinkTitle": "Desvincular conta ISA?",
+        "unlinkDescription": "Seu perfil deixará de mostrar seu ID de membro da ISA. Você pode conectá-la novamente quando quiser.",
+        "unlinkCancel": "Cancelar",
+        "unlinkConfirm": "Desvincular",
+        "errorTitle": "Conta ISA",
+        "errors": {
+          "alreadyLinked": "Esta conta ISA já está conectada a outro perfil do Choose Life.",
+          "notVerified": "Não foi possível verificar seu login na ISA. Tente novamente.",
+          "linkFailed": "Não foi possível conectar sua conta ISA. Tente novamente.",
+          "unlinkFailed": "Não foi possível desvincular sua conta ISA. Tente novamente."
+        }
       }
     },
     "webbing-detail": {

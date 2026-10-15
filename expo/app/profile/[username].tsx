@@ -2,15 +2,12 @@ import { SupabaseProvider } from '@chooselife/ui';
 import { LegendList } from '@legendapp/list/react-native';
 import { QueryData } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
+import { IsaBadge } from '~/features/isa/isa-badge';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { CalendarIcon, ChevronLeftIcon, FrownIcon } from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  Pressable,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -155,6 +152,7 @@ const UserHeader: React.FC<{
             <Text variant="h3" numberOfLines={1} className="mr-1">
               {profile.name}
             </Text>
+            <IsaBadge profileId={profile.id} />
             {profile.birthday ? (
               <View className="flex-row gap-1">
                 <Icon

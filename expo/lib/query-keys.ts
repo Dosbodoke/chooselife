@@ -2,6 +2,11 @@ export const queryKeys = {
   profile: {
     all: ['profile'] as const,
   },
+  isaAccount: {
+    all: ['isa-account'] as const,
+    byProfile: (profileId: string | undefined) =>
+      [...queryKeys.isaAccount.all, profileId] as const,
+  },
   membershipApplication: {
     all: ['membership-application'] as const,
     byOrgUser: (
