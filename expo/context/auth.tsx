@@ -385,16 +385,27 @@ export function AuthProvider(props: React.PropsWithChildren) {
       );
 
       if (res.type === 'success') {
-        const { url } = res;
-        await createSessionFromUrl(url);
-        await saveLoginMethod('google');
+        // A redirect without tokens is not a sign-in, so don't report one.
+        const session = await createSessionFromUrl(res.url);
+        if (session) {
+          await saveLoginMethod('google');
 
-        return {
-          success: true,
-        };
+          return {
+            success: true,
+          };
+        }
+      } else if (__DEV__) {
+        // Supabase sends unlisted redirect URLs to the Site URL (the website),
+        // which leaves the auth sheet open until the user closes it.
+        console.warn(
+          `[auth] Google sign-in did not return to ${baseRedirectTo}. ` +
+            'If you did not cancel, add this scheme to Supabase Auth → URL Configuration → Redirect URLs.',
+        );
       }
 
-      throw new Error(t('context.auth.sessionCreationFailed'));
+      // Return instead of throwing: React Compiler can't lower a throw inside try.
+      setPendingRedirect(null);
+      return { success: false };
     } catch (error) {
       setPendingRedirect(null);
       if (error instanceof AuthError) {

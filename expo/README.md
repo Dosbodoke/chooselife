@@ -146,7 +146,10 @@ Before the first device build, register the new identifiers with the services th
 
 - Create Apple signing/provisioning and Apple Sign In configuration for the development and preview bundle IDs. TestFlight preview needs a separate App Store Connect app for `com.bodok.chooselife.preview`; select that app during submission. Builds uploaded under the production profile still use the production icon, including in TestFlight.
 - Register the development and preview Android packages with Firebase. Supply their matching files through `GOOGLE_SERVICES_JSON` in each EAS environment, or use ignored local files `credentials/google-services-development.json` and `credentials/google-services-preview.json`. Production retains `credentials/google-services.json`. Do not reuse a production-only Firebase file for the new packages.
-- Register the variant URL schemes and bundle IDs with any authentication providers. To support verified website links in these apps, add their identifiers and signing fingerprints to the website's Apple/Android association files.
+- Register the variant URL schemes and bundle IDs with Supabase Auth, in **both** the production and stage projects:
+  - Auth → URL Configuration → Redirect URLs: `com.bodok.chooselife://**`, `com.bodok.chooselife.dev://**`, and `com.bodok.chooselife.preview://**`. Use `**`: a single `*` stops at `.` and `/`. Without the variant entry, Google sign-in ends on the website (Supabase falls back to the Site URL) instead of returning to the app.
+  - Auth → Providers → Apple → Client IDs: add `com.bodok.chooselife.dev,com.bodok.chooselife.preview` next to the existing IDs. Otherwise native Apple sign-in fails with `Unacceptable audience in id_token`, because the token's audience is the bundle ID.
+- To support verified website links in these apps, add their identifiers and signing fingerprints to the website's Apple/Android association files.
 
 These variants select build identity and assets, not a separate backend. Keep API and other service values in their appropriate EAS environment. Use the update scripts so `APP_VARIANT` is also present during EAS Update, which does not read build-profile `env` values. If publishing updates directly with `--environment`, configure the matching plaintext `APP_VARIANT` variable in that EAS environment as well.
 
