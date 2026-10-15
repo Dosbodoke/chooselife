@@ -110,10 +110,15 @@ select vault.create_secret('<your-secret-key>', 'secret_key', 'Supabase Secret k
 ## OAuth Configuration
 
 1.  **Configure URL Redirects:**
-    - In the Supabase dashboard (Auth > URL Configuration), add a Site URL matching your app's scheme (defined in `app.config.ts`).
-    - Example: `com.bodok.chooselife://*`
+    - In the Supabase dashboard (Auth > URL Configuration), add every app scheme from `expo/app.config.ts` to **Redirect URLs** (not the Site URL). Each app variant has its own scheme:
+      - `com.bodok.chooselife://**` (production)
+      - `com.bodok.chooselife.dev://**` (development builds)
+      - `com.bodok.chooselife.preview://**` (preview builds)
+    - Use `**`; a single `*` does not match `.` or `/`. A redirect URL that is not listed falls back to the Site URL, so the OAuth sheet opens the website instead of returning to the app.
+    - This is a dashboard setting for the production and stage projects. `supabase/config.toml` only configures the local stack; do not `supabase config push` it to a remote project.
 2.  **Enable Social Auth:**
     - Enable Google and Apple social login in the Supabase dashboard.
+    - Apple's **Client IDs** must list every bundle ID that signs in natively: `com.bodok.chooselife`, `com.bodok.chooselife.dev`, and `com.bodok.chooselife.preview`.
     - Follow these guides:
       - [Setup Apple oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-apple?queryGroups=platform&platform=react-native)
       - [Setup Google oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-google?queryGroups=platform&platform=react-native)
