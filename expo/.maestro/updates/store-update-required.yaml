@@ -1,4 +1,4 @@
-appId: com.bodok.chooselife
+appId: com.bodok.chooselife.dev
 name: Store Update Required - Blocking Modal (iOS)
 tags:
   - updates
@@ -10,7 +10,7 @@ tags:
 # Test: Store update modal blocks the app when version is below minimum
 # Note: clearState requires a standalone build (not Expo Go)
 - launchApp:
-    appId: com.bodok.chooselife
+    appId: com.bodok.chooselife.dev
 
 # Store update modal should be visible
 - assertVisible:

@@ -1,23 +1,42 @@
 import type { ConfigContext, ExpoConfig } from "expo/config";
 
-const googleServicesFile = process.env.GOOGLE_SERVICES_JSON ??
-  "./credentials/google-services.json";
+// Keep production as the safe default for direct Expo/EAS commands.
+// Local scripts and EAS profiles select their variant explicitly.
+const appVariant = process.env.APP_VARIANT ?? "production";
+if (!["development", "preview", "production"].includes(appVariant)) {
+  throw new Error(`Invalid APP_VARIANT: ${appVariant}`);
+}
+const isDevelopment = appVariant === "development";
+const isProduction = appVariant === "production";
+const version = "1.9.4";
+const applicationId = isProduction
+  ? "com.bodok.chooselife"
+  : `com.bodok.chooselife.${isDevelopment ? "dev" : "preview"}`;
+const blueprintIcon = "./assets/icons/blueprint.png";
+const googleServicesFile =
+  process.env.GOOGLE_SERVICES_JSON ??
+  (isProduction
+    ? "./credentials/google-services.json"
+    : `./credentials/google-services-${appVariant}.json`);
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: "ChooseLife",
+  name: isProduction
+    ? "ChooseLife"
+    : `ChooseLife (${isDevelopment ? "Dev" : "Preview"})`,
   slug: "chooselife",
-  version: "1.9.4",
+  version,
+  ...(!isProduction && { icon: blueprintIcon }),
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
   },
   orientation: "portrait",
-  scheme: "com.bodok.chooselife",
+  scheme: applicationId,
   userInterfaceStyle: "light",
   assetBundlePatterns: ["**/*"],
   ios: {
-    bundleIdentifier: "com.bodok.chooselife",
+    bundleIdentifier: applicationId,
     usesAppleSignIn: true,
     supportsTablet: false,
     associatedDomains: ["applinks:chooselife.club"],
@@ -28,10 +47,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     config: {
       usesNonExemptEncryption: false,
     },
-    icon: "./assets/icons/ios-light.png",
+    icon: isProduction ? "./assets/icons/ios-light.png" : blueprintIcon,
   },
   android: {
-    package: "com.bodok.chooselife",
+    package: applicationId,
     googleServicesFile,
     blockedPermissions: [
       "android.permission.READ_EXTERNAL_STORAGE",
@@ -69,9 +88,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     softwareKeyboardLayoutMode: "pan",
     adaptiveIcon: {
-      foregroundImage: "./assets/icons/adaptive-icon.png",
+      foregroundImage: isProduction
+        ? "./assets/icons/adaptive-icon.png"
+        : blueprintIcon,
       monochromeImage: "./assets/icons/adaptive-icon.png",
-      backgroundColor: "#ffffff",
+      backgroundColor: isProduction ? "#ffffff" : "#0066ff",
     },
     permissions: [
       "android.permission.ACCESS_COARSE_LOCATION",
@@ -81,9 +102,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   web: {
     bundler: "metro",
     output: "static",
-    favicon: "./assets/icons/favicon.png",
+    favicon: isProduction ? "./assets/icons/favicon.png" : blueprintIcon,
   },
   plugins: [
+    ["expo-dev-client", { addGeneratedScheme: isDevelopment }],
     [
       "expo-build-properties",
       {
@@ -167,7 +189,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     url: "https://u.expo.dev/6767d806-09e4-4095-ba1f-10805e3d0c5f",
     checkAutomatically: "ON_ERROR_RECOVERY",
   },
-  runtimeVersion: {
-    policy: "appVersion",
-  },
+  runtimeVersion: isProduction
+    ? { policy: "appVersion" }
+    : `${version}-${appVariant}`,
 });
