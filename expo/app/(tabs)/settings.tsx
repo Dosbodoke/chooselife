@@ -8,6 +8,7 @@ import {
 } from '@gorhom/bottom-sheet';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { IsaMark } from '~/features/isa/isa-logo';
 import { isIsaLinkingEnabled } from '~/features/isa/isa-sign-in';
 import {
   IsaLinkError,
@@ -18,7 +19,6 @@ import {
 import Constants from 'expo-constants';
 import { Link, useRouter } from 'expo-router';
 import {
-  BadgeCheckIcon,
   ChevronRightIcon,
   LanguagesIcon,
   LogOutIcon,
@@ -190,6 +190,8 @@ export default function SettingsPage() {
 interface SettingsItemProps {
   icon?: LucideIcon;
   iconColor?: string;
+  /** Replaces the coloured icon tile, e.g. for a brand logo. */
+  iconElement?: React.ReactNode;
   label: string;
   onPress?: () => void;
   rightElement?: React.ReactNode;
@@ -200,6 +202,7 @@ interface SettingsItemProps {
 const SettingsItem: React.FC<SettingsItemProps> = ({
   icon: IconComponent,
   iconColor = '#007AFF', // Default iOS Blue
+  iconElement,
   label,
   onPress,
   rightElement,
@@ -215,7 +218,8 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
       )}
     >
       {/* Icon Container */}
-      {IconComponent && (
+      {iconElement}
+      {!iconElement && IconComponent && (
         <View
           className="size-8 rounded-md items-center justify-center mr-4"
           style={{ backgroundColor: iconColor }}
@@ -458,8 +462,11 @@ const IsaAccount: React.FC<{ isLast?: boolean }> = ({ isLast }) => {
 
   return (
     <SettingsItem
-      icon={BadgeCheckIcon}
-      iconColor="#0A4D8C"
+      iconElement={
+        <View className="size-8 rounded-md items-center justify-center mr-4 bg-white border border-gray-200">
+          <IsaMark width={28} height={11} />
+        </View>
+      }
       label={
         linkedAccount
           ? t('components.settings.isa.linked')
