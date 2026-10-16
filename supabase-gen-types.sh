@@ -5,7 +5,8 @@
 #
 # Defaults to this repository's Supabase project and the shared database package
 # artifact. --check compares freshly generated types with the artifact without
-# modifying it. Exit codes: 0 success or no drift, 1 drift, 2 usage or generation error.
+# modifying it. Exit codes: 0 success or no drift, 1 drift or missing artifact,
+# 2 usage, generation or filesystem error.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -57,13 +58,22 @@ done
 [ -f "$WORKDIR/supabase/config.toml" ] || fail "No supabase/config.toml under workdir $WORKDIR."
 WORKDIR="$(cd "$WORKDIR" && pwd)"
 
+# mv into an existing directory would nest the file inside it instead of replacing it.
+if [ -e "$OUTPUT" ] && [ ! -f "$OUTPUT" ]; then
+    fail "Output $OUTPUT exists but is not a regular file."
+fi
 OUTPUT_DIR="$(dirname "$OUTPUT")"
+NEAREST_DIR="$OUTPUT_DIR"
+while [ ! -e "$NEAREST_DIR" ]; do NEAREST_DIR="$(dirname "$NEAREST_DIR")"; done
+[ -d "$NEAREST_DIR" ] || fail "Output path component $NEAREST_DIR is not a directory."
+
 if $CHECK; then
-    TEMP_FILE="$(mktemp)"
+    TEMP_FILE="$(mktemp)" || fail "Could not create a temporary file."
 else
-    mkdir -p "$OUTPUT_DIR"
+    mkdir -p "$OUTPUT_DIR" || fail "Could not create output directory $OUTPUT_DIR."
     # Same directory as the artifact so the final mv is an atomic rename.
-    TEMP_FILE="$(mktemp "$OUTPUT_DIR/.$(basename "$OUTPUT").XXXXXX")"
+    TEMP_FILE="$(mktemp "$OUTPUT_DIR/.$(basename "$OUTPUT").XXXXXX")" ||
+        fail "Could not create a temporary file in $OUTPUT_DIR."
 fi
 trap 'rm -f "$TEMP_FILE"' EXIT
 trap 'exit 130' INT
@@ -79,7 +89,15 @@ if [ ! -s "$TEMP_FILE" ] || ! grep -q '^export type Database = ' "$TEMP_FILE"; t
 fi
 
 if $CHECK; then
-    if [ -f "$OUTPUT" ] && cmp -s "$TEMP_FILE" "$OUTPUT"; then
+    if [ -e "$OUTPUT" ]; then
+        # cmp exits 1 when the bytes differ and above 1 when it cannot compare.
+        CMP_STATUS=0
+        cmp -s "$TEMP_FILE" "$OUTPUT" || CMP_STATUS=$?
+        [ "$CMP_STATUS" -le 1 ] || fail "Could not compare generated types with $OUTPUT."
+    else
+        CMP_STATUS=1
+    fi
+    if [ "$CMP_STATUS" -eq 0 ]; then
         echo "Database types are up to date: $OUTPUT" >&2
         exit 0
     fi
@@ -87,6 +105,6 @@ if $CHECK; then
     exit 1
 fi
 
-chmod 644 "$TEMP_FILE"
-mv -f "$TEMP_FILE" "$OUTPUT"
+chmod 644 "$TEMP_FILE" || fail "Could not set permissions on the generated types; $OUTPUT was not modified."
+mv -f "$TEMP_FILE" "$OUTPUT" || fail "Could not replace $OUTPUT; it was not modified."
 echo "Database types updated: $OUTPUT" >&2

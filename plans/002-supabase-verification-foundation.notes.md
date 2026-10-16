@@ -8,6 +8,8 @@ Worktree `/Users/juangsandrade/.t3/worktrees/chooselife/t3-f4bb91a0`, branch `t3
 | `775f09f` | Docs-only bootstrap with plans 002–004, the research report and the updated index, copied from the parent checkout |
 | `775f09f` | Implementation base for Step 1 |
 | `225af71` | Step 1 source changes |
+| `fce9eee` | Step 1 notes. Implementation base for Step 1 revision 1 |
+| Commit that adds this row | Step 1 revision 1: output-path guards and filesystem error exit codes |
 
 Commands ran under Node 24.18.0 from nvm, matching `.nvmrc`. The default `node` on PATH is 25.2.1, so a fresh shell needs `export PATH="$HOME/.nvm/versions/node/v24.18.0/bin:$PATH"` first. pnpm is 11.10.0.
 
@@ -26,7 +28,7 @@ Changes:
   bash supabase-gen-types.sh [--check] [--workdir <Supabase project root>] [--output <artifact path>]
   ```
 
-  It locates the repository root from its own path and runs `<root>/node_modules/.bin/supabase --workdir <abs workdir> --agent no gen types typescript --local --schema storage,public,functions`. It rejects `--linked`, unknown options and missing option values before calling the CLI, and requires `<workdir>/supabase/config.toml`. Write mode generates into a `mktemp` file next to the artifact, requires nonempty output with `export type Database = `, then does `chmod 644` and `mv`. Check mode generates into a system temp file, compares with `cmp` and never writes. Exit codes are 0 for success or no drift, 1 for drift, 2 for usage or generation errors. All diagnostics go to stderr. An EXIT trap removes the temp file, and INT/TERM traps exit so the EXIT trap runs.
+  It locates the repository root from its own path and runs `<root>/node_modules/.bin/supabase --workdir <abs workdir> --agent no gen types typescript --local --schema storage,public,functions`. It rejects `--linked`, unknown options and missing option values before calling the CLI, and requires `<workdir>/supabase/config.toml`. Write mode generates into a `mktemp` file next to the artifact, requires nonempty output with `export type Database = `, then does `chmod 644` and `mv`. Check mode generates into a system temp file, compares with `cmp` and never writes. Exit codes are 0 for success or no drift, 1 for drift, 2 for usage or generation errors. Revision 1 below routes filesystem errors to 2. All diagnostics go to stderr. An EXIT trap removes the temp file, and INT/TERM traps exit so the EXIT trap runs.
 
 ### Verification
 
@@ -65,13 +67,74 @@ The tracked `packages/database/database-generated.types.ts`, `packages/database/
 
 Not covered yet. Real generation against a running local database belongs to Step 3, which runs it against the disposable verifier stack.
 
+### Revision 1: output-path and filesystem errors
+
+The first Sol review returned fix-first with two findings:
+
+1. An existing directory as `--output` made `mv` move the temp file into that directory and then report success.
+2. Filesystem errors exited 1, which callers read as drift. A regular file in the output's parent path exited 1 from `mkdir -p` under `set -e`, and an unreadable artifact in `--check` was reported as drift.
+
+Changes, all in `supabase-gen-types.sh`:
+
+- Before generation, an `--output` that exists but is not a regular file exits 2. `-e`/`-f` follow symlinks, so a symlink to a directory is rejected too. This runs in both modes.
+- Before generation, the helper walks up from the output's parent to the nearest existing path. If that path is not a directory, it exits 2. This catches a regular file anywhere in the parent chain in both modes, so `--check` no longer reports that case as a missing artifact.
+- In write mode, `mkdir -p`, `mktemp`, `chmod` and `mv` failures each call `fail` (exit 2). `mktemp` in check mode does the same. The `mv` message says the artifact was not modified, and no success line is printed.
+- `--check` records `cmp -s` status. 0 is up to date, 1 is drift, above 1 exits 2 with "Could not compare". A missing artifact still counts as drift (exit 1) without running `cmp`.
+- The header comment now lists exit codes as 0 success or no drift, 1 drift or missing artifact, 2 usage, generation or filesystem error.
+
+Verification ran in the worktree under Node 24.18.0 and pnpm 11.10.0. Base `fce9eee`.
+
+| Command | Result |
+| --- | --- |
+| `bash -n supabase-gen-types.sh` | exit 0 |
+| `pnpm exec supabase --workdir . --version` | `2.121.0` |
+
+Real CLI failure gate, repeated. Scratch `S=$(mktemp -d "$TMPDIR/chooselife-gen-types-check.XXXXXX")`, broken TOML config with `project_id = "chooselife-gen-types-invalid"`, sentinel `$S/out/types.ts`:
+
+```bash
+bash supabase-gen-types.sh --workdir "$S/proj" --output "$S/out/types.ts"
+bash supabase-gen-types.sh --check --workdir "$S/proj" --output "$S/out/types.ts"
+```
+
+Both exited 2 with empty stdout. The CLI reported `failed to load config: Invalid TOML document: incomplete key-value`. The sentinel sha256 was `754defb5ea581a63fd610981ad8b13eba7a69f4a7ffbbde7ab9cbbb10b8665fd` before and after. `out/` held only `types.ts`, and the count of `$TMPDIR/tmp.*` files was 1 before and after.
+
+Fake-CLI harness. I copied the revised helper into `$(mktemp -d "$TMPDIR/chooselife-gen-types-r1.XXXXXX")/root` with a fake `node_modules/.bin/supabase`. A `FAKE_MODE` variable selects valid, empty, malformed or failing output. These runs exercise only the script, without Docker or a database. Every case matched its expected exit code with empty stdout:
+
+| Case | Exit | Other evidence |
+| --- | --- | --- |
+| `--check`, no artifact | 1 | No artifact created |
+| write | 0 | Mode 644, no temp file left |
+| `--check` right after write | 0 | |
+| `--check` after appending a sentinel comment | 1 | Checksum unchanged |
+| write over the drifted artifact | 0 | New content present |
+| write, `--output` is an existing directory | 2 | Directory still empty, no temp files under the scratch root |
+| `--check`, `--output` is an existing directory | 2 | |
+| write, `--output` is a symlink to a directory | 2 | Target directory empty, link intact |
+| `--check`, `--output` is a symlink to a directory | 2 | |
+| write, parent is a regular file (`plainfile/types.ts`) | 2 | "Output path component … is not a directory", file checksum unchanged |
+| write, ancestor is a regular file (`plainfile/sub/types.ts`) | 2 | Same |
+| `--check`, parent is a regular file | 2 | Same |
+| `--check`, artifact mode 000 | 2 | "Could not compare", checksum unchanged after restoring mode |
+| write into a read-only (555) directory | 2 | `mktemp` failure, artifact checksum unchanged, no temp |
+| write to a missing subdirectory of a read-only directory | 2 | `mkdir` failure, subdirectory not created |
+| write onto an artifact made immutable with `chflags uchg` | 2 | `mv` failure, "it was not modified", no "updated" line, checksum unchanged, no temp |
+| write and `--check`, empty generation | 2 each | Checksum unchanged |
+| write and `--check`, output without `export type Database` | 2 each | Checksum unchanged |
+| write and `--check`, CLI exits 1 | 2 each | Checksum unchanged, no temp |
+| SIGTERM while the fake CLI was mid-write | 143 | Checksum unchanged, temp removed |
+
+Both scratch roots were deleted afterwards. `git diff --exit-code -- packages/database supabase next expo package.json pnpm-lock.yaml` exited 0. No container, local database or cloud project was touched. Real generation against a running database is still untested and stays with Step 3.
+
 ## Deviations
 
 - `db:verify` is not registered yet. `scripts/verify-database.mjs` does not exist until Step 2, and a root script pointing at a missing file would fail with a module error. Step 2 adds the script and its entry together.
 - The helper passes `--agent no`, which the plan did not ask for. The pinned CLI auto-detects agent environments, and generated stdout should not depend on which shell or agent runs it.
 - A missing artifact in `--check` mode counts as drift (exit 1), not as an error.
+- Revision 1 rejects any existing non-regular `--output`, not just directories. FIFOs and device nodes would otherwise hang `cmp` or be replaced by `mv`, and the same one-line guard covers them.
 - The branch kept its app-managed name `t3/supabase-schema-workflow`. Renaming could break the T3 thread binding.
 
 ## How the run ended
 
-Step 1 is complete and verified locally. Steps 2–4 have not started.
+Step 1 and its revision 1 are complete and verified locally. Revision 1 waits for a new review. Steps 2–4 have not started.
+
+Remaining risk in revision 1. The destination check runs before generation. If another process turns the destination into a directory during generation, `mv` would still nest the file inside it. Portable `mv` has no no-target-directory flag on both macOS and Linux, and the artifact path is not shared with other writers. If a parent directory is unsearchable in `--check`, the artifact looks missing and reports drift (exit 1), not exit 2.
