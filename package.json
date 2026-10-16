@@ -6,7 +6,9 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "deploy:functions": "./deploy-functions.sh"
+    "deploy:functions": "./deploy-functions.sh",
+    "db:types": "bash supabase-gen-types.sh",
+    "db:types:check": "bash supabase-gen-types.sh --check"
   },
   "devDependencies": {
     "next": "16.3.5",

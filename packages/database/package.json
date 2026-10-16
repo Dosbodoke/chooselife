@@ -4,10 +4,10 @@
   "private": true,
   "main": "index.ts",
   "scripts": {
-    "gen-types": "supabase gen types typescript --local --schema storage,public,functions > database-generated.types.ts"
+    "gen-types": "bash ../../supabase-gen-types.sh"
   },
   "devDependencies": {
-    "supabase": "^2.62.10"
+    "supabase": "2.121.0"
   },
   "dependencies": {
     "type-fest": "^5.2.0"
