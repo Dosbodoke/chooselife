@@ -9,7 +9,8 @@ Worktree `/Users/juangsandrade/.t3/worktrees/chooselife/t3-f4bb91a0`, branch `t3
 | `775f09f` | Implementation base for Step 1 |
 | `225af71` | Step 1 source changes |
 | `fce9eee` | Step 1 notes. Implementation base for Step 1 revision 1 |
-| Commit that adds this row | Step 1 revision 1: output-path guards and filesystem error exit codes |
+| `0d694f1` | Step 1 revision 1: output-path guards and filesystem error exit codes. Implementation base for Step 1 revision 2 |
+| Commit that adds this row | Step 1 revision 2: unsearchable output directory exits 2 |
 
 Commands ran under Node 24.18.0 from nvm, matching `.nvmrc`. The default `node` on PATH is 25.2.1, so a fresh shell needs `export PATH="$HOME/.nvm/versions/node/v24.18.0/bin:$PATH"` first. pnpm is 11.10.0.
 
@@ -125,6 +126,43 @@ Fake-CLI harness. I copied the revised helper into `$(mktemp -d "$TMPDIR/choosel
 
 Both scratch roots were deleted afterwards. `git diff --exit-code -- packages/database supabase next expo package.json pnpm-lock.yaml` exited 0. No container, local database or cloud project was touched. Real generation against a running database is still untested and stays with Step 3.
 
+### Revision 2: unsearchable output directory
+
+The second Sol review confirmed revision 1 but kept one finding. At `supabase-gen-types.sh:92`, an artifact whose parent directory lacks search permission makes `[ -e "$OUTPUT" ]` false, so `--check` reported an existing but inaccessible artifact as missing and exited 1. A scratch parent with mode 000 reproduced it. The review asked for exit 2 before the missing-artifact classification, using a small guard in the existing ancestor check. It accepted the concurrent destination-replacement race as residual risk for a local helper, so no locking was added.
+
+Change: after the nearest existing ancestor of the output passes `-d`, it must also pass `-x`. Otherwise the helper exits 2 with "Output directory … is not searchable". This runs in both modes before generation. If a deeper ancestor is unsearchable, the walk stops at that ancestor because nothing below it can be stat'ed. If the nearest existing ancestor can be stat'ed, every directory above it is already searchable. A missing artifact under a searchable directory is still drift (exit 1).
+
+Verification ran in the worktree under Node 24.18.0. Base `0d694f1`.
+
+| Command | Result |
+| --- | --- |
+| `bash -n supabase-gen-types.sh` | exit 0 |
+| `pnpm exec supabase --workdir . --version` | `2.121.0` |
+
+Fake-CLI harness in `$(mktemp -d "$TMPDIR/chooselife-gen-types-r2.XXXXXX")/root`, built the same way as revision 1. Every case matched its expected exit code with empty stdout:
+
+| Case | Exit | Other evidence |
+| --- | --- | --- |
+| `--check`, existing artifact, parent mode 000 | 2 | "Output directory …/locked is not searchable", checksum unchanged after restoring mode |
+| write, existing artifact, parent mode 000 | 2 | Same |
+| `--check`, `locked2/sub/types.ts` with `locked2` mode 000 | 2 | Names `locked2`, checksum unchanged |
+| write, same nested path | 2 | Same, no temp file in `locked2/sub` |
+| `--check`, `locked2/a/b/types.ts` with `locked2` mode 000 | 2 | Names `locked2` |
+| `--check`, searchable directory, missing artifact | 1 | |
+| `--check`, missing subdirectories under a searchable directory | 1 | |
+| write | 0 | |
+| `--check` right after write | 0 | |
+| `--check` after appending a drift comment | 1 | Checksum unchanged |
+| write and `--check`, `--output` is an existing directory | 2 each | Directory still empty |
+| write and `--check`, `--output` is a symlink to a directory | 2 each | |
+| write and `--check`, parent is a regular file | 2 each | File checksum unchanged |
+
+No `.types.ts.*` temp file was left anywhere under the scratch root. Permissions were restored to 755 before the checksums were taken, then the scratch directory was deleted.
+
+Real CLI failure gate, repeated. Scratch `$(mktemp -d "$TMPDIR/chooselife-gen-types-check.XXXXXX")`, broken TOML with `project_id = "chooselife-gen-types-invalid"`, sentinel `out/types.ts`. Write mode and `--check` each exited 2 with empty stdout and `failed to load config: Invalid TOML document: incomplete key-value: cannot find end of key`. The sentinel sha256 was `27d5a937427dc377117190077855d3110d22c9589406a12b1bb4b2a26071fa63` before and after. `out/` held only `types.ts`, and the `$TMPDIR/tmp.*` count was 1 before and after. The scratch directory was deleted.
+
+No container, local database or cloud project was touched.
+
 ## Deviations
 
 - `db:verify` is not registered yet. `scripts/verify-database.mjs` does not exist until Step 2, and a root script pointing at a missing file would fail with a module error. Step 2 adds the script and its entry together.
@@ -135,6 +173,6 @@ Both scratch roots were deleted afterwards. `git diff --exit-code -- packages/da
 
 ## How the run ended
 
-Step 1 and its revision 1 are complete and verified locally. Revision 1 waits for a new review. Steps 2–4 have not started.
+Step 1 and revisions 1 and 2 are complete and verified locally. Revision 2 waits for a new review. Steps 2–4 have not started.
 
-Remaining risk in revision 1. The destination check runs before generation. If another process turns the destination into a directory during generation, `mv` would still nest the file inside it. Portable `mv` has no no-target-directory flag on both macOS and Linux, and the artifact path is not shared with other writers. If a parent directory is unsearchable in `--check`, the artifact looks missing and reports drift (exit 1), not exit 2.
+Remaining risk. The destination check runs before generation. If another process turns the destination into a directory during generation, `mv` would still nest the file inside it. Portable `mv` has no no-target-directory flag on both macOS and Linux, and the artifact path is not shared with other writers. The second review accepted this as residual risk. Revision 2 fixed the unsearchable-parent case.

@@ -66,6 +66,8 @@ OUTPUT_DIR="$(dirname "$OUTPUT")"
 NEAREST_DIR="$OUTPUT_DIR"
 while [ ! -e "$NEAREST_DIR" ]; do NEAREST_DIR="$(dirname "$NEAREST_DIR")"; done
 [ -d "$NEAREST_DIR" ] || fail "Output path component $NEAREST_DIR is not a directory."
+# Without search permission an existing artifact would look missing.
+[ -x "$NEAREST_DIR" ] || fail "Output directory $NEAREST_DIR is not searchable."
 
 if $CHECK; then
     TEMP_FILE="$(mktemp)" || fail "Could not create a temporary file."
