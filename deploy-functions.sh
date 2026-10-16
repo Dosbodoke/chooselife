@@ -13,4 +13,7 @@ npx supabase functions deploy push-notification
 echo -e "${GREEN}Deploying user-self-deletion...${NC}"
 npx supabase functions deploy user-self-deletion
 
+echo -e "${GREEN}Deploying link-isa-account...${NC}"
+npx supabase functions deploy link-isa-account
+
 echo -e "${GREEN}All functions deployed successfully!${NC}"

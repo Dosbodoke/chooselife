@@ -265,6 +265,8 @@
       },
       "settings": {
         "viewProfile": "View profile",
+        "myAccountSection": "My account",
+        "preferencesSection": "Preferences",
         "logOut": "Log Out",
         "delete": {
           "label": "Delete Account",
@@ -446,7 +448,8 @@
               "description": "Walked a total of 1 kilometer on highlines."
             }
           }
-        }
+        },
+        "isaMember": "ISA member {{isaId}}"
       }
     },
     "+not-found": {
@@ -736,6 +739,21 @@
         "daysUsed": "{{used}} / {{total}} days used",
         "noLifetime": "No lifetime recommendation",
         "usageError": "Usage is currently unavailable."
+      },
+      "isa": {
+        "connect": "Connect ISA account",
+        "linked": "ISA account",
+        "unlinkTitle": "Unlink ISA account?",
+        "unlinkDescription": "Your profile will no longer show your ISA member ID. You can connect it again at any time.",
+        "unlinkCancel": "Cancel",
+        "unlinkConfirm": "Unlink",
+        "errorTitle": "ISA account",
+        "errors": {
+          "alreadyLinked": "This ISA account is already connected to another Choose Life profile.",
+          "notVerified": "Your ISA sign-in could not be verified. Please try again.",
+          "linkFailed": "Your ISA account could not be connected. Please try again.",
+          "unlinkFailed": "Your ISA account could not be unlinked. Please try again."
+        }
       }
     },
     "webbing-detail": {

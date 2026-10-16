@@ -1613,6 +1613,38 @@ export type Database = {
           },
         ]
       }
+      profile_isa_accounts: {
+        Row: {
+          cognito_sub: string
+          isa_id: string
+          isa_name: string | null
+          linked_at: string
+          profile_id: string
+        }
+        Insert: {
+          cognito_sub: string
+          isa_id: string
+          isa_name?: string | null
+          linked_at?: string
+          profile_id: string
+        }
+        Update: {
+          cognito_sub?: string
+          isa_id?: string
+          isa_name?: string | null
+          linked_at?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_isa_accounts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           birthday: string | null
