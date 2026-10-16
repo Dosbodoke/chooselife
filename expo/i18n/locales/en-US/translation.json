@@ -265,6 +265,8 @@
       },
       "settings": {
         "viewProfile": "View profile",
+        "myAccountSection": "My account",
+        "preferencesSection": "Preferences",
         "logOut": "Log Out",
         "delete": {
           "label": "Delete Account",
@@ -739,7 +741,6 @@
         "usageError": "Usage is currently unavailable."
       },
       "isa": {
-        "section": "International Slackline Association",
         "connect": "Connect ISA account",
         "linked": "ISA account",
         "unlinkTitle": "Unlink ISA account?",

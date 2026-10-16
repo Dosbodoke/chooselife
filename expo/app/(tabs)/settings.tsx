@@ -115,21 +115,23 @@ export default function SettingsPage() {
             </View>
           </View>
 
-          {isIsaLinkingEnabled ? (
-            <View className="gap-2">
-              <Text className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                {t('components.settings.isa.section')}
-              </Text>
-              <View className="bg-white rounded-xl overflow-hidden">
-                <IsaAccount isLast />
-              </View>
+          <View className="gap-2">
+            <Text className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              {t('app.(tabs).settings.myAccountSection')}
+            </Text>
+            <View className="bg-white rounded-xl overflow-hidden">
+              <EditProfileButton isLast={!isIsaLinkingEnabled} />
+              {isIsaLinkingEnabled ? <IsaAccount isLast /> : null}
             </View>
-          ) : null}
+          </View>
 
-          {/* Settings Group */}
-          <View className="bg-white rounded-xl overflow-hidden">
-            <EditProfileButton />
-            <ChangeLanguage isLast />
+          <View className="gap-2">
+            <Text className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              {t('app.(tabs).settings.preferencesSection')}
+            </Text>
+            <View className="bg-white rounded-xl overflow-hidden">
+              <ChangeLanguage isLast />
+            </View>
           </View>
 
           {/* Account Actions */}
@@ -298,7 +300,7 @@ const ChangeLanguage: React.FC<{ isLast?: boolean }> = ({ isLast }) => {
   );
 };
 
-const EditProfileButton: React.FC = () => {
+const EditProfileButton: React.FC<{ isLast?: boolean }> = ({ isLast }) => {
   const { profile } = useAuth();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -396,6 +398,7 @@ const EditProfileButton: React.FC = () => {
         iconColor="#007AFF" // iOS Blue
         label={t('app.(tabs).settings.editProfile.triggerLabel')}
         onPress={openModal}
+        isLast={isLast}
       />
       <BottomSheetModal
         ref={bottomSheetModalRef}

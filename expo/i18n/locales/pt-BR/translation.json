@@ -265,6 +265,8 @@
       },
       "settings": {
         "viewProfile": "Visualizar perfil",
+        "myAccountSection": "Minha conta",
+        "preferencesSection": "Preferências",
         "logOut": "Sair da conta",
         "delete": {
           "label": "Deletar Conta",
@@ -739,7 +741,6 @@
         "usageError": "O uso está indisponível no momento."
       },
       "isa": {
-        "section": "International Slackline Association",
         "connect": "Conectar conta ISA",
         "linked": "Conta ISA",
         "unlinkTitle": "Desvincular conta ISA?",
