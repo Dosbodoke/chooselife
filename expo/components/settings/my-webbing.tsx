@@ -5,25 +5,15 @@ import {
   type ResolvedWebbingSpecs,
   type WebbingLifetimeStatus,
 } from '@chooselife/ui';
-import { WebbingPhotoError } from '~/features/webbing/photo-upload';
-import * as ImagePicker from 'expo-image-picker';
+import { photoProgress, type LocalPhoto } from '~/features/photos/photo-file';
 import { Link } from 'expo-router';
-import {
-  CameraIcon,
-  ChevronRightIcon,
-  PackageIcon,
-  XIcon,
-} from 'lucide-react-native';
-import { useState } from 'react';
+import { ChevronRightIcon, PackageIcon } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Image, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
 import { useOnlineStatus } from '~/context/react-query';
-import {
-  useWebbingPhoto,
-  WEBBING_PHOTO_PICKER_OPTIONS,
-} from '~/hooks/use-webbing-photo';
+import { useWebbingPhoto } from '~/hooks/use-webbing-photo';
 import {
   getWebbingName,
   useUserWebbings,
@@ -31,6 +21,11 @@ import {
 } from '~/hooks/use-webbings';
 import { getR2PublicUrl } from '~/lib/r2';
 
+import {
+  photoErrorMessage,
+  PhotoTile,
+  usePhotoTransfer,
+} from '~/components/photo-picker';
 import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
@@ -108,104 +103,71 @@ export function MyWebbings() {
   );
 }
 
-function WebbingPhoto({ webbing }: { webbing: WebbingWithUsage }) {
+/**
+ * The row's photo: saves as soon as one is picked or removed. While saving,
+ * and after a failed upload, the tile shows the picked photo, not the stored
+ * one.
+ */
+function useWebbingPhotoTile(webbing: WebbingWithUsage) {
   const { t } = useTranslation();
-  const [isPicking, setIsPicking] = useState(false);
-  const [failedUri, setFailedUri] = useState<string>();
-  const mutation = useWebbingPhoto(webbing);
   const isOnline = useOnlineStatus();
-  // Personal photo, then an authorized legacy model image, then placeholder.
-  // Saved SlackData snapshots never carry upstream images.
-  const imagePath =
-    webbing.image_path ?? resolveWebbingSpecs(webbing).legacyImageUrl;
-  const uri = imagePath ? getR2PublicUrl('webbings', imagePath) : undefined;
-  const image = uri && uri !== failedUri ? uri : undefined;
-  const busy = isPicking || mutation.isPending;
-  const disabled = busy || !isOnline;
-  const name = getWebbingName(webbing);
+  const mutation = useWebbingPhoto(webbing);
+  const photo = usePhotoTransfer();
+  const change = mutation.variables;
+  const showsChange =
+    !!change &&
+    (mutation.isPending ||
+      mutation.isSuccess ||
+      (mutation.isError && !!change.asset));
+  const storedUri = webbing.image_path
+    ? getR2PublicUrl('webbings', webbing.image_path)
+    : null;
+  const value = showsChange
+    ? change.asset
+    : storedUri
+      ? { uri: storedUri }
+      : null;
+  // Personal photos only; saved SlackData snapshots never carry upstream images.
+  const legacyImage = resolveWebbingSpecs(webbing).legacyImageUrl;
 
-  const showError = (error?: unknown) =>
-    Alert.alert(
-      t(`${translationKey}.photoErrorTitle`),
-      error instanceof WebbingPhotoError
-        ? t(`app.(modals).register-webbing.photo.errors.${error.code}`)
-        : t(`${translationKey}.photoError`),
+  const save = (asset: LocalPhoto | null) => {
+    if (asset) photo.report(photoProgress('preparing'));
+    else photo.reset();
+    mutation.mutate(
+      { asset, onProgress: asset ? photo.report : undefined },
+      {
+        onSuccess: () => {
+          if (asset) photo.succeed();
+        },
+        onError: (error) => {
+          if (asset) photo.fail(photoErrorMessage(t, error));
+        },
+      },
     );
-  const choose = async () => {
-    if (disabled) return;
-    setIsPicking(true);
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        ...WEBBING_PHOTO_PICKER_OPTIONS,
-        mediaTypes: [...WEBBING_PHOTO_PICKER_OPTIONS.mediaTypes],
-        aspect: [...WEBBING_PHOTO_PICKER_OPTIONS.aspect],
-      });
-      if (!result.canceled && result.assets[0])
-        await mutation.mutateAsync(result.assets[0]);
-    } catch (error) {
-      showError(error);
-    }
-    // Not `finally`: React Compiler can't compile it yet.
-    setIsPicking(false);
   };
 
-  return (
-    <View className="h-24 w-20 rounded-xl overflow-hidden bg-slate-100">
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t(
-          `${translationKey}.${image ? 'changePhotoFor' : 'addPhotoFor'}`,
-          { name },
-        )}
-        accessibilityState={{ disabled, busy }}
-        disabled={disabled}
-        onPress={() => void choose()}
-        className="flex-1 items-center justify-center gap-1"
-      >
-        {image ? (
-          <Image
-            source={{ uri: image }}
-            onError={() => setFailedUri(image)}
-            resizeMode={webbing.image_path ? 'cover' : 'contain'}
-            className="absolute inset-0 h-full w-full"
-          />
-        ) : (
-          <>
-            <Icon as={CameraIcon} size={22} className="text-slate-400" />
-            <Text className="text-[11px] text-slate-500">
-              {t(`${translationKey}.addPhoto`)}
-            </Text>
-          </>
-        )}
-        {image && !busy && (
-          <View className="absolute bottom-1 right-1 rounded-full bg-white/90 p-1.5">
-            <Icon as={CameraIcon} size={14} className="text-slate-800" />
-          </View>
-        )}
-        {busy && (
-          <View className="absolute inset-0 items-center justify-center bg-white/80">
-            <ActivityIndicator />
-          </View>
-        )}
-      </Pressable>
-      {webbing.image_path && !busy && (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(`${translationKey}.removePhotoFor`, { name })}
-          accessibilityState={{ disabled }}
-          disabled={disabled}
-          onPress={() =>
-            mutation.mutate(null, { onError: (error) => showError(error) })
+  return {
+    tile: {
+      value,
+      fallbackUri: legacyImage
+        ? getR2PublicUrl('webbings', legacyImage)
+        : undefined,
+      onChange: save,
+      transfer: photo.transfer,
+      onRetry: isOnline && change?.asset ? () => save(change.asset) : undefined,
+      disabled: !isOnline,
+      name: getWebbingName(webbing),
+    },
+    error: mutation.isError ? photoErrorMessage(t, mutation.error) : null,
+    /** After a failed upload, go back to the stored photo. */
+    keepPrevious:
+      mutation.isError && change?.asset
+        ? () => {
+            mutation.reset();
+            photo.reset();
           }
-          className="absolute right-0 top-0 h-11 w-11 items-center justify-center"
-        >
-          <View className="rounded-full bg-white/90 p-1">
-            <Icon as={XIcon} size={14} />
-          </View>
-        </Pressable>
-      )}
-    </View>
-  );
+        : undefined,
+  };
 }
 
 const STATUS_COLORS: Record<WebbingLifetimeStatus, string> = {
@@ -216,14 +178,32 @@ const STATUS_COLORS: Record<WebbingLifetimeStatus, string> = {
 };
 
 function WebbingPhotoRow({ webbing }: { webbing: WebbingWithUsage }) {
+  const { t } = useTranslation();
   const specs = resolveWebbingSpecs(webbing);
+  const photo = useWebbingPhotoTile(webbing);
 
   return (
     <View className="rounded-2xl bg-white border border-slate-200 p-4 gap-4">
       <View className="flex-row gap-3">
-        <WebbingPhoto webbing={webbing} />
+        <PhotoTile {...photo.tile} />
         <WebbingSummaryLink webbing={webbing} specs={specs} />
       </View>
+      {photo.error ? (
+        <View className="flex-row flex-wrap items-center gap-x-3 gap-y-1">
+          <Text className="text-xs text-destructive">{photo.error}</Text>
+          {photo.keepPrevious ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={photo.keepPrevious}
+              hitSlop={8}
+            >
+              <Text className="text-xs font-semibold text-primary">
+                {t(`${translationKey}.keepPreviousPhoto`)}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
       <WebbingLifetime
         webbingId={webbing.id}
         lifetime={specs.recommendedLifetimeDays}
