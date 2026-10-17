@@ -5,7 +5,7 @@ Plan 001 was generated October 14, 2026 for one cloud coding session. Plans 002�
 | Plan | Title | Priority | Effort | Depends on | Status |
 | --- | --- | --- | --- | --- | --- |
 | [001](001-hosted-slackdata-webbings.md) | Integrate hosted SlackData webbing selection into mobile | P1 | L | None | IMPLEMENTED — VERIFICATION PENDING (native checklist not run; see [notes](001-hosted-slackdata-webbings.notes.md)) |
-| [002](002-supabase-verification-foundation.md) | Establish isolated Supabase verification and one CLI toolchain | P1 | M | None | TODO |
+| [002](002-supabase-verification-foundation.md) | Establish isolated Supabase verification and one CLI toolchain | P1 | M | None | IN PROGRESS: Opus High implementation, Sol review after each numbered step |
 | [003](003-supabase-baseline-and-types.md) | Reconcile the Supabase baseline and restore complete generated types | P1 | M | 002 | TODO |
 | [004](004-supabase-declarative-adoption.md) | Adopt declarative Supabase schemas with independent parity checks | P1 | L | 002, 003 | TODO |
 
@@ -16,6 +16,8 @@ For Plan 001, execute its internal checkpoints end to end in one session. Do not
 The executor creates `001-hosted-slackdata-webbings.notes.md` and records code changes, deviations, passed checks, and unavailable verification. Use IMPLEMENTED — VERIFICATION PENDING when code checks pass but SQL/native gates cannot run; do not mark full verification DONE prematurely.
 
 For Supabase, execute 002, then 003, then 004. Plan 002 adds isolated replay/tests and safe generation; its default CI gate intentionally leaves known type drift non-gating. Plan 003 reconciles the baseline, regenerates the complete artifact and makes type drift blocking. Plan 004 depends on both gates and adds declarative authoring, independent catalog parity and a no-op sync check. Plan 001's remaining native checklist does not block this sequence.
+
+The user authorized dedicated-worktree execution with Opus 5.5 High and a fresh GPT Sol review after every numbered step. Current routing, checkpoint/task IDs and acceptance evidence are tracked in the [orchestration log](supabase-implementation.orchestration.md).
 
 Every Supabase executor creates its own `<plan-basename>.notes.md` with `## Deviations` and `## How the run ended`, records commands/exit codes and updates only its own status row. Expected predecessor edits are accounted for by each dependent plan's prerequisite contract. Mark BLOCKED with the exact missing capability when required replay, staging comparison or parity verification cannot be completed; preserve independent work without claiming full completion.
 
