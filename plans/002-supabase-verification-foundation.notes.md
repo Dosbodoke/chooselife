@@ -11,7 +11,10 @@ Worktree `/Users/juangsandrade/.t3/worktrees/chooselife/t3-f4bb91a0`, branch `t3
 | `fce9eee` | Step 1 notes. Implementation base for Step 1 revision 1 |
 | `0d694f1` | Step 1 revision 1: output-path guards and filesystem error exit codes. Implementation base for Step 1 revision 2 |
 | `fd8b6cb` | Step 1 revision 2: unsearchable output directory exits 2. Accepted by the third Sol review. Implementation base for Step 2 |
-| Commit that adds this row | Step 2: disposable verification workspace, `db:verify` and helper tests |
+| `2c2ace6` | Step 2: disposable verification workspace, `db:verify` and helper tests |
+| `8467699` | Step 2 revision 1: a failed `start` prints only stderr. Accepted by review |
+| `c09a317` | Advisor docs only. Implementation base for Step 3 |
+| Commit that adds this row | Step 3: real replay and failure-isolation evidence, notes only |
 
 Commands ran under Node 24.18.0 from nvm, matching `.nvmrc`. The default `node` on PATH is 25.2.1, so a fresh shell needs `export PATH="$HOME/.nvm/versions/node/v24.18.0/bin:$PATH"` first. pnpm is 11.10.0.
 
@@ -299,6 +302,86 @@ Base `2c2ace6`. Node 24.18.0 from `/Users/juangsandrade/.nvm/versions/node/v24.1
 
 No container, Docker command or real CLI call ran for this revision.
 
+## Step 3: real replay and failure isolation
+
+Status: done locally, waiting for review. No tracked source changed. This commit only adds these notes.
+
+Base `c09a317`. Node 24.18.0 from nvm, pnpm 11.10.0, `pnpm exec supabase --workdir . --version` = `2.121.0`. Docker server and client 29.8.2 on the `orbstack` context. Every command ran from the worktree unless noted. Private evidence files lived in a mode-700 scratch directory that is not part of the repository.
+
+Before any mutation I checked the pinned CLI help with `node_modules/.bin/supabase --agent no <group> <command> --help`. `db reset` has `--local`, `--no-seed`, `--sql-paths`, `--version` and `--last`. `db lint` has `--local`, `--schema`, `--level warning|error` and `--fail-on none|warning|error`. `test db` takes `--local [<path...>]`, and `db query` takes `--local [<sql>]`. `stop` has `--project-id`, `--no-backup` and `--all`. `start` has `--exclude` and `--ignore-health-check`. Global flags include `--workdir`, `--yes`, `--agent` and `--output-format`. This matches the Step 2 table.
+
+### Preservation snapshot
+
+Before the first run, read-only:
+
+- `docker ps -a` (ID, name, status and image only): 12 containers, all `supabase_*_chooselife`, up 12 hours. Postgres image `15.8.1.044`.
+- `docker inspect --format '{{.Name}} {{.Id}} {{.State.StartedAt}} {{.RestartCount}}'` for every container. No environment or config fields were read.
+- Volume names: `supabase_db_chooselife`, `supabase_edge_runtime_chooselife`, `supabase_storage_chooselife` and one unrelated volume. Network names: `supabase_network_chooselife` plus the defaults and one unrelated network.
+- `docker exec supabase_db_chooselife psql -U postgres -d postgres -tAX -c "select version || ' ' || coalesce(name,'') from supabase_migrations.schema_migrations order by version"`: 41 rows, last `20261015013845 webbing_catalog_snapshot`, sha256 `2b6d8c0397a6d7209a7a854787f87a64505532073e95aeb2841c5510dba6f027`.
+- Tracked `packages/database/database-generated.types.ts` sha256 `40efe65c104497a7e6504a6e8373757f84d57180b6bab80c1f70a7ce39aabaa1`.
+
+Derived input counts at `c09a317`: `ls supabase/migrations | wc -l` = 41, and `find supabase/tests -name '*.sql' -o -name '*.pg' | wc -l` = 12.
+
+### Run 1: `pnpm db:verify --keep`
+
+Exit 0, 02:26:32–02:27:52 UTC, including the first pull of newer service images. Stdout held only phase lines and the descriptor. Stderr held only pnpm's `$ node scripts/verify-database.mjs --keep` echo.
+
+```text
+Preparing disposable project: ok (chooselife-verify-78be7eb6c7b2, 41 migrations, 12 test files)
+Starting disposable stack: ok
+Replaying migrations and seeds: ok
+Comparing applied migrations: ok (41 versions match 41 files)
+Linting public schema: ok
+Running pgTAP tests: ok (12 files, 371 assertions)
+Verification passed.
+```
+
+Kept descriptor, with no credentials: path `/private/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-verify-aSvGma`, project `chooselife-verify-78be7eb6c7b2`, ports `api 51898`, `db 51899`, `db.shadow 51900`, `db.pooler 51901`, `studio 51902`, `inbucket 51903`, `edge_runtime.inspector 51904`, `analytics 51905`, and the cleanup command `'<worktree>/node_modules/.bin/supabase' --workdir '<path>' stop --project-id chooselife-verify-78be7eb6c7b2 --no-backup && rm -rf '<path>'`.
+
+Owned resources while kept: seven containers, `supabase_{auth,db,inbucket,kong,realtime,rest,storage}_chooselife-verify-78be7eb6c7b2`, all healthy except `rest`, which has no health check. Images were postgres `15.19.0.004`, gotrue `v2.197.0`, realtime `v2.143.4`, storage-api `v1.82.1`, postgrest `v16.4`, mailpit `v1.31.3` and kong `2.8.1`. There were two volumes, `supabase_db_…` and `supabase_storage_…`, and one network, `supabase_network_…`. No Studio, analytics, Edge runtime, vector or pg-meta container started. The database major version stays 15, matching `[db] major_version`.
+
+This run settles the open questions from Step 2. Under 2.121.0, `start` accepts the rewritten config. `db reset --local --yes` replays every migration and both seed files without hanging. The real `db query --output json` result and the `pg_prove` `Files=`/`Tests=`/`Result:` summary parse. OrbStack mounts the `/private/var/folders/…` temp root. The allowlisted environment is enough, and no `env()` reference failed. The allocated ports did not collide.
+
+### Generator against the kept stack
+
+Scratch output `<mktemp -d $TMPDIR/chooselife-s3-gen.XXXXXX>/out/types.ts`, never the tracked artifact. `K` is the kept workdir.
+
+| Command | Exit | Evidence |
+| --- | --- | --- |
+| `bash supabase-gen-types.sh --workdir "$K" --output "$O"` | 0 | Empty stdout. Stderr `Connecting to 127.0.0.1 51899`, which is the owned DB port. 1609 lines, one `export type Database = `, mode 644, no temp file left, sha256 `6385a97a…16a5` |
+| `bash supabase-gen-types.sh --check --workdir "$K" --output "$O"` | 0 | "Database types are up to date", sha256 unchanged |
+| Append `// step3 drift sentinel`, then `--check` again | 1 | "Database types are out of date", sha256 `2c611437…81bb` before and after, sentinel still the last line |
+| `pnpm db:types:check --workdir "$K"` against the tracked artifact | 1 | Expected known drift for Plan 003. Tracked sha256 unchanged |
+| After cleanup: write mode and `--check` against a scratch copy of the kept `config.toml`, whose project is no longer running | 2 each | `supabase start is not running.`, "…was not modified", empty stdout, sentinel sha256 unchanged, no temp file |
+
+The CLI also printed `Generated TypeScript is unformatted. Format it with: npx oxfmt <generated-file.ts>` on stderr. The tracked artifact has 3407 lines and the fresh output has 1609. Plan 003 has to choose the formatting before type parity can gate.
+
+Cleanup used the printed command verbatim. It exited 0 and printed `{"project_id_filter":"chooselife-verify-78be7eb6c7b2","backup":false,"message":"Stopped supabase local development setup."}`. It printed JSON because that command does not pin `--agent no`, so agent auto-detection chose JSON. Afterwards there were zero `chooselife-verify` containers, volumes or networks, the kept directory was gone, and the generator scratch directory was deleted.
+
+### Run 2: `pnpm db:verify` with default cleanup
+
+Exit 0, 02:28:51–02:29:51 UTC. Project `chooselife-verify-ea7dd61db38c`, 41 migrations, 12 test files, 41 versions matched 41 files, lint ok, 12 files and 371 assertions, `Removed the disposable project.` A background poll of `docker ps -a` saw exactly the same seven service containers for this project ID. After exit there were zero `chooselife-verify` containers, volumes and networks, and no `chooselife-verify-*` directory in `$TMPDIR`.
+
+### Run 3: injected failure in a disposable copy
+
+The scratch repository was `<mktemp -d $TMPDIR/chooselife-s3-fail.XXXXXX>`. It held a byte-identical copy of `scripts/verify-database.mjs` (checked with `cmp`), `supabase-gen-types.sh`, a symlink to the worktree's `node_modules`, and copies of `supabase/config.toml`, `seed.sql`, `migrations/`, `seeds/` and `tests/`. It added one fixture, `supabase/tests/zz_injected_failure_test.sql`: `begin; select plan(2); select ok(true, …); select ok(false, 'injected failure: this assertion must fail'); select * from finish(); rollback;`. No committed SQL was edited, and the verifier gained no new API. Running the copy's `node scripts/verify-database.mjs` from the scratch root uses the real CLI and the real `main()` cleanup path.
+
+Exit 1, 02:30:00–02:31:00 UTC. Project `chooselife-verify-906b7b1b754f`, with 41 migrations and 13 test files discovered. Replay, migration comparison and lint passed. Then the run printed `pgTAP failed (exit 1).`, the redacted pg_prove tail with all 12 real files `ok`, `# Failed test 2: "injected failure: this assertion must fail"`, `Files=13, Tests=373`, `Result: FAIL`, and `Removed the disposable project.` The same seven owned containers appeared, and afterwards there were zero `chooselife-verify` containers, volumes, networks or temp directories. No JWT, `sb_secret_`/`sb_publishable_` key or URL password pattern appeared in stdout or stderr. The scratch repository was deleted.
+
+### Postconditions
+
+| Check | Result |
+| --- | --- |
+| `docker ps -a` ID/name/status/image, hours normalized | identical to the snapshot |
+| `docker inspect` name, ID, `StartedAt`, `RestartCount` for every container | identical, so the `chooselife` stack was neither stopped, restarted nor replaced |
+| Volume and network names | identical |
+| Developer `schema_migrations` dump | 41 rows, same sha256 `2b6d8c03…f027` |
+| `git diff --exit-code -- supabase/migrations supabase/tests supabase/seed.sql supabase/seeds packages/database/database-generated.types.ts supabase/config.toml` | exit 0 |
+| `git diff --exit-code c09a317 -- supabase packages pnpm-lock.yaml supabase-gen-types.sh package.json scripts next expo .github plans/README.md plans/supabase-implementation.orchestration.md` | exit 0 |
+| `node --test scripts/verify-database.test.mjs` | 39 tests, 39 pass |
+
+No hosted project, token or password was used. No command used `--all`, `--linked`, `--db-url` or `--project-ref`. Every start, reset, stop and generation targeted a `chooselife-verify-*` workdir created by `prepareWorkspace`. The one exception is the developer history read, which ran `select` through `docker exec` on the existing DB container. Raw `start` and `status` output was never printed, and no environment or connection string was inspected or recorded. No port or Docker retry was needed.
+
 ## Deviations
 
 - `[functions.*]` sections are dropped from the disposable config. They point at `functions/`, which is not a verification input, and Edge runtime is disabled in the copy. The root config is unchanged.
@@ -313,11 +396,16 @@ No container, Docker command or real CLI call ran for this revision.
 - A missing artifact in `--check` mode counts as drift (exit 1), not as an error.
 - Revision 1 rejects any existing non-regular `--output`, not just directories. FIFOs and device nodes would otherwise hang `cmp` or be replaced by `mv`, and the same one-line guard covers them.
 - The branch kept its app-managed name `t3/supabase-schema-workflow`. Renaming could break the T3 thread binding.
+- Step 3 injected the failing test by running a byte-identical copy of the verifier from a disposable repository copy with one extra fixture, rather than calling `prepareWorkspace` and driving the CLI by hand. This exercises the real `main()` failure and cleanup path without editing committed SQL or adding an injection API.
+- Step 3 also ran a real generator failure against a stopped owned project. The plan only required success, equal-check and drift-check on the kept stack. It also ran `db:types:check` once against the kept stack to record the known tracked-type drift.
+- Step 3 recorded developer migration history with a read-only `select` through `docker exec` on the existing DB container, instead of running a Supabase CLI command against the developer project.
 
 ## How the run ended
 
-Step 1 and revisions 1 and 2 were accepted by the third Sol review. Step 2 is implemented and verified with helper tests, CLI help and one non-mutating config probe. Revision 1 stops printing `start` stdout on failure. It waits for review. Steps 3 and 4 have not started, and no real replay has run.
+Step 1 and revisions 1 and 2 were accepted by the third Sol review. Step 2 and its revision 1 were accepted. Step 3 is done locally and waits for review. Two real disposable replays exited 0, each with 41/41 migrations, both seeds, a clean lint and 12 files with 371 assertions. Real generator success, equal-check, drift-check and failure cases behaved as specified. An injected pgTAP failure exited 1 and cleaned up only its owned resources. The developer `chooselife` stack, its migration history, tracked types, SQL inputs and the root config are unchanged. Step 4 (CI workflow and README) has not started, so the plan is not DONE.
 
 Remaining risk. The destination check runs before generation. If another process turns the destination into a directory during generation, `mv` would still nest the file inside it. Portable `mv` has no no-target-directory flag on both macOS and Linux, and the artifact path is not shared with other writers. The second review accepted this as residual risk. Revision 2 fixed the unsearchable-parent case.
 
-Step 2 remaining risk. The allocation sockets close before `start` binds the ports, so another process can take one in between. `start` then fails and cleanup removes only the owned project. The verifier does not retry automatically. The plan allows one manual retry with a new workspace. `redact` is pattern-based defense in depth and misses table-formatted values, so `start` stdout is never printed, and successful runs print no status output at all. Stderr and the stdout of later commands still rely on `redact`. A failing `db reset`, `db lint` or `test db` is not expected to print keys, but Step 3 has not observed their real failure output yet.
+Step 2 remaining risk. The allocation sockets close before `start` binds the ports, so another process can take one in between. `start` then fails and cleanup removes only the owned project. The verifier does not retry automatically. The plan allows one manual retry with a new workspace. `redact` is pattern-based defense in depth and misses table-formatted values, so `start` stdout is never printed, and successful runs print no status output at all. Stderr and the stdout of later commands still rely on `redact`. Step 3 observed a real `test db` failure. Its output held only pg_prove TAP lines and CLI errors, with no key patterns. A failing `db reset` or `db lint` has still not been observed for real.
+
+Step 3 observations for Step 4 and Plan 003. The printed cleanup command does not pass `--agent no`, so under agent detection `stop` prints a JSON status line. That is harmless and has no credentials. Pinned 2.121.0 generates unformatted TypeScript, 1609 lines against the tracked 3407, and suggests `oxfmt`. Plan 003 must settle formatting before type parity can gate. A cold run that pulls images took about 80 s. Warm runs took about 60 s.
