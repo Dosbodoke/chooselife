@@ -22,4 +22,4 @@ No database migration or data mutation is required. No automatic matching by mod
 
 ## Delivery
 
-Changes are local and uncommitted. No deployment, database mutation, R2 transfer, CI workflow, or scheduled job was performed for this task.
+Committed for [PR #284](https://github.com/Dosbodoke/chooselife/pull/284). The remote shared photo-picker change was merged, preserving its photo transfer behavior and this task's SlackData-only model selection. After integration, all 311 mobile tests, 49 shared UI tests, Expo and shared UI TypeScript checks, and scoped lint passed. The sync publisher's 42 tests also passed. No deployment, database mutation, R2 transfer, CI workflow, or scheduled job was performed for this picker-retirement task.
