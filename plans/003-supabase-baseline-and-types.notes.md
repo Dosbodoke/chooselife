@@ -188,6 +188,26 @@ Likely cause, from read-only checks only. This worktree has none of the gitignor
 
 Step 4 compares its after-typecheck against these exact lines in the same environment. The plan's gate requires all three typechecks to exit 0, and that cannot happen without a separate decision. Either generate the framework declarations as an environment step, or accept and scope these pre-existing errors. That decision is the root's.
 
+## Parent review and prepared compiler baseline
+
+Fresh Sol review `/root/supabase_003_1_review` returned SHIP with no blocking findings. It checked the complete notes diff, retained evidence, copied migration bytes, workspace ownership and developer preservation snapshots. The parent independently validated ownership, queried the live retained database and matched all 41 applied versions to filenames. The live counts are 38 public tables and 82 public functions, with `profile_isa_accounts` absent. The parent also reproduced the raw web/mobile/UI diagnostics above.
+
+The parent then prepared the normal ignored framework declarations before any database-type change. Installed CLI inspection and the official Next/Expo documentation identify these commands:
+
+```bash
+CI=1 NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co node next/node_modules/next/dist/bin/next typegen next
+# From expo/:
+APP_VARIANT=development CI=1 EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 node node_modules/expo/bin/cli customize tsconfig.json
+```
+
+Both exited 0. The URL is a nonsecret configuration placeholder, not a database connection. Next generated its ignored environment and route types; Expo generated its ignored environment and router types without starting a server. `git check-ignore` confirms the generated locations are ignored, and tracked files remained unchanged.
+
+An initial `pnpm --dir next exec next typegen` invocation triggered pnpm 11's automatic dependency install before reaching Next, then stalled. The parent terminated that owned install process and used the direct installed CLI. A subsequent root `pnpm install --frozen-lockfile` completed successfully with no tracked changes. No credentials or source fixes were needed.
+
+The parent repeated the exact three compiler commands after preparation. Web, mobile and shared UI each exited 0 with no diagnostics. This prepared baseline is the comparison baseline for regeneration; the raw eight errors above remain recorded as evidence of missing generated declarations in a fresh worktree, not unresolved application debt. Plan 003 now documents this setup and corrects the registration RPC to `register_festival_companion_token`.
+
+Root accepts checkpoint 003.1. The owned database is still retained for Step 2; source, SQL, config and generated database types remain unchanged.
+
 ## Deviations
 
 - Plan text says the companion RPCs are `register_festival_companion_installation` and `unregister_festival_companion_installation`. The migration `supabase/migrations/20260730140837_festival_live_companion.sql:65` defines `register_festival_companion_token(installation_id_input uuid, token_type_input text, activity_name_input text, token_input text, language_input language)`, and `:139` defines `unregister_festival_companion_installation(uuid)`. No `register_festival_companion_installation` exists in the migrations, the replay, or any tracked source. Step 4's `rg` identity check should use `register_festival_companion_token`. Otherwise it cannot find all five identities from a correct full regeneration. This is a plan correction, not a schema difference. Neither function is in the current tracked type artifact.

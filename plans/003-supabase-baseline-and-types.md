@@ -52,7 +52,7 @@ Changes implementing the prerequisite are expected, not drift failures. Reconcil
   ```
 
   Its RLS policy allows authenticated owners to SELECT, with write grants revoked. Keep this authorization model.
-- `supabase/migrations/20260730140837_festival_live_companion.sql:4` and `:21` create `festival_companion_config` and `festival_companion_tokens`. Those tables and `register_festival_companion_installation` / `unregister_festival_companion_installation` are missing from the committed type artifact at the planned revision.
+- `supabase/migrations/20260730140837_festival_live_companion.sql:4` and `:21` create `festival_companion_config` and `festival_companion_tokens`. Those tables and `register_festival_companion_token` / `unregister_festival_companion_installation` are missing from the committed type artifact at the planned revision. The registration RPC is defined at line 65; its name was corrected during Step 1 inspection.
 - `next/app/api/courses/highline-beginner/access/route.ts:15` currently has:
 
   ```ts
@@ -157,7 +157,7 @@ Do not hand-splice blocks or copy output from the developer's existing database.
 
 Run the three consumer typechecks. Fix only new errors caused by accurate generated contracts, using real nullable/optional shapes and the existing shared override mechanism. Compare with Step 1's diagnostics. Runtime logic changes or errors unrelated to regeneration require a separate scope decision; report them instead of expanding this plan.
 
-**Verify:** `rg -n 'choosen_course_entitlements|festival_companion_config|festival_companion_tokens|register_festival_companion_installation|unregister_festival_companion_installation' packages/database/database-generated.types.ts` finds all five identities; the complete file check exits 0; all consumer typechecks exit 0.
+**Verify:** `rg -n 'choosen_course_entitlements|festival_companion_config|festival_companion_tokens|register_festival_companion_token|unregister_festival_companion_installation' packages/database/database-generated.types.ts` finds all five identities; the complete file check exits 0; all consumer typechecks exit 0.
 
 ### 5. Make complete type parity a blocking CI gate
 
@@ -168,6 +168,17 @@ Prove the gate rejects drift using a scratch `--output` file or disposable check
 **Verify:** `node --test scripts/verify-database.test.mjs scripts/check-database-catalog.test.mjs`, `pnpm db:verify --check-types`, and the application gates below all pass.
 
 ## Application gates
+
+Prepare the ignored framework declarations before recording the compiler baseline or comparing generated database types. A fresh worktree lacks these files even when dependencies are installed. From the root, with Node 24.18.0 selected:
+
+```bash
+CI=1 NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co node next/node_modules/next/dist/bin/next typegen next
+cd expo
+APP_VARIANT=development CI=1 EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 node node_modules/expo/bin/cli customize tsconfig.json
+cd ..
+```
+
+The URL is a nonsecret image-host configuration value for type generation, not a database target. These commands generate ignored `next/next-env.d.ts`, `next/.next/types/`, `expo/expo-env.d.ts` and `expo/.expo/types/`. Existing tracked framework configuration already includes them; confirm `git status --short` stays unchanged. Do not add ambient declarations, alter route types or suppress errors to replace framework generation. Direct installed entry points avoid pnpm 11's automatic dependency installation before `exec`. Record both the initial raw diagnostics and the prepared baseline before any database-type change, and compare the latter with the final diagnostics.
 
 Run from the root and record exit codes:
 
@@ -202,3 +213,5 @@ Recover locally by regenerating again from a fresh owned replay and cleaning onl
 - [Pinned CLI query flags](https://github.com/supabase/cli/blob/v2.121.0/apps/cli/src/commands/db/query/query.command.ts)
 - [Pinned CLI versioned reset flags](https://github.com/supabase/cli/blob/v2.121.0/apps/cli/src/commands/db/reset/reset.command.ts)
 - [Supabase TypeScript generation](https://supabase.com/docs/guides/api/rest/generating-types)
+- [Next type generation](https://nextjs.org/docs/app/api-reference/cli/next#next-typegen-options)
+- [Expo typed-route generation without a development server](https://docs.expo.dev/router/reference/typed-routes/#type-generation)
