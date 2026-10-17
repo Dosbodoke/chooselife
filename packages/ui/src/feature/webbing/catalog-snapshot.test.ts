@@ -174,9 +174,10 @@ describe('parseWebbingCatalogSnapshot', () => {
   const snapshot = normalize(upstream).snapshot;
 
   it('round-trips a stored snapshot', () => {
-    expect(parseWebbingCatalogSnapshot(JSON.parse(JSON.stringify(snapshot)))).toEqual(
-      snapshot,
-    );
+    // A JSONB round trip, not a clone: structuredClone would keep `undefined`.
+    // react-doctor-disable-next-line react-doctor/no-json-parse-stringify-clone
+    const stored: unknown = JSON.parse(JSON.stringify(snapshot));
+    expect(parseWebbingCatalogSnapshot(stored)).toEqual(snapshot);
   });
 
   it('returns null for unknown versions and invalid values without throwing', () => {

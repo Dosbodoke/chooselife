@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useForm, type SubmitHandler, type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -119,6 +119,8 @@ export function useRegisterWebbing(
   const { supabase, userId } = useSupabase();
   const queryClient = useQueryClient();
   const inFlight = useRef(false);
+  // Created once per form; every retry of this draft reuses it.
+  const [registrationKey] = useState(() => options?.createRegistrationKey?.());
 
   const form = useForm<RegisterWebbingFormData>({
     resolver: zodResolver(registerWebbingSchema),
@@ -126,7 +128,7 @@ export function useRegisterWebbing(
     defaultValues: {
       modelID: '',
       catalogSnapshot: null,
-      registrationKey: options?.createRegistrationKey?.(),
+      registrationKey,
       note: '',
       tagName: '',
       length: '',

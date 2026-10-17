@@ -310,16 +310,25 @@ export function shouldLoadCatalogOnOpen(state: CatalogQueryState | undefined) {
   );
 }
 
+/** When the cooldown requested by the last failure ends, if it asked for one. */
+export function getCatalogRetryAt(
+  error: unknown,
+  errorUpdatedAt: number,
+): number | null {
+  if (error instanceof CatalogError && error.details.retryAfterMs) {
+    return errorUpdatedAt + error.details.retryAfterMs;
+  }
+  return null;
+}
+
 /** Whether a manual retry/refresh is allowed now, honoring any cooldown. */
 export function getCatalogRetryAvailability(
   error: unknown,
   errorUpdatedAt: number,
   nowMs: number,
 ): { canRetry: boolean; retryAt: number | null } {
-  if (error instanceof CatalogError && error.details.retryAfterMs) {
-    const retryAt = errorUpdatedAt + error.details.retryAfterMs;
-    if (retryAt > nowMs) return { canRetry: false, retryAt };
-  }
+  const retryAt = getCatalogRetryAt(error, errorUpdatedAt);
+  if (retryAt !== null && retryAt > nowMs) return { canRetry: false, retryAt };
   return { canRetry: true, retryAt: null };
 }
 

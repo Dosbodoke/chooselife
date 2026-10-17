@@ -209,23 +209,23 @@ function CardHeader({
 function Tile({
   value,
   label,
-  hot,
+  highlighted,
 }: {
   value: string;
   label: string;
-  hot: boolean;
+  highlighted: boolean;
 }) {
   return (
     <View
       className={cn(
         'w-[47%] grow rounded-lg px-2 py-1.5',
-        hot ? 'bg-foreground' : 'bg-muted',
+        highlighted ? 'bg-foreground' : 'bg-muted',
       )}
     >
       <Text
         className={cn(
           'text-[15px] font-bold',
-          hot ? 'text-background' : 'text-foreground',
+          highlighted ? 'text-background' : 'text-foreground',
         )}
         style={{ fontVariant: ['tabular-nums'] }}
       >
@@ -234,7 +234,7 @@ function Tile({
       <Text
         className={cn(
           'text-[10px]',
-          hot ? 'text-background' : 'text-muted-foreground',
+          highlighted ? 'text-background' : 'text-muted-foreground',
         )}
         numberOfLines={1}
       >
@@ -281,17 +281,17 @@ export function SpecTilesCard({
         <Tile
           value={orDash(model.breakingStrengthKn)}
           label={t(`${translationKey}.card.kn`)}
-          hot={sortKey === 'strength'}
+          highlighted={sortKey === 'strength'}
         />
         <Tile
           value={orDash(model.widthMm)}
           label={t(`${translationKey}.card.mm`)}
-          hot={sortKey === 'width'}
+          highlighted={sortKey === 'width'}
         />
         <Tile
           value={orDash(model.weightGramsPerMeter)}
           label={t(`${translationKey}.card.gramsPerMeter`)}
-          hot={sortKey === 'weight'}
+          highlighted={sortKey === 'weight'}
         />
         <Tile
           value={stretch ? String(round1(stretch.percent)) : '—'}
@@ -300,7 +300,7 @@ export function SpecTilesCard({
               ? t(`${translationKey}.card.stretchAt`, { kn: stretch.kn })
               : t(`${translationKey}.card.stretch`)
           }
-          hot={sortKey === 'stretch'}
+          highlighted={sortKey === 'stretch'}
         />
       </View>
       {selected && imageUri ? (
@@ -319,25 +319,18 @@ export function SpecTilesCard({
 function Stat({
   value,
   unit,
-  hot,
-  last = false,
+  highlighted,
 }: {
   value: string;
   unit: string;
-  hot: boolean;
-  last?: boolean;
+  highlighted: boolean;
 }) {
   return (
-    <View
-      className={cn(
-        'flex-1 items-center gap-0.5',
-        !last && 'border-r border-border',
-      )}
-    >
+    <View className="flex-1 items-center gap-0.5">
       <Text
         className={cn(
           'rounded px-1 text-[17px] font-bold text-foreground',
-          hot && 'bg-amber-100',
+          highlighted && 'bg-amber-100',
         )}
         style={{ fontVariant: ['tabular-nums'] }}
       >
@@ -346,13 +339,19 @@ function Stat({
       <Text
         className={cn(
           'text-[10px]',
-          hot ? 'font-semibold text-foreground' : 'text-muted-foreground',
+          highlighted
+            ? 'font-semibold text-foreground'
+            : 'text-muted-foreground',
         )}
       >
         {unit}
       </Text>
     </View>
   );
+}
+
+function StatDivider() {
+  return <View className="w-px self-stretch bg-border" />;
 }
 
 /** Load (x) vs elongation (y); a single point is shown as a value only. */
@@ -435,18 +434,21 @@ export function WideCard({
         <Stat
           value={orDash(model.breakingStrengthKn)}
           unit={t(`${translationKey}.card.kn`)}
-          hot={sortKey === 'strength'}
+          highlighted={sortKey === 'strength'}
         />
+        <StatDivider />
         <Stat
           value={orDash(model.widthMm)}
           unit={t(`${translationKey}.card.mm`)}
-          hot={sortKey === 'width'}
+          highlighted={sortKey === 'width'}
         />
+        <StatDivider />
         <Stat
           value={orDash(model.weightGramsPerMeter)}
           unit={t(`${translationKey}.card.gramsPerMeter`)}
-          hot={sortKey === 'weight'}
+          highlighted={sortKey === 'weight'}
         />
+        <StatDivider />
         <Stat
           value={stretch ? `${round1(stretch.percent)}%` : '—'}
           unit={
@@ -454,8 +456,7 @@ export function WideCard({
               ? t(`${translationKey}.card.atKn`, { kn: stretch.kn })
               : t(`${translationKey}.card.stretch`)
           }
-          hot={sortKey === 'stretch'}
-          last
+          highlighted={sortKey === 'stretch'}
         />
       </View>
       {curve && width ? (

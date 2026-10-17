@@ -12,7 +12,7 @@ import { useAuth } from '~/context/auth';
 import { deleteFromR2, uploadToR2 } from '~/lib/r2';
 import { supabase } from '~/lib/supabase';
 
-import { useWebbingsKeyFactory, type WebbingWithUsage } from './use-webbings';
+import { webbingKeys, type WebbingWithUsage } from './use-webbings';
 
 /** Image library options shared by registration and My Webbings. */
 export const WEBBING_PHOTO_PICKER_OPTIONS = {
@@ -67,18 +67,18 @@ export function setCachedWebbingPhoto(
   imagePath: string | null,
 ) {
   queryClient.setQueryData<WebbingWithUsage[]>(
-    useWebbingsKeyFactory.webbings(ownerId),
+    webbingKeys.webbings(ownerId),
     (current) =>
       current?.map((item) =>
         item.id === webbingId ? { ...item, image_path: imagePath } : item,
       ),
   );
   queryClient.setQueryData<WebbingWithUsage | null>(
-    useWebbingsKeyFactory.webbing(ownerId, webbingId),
+    webbingKeys.webbing(ownerId, webbingId),
     (current) => (current ? { ...current, image_path: imagePath } : current),
   );
   void queryClient.invalidateQueries({
-    queryKey: useWebbingsKeyFactory.webbings(ownerId),
+    queryKey: webbingKeys.webbings(ownerId),
   });
 }
 
@@ -110,7 +110,7 @@ export function useWebbingPhoto(webbing: WebbingWithUsage) {
           if (error.code === 'conflict') {
             pendingPath.current = null;
             void queryClient.invalidateQueries({
-              queryKey: useWebbingsKeyFactory.webbings(profile.id),
+              queryKey: webbingKeys.webbings(profile.id),
             });
           }
         }

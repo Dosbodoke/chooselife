@@ -43,8 +43,10 @@ function fakeRepository() {
     rows,
     findByRegistrationKey: jest.fn(async (userId: string, key: string) => {
       const row = rows.find((r) => r.user_id === userId && r.registration_key === key);
+      if (!row) return null;
       // Simulate the JSONB round trip, which does not preserve key order.
-      return row ? (JSON.parse(JSON.stringify(row)) as StoredWebbingRegistration) : null;
+      // react-doctor-disable-next-line react-doctor/no-json-parse-stringify-clone
+      return JSON.parse(JSON.stringify(row)) as StoredWebbingRegistration;
     }),
     insert: jest.fn(async (row: WebbingRegistrationRow) => {
       if (rows.some((r) => r.user_id === row.user_id && r.registration_key === row.registration_key && row.registration_key)) {

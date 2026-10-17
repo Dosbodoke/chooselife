@@ -34,12 +34,12 @@ export type WebbingWithUsage = SingleWebbingWithModel & {
 
 // Private inventory: keys and `authScope` carry the viewer so a different
 // account never reads this cache. `all()` prefixes every viewer's entries.
-export const useWebbingsKeyFactory = {
+export const webbingKeys = {
   all: () => ['webbings'] as const,
   webbings: (viewerId: string | undefined) =>
-    [...useWebbingsKeyFactory.all(), viewerId ?? 'anonymous'] as const,
+    [...webbingKeys.all(), viewerId ?? 'anonymous'] as const,
   webbing: (viewerId: string | undefined, id: number) =>
-    [...useWebbingsKeyFactory.webbings(viewerId), id] as const,
+    [...webbingKeys.webbings(viewerId), id] as const,
 };
 
 // Helper function to compute 'isUsed' and transform a single webbing object
@@ -66,7 +66,7 @@ export const useUserWebbings = () => {
   const { profile } = useAuth();
 
   return useQuery<WebbingWithUsage[]>({
-    queryKey: useWebbingsKeyFactory.webbings(profile?.id),
+    queryKey: webbingKeys.webbings(profile?.id),
     meta: { authScope: profile?.id },
     queryFn: async (): Promise<WebbingWithUsage[]> => {
       if (!profile?.id) {
@@ -99,11 +99,11 @@ export const useWebbing = (id: number) => {
   const { profile } = useAuth();
 
   return useQuery<WebbingWithUsage | null>({
-    queryKey: useWebbingsKeyFactory.webbing(profile?.id, id),
+    queryKey: webbingKeys.webbing(profile?.id, id),
     meta: { authScope: profile?.id },
     queryFn: async (): Promise<WebbingWithUsage | null> => {
       const cachedWebbings = queryClient.getQueryData<WebbingWithUsage[]>(
-        useWebbingsKeyFactory.webbings(profile?.id),
+        webbingKeys.webbings(profile?.id),
       );
       if (cachedWebbings) {
         const foundInCache = cachedWebbings.find((w) => w.id === id);
@@ -126,7 +126,7 @@ export const useWebbing = (id: number) => {
     },
     initialData: () => {
       const cachedWebbings = queryClient.getQueryData<WebbingWithUsage[]>(
-        useWebbingsKeyFactory.webbings(profile?.id),
+        webbingKeys.webbings(profile?.id),
       );
       return cachedWebbings?.find((w) => w.id === id);
     },

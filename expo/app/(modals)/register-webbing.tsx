@@ -1,10 +1,8 @@
 import {
-  formatCatalogModelName,
   getStrengthClassColor,
   STRENGTH_CLASS_OPTIONS,
   useRegisterWebbing,
   type RegisterWebbingFormData,
-  type WebbingCatalogSnapshot,
 } from '@chooselife/ui';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useQueryClient } from '@tanstack/react-query';
@@ -21,6 +19,7 @@ import {
   saveWebbingPhoto,
   WebbingPhotoError,
   type PhotoAsset,
+  type WebbingPhotoErrorCode,
 } from '~/features/webbing/photo-upload';
 import {
   advanceRegistration,
@@ -38,13 +37,16 @@ import {
   CloudOffIcon,
   XIcon,
 } from 'lucide-react-native';
-import React, { useCallback, useId, useRef, useState } from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 import {
-  Control,
   Controller,
+  FormProvider,
   useController,
-  UseFormReturn,
+  useFormContext,
+  useFormState,
   useWatch,
+  type Control,
+  type UseFormReturn,
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
@@ -83,48 +85,206 @@ import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
+import { WebbingCatalogPicker } from '~/components/webbing-catalog-picker';
 import {
-  SelectedCatalogDetails,
-  WebbingCatalogPicker,
-  type LegacyWebbingModel,
-} from '~/components/webbing-catalog-picker';
+  selectionName,
+  useLegacyWebbingModels,
+  type WebbingModelSelection,
+} from '~/components/webbing-catalog-picker/model-selection';
+import { SelectedCatalogDetails } from '~/components/webbing-catalog-specs';
 import { WebbingInput } from '~/components/webbing-input';
 
 const translationKey = 'app.(modals).register-webbing';
-const ROOT_ERROR_CODES = [
+const ROOT_ERROR_CODES = new Set([
   'draft-conflict',
   'unconfirmed',
   'lookup-failed',
   'offline',
-];
+]);
+
+type RegisterWebbingForm = UseFormReturn<RegisterWebbingFormData>;
 
 export default function RegisterWebbing() {
+  const { session, sessionLoading } = useAuth();
+  const userId = session?.user.id;
+
+  if (sessionLoading) {
+    return (
+      <SignedOutScreen>
+        <View className="items-center py-8">
+          <ActivityIndicator />
+        </View>
+      </SignedOutScreen>
+    );
+  }
+  if (!userId) {
+    return (
+      <SignedOutScreen>
+        <SignInRequired />
+      </SignedOutScreen>
+    );
+  }
+  return <RegistrationForm userId={userId} />;
+}
+
+function SignedOutScreen({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  return (
+    <SafeAreaView className="flex-1">
+      <View className="flex-1 px-6 pt-3 pb-8 gap-6">
+        <OnboardHeader total={1} selectedIndex={0} onBack={router.back} />
+        <RegistrationIntro />
+        {children}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function SignInRequired() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const { isLoginPending } = useAuth();
+
+  return (
+    <>
+      <Alert variant="warning">
+        <AlertIcon icon={AlertTriangleIcon} />
+        <AlertContent>
+          <AlertTitle>{t(`${translationKey}.authRequired.title`)}</AlertTitle>
+          <AlertDescription>
+            {t(`${translationKey}.authRequired.description`)}
+          </AlertDescription>
+        </AlertContent>
+      </Alert>
+
+      <View className="flex-grow" />
+
+      <Button
+        className="w-full rounded-full"
+        disabled={isLoginPending}
+        onPress={() => router.push('/(modals)/login')}
+      >
+        <Text>{t(`${translationKey}.authRequired.action`)}</Text>
+      </Button>
+    </>
+  );
+}
+
+function RegistrationIntro() {
+  const { t } = useTranslation();
+  return (
+    <>
+      <View className="h-52">
+        <RegisterWebbingIllustration className="w-full h-full" />
+      </View>
+      <View>
+        <Text variant="h3" className="text-left">
+          {t(`${translationKey}.title`)}
+        </Text>
+        <Text variant="muted" className="text-left">
+          {t(`${translationKey}.description`)}
+        </Text>
+      </View>
+    </>
+  );
+}
+
+function RegistrationForm({ userId }: { userId: string }) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const isOnline = useOnlineStatus();
+  const { form, submit } = useRegisterWebbing({ createRegistrationKey: uuid });
+  const experiment = useWebbingPickerExperiment();
+  const [photo, setPhoto] = useState<PhotoAsset | null>(null);
+  const registration = useRegistration({
+    userId,
+    form,
+    submit,
+    photo,
+    experiment,
+  });
+  const { flow } = registration;
+
+  return (
+    <FormProvider {...form}>
+      <BottomSheetModalProvider>
+        <SafeAreaView className="flex-1">
+          <KeyboardAwareScrollView
+            contentContainerClassName="px-6 pt-3 pb-8 gap-4"
+            keyboardShouldPersistTaps="handled"
+          >
+            <OnboardHeader total={1} selectedIndex={0} onBack={router.back} />
+            <View className="gap-6">
+              <RegistrationIntro />
+              <LengthField />
+              <ModelField experiment={experiment} />
+              <StrengthClassSelector />
+              <TagNameField />
+              <PhotoField
+                photo={photo}
+                onChange={setPhoto}
+                disabled={registration.isLocked}
+              />
+              <NoteField />
+            </View>
+
+            {!isOnline && <OfflineNotice />}
+            {flow.phase === 'editing' && <SubmitError />}
+
+            {/* Spacer to push paginator down */}
+            <View className="flex-grow" />
+
+            {registration.photoFailed ? (
+              <PhotoFailedAlert
+                error={flow.photoError}
+                canRetry={isOnline && !!photo}
+                onRetry={registration.retryPhoto}
+                onContinue={registration.continueWithoutPhoto}
+              />
+            ) : (
+              <>
+                {flow.phase === 'uploadingPhoto' && <PhotoUploading />}
+                <OnboardNavigator
+                  total={1}
+                  selectedIndex={0}
+                  onIndexChange={() => {}} // There is only one step
+                  onFinish={registration.submit}
+                  goBack={router.back}
+                  isLoading={registration.isLocked}
+                  finishLabel={t(`${translationKey}.finishLabel`)}
+                  showBack={false}
+                />
+              </>
+            )}
+          </KeyboardAwareScrollView>
+        </SafeAreaView>
+      </BottomSheetModalProvider>
+    </FormProvider>
+  );
+}
+
+/** Save the item, then its photo, then leave; each phase is recoverable. */
+function useRegistration({
+  userId,
+  form,
+  submit,
+  photo,
+  experiment,
+}: {
+  userId: string;
+  form: RegisterWebbingForm;
+  submit: ReturnType<typeof useRegisterWebbing>['submit'];
+  photo: PhotoAsset | null;
+  experiment: WebbingPickerExperiment;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isOnline = useOnlineStatus();
-  const { session, sessionLoading, isLoginPending } = useAuth();
-  const handleLogin = useCallback(() => {
-    router.push('/(modals)/login');
-  }, [router]);
-
-  const { form, submit } = useRegisterWebbing({ createRegistrationKey: uuid });
-  const pickerExperiment = useWebbingPickerExperiment();
-  const [selectedLegacy, setSelectedLegacy] =
-    useState<LegacyWebbingModel | null>(null);
-  const [photo, setPhoto] = useState<PhotoAsset | null>(null);
+  const selectedLegacy = useSelectedLegacyModel(form.control);
   const [flow, setFlow] = useState<RegistrationFlowState>(
     initialRegistrationFlow,
   );
   const finished = useRef(false);
-
-  const rootError = form.formState.errors.root;
-  const rootErrorType = String(rootError?.type ?? '');
-  const submitError = rootError
-    ? ROOT_ERROR_CODES.includes(rootErrorType)
-      ? t(`${translationKey}.errors.${rootErrorType}`)
-      : rootError.message
-    : undefined;
 
   const finish = () => {
     // Navigate back and ask for a review exactly once.
@@ -134,35 +294,35 @@ export default function RegisterWebbing() {
     router.back();
   };
 
+  const saveItem = async (values: RegisterWebbingFormData | null) => {
+    if (!values) return null;
+    const webbing = await submit({
+      ...values,
+      // A legacy model's own class is shown locked, not saved as personal.
+      strengthClass: selectedLegacy?.strength_class
+        ? undefined
+        : values.strengthClass,
+    });
+    if (webbing) {
+      captureWebbingRegistered(captureGrowthEvent, experiment, {
+        modelSource: values.catalogSnapshot
+          ? 'catalog'
+          : values.modelID
+            ? 'legacy'
+            : 'manual',
+        hasPhoto: !!photo,
+      });
+      flushGrowthEvents();
+    }
+    return webbing;
+  };
+
   const run = async (values: RegisterWebbingFormData | null) => {
-    const userId = session?.user.id;
-    if (!userId) return;
     const state = await advanceRegistration(
       flow,
       photo,
       {
-        saveItem: async () => {
-          if (!values) return null;
-          const webbing = await submit({
-            ...values,
-            // A legacy model's own class is shown locked, not saved as personal.
-            strengthClass: selectedLegacy?.strength_class
-              ? undefined
-              : values.strengthClass,
-          });
-          if (webbing) {
-            captureWebbingRegistered(captureGrowthEvent, pickerExperiment, {
-              modelSource: values.catalogSnapshot
-                ? 'catalog'
-                : values.modelID
-                  ? 'legacy'
-                  : 'manual',
-              hasPhoto: !!photo,
-            });
-            flushGrowthEvents();
-          }
-          return webbing;
-        },
+        saveItem: () => saveItem(values),
         savePhoto: async ({ webbing, asset, pendingPath }) => {
           const imagePath = await saveWebbingPhoto({
             webbingId: webbing.id,
@@ -180,350 +340,274 @@ export default function RegisterWebbing() {
     if (state.phase === 'completed') finish();
   };
 
-  const handleFinish = () => {
-    if (!isOnline) {
-      form.setError('root', { type: 'offline', message: 'offline' });
-      return;
-    }
-    void form.handleSubmit((values) => run(values))();
+  return {
+    flow,
+    /** Saving, uploading or done: the draft can no longer change. */
+    isLocked:
+      flow.phase === 'savingItem' ||
+      flow.phase === 'uploadingPhoto' ||
+      flow.phase === 'completed',
+    photoFailed:
+      flow.phase === 'savedPhotoFailed' ||
+      flow.phase === 'photoCommitUnconfirmed',
+    submit: () => {
+      if (!isOnline) {
+        form.setError('root', { type: 'offline', message: 'offline' });
+        return;
+      }
+      void form.handleSubmit((values) => run(values))();
+    },
+    retryPhoto: () => void run(null),
+    continueWithoutPhoto: () => {
+      setFlow(continueWithoutPhoto(flow));
+      finish();
+    },
   };
+}
 
-  const busy = flow.phase === 'savingItem' || flow.phase === 'uploadingPhoto';
-  const photoFailed =
-    flow.phase === 'savedPhotoFailed' ||
-    flow.phase === 'photoCommitUnconfirmed';
+/** The selected legacy model, derived from the draft's `modelID`. */
+function useSelectedLegacyModel(control: Control<RegisterWebbingFormData>) {
+  const modelID = useWatch({ control, name: 'modelID' });
+  const { data } = useLegacyWebbingModels();
+  if (!modelID) return null;
+  return data?.find((model) => String(model.id) === modelID) ?? null;
+}
 
-  if (sessionLoading || !session?.user.id) {
-    return (
-      <BottomSheetModalProvider>
-        <SafeAreaView className="flex-1">
-          <View className="flex-1 px-6 pt-3 pb-8 gap-6">
-            <OnboardHeader total={1} selectedIndex={0} onBack={router.back} />
-
-            <View className="h-52">
-              <RegisterWebbingIllustration className="w-full h-full" />
-            </View>
-
-            <View>
-              <Text variant="h3" className="text-left">
-                {t('app.(modals).register-webbing.title')}
-              </Text>
-              <Text variant="muted" className="text-left">
-                {t('app.(modals).register-webbing.description')}
-              </Text>
-            </View>
-
-            {sessionLoading ? (
-              <View className="items-center py-8">
-                <ActivityIndicator />
-              </View>
-            ) : (
-              <>
-                <Alert variant="warning">
-                  <AlertIcon icon={AlertTriangleIcon} />
-                  <AlertContent>
-                    <AlertTitle>
-                      {t('app.(modals).register-webbing.authRequired.title')}
-                    </AlertTitle>
-                    <AlertDescription>
-                      {t(
-                        'app.(modals).register-webbing.authRequired.description',
-                      )}
-                    </AlertDescription>
-                  </AlertContent>
-                </Alert>
-
-                <View className="flex-grow" />
-
-                <Button
-                  className="w-full rounded-full"
-                  disabled={isLoginPending}
-                  onPress={handleLogin}
-                >
-                  <Text>
-                    {t('app.(modals).register-webbing.authRequired.action')}
-                  </Text>
-                </Button>
-              </>
-            )}
-          </View>
-        </SafeAreaView>
-      </BottomSheetModalProvider>
-    );
-  }
-
+function OfflineNotice() {
+  const { t } = useTranslation();
   return (
-    <BottomSheetModalProvider>
-      <SafeAreaView className="flex-1">
-        <KeyboardAwareScrollView
-          contentContainerClassName="px-6 pt-3 pb-8 gap-4"
-          keyboardShouldPersistTaps="handled"
-        >
-          <OnboardHeader total={1} selectedIndex={0} onBack={router.back} />
-          <PrefillForm
-            form={form}
-            selectedLegacy={selectedLegacy}
-            onSelectedLegacyChange={setSelectedLegacy}
-            photo={photo}
-            onPhotoChange={setPhoto}
-            photoLocked={busy || flow.phase === 'completed'}
-            pickerExperiment={pickerExperiment}
-          />
-
-          {!isOnline && (
-            <Alert variant="default">
-              <AlertIcon icon={CloudOffIcon} />
-              <AlertContent>
-                <AlertDescription>
-                  {t(`${translationKey}.errors.offline`)}
-                </AlertDescription>
-              </AlertContent>
-            </Alert>
-          )}
-
-          {submitError && flow.phase === 'editing' ? (
-            <Alert variant="destructive">
-              <AlertIcon icon={AlertTriangleIcon} />
-              <AlertContent>
-                <AlertDescription>{submitError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
-
-          <View className="flex-grow">
-            {/* Spacer to push paginator down */}
-          </View>
-
-          {photoFailed ? (
-            <Alert variant="warning">
-              <AlertIcon icon={AlertTriangleIcon} />
-              <AlertContent className="gap-3">
-                <AlertTitle>
-                  {t(`${translationKey}.photoPhase.failedTitle`)}
-                </AlertTitle>
-                <AlertDescription>
-                  {flow.photoError
-                    ? `${t(`${translationKey}.photo.errors.${flow.photoError}`)} `
-                    : ''}
-                  {t(`${translationKey}.photoPhase.failedDescription`)}
-                </AlertDescription>
-                <Button
-                  disabled={!isOnline || !photo}
-                  onPress={() => void run(null)}
-                >
-                  <Text>{t(`${translationKey}.photoPhase.retryPhoto`)}</Text>
-                </Button>
-                <Button
-                  variant="outline"
-                  onPress={() => {
-                    setFlow(continueWithoutPhoto(flow));
-                    finish();
-                  }}
-                >
-                  <Text>{t(`${translationKey}.photoPhase.continue`)}</Text>
-                </Button>
-              </AlertContent>
-            </Alert>
-          ) : (
-            <>
-              {flow.phase === 'uploadingPhoto' && (
-                <View className="flex-row items-center justify-center gap-2">
-                  <ActivityIndicator />
-                  <Text className="text-sm text-muted-foreground">
-                    {t(`${translationKey}.photoPhase.uploading`)}
-                  </Text>
-                </View>
-              )}
-              <OnboardNavigator
-                total={1}
-                selectedIndex={0}
-                onIndexChange={() => {}} // There is only one step
-                onFinish={handleFinish}
-                goBack={router.back}
-                isLoading={busy || flow.phase === 'completed'}
-                finishLabel={t('app.(modals).register-webbing.finishLabel')}
-                showBack={false}
-              />
-            </>
-          )}
-        </KeyboardAwareScrollView>
-      </SafeAreaView>
-    </BottomSheetModalProvider>
+    <Alert variant="default">
+      <AlertIcon icon={CloudOffIcon} />
+      <AlertContent>
+        <AlertDescription>
+          {t(`${translationKey}.errors.offline`)}
+        </AlertDescription>
+      </AlertContent>
+    </Alert>
   );
 }
 
-const PrefillForm: React.FC<{
-  form: UseFormReturn<RegisterWebbingFormData>;
-  selectedLegacy: LegacyWebbingModel | null;
-  onSelectedLegacyChange: (model: LegacyWebbingModel | null) => void;
-  photo: PhotoAsset | null;
-  onPhotoChange: (photo: PhotoAsset | null) => void;
-  photoLocked: boolean;
-  pickerExperiment: WebbingPickerExperiment;
-}> = ({
-  form,
-  selectedLegacy,
-  onSelectedLegacyChange,
-  photo,
-  onPhotoChange,
-  photoLocked,
-  pickerExperiment,
-}) => {
+function SubmitError() {
+  const { t } = useTranslation();
+  const { errors } = useFormState<RegisterWebbingFormData>();
+  const rootError = errors.root;
+  if (!rootError) return null;
+
+  const type = String(rootError.type ?? '');
+  const message = ROOT_ERROR_CODES.has(type)
+    ? t(`${translationKey}.errors.${type}`)
+    : rootError.message;
+  if (!message) return null;
+
+  return (
+    <Alert variant="destructive">
+      <AlertIcon icon={AlertTriangleIcon} />
+      <AlertContent>
+        <AlertDescription>{message}</AlertDescription>
+      </AlertContent>
+    </Alert>
+  );
+}
+
+function PhotoUploading() {
+  const { t } = useTranslation();
+  return (
+    <View className="flex-row items-center justify-center gap-2">
+      <ActivityIndicator />
+      <Text className="text-sm text-muted-foreground">
+        {t(`${translationKey}.photoPhase.uploading`)}
+      </Text>
+    </View>
+  );
+}
+
+function PhotoFailedAlert({
+  error,
+  canRetry,
+  onRetry,
+  onContinue,
+}: {
+  error: WebbingPhotoErrorCode | null;
+  canRetry: boolean;
+  onRetry: () => void;
+  onContinue: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Alert variant="warning">
+      <AlertIcon icon={AlertTriangleIcon} />
+      <AlertContent className="gap-3">
+        <AlertTitle>{t(`${translationKey}.photoPhase.failedTitle`)}</AlertTitle>
+        <AlertDescription>
+          {error ? `${t(`${translationKey}.photo.errors.${error}`)} ` : ''}
+          {t(`${translationKey}.photoPhase.failedDescription`)}
+        </AlertDescription>
+        <Button disabled={!canRetry} onPress={onRetry}>
+          <Text>{t(`${translationKey}.photoPhase.retryPhoto`)}</Text>
+        </Button>
+        <Button variant="outline" onPress={onContinue}>
+          <Text>{t(`${translationKey}.photoPhase.continue`)}</Text>
+        </Button>
+      </AlertContent>
+    </Alert>
+  );
+}
+
+function LengthField() {
+  const { control, setValue } = useFormContext<RegisterWebbingFormData>();
+  const [leftLoop, rightLoop, length] = useWatch({
+    control,
+    name: ['leftLoop', 'rightLoop', 'length'],
+  });
+  const { errors } = useFormState({ control, name: 'length' });
+
+  return (
+    <WebbingInput
+      leftLoop={leftLoop}
+      rightLoop={rightLoop}
+      length={length}
+      onLeftLoopChange={(value) => setValue('leftLoop', value)}
+      onRightLoopChange={(value) => setValue('rightLoop', value)}
+      onLengthChange={(value) =>
+        setValue('length', value, { shouldValidate: true })
+      }
+      error={errors.length?.message ?? null}
+    />
+  );
+}
+
+function ModelField({ experiment }: { experiment: WebbingPickerExperiment }) {
   const { t } = useTranslation();
   const labelId = useId();
-  const [leftLoop, rightLoop, length, catalogSnapshot] = useWatch({
-    control: form.control,
-    name: ['leftLoop', 'rightLoop', 'length', 'catalogSnapshot'],
-  });
+  const { control, setValue, getValues } =
+    useFormContext<RegisterWebbingFormData>();
+  const catalogSnapshot = useWatch({ control, name: 'catalogSnapshot' });
+  const selectedLegacy = useSelectedLegacyModel(control);
   // The label last filled in automatically; user edits are never replaced.
   const autoLabel = useRef<string | null>(null);
 
-  const applySelection = (
-    snapshot: WebbingCatalogSnapshot | null,
-    legacy: LegacyWebbingModel | null,
-  ) => {
+  const value: WebbingModelSelection | null = catalogSnapshot
+    ? { source: 'catalog', snapshot: catalogSnapshot }
+    : selectedLegacy
+      ? { source: 'legacy', model: selectedLegacy }
+      : null;
+
+  const handleChange = (selection: WebbingModelSelection | null) => {
     // The selection is copied into the draft; catalog refetches never replace it.
-    form.setValue('catalogSnapshot', snapshot, { shouldValidate: true });
-    form.setValue('modelID', legacy ? legacy.id.toString() : '', {
-      shouldValidate: true,
-    });
-    onSelectedLegacyChange(legacy);
-    const suggestion = snapshot
-      ? formatCatalogModelName(snapshot)
-      : (legacy?.name ?? null);
-    const nextLabel = nextAutoLabel(
-      form.getValues('tagName'),
-      autoLabel.current,
-      suggestion,
+    setValue(
+      'catalogSnapshot',
+      selection?.source === 'catalog' ? selection.snapshot : null,
+      { shouldValidate: true },
     );
-    if (nextLabel !== form.getValues('tagName')) {
-      form.setValue('tagName', nextLabel, { shouldValidate: !!nextLabel });
+    setValue(
+      'modelID',
+      selection?.source === 'legacy' ? String(selection.model.id) : '',
+      { shouldValidate: true },
+    );
+    const suggestion = selection ? selectionName(selection) : null;
+    const tagName = getValues('tagName');
+    const nextLabel = nextAutoLabel(tagName, autoLabel.current, suggestion);
+    if (nextLabel !== tagName) {
+      setValue('tagName', nextLabel, { shouldValidate: !!nextLabel });
     }
     autoLabel.current = suggestion;
   };
 
   return (
-    <View className="gap-6">
-      <View className="h-52">
-        <RegisterWebbingIllustration className="w-full h-full" />
-      </View>
-
-      <View>
-        <Text variant="h3" className="text-left">
-          {t('app.(modals).register-webbing.title')}
+    <View className="gap-3">
+      <WebbingCatalogPicker
+        labelId={labelId}
+        value={value}
+        onChange={handleChange}
+        experiment={experiment}
+      />
+      {catalogSnapshot ? (
+        <SelectedCatalogDetails snapshot={catalogSnapshot} />
+      ) : !selectedLegacy ? (
+        <Text variant="muted" className="text-sm">
+          {t(`${translationKey}.selectModel.manualHint`)}
         </Text>
-        <Text variant="muted" className="text-left">
-          {t('app.(modals).register-webbing.description')}
-        </Text>
-      </View>
-
-      <WebbingInput
-        leftLoop={leftLoop}
-        rightLoop={rightLoop}
-        length={length}
-        onLeftLoopChange={(value) => form.setValue('leftLoop', value)}
-        onRightLoopChange={(value) => form.setValue('rightLoop', value)}
-        onLengthChange={(value) =>
-          form.setValue('length', value, { shouldValidate: true })
-        }
-        error={form.formState.errors.length?.message ?? null}
-      />
-
-      <View className="gap-3">
-        <WebbingCatalogPicker
-          labelId={labelId}
-          selectedSnapshot={catalogSnapshot ?? null}
-          selectedLegacy={selectedLegacy}
-          onSelectCatalog={(snapshot) => applySelection(snapshot, null)}
-          onSelectLegacy={(model) => applySelection(null, model)}
-          onClear={() => applySelection(null, null)}
-          experiment={pickerExperiment}
-        />
-        {catalogSnapshot ? (
-          <SelectedCatalogDetails snapshot={catalogSnapshot} />
-        ) : !selectedLegacy ? (
-          <Text variant="muted" className="text-sm">
-            {t(`${translationKey}.selectModel.manualHint`)}
-          </Text>
-        ) : null}
-      </View>
-
-      <StrengthClassSelector
-        control={form.control}
-        legacyModel={selectedLegacy}
-        catalogClass={catalogSnapshot?.isaClass ?? null}
-      />
-
-      <Controller
-        control={form.control}
-        name="tagName"
-        render={({ field, fieldState }) => (
-          <View className="gap-2">
-            <Label nativeID="tagname">
-              {t('app.(modals).register-webbing.tagName.label')}
-            </Label>
-            <Input
-              value={field.value}
-              onChangeText={field.onChange}
-              placeholder={t(
-                'app.(modals).register-webbing.tagName.placeholder',
-              )}
-              className={fieldState.error && 'border-destructive'}
-              aria-labelledby="tagname"
-            />
-            {fieldState.error ? (
-              <Text variant="small" className="text-destructive">
-                {fieldState.error.message}
-              </Text>
-            ) : null}
-          </View>
-        )}
-      />
-
-      <PhotoField
-        photo={photo}
-        onChange={onPhotoChange}
-        disabled={photoLocked}
-      />
-
-      <Controller
-        control={form.control}
-        name="note"
-        render={({ field, fieldState }) => (
-          <View className="gap-2">
-            <Label nativeID="note">
-              {t('app.(modals).register-webbing.note.label')}{' '}
-              <Text variant="muted">{t('common.optional')}</Text>
-            </Label>
-            <Textarea
-              keyboardType="default"
-              returnKeyType="done"
-              placeholder={t('app.(modals).register-webbing.note.placeholder')}
-              {...field}
-              submitBehavior="blurAndSubmit"
-              onChangeText={(text) => field.onChange(text)}
-              value={field.value}
-              className={fieldState.error && 'border-destructive'}
-              aria-labelledby="note"
-            />
-            {fieldState.error ? (
-              <Text variant="small" className="text-destructive">
-                {fieldState.error.message}
-              </Text>
-            ) : null}
-          </View>
-        )}
-      />
+      ) : null}
     </View>
   );
-};
+}
+
+function TagNameField() {
+  const { t } = useTranslation();
+  const { control } = useFormContext<RegisterWebbingFormData>();
+  return (
+    <Controller
+      control={control}
+      name="tagName"
+      render={({ field, fieldState }) => (
+        <View className="gap-2">
+          <Label nativeID="tagname">
+            {t(`${translationKey}.tagName.label`)}
+          </Label>
+          <Input
+            value={field.value}
+            onChangeText={field.onChange}
+            placeholder={t(`${translationKey}.tagName.placeholder`)}
+            className={fieldState.error && 'border-destructive'}
+            aria-labelledby="tagname"
+          />
+          <FieldError message={fieldState.error?.message} />
+        </View>
+      )}
+    />
+  );
+}
+
+function NoteField() {
+  const { t } = useTranslation();
+  const { control } = useFormContext<RegisterWebbingFormData>();
+  return (
+    <Controller
+      control={control}
+      name="note"
+      render={({ field, fieldState }) => (
+        <View className="gap-2">
+          <Label nativeID="note">
+            {t(`${translationKey}.note.label`)}{' '}
+            <Text variant="muted">{t('common.optional')}</Text>
+          </Label>
+          <Textarea
+            keyboardType="default"
+            returnKeyType="done"
+            placeholder={t(`${translationKey}.note.placeholder`)}
+            {...field}
+            submitBehavior="blurAndSubmit"
+            onChangeText={(text) => field.onChange(text)}
+            value={field.value}
+            className={fieldState.error && 'border-destructive'}
+            aria-labelledby="note"
+          />
+          <FieldError message={fieldState.error?.message} />
+        </View>
+      )}
+    />
+  );
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <Text variant="small" className="text-destructive">
+      {message}
+    </Text>
+  );
+}
 
 // Personal photo for the physical item, uploaded after the item is saved.
-const PhotoField: React.FC<{
+function PhotoField({
+  photo,
+  onChange,
+  disabled,
+}: {
   photo: PhotoAsset | null;
   onChange: (photo: PhotoAsset | null) => void;
   disabled: boolean;
-}> = ({ photo, onChange, disabled }) => {
+}) {
   const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [isPicking, setIsPicking] = useState(false);
@@ -538,8 +622,9 @@ const PhotoField: React.FC<{
         aspect: [...WEBBING_PHOTO_PICKER_OPTIONS.aspect],
       });
       // Cancelling keeps the previous selection and is not an error.
-      if (!result.canceled && result.assets[0]) {
-        const asset = result.assets[0];
+      const asset = result.canceled ? undefined : result.assets[0];
+      if (asset) {
+        // Throws for formats we can't store.
         getStaticPhotoType(asset.mimeType);
         setError(null);
         onChange({
@@ -549,14 +634,11 @@ const PhotoField: React.FC<{
         });
       }
     } catch (cause) {
-      setError(
-        t(
-          `${translationKey}.photo.errors.${
-            cause instanceof WebbingPhotoError ? cause.code : 'unreadable'
-          }`,
-        ),
-      );
+      const code =
+        cause instanceof WebbingPhotoError ? cause.code : 'unreadable';
+      setError(t(`${translationKey}.photo.errors.${code}`));
     }
+    // Not `finally`: React Compiler can't compile it yet.
     setIsPicking(false);
   };
 
@@ -577,26 +659,7 @@ const PhotoField: React.FC<{
           onPress={() => void choose()}
           className="h-24 w-32 items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-muted/30"
         >
-          {photo ? (
-            <Image
-              source={{ uri: photo.uri }}
-              contentFit="cover"
-              style={{ width: '100%', height: '100%' }}
-            />
-          ) : isPicking ? (
-            <ActivityIndicator />
-          ) : (
-            <>
-              <Icon
-                as={CameraIcon}
-                size={22}
-                className="text-muted-foreground"
-              />
-              <Text className="text-xs text-muted-foreground">
-                {t(`${translationKey}.photo.add`)}
-              </Text>
-            </>
-          )}
+          <PhotoPreview photo={photo} isPicking={isPicking} />
         </Pressable>
         {photo && !disabled && (
           <Button
@@ -610,34 +673,58 @@ const PhotoField: React.FC<{
           </Button>
         )}
       </View>
-      {error ? (
-        <Text variant="small" className="text-destructive">
-          {error}
-        </Text>
-      ) : null}
+      <FieldError message={error ?? undefined} />
     </View>
   );
-};
+}
+
+function PhotoPreview({
+  photo,
+  isPicking,
+}: {
+  photo: PhotoAsset | null;
+  isPicking: boolean;
+}) {
+  const { t } = useTranslation();
+  if (photo) {
+    return (
+      <Image
+        source={{ uri: photo.uri }}
+        contentFit="cover"
+        style={{ width: '100%', height: '100%' }}
+      />
+    );
+  }
+  if (isPicking) return <ActivityIndicator />;
+  return (
+    <>
+      <Icon as={CameraIcon} size={22} className="text-muted-foreground" />
+      <Text className="text-xs text-muted-foreground">
+        {t(`${translationKey}.photo.add`)}
+      </Text>
+    </>
+  );
+}
 
 // Personal strength class. A legacy model's own class is shown locked; a
 // SlackData class is shown separately and never becomes a personal value.
-const StrengthClassSelector: React.FC<{
-  control: Control<RegisterWebbingFormData>;
-  legacyModel: LegacyWebbingModel | null;
-  catalogClass: string | null;
-}> = ({ control, legacyModel, catalogClass }) => {
+function StrengthClassSelector() {
   const { t } = useTranslation();
+  const { control } = useFormContext<RegisterWebbingFormData>();
   const { field } = useController({ control, name: 'strengthClass' });
+  const catalogSnapshot = useWatch({ control, name: 'catalogSnapshot' });
+  const legacyModel = useSelectedLegacyModel(control);
 
   const lockedClass = legacyModel?.strength_class ?? null;
   const isLocked = !!lockedClass;
   const displayValue = isLocked ? lockedClass : field.value;
+  const catalogClass = catalogSnapshot?.isaClass ?? null;
   const recommendedDays = legacyModel?.recommended_lifetime_days ?? null;
 
   return (
     <View className="gap-2">
       <Label nativeID="strengthClass">
-        {t('app.(modals).register-webbing.strengthClass.label')}
+        {t(`${translationKey}.strengthClass.label`)}
         {!isLocked && (
           <>
             {' '}
@@ -646,7 +733,6 @@ const StrengthClassSelector: React.FC<{
         )}
       </Label>
 
-      {/* Strength class buttons */}
       <View className="flex-row gap-2">
         {STRENGTH_CLASS_OPTIONS.map((option) => {
           const isSelected = displayValue === option;
@@ -679,13 +765,13 @@ const StrengthClassSelector: React.FC<{
       </View>
 
       <Text variant="muted" className="text-sm">
-        {isLocked
-          ? t('app.(modals).register-webbing.strengthClass.lockedHint')
-          : t('app.(modals).register-webbing.strengthClass.personalHint')}
+        {t(
+          `${translationKey}.strengthClass.${isLocked ? 'lockedHint' : 'personalHint'}`,
+        )}
       </Text>
       {catalogClass && (
         <Text variant="muted" className="text-sm">
-          {t('app.(modals).register-webbing.strengthClass.catalogClass', {
+          {t(`${translationKey}.strengthClass.catalogClass`, {
             value: catalogClass,
           })}
         </Text>
@@ -694,11 +780,11 @@ const StrengthClassSelector: React.FC<{
       {/* Only a legacy model carries a supported recommended lifetime */}
       {recommendedDays ? (
         <Text variant="muted" className="text-sm">
-          {t('app.(modals).register-webbing.recommendedLifetime', {
+          {t(`${translationKey}.recommendedLifetime`, {
             days: recommendedDays,
           })}
         </Text>
       ) : null}
     </View>
   );
-};
+}

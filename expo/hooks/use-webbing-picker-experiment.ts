@@ -1,36 +1,34 @@
+import { useQuery } from '@tanstack/react-query';
 import {
   getWebbingPickerStorage,
   getWebbingPickerVariant,
 } from '~/features/growth/analytics';
 import {
   resolveWebbingPickerLayout,
+  WEBBING_PICKER_EXPERIMENT,
   WEBBING_PICKER_FALLBACK,
   type WebbingPickerExperiment,
 } from '~/features/growth/webbing-picker-layout';
-import { useState } from 'react';
-
-import { useMountEffect } from '~/hooks/use-mount-effect';
 
 /**
- * Resolve the picker layout once, when registration opens, so it is usually
- * ready before the sheet is. Until then (max ~1.8 s) the unenrolled fallback
- * is used; the picker locks whichever value it had when the sheet opened.
+ * Resolve the picker layout when registration opens, so it is usually ready
+ * before the sheet is. Until then (max ~1.8 s) the unenrolled fallback is
+ * used; the picker locks whichever value it had when the sheet opened.
+ * Enrollment itself is sticky in storage, so re-resolving is cheap and safe.
  */
 export function useWebbingPickerExperiment(): WebbingPickerExperiment {
-  const [experiment, setExperiment] = useState(WEBBING_PICKER_FALLBACK);
-
-  useMountEffect(() => {
-    let mounted = true;
-    void resolveWebbingPickerLayout(
-      getWebbingPickerStorage(),
-      getWebbingPickerVariant,
-    ).then((resolved) => {
-      if (mounted) setExperiment(resolved);
-    });
-    return () => {
-      mounted = false;
-    };
+  const { data } = useQuery({
+    queryKey: ['experiment', WEBBING_PICKER_EXPERIMENT],
+    queryFn: () =>
+      resolveWebbingPickerLayout(
+        getWebbingPickerStorage(),
+        getWebbingPickerVariant,
+      ),
+    // Resolution never throws and reads a stored enrollment offline too.
+    networkMode: 'always',
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
-
-  return experiment;
+  return data ?? WEBBING_PICKER_FALLBACK;
 }

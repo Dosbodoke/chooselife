@@ -110,18 +110,19 @@ export function applyCatalogFilters(
   filters: CatalogFilter[],
 ): WebbingCatalogSnapshot[] {
   if (!filters.length) return items;
-  return items.filter((model) =>
-    filters.every((filter) => {
+  return items.filter((model) => {
+    const materials = new Set(model.materials);
+    return filters.every((filter) => {
       switch (filter.kind) {
         case 'isa-certified':
           return model.isaCertified === true;
         case 'in-production':
           return model.active !== false;
         case 'material':
-          return (model.materials ?? []).includes(filter.material);
+          return materials.has(filter.material);
       }
-    }),
-  );
+    });
+  });
 }
 
 export type CatalogFlag =

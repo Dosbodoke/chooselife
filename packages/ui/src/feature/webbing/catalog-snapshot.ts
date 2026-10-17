@@ -194,16 +194,17 @@ function normalizeMaterials(value: unknown, degraded: string[]) {
     degraded.push('material');
     return null;
   }
-  const materials: string[] = [];
+  // A Set dedupes while keeping first-seen order.
+  const materials = new Set<string>();
   for (const entry of value) {
     const material = typeof entry === 'string' ? entry.trim() : '';
     if (!material || material.length > 64) {
       degraded.push('material');
       continue;
     }
-    if (!materials.includes(material)) materials.push(material);
+    materials.add(material);
   }
-  return materials.length ? materials.slice(0, 10) : null;
+  return materials.size ? [...materials].slice(0, 10) : null;
 }
 
 function normalizeStretch(value: unknown, degraded: string[]) {

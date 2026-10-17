@@ -2,6 +2,8 @@ import {
   getTranslatedStatus,
   resolveWebbingSpecs,
   useWebbingUsage,
+  type ResolvedWebbingSpecs,
+  type WebbingLifetimeStatus,
 } from '@chooselife/ui';
 import { WebbingPhotoError } from '~/features/webbing/photo-upload';
 import * as ImagePicker from 'expo-image-picker';
@@ -143,6 +145,7 @@ function WebbingPhoto({ webbing }: { webbing: WebbingWithUsage }) {
     } catch (error) {
       showError(error);
     }
+    // Not `finally`: React Compiler can't compile it yet.
     setIsPicking(false);
   };
 
@@ -205,110 +208,137 @@ function WebbingPhoto({ webbing }: { webbing: WebbingWithUsage }) {
   );
 }
 
+const STATUS_COLORS: Record<WebbingLifetimeStatus, string> = {
+  good: '#059669',
+  unknown: '#059669',
+  inspect: '#b45309',
+  replace: '#dc2626',
+};
+
 function WebbingPhotoRow({ webbing }: { webbing: WebbingWithUsage }) {
-  const { t, i18n } = useTranslation();
-  const resolved = resolveWebbingSpecs(webbing);
-  const lifetime = resolved.recommendedLifetimeDays;
-  const modelStrength = resolved.modelStrengthClass?.value;
-  const personalStrength = resolved.personalStrengthClass;
-  const { data: usage, isError: usageError } = useWebbingUsage(
-    webbing.id,
-    lifetime,
-  );
-  const loops = Number(webbing.left_loop) + Number(webbing.right_loop);
-  const color =
-    usage?.status === 'replace'
-      ? '#dc2626'
-      : usage?.status === 'inspect'
-        ? '#b45309'
-        : '#059669';
-  const specs = [
-    `${webbing.length} m`,
-    resolved.materials?.join(' / '),
-    resolved.construction,
-    `${loops} ${t(loops === 1 ? 'common.loop' : 'common.loops')}`,
-  ]
-    .filter(Boolean)
-    .join(' · ');
-  const usageCounts = usage
-    ? `${t(`${translationKey}.usedDays`, { count: usage.usageDays })} · ${t(`${translationKey}.rigs`, { count: usage.rigCount })}`
-    : null;
+  const specs = resolveWebbingSpecs(webbing);
 
   return (
     <View className="rounded-2xl bg-white border border-slate-200 p-4 gap-4">
       <View className="flex-row gap-3">
         <WebbingPhoto webbing={webbing} />
-        <Link asChild href={`/webbing/${webbing.id}`}>
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel={t(`${translationKey}.viewHistory`, {
-              name: getWebbingName(webbing),
-            })}
-            className="flex-1 flex-row items-center gap-2 min-h-11"
-          >
-            <View className="flex-1 gap-1.5">
-              <Text className="text-base font-semibold text-slate-900">
-                {getWebbingName(webbing)}
-              </Text>
-              <Text className="text-xs text-slate-500">
-                ID {webbing.id}
-                {modelStrength
-                  ? ` · ${t(`${translationKey}.strength`, { strength: modelStrength })}`
-                  : personalStrength
-                    ? ` · ${t(`${translationKey}.personalStrength`, { strength: personalStrength })}`
-                    : ''}
-                {webbing.isUsed ? ` · ${t(`${translationKey}.riggedNow`)}` : ''}
-              </Text>
-              <Text className="text-xs leading-5 text-slate-500">{specs}</Text>
-            </View>
-            <Icon as={ChevronRightIcon} size={16} className="text-slate-400" />
-          </Pressable>
-        </Link>
+        <WebbingSummaryLink webbing={webbing} specs={specs} />
       </View>
-      {usageError ? (
-        <Text className="text-xs text-muted-foreground">
-          {t(`${translationKey}.usageError`)}
-        </Text>
-      ) : !usage ? (
-        <Skeleton className="h-4 w-full rounded" />
-      ) : lifetime && usage.percentageUsed !== null ? (
-        <View className="gap-1.5">
-          <View className="flex-row justify-between gap-2 flex-wrap">
-            <Text className="text-xs text-slate-500">
-              {t(`${translationKey}.daysUsed`, {
-                used: usage.usageDays,
-                total: lifetime,
-              })}
-            </Text>
-            <Text className="text-xs font-semibold" style={{ color }}>
-              {getTranslatedStatus(usage.status, i18n.language)}
-            </Text>
-          </View>
-          <View
-            accessibilityRole="progressbar"
-            accessibilityLabel={t('components.webbing-detail.lifetime.title')}
-            accessibilityValue={{
-              min: 0,
-              max: 100,
-              now: Math.max(0, Math.min(100, usage.percentageUsed)),
-            }}
-            className="h-1 rounded-full bg-slate-100 overflow-hidden"
-          >
-            <View
-              className="h-full rounded-full"
-              style={{
-                width: `${Math.max(0, Math.min(100, usage.percentageUsed))}%`,
-                backgroundColor: color,
-              }}
-            />
-          </View>
+      <WebbingLifetime
+        webbingId={webbing.id}
+        lifetime={specs.recommendedLifetimeDays}
+      />
+    </View>
+  );
+}
+
+function WebbingSummaryLink({
+  webbing,
+  specs,
+}: {
+  webbing: WebbingWithUsage;
+  specs: ResolvedWebbingSpecs;
+}) {
+  const { t } = useTranslation();
+  const name = getWebbingName(webbing);
+  const loops = Number(webbing.left_loop) + Number(webbing.right_loop);
+  const modelStrength = specs.modelStrengthClass?.value;
+  const strength = modelStrength
+    ? t(`${translationKey}.strength`, { strength: modelStrength })
+    : specs.personalStrengthClass
+      ? t(`${translationKey}.personalStrength`, {
+          strength: specs.personalStrengthClass,
+        })
+      : null;
+  const details = [
+    `ID ${webbing.id}`,
+    strength,
+    webbing.isUsed ? t(`${translationKey}.riggedNow`) : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const specLine = [
+    `${webbing.length} m`,
+    specs.materials?.join(' / '),
+    specs.construction,
+    `${loops} ${t(loops === 1 ? 'common.loop' : 'common.loops')}`,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  return (
+    <Link asChild href={`/webbing/${webbing.id}`}>
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={t(`${translationKey}.viewHistory`, { name })}
+        className="flex-1 flex-row items-center gap-2 min-h-11"
+      >
+        <View className="flex-1 gap-1.5">
+          <Text className="text-base font-semibold text-slate-900">{name}</Text>
+          <Text className="text-xs text-slate-500">{details}</Text>
+          <Text className="text-xs leading-5 text-slate-500">{specLine}</Text>
         </View>
-      ) : (
-        // No supported lifetime: show recorded use, no bar or remaining life.
+        <Icon as={ChevronRightIcon} size={16} className="text-slate-400" />
+      </Pressable>
+    </Link>
+  );
+}
+
+function WebbingLifetime({
+  webbingId,
+  lifetime,
+}: {
+  webbingId: number;
+  lifetime: number | null;
+}) {
+  const { t, i18n } = useTranslation();
+  const { data: usage, isError } = useWebbingUsage(webbingId, lifetime);
+
+  if (isError) {
+    return (
+      <Text className="text-xs text-muted-foreground">
+        {t(`${translationKey}.usageError`)}
+      </Text>
+    );
+  }
+  if (!usage) return <Skeleton className="h-4 w-full rounded" />;
+  if (!lifetime || usage.percentageUsed === null) {
+    // No supported lifetime: show recorded use, no bar or remaining life.
+    return (
+      <Text className="text-xs text-slate-500">
+        {t(`${translationKey}.usedDays`, { count: usage.usageDays })} ·{' '}
+        {t(`${translationKey}.rigs`, { count: usage.rigCount })} ·{' '}
+        {t(`${translationKey}.noLifetime`)}
+      </Text>
+    );
+  }
+
+  const color = STATUS_COLORS[usage.status];
+  const percent = Math.max(0, Math.min(100, usage.percentageUsed));
+  return (
+    <View className="gap-1.5">
+      <View className="flex-row justify-between gap-2 flex-wrap">
         <Text className="text-xs text-slate-500">
-          {usageCounts} · {t(`${translationKey}.noLifetime`)}
+          {t(`${translationKey}.daysUsed`, {
+            used: usage.usageDays,
+            total: lifetime,
+          })}
         </Text>
-      )}
+        <Text className="text-xs font-semibold" style={{ color }}>
+          {getTranslatedStatus(usage.status, i18n.language)}
+        </Text>
+      </View>
+      <View
+        accessibilityRole="progressbar"
+        accessibilityLabel={t('components.webbing-detail.lifetime.title')}
+        accessibilityValue={{ min: 0, max: 100, now: percent }}
+        className="h-1 rounded-full bg-slate-100 overflow-hidden"
+      >
+        <View
+          className="h-full rounded-full"
+          style={{ width: `${percent}%`, backgroundColor: color }}
+        />
+      </View>
     </View>
   );
 }
