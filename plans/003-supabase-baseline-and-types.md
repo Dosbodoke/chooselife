@@ -87,6 +87,8 @@ Modify only:
 - `scripts/check-database-catalog.mjs`, `scripts/check-database-catalog.test.mjs` to create
 - `scripts/verify-database.mjs` and its tests, limited to integrating catalog/type verification
 - `packages/database/database-generated.types.ts`
+- `packages/database/index.ts`, limited to the trigger-backed optional `highline.Insert.slug` override and its explanation, preserving all existing overrides and re-exports
+- `supabase-gen-types.sh` and new `scripts/supabase-gen-types.test.mjs`, limited to canonical Prettier formatting and verification of its failure-preservation contract
 - `next/app/api/courses/highline-beginner/access/route.ts`
 - `.github/workflows/database.yml`, `package.json`, and `supabase/README.md` for the new check commands/documentation
 - Minimal type-only fixes in direct generated-type consumers under `packages/ui/src/`, `expo/`, or `next/`, **only** for new errors demonstrated by the before/after typechecks. Record each such file, diagnostic and fix in the notes before editing it.
@@ -168,17 +170,23 @@ bash supabase-gen-types.sh --check --workdir "$DB_VERIFY_WORKDIR"
 
 Do not hand-splice blocks or copy output from the developer's existing database. Import the shared `Database` type into the entitlement route and change `createClient(` to `createClient<Database>(`. Keep bearer authorization, disabled session persistence, RLS, responses and R2 signing unchanged.
 
+Scope refinement after the first003.4 attempt: the clean generated artifact correctly requires `highline.Insert.slug` because the column is NOT NULL with no default. The existing `set_highline_slug` BEFORE INSERT trigger unconditionally supplies it, so put `slug?: string` in the existing shared `MergeDeep` highline Insert override, with a short trigger explanation. Keep `Row.slug` required, all existing PostGIS/notification overrides and all re-exports unchanged. This corrects two demonstrated new errors in `next/components/CreateHighline.tsx:194` and `expo/components/highline/highline-form.tsx:226`, without changing either insert payload. The old generated file had the optionality hand-spliced; do not repeat that. The original task brief excluded the override file too narrowly.
+
+The raw CLI output also has15trailing-whitespace lines and conflicts with the repository formatting command. Supersede the initial raw-output decision: normalize the entire generated stream with the already installed repository Prettier, currently3.8.1, before validation/comparison/atomic replacement. Keep `set -o pipefail`, existing nonempty/export validation, temp cleanup, output guards and0/1/2exit contract. A CLI failure after emitting valid partial output or a formatter failure must exit2 and preserve existing destination bytes in both write and check modes. Use a fixed canonical `--stdin-filepath` pointing to `packages/database/database-generated.types.ts`, and run only the formatter subprocess from repository root. Do not derive formatting configuration from `--output`, a scratch directory or the caller cwd; preserve relative output-path behavior. No new dependency, ignore file, generic formatting framework or SQL change is needed.
+
+Add bounded tests in `scripts/supabase-gen-types.test.mjs` that execute the real shell helper with fixture executables. Cover canonical write/equality, destination/cwd configuration independence, drift preservation, partial-output CLI failure, formatter failure and temporary-file cleanup. The existing verifier tests replace the type helper and cannot verify these contracts. Check the real generated artifact with Prettier, show that formatting it again changes no bytes, and show generator `--check` still exits0. Keep failures and formatting tests independent of a live database.
+
 Run the three consumer typechecks. Fix only new errors caused by accurate generated contracts, using real nullable/optional shapes and the existing shared override mechanism. Compare with Step 1's diagnostics. Runtime logic changes or errors unrelated to regeneration require a separate scope decision; report them instead of expanding this plan.
 
 **Verify:** `rg -n 'choosen_course_entitlements|festival_companion_config|festival_companion_tokens|register_festival_companion_token|unregister_festival_companion_installation' packages/database/database-generated.types.ts` finds all five identities; the complete file check exits 0; all consumer typechecks exit 0.
 
 ### 5. Make complete type parity a blocking CI gate
 
-Change `.github/workflows/database.yml` to invoke `pnpm db:verify --check-types`. Include workflow path triggers for direct type consumers, generated types and the safe generator. Keep the workflow verification-only and cloud-credential-free. Document full regeneration from clean replay and the stage comparison result in the README/notes.
+Change `.github/workflows/database.yml` to invoke `pnpm db:verify --check-types` and include the new generator tests alongside the existing helper/catalog tests. Include workflow path triggers for direct type consumers, generated types and the safe generator. Keep the workflow verification-only and cloud-credential-free. Document full regeneration from clean replay and the stage comparison result in the README/notes.
 
 Prove the gate rejects drift using a scratch `--output` file or disposable checkout: generate a valid artifact, change a field or append a sentinel, run `--check`, and assert nonzero exit with unchanged bytes. The production artifact must remain untouched by the negative test. Integrate the catalog JSON capture into verification as a reusable step for Plan 004; there is no checked-in dump of staging data.
 
-**Verify:** `node --test scripts/verify-database.test.mjs scripts/check-database-catalog.test.mjs`, `pnpm db:verify --check-types`, and the application gates below all pass.
+**Verify:** `node --test scripts/verify-database.test.mjs scripts/check-database-catalog.test.mjs scripts/supabase-gen-types.test.mjs`, `pnpm db:verify --check-types`, and the application gates below all pass.
 
 ## Application gates
 
