@@ -10,6 +10,7 @@
 - Depends on: Plan 002, isolated verification and pinned tooling
 - Category: migration, correctness, dx
 - Planned at: commit `427007b`, October 16, 2026
+- Execution status: BLOCKED at 003.2 after the bounded parser recovery. Valid U+2028/U+2029 payload strings are still rejected by connector parsing. Later steps remain pending acceptance.
 
 ## Outcome and decisions
 
@@ -125,6 +126,8 @@ Create `scripts/check-database-catalog.mjs <left.json> <right.json>` accepting t
 Wrapper contract refined after the October 17 review: JSON payload strings are opaque data, including comments, defaults and configuration containing `<untrusted-data-…` text. Recognize the supported wrapper structure without scanning those strings as protocol. Apply connector delimiter/prose checks outside the framed JSON payload, and recognize JSON-lines events without interpreting their JSON strings as connector text. A bare catalog, CLI rows, connector text, connector `{result}` and stream-json must all accept the same valid payload. Explicit stream errors and malformed/additional boundaries outside the payload must still fail closed.
 
 The original checkpoint exhausted two correction rounds and is blocked on the reproduced regression: setting a schema comment to `Documentation example: <untrusted-data-deadbeef` is valid in bare JSON but rejected in connector and stream wrappers. One bounded parser recovery under this refined contract may change only the comparator, its tests and notes. It must prove valid payload prefixes round-trip across wrappers while preserving every prior rejection case, then receive a new fresh Sol review. If that recovery fails, retain BLOCKED status and report the concrete remaining issue instead of starting another correction loop.
+
+Recovery outcome: the ASCII case is fixed, but the final fresh review reproduced another valid JSON case. Raw U+2028 or U+2029 inside a payload string makes JavaScript multiline regex anchors recognize extra connector delimiter lines. Bare JSON accepts the same payload. The next parser proposal must distinguish physical connector framing from every character allowed in JSON strings, including these Unicode separators. The single recovery allowance is exhausted; no further implementation loop was started.
 
 **Verify:** `node --test scripts/check-database-catalog.test.mjs` passes. Fixture tests must detect a lost RLS policy, changed EXECUTE grant, altered function body, missing auth trigger, changed cron command and changed enum order; reordered unordered object arrays must compare equal. Include connector-wrapper and invalid-input cases, valid tag-like text inside payload strings across supported wrappers, and malformed tag prefixes outside the connector payload. Test fixtures contain synthetic metadata only.
 

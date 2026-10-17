@@ -576,6 +576,18 @@ Exact limits of this recovery:
 - Step 2 revision 1 counts every non-extension schema owned by the database owner as an application schema. Locally that includes `extensions` and `_realtime`, which the platform creates. See the revision 1 judgments.
 - Step 2 found no verification-only extension or helper to exclude. The plan anticipated some. The pre-tool and post-tool captures are equal, so the query has no provenance exclusion.
 
+## Parent final recovery review
+
+Fresh Sol `/root/supabase_003_2_recovery_review` returned FIX-FIRST P2. JavaScript multiline anchors in `UNTRUSTED_TAG` recognize U+2028 and U+2029 inside valid JSON strings as line boundaries. A schema comment containing either character around complete connector tags parses in bare JSON but is rejected in connector text and connector `{result}`. This still violates the revised opaque-payload contract. The parent independently reproduced both variants. Evidence: `/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-parent-unicode-wrapper-ksTjiD/report.json`.
+
+The parent passed all 176 tests, Prettier, unchanged-SQL/protected-input checks and the ASCII cross-wrapper regressions. Those tests do not cover this Unicode case. No other material issue was found in the final recovery review.
+
+The original two-round correction loop and the single revised recovery allowance are exhausted. Root leaves 003.2 BLOCKED, does not start another correction loop, and does not push the unaccepted checkpoint. Local commits and private evidence are preserved.
+
+The owned database `chooselife-verify-049997ac2680` was stopped and removed through `cleanupWorkspace` after ownership validation. Its workdir was removed. All 12 developer containers, their identities/start times/restarts, and the developer migration history stayed unchanged. The old retained descriptor is now historical; any future database verification must create a fresh owned workspace.
+
+A parent metadata-only preflight confirmed the linked project is still `festival-chooselife-stage`, reference `azhdfsfdfyvrvcjkkgbq`, healthy on Postgres `15.8.1.044`. The existing connected Supabase app can read that project metadata. No staging catalog or migration comparison was performed, and no hosted write occurred. This checkpoint is blocked on the parser, not on demonstrated missing credentials.
+
 ## How the run ended
 
 Step 1 is accepted. Prerequisites held: CLI 2.121.0, 39/39 helper tests, and `pnpm db:verify --keep` passing with 41/41 migrations, a clean lint and 12 files with 371 assertions. The clean replay matches the checked-in migrations exactly. It has 38 public tables and 82 public functions, and no `profile_isa_accounts`. The raw compiler baseline in a fresh worktree was web exit 1, mobile exit 1 and UI exit 0, with eight diagnostics from missing framework declarations. After the parent prepared the ignored Next and Expo declarations, all three typechecks exit 0 with no diagnostics. That prepared baseline is the one later steps compare against.
@@ -587,3 +599,5 @@ Step 2 revision 2 changes only the checker, its tests and these notes. It answer
 The Step 2 parser recovery changes only the checker, its tests and these notes. It answers the third fresh review's P2 regression. Payload strings stay opaque in every wrapper, and connector tags are only interpreted outside the framed JSON block. 137 catalog tests pass beside the 39 helper tests. The real baseline with the reproduced tag-like schema comment round-trips unchanged and compares exit 0 in bare JSON, CLI rows, the agent envelope, stream-json, connector text and connector `{result}`. Every earlier rejection still exits 2 without printing values, and the saved captures compare as before. This is the single bounded recovery the refined contract allows. It waits for a new fresh review. Step 2 is not accepted. The owned stack was not touched.
 
 Steps 3–5 have not started. No staging inspection, versioned reset, type regeneration, route change, runner integration, workflow or README change happened. Plan 003 is not done.
+
+Final root status: 003.2 remains BLOCKED by the valid Unicode payload regression described above. The disposable database has been removed. The last accepted remote checkpoint remains `6481a036524a872e17a8aedd94709654def0f5e2`; subsequent implementation commits remain local and unaccepted. The metadata-only parent staging preflight is the exception to the earlier no-staging-access statement; no schema comparison has run.

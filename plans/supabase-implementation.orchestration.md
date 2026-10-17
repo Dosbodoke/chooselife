@@ -15,13 +15,13 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 
 ## Current task
 
-- Checkpoint: `003.2`, nonsecret catalog capture and comparison.
-- Status: BLOCKED at revision2 `cafd0d72f97b1041fcb9a88fb0774cac392f89dd`. Fresh Sol round3 found a valid-payload wrapper regression. Two correction rounds exhausted; original brief stopped and wrapper contract refined for one bounded recovery before a new fresh review.
-- Client request ID: `supabase-003-step2-opus-revision2-20261017`.
-- T3 task ID: `node:delegated-task:command%3Amcp%3Aecda434f-2a44-4533-9586-89b5872b8c2e%3Adelegate-task%3Asupabase-003-step2-opus-revision2-20261017`.
-- Automatic completion delivery is enabled. Await the result rather than starting a duplicate or polling a watcher.
+- Checkpoint: `003.2`, BLOCKED after the one bounded opaque-payload parser recovery.
+- Status: Recovery commit `1a09e07170d6fe8f13981e482b019f47cd49f4bf` still fails valid U+2028/U+2029 payloads. Fresh Sol FIX-FIRST and parent reproduction agree. Both the two-round limit and revised recovery allowance are exhausted; execution stopped with no active child task.
+- Client request ID: `supabase-003-step2-parser-recovery-v2-20261017`.
+- T3 task ID: `node:delegated-task:command%3Amcp%3Aecda434f-2a44-4533-9586-89b5872b8c2e%3Adelegate-task%3Asupabase-003-step2-parser-recovery-v2-20261017`.
+- Last task is complete. No active execution or watcher is pending.
 - Bootstrap commit: `775f09fbefdc984657cf0994b2ffbd9bb40644c4`.
-- Current implementation base: `6481a036524a872e17a8aedd94709654def0f5e2`.
+- Current recovery base: `83ad81edd9e025040225d6077750f0b02899b32d`; last accepted source checkpoint remains `6481a03`.
 - Latest accepted reviewer: `/root/supabase_003_1_review`, GPT-6.1-Sol High. No blocking findings.
 - Predecessor evidence: Node24.18.0, frozen install and 39 helper tests pass; real replay passes 41 migrations and 12 files/371 assertions, including independent root runs. Generator negative cases and failure cleanup pass. Existing developer database and protected inputs remain unchanged.
 
@@ -32,7 +32,7 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - 002.3: ACCEPTED, head `257657d`, fresh Sol ship and all parent real gates passed.
 - 002.4: ACCEPTED, head `f224e01`, fresh Sol ship and parent exact workflow checks passed. Plan 002 DONE locally; hosted CI unobserved.
 - 003.1: ACCEPTED, head `ff2bd8f`, fresh Sol ship. Parent prepared ignored framework declarations and all three consumer typechecks pass before database-type changes.
-- 003.2: BLOCKED at `cafd0d7` by valid payload strings misread as connector protocol. Revised contract permits one bounded parser recovery, then fresh review; no renewed correction loop.
+- 003.2: BLOCKED after recovery `1a09e07`; Unicode separators in valid payload strings still create false connector boundaries. No further correction loop started.
 - 003.3–003.5: pending accepted predecessor checkpoint.
 - 004.1–004.5: pending Plans 002 and 003 acceptance.
 
@@ -87,6 +87,12 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - Revision2 returned COMPLETE at `cafd0d72f97b1041fcb9a88fb0774cac392f89dd`, checker/tests/notes only. Parent independently passed all124 tests, Prettier and protected-input/unchanged-SQL checks. Real saved v2 baseline and valid connector prose are accepted; eight focused malformed folded-state and partial-boundary cases are rejected. No DB lifecycle repeated because SQL is unchanged. Fresh GPT-6.1-Sol High round3 `/root/supabase_003_2_review_r3` receives full brief, prior findings/responses, accepted folding limit and actual parent evidence.
 - Fresh Sol round3 returned FIX-FIRST P2: whole-input tag scanning interprets valid JSON comment strings as wrapper delimiters. Parent independently reproduced the actual baseline with `schemas[0].comment = "Documentation example: <untrusted-data-deadbeef"`: bare JSON parses/equates, connector text/structured result/stream-json reject it. Folded-state fix is correct; no other material issue found. SQL and prior live results remain valid.
 - Original003.2 correction loop stopped at its two-round limit. Root marks003.2/Plan003 BLOCKED and refines the plan's wrapper contract: recognize format before interpreting protocol, keep JSON payload strings opaque, validate malformed prefixes only outside payload. One bounded comparator/tests/notes recovery is authorized by the continuing implementation request; it requires full existing tests plus cross-wrapper payload fixtures and a NEW fresh Sol review. If it fails, leave BLOCKED and report, without another loop. No user permission is needed for this in-scope plan refinement.
+- Root committed revised contract/index/ledger as `83ad81edd9e025040225d6077750f0b02899b32d` locally, without pushing unaccepted code. Parent reproducer report: `/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-parent-wrapper-contract-xmRQ4v/report.json`.
+- Bounded recovery dispatched to Opus5.5High via task `node:delegated-task:command%3Amcp%3Aecda434f-2a44-4533-9586-89b5872b8c2e%3Adelegate-task%3Asupabase-003-step2-parser-recovery-v2-20261017`, request `supabase-003-step2-parser-recovery-v2-20261017`. Owns checker/tests/notes only, no SQL/DB actions. Full revised plan and exact valid-payload regression/cross-wrapper positive and outer-boundary negative criteria are inlined. On return root verifies then requests NEW fresh Sol review. If recovery or review fails, retain BLOCKED and report concrete issue without another correction loop.
+- Recovery returned COMPLETE at `1a09e07170d6fe8f13981e482b019f47cd49f4bf`, three scoped files only. Parent independently passed176 tests, Prettier/protected-input checks and ASCII payload round-trips with prior negative cases. Fresh Sol `/root/supabase_003_2_recovery_review` found one P2: JS multiline boundaries include U+2028/U+2029 inside valid JSON strings; tag-like content around those separators still rejects valid connector and structured connector captures. Parent independently reproduced both. Evidence `/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-parent-unicode-wrapper-ksTjiD/report.json`. No additional material issue found.
+- Recovery allowance exhausted. Root leaves003.2/Plan003 BLOCKED and stops further execution rather than starting another correction loop. All implementation/evidence preserved locally, no unaccepted checkpoint pushed. Remote branch remains accepted head `6481a036524a872e17a8aedd94709654def0f5e2`.
+- Root cleaned only owned baseline stack `chooselife-verify-049997ac2680` and its temp root through the ownership-validated helper. All12 developer container IDs/start/restarts and history remained byte-identical. The old retained descriptor is no longer live; future verification must create a fresh owned project.
+- Metadata-only parent preflight confirmed existing connected Supabase app access to `festival-chooselife-stage`, reference `azhdfsfdfyvrvcjkkgbq`, healthy Postgres15.8.1.044. No staging catalog/migration comparison or hosted write occurred. If work resumes under a new parser plan, root can use `mcp__codex_apps__supabase_get_project/execute_sql/list_migrations` for authorized read-only staging work; a missing worker-provider connector is not proof that root credentials are missing.
 
 After 002.2 acceptance, commit the current advisor status documents and push the dedicated branch as requested. Checkpoint 002.3 is the next implementation step and must use the same worktree. Real replay and all later plan gates remain pending until their own verification and fresh review.
 
