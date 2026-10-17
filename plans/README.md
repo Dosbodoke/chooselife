@@ -6,7 +6,7 @@ Plan 001 was generated October 14, 2026 for one cloud coding session. Plans 002�
 | --- | --- | --- | --- | --- | --- |
 | [001](001-hosted-slackdata-webbings.md) | Integrate hosted SlackData webbing selection into mobile | P1 | L | None | IMPLEMENTED — VERIFICATION PENDING (native checklist not run; see [notes](001-hosted-slackdata-webbings.notes.md)) |
 | [002](002-supabase-verification-foundation.md) | Establish isolated Supabase verification and one CLI toolchain | P1 | M | None | DONE: local gates and all four Sol reviews accepted; hosted CI unobserved |
-| [003](003-supabase-baseline-and-types.md) | Reconcile the Supabase baseline and restore complete generated types | P1 | M | 002 | IN PROGRESS: user resumed 003.2; physical-line Unicode fix, then fresh Sol review |
+| [003](003-supabase-baseline-and-types.md) | Reconcile the Supabase baseline and restore complete generated types | P1 | M | 002 | IN PROGRESS: 003.1–003.2 accepted; 003.3 same-version staging comparison next |
 | [004](004-supabase-declarative-adoption.md) | Adopt declarative Supabase schemas with independent parity checks | P1 | L | 002, 003 | TODO |
 
 ## Execution order

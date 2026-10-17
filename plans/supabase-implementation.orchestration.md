@@ -15,14 +15,14 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 
 ## Current task
 
-- Checkpoint: `003.2` ACCEPTED; preparing003.3.
-- Status: Fresh Sol `/root/supabase_003_2_unicode_review` returned SHIP with no material findings. Root accepts003.2 at `0cb874fb60cc59fd01c76315b6026e9c5fda21c2`; preparing publication and003.3.
+- Checkpoint: `003.3`, same-version staging comparison.
+- Status: Accepted003.2 and docs pushed at `47365e44257b7b3f1d9240f03b5075ca95190440`, remote SHA independently confirmed. Preparing Opus003.3 with root-bridged read-only staging captures.
 - Client request ID: `supabase-003-step2-unicode-resumed-20261017`.
 - T3 task ID: `node:delegated-task:command%3Amcp%3Abec09b2a-d031-46c4-917a-77f0a860d50a%3Adelegate-task%3Asupabase-003-step2-unicode-resumed-20261017`.
 - Automatic task completion delivery is enabled. Await it without polling or duplicate work.
 - Bootstrap commit: `775f09fbefdc984657cf0994b2ffbd9bb40644c4`.
-- Current resumed task base: `d36b641c3755e11aa4ecca19429bd452a885120d`; last accepted source checkpoint remains `6481a03`.
-- Latest accepted reviewer: `/root/supabase_003_1_review`, GPT-6.1-Sol High. No blocking findings.
+- Accepted catalog source head: `0cb874fb60cc59fd01c76315b6026e9c5fda21c2`; accepted remote docs checkpoint `47365e44257b7b3f1d9240f03b5075ca95190440`.
+- Latest accepted reviewer: `/root/supabase_003_2_unicode_review`, GPT-6.1-Sol High. SHIP, no material findings.
 - Predecessor evidence: Node24.18.0, frozen install and 39 helper tests pass; real replay passes 41 migrations and 12 files/371 assertions, including independent root runs. Generator negative cases and failure cleanup pass. Existing developer database and protected inputs remain unchanged.
 
 ## Checkpoint status
@@ -99,6 +99,8 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - Resumed Unicode task returned COMPLETE at `0cb874fb60cc59fd01c76315b6026e9c5fda21c2`, checker/tests/notes only. Root inspected the full scoped diff and independently passed225 tests, Prettier, whitespace/protected-input checks,28 constructed real-baseline Unicode wrapper round-trips and16 outer-boundary rejections. All45 saved invalid inputs exit2 without fixture values, and20 saved captures retain11 equal/9 semantic differences. SQL/helper/package unchanged; no DB operation repeated. Evidence `/tmp/chooselife-parent-unicode-accepted-1nb3XB/report.json`. NEW fresh GPT-6.1-Sol High reviewer `/root/supabase_003_2_unicode_review` receives full original brief, prior findings/responses, accepted limits and actual parent evidence.
 
 - Fresh Sol Unicode review `/root/supabase_003_2_unicode_review`: SHIP, no material findings. Independently passed225tests,22 real-baseline round-trips across11wrappers/bothseparators and14 malformedframes. Previouschecker rejected8 correspondingconnector cases. Helper/offset handling judged simple enough. Root accepts003.2. SQL security evidence and accepted limitations remain unchanged; live connector execution due003.3. Notes arithmetic typo is documentation-only.
+
+- Root pushed accepted003.2 and docs as `47365e44257b7b3f1d9240f03b5075ca95190440` through existing SSH. Remote exact SHA verified. No PR created. For003.3 root bridged the already-authorized read-only Supabase connection: linked identity remains `festival-chooselife-stage`, healthy PG15.8.1.044. Its40 migrations exactly match the checked-in41-version prefix, lateststage20261014162921, latestlocal20261015013845. Executed the unchanged metadata-only catalogSELECT through the live connector and stored484197bytes privately at `/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-stage-catalog-x8n_53_a`. Accepted checker extracts actual connector response and compares0to its normalizedpayload. No hostedwrite, userrows, rawbodies or vaultread. This supplies worker access without asking for newcredentials. Opus still owns the actual same-version local comparison, difference investigation and restore/test evidence.
 
 After 002.2 acceptance, commit the current advisor status documents and push the dedicated branch as requested. Checkpoint 002.3 is the next implementation step and must use the same worktree. Real replay and all later plan gates remain pending until their own verification and fresh review.
 
