@@ -1,115 +1,8 @@
-import {
-  MAX_WEBBING_PHOTO_BYTES,
-  saveWebbingPhoto,
-  validateStaticPhoto,
-  WebbingPhotoError,
-  type WebbingPhotoDeps,
-} from './photo-upload';
+import { MAX_PHOTO_BYTES, type PhotoError } from '~/features/photos/photo-file';
 
-function chunk(type: string, data: number[] = []) {
-  const length = [24, 16, 8, 0].map((shift) => (data.length >>> shift) & 0xff);
-  return [
-    ...length,
-    ...[...type].map((c) => c.charCodeAt(0)),
-    ...data,
-    0,
-    0,
-    0,
-    0,
-  ];
-}
-const SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-const png = (...chunks: number[][]) =>
-  new Uint8Array([...SIGNATURE, ...chunks.flat()]);
-const STATIC_PNG = png(
-  chunk('IHDR', new Array(13).fill(0)),
-  chunk('IDAT', [1, 2]),
-  chunk('IEND'),
-);
-const ANIMATED_PNG = png(
-  chunk('IHDR', new Array(13).fill(0)),
-  chunk('acTL', new Array(8).fill(0)),
-  chunk('IDAT', [1]),
-  chunk('IEND'),
-);
+import { saveWebbingPhoto, type WebbingPhotoDeps } from './photo-upload';
+
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0x10]);
-
-const code = (fn: () => unknown) => {
-  try {
-    fn();
-  } catch (error) {
-    return (error as WebbingPhotoError).code;
-  }
-  return 'ok';
-};
-
-describe('validateStaticPhoto', () => {
-  it('accepts static JPEG and PNG matching the reported type', () => {
-    expect(validateStaticPhoto(JPEG, 'image/jpeg')).toEqual({
-      contentType: 'image/jpeg',
-      extension: 'jpg',
-    });
-    expect(validateStaticPhoto(STATIC_PNG, 'image/png').extension).toBe('png');
-  });
-
-  it('rejects unsupported and unknown MIME types without trusting extensions', () => {
-    for (const mime of [
-      'image/gif',
-      'image/webp',
-      'image/heic',
-      '',
-      null,
-      undefined,
-    ]) {
-      expect(code(() => validateStaticPhoto(JPEG, mime))).toBe(
-        'unsupported-type',
-      );
-    }
-  });
-
-  it('rejects animated PNG and MIME/signature mismatches', () => {
-    expect(code(() => validateStaticPhoto(ANIMATED_PNG, 'image/png'))).toBe(
-      'animated',
-    );
-    expect(code(() => validateStaticPhoto(STATIC_PNG, 'image/jpeg'))).toBe(
-      'invalid-image',
-    );
-    expect(code(() => validateStaticPhoto(JPEG, 'image/png'))).toBe(
-      'invalid-image',
-    );
-    const gif = new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]);
-    expect(code(() => validateStaticPhoto(gif, 'image/png'))).toBe(
-      'invalid-image',
-    );
-  });
-
-  it('rejects truncated or malformed PNG chunks', () => {
-    expect(
-      code(() => validateStaticPhoto(STATIC_PNG.slice(0, 30), 'image/png')),
-    ).toBe('invalid-image');
-    const noEnd = png(chunk('IHDR', new Array(13).fill(0)), chunk('IDAT', [1]));
-    expect(code(() => validateStaticPhoto(noEnd, 'image/png'))).toBe(
-      'invalid-image',
-    );
-    const lying = STATIC_PNG.slice();
-    lying[8 + 3] = 0xff; // IHDR length beyond the buffer
-    expect(code(() => validateStaticPhoto(lying, 'image/png'))).toBe(
-      'invalid-image',
-    );
-    const notHeaderFirst = png(chunk('IDAT', [1]), chunk('IEND'));
-    expect(code(() => validateStaticPhoto(notHeaderFirst, 'image/png'))).toBe(
-      'invalid-image',
-    );
-  });
-
-  it('enforces the actual byte size', () => {
-    const big = new Uint8Array(MAX_WEBBING_PHOTO_BYTES + 1);
-    big.set(JPEG);
-    expect(code(() => validateStaticPhoto(big, 'image/jpeg'))).toBe(
-      'too-large',
-    );
-  });
-});
 
 type UpdateResult = ReturnType<WebbingPhotoDeps['updateImagePath']>;
 
@@ -120,7 +13,10 @@ function harness(initialPath: string | null = 'owner/1/old.jpg') {
   let n = 0;
   const deps = {
     readAsset: jest.fn(async () => JPEG.buffer.slice(0) as ArrayBuffer),
-    upload: jest.fn(async (key: string) => {
+    upload: jest.fn<
+      Promise<string>,
+      [string, ArrayBuffer, string, ((sent: number) => void)?]
+    >(async (key) => {
       const path = `owner/${key}`;
       objects.add(path);
       return path;
@@ -236,10 +132,10 @@ describe('saveWebbingPhoto', () => {
       previousPath: 'owner/1/old.jpg',
       asset,
       deps,
-    }).catch((e: WebbingPhotoError) => e);
+    }).catch((e: PhotoError) => e);
     expect(error).toMatchObject({
       code: 'unconfirmed',
-      pendingPath: 'owner/1/photo-1.jpg',
+      pending: { path: 'owner/1/photo-1.jpg', sourceUri: asset.uri },
     });
     expect(objects.size).toBe(2);
 
@@ -248,7 +144,7 @@ describe('saveWebbingPhoto', () => {
       webbingId: 1,
       previousPath: 'owner/1/old.jpg',
       asset,
-      pendingPath: (error as WebbingPhotoError).pendingPath,
+      pending: (error as PhotoError).pending,
       deps,
     });
     expect(path).toBe('owner/1/photo-1.jpg');
@@ -306,11 +202,86 @@ describe('saveWebbingPhoto', () => {
       saveWebbingPhoto({
         webbingId: 1,
         previousPath: null,
-        asset: { ...asset, fileSize: MAX_WEBBING_PHOTO_BYTES + 1 },
+        asset: { ...asset, fileSize: MAX_PHOTO_BYTES + 1 },
         deps,
       }),
     ).rejects.toMatchObject({ code: 'too-large' });
     expect(deps.readAsset).not.toHaveBeenCalled();
     expect(deps.upload).not.toHaveBeenCalled();
+  });
+  it('applies a different photo after the pending upload turns out committed', async () => {
+    const { row, objects, deps } = harness();
+    // An earlier attempt committed photo-1 but its response was lost.
+    row.image_path = 'owner/1/photo-1.jpg';
+    objects.add('owner/1/photo-1.jpg');
+    deps.createId = () => 'photo-2';
+    const path = await saveWebbingPhoto({
+      webbingId: 1,
+      previousPath: 'owner/1/old.jpg',
+      asset: { ...asset, uri: 'file:///other.jpg' },
+      pending: { path: 'owner/1/photo-1.jpg', sourceUri: asset.uri },
+      deps,
+    });
+    expect(path).toBe('owner/1/photo-2.jpg');
+    expect(row.image_path).toBe(path);
+    expect([...objects]).toEqual([path]);
+  });
+
+  it('removes the photo when asked to, even after a committed pending upload', async () => {
+    const { row, objects, deps } = harness();
+    row.image_path = 'owner/1/photo-1.jpg';
+    objects.add('owner/1/photo-1.jpg');
+    await expect(
+      saveWebbingPhoto({
+        webbingId: 1,
+        previousPath: 'owner/1/old.jpg',
+        asset: null,
+        pending: { path: 'owner/1/photo-1.jpg', sourceUri: asset.uri },
+        deps,
+      }),
+    ).resolves.toBeNull();
+    expect(row.image_path).toBeNull();
+    expect(objects.size).toBe(0);
+  });
+
+  it('keeps the pending source when the reconcile read fails again', async () => {
+    const { deps } = harness();
+    deps.readImagePath.mockRejectedValueOnce(new TypeError('offline'));
+    const pending = { path: 'owner/1/photo-1.jpg', sourceUri: asset.uri };
+    await expect(
+      saveWebbingPhoto({
+        webbingId: 1,
+        previousPath: 'owner/1/old.jpg',
+        asset,
+        pending,
+        deps,
+      }),
+    ).rejects.toMatchObject({ code: 'unconfirmed', pending });
+  });
+
+  it('reports monotonic progress from preparing to saving', async () => {
+    const { row, deps } = harness();
+    deps.upload.mockImplementationOnce(
+      async (key, _body, _type, onProgress) => {
+        onProgress?.(0.5);
+        onProgress?.(1);
+        return `owner/${key}`;
+      },
+    );
+    const steps: string[] = [];
+    const values: number[] = [];
+    await saveWebbingPhoto({
+      webbingId: 1,
+      previousPath: row.image_path,
+      asset,
+      onProgress: (p) => {
+        steps.push(p.step);
+        values.push(p.progress);
+      },
+      deps,
+    });
+    expect(steps[0]).toBe('preparing');
+    expect(steps[steps.length - 1]).toBe('saving');
+    expect([...values].sort((a, b) => a - b)).toEqual(values);
   });
 });

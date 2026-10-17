@@ -15,12 +15,13 @@ import {
   type WebbingPickerExperiment,
 } from '~/features/growth/webbing-picker-layout';
 import {
-  getStaticPhotoType,
-  saveWebbingPhoto,
-  WebbingPhotoError,
-  type PhotoAsset,
-  type WebbingPhotoErrorCode,
-} from '~/features/webbing/photo-upload';
+  isPhotoFileError,
+  photoProgress,
+  type LocalPhoto,
+  type PhotoProgress,
+} from '~/features/photos/photo-file';
+import { PHOTO_SPECS } from '~/features/photos/pick-photo';
+import { saveWebbingPhoto } from '~/features/webbing/photo-upload';
 import {
   advanceRegistration,
   continueWithoutPhoto,
@@ -28,15 +29,9 @@ import {
   nextAutoLabel,
   type RegistrationFlowState,
 } from '~/features/webbing/registration-flow';
-import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import {
-  AlertTriangleIcon,
-  CameraIcon,
-  CloudOffIcon,
-  XIcon,
-} from 'lucide-react-native';
+import { AlertTriangleIcon, CloudOffIcon } from 'lucide-react-native';
 import { useId, useRef, useState, type ReactNode } from 'react';
 import {
   Controller,
@@ -48,12 +43,7 @@ import {
   type UseFormReturn,
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  Pressable,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { v4 as uuid } from 'uuid';
 
@@ -62,7 +52,6 @@ import { useOnlineStatus } from '~/context/react-query';
 import {
   createWebbingPhotoDeps,
   setCachedWebbingPhoto,
-  WEBBING_PHOTO_PICKER_OPTIONS,
 } from '~/hooks/use-webbing-photo';
 import { useWebbingPickerExperiment } from '~/hooks/use-webbing-picker-experiment';
 import RegisterWebbingIllustration from '~/lib/icons/register-webbing';
@@ -70,6 +59,7 @@ import { cn } from '~/lib/utils';
 import { requestReview } from '~/utils/request-review';
 
 import { OnboardHeader, OnboardNavigator } from '~/components/onboard';
+import { PhotoCover, type PhotoTransfer } from '~/components/photo-picker';
 import { SafeAreaView } from '~/components/styled';
 import {
   Alert,
@@ -79,7 +69,6 @@ import {
   AlertTitle,
 } from '~/components/ui/alert';
 import { Button } from '~/components/ui/button';
-import { Icon } from '~/components/ui/icon';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { Text } from '~/components/ui/text';
@@ -193,7 +182,7 @@ function RegistrationForm({ userId }: { userId: string }) {
   const isOnline = useOnlineStatus();
   const { form, submit } = useRegisterWebbing({ createRegistrationKey: uuid });
   const experiment = useWebbingPickerExperiment();
-  const [photo, setPhoto] = useState<PhotoAsset | null>(null);
+  const [photo, setPhoto] = useState<LocalPhoto | null>(null);
   const registration = useRegistration({
     userId,
     form,
@@ -221,6 +210,12 @@ function RegistrationForm({ userId }: { userId: string }) {
               <PhotoField
                 photo={photo}
                 onChange={setPhoto}
+                transfer={registration.photoTransfer}
+                onRetry={
+                  registration.canRetryPhoto
+                    ? registration.retryPhoto
+                    : undefined
+                }
                 disabled={registration.isLocked}
               />
               <NoteField />
@@ -233,26 +228,25 @@ function RegistrationForm({ userId }: { userId: string }) {
             <View className="flex-grow" />
 
             {registration.photoFailed ? (
-              <PhotoFailedAlert
-                error={flow.photoError}
-                canRetry={isOnline && !!photo}
-                onRetry={registration.retryPhoto}
+              <PhotoFailedActions
+                onUpload={
+                  registration.canUploadNewPhoto
+                    ? registration.retryPhoto
+                    : undefined
+                }
                 onContinue={registration.continueWithoutPhoto}
               />
             ) : (
-              <>
-                {flow.phase === 'uploadingPhoto' && <PhotoUploading />}
-                <OnboardNavigator
-                  total={1}
-                  selectedIndex={0}
-                  onIndexChange={() => {}} // There is only one step
-                  onFinish={registration.submit}
-                  goBack={router.back}
-                  isLoading={registration.isLocked}
-                  finishLabel={t(`${translationKey}.finishLabel`)}
-                  showBack={false}
-                />
-              </>
+              <OnboardNavigator
+                total={1}
+                selectedIndex={0}
+                onIndexChange={() => {}} // There is only one step
+                onFinish={registration.submit}
+                goBack={router.back}
+                isLoading={registration.isLocked}
+                finishLabel={t(`${translationKey}.finishLabel`)}
+                showBack={false}
+              />
             )}
           </KeyboardAwareScrollView>
         </SafeAreaView>
@@ -272,15 +266,21 @@ function useRegistration({
   userId: string;
   form: RegisterWebbingForm;
   submit: ReturnType<typeof useRegisterWebbing>['submit'];
-  photo: PhotoAsset | null;
+  photo: LocalPhoto | null;
   experiment: WebbingPickerExperiment;
 }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const isOnline = useOnlineStatus();
   const [flow, setFlow] = useState<RegistrationFlowState>(
     initialRegistrationFlow,
   );
+  // The photo the last upload was for, and how far it got.
+  const [attempt, setAttempt] = useState<{
+    photo: LocalPhoto;
+    progress: PhotoProgress;
+  } | null>(null);
   const finished = useRef(false);
 
   const finish = () => {
@@ -305,17 +305,19 @@ function useRegistration({
   };
 
   const run = async (values: RegisterWebbingFormData | null) => {
+    if (photo) setAttempt({ photo, progress: photoProgress('preparing') });
     const state = await advanceRegistration(
       flow,
       photo,
       {
         saveItem: () => saveItem(values),
-        savePhoto: async ({ webbing, asset, pendingPath }) => {
+        savePhoto: async ({ webbing, asset, pending }) => {
           const imagePath = await saveWebbingPhoto({
             webbingId: webbing.id,
             previousPath: webbing.image_path,
             asset,
-            pendingPath,
+            pending,
+            onProgress: (progress) => setAttempt({ photo: asset, progress }),
             deps: createWebbingPhotoDeps(webbing.id, userId),
           });
           setCachedWebbingPhoto(queryClient, userId, webbing.id, imagePath);
@@ -324,19 +326,47 @@ function useRegistration({
       },
       setFlow,
     );
-    if (state.phase === 'completed') finish();
+    if (state.phase === 'completed') {
+      if (photo) {
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        );
+      }
+      finish();
+    } else if (state.photoError) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
   };
+
+  const photoFailed =
+    flow.phase === 'savedPhotoFailed' ||
+    flow.phase === 'photoCommitUnconfirmed';
+  // Replacing the photo after a failure starts over from an idle field.
+  const isAttempted = !!photo && attempt?.photo === photo;
 
   return {
     flow,
+    photoTransfer: derivePhotoTransfer(
+      flow,
+      photo,
+      isAttempted ? attempt.progress : null,
+      t,
+    ),
+    /** Retry the same photo, when retrying can help. */
+    canRetryPhoto:
+      photoFailed &&
+      isOnline &&
+      isAttempted &&
+      !!flow.photoError &&
+      !isPhotoFileError(flow.photoError),
+    /** A different photo was chosen after the failure. */
+    canUploadNewPhoto: photoFailed && isOnline && !!photo && !isAttempted,
     /** Saving, uploading or done: the draft can no longer change. */
     isLocked:
       flow.phase === 'savingItem' ||
       flow.phase === 'uploadingPhoto' ||
       flow.phase === 'completed',
-    photoFailed:
-      flow.phase === 'savedPhotoFailed' ||
-      flow.phase === 'photoCommitUnconfirmed',
+    photoFailed,
     submit: () => {
       if (!isOnline) {
         form.setError('root', { type: 'offline', message: 'offline' });
@@ -350,6 +380,39 @@ function useRegistration({
       finish();
     },
   };
+}
+
+/** The photo field's state, read off the registration phase. */
+function derivePhotoTransfer(
+  flow: RegistrationFlowState,
+  photo: LocalPhoto | null,
+  progress: PhotoProgress | null,
+  t: ReturnType<typeof useTranslation>['t'],
+): PhotoTransfer {
+  if (!photo) return { state: 'idle' };
+  switch (flow.phase) {
+    case 'savingItem':
+      return { state: 'queued' };
+    case 'uploadingPhoto':
+      return {
+        state: 'uploading',
+        ...(progress ?? photoProgress('preparing')),
+      };
+    case 'savedPhotoFailed':
+    case 'photoCommitUnconfirmed':
+      if (!progress) return { state: 'idle' };
+      return {
+        state: 'failed',
+        progress: progress.progress,
+        message: t(
+          `components.photo-picker.errors.${flow.photoError ?? 'upload-failed'}`,
+        ),
+      };
+    case 'completed':
+      return { state: 'saved' };
+    default:
+      return { state: 'idle' };
+  }
 }
 
 function OfflineNotice() {
@@ -388,47 +451,33 @@ function SubmitError() {
   );
 }
 
-function PhotoUploading() {
-  const { t } = useTranslation();
-  return (
-    <View className="flex-row items-center justify-center gap-2">
-      <ActivityIndicator />
-      <Text className="text-sm text-muted-foreground">
-        {t(`${translationKey}.photoPhase.uploading`)}
-      </Text>
-    </View>
-  );
-}
-
-function PhotoFailedAlert({
-  error,
-  canRetry,
-  onRetry,
+/** The webbing is saved; offer to finish without the photo. */
+function PhotoFailedActions({
+  onUpload,
   onContinue,
 }: {
-  error: WebbingPhotoErrorCode | null;
-  canRetry: boolean;
-  onRetry: () => void;
+  onUpload?: () => void;
   onContinue: () => void;
 }) {
   const { t } = useTranslation();
   return (
-    <Alert variant="warning">
-      <AlertIcon icon={AlertTriangleIcon} />
-      <AlertContent className="gap-3">
-        <AlertTitle>{t(`${translationKey}.photoPhase.failedTitle`)}</AlertTitle>
-        <AlertDescription>
-          {error ? `${t(`${translationKey}.photo.errors.${error}`)} ` : ''}
-          {t(`${translationKey}.photoPhase.failedDescription`)}
-        </AlertDescription>
-        <Button disabled={!canRetry} onPress={onRetry}>
-          <Text>{t(`${translationKey}.photoPhase.retryPhoto`)}</Text>
+    <View className="gap-3">
+      {onUpload ? (
+        <Button className="w-full rounded-full" onPress={onUpload}>
+          <Text>{t(`${translationKey}.photoPhase.uploadPhoto`)}</Text>
         </Button>
-        <Button variant="outline" onPress={onContinue}>
-          <Text>{t(`${translationKey}.photoPhase.continue`)}</Text>
-        </Button>
-      </AlertContent>
-    </Alert>
+      ) : null}
+      <Button
+        variant="outline"
+        className="w-full rounded-full"
+        onPress={onContinue}
+      >
+        <Text>{t(`${translationKey}.photoPhase.continue`)}</Text>
+      </Button>
+      <Text variant="muted" className="text-center text-sm">
+        {t(`${translationKey}.photoPhase.failedDescription`)}
+      </Text>
+    </View>
   );
 }
 
@@ -572,107 +621,33 @@ function FieldError({ message }: { message?: string }) {
 function PhotoField({
   photo,
   onChange,
+  transfer,
+  onRetry,
   disabled,
 }: {
-  photo: PhotoAsset | null;
-  onChange: (photo: PhotoAsset | null) => void;
+  photo: LocalPhoto | null;
+  onChange: (photo: LocalPhoto | null) => void;
+  transfer: PhotoTransfer;
+  onRetry?: () => void;
   disabled: boolean;
 }) {
   const { t } = useTranslation();
-  const [error, setError] = useState<string | null>(null);
-  const [isPicking, setIsPicking] = useState(false);
-
-  const choose = async () => {
-    if (disabled || isPicking) return;
-    setIsPicking(true);
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        ...WEBBING_PHOTO_PICKER_OPTIONS,
-        mediaTypes: [...WEBBING_PHOTO_PICKER_OPTIONS.mediaTypes],
-        aspect: [...WEBBING_PHOTO_PICKER_OPTIONS.aspect],
-      });
-      // Cancelling keeps the previous selection and is not an error.
-      const asset = result.canceled ? undefined : result.assets[0];
-      if (asset) {
-        // Throws for formats we can't store.
-        getStaticPhotoType(asset.mimeType);
-        setError(null);
-        onChange({
-          uri: asset.uri,
-          mimeType: asset.mimeType,
-          fileSize: asset.fileSize,
-        });
-      }
-    } catch (cause) {
-      const code =
-        cause instanceof WebbingPhotoError ? cause.code : 'unreadable';
-      setError(t(`${translationKey}.photo.errors.${code}`));
-    }
-    // Not `finally`: React Compiler can't compile it yet.
-    setIsPicking(false);
-  };
-
   return (
     <View className="gap-2">
       <Label nativeID="photo">
         {t(`${translationKey}.photo.label`)}{' '}
         <Text variant="muted">{t('common.optional')}</Text>
       </Label>
-      <View className="flex-row items-center gap-3">
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(
-            `${translationKey}.photo.${photo ? 'change' : 'add'}`,
-          )}
-          accessibilityState={{ disabled, busy: isPicking }}
-          disabled={disabled}
-          onPress={() => void choose()}
-          className="h-24 w-32 items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-muted/30"
-        >
-          <PhotoPreview photo={photo} isPicking={isPicking} />
-        </Pressable>
-        {photo && !disabled && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={() => onChange(null)}
-            accessibilityLabel={t(`${translationKey}.photo.remove`)}
-          >
-            <Icon as={XIcon} size={16} />
-            <Text>{t(`${translationKey}.photo.remove`)}</Text>
-          </Button>
-        )}
-      </View>
-      <FieldError message={error ?? undefined} />
-    </View>
-  );
-}
-
-function PhotoPreview({
-  photo,
-  isPicking,
-}: {
-  photo: PhotoAsset | null;
-  isPicking: boolean;
-}) {
-  const { t } = useTranslation();
-  if (photo) {
-    return (
-      <Image
-        source={{ uri: photo.uri }}
-        contentFit="cover"
-        style={{ width: '100%', height: '100%' }}
+      <PhotoCover
+        spec={PHOTO_SPECS.webbing}
+        value={photo}
+        onChange={onChange}
+        transfer={transfer}
+        onRetry={onRetry}
+        disabled={disabled}
+        instructions={t(`${translationKey}.photo.instructions`)}
       />
-    );
-  }
-  if (isPicking) return <ActivityIndicator />;
-  return (
-    <>
-      <Icon as={CameraIcon} size={22} className="text-muted-foreground" />
-      <Text className="text-xs text-muted-foreground">
-        {t(`${translationKey}.photo.add`)}
-      </Text>
-    </>
+    </View>
   );
 }
 

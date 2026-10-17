@@ -1,18 +1,22 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Mapbox from '@rnmapbox/maps';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { decode } from 'base64-arraybuffer';
-import * as Haptics from 'expo-haptics';
-import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
+import {
+  isPhotoFileError,
+  PhotoError,
+  photoProgress,
+  preparePhotoUpload,
+  type LocalPhoto,
+} from '~/features/photos/photo-file';
+import { PHOTO_SPECS } from '~/features/photos/pick-photo';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Position } from 'geojson';
 import i18next from 'i18next';
-import { MapPinIcon, UploadIcon, XIcon } from 'lucide-react-native';
-import React, { memo } from 'react';
+import { MapPinIcon } from 'lucide-react-native';
+import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Dimensions, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { v4 as uuidv4 } from 'uuid';
@@ -22,8 +26,6 @@ import { useAuth } from '~/context/auth';
 import { Highline, highlineKeyFactory } from '~/hooks/use-highline';
 import { supabase } from '~/lib/supabase';
 import { getR2PublicUrl, uploadToR2, deleteFromR2 } from '~/lib/r2';
-import { cn } from '~/lib/utils';
-import { ACCEPTED_IMAGE_TYPES, MAX_FILE_SIZE } from '~/utils/constants';
 import { requestReview } from '~/utils/request-review';
 
 import SuccessAnimation from '~/components/animations/success-animation';
@@ -31,12 +33,23 @@ import {
   haversineDistance,
   positionToPostGISPoint,
 } from '~/components/map/utils';
+import {
+  PhotoCover,
+  photoErrorCode,
+  photoErrorMessage,
+  usePhotoTransfer,
+} from '~/components/photo-picker';
 import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
+
+/** The current cover, or a newly picked photo still to be uploaded. */
+type HighlineImage =
+  | { kind: 'stored'; uri: string }
+  | ({ kind: 'local' } & LocalPhoto);
 
 const formSchema = z.object({
   name: z
@@ -64,21 +77,7 @@ const formSchema = z.object({
     })
     .positive(i18next.t('components.map.register-modal.length.positive')),
   description: z.string().optional(),
-  image: z
-    .custom<ImagePicker.ImagePickerAsset>()
-    .nullable()
-    .refine((file) => {
-      if (!file || !file.base64) return true; // If not base64 it's an image that is already uploaded
-
-      return file.fileSize ? file.fileSize <= MAX_FILE_SIZE : true;
-    }, i18next.t('components.map.register-modal.image.maxSize'))
-    .refine((file) => {
-      if (!file || !file.base64) return true; // If not base64 it's an image that is already uploaded
-
-      return file.mimeType
-        ? ACCEPTED_IMAGE_TYPES.includes(file.mimeType)
-        : false;
-    }, i18next.t('components.map.register-modal.image.accepted')),
+  image: z.custom<HighlineImage>().nullable(),
 });
 
 type FormSchema = z.infer<typeof formSchema>;
@@ -90,6 +89,7 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const photo = usePhotoTransfer();
   const [newHighlineUUID, setNewHighlineUUID] = React.useState<string | null>(
     null,
   );
@@ -120,6 +120,7 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
       description: highline?.description || '',
       image: highline?.cover_image
         ? {
+            kind: 'stored',
             uri: getR2PublicUrl('images', highline.cover_image),
           }
         : null,
@@ -175,30 +176,21 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
       // If it's a new Highline, require anchor to be defined
       if (!highline && (!anchorA || !anchorB))
         throw new Error('Anchors not defined');
-      let imageID: string | null = highline?.cover_image || null;
-      let shouldDeleteExisting = false;
-
-      // Upload new image if provided (converted to base64)
-      if (formData.image && formData.image.base64 && formData.image.mimeType) {
-        // If there is already an image for this highline and the user is uploading a new one,
-        if (imageID) shouldDeleteExisting = true;
-        const extension = formData.image.mimeType.split('/')[1];
-        imageID = `${uuidv4()}.${extension}`;
-        await uploadToR2(
-          'images',
-          imageID,
-          decode(formData.image.base64),
-          formData.image.mimeType,
-        );
-      }
+      const previousImageID = highline?.cover_image || null;
+      // Upload a new photo first; the old cover is only deleted once the
+      // row points at the new one.
+      const uploadedID =
+        formData.image?.kind === 'local'
+          ? await uploadCover(formData.image, photo.report)
+          : null;
+      const imageID = uploadedID ?? (formData.image ? previousImageID : null);
+      const discardUpload = () =>
+        uploadedID
+          ? deleteFromR2('images', uploadedID).catch(() => undefined)
+          : undefined;
 
       // Update Highline
       if (highline?.id) {
-        // Delete old image
-        if (highline.cover_image && shouldDeleteExisting) {
-          await deleteFromR2('images', highline.cover_image);
-        }
-
         const { data: updatedHighline, error } = await supabase
           .from('highline')
           .update({
@@ -213,7 +205,11 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
           .single();
 
         if (error || !updatedHighline) {
+          await discardUpload();
           throw new Error('Error when updating the highline');
+        }
+        if (previousImageID && previousImageID !== imageID) {
+          await deleteFromR2('images', previousImageID).catch(() => undefined);
         }
 
         return { newHighlineID: updatedHighline.id };
@@ -237,12 +233,14 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
         .single();
 
       if (error || !newHighline) {
+        await discardUpload();
         throw new Error('Error when creating the highline');
       }
 
       return { newHighlineID: newHighline.id };
     },
     onSuccess: async ({ newHighlineID }) => {
+      photo.reset();
       setNewHighlineUUID(newHighlineID);
 
       queryClient.invalidateQueries({
@@ -257,7 +255,9 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
 
       await requestReview();
     },
-    onError: (_, _newHighlineID, context) => {
+    onError: (error, _newHighlineID, context) => {
+      if (error instanceof PhotoError) photo.fail(photoErrorMessage(t, error));
+      else photo.reset();
       if (context?.previousHighlines) {
         queryClient.setQueryData(
           highlineKeyFactory.list(),
@@ -274,6 +274,12 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
   const handleInvalidForm = () => {
     console.log('INVALID FORM');
   };
+
+  const submit = highlineForm.handleSubmit(handleValidForm, handleInvalidForm);
+  // Retrying a photo resubmits the form; a bad file needs a different photo.
+  const canRetryPhoto =
+    photo.transfer.state === 'failed' &&
+    !isPhotoFileError(photoErrorCode(mutation.error));
 
   if (newHighlineUUID) {
     return <SuccessMessage id={newHighlineUUID} isUpdate={!!highline} />;
@@ -413,29 +419,33 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
           <Controller
             control={highlineForm.control}
             name="image"
-            render={({ field, fieldState }) => (
-              <View className="w-full">
-                <HighlineImageUploader
+            render={({ field }) => (
+              <View className="gap-2">
+                <Label nativeID="image">
+                  {t('components.map.register-modal.image.label')}{' '}
+                  <Text variant="muted">{t('common.optional')}</Text>
+                </Label>
+                <PhotoCover
+                  spec={PHOTO_SPECS.highlineCover}
                   value={field.value}
-                  onChange={field.onChange}
-                  hasError={!!fieldState.error}
+                  onChange={(picked) => {
+                    photo.reset();
+                    field.onChange(
+                      picked ? { kind: 'local', ...picked } : null,
+                    );
+                  }}
+                  transfer={photo.transfer}
+                  onRetry={canRetryPhoto ? submit : undefined}
+                  disabled={mutation.isPending}
+                  instructions={t(
+                    'components.map.register-modal.image.instructions',
+                  )}
                 />
-                {fieldState.error && (
-                  <Text className="text-destructive text-sm mt-1">
-                    {fieldState.error.message}
-                  </Text>
-                )}
               </View>
             )}
           />
 
-          <Button
-            onPress={highlineForm.handleSubmit(
-              handleValidForm,
-              handleInvalidForm,
-            )}
-            disabled={mutation.isPending}
-          >
+          <Button onPress={submit} disabled={mutation.isPending}>
             <Text>
               {t(
                 `components.map.register-modal.${highline ? 'update' : 'create'}`,
@@ -494,122 +504,25 @@ const SuccessMessage: React.FC<{ id: string; isUpdate: boolean }> = ({
   );
 };
 
-const HighlineImageUploader = memo(
-  ({
-    value,
-    onChange,
-    hasError,
-  }: {
-    value: ImagePicker.ImagePickerAsset | null;
-    onChange: (image: ImagePicker.ImagePickerAsset | null) => void;
-    hasError?: boolean;
-  }) => {
-    const { t } = useTranslation();
-    const [isLoading, setIsLoading] = React.useState(false);
-
-    const handleImageSelection = React.useCallback(async () => {
-      try {
-        setIsLoading(true);
-        Haptics.selectionAsync();
-
-        const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ['images'],
-          allowsEditing: true,
-          quality: 0.7,
-          aspect: [16, 9],
-          selectionLimit: 1,
-          base64: true,
-        });
-
-        if (!result.canceled) {
-          const selectedImage = result.assets[0];
-
-          // Validate file size
-          if (
-            selectedImage.fileSize &&
-            selectedImage.fileSize > MAX_FILE_SIZE
-          ) {
-            console.warn('File too large');
-            // You might want to show an error message here
-            return;
-          }
-
-          // Validate file type
-          if (
-            selectedImage.mimeType &&
-            !ACCEPTED_IMAGE_TYPES.includes(selectedImage.mimeType)
-          ) {
-            console.warn('Invalid file type');
-            // You might want to show an error message here
-            return;
-          }
-
-          onChange(selectedImage);
-        }
-      } catch (error) {
-        console.error('Image picker error:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }, [onChange]);
-
-    const handleRemoveImage = React.useCallback(() => {
-      Haptics.selectionAsync();
-      onChange(null);
-    }, [onChange]);
-
-    return (
-      <View
-        className={cn(
-          'flex items-center justify-center border border-border rounded-lg w-full bg-background overflow-hidden',
-          hasError ? 'border-destructive' : null,
-        )}
-        style={{
-          height: (Dimensions.get('window').width * 9) / 16, // Fixed height based on 16:9 aspect ratio
-        }}
-      >
-        {value ? (
-          <>
-            <Image
-              source={{ uri: (value as ImagePicker.ImagePickerAsset).uri }}
-              contentFit="cover"
-              alt="Image of the Highline"
-              style={{ width: '100%', height: '100%' }}
-              className="rounded-lg"
-            />
-            <TouchableOpacity
-              onPress={handleRemoveImage}
-              className="absolute top-2 right-2 p-2 bg-black/50 rounded-full"
-            >
-              <Icon as={XIcon} className="text-white size-4" />
-            </TouchableOpacity>
-          </>
-        ) : (
-          <View className="flex items-center justify-center p-4">
-            <TouchableOpacity
-              onPress={handleImageSelection}
-              disabled={isLoading}
-              className="flex items-center gap-2"
-            >
-              <View className="p-3 items-center justify-center rounded-md bg-muted">
-                <Icon
-                  as={UploadIcon}
-                  className="text-muted-foreground size-8"
-                />
-              </View>
-              <Text className="text-lg text-center text-primary">
-                {t('components.map.register-modal.image.label')}
-              </Text>
-              <Text className="text-sm text-center text-muted-foreground">
-                {t('components.map.register-modal.image.instructions')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
+/** Validate and upload a picked cover; returns its new key. */
+async function uploadCover(
+  image: LocalPhoto,
+  report: ReturnType<typeof usePhotoTransfer>['report'],
+) {
+  report(photoProgress('preparing'));
+  const { body, contentType, extension } = await preparePhotoUpload(image);
+  const key = `${uuidv4()}.${extension}`;
+  report(photoProgress('sending'));
+  try {
+    await uploadToR2('images', key, body, contentType, (sent) =>
+      report(photoProgress('sending', sent)),
     );
-  },
-);
+  } catch {
+    throw new PhotoError('upload-failed', 'Photo could not be uploaded');
+  }
+  report(photoProgress('saving'));
+  return key;
+}
 
 const AnchorPin: React.FC<{
   anchor: Position;

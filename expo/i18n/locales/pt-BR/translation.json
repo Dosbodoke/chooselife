@@ -305,27 +305,12 @@
         },
         "photo": {
           "label": "Foto",
-          "add": "Adicionar foto",
-          "change": "Trocar foto",
-          "remove": "Remover foto",
-          "errors": {
-            "unsupported-type": "Escolha uma foto JPEG ou PNG.",
-            "animated": "Imagens animadas não são aceitas. Escolha um JPEG ou PNG estático.",
-            "invalid-image": "Este arquivo não é um JPEG ou PNG válido.",
-            "too-large": "Escolha uma imagem menor que 10 MB.",
-            "unreadable": "Não foi possível ler a foto selecionada.",
-            "upload-failed": "Não foi possível enviar a foto.",
-            "rejected": "Não foi possível salvar a foto.",
-            "unconfirmed": "Não conseguimos confirmar se a foto foi salva. Tente novamente para verificar.",
-            "conflict": "A foto desta fita foi alterada em outro lugar. Sua nova foto não foi aplicada."
-          }
+          "instructions": "Uma foto ajuda a diferenciar esta fita das outras"
         },
         "photoPhase": {
-          "uploading": "Enviando foto…",
-          "failedTitle": "Fita salva, foto não enviada",
-          "failedDescription": "Sua fita foi cadastrada. Tente enviar a foto de novo ou continue sem ela — você pode adicionar depois em Minhas fitas.",
-          "retryPhoto": "Tentar foto novamente",
-          "continue": "Continuar sem foto"
+          "failedDescription": "Sua fita foi cadastrada. Tente enviar a foto acima de novo ou continue sem ela — você pode adicionar depois em Minhas fitas.",
+          "continue": "Continuar sem foto",
+          "uploadPhoto": "Enviar foto"
         },
         "errors": {
           "draft-conflict": "Este cadastro já foi salvo com outros dados. Feche e inicie um novo cadastro.",
@@ -781,10 +766,8 @@
           "placeholder": "Fale um pouco sobre este Highline. Aqui é o lugar perfeito para dar informações de acesso, segurança, dica para montagem ou rolê, etc..."
         },
         "image": {
-          "maxSize": "Tamanho máximo do arquivo é 6MB",
-          "accepted": "Formatos aceitos são: .jpg, .jpeg, .png e .webp",
           "label": "Foto do highline",
-          "instructions": "Clique aqui para escolher a foto que será usada como capa para este Highline"
+          "instructions": "Uma foto ampla do highline fica melhor como capa"
         },
         "create": "Registrar Highline",
         "update": "Atualizar Highline",
@@ -826,12 +809,6 @@
         "emptyDescription": "Adicione sua primeira fita para acompanhar o uso e escolher uma foto.",
         "loadError": "Não foi possível carregar suas fitas.",
         "retry": "Tentar novamente",
-        "addPhoto": "Adicionar foto",
-        "addPhotoFor": "Adicionar foto de {{name}}",
-        "changePhotoFor": "Trocar foto de {{name}}",
-        "removePhotoFor": "Remover foto pessoal de {{name}}",
-        "photoErrorTitle": "Não foi possível salvar a foto",
-        "photoError": "Tente novamente com uma imagem menor que 10 MB. Sua foto anterior foi mantida.",
         "viewHistory": "Ver histórico de {{name}}",
         "strength": "Tipo {{strength}}",
         "riggedNow": "Montada agora",
@@ -842,7 +819,8 @@
         "rigs_other": "{{count}} montagens",
         "usedDays_one": "{{count}} dia de uso",
         "usedDays_other": "{{count}} dias de uso",
-        "personalStrength": "Tipo {{strength}} (seu)"
+        "personalStrength": "Tipo {{strength}} (seu)",
+        "keepPreviousPhoto": "Manter foto anterior"
       }
     },
     "webbing-detail": {
@@ -976,7 +954,40 @@
         "label": "Fita de:"
       }
     },
-    "offlineBannerMessage": "Você está offline"
+    "offlineBannerMessage": "Você está offline",
+    "photo-picker": {
+      "add": "Adicionar foto",
+      "replace": "Trocar",
+      "remove": "Remover foto",
+      "retry": "Tentar de novo",
+      "saved": "Salva",
+      "limits": "JPEG ou PNG · até 10 MB",
+      "status": {
+        "queued": "Aguardando envio…",
+        "preparing": "Preparando foto…",
+        "sending": "Enviando {{percent}}%",
+        "saving": "Salvando…"
+      },
+      "a11y": {
+        "replace": "Trocar foto",
+        "progress": "Envio da foto",
+        "addFor": "Adicionar foto de {{name}}",
+        "replaceFor": "Trocar foto de {{name}}",
+        "removeFor": "Remover foto pessoal de {{name}}",
+        "retryFor": "Tentar enviar de novo a foto de {{name}}"
+      },
+      "errors": {
+        "unsupported-type": "Escolha uma foto JPEG ou PNG.",
+        "animated": "Imagens animadas não são aceitas. Escolha um JPEG ou PNG estático.",
+        "invalid-image": "Este arquivo não é um JPEG ou PNG válido.",
+        "too-large": "Escolha uma imagem menor que 10 MB.",
+        "unreadable": "Não foi possível ler a foto selecionada.",
+        "upload-failed": "Não foi possível enviar a foto.",
+        "rejected": "Não foi possível salvar a foto.",
+        "unconfirmed": "Não conseguimos confirmar se a foto foi salva. Tente novamente para verificar.",
+        "conflict": "Esta foto foi alterada em outro lugar. Sua nova foto não foi aplicada."
+      }
+    }
   },
   "context": {
     "auth": {

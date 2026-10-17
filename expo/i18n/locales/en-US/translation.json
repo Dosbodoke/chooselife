@@ -305,27 +305,12 @@
         },
         "photo": {
           "label": "Photo",
-          "add": "Add photo",
-          "change": "Change photo",
-          "remove": "Remove photo",
-          "errors": {
-            "unsupported-type": "Choose a JPEG or PNG photo.",
-            "animated": "Animated images aren't supported. Choose a still JPEG or PNG.",
-            "invalid-image": "This file isn't a valid JPEG or PNG.",
-            "too-large": "Choose an image smaller than 10 MB.",
-            "unreadable": "The selected photo couldn't be read.",
-            "upload-failed": "The photo couldn't be uploaded.",
-            "rejected": "The photo couldn't be saved.",
-            "unconfirmed": "We couldn't confirm whether the photo was saved. Retry to check.",
-            "conflict": "This webbing's photo was changed elsewhere. Your new photo wasn't applied."
-          }
+          "instructions": "A photo helps you tell this webbing apart from your others"
         },
         "photoPhase": {
-          "uploading": "Uploading photo…",
-          "failedTitle": "Webbing saved, photo not uploaded",
-          "failedDescription": "Your webbing is registered. Retry the photo or continue without it — you can add one later in My Webbings.",
-          "retryPhoto": "Retry photo",
-          "continue": "Continue without photo"
+          "failedDescription": "Your webbing is registered. Retry the photo above or continue without it — you can add one later in My Webbings.",
+          "continue": "Continue without photo",
+          "uploadPhoto": "Upload photo"
         },
         "errors": {
           "draft-conflict": "This registration was already saved with different details. Close it and start a new registration.",
@@ -781,10 +766,8 @@
           "placeholder": "Tell us about this Highline. This is the perfect place to provide access information, safety tips, setup hints, etc..."
         },
         "image": {
-          "maxSize": "Maximum file size is 6MB",
-          "accepted": "Accepted formats are: .jpg, .jpeg, .png, and .webp",
           "label": "Highline Photo",
-          "instructions": "Tap here to choose the photo to use as the cover for this Highline"
+          "instructions": "A wide shot of the line works best as the cover"
         },
         "create": "Register Highline",
         "update": "Update Highline",
@@ -826,12 +809,6 @@
         "emptyDescription": "Add your first webbing to track its use and choose a personal photo.",
         "loadError": "Your webbings could not be loaded.",
         "retry": "Try again",
-        "addPhoto": "Add photo",
-        "addPhotoFor": "Add photo for {{name}}",
-        "changePhotoFor": "Change photo for {{name}}",
-        "removePhotoFor": "Remove personal photo for {{name}}",
-        "photoErrorTitle": "Photo could not be saved",
-        "photoError": "Try again with an image smaller than 10 MB. Your previous photo has been kept.",
         "viewHistory": "View history for {{name}}",
         "strength": "Type {{strength}}",
         "riggedNow": "Rigged now",
@@ -842,7 +819,8 @@
         "rigs_other": "{{count}} rigs",
         "usedDays_one": "{{count}} day used",
         "usedDays_other": "{{count}} days used",
-        "personalStrength": "Type {{strength}} (yours)"
+        "personalStrength": "Type {{strength}} (yours)",
+        "keepPreviousPhoto": "Keep previous photo"
       }
     },
     "webbing-detail": {
@@ -976,7 +954,40 @@
         "label": "Webbing from:"
       }
     },
-    "offlineBannerMessage": "You're offline"
+    "offlineBannerMessage": "You're offline",
+    "photo-picker": {
+      "add": "Add photo",
+      "replace": "Replace",
+      "remove": "Remove photo",
+      "retry": "Retry",
+      "saved": "Saved",
+      "limits": "JPEG or PNG · up to 10 MB",
+      "status": {
+        "queued": "Waiting to upload…",
+        "preparing": "Preparing photo…",
+        "sending": "Uploading {{percent}}%",
+        "saving": "Saving…"
+      },
+      "a11y": {
+        "replace": "Replace photo",
+        "progress": "Photo upload",
+        "addFor": "Add photo for {{name}}",
+        "replaceFor": "Replace photo for {{name}}",
+        "removeFor": "Remove personal photo for {{name}}",
+        "retryFor": "Retry photo upload for {{name}}"
+      },
+      "errors": {
+        "unsupported-type": "Choose a JPEG or PNG photo.",
+        "animated": "Animated images aren't supported. Choose a still JPEG or PNG.",
+        "invalid-image": "This file isn't a valid JPEG or PNG.",
+        "too-large": "Choose an image smaller than 10 MB.",
+        "unreadable": "The selected photo couldn't be read.",
+        "upload-failed": "The photo couldn't be uploaded.",
+        "rejected": "The photo couldn't be saved.",
+        "unconfirmed": "We couldn't confirm whether the photo was saved. Retry to check.",
+        "conflict": "This photo was changed elsewhere. Your new photo wasn't applied."
+      }
+    }
   },
   "context": {
     "auth": {

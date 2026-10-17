@@ -1,6 +1,6 @@
 import type { RegisteredWebbing } from '@chooselife/ui';
+import { PhotoError } from '~/features/photos/photo-file';
 
-import { WebbingPhotoError } from './photo-upload';
 import {
   advanceRegistration,
   continueWithoutPhoto,
@@ -40,8 +40,8 @@ describe('advanceRegistration', () => {
   it('saves the item once and retries only the photo', async () => {
     const d = deps();
     d.savePhoto
-      .mockRejectedValueOnce(new WebbingPhotoError('upload-failed', 'boom'))
-      .mockRejectedValueOnce(new WebbingPhotoError('upload-failed', 'boom'));
+      .mockRejectedValueOnce(new PhotoError('upload-failed', 'boom'))
+      .mockRejectedValueOnce(new PhotoError('upload-failed', 'boom'));
     const phases: string[] = [];
     const track = (s: { phase: string }) => phases.push(s.phase);
 
@@ -73,19 +73,20 @@ describe('advanceRegistration', () => {
     ]);
   });
 
-  it('carries an unconfirmed pending path into the next photo attempt', async () => {
+  it('carries an unconfirmed pending upload into the next photo attempt', async () => {
+    const pending = { path: 'owner/12/pending.jpg', sourceUri: photo.uri };
     const d = deps();
     d.savePhoto.mockRejectedValueOnce(
-      new WebbingPhotoError('unconfirmed', 'unknown', 'owner/12/pending.jpg'),
+      new PhotoError('unconfirmed', 'unknown', pending),
     );
     let state = await advanceRegistration(initialRegistrationFlow, photo, d);
     expect(state).toMatchObject({
       phase: 'photoCommitUnconfirmed',
-      pendingPhotoPath: 'owner/12/pending.jpg',
+      pendingPhoto: pending,
     });
     state = await advanceRegistration(state, photo, d);
     expect(d.savePhoto).toHaveBeenLastCalledWith(
-      expect.objectContaining({ pendingPath: 'owner/12/pending.jpg' }),
+      expect.objectContaining({ pending }),
     );
     expect(state.phase).toBe('completed');
   });

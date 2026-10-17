@@ -1,10 +1,10 @@
 import type { RegisteredWebbing } from '@chooselife/ui';
-
 import {
-  WebbingPhotoError,
-  type PhotoAsset,
-  type WebbingPhotoErrorCode,
-} from './photo-upload';
+  PhotoError,
+  type LocalPhoto,
+  type PendingPhoto,
+  type PhotoErrorCode,
+} from '~/features/photos/photo-file';
 
 /**
  * editing -> savingItem -> uploadingPhoto? -> completed
@@ -23,14 +23,14 @@ export interface RegistrationFlowState {
   phase: RegistrationPhase;
   webbing: RegisteredWebbing | null;
   /** Uploaded object whose commit is unconfirmed; reconciled on retry. */
-  pendingPhotoPath: string | null;
-  photoError: WebbingPhotoErrorCode | null;
+  pendingPhoto: PendingPhoto | null;
+  photoError: PhotoErrorCode | null;
 }
 
 export const initialRegistrationFlow: RegistrationFlowState = {
   phase: 'editing',
   webbing: null,
-  pendingPhotoPath: null,
+  pendingPhoto: null,
   photoError: null,
 };
 
@@ -39,8 +39,8 @@ export interface RegistrationFlowDeps {
   saveItem: () => Promise<RegisteredWebbing | null>;
   savePhoto: (input: {
     webbing: RegisteredWebbing;
-    asset: PhotoAsset;
-    pendingPath: string | null;
+    asset: LocalPhoto;
+    pending: PendingPhoto | null;
   }) => Promise<string | null>;
 }
 
@@ -52,7 +52,7 @@ const BUSY: RegistrationPhase[] = ['savingItem', 'uploadingPhoto', 'completed'];
  */
 export async function advanceRegistration(
   state: RegistrationFlowState,
-  photo: PhotoAsset | null,
+  photo: LocalPhoto | null,
   deps: RegistrationFlowDeps,
   onChange: (state: RegistrationFlowState) => void = () => undefined,
 ): Promise<RegistrationFlowState> {
@@ -77,24 +77,23 @@ export async function advanceRegistration(
     await deps.savePhoto({
       webbing: current.webbing!,
       asset: photo,
-      pendingPath: current.pendingPhotoPath,
+      pending: current.pendingPhoto,
     });
-    return emit({ ...current, phase: 'completed', pendingPhotoPath: null });
+    return emit({ ...current, phase: 'completed', pendingPhoto: null });
   } catch (error) {
-    const code =
-      error instanceof WebbingPhotoError ? error.code : 'upload-failed';
+    const code = error instanceof PhotoError ? error.code : 'upload-failed';
     if (code === 'unconfirmed') {
       return emit({
         ...current,
         phase: 'photoCommitUnconfirmed',
-        pendingPhotoPath: (error as WebbingPhotoError).pendingPath,
+        pendingPhoto: (error as PhotoError).pending,
         photoError: code,
       });
     }
     return emit({
       ...current,
       phase: 'savedPhotoFailed',
-      pendingPhotoPath: null,
+      pendingPhoto: null,
       photoError: code,
     });
   }
