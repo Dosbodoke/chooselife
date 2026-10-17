@@ -152,23 +152,37 @@ pnpm db:catalog:compare local.json hosted.json
 Keep both captures out of the repository.
 
 **Status: blocked.** The October 17, 2026 comparison of staging
-(`festival-chooselife-stage`) at its recorded version `20261014162921` found
-named differences that the replay doesn't reproduce:
+(`festival-chooselife-stage`) at its recorded version `20261014162921` exited 1
+with 217 named differences that the replay doesn't reproduce. That result
+stands: no comparison has passed since, and the scope decision on B1 below
+doesn't change it.
 
-- **B1, Storage buckets.** Legacy bucket IDs and upload MIME rules differ from
-  what the bucket migration creates, and staging has a public `webbings` bucket
-  that no migration creates.
+- **B1, legacy Storage buckets: outside the target.** Application media is
+  stored in R2, not Supabase Storage. Staging's legacy bucket IDs and upload
+  MIME rules differ from what the bucket migration creates, and staging has a
+  public `webbings` bucket that no migration creates. By the owner's R2
+  decision, bucket IDs, existence and MIME rules are not part of the desired
+  state, so these differences are historical diagnostics only. Don't recreate
+  the buckets or their MIME rules in a migration or desired schema. No hosted
+  bucket was changed or deleted, and cleanup isn't authorized. The decision
+  covers bucket configuration only; Storage grants and policies stay in scope.
 - **B2, schema `public` ACL.** Staging has revoked the `PUBLIC` role's `USAGE`
   on `public`; the replay keeps the Postgres default.
 - **B3, platform security state.** Staging still has pgsodium and the older
   pgsodium-based Vault, with different Vault grants, and other platform image
   and service versions with different grants and settings.
 
-None of these is accepted as a security exception, and staging does not have
-parity with the replay. Staging also lags by one migration,
+B2, B3 and the other platform security differences remain blocking. None is
+accepted as a security exception, and staging does not have parity with the
+replay. Staging also lags by one migration,
 `20261015013845_webbing_catalog_snapshot`. That is a pending deployment, not
 drift. Production was not inspected. The nonsecret detail is in
 `plans/003-supabase-baseline-and-types.notes.md`.
+
+The checker is unchanged. It still compares all 17 catalog sections, including
+`storage_buckets`, so a hosted comparison still reports the B1 lines. Narrowing
+the parity scope needs its own reviewed change that names exactly what it
+excludes, not a broad ignore.
 
 ## Database Setup
 

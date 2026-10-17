@@ -1070,3 +1070,33 @@ Direct type consumers are taken to be the modules that import `@chooselife/datab
 ### State left
 
 The five files are committed locally on `t3/supabase-schema-workflow`, with no push or PR. No owned stack or workspace remains: `fb3593e92268`, `63145e9af104` and `40509a6ce0ba` are all removed, and only the private evidence directory is kept. Staging reconciliation 003.3 remains BLOCKED on B1 (bucket configuration), B2 (schema `public` `PUBLIC:USAGE`) and B3 with the other platform security differences, none accepted. The one-migration deployment lag remains, and production remains uninspected. Plan 003 is not complete, and Plan 004 is not authorized.
+
+
+## R2 storage decision and current status (003.5 documentation revision)
+
+User decision, October 17, 2026, answering the root's question about which legacy Storage configuration to preserve: "No need for staging rules. I currently migrated to R2 storage." R2 is the active storage backend for application media. Legacy Supabase Storage bucket IDs, bucket existence and MIME configuration are outside the reconciliation target and the desired state.
+
+Effect on the 003.3 blockers:
+
+- **B1 is resolved as a scope choice.** The B1 lines recorded above stay as historical diagnostics, and the October 17 comparison still exited 1 with 217 differences. The decision does not ask for the buckets or their MIME rules to be reproduced in a migration or desired schema, and it does not ask for hosted buckets to be hardened, cleaned up or deleted. No hosted bucket was changed. The decision covers bucket configuration only: no Storage grant, policy or other security exception is approved, and no broad ignore is introduced.
+- **B2**, schema `public` `PUBLIC:USAGE`, remains unresolved and blocking.
+- **B3** and the other platform security provenance remain unresolved and blocking. No security exception is accepted.
+- The one-migration deployment lag, `20261015013845_webbing_catalog_snapshot`, remains a pending deployment. Production remains uninspected.
+
+The catalog query and checker are unchanged. They still capture and compare all 17 sections, including `storage_buckets`, so a hosted comparison still reports the B1 lines. Narrowing the parity scope requires its own explicit, reviewed implementation.
+
+### README change
+
+In `supabase/README.md`, only the `## Staging Comparison` status block changed. It now says application media is in R2, marks B1 as outside the target by the owner's decision with no hosted cleanup authorized, keeps B2 and B3 blocking with no accepted exception, keeps the historical 217-difference result, and states that the checker and its 17 sections are unchanged. Everything from `## Database Setup` onward is byte-identical to `4d60d1a`.
+
+### Root verification of 003.5 source
+
+Recorded from the root's report, not rerun here: `/tmp/chooselife-parent-0035-real-FKUMVk/report.json`. The root inspected the full five-file diff of `49b4678` and independently passed 238 helper tests, the web, mobile and UI typechecks with no diagnostics, 17 web tests and 11 mobile tests. Its real fresh `pnpm db:verify --keep --check-types` on owned project `chooselife-verify-0e058ba89ab7` took 66.879 s: 41 migrations, a catalog of 17 sections and 787 objects equal to the accepted full capture, 12 SQL files with 371 assertions, and type parity exit 0. A scratch sentinel made the check exit 1 without writing. Developer state was unchanged and the owned root was removed. The artifact sha256 is `c30af02141acdd1feecfda4faa3df817edc49ec229d344134b9ee79b65ab9672`. No owned stack is live, and older descriptors point at removed workspaces.
+
+### Review state
+
+The first fresh Sol review, `/root/supabase_003_5_review`, failed on provider usage before returning any verdict. That is neither an approval nor a code finding. A new fresh review of all 003.5 source, including `49b4678` and this documentation commit, is pending.
+
+### State left
+
+003.5 is not accepted. This commit is local on `t3/supabase-schema-workflow`, with no push or PR. Plan 003 is not done: staging reconciliation stays BLOCKED on B2 and B3, and Plan 004 remains gated.
