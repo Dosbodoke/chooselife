@@ -1,0 +1,230 @@
+{
+  "name": "Webbing picker layout: spec tiles vs wide cards",
+  "description": "Hypothesis: one-column wide cards (stat strip + stretch curve) help people find and register their exact webbing model more often than two-column spec tiles. Unit: anonymous installation, sticky. Exposure only when catalog cards become visible in the picker sheet. Choose a sample target from baseline before launch. Do not launch before the instrumented app is released.",
+  "feature_flag_key": "webbing-picker-layout-v1",
+  "type": "product",
+  "feature_flag": {
+    "filters": {
+      "groups": [
+        {
+          "properties": [],
+          "rollout_percentage": 100
+        }
+      ],
+      "multivariate": {
+        "variants": [
+          {
+            "key": "control",
+            "name": "Spec tiles (two columns)",
+            "rollout_percentage": 50
+          },
+          {
+            "key": "wide",
+            "name": "Wide cards (one column)",
+            "rollout_percentage": 50
+          }
+        ]
+      }
+    }
+  },
+  "exposure_criteria": {
+    "exposure_config": {
+      "kind": "ExperimentEventExposureConfig",
+      "event": "webbing_picker_exposed",
+      "properties": [
+        {
+          "key": "experiment_eligible",
+          "type": "event",
+          "operator": "exact",
+          "value": true
+        }
+      ]
+    },
+    "multiple_variant_handling": "exclude",
+    "filterTestAccounts": true
+  },
+  "metrics": [
+    {
+      "kind": "ExperimentMetric",
+      "name": "Registered with a catalog model within 24 hours",
+      "metric_type": "funnel",
+      "series": [
+        {
+          "kind": "EventsNode",
+          "event": "webbing_picker_exposed",
+          "properties": [
+            {
+              "key": "experiment_eligible",
+              "type": "event",
+              "operator": "exact",
+              "value": true
+            }
+          ]
+        },
+        {
+          "kind": "EventsNode",
+          "event": "webbing_registered",
+          "properties": [
+            {
+              "key": "experiment_eligible",
+              "type": "event",
+              "operator": "exact",
+              "value": true
+            },
+            {
+              "key": "model_source",
+              "type": "event",
+              "operator": "exact",
+              "value": "catalog"
+            }
+          ]
+        }
+      ],
+      "conversion_window": 24,
+      "conversion_window_unit": "hour"
+    }
+  ],
+  "metrics_secondary": [
+    {
+      "kind": "ExperimentMetric",
+      "name": "Picked a catalog model from the sheet",
+      "metric_type": "funnel",
+      "series": [
+        {
+          "kind": "EventsNode",
+          "event": "webbing_picker_exposed",
+          "properties": [
+            {
+              "key": "experiment_eligible",
+              "type": "event",
+              "operator": "exact",
+              "value": true
+            }
+          ]
+        },
+        {
+          "kind": "EventsNode",
+          "event": "webbing_picker_model_selected",
+          "properties": [
+            {
+              "key": "experiment_eligible",
+              "type": "event",
+              "operator": "exact",
+              "value": true
+            },
+            {
+              "key": "model_source",
+              "type": "event",
+              "operator": "exact",
+              "value": "catalog"
+            }
+          ]
+        }
+      ],
+      "conversion_window": 1,
+      "conversion_window_unit": "hour"
+    },
+    {
+      "kind": "ExperimentMetric",
+      "name": "Seconds from exposure to catalog pick",
+      "metric_type": "mean",
+      "source": {
+        "kind": "EventsNode",
+        "event": "webbing_picker_model_selected",
+        "properties": [
+          {
+            "key": "experiment_eligible",
+            "type": "event",
+            "operator": "exact",
+            "value": true
+          },
+          {
+            "key": "model_source",
+            "type": "event",
+            "operator": "exact",
+            "value": "catalog"
+          },
+          {
+            "key": "seconds_since_exposure",
+            "type": "event",
+            "operator": "gte",
+            "value": 0
+          }
+        ],
+        "math": "avg",
+        "math_property": "seconds_since_exposure"
+      },
+      "conversion_window": 1,
+      "conversion_window_unit": "hour",
+      "ignore_zeros": true
+    },
+    {
+      "kind": "ExperimentMetric",
+      "name": "Fell back to manual entry after seeing the catalog",
+      "metric_type": "funnel",
+      "series": [
+        {
+          "kind": "EventsNode",
+          "event": "webbing_picker_exposed",
+          "properties": [
+            {
+              "key": "experiment_eligible",
+              "type": "event",
+              "operator": "exact",
+              "value": true
+            }
+          ]
+        },
+        {
+          "kind": "EventsNode",
+          "event": "webbing_picker_manual_chosen",
+          "properties": [
+            {
+              "key": "experiment_eligible",
+              "type": "event",
+              "operator": "exact",
+              "value": true
+            }
+          ]
+        }
+      ],
+      "conversion_window": 1,
+      "conversion_window_unit": "hour"
+    },
+    {
+      "kind": "ExperimentMetric",
+      "name": "Any registration within 24 hours (guardrail)",
+      "metric_type": "funnel",
+      "series": [
+        {
+          "kind": "EventsNode",
+          "event": "webbing_picker_exposed",
+          "properties": [
+            {
+              "key": "experiment_eligible",
+              "type": "event",
+              "operator": "exact",
+              "value": true
+            }
+          ]
+        },
+        {
+          "kind": "EventsNode",
+          "event": "webbing_registered",
+          "properties": [
+            {
+              "key": "experiment_eligible",
+              "type": "event",
+              "operator": "exact",
+              "value": true
+            }
+          ]
+        }
+      ],
+      "conversion_window": 24,
+      "conversion_window_unit": "hour"
+    }
+  ],
+  "only_count_matured_users": true,
+  "allow_unknown_events": true
+}

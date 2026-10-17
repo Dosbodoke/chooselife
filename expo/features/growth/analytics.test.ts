@@ -2,6 +2,7 @@ import AsyncStorage from 'expo-sqlite/kv-store';
 import PostHog from 'posthog-react-native';
 
 import { MAP_DEFAULT_EXPERIMENT } from './map-default';
+import { WEBBING_PICKER_EXPERIMENT } from './webbing-picker-layout';
 
 jest.mock('posthog-react-native', () => ({
   __esModule: true,
@@ -18,6 +19,47 @@ async function load() {
   });
   return analytics;
 }
+
+describe('webbing picker flag', () => {
+  beforeEach(() => {
+    (globalThis as Record<string, unknown>).__DEV__ = false;
+    process.env.EXPO_PUBLIC_POSTHOG_KEY = 'phc_test';
+    delete process.env.EXPO_PUBLIC_DEV_WEBBING_PICKER_VARIANT;
+    jest.clearAllMocks();
+  });
+  afterEach(() => {
+    (globalThis as Record<string, unknown>).__DEV__ = true;
+    process.env = { ...originalEnv };
+  });
+
+  it('reads its own flag key in production and ignores dev overrides', async () => {
+    process.env.EXPO_PUBLIC_DEV_WEBBING_PICKER_VARIANT = 'control';
+    const instance = {
+      ready: jest.fn().mockResolvedValue(undefined),
+      reloadFeatureFlagsAsync: jest.fn().mockResolvedValue({
+        [MAP_DEFAULT_EXPERIMENT]: 'illustrated',
+        [WEBBING_PICKER_EXPERIMENT]: 'wide',
+      }),
+    };
+    constructor.mockImplementation(() => instance as unknown as PostHog);
+    expect(await (await load()).getWebbingPickerVariant()).toBe('wide');
+  });
+
+  it('uses a dev override in isolated QA storage without any transport', async () => {
+    (globalThis as Record<string, unknown>).__DEV__ = true;
+    process.env.EXPO_PUBLIC_DEV_WEBBING_PICKER_VARIANT = 'wide';
+    const analytics = await load();
+    expect(await analytics.getWebbingPickerVariant()).toBe('wide');
+    await analytics
+      .getWebbingPickerStorage()
+      .setItem(`experiment:${WEBBING_PICKER_EXPERIMENT}`, 'wide');
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+      `qa:${WEBBING_PICKER_EXPERIMENT}:wide:experiment:${WEBBING_PICKER_EXPERIMENT}`,
+      'wide',
+    );
+    expect(constructor).not.toHaveBeenCalled();
+  });
+});
 
 describe('growth transport', () => {
   beforeEach(() => {

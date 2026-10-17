@@ -10,7 +10,8 @@ import type { WebbingRigHistory } from './types';
  */
 export const webbingHistoryKeyFactory = {
   all: () => ['webbing-history'] as const,
-  byId: (webbingId: number) => ['webbing-history', webbingId] as const,
+  byId: (webbingId: number, viewerId: string | undefined) =>
+    ['webbing-history', viewerId ?? 'public', webbingId] as const,
 };
 
 /**
@@ -31,11 +32,12 @@ function calculateDurationDays(
  * Returns all rigs where this webbing was used, with highline info
  */
 export function useWebbingHistory(webbingId: number | undefined) {
-  const { supabase } = useSupabase();
+  const { supabase, userId } = useSupabase();
 
   const query = useQuery({
-    queryKey: webbingHistoryKeyFactory.byId(webbingId ?? 0),
+    queryKey: webbingHistoryKeyFactory.byId(webbingId ?? 0, userId),
     enabled: !!webbingId,
+    meta: { authScope: userId },
     queryFn: async (): Promise<WebbingRigHistory[]> => {
       if (!webbingId) {
         throw new Error('Webbing ID is required');
