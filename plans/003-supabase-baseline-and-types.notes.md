@@ -820,3 +820,157 @@ Reconciliation remains BLOCKED on B1/B2 desired-state decisions and unresolved s
 ## Parent acceptance of003.3 diagnostic report
 
 Fresh GPT-6.1-Sol High `/root/supabase_003_3_review_r2` returned SHIP at `c2b1ff11360e00034203177ebd46a19fa26410be` after the documentation corrections. Root accepts the diagnostic checkpoint only. The comparison remains exit1with217named differences and four separately explained deployment-lag lines. Staging reconciliation remains BLOCKED, no security exception is accepted, and Plan004 remains gated. Independent003.4 type generation from the verified full local replay is permitted by the refined plan;003.3parity is not marked complete. The retained owned descriptor above remains live and must pass ownership validation before use.
+
+
+## Step 4: whole-artifact regeneration (003.4), STOPPED on a consumer diagnostic
+
+Ran at base `27017a7` in this worktree, under the root's independence refinement. Private evidence: `/tmp/chooselife-003-4-private.Tkf83j`. It holds the before/after compiler output, the developer snapshots, the pre-generation catalog, copies of the old and new artifacts, a Prettier-normalized semantic diff produced in temp copies only, and the route diff.
+
+### Preconditions
+
+| Check | Exit | Result |
+| --- | --- | --- |
+| `bin/snapshot.sh` before | 0 | 12 developer containers. Inspect records and history sha `2b6d8c03…f027` match the 003.3 final snapshot |
+| Prepared compiler baseline: web, mobile and UI `tsc --noEmit --incremental false` | 0, 0, 0 | No diagnostics. The ignored Next and Expo declarations were already present, so neither generator command ran |
+| `assert-owned.mjs` on the retained descriptor | 0 | `chooselife-verify-fb3593e92268`. The copy has no `.env`, `project-ref` or pooler file; `.temp` holds only `cli-latest`. Migration files are byte-identical to the checkout |
+| Owned history query | 0 | 41 versions ending `20261015013845`, equal to the checked-in versions |
+| Inventory | 0 | `profile_isa_accounts` absent. The three required tables and two RPCs are present |
+| Live catalog against saved `cap/local-full-posttest.json` | 0 | `Application catalogs match` |
+
+### Generation
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `bash supabase-gen-types.sh --check --workdir <owned root>` before | 1 | Drift, as expected |
+| `bash supabase-gen-types.sh --workdir <owned root>` | 0 | Whole artifact replaced. sha256 `6385a97a…16a5`, 1609 lines (was 3407) |
+| `bash supabase-gen-types.sh --check --workdir <owned root>` | 0 | Byte-identical |
+
+All five required identities are present: `choosen_course_entitlements`, `festival_companion_config`, `festival_companion_tokens`, `register_festival_companion_token`, `unregister_festival_companion_installation`. `profile_isa_accounts` is absent. `packages/database/index.ts` is unchanged.
+
+Formatting: as the brief instructs, the raw pinned output is kept. The CLI prints `Generated TypeScript is unformatted` and suggests oxfmt, as Plan 002 recorded. Raw `git diff` is +1519/−3317. After Prettier normalization of temp copies, the semantic diff is +232/−17:
+
+- the five identities and `enqueue_festival_companion_notifications`
+- `ComputedFields: never` on every table
+- `Json` becoming `NonNullable<Json>` on NOT NULL json columns
+- `Args: never` becoming `Args: Record<PropertyKey, never>`
+- `push_tokens.platform` and newer Storage columns and functions from image `15.19.0.004`
+- `highline.Insert.slug` becoming required
+
+Two follow-ups for the root:
+
+- `git diff --check` exits 2 on 15 trailing-whitespace lines inside the raw output.
+- The root `format` script (`prettier --write "**/*.{ts,tsx,md}"`) would rewrite the artifact and break `--check`. No `.prettierignore` exists.
+
+### Entitlement route
+
+`next/app/api/courses/highline-beginner/access/route.ts` now imports `type { Database }` from `@/utils/supabase/database.types`, the existing shared re-export, and calls `createClient<Database>(`. Nothing else changed: same Bearer header, auth options, query, responses and R2 signing.
+
+### New diagnostics, recorded before any consumer edit
+
+Final typechecks: UI exit 0; web exit 1; mobile exit 1. The baseline had no diagnostics, so both errors are new.
+
+- `expo/components/highline/highline-form.tsx(226,11): error TS2769: No overload matches this call.` `Property '"slug"' is missing in type '{ name; height; length; description; cover_image; anchor_a; anchor_b }' but required in type` the `highline` Insert.
+- `next/components/CreateHighline.tsx(194,9): error TS2769`, the same missing `slug` on a `highline` insert.
+
+Correction made in the 003.4 revision: this run first recorded these two paths swapped. The prefixes come from the `pnpm --filter` package directory in the compiler output. The paths above are correct.
+
+Why they are new: `20261009120000_add_highline_slug.sql` adds `highline.slug text NOT NULL` with no default. The `BEFORE INSERT OR UPDATE` trigger `set_highline_slug` assigns `generate_highline_slug(NEW.name, NEW.id)` on every insert and keeps `OLD.slug` on update. The generator therefore types Insert `slug: string`. The previous `slug?: string` was hand-written in `ed30452` (#270), not generator output, and full regeneration removes it.
+
+No consumer was edited. Sending a placeholder slug would change the request payload, which is runtime behavior; the trigger would discard the value anyway. A cast, `@ts-ignore` or untyped client is forbidden. The accurate type-only correction is an `Insert: { slug?: string }` entry under `highline` in the existing `MergeDeep` override in `packages/database/index.ts`. The 003.4 brief explicitly excludes that file. This is a scope expansion, so the step stopped here.
+
+### Other gates, run for evidence
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `pnpm --filter chooselife-web test` | 0 | 17/17 |
+| `pnpm --filter chooselife-mobile exec jest features/course-guide --runInBand --watch=false --watchman=false` | 0 | 2 suites, 11 tests |
+| `node --test scripts/verify-database.test.mjs scripts/check-database-catalog.test.mjs` | 0 | 225/225, sources unchanged |
+| `--check` after the route edit | 0 | Whole-artifact byte parity holds |
+| `bin/snapshot.sh` after | 0 | Developer inspect records, history sha, volumes, networks and count are byte-identical. Non-owned `docker ps` IDs and names are unchanged |
+
+### State left
+
+The regenerated artifact, the route edit and this section are **uncommitted** in the worktree. Committing them would put two failing typechecks on the branch. The owned stack `chooselife-verify-fb3593e92268` is retained, unchanged, under the same descriptor; validate ownership before reuse. 003.3 staging parity remains BLOCKED (217 differences, B1/B2/B3). 003.4 is not complete, and nothing here touches 003.5 or Plan 004.
+
+## Step 4 revision: trigger-backed slug override and canonical formatting (003.4)
+
+Ran at base `8af87b5` under the refined plan and the revised brief, which allows the shared override file, the helper and a new helper test. It continues the uncommitted inputs from the STOP above and verified their sha256 first: artifact `6385a97a…16a5`, route `92cdabe5…e296`, notes `ccd9bc60…02e6`. Private evidence: `/tmp/chooselife-003-4-private.Tkf83j/r2`. The first run's files, including the saved old artifact `generated-before.ts`, are untouched beside it. That run's raw artifact was saved as `r2/generated-raw-r1.ts` before regeneration.
+
+This revision supersedes two parts of the STOP section: keeping the raw CLI output, and leaving the work uncommitted.
+
+### Changes
+
+| File | Change |
+| --- | --- |
+| `supabase-gen-types.sh` | Pipes the whole CLI stream through `node_modules/.bin/prettier --stdin-filepath <repo>/packages/database/database-generated.types.ts`, in a subshell that `cd`s to the repository root, into the existing `TEMP_FILE`. Checks the exit status of both pipeline stages through `PIPESTATUS`. Adds a dependency guard for the repository Prettier before any CLI call. Updates the header for the new formatting step and the exit-2 cases |
+| `scripts/supabase-gen-types.test.mjs` | New. 7 tests that run the real helper copied into a temporary fixture, with a fake CLI and either the real repository Prettier or a failing fake |
+| `packages/database/index.ts` | `highline.Insert.slug?: string` in the existing `MergeDeep` override, with a two-line comment naming the trigger. `Row.slug` is still required as generated. The POINT and notification overrides and the re-exports are unchanged |
+| `packages/database/database-generated.types.ts` | Whole file regenerated by the updated helper from the owned replay. No hand edits |
+| `next/app/api/courses/highline-beginner/access/route.ts` | Unchanged since the STOP: the `type { Database }` import and `createClient<Database>(`, 2 lines |
+
+Override evidence: `20261009120000_add_highline_slug.sql:85-100` has a `BEFORE INSERT OR UPDATE` trigger that sets `NEW.slug := public.generate_highline_slug(NEW.name, NEW.id)` on every insert, before the NOT NULL check. The generated `Update.slug` is already optional, and the trigger keeps `OLD.slug` on update, so only Insert needed the override. Neither insert payload changed.
+
+### Helper contract
+
+- Exit codes are unchanged: 0 equal or written, 1 drift or missing artifact in `--check`, 2 usage, generation, formatting or filesystem error.
+- A nonzero CLI exit fails even when its partial output formats and validates: `Type generation failed (supabase exit N, prettier exit M)`. A formatter failure reports `Formatting generated types with Prettier failed (exit M)`. In both cases, in write and check modes, the destination keeps its bytes and the `EXIT` trap removes the temporary file.
+- Formatting always resolves configuration from the canonical artifact path, never from `--output`, the caller's cwd or the destination directory. Only the formatter subshell changes directory, so a relative `--output` still resolves against the caller.
+- Unchanged: the explicit local repository CLI, `storage,public,functions`, `--linked` rejection, output path guards, the nonempty `export type Database =` check, `cmp`-based check without writes, the same-directory atomic `mv` and the signal traps.
+
+The CLI still prints `Generated TypeScript is unformatted ... npx oxfmt` to stderr. That message comes from the pinned CLI and does not describe the helper's final output.
+
+The 7 tests cover:
+
+- canonical write, then `--check` exit 0, with output equal to repository Prettier, idempotent under a second pass, free of trailing whitespace, and the exact CLI arguments
+- three destinations with identical canonical bytes: the default artifact, `expo/example.ts` beside a conflicting `.prettierrc.json`, and an external directory with a conflicting config reached through a relative `--output` from that directory. The test first proves the conflicting config would change the bytes
+- `--check` exit 1 on a sentinel drift and on a missing artifact, without writing
+- CLI exit 1 after complete valid output: exit 2 in write and check modes, prior bytes preserved
+- formatter exit 2 after printing a valid-looking partial result: exit 2 in write and check modes, prior bytes preserved
+- missing repository Prettier: exit 2 before the CLI is called
+- empty output and output without the Database export: exit 2, prior bytes preserved
+
+Every test asserts that the fixture `TMPDIR`, used by check-mode `mktemp`, and the destination directory, used for the write-mode dot file, hold no leftover temporary files. Prettier enables Node's compile cache under `TMPDIR`. The tests set `NODE_DISABLE_COMPILE_CACHE=1` so that this Node cache directory does not mask a leaked helper file. In normal use that cache lives in the system temp directory, as for any Prettier run.
+
+Mutation check, in scratch copies outside the repository: the pre-revision helper fails 5 of 7 tests. Using `--stdin-filepath "$OUTPUT"` fails the destination test. Ignoring the CLI status fails the partial-output test. Ignoring the formatter status fails the formatter test.
+
+### Owned stack and generation
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `snapshot.sh` before | 0 | 12 developer containers. Inspect records, history sha `2b6d8c03…f027`, volumes and networks equal the first run's after-snapshot. Non-owned `docker ps` IDs and names unchanged |
+| `assert-owned.mjs <descriptor>`, before every query and generation | 0 | `chooselife-verify-fb3593e92268` at `/private/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-verify-UCnOyZ`. `supabase/.temp` holds only `cli-latest`; no `.env`. Migration files byte-identical to the checkout |
+| Owned history query | 0 | 41 versions ending `20261015013845`, equal to the checked-in versions |
+| Owned inventory query | 0 | `profile_isa_accounts` absent. The three tables and two RPCs are present |
+| `bash supabase-gen-types.sh --check --workdir <owned root>` | 1 | Drift: the committed-state artifact was raw |
+| `bash supabase-gen-types.sh --workdir <owned root>` | 0 | Whole artifact replaced. sha256 `c30af021…9672`, 3624 lines |
+| `bash supabase-gen-types.sh --check --workdir <owned root>` | 0 | Up to date |
+
+No replay, reset or catalog capture ran in this revision. The 12 files and 371 SQL assertions are the evidence from the 003.3 restore; no SQL changed.
+
+Artifact checks:
+
+- Prettier applied to the first run's raw output, `r2/generated-raw-r1.ts`, is byte-identical to the new artifact. Formatting is therefore the only difference from the earlier generation.
+- A second Prettier pass changes no bytes, and `prettier --check` on the artifact exits 0.
+- The artifact has no trailing-whitespace lines, and `git diff --check` exits 0.
+- Each of the five identities appears once. `profile_isa_accounts` appears 0 times.
+- The raw `git diff` against HEAD is +2885/−2668 because the HEAD artifact was not Prettier-formatted. After Prettier normalization of the HEAD copy, the semantic diff is +232/−17, the same content listed in the STOP section.
+
+### Gates
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `pnpm --filter chooselife-web exec tsc --noEmit --incremental false` | 0 | No diagnostics. Both slug errors are gone |
+| `pnpm --filter chooselife-mobile exec tsc --noEmit --incremental false` | 0 | No diagnostics |
+| `pnpm --filter @chooselife/ui exec tsc --noEmit --incremental false` | 0 | No diagnostics |
+| `pnpm --filter chooselife-web test` | 0 | 17/17 |
+| `pnpm --filter chooselife-mobile exec jest features/course-guide --runInBand --watch=false --watchman=false` | 0 | 2 suites, 11 tests |
+| `node --test scripts/verify-database.test.mjs scripts/check-database-catalog.test.mjs scripts/supabase-gen-types.test.mjs` | 0 | 232/232: 225 existing plus 7 new |
+| `prettier --check` on the artifact, `index.ts`, the route and the new test | 1 | Only the route fails. The cause is a missing trailing comma at `route.ts:30`, outside the 2-line edit and already present at HEAD. Not fixed, because the route change is limited to the type import and generic |
+| `git diff --check` | 0 | Clean |
+| `snapshot.sh` after | 0 | Inspect records, history sha, volumes, networks and count equal the before-snapshot. Non-owned `docker ps` IDs and names unchanged |
+
+The prepared Next and Expo declarations were already present, and `git status` shows only the six scoped files. The root `pnpm format` glob was not run. The older owned stack `049997ac2680` was not touched.
+
+### State left
+
+The six scoped files are committed on `t3/supabase-schema-workflow`, with no push or PR. The owned stack `chooselife-verify-fb3593e92268` is retained under the same descriptor for 003.5. 003.3 staging parity remains BLOCKED with 217 named differences. 003.4 waits for root verification and a fresh review. Nothing here touches 003.5, Plan 004, CI, `package.json`, the README, SQL or hosted state.

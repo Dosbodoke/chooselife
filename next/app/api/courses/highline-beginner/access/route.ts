@@ -9,11 +9,12 @@ import {
   resolveHighlineBeginnerAccess,
 } from "@/lib/courses/highline-beginner-access";
 import { r2Client } from "@/lib/storage/r2.server";
+import type { Database } from "@/utils/supabase/database.types";
 
 const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
 
 function createRlsSupabaseClient(accessToken: string) {
-  return createClient(
+  return createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {

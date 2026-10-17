@@ -27,6 +27,9 @@ export type Database = MergeDeep<
           Insert: {
             anchor_a?: Point | null;
             anchor_b?: Point | null;
+            // NOT NULL without a default, so the generator requires it, but the
+            // set_highline_slug BEFORE INSERT trigger always generates it.
+            slug?: string;
           };
           Update: {
             anchor_a?: Point | null;

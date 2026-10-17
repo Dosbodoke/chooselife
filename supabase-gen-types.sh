@@ -4,18 +4,22 @@
 # Usage: bash supabase-gen-types.sh [--check] [--workdir <Supabase project root>] [--output <artifact path>]
 #
 # Defaults to this repository's Supabase project and the shared database package
-# artifact. --check compares freshly generated types with the artifact without
-# modifying it. Exit codes: 0 success or no drift, 1 drift or missing artifact,
-# 2 usage, generation or filesystem error.
+# artifact. The CLI output is formatted with the repository's Prettier as if it
+# were the shared artifact, whatever --output names, so every destination gets
+# the same bytes. --check compares freshly generated types with the artifact
+# without modifying it. Exit codes: 0 success or no drift, 1 drift or missing
+# artifact, 2 usage, generation, formatting or filesystem error.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SUPABASE_BIN="$REPO_ROOT/node_modules/.bin/supabase"
+PRETTIER_BIN="$REPO_ROOT/node_modules/.bin/prettier"
 SCHEMAS="storage,public,functions"
+CANONICAL_OUTPUT="$REPO_ROOT/packages/database/database-generated.types.ts"
 
 CHECK=false
 WORKDIR="$REPO_ROOT"
-OUTPUT="$REPO_ROOT/packages/database/database-generated.types.ts"
+OUTPUT="$CANONICAL_OUTPUT"
 
 usage() {
     echo "Usage: bash supabase-gen-types.sh [--check] [--workdir <Supabase project root>] [--output <artifact path>]" >&2
@@ -55,6 +59,7 @@ while [ $# -gt 0 ]; do
 done
 
 [ -x "$SUPABASE_BIN" ] || fail "Repository Supabase CLI not found at $SUPABASE_BIN. Run pnpm install."
+[ -x "$PRETTIER_BIN" ] || fail "Repository Prettier not found at $PRETTIER_BIN. Run pnpm install."
 [ -f "$WORKDIR/supabase/config.toml" ] || fail "No supabase/config.toml under workdir $WORKDIR."
 WORKDIR="$(cd "$WORKDIR" && pwd)"
 
@@ -81,9 +86,22 @@ trap 'rm -f "$TEMP_FILE"' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
+# Only this subshell runs from the repository root, so ignore files resolve there
+# and a relative --output still resolves against the caller's directory.
+format_types() (
+    cd "$REPO_ROOT" && "$PRETTIER_BIN" --stdin-filepath "$CANONICAL_OUTPUT"
+)
+
 echo "Generating database types from the local Supabase project at $WORKDIR..." >&2
-if ! "$SUPABASE_BIN" --workdir "$WORKDIR" --agent no gen types typescript --local --schema "$SCHEMAS" > "$TEMP_FILE"; then
-    fail "Type generation failed; $OUTPUT was not modified."
+PIPE_STATUS=(0 0)
+"$SUPABASE_BIN" --workdir "$WORKDIR" --agent no gen types typescript --local --schema "$SCHEMAS" |
+    format_types > "$TEMP_FILE" || PIPE_STATUS=("${PIPESTATUS[@]}")
+# Partial output from a failed CLI can still format cleanly, so check both.
+if [ "${PIPE_STATUS[0]}" -ne 0 ]; then
+    fail "Type generation failed (supabase exit ${PIPE_STATUS[0]}, prettier exit ${PIPE_STATUS[1]}); $OUTPUT was not modified."
+fi
+if [ "${PIPE_STATUS[1]}" -ne 0 ]; then
+    fail "Formatting generated types with Prettier failed (exit ${PIPE_STATUS[1]}); $OUTPUT was not modified."
 fi
 
 if [ ! -s "$TEMP_FILE" ] || ! grep -q '^export type Database = ' "$TEMP_FILE"; then
