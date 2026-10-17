@@ -15,10 +15,10 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 
 ## Current task
 
-- Checkpoint: `002.2`, isolated verification workspace/runner and tests.
-- Status: ACCEPTED at `84676998a189e74eb63923af433dfd7d6772edbe`. Parent verification passed and fresh Sol round 2 returned SHIP with no findings. Advisor documents are being committed for the user-authorized branch push.
-- Client request ID: `supabase-002-step2-opus-revision1-20261016`.
-- T3 task ID: `node:delegated-task:command%3Amcp%3A8fa173e9-c7dc-4671-afb7-e032d9dd2cc9%3Adelegate-task%3Asupabase-002-step2-opus-revision1-20261016`.
+- Checkpoint: `002.3`, real isolated replay, generator and failure cleanup verification.
+- Status: ACCEPTED at `257657d`. Parent independently passed real replay, generation, failure and preservation gates; fresh Sol returned SHIP conditional on those now-satisfied gates. Next checkpoint is 002.4.
+- Client request ID: `supabase-002-step3-opus-r1-20261016`.
+- T3 task ID: `node:delegated-task:command%3Amcp%3A8fa173e9-c7dc-4671-afb7-e032d9dd2cc9%3Adelegate-task%3Asupabase-002-step3-opus-r1-20261016`.
 - Automatic completion delivery is enabled. Await the result rather than starting a duplicate or polling a watcher.
 - Bootstrap commit: `775f09fbefdc984657cf0994b2ffbd9bb40644c4`.
 - Checkpoint implementation range: `fd8b6cbbf6118fe05bee52082356c168b025fffd..84676998a189e74eb63923af433dfd7d6772edbe`.
@@ -29,7 +29,8 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 
 - 002.1: ACCEPTED, head `fd8b6cbbf6118fe05bee52082356c168b025fffd`, fresh Sol round 3 ship.
 - 002.2: ACCEPTED, head `84676998a189e74eb63923af433dfd7d6772edbe`, fresh Sol round 2 ship.
-- 002.3–002.4: pending accepted predecessor checkpoint.
+- 002.3: ACCEPTED, head `257657d`, fresh Sol ship and all parent real gates passed.
+- 002.4: ready for Opus implementation.
 - 003.1–003.5: pending Plan 002 acceptance.
 - 004.1–004.5: pending Plans 002 and 003 acceptance.
 
@@ -55,6 +56,11 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - Revision 1 completed at `84676998a189e74eb63923af433dfd7d6772edbe`. Parent reran all 39 tests under Node 24.18.0, Prettier and checkpoint diff whitespace checks; all passed, with a clean tree. The fix suppresses failed-start stdout locally while retaining masked stderr. The regression covers Unicode/ASCII credential tables, useful stderr and owned cleanup. No Docker operation ran.
 - Fresh reviewer `/root/supabase_002_2_review_r2`, GPT-6.1-Sol High, receives the complete checkpoint brief, prior finding, fix, verification and accepted residual limits. Publication waits for its verdict.
 - Sol002.2 round2: SHIP, no correctness or simplicity findings. Independent rerun passed all 39 tests on Node 24.18.0, Prettier, whitespace checks and relevant CLI help. Reviewer confirmed the local correction, cleanup and fixture preservation. Root accepts checkpoint 002.2. Real startup/replay/query/TAP/runtime isolation remain due in 002.3.
+- User-authorized publication: committed advisor status documents as `c09a3172f5b2e163d1da242e16d0662c189836cb`, then `git push -u origin HEAD` succeeded. `git ls-remote --heads origin refs/heads/t3/supabase-schema-workflow` returned the same SHA. Dedicated tree was clean and tracking origin; unrelated parent edits stayed untouched. No PR created.
+- Dispatched 002.3 to Opus 5.5 High in the existing worktree. Owns only factual checkpoint notes and owned scratch verification resources; any runner compatibility change must be reported first. No automatic push by executor. Next action on completion is parent evidence verification and a fresh Sol review, including any STOP diagnosis.
+- Opus002.3 returned COMPLETE, head `257657d`, changing only its notes. Observed 41 applied migrations, both seeds, clean lint and 12 files with 371 assertions on each of two successful replays. Real generator success/equality/drift/stopped-project preservation passed. A scratch copy with an injected failing test returned 1 and removed owned resources. Developer container identities/start times/restart counts, volumes/networks and 41-row history hash stayed unchanged. Parent is independently rerunning the kept/default/generator/injected-failure gates before fresh review.
+- Fresh Sol `/root/supabase_002_3_review`: SHIP conditional on remaining parent real gates, with no correctness, scope, safety or simplicity findings. Independently passed all 39 helper tests, CLI version and whitespace/protected-input checks. Notes-only verification and byte-identical scratch failure injection are proportionate to Step 3.
+- Parent real rerun PASS: kept and default replays each 41 migrations and 12 files/371 assertions; scratch generation/equality 0, drift 1 with preserved bytes, stopped-project write/check 2 with preserved bytes. An independent one-assertion failure fixture ran 13 files/372 assertions, exited 1 and cleaned owned resources. All 12 developer container identities/start times/restarts, volume/network names and 41-row history hash stayed unchanged. Protected input diff is empty. These results satisfy Sol's conditions, and root accepts 002.3. Private nonsecret evidence file: `/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-parent-s3-d6WOdR/evidence.json`.
 
 After 002.2 acceptance, commit the current advisor status documents and push the dedicated branch as requested. Checkpoint 002.3 is the next implementation step and must use the same worktree. Real replay and all later plan gates remain pending until their own verification and fresh review.
 
