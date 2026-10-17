@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { after, before, beforeEach, test } from "node:test";
 
+import { SECTIONS, readCatalog } from "./check-database-catalog.mjs";
 import {
   assertOwnedWorkspace,
   childEnv,
@@ -17,6 +18,10 @@ import {
 
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const verifierPath = path.join(import.meta.dirname, "verify-database.mjs");
+const checkerPath = path.join(
+  import.meta.dirname,
+  "check-database-catalog.mjs",
+);
 const SECRETS = [
   "sb_publishable_FAKEPUB",
   "sb_secret_FAKESECRET",
@@ -33,6 +38,34 @@ const SERVICE_PORTS = [
   "analytics.port",
   "edge_runtime.inspector_port",
 ];
+
+// Synthetic metadata only: one schema and otherwise empty sections. The
+// comment is a sentinel that must never reach the verifier's output.
+const CATALOG_SENTINEL = "SENTINEL_CATALOG_PAYLOAD";
+const CATALOG = {
+  format: "chooselife.catalog.v2",
+  environment: {
+    server_version_num: "150000",
+    app_owner: "postgres",
+    complete_visibility: true,
+    extension_versions: { plpgsql: "1.0" },
+  },
+  counts: Object.fromEntries(
+    SECTIONS.map((section) => [section, section === "schemas" ? 1 : 0]),
+  ),
+  ...Object.fromEntries(SECTIONS.map((section) => [section, []])),
+  schemas: [
+    {
+      id: "public",
+      owner: "pg_database_owner",
+      extension_member: false,
+      comment: CATALOG_SENTINEL,
+      acl: ["anon:USAGE"],
+      effective: { anon: ["USAGE"], authenticated: [], service_role: [] },
+    },
+  ],
+};
+const CATALOG_ROWS = JSON.stringify([{ catalog: CATALOG }]);
 
 let base;
 let tmpDir;
@@ -53,7 +86,8 @@ for (let i = 0; i < argv.length; i++) {
     i++;
   } else rest.push(argv[i]);
 }
-const command = rest[0] === "db" || rest[0] === "test" ? rest.slice(0, 2).join(" ") : rest[0];
+let command = rest[0] === "db" || rest[0] === "test" ? rest.slice(0, 2).join(" ") : rest[0];
+if (command === "db query" && rest.includes("--file")) command = "db query --file";
 fs.appendFileSync(path.join(dir, "calls.log"), JSON.stringify({ argv, rest, command, cwd: process.cwd(), env: process.env }) + "\\n");
 const behavior = JSON.parse(fs.readFileSync(path.join(dir, "behavior.json"), "utf8"))[command] ?? {};
 if (behavior.sleepMs) await new Promise((resolve) => setTimeout(resolve, behavior.sleepMs));
@@ -64,6 +98,9 @@ if (stdout === undefined && command === "start") {
 if (stdout === undefined && command === "db query") {
   const versions = fs.readdirSync(path.join(workdir, "supabase/migrations")).map((name) => name.split("_")[0]);
   stdout = JSON.stringify(versions.map((version) => ({ version })), null, 2) + "\\n";
+}
+if (stdout === undefined && command === "db query --file") {
+  stdout = ${JSON.stringify(CATALOG_ROWS)} + "\\n";
 }
 if (stdout === undefined && command === "test db") {
   const count = fs.readdirSync(rest.at(-1), { recursive: true }).filter((name) => /\\.(sql|pg)$/.test(name)).length;
@@ -90,6 +127,10 @@ async function makeFixture(mutate) {
   await writeFile(
     path.join(root, "scripts/verify-database.mjs"),
     await fs.readFile(verifierPath),
+  );
+  await writeFile(
+    path.join(root, "scripts/check-database-catalog.mjs"),
+    await fs.readFile(checkerPath),
   );
   await writeFile(
     path.join(root, "node_modules/supabase/dist/supabase.js"),
@@ -121,6 +162,10 @@ async function makeFixture(mutate) {
   await writeFile(path.join(supabase, "tests/README.md"), "notes\n");
   await writeFile(path.join(supabase, "tests/.env"), "SECRET=1\n");
   await writeFile(path.join(supabase, "seed.sql"), "-- seed\n");
+  await writeFile(
+    path.join(supabase, "verification/catalog.sql"),
+    "select 1 as catalog;\n",
+  );
   await writeFile(
     path.join(supabase, "seeds/association-billing-personas.sql"),
     "-- personas\n",
@@ -308,6 +353,8 @@ test("the workspace copies only Supabase inputs and isolates the config", async 
       "supabase/tests/a_test.sql",
       "supabase/tests/nested",
       "supabase/tests/nested/b_test.pg",
+      "supabase/verification",
+      "supabase/verification/catalog.sql",
     ]);
 
     const config = await fs.readFile(
@@ -600,7 +647,15 @@ test("a passing run hard-targets the owned project and removes it", async () => 
   const calls = await readCalls(fixture);
   assert.deepEqual(
     calls.map((call) => call.command),
-    ["start", "db reset", "db query", "db lint", "test db", "stop"],
+    [
+      "start",
+      "db reset",
+      "db query",
+      "db query --file",
+      "db lint",
+      "test db",
+      "stop",
+    ],
   );
   const root = calls[0].argv[1];
   assert.equal(path.dirname(root), tmpDir);
@@ -661,6 +716,20 @@ test("a passing run hard-targets the owned project and removes it", async () => 
     byCommand["db query"].rest[5],
     /^select version from supabase_migrations\.schema_migrations/,
   );
+  assert.deepEqual(byCommand["db query --file"].rest, [
+    "db",
+    "query",
+    "--local",
+    "--file",
+    path.join(root, "supabase/verification/catalog.sql"),
+    "--output",
+    "json",
+  ]);
+  assert.match(
+    result.stdout,
+    /Capturing schema catalog: ok \(17 sections, 1 objects, /,
+  );
+  assert.ok(!result.output.includes(CATALOG_SENTINEL));
   assert.deepEqual(byCommand["test db"].rest, [
     "test",
     "db",
@@ -880,11 +949,15 @@ test("--keep retains the owned project and prints a descriptor without credentia
     ),
   );
   assert.deepEqual(Object.keys(descriptor).sort(), [
+    "catalog",
     "cleanup",
     "path",
     "ports",
     "projectId",
   ]);
+  assert.equal(descriptor.catalog, path.join(descriptor.path, "catalog.json"));
+  assert.deepEqual(await readCatalog(descriptor.catalog), CATALOG);
+  assert.ok(!result.output.includes(CATALOG_SENTINEL));
   assert.equal(path.dirname(descriptor.path), tmpDir);
   assert.equal(descriptor.projectId, projectIdFrom(result.stdout));
   assert.deepEqual(
@@ -906,10 +979,77 @@ test("--keep retains the owned project and prints a descriptor without credentia
   );
 });
 
+test("a failed or invalid catalog capture fails before lint and pgTAP and leaves nothing behind", async (t) => {
+  const rows = CATALOG_ROWS;
+  const missingSection = { ...CATALOG };
+  delete missingSection.storage_buckets;
+  const cases = [
+    [
+      "the query fails after printing part of the payload",
+      {
+        "db query --file": {
+          code: 1,
+          stdout: rows.slice(0, rows.indexOf(CATALOG_SENTINEL) + 40),
+          stderr:
+            "ERROR: canceling statement\nSecret key: sb_secret_FAKESECRET\n",
+        },
+      },
+      /Catalog query failed \(exit 1\)[^]*canceling statement/,
+    ],
+    [
+      "the payload is truncated",
+      { "db query --file": { stdout: rows.slice(0, -40) } },
+      /Catalog capture is invalid: Input is not valid JSON/,
+    ],
+    [
+      "the output is not a catalog",
+      { "db query --file": { stdout: '[{"catalog":{"format":"other"}}]' } },
+      /Catalog capture is invalid: Input is not a chooselife\.catalog\.v2 catalog/,
+    ],
+    [
+      "a section is missing",
+      {
+        "db query --file": {
+          stdout: JSON.stringify([{ catalog: missingSection }]),
+        },
+      },
+      /Catalog capture is invalid: Catalog section storage_buckets is missing/,
+    ],
+    [
+      "the query file is missing",
+      {},
+      /Missing the catalog query supabase\/verification\/catalog\.sql/,
+      (s) => fs.rm(path.join(s, "verification"), { recursive: true }),
+    ],
+  ];
+  for (const [name, behavior, message, mutate] of cases) {
+    await t.test(name, async () => {
+      const fixture = await makeFixture(mutate);
+      await setBehavior(fixture, behavior);
+      const result = await runVerifier(fixture, ["--check-types"]);
+      assert.equal(result.code, 1, result.output);
+      assert.match(result.stderr, message);
+      assert.ok(!result.output.includes(CATALOG_SENTINEL));
+      for (const secret of SECRETS)
+        assert.ok(!result.output.includes(secret), secret);
+      const commands = (await readCalls(fixture)).map((call) => call.command);
+      assert.deepEqual(commands.slice(-1), ["stop"]);
+      for (const skipped of ["db lint", "test db"])
+        assert.ok(!commands.includes(skipped), skipped);
+      await assert.rejects(fs.access(path.join(fixture, "gen-types.log")));
+      assert.deepEqual(await tmpEntries(), []);
+    });
+  }
+});
+
 test("--check-types runs the generator in check mode against the owned project", async (t) => {
   for (const [status, code, message] of [
     ["0", 0, /Checking generated types: ok/],
-    ["1", 1, /known until Plan 003/],
+    [
+      "1",
+      1,
+      /Generated types differ from .*Regenerate them from a clean replay/,
+    ],
   ]) {
     await t.test(`generator exit ${status}`, async () => {
       const fixture = await makeFixture();
@@ -939,7 +1079,15 @@ test("SIGTERM stops the owned project without killing its cleanup", async (t) =>
       "during cleanup",
       "stop",
       0,
-      ["start", "db reset", "db query", "db lint", "test db", "stop"],
+      [
+        "start",
+        "db reset",
+        "db query",
+        "db query --file",
+        "db lint",
+        "test db",
+        "stop",
+      ],
     ],
   ];
   for (const [name, command, code, commands] of cases) {

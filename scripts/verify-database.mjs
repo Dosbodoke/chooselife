@@ -5,8 +5,9 @@
 //
 // Copies the repository's Supabase inputs into a fresh temp directory with its
 // own project ID and ports, then starts that copy, resets it, checks applied
-// migration versions, lints and runs pgTAP. Only the copy's containers and
-// directory are touched, so an existing local stack keeps running.
+// migration versions, captures the schema catalog, lints and runs pgTAP. Only
+// the copy's containers and directory are touched, so an existing local stack
+// keeps running.
 // Exit codes: 0 success, 1 verification or cleanup failure, 2 usage error,
 // 128 + signal number when interrupted.
 
@@ -17,10 +18,15 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 
+import { extractCatalog } from "./check-database-catalog.mjs";
+
 const REPO_ROOT = path.resolve(import.meta.dirname, "..");
 const CLI_JS = path.join(REPO_ROOT, "node_modules/supabase/dist/supabase.js");
 const CLI_BIN = path.join(REPO_ROOT, "node_modules/.bin/supabase");
 const TYPES_HELPER = path.join(REPO_ROOT, "supabase-gen-types.sh");
+// Relative to the disposable project root.
+const CATALOG_QUERY = "supabase/verification/catalog.sql";
+const CATALOG_FILE = "catalog.json";
 
 const WORKSPACE_PREFIX = "chooselife-verify-";
 const WORKSPACE_NAME = /^chooselife-verify-[A-Za-z0-9]{6}$/;
@@ -94,14 +100,15 @@ const ENV_ALLOWED = new Set([
 
 const USAGE = `Usage: pnpm db:verify [--keep] [--check-types]
 
-Replays every migration and seed, lints the public schema and runs every
-pgTAP test in a disposable copy of the Supabase project. Requires a running
-Docker-compatible runtime such as Docker Desktop, OrbStack or Colima. The
-existing local stack and its data are left alone.
+Replays every migration and seed, captures the schema catalog, lints the
+public schema and runs every pgTAP test in a disposable copy of the Supabase
+project. Requires a running Docker-compatible runtime such as Docker Desktop,
+OrbStack or Colima. The existing local stack and its data are left alone.
 
-  --keep          Keep the disposable stack and print how to remove it.
-  --check-types   Also compare generated types with the tracked artifact.
-                  Known drift fails this check until Plan 003.`;
+  --keep          Keep the disposable stack and its catalog capture, and
+                  print where they are and how to remove them.
+  --check-types   Also fail if types generated from the replay differ from
+                  packages/database/database-generated.types.ts.`;
 
 class VerifyError extends Error {
   constructor(message, output = "") {
@@ -419,6 +426,7 @@ export function describeWorkspace(workspace) {
     path: workspace.root,
     projectId: workspace.projectId,
     ports: workspace.ports,
+    ...(workspace.catalogFile && { catalog: workspace.catalogFile }),
     cleanup: `${shellQuote(CLI_BIN)} --workdir ${root} stop --project-id ${workspace.projectId} --no-backup && rm -rf ${root}`,
   };
 }
@@ -531,6 +539,48 @@ async function checkMigrations(workspace) {
   return `${applied.length} versions match ${expected.length} files`;
 }
 
+// Runs the copied supabase/verification/catalog.sql against the owned project
+// and writes the validated payload to <root>/catalog.json, which cleanup
+// removes with the rest of the project. Capture right after a reset: lint and
+// pgTAP install helpers that are not part of the migrations. Query output can
+// hold catalog values, so a failure reports only stderr and the checker's
+// message, never stdout.
+export async function captureCatalog(workspace) {
+  await assertOwnedWorkspace(workspace);
+  const query = path.join(workspace.root, CATALOG_QUERY);
+  await fs.access(query).catch(() => {
+    throw new VerifyError(`Missing the catalog query ${CATALOG_QUERY}.`);
+  });
+  const result = await runCli(workspace, [
+    "db",
+    "query",
+    "--local",
+    "--file",
+    query,
+    "--output",
+    "json",
+  ]);
+  if (result.code !== 0) {
+    throw new VerifyError(
+      `Catalog query failed (${result.signal ?? `exit ${result.code}`}).`,
+      result.stderr,
+    );
+  }
+  let catalog;
+  try {
+    catalog = extractCatalog(result.stdout);
+  } catch (error) {
+    throw new VerifyError(`Catalog capture is invalid: ${error.message}`);
+  }
+  const file = path.join(workspace.root, CATALOG_FILE);
+  const partial = `${file}.partial`;
+  await fs.writeFile(partial, `${JSON.stringify(catalog)}\n`, { flag: "wx" });
+  await fs.rename(partial, file);
+  workspace.catalogFile = file;
+  const objects = Object.values(catalog.counts).reduce((a, b) => a + b, 0);
+  return `${Object.keys(catalog.counts).length} sections, ${objects} objects, ${file}`;
+}
+
 async function runTests(workspace) {
   const { stdout } = await runCliStep(
     workspace,
@@ -562,7 +612,7 @@ async function checkTypes(workspace) {
   ]);
   if (result.code === 1) {
     throw new VerifyError(
-      "Generated types differ from packages/database/database-generated.types.ts. This drift is known until Plan 003.",
+      "Generated types differ from packages/database/database-generated.types.ts. Regenerate them from a clean replay as supabase/README.md describes.",
     );
   }
   if (result.code !== 0)
@@ -663,6 +713,8 @@ export async function main(argv) {
     await step("Comparing applied migrations", () =>
       checkMigrations(workspace),
     );
+    checkInterrupt();
+    await step("Capturing schema catalog", () => captureCatalog(workspace));
     checkInterrupt();
     await step("Linting public schema", async () => {
       await runCliStep(workspace, "db lint", [

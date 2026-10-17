@@ -979,3 +979,94 @@ The six scoped files are committed on `t3/supabase-schema-workflow`, with no pus
 ## Parent acceptance of003.4
 
 Root accepts003.4 at `f1cc1cd` after fresh GPT-6.1-Sol High `/root/supabase_003_4_review` returned SHIP with no material findings. Parent independently passed232tooling tests, web/mobile/UI typechecks with no diagnostics,17web and11mobile tests, the real owned whole-artifact check, scratch generation matching the artifact and an idempotent formatter pass. A scratch sentinel correctly makes check exit1without changing scratch or artifact bytes. Developer state remains unchanged. Evidence: `/tmp/chooselife-parent-0034-final-mu9qhw/report.json`. The canonical artifact SHA256 is `c30af02141acdd1feecfda4faa3df817edc49ec229d344134b9ee79b65ab9672`. SQL, migrations, runtime behavior and hosted state are unchanged. The route formatting warning is pre-existing; the changed artifact/override/test files and whitespace checks pass.003.3parity remains blocked;003.5may proceed independently and cannot authorize Plan004.
+
+## Step 5: local CI gate and catalog capture (003.5)
+
+Status: done locally and waiting for root verification and a fresh review. It ran at base `1c25041` with a clean status, under the independence refinement. This step closes nothing on staging: 003.3 reconciliation remains BLOCKED, and Plan 004 stays gated.
+
+Private evidence: `/tmp/chooselife-003-5-private.1dlhSl` (mode 700). It holds the developer snapshots under `snap/before|after`, command logs under `logs/`, the kept run's descriptor, a copy of the fresh catalog (`catalog-fresh.json`, sha256 `5590c218…a9dc`) and the scratch negative-check file. A scan for `sb_secret_`, `sb_publishable_`, JWTs, `Bearer` tokens and URL passwords found nothing outside copied test fixtures, which hold only the synthetic fake values.
+
+Commands ran under Node 24.18.0 from nvm, pnpm 11.10.0 and repository CLI 2.121.0. No `SUPABASE*`, `PG*`, `DATABASE*` or `DOCKER*` variable was set.
+
+### Changes
+
+| File | Change |
+| --- | --- |
+| `scripts/verify-database.mjs` | New exported `captureCatalog(workspace)`, run as the step `Capturing schema catalog` right after the applied-version check and before lint and pgTAP. It asserts ownership, requires the copied `supabase/verification/catalog.sql`, runs `db query --local --file <copied absolute path> --output json` through the existing CLI wrapper, validates stdout with the accepted `extractCatalog`, and writes the validated payload to `<root>/catalog.json` through a `catalog.json.partial` rename. The descriptor gains `catalog` once a capture exists. `--check-types` drift now says to regenerate from a clean replay. The usage text no longer mentions known drift |
+| `scripts/verify-database.test.mjs` | The fixture copies the real `check-database-catalog.mjs` and adds a synthetic `verification/catalog.sql`. The fake CLI answers `db query --file` with one synthetic 17-section catalog row. Existing tests now also assert the capture's position, its exact arguments and the kept descriptor's `catalog`. One new test, with 5 cases, covers failed capture |
+| `.github/workflows/database.yml` | Runs all three helper test files and `pnpm db:verify --check-types`. Adds path triggers for the comparator and generator tests, `packages/database/**`, formatter configuration and direct type consumers |
+| `supabase/README.md` | Only `## Local Verification` and `## Database Types` changed, plus a new `## Staging Comparison` section. Everything from `## Database Setup` onward is byte-identical to HEAD |
+
+`package.json` did not change: `db:verify`, `db:types`, `db:types:check` and `db:catalog:compare` already exist. No SQL, catalog query, comparator, helper, generated type, override, route, migration, seed, config, dependency or lockfile changed.
+
+### Capture contract
+
+- Reusable entry point for Plan 004: `captureCatalog({ root, projectId })` from `scripts/verify-database.mjs`. It works on a kept descriptor's `path` and `projectId` and returns a short summary. The file is always `<root>/catalog.json`, holding the bare `chooselife.catalog.v2` payload that `pnpm db:catalog:compare` reads.
+- It fails closed, with exit 1 and normal cleanup, in four cases. The copied query may be missing. The query may exit nonzero; then only stderr is shown, redacted, and stdout is dropped because it can hold partial payload values. Stdout may be malformed or truncated JSON. Or the result may fail `validateCatalog`, for example with a missing section, a count mismatch or incomplete visibility. In those cases `Catalog capture is invalid: <checker message>` is reported. Checker messages name sections and identities, never values. No bypass flag exists.
+- The payload is never printed. Success prints section and object counts and the file path.
+- Without `--keep`, cleanup removes `catalog.json` with the project directory.
+
+### Tests
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `node --test scripts/verify-database.test.mjs scripts/check-database-catalog.test.mjs scripts/supabase-gen-types.test.mjs` | 0 | 238/238. At HEAD there were 232: 39 + 186 + 7. Now 45 + 186 + 7, from one new test with 5 cases. No existing test was removed |
+
+The new cases cover a query exit 1 whose stdout holds part of the payload, including a sentinel, and whose stderr holds a fake secret. They also cover truncated JSON, a non-catalog format, a payload missing `storage_buckets`, and a missing query file. Each case asserts exit 1, the specific message, neither the sentinel nor any fake secret in the output, `stop` as the last call, no `db lint`, `test db` or type generation, and an empty temp directory. The passing and `--keep` tests assert that the sentinel never reaches the output, and that `readCatalog(descriptor.catalog)` deep-equals the synthetic payload.
+
+Mutation check, in scratch copies outside the repository. Moving the capture after lint fails 9 tests. Adding stdout to the failure output fails 2. Accepting an invalid payload fails 4. Removing the step fails 10.
+
+### Real runs
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| Old retained `chooselife-verify-fb3593e92268`: `assertOwnedWorkspace` then `cleanupWorkspace`, from the repository module | 0 | Removed: no container, volume, network or directory left. `049997ac2680` was not targeted |
+| `pnpm db:verify --check-types` (13:24:57–13:56:32 UTC) | 0 | `chooselife-verify-63145e9af104`: 41 migrations, `41 versions match 41 files`; catalog `17 sections, 787 objects` captured before lint; lint ok; pgTAP `12 files, 371 assertions`; `generated types match`; `Removed the disposable project` |
+| `pnpm db:verify --keep --check-types` (13:59:16–14:00:18 UTC) | 0 | `chooselife-verify-40509a6ce0ba`, the same results, with timestamps per step: start 29 s, reset 26 s, capture 1 s, lint 1 s, pgTAP 3 s, types 1 s. The descriptor printed `catalog` at `<path>/catalog.json` |
+| `assertOwnedWorkspace` and `readCatalog` on the kept descriptor | 0 | 17 sections, 787 objects, 408,168 bytes, `complete_visibility` true |
+| `pnpm db:catalog:compare <fresh catalog> <003.3 cap/local-full-posttest.json>` | 0 | `Application catalogs match`, with no environment lines |
+| `bash supabase-gen-types.sh --workdir <kept> --output <scratch>` | 0 | Scratch is byte-identical to the artifact |
+| `--check --workdir <kept> --output <scratch>`, before and after appending `// SENTINEL_DRIFT` | 0, then 1 | Scratch bytes unchanged by the check, `Database types are out of date` |
+| `bash supabase-gen-types.sh --check --workdir <kept>` | 0 | The production artifact sha256 stays `c30af021…9672`, before and after |
+| `cleanupWorkspace` on the kept descriptor, after `assertOwnedWorkspace` | 0 | Removed. No `chooselife-verify` container, volume, network or temp directory remains |
+
+The first run took 31.5 minutes. A mid-run process check found the stack containers only about 30 seconds old while the pgTAP `docker run` was already in progress, around 13:39–13:40 UTC. So about 14 minutes passed before the stack came up, and about 16 minutes passed from pgTAP to the end. pgTAP and type generation each start their own image. The second run took 62 seconds. Docker kept no events for that window, so the cause is not established; one-time image pulls are likely. In CI every image is pulled fresh, so the 30-minute job timeout was not observed under CI conditions.
+
+### Application gates
+
+The prepared Next and Expo declarations were already present, so no generator ran.
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `pnpm --filter chooselife-web exec tsc --noEmit --incremental false` | 0 | No diagnostics |
+| `pnpm --filter chooselife-mobile exec tsc --noEmit --incremental false` | 0 | No diagnostics |
+| `pnpm --filter @chooselife/ui exec tsc --noEmit --incremental false` | 0 | No diagnostics |
+| `pnpm --filter chooselife-web test` | 0 | 17/17 |
+| `pnpm --filter chooselife-mobile exec jest features/course-guide --runInBand --watch=false --watchman=false` | 0 | 2 suites, 11 tests |
+
+### Workflow validation
+
+`actionlint` and `yamllint` are not installed and were not installed for this step. The workflow was parsed with the already-installed `yaml` package in strict mode with unique keys. It has no errors or warnings, and the `pull_request` and `push` path lists are identical, with 39 unique entries. Every literal path is tracked except `.prettierignore`, which Prettier would honor if added, like `.prettierrc*` and `prettier.config.*`. The parse also confirmed these settings: `contents: read`; `persist-credentials: false`; pnpm `11.10.0`; Node from `.nvmrc` with the pnpm cache; `pnpm install --frozen-lockfile`; `timeout-minutes: 30`; the cancel-in-progress concurrency group; and no `${{ secrets.* }}`, link, push or deploy. `packages/database/package.json` was replaced by its superset `packages/database/**`.
+
+Direct type consumers are taken to be the modules that import `@chooselife/database` or the generated file directly, or that re-export them: the three shims, six `next` modules, six `packages/ui` modules and the entitlement route. Modules that import through a shim are not listed. The `[locale]`-style segments use the documented `\[` escape. GitHub only treats brackets as alphanumeric classes. Whether GitHub matches these patterns was not observed: no workflow was dispatched, pushed or opened as a PR. No hosted CI result exists for this step.
+
+### Format and scope
+
+- `git diff --check` exits 0. `prettier --check` passes for both scripts.
+- Prettier would rewrite the workflow's single quotes to double quotes. The HEAD file fails the same way, so the existing style was kept.
+- In the README, Prettier reports only two blank lines inside the hosted section. They are present at HEAD and were kept, because that section must stay byte-identical. The changed sections are Prettier-clean.
+- `git status` shows only the five owned files.
+
+### Developer stack preservation
+
+`snapshot.sh`, reused from 003.3, ran before and after. It shows 12 containers, all up. Inspect records (IDs, `StartedAt`, restart counts), the history sha `2b6d8c03…f027` and the count are identical, and non-owned `docker ps` IDs, names and images are identical. The before-snapshot also matched 003.3's after-snapshot. The only volume and network differences are the three resources of the removed `fb3593e92268` project.
+
+### Deviations and limits
+
+- The run reused only the old retained stack's descriptor, for removal. Every replay in this step is new.
+- The helper's drift message still says `Run pnpm db:types to regenerate`, which reads the developer stack by default. The README recommends a clean replay instead. The helper is outside this step's scope, so its message was left alone.
+- `pnpm db:verify --check-types` proves local parity only. It does not compare staging.
+
+### State left
+
+The five files are committed locally on `t3/supabase-schema-workflow`, with no push or PR. No owned stack or workspace remains: `fb3593e92268`, `63145e9af104` and `40509a6ce0ba` are all removed, and only the private evidence directory is kept. Staging reconciliation 003.3 remains BLOCKED on B1 (bucket configuration), B2 (schema `public` `PUBLIC:USAGE`) and B3 with the other platform security differences, none accepted. The one-migration deployment lag remains, and production remains uninspected. Plan 003 is not complete, and Plan 004 is not authorized.

@@ -13,8 +13,33 @@ on:
       - 'supabase/verification/**'
       - 'scripts/verify-database.mjs'
       - 'scripts/verify-database.test.mjs'
+      - 'scripts/check-database-catalog.mjs'
+      - 'scripts/check-database-catalog.test.mjs'
+      - 'scripts/supabase-gen-types.test.mjs'
       - 'supabase-gen-types.sh'
-      - 'packages/database/package.json'
+      - 'packages/database/**'
+      # Formatter configuration that shapes the generated artifact.
+      - '.editorconfig'
+      - '.prettierrc*'
+      - '.prettierignore'
+      - 'prettier.config.*'
+      # Modules that re-export or import the generated types directly.
+      - 'supabase/functions/_shared/database.types.ts'
+      - 'expo/utils/database.types.ts'
+      - 'next/utils/supabase/database.types.ts'
+      - 'next/app/api/courses/highline-beginner/access/route.ts'
+      - 'next/app/\[locale\]/highline/\[id\]/opengraph-image.tsx'
+      - 'next/app/\[locale\]/news/\[newsSlug\]/opengraph-image.tsx'
+      - 'next/app/\[locale\]/news/\[newsSlug\]/page.tsx'
+      - 'next/app/sitemap.ts'
+      - 'next/lib/billing-workspace.ts'
+      - 'next/lib/initial-payment-claims.ts'
+      - 'packages/ui/src/supabase-provider.tsx'
+      - 'packages/ui/src/feature/calendar/use-events.ts'
+      - 'packages/ui/src/feature/festival/api.ts'
+      - 'packages/ui/src/feature/festival/types.ts'
+      - 'packages/ui/src/feature/rig-setup/use-rigger-profiles.ts'
+      - 'packages/ui/src/feature/webbing/types.ts'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
@@ -32,8 +57,33 @@ on:
       - 'supabase/verification/**'
       - 'scripts/verify-database.mjs'
       - 'scripts/verify-database.test.mjs'
+      - 'scripts/check-database-catalog.mjs'
+      - 'scripts/check-database-catalog.test.mjs'
+      - 'scripts/supabase-gen-types.test.mjs'
       - 'supabase-gen-types.sh'
-      - 'packages/database/package.json'
+      - 'packages/database/**'
+      # Formatter configuration that shapes the generated artifact.
+      - '.editorconfig'
+      - '.prettierrc*'
+      - '.prettierignore'
+      - 'prettier.config.*'
+      # Modules that re-export or import the generated types directly.
+      - 'supabase/functions/_shared/database.types.ts'
+      - 'expo/utils/database.types.ts'
+      - 'next/utils/supabase/database.types.ts'
+      - 'next/app/api/courses/highline-beginner/access/route.ts'
+      - 'next/app/\[locale\]/highline/\[id\]/opengraph-image.tsx'
+      - 'next/app/\[locale\]/news/\[newsSlug\]/opengraph-image.tsx'
+      - 'next/app/\[locale\]/news/\[newsSlug\]/page.tsx'
+      - 'next/app/sitemap.ts'
+      - 'next/lib/billing-workspace.ts'
+      - 'next/lib/initial-payment-claims.ts'
+      - 'packages/ui/src/supabase-provider.tsx'
+      - 'packages/ui/src/feature/calendar/use-events.ts'
+      - 'packages/ui/src/feature/festival/api.ts'
+      - 'packages/ui/src/feature/festival/types.ts'
+      - 'packages/ui/src/feature/rig-setup/use-rigger-profiles.ts'
+      - 'packages/ui/src/feature/webbing/types.ts'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
@@ -74,9 +124,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Test verification helpers
-        run: node --test scripts/verify-database.test.mjs
+        run: node --test scripts/verify-database.test.mjs scripts/check-database-catalog.test.mjs scripts/supabase-gen-types.test.mjs
 
       # Disposable Supabase stack only: no link, push, deploy or secrets.
-      # Type parity is not checked here until Plan 003 regenerates the types.
-      - name: Verify migrations, seeds, lint and pgTAP tests
-        run: pnpm db:verify
+      # Fails on a missing or invalid catalog capture and on any difference
+      # between the generated types and the tracked artifact.
+      - name: Verify migrations, seeds, catalog, lint, pgTAP tests and types
+        run: pnpm db:verify --check-types
