@@ -575,6 +575,8 @@ Exact limits of this recovery:
 - Step 2 revision 1 adds a `managed_security` section in place of `managed_grants`, and extension security entries, with format `chooselife.catalog.v2`. The plan excludes platform objects from application comparison. Their security state is still compared, because the plan also requires managed-schema privilege differences to be found.
 - Step 2 revision 1 counts every non-extension schema owned by the database owner as an application schema. Locally that includes `extensions` and `_realtime`, which the platform creates. See the revision 1 judgments.
 - Step 2 found no verification-only extension or helper to exclude. The plan anticipated some. The pre-tool and post-tool captures are equal, so the query has no provenance exclusion.
+- Step 3 ran no hosted command. The plan allows the connector or `db query --linked`. This checkpoint used the root's connector captures of `get_project`, `list_migrations` and `execute_sql`, which ran the unchanged `catalog.sql`. Hosted access was the root's bridge; no credential, link or `.temp` file was used in the owned workspace.
+- Step 3's same-version comparison exits 1, not 0. The plan accepts named blockers in that case. Two are application drift (B1 buckets, B2 `public` schema `PUBLIC:USAGE`). One is platform Vault/pgsodium security state needing owner acceptance (B3). The CLI pins a newer Postgres image (`15.19.0.004`) than staging (`15.8.1.044`), so the platform groups P3–P9 cannot be removed by a same-image replay. Nothing was normalized, allow-listed or edited to change the result.
 
 ## Parent final recovery review
 
@@ -657,7 +659,150 @@ Final root status: 003.2 remains BLOCKED by the valid Unicode payload regression
 
 Resumed under the user's October 17 instruction to proceed: the bounded Unicode framing fix changes only the checker, its tests and these notes. Connector tag lines are found on physical LF/CRLF lines, so raw U+2028 and U+2029 in payload strings stay data. 186 catalog tests pass beside the 39 helper tests. The real baseline with the reproduced comment round-trips unchanged in all ten wrappers for both separators. Each compares exit 0 to its bare form and exit 1, comment only, to the original. Every earlier rejection and the new framing guards exit 2 without printing values. The saved captures compare as before. No database was used. The fix awaits a new fresh review; 003.2 is not accepted and nothing was pushed.
 
+Step 3 (checkpoint 003.3) is STOPPED with named blockers and is not accepted. Staging `festival-chooselife-stage` has 40 migrations, an exact prefix of the 41 checked-in ones. The pending `20261015013845` accounts for exactly four catalog lines, so the deployment lag is documented. The owned replay at `20261014162921` equals staging in every `public` and `gis` object, policy, trigger, grant, cron job and Realtime application table. The comparator still exits 1 with 217 lines. Two of them are application drift: B1, Storage bucket configuration (a public staging-only `webbings` bucket and different MIME rules), and B2, `PUBLIC:USAGE` revoked on schema `public` on staging only. B3 is the pgsodium and Vault 0.2.8 security state on staging, which needs owner acceptance. P3–P9 are documented platform image and service differences. Two minimal read-only diagnostic queries are proposed for the root. The owned stack `chooselife-verify-fb3593e92268` is retained in its full 41-migration seeded state. Lint passes, and pgTAP passes 12 files and 371 assertions. The developer stack is unchanged. Production was not inspected. Steps 4–5 have not started, and Plan 003 is not done.
+
 
 ## Parent acceptance of003.2
 
 Root accepts003.2 at `0cb874fb60cc59fd01c76315b6026e9c5fda21c2` after the user-authorized resumed task. Fresh GPT-6.1-Sol High reviewer `/root/supabase_003_2_unicode_review` returned SHIP with no material findings. Root independently passed225catalog/helper tests,28real-baseline Unicode wrapper round-trips,16outer-boundary negatives,45saved invalid-file CLI rejections and20saved captures with11equal/9semantic differences. Reviewer independently passed225tests,22real-baseline round-trips and14malformed frames; it judged the helper and offsets simple enough. Prettier, scope and whitespace checks passed. No SQL or database operation changed during this task. Parent report: `/tmp/chooselife-parent-unicode-accepted-1nb3XB/report.json`. Earlier BLOCKED paragraphs above are historical;003.2 is now accepted. Live connector execution and staging parity remain due003.3.
+
+## Step 3: same-version staging comparison
+
+Status: STOPPED with named blockers. Not accepted. The comparison ran on real captures from both sides, and the owned database was restored and verified afterwards. This checkpoint changed only this notes file. No source, SQL, checker, test, migration, seed, config, generated type, route, README or workflow changed. No hosted operation ran in this checkpoint. The hosted half is the root's read-only connector capture (below).
+
+Private evidence: `/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-003-3-private.pVUMoK` (mode 700). It holds `descriptor.json`, the developer snapshots under `snap/before|after`, every local capture under `cap/`, comparator output and the classification under `cmp/`, command logs under `logs/`, and the scripts under `bin/` (`snapshot.sh`, `assert-owned.mjs`, `history.py`, `show.mjs`, `classify.py`). `show.mjs` redacts every digest, comment, default, definition and command field, and `config` values. A scan for `sb_secret_`, `sb_publishable_`, JWTs, `Bearer` tokens and URL passwords found nothing.
+
+Commands ran under Node 24.18.0 from nvm, pnpm 11.10.0 and repository CLI 2.121.0. `HEAD` was `09b44c2` with a clean status before work. No `SUPABASE*`, `PG*`, `DATABASE*` or `DOCKER*` variable was set in the shell.
+
+### Owned replay
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `pnpm db:verify --keep` (12:42:35–12:43:36 UTC) | 0 | `chooselife-verify-fb3593e92268`, 41 migrations, 12 test files, `41 versions match 41 files`, lint ok, pgTAP `12 files, 371 assertions` |
+| `node bin/assert-owned.mjs descriptor.json` (calls the repository's `assertOwnedWorkspace`) | 0 | Ran before every reset, query batch and test run below |
+
+Retained descriptor, with no credentials:
+
+```json
+{
+  "path": "/private/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-verify-UCnOyZ",
+  "projectId": "chooselife-verify-fb3593e92268",
+  "ports": { "api.port": 60329, "db.port": 60330, "db.shadow_port": 60331, "db.pooler.port": 60332, "studio.port": 60333, "inbucket.port": 60334, "edge_runtime.inspector_port": 60335, "analytics.port": 60336 },
+  "cleanup": "'/Users/juangsandrade/.t3/worktrees/chooselife/t3-f4bb91a0/node_modules/.bin/supabase' --workdir '/private/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-verify-UCnOyZ' stop --project-id chooselife-verify-fb3593e92268 --no-backup && rm -rf '/private/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-verify-UCnOyZ'"
+}
+```
+
+The workdir's `.temp` holds only `cli-latest`. It has no `project-ref`, link or env file, and nothing was copied from the parent's `supabase/.temp`. The owned DB image is `postgres:15.19.0.004`. Staging runs `15.8.1.044`.
+
+### Pinned CLI interface
+
+`supabase --agent no db reset --help` (exit 0) lists `--local`, `--linked`, `--db-url`, `--version`, `--last`, `--no-seed` and `--sql-paths`. `supabase --agent no db query --help` (exit 0) lists `--local`, `--linked`, `--db-url`, `--project-ref` and `--file/-f`, with the global `--output` and `--workdir`. Both match Step 2.
+
+### Hosted captures and history prefix
+
+The root supplied the captures in `/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-stage-catalog-x8n_53_a`. They are treated as data only. sha256 prefixes: `project-tool.json` `bfee02cbeb352683`, `migrations-tool.json` `9f3198c6128966ab`, `migrations.txt` `51536dc58a304161`, `catalog-tool.json` `89af52d8dd2e709b`, `catalog.txt` `05a7c7d0aa4e081e`, `catalog.normalized.json` `0526cfe0ccb4e7bc`.
+
+- `project-tool.json`: name `festival-chooselife-stage`, `ACTIVE_HEALTHY`, `sa-east-1`, database `15.8.1.044`. Its reference equals the parent's `supabase/.temp/project-ref`, which was used as identification only.
+- `bin/history.py`: the `migrations.txt` list equals the list inside `migrations-tool.json`. It has 40 sorted, unique versions, `20250206202200`–`20261014162921`. These equal the first 40 checked-in filename prefixes, and all 40 names match. No remote version is unknown. The one local-only version is `20261015013845` (`webbing_catalog_snapshot`). This is a matching prefix, so the STOP condition does not apply.
+- `catalog-tool.json` is one text item, `isError: false`, 484,197 characters. `catalog.txt` equals that text plus a trailing newline. That is 484,200 bytes, because some characters are multi-byte. `catalog.txt`, `catalog.normalized.json` and the tool text rewrapped as connector `{result}` all compare exit 0 against `catalog.normalized.json`. Stage `complete_visibility` is true, and `app_owner` is `postgres`.
+
+### Versioned reset and same-version capture
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `supabase --workdir "$W" --agent no db reset --local --version 20261014162921 --no-seed --yes` (12:44:15–12:44:41 UTC) | 0 | 40 `Applying migration` lines, `Seeding globals from roles.sql` (roles, not data), no `Seeding data` line |
+| `db query --local --output json "select version, name from supabase_migrations.schema_migrations …"` | 0 | 40 rows, `(version, name)` equal to staging's list |
+| `db query --local --output json` on `pg_extension` | 0 | Clean-reset extensions before any tool: `pg_cron 1.6.4`, `pg_graphql 1.6.2`, `pg_net 0.20.4`, `pg_stat_statements 1.10`, `pgcrypto 1.3`, `pgjwt 0.2.0`, `plpgsql 1.0`, `postgis 3.3.2`, `supabase_vault 0.3.1`, `unaccent 1.1`, `uuid-ossp 1.1` |
+| `supabase --workdir "$W" --agent no db query --local --file "$PWD/supabase/verification/catalog.sql" --output json`, twice | 0, 0 | 691,684 bytes each, byte-identical (sha256 `c12ba4504cbad00c…`). Self-compare exit 0 |
+
+`supabase/verification/catalog.sql` is unchanged since `d67f226` (sha256 `6913fc91…0fc7`), and the workdir copy is byte-identical. Lint and pgTAP did not run between this reset and these captures.
+
+### Comparison
+
+`pnpm db:catalog:compare cap/local-stage-a.json <captures>/catalog.txt` exits **1** with 217 differences. The same 217 lines come from the comparison against `catalog.normalized.json`. The only extra output is pnpm's lifecycle line. Counts, local vs stage:
+
+| Section | Local | Stage | Section | Local | Stage |
+| --- | --- | --- | --- | --- | --- |
+| schemas | 15 | 16 | policies | 68 | 68 |
+| relations | 51 | 47 | triggers | 39 | 40 |
+| constraints | 186 | 179 | rules | 3 | 3 |
+| indexes | 116 | 108 | event_triggers | 8 | 9 |
+| types | 21 | 21 | default_acls | 30 | 35 |
+| functions | 88 | 88 | managed_security | 137 | 236 |
+| extensions | 11 | 12 | publications / tables | 1 / 4 | 2 / 5 |
+| cron_jobs | 3 | 3 | storage_buckets | 4 | 5 |
+
+The relation, constraint and index surplus is exactly the 4 tables, 7 constraints and 8 indexes of `_realtime`.
+
+**No difference** appears in any `public` or `gis` relation, column, constraint, index, type, function, policy, trigger, rule, RLS flag, replica identity, ACL or effective privilege. None appears in the `supabase_realtime` publication tables, the three cron jobs, default ACLs owned by `postgres`, the custom `auth.users` trigger, or any `storage.objects` policy. Differences appear only in `functions` entries in `extensions`. At 40 versions, the application schema of staging equals the clean replay.
+
+Environment metadata does not change the exit code: server `150019` vs `150008`, `pg_cron` 1.6.4 vs 1.6, `pg_graphql` 1.6.2 vs 1.5.11, `pg_net` 0.20.4 vs 0.14.0, `postgis` 3.3.2 vs 3.3.7, `supabase_vault` 0.3.1 vs 0.2.8.
+
+`bin/classify.py` assigns each of the 217 lines to one group. No line is unclassified. "Left" is the local replay and "right" is staging.
+
+#### Application drift, blocking
+
+- **B1, storage buckets (7 lines).** `20250407023808_buckets.sql` inserts `images`, `avatars` and `promo` with `gen_random_uuid()` IDs, `public = true` and `allowed_mime_types = ARRAY['image/jpeg, image/png, image/webp']`: one comma-joined element. Each insert runs only `IF NOT EXISTS (… WHERE name = …)`. On staging, all three have `id = name`, so they existed before the migration, which skipped them. Their MIME rules differ: `avatars` is `image/*`, `images` is the three types as separate elements, and `promo` is null (unrestricted). Locally all three get the single comma-joined element. That element is probably not a valid MIME match, which is a separate defect for the migration owner. Staging also has a **public** bucket, `webbings` (`id = name`, no size or MIME limit), that no migration creates. `20261014162921_webbing_personal_photos.sql:1` says personal photos use the R2 `webbings` bucket, not Supabase Storage. `public` and `file_size_limit` agree for the three shared buckets, and `documents` matches. The bucket set and its upload rules are application configuration that a replay does not reproduce. Missing diagnostic: when each bucket was created or changed, from metadata only. Proposed minimal read-only query for the root to bridge: `select name, created_at, updated_at from storage.buckets order by name;`. Bucket configuration rows only, no objects.
+- **B2, `public` schema ACL (1 line).** Locally `PUBLIC:USAGE` is present. That is the Postgres 15 default, through `pg_database_owner`. On staging it has been revoked. No checked-in migration grants or revokes on schema `public`, which `rg` confirmed. Effective `USAGE` for `anon`, `authenticated` and `service_role` is identical, because each has an explicit grant. The difference affects every other role, including any future custom role. It is a security-relevant grant on an application schema, and a replay does not reproduce it. Postgres keeps no grant history, so no catalog query on staging can say whether a platform default or a manual revoke caused it. The owner must decide whether to codify the revoke in a migration or accept local `PUBLIC:USAGE`. That is not resolved here.
+
+#### Platform-provisioned, security-relevant, owner acceptance required (blocking until accepted)
+
+- **B3, pgsodium and the pgsodium-based Vault on staging (131 lines. The classifier puts 122 in its pgsodium group, three of them the Vault ACL lines that name `pgsodium_keyiduser`, and 9 in its Vault group).** Staging has the `pgsodium` extension, its schemas `pgsodium` and `pgsodium_masks`, and 6 relations: `decrypted_key`, `key`, `key_key_id_seq`, `mask_columns`, `masking_rule` and `valid_key`. It also has 98 `pgsodium.*` routines in `managed_security`. Other staging-only objects: triggers `pgsodium.key.key_encrypt_secret_trigger_raw_key` and `vault.secrets.secrets_encrypt_secret_trigger_secret`, routine `vault.secrets_encrypt_secret_secret()`, event trigger `pgsodium_trg_mask_update`, and 5 `supabase_admin` default ACLs on `pgsodium` and `pgsodium_masks`. Locally only, `vault._crypto_aead_det_{decrypt,encrypt,noncegen}` exist (Vault 0.3.1's own crypto helpers). `20250206202200_remote_schema.sql:17` records that pgsodium was removed from the replay on purpose, because the base image no longer provisions it. So this half is documented history. Vault 0.2.8 versus 0.3.1 changes security state:
+  - schema `vault`: locally `postgres:USAGE*` and `service_role:USAGE`; on staging `pgsodium_keyiduser:CREATE,USAGE`. Effective `service_role` gains `CREATE` on staging.
+  - `vault.secrets` and `vault.decrypted_secrets`: locally `postgres` and `service_role` hold `SELECT` and `DELETE`; on staging `pgsodium_keyiduser` holds every privilege. Effective `service_role` on staging adds `INSERT`, `UPDATE`, `TRUNCATE`, `REFERENCES` and `TRIGGER`. `decrypted_secrets` is a `supabase_vault` member locally but not on staging.
+  - Folded Vault routine state: locally `SECURITY DEFINER` with a `search_path` setting, `EXECUTE` for `postgres` and `service_role` only. On staging it is invoker, with no setting, and `PUBLIC:EXECUTE`, so `anon` and `authenticated` have effective `EXECUTE`. Neither has `USAGE` on schema `vault` on either side.
+
+  `20251113121601_schedule-payment.sql` reads `vault.decrypted_secrets` and calls `net.http_post`, so Vault matters to this application. No application migration can change these platform-owned grants. The owner must accept them as a platform version lag on staging or arrange a platform upgrade. Missing diagnostic: role membership that explains the `service_role` effective privileges. Proposed read-only query: `select r.rolname as role, m.rolname as member from pg_auth_members am join pg_roles r on r.oid = am.roleid join pg_roles m on m.oid = am.member where r.rolname like 'pgsodium%' order by 1, 2;`. Role catalog only.
+
+#### Platform image and service version differences, documented
+
+These are platform-owned objects whose differences match the image and service versions. Effective privileges for the API roles do not differ in any of them. They are listed for explicit root acceptance, not silently accepted.
+
+- **P3, `_realtime` (20 lines), local only.** Schema `_realtime` and its tables `extensions`, `feature_flags`, `schema_migrations` and `tenants`, with 7 constraints and 8 indexes. The local Realtime container (`realtime:v2.143.4`) keeps its tenant metadata in the project database. The schema is owned by the database owner, so the catalog counts it as an application schema (Step 2 revision 1). Hosted Realtime does not keep this schema in the project database.
+- **P4, Realtime runtime (13 lines; `classify.py` counted the two publication lines in its `_realtime` group because its pattern also matches `supabase_realtime_messages_publication`).** Daily `realtime.messages_*` partitions differ by date: local `2026_10_16`–`2026_10_20`, staging `2026_08_06`–`2026_08_10`. Staging alone has the `supabase_realtime_messages_publication` publication with `realtime.messages`. The `realtime.schema_migrations` ACL differs: locally `dashboard_user` and `postgres` hold every table privilege; on staging there are no grants.
+- **P5, Storage service (15 lines).**
+  - Local only (storage-api v1.82.1): trigger `storage.buckets.enforce_versioning_status_transition` and its function, and relations `storage.iceberg_namespaces` and `storage.iceberg_tables`.
+  - `supabase_storage_admin` grant option: locally grantable on schema `storage`, not grantable on `storage.buckets` and `storage.objects`; on staging the reverse.
+  - Staging only: explicit `postgres` table grants on `storage.s3_multipart_uploads` and `storage.s3_multipart_uploads_parts`, and explicit grants on `storage.extension`, `storage.filename` and `storage.foldername` (to `anon`, `authenticated`, `dashboard_user`, `postgres` and `service_role`), plus on `storage.can_insert_object`, `storage.operation` and `storage.update_updated_at_column` (to `postgres`). `PUBLIC:EXECUTE` already gives these the same effective result.
+- **P6, platform helpers in `extensions` (17 lines).** `grant_pg_cron_access`, `grant_pg_graphql_access`, `grant_pg_net_access`, `pgrst_ddl_watch`, `pgrst_drop_watch` and `set_graphql_placeholder` differ in `body_digest` and `config`. `grant_pg_cron_access` and `grant_pg_net_access` also differ in owner and ACL: locally `supabase_admin`, on staging `postgres`. The `issue_pg_graphql_access` event trigger's tags differ. No migration defines these, which `rg` confirmed. The platform image installs them in `extensions`, a schema owned by the database owner.
+- **P7, Auth (4 lines).** Staging has an explicit `postgres:EXECUTE` on `auth.email()`, `auth.role()` and `auth.uid()`. Locally `postgres:SELECT*` is on `auth.schema_migrations`.
+- **P8, `dashboard_user` (5 lines).** Staging grants `dashboard_user` `EXECUTE` on `pg_stat_statements` and `pgjwt` routines, including `pg_stat_statements_reset`, and every table privilege on `extensions.pg_stat_statements` and `pg_stat_statements_info`.
+- **P9, extension member state (4 lines).** Locally `net.http_get` and `net.http_post` are `SECURITY DEFINER` with a `search_path` setting and explicit grants (pg_net 0.20.4). On staging (0.14.0) they share pg_net's invoker state. In both, `anon` and `authenticated` have effective `EXECUTE`. `graphql_public.graphql(…)` is a separate platform function on staging (pg_graphql 1.5.11), and locally it is in pg_graphql's folded state. `extensions.st_letters` carries a setting on staging (postgis 3.3.7), and locally it is folded.
+
+### Deployment lag versus semantic drift
+
+The only migration staging lacks is `20261015013845_webbing_catalog_snapshot.sql`. Comparing the 40-version local capture with the full 41-version capture gives exactly 4 lines:
+
+- `relations public.webbing: columns: only in right: catalog_snapshot, registration_key`
+- `constraints public.webbing.webbing_catalog_snapshot_valid: only in right`
+- `indexes public.webbing_user_id_registration_key_idx: only in right`
+- the `check_digest` of policy `public.webbing."Allow authenticated users to insert webbing"`
+
+This is the planned deployment lag. It is not drift, and hosted state was not changed to remove it. Semantic drift outside that lag is B1 and B2. B3 and P3–P9 are platform state that the replay does not provision.
+
+### Restore and full verification
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `db reset --local --yes` (12:47:41–12:48:08 UTC) | 0 | 41 `Applying migration` lines. `Seeding data from supabase/seed.sql` and `supabase/seeds/association-billing-personas.sql` |
+| History query | 0 | 41 rows, `20250206202200`–`20261015013845`, `(version, name)` equal to the 41 checked-in filenames |
+| Catalog capture before tools | 0 | sha256 `b528b488af6d8415…` |
+| `db lint --local --schema public --level error --fail-on error` | 0 | No findings |
+| Catalog capture after lint | 0 | Byte-identical to the capture before tools |
+| `test db --local <workdir>/supabase/tests` | 0 | `Files=12, Tests=371`, `Result: PASS` |
+| Catalog capture after pgTAP | 0 | Byte-identical. All three pairwise compares exit 0, so lint and pgTAP leave no catalog residue |
+| `node --test scripts/check-database-catalog.test.mjs scripts/verify-database.test.mjs` | 0 | 225/225 |
+
+The owned stack `chooselife-verify-fb3593e92268` is **retained** with the descriptor above, in full 41-migration state with seeds, after lint and pgTAP. It has seven containers, volumes `supabase_db_…` and `supabase_storage_…`, and network `supabase_network_…`. It is kept for 003.4. Remove it only through the descriptor's cleanup command, after `assertOwnedWorkspace`.
+
+### Developer stack preservation
+
+`bin/snapshot.sh` read only `docker ps -a` ID, name, status and image, `docker inspect` name, ID, `StartedAt` and `RestartCount`, volume and network names, and the migration history through `psql`. Before: 12 `supabase_*_chooselife` containers, history 41 rows ending `20261015013845 webbing_catalog_snapshot`, sha256 `2b6d8c03…f027`. No `chooselife-verify` container, volume, network or temp directory existed. After, with owned resources filtered: inspect records and history are byte-identical. Volume and network names are identical. Non-owned `docker ps` ID, name and image are identical, and all 12 are still up. The developer stack was not stopped, reset or queried beyond that history read.
+
+### Limits of this comparison
+
+- Production was not inspected. This result covers staging only.
+- The hosted catalog is a single capture taken by the root at 09:40 local time on October 17. It is not refreshed here, and no additional hosted query ran.
+- The local image (`15.19.0.004`) is newer than staging's (`15.8.1.044`). The CLI pins its own image, so a same-image replay was not available. P3–P9 and the Vault half of B3 follow from that.
+- The accepted catalog limits apply. Roles and memberships, the database, foreign servers, casts and operators are not captured. Extension members that share a folded state are not inventoried. That limit matters for B3: staging's `pgsodium_keyiduser` membership explains its effective Vault privileges but is not in the catalog.
+- No live security probe ran, and no value was normalized away. The query, checker and tests are unchanged.
