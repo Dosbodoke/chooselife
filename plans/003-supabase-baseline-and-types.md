@@ -10,7 +10,7 @@
 - Depends on: Plan 002, isolated verification and pinned tooling
 - Category: migration, correctness, dx
 - Planned at: commit `427007b`, October 16, 2026
-- Execution status: RECONCILIATION BLOCKED at003.3 with named same-version differences. Checkpoints003.1–003.2 are accepted. The diagnostic report is accepted after parent verification and fresh Sol round2 SHIP at `c2b1ff1`; the restored full replay passes371SQLassertions. Independent003.4 type work may continue from the full replay under the refinement below. Plan004 remains gated by reconciliation.
+- Execution status: RECONCILIATION BLOCKED at003.3 with named same-version differences. Checkpoints003.1–003.2 are accepted. The diagnostic report is accepted after parent verification and fresh Sol round2 SHIP at `c2b1ff1`; the restored full replay passes371SQLassertions. Independent003.4 is accepted after parent verification and fresh Sol SHIP at `f1cc1cd`;003.5 local CI/catalog integration is next under the refinement below. Plan004 remains gated by reconciliation.
 
 ## Outcome and decisions
 
@@ -217,9 +217,9 @@ The web suite already includes `lib/courses/highline-beginner-access.test.ts`. I
 
 - [ ] Clean full migration replay and all SQL tests pass under the pinned CLI.
 - [ ] Same-version staging comparison is complete with no unexplained semantic differences; pending deployment lag is documented.
-- [ ] The full generated file matches clean replay; no spliced blocks or unpublished local objects enter it.
-- [ ] Entitlement client uses the shared `Database` type and preserves runtime authorization behavior.
-- [ ] Consumer typechecks and targeted existing application tests pass.
+- [x] The full generated file matches clean replay; no spliced blocks or unpublished local objects enter it.
+- [x] Entitlement client uses the shared `Database` type and preserves runtime authorization behavior.
+- [x] Consumer typechecks and targeted existing application tests pass.
 - [ ] CI blocks complete generated-type drift; negative check proves it detects drift without writing.
 - [ ] Notes list each consumer file changed and every allowed environment normalization; original local and all hosted objects remain unchanged.
 

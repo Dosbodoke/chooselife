@@ -15,14 +15,14 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 
 ## Current task
 
-- Checkpoint: independent `003.4`, complete type generation from verified full replay.
-- Status: Opus003.4 STOPPED with uncommitted whole artifact/route/notes. Root reproduced the two new slug errors and formatting whitespace. Fresh Sol confirmed narrow plan refinement: shared Insert.slug override, canonical Prettier helper formatting and focused failure tests. Preparing revised Opus task; no permission request needed for this in-scope type/tooling correction. Staging reconciliation remains BLOCKED.
-- Client request ID: `supabase-003-step4-opus-r1-20261017`.
-- T3 task ID: `node:delegated-task:command%3Amcp%3Abec09b2a-d031-46c4-917a-77f0a860d50a%3Adelegate-task%3Asupabase-003-step4-opus-r1-20261017`.
+- Checkpoint: independent `003.5`, blocking local type parity and reusable catalog capture.
+- Status:003.4 accepted at `f1cc1cd`, fresh Sol SHIP with no material findings. Parent actual real helper/type/app gates passed. Preparing accepted checkpoint publication and independent003.5; staging reconciliation remains BLOCKED.
+- Client request ID: `supabase-003-step4-opus-revision1-20261017`.
+- T3 task ID: `node:delegated-task:command%3Amcp%3Abec09b2a-d031-46c4-917a-77f0a860d50a%3Adelegate-task%3Asupabase-003-step4-opus-revision1-20261017`.
 - Automatic task completion delivery is enabled. Await it without polling or duplicate work.
 - Bootstrap commit: `775f09fbefdc984657cf0994b2ffbd9bb40644c4`.
 - Accepted catalog source head: `0cb874fb60cc59fd01c76315b6026e9c5fda21c2`; accepted remote docs checkpoint `47365e44257b7b3f1d9240f03b5075ca95190440`.
-- Latest accepted reviewer: `/root/supabase_003_3_review_r2`, GPT-6.1-Sol High. SHIP diagnostic report only, no material findings; no parity/security exception accepted.
+- Latest accepted reviewer: `/root/supabase_003_4_review`, GPT-6.1-Sol High. SHIP003.4, no material findings; staging parity and security acceptance remain separate unresolved gates.
 - Predecessor evidence: Node24.18.0, frozen install and 39 helper tests pass; real replay passes 41 migrations and 12 files/371 assertions, including independent root runs. Generator negative cases and failure cleanup pass. Existing developer database and protected inputs remain unchanged.
 
 ## Checkpoint status
@@ -34,8 +34,8 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - 003.1: ACCEPTED, head `ff2bd8f`, fresh Sol ship. Parent prepared ignored framework declarations and all three consumer typechecks pass before database-type changes.
 - 003.2: ACCEPTED at `0cb874fb60cc59fd01c76315b6026e9c5fda21c2`, fresh Sol Unicode review SHIP. Parent and reviewer independent Unicode, malformed-input and225-test verification passed. Live connector execution remains due003.3.
 - 003.3: DIAGNOSTIC ACCEPTED at `c2b1ff11360e00034203177ebd46a19fa26410be`, fresh Sol round2 SHIP. Reconciliation remains BLOCKED by B1/B2 desired state and B3/other platform security provenance.
-- 003.4: RUNNING, independent clean-replay whole types + typed entitlementclient; awaits actual verification and fresh Sol review.
-- 003.5: pending003.4; cannot close staging parity or unblock004.
+- 003.4: ACCEPTED at `f1cc1cd`, fresh Sol SHIP, canonical generator/trigger override/whole types/typed route all verified.
+- 003.5: next independent local CI/catalog integration; cannot close staging parity or unblock004.
 - 004.1–004.5: pending Plans 002 and 003 acceptance.
 
 ## Continuation contract
@@ -113,6 +113,10 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - Root committed/pushedaccepteddiagnostic+independenceplans at `27017a7146b733a3430a2239ea13ce719b268fa1`, remoteexactSHAverified. Dispatched003.4Opus5.5High task `node:delegated-task:command%3Amcp%3Abec09b2a-d031-46c4-917a-77f0a860d50a%3Adelegate-task%3Asupabase-003-step4-opus-r1-20261017`, request `supabase-003-step4-opus-r1-20261017`. Ownswholegeneratedartifact, entitlementrouteDatabasegeneric/typeimport, onlydemonstratednewtypeconsumerfixesandnotes. Fullplanandretainedowneddescriptor+parentactualverificationinlined. RawCLIartifactcanonical, noformatter/generatorredesign, override/reexport/runtime/SQLunchanged. Baselinebeforegeneration+allappgates+byteparity+developerpreservationrequired. RootverifiesandrequestsNEWfreshSoloncompletion. NoPRcreated. UserStoragebaselinepreferencepending, doesnotblockindependent003.4.
 
 - Opus003.4 first task STOPPED, no commit: wholeartifactgenerated/check0, requiredfiveidentitiespresent/ISAabsent, routegenericdone, baselineallthree0. Newtypechecksweb1/mobile1/UI0 missingtrigger-generatedslug. Actualpaths `next/components/CreateHighline.tsx:194` and `expo/components/highline/highline-form.tsx:226`; workerreport/notes swappedpathnames. RawCLIgeneration15trailing-whitespace lines also conflictsrootformat. Root reproducederrors/readfullnormalizedsemanticdiffandSQLtrigger. Fresh Sol `/root/supabase_003_4_stop_review` confirmsSTOPandminimalrefinement: addonlyhighline.Insert.slugoptionaloverride+comment; canonicalizegeneratorwithexistingPrettier fixedcanonicalartifactstdinfilepath/rootformattercwd, preserveatomic/failure/checkcontracts andrelativeoutputs; addboundedrealhelpertests. No runtime/SQL changes. Rootrefinesplanwithoutaskingforpermissionforroutinein-scoperecovery. Threeworkerfilesremainuncommittedandmustbecarriedintorevision; nosourceeditsbyroot. UserStoragedecisionstillpending.
+
+- Root committed003.4scope refinementplansonlyas `8af87b5fdece91dfb407a5d15324acb7f017c6d4`, keptthreeworkerfilesuncommitted, verifiedtheirhashes. DispatchedOpus5.5Highrevision1 task `node:delegated-task:command%3Amcp%3Abec09b2a-d031-46c4-917a-77f0a860d50a%3Adelegate-task%3Asupabase-003-step4-opus-revision1-20261017`, request `supabase-003-step4-opus-revision1-20261017`. Fullrefinedplan+freshSolfindings+exactcarriedhashesinlined. Fixedcanonicalartifactstdinfilepath/root-onlyformattercwd required so--outputneverchoosesformatconfig. BoundedrealBashhelpertestscoverpartialCLI/formatterfailureandbytespreservation. Actualdiagnosticpathswapmustbecorrected. NoSQL/runtime/consumerpayloadchange; no root sourceedits or newpermissionneeded. Awaitautomaticcompletion; nextparentverificationthenNEWfreshSolimplementationreview.
+
+- Revised003.4 completed at `f1cc1cd`, six scopedfiles only. Root independently passed232tests, all3typechecks0,web17/mobile11tests, realownedwholeartifactcheck0, scratchgenerationbyteequal, secondcanonicalformatbyteequal andnegativecheck1withoutwrites;developerstatepreserved andSQL/otherprotectedinputsunchanged. Parentreport `/tmp/chooselife-parent-0034-final-mu9qhw/report.json`, artifactSHA `c30af02141acdd1feecfda4faa3df817edc49ec229d344134b9ee79b65ab9672`. FreshSol `/root/supabase_003_4_review` SHIPwithnomaterialfindings afterindependent232tests/3typechecks/artifactparitychecks. Rootaccepts003.4. Entitlementroutepre-existingcommaformatwarning documented, notintroduced; newartifact/index/testsformatpassandgitdiffclean. NoSQLruntime/cloudchange,003.3stillBLOCKED.
 
 After 002.2 acceptance, commit the current advisor status documents and push the dedicated branch as requested. Checkpoint 002.3 is the next implementation step and must use the same worktree. Real replay and all later plan gates remain pending until their own verification and fresh review.
 
