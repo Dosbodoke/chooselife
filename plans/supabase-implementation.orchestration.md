@@ -36,7 +36,8 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - 003.3: DIAGNOSTIC ACCEPTED at `c2b1ff11360e00034203177ebd46a19fa26410be`, fresh Sol round2 SHIP. Reconciliation remains BLOCKED by B2 schema ACL and B3/other platform security provenance. User R2 decision retires B1 legacy bucket configuration from target.
 - 003.4: ACCEPTED at `f1cc1cd`, fresh Sol SHIP, canonical generator/trigger override/whole types/typed route all verified.
 - 003.5: ACCEPTED at `275f23d` including49b4678source. All local replay/catalog/type/CI config gates complete; hosted parity still unresolved.
-- 004.1–004.5: pending Plans 002 and 003 acceptance.
+- 004.1: local preparation ready under explicit reviewed independence refinement; hosted003.3unresolved.
+- 004.2–004.5: pending each preceding local checkpoint acceptance, with hosted release gate retained.
 
 ## Continuation contract
 
@@ -126,6 +127,8 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - RootcommitteduserR2scopeplans at `4d60d1a8528ada69e5f6fe8098c8f1948dfa02e9`, no sourcemutation/push. Opusdocumentationtask `node:delegated-task:command%3Amcp%3A5baeb4a5-e9d3-4b94-a382-c98da762133e%3Adelegate-task%3Asupabase-003-step5-r2-docs-opus-r1-20261017`, request `supabase-003-step5-r2-docs-opus-r1-20261017`, ownsREADMEaboveDatabaseSetupandnotesonly. RecordB1retiredtarget/R2active,retainB2/B3block/historical217evidence/nohostedcleanup. Sourceandartifacthashesunchanged;fullDBrerunnotneededfordocsonly. OncompletionverifydiffthenNEWfreshGPTSolreviewofentire003.5; priorreviewusagefailureisNOTapproval. Noownedstacksleft; parentrealrunreportexistsandcleanupconfirmed.
 
 - OpusR2docs completed at `275f23d`, two scopedfilesonly; sourceunchanged. Parentdiff/whitespace/protectedREADMEchecksPASS. NEWfreshSol `/root/supabase_003_5_review_retry` SHIPnomaterialfindingsfor275f23dincluding49b4678source, independently238tests/YAML39paths/format/scopeandreadparent66.879secreport. Rootaccepts003.5LOCALimplementation. HostedCI/30mincoldstartunverified, no hostedparity/securityexceptionaccepted. Separatefreshread-onlyplanningadvisor `/root/supabase_parity_next_step_advice` assessingwhether004localauthoringcanproceedfromcompleteacceptedlocalcontractswhile B2/B3hostedreconciliationremainsseparate; no sourcechangeor004dispatchyet.
+
+- Fresh planning advisor `/root/supabase_parity_next_step_advice` recommends boundedlocal004preparationafter003.5acceptance, withoutmarking003.3resolved. Hostedparitynottechnicalprerequisitetotwolocalsameplatformroundtrip. Rootexplicitlyrefines004:004.1engineonlyownedcopy+verifiedfullgate,004.2completeprivateexport+strictno-op+freshreviewbeforepromotion,004.3reviewedpromotion+independentreconstruction. Retainallsecuritychecks/rolesemanticverification;fixeddeclarative-onlyprojectionomitsjustretiredstorage_bucketsdata/count,raw17sectioncapturesandgeneralcomparatorunchanged. B2/B3hostedrisks/releasesremainunresolved,nosecurityexceptionorcloudwriteapproved. EachnumberedcheckpointstillOpusHighthenfreshSol.
 
 After 002.2 acceptance, commit the current advisor status documents and push the dedicated branch as requested. Checkpoint 002.3 is the next implementation step and must use the same worktree. Real replay and all later plan gates remain pending until their own verification and fresh review.
 

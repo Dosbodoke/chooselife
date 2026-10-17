@@ -7,9 +7,10 @@
 - Priority: P1
 - Effort: L
 - Risk: MED, gated by independent catalog and authorization checks
-- Depends on: completed Plans 002 and 003
+- Depends on: accepted Plan002 and all accepted local Plan003 capabilities; hosted003.3 reconciliation remains an independent release gate
 - Category: migration, direction, dx
 - Planned at: commit `427007b`, October 16, 2026
+- Local-preparation refinement: October17 after fresh planning advice and accepted003.5 at `275f23d`; current accepted branch checkpoint `b616067`. Hosted compatibility is unresolved.
 
 ## Outcome and decisions
 
@@ -18,6 +19,14 @@ Maintain the complete desired application schema under `supabase/schemas/`, usin
 The initial conversion must generate no unexplained migration. Prove more than a visually plausible export: independently reconstruct the declared schema in a fresh platform database and compare its application catalogs with full historical replay. Keep explicit data migrations and operational provisioning separate.
 
 Decisions selected by the user on October 16, 2026: implement the verification foundation, baseline/types reconciliation, and declarative adoption as ordered plans. This plan authorizes local implementation and verification, not cloud deployment, history repair or production reset.
+
+## Local preparation and hosted compatibility
+
+Fresh GPT-6.1-Sol planning advice reviewed the current evidence and identified that same-version hosted parity is not a technical prerequisite for comparing historical replay with declarations on identical disposable local platforms. Permit local preparation from the accepted replay/catalog/type/CI contracts below, while003.3 remains unresolved. This supersedes the earlier requirement to finish every hosted reconciliation item before any004work. It does not accept a security exception, claim staging parity, or authorize release.
+
+B2 schema `public` PUBLIC USAGE and B3 Vault/pgsodium/other platform-security provenance remain material hosted-compatibility risks. Local PUBLIC USAGE must not be proposed as a staging correction merely because it appears in an export. Local Vault/platform behavior cannot prove compatibility with staging's legacy ownership or inherited privileges. No generated SQL may be applied to hosted projects.
+
+Checkpoints004.1 and004.2 are preparation only: engine settings and complete export stay in owned temporary state, with notes committed for review. After a fresh Sol review accepts the strict export and no-op round-trip,004.3 may promote the reviewed settings/tree and implement independent reconstruction. Keep one implementation checkpoint and fresh review at a time. Actual unsupported application objects or unexplained SQL are STOP conditions, not reasons to replace the engine or erase differences.
 
 ## Prerequisite contract and drift check
 
@@ -29,7 +38,7 @@ These capabilities must already exist; their contracts are inlined so the execut
 - `supabase/verification/catalog.sql` returns stable, nonsecret application metadata: objects, definition digests, constraints, RLS, direct/default/effective ACLs, managed-schema customizations, function attributes, Realtime and named cron configuration. It excludes user rows, credentials, runtime sequence state, platform internals, extension-owned internals and migration/pgTAP bookkeeping.
 - `pnpm db:catalog:compare <left.json> <right.json>` compares that metadata and fails on semantic differences. Fixture tests cover lost policies/permissions, changed bodies, auth triggers, cron commands and enum order.
 - `.github/workflows/database.yml` is a root, verification-only, cloud-credential-free workflow that runs `pnpm db:verify --check-types`.
-- Baseline reconciliation established same-version staging parity, or documented and resolved any prior divergence. Pending deployments were recorded; production was not assumed equivalent to staging.
+- All local003capabilities are accepted: clean full replay, complete canonical types, strict reusable catalog capture and blocking local CI configuration. The hosted comparison is documented but unresolved; B1 legacy bucket configuration is retired by the R2 decision, while B2/B3 and other security provenance remain release gates. Production was not inspected.
 
 First verify:
 
@@ -37,11 +46,11 @@ First verify:
 git status --short
 git diff --stat 427007b..HEAD -- supabase scripts package.json packages/database .github/workflows/database.yml supabase-gen-types.sh
 pnpm exec supabase --workdir . --version
-node --test scripts/verify-database.test.mjs scripts/check-database-catalog.test.mjs
+node --test scripts/verify-database.test.mjs scripts/check-database-catalog.test.mjs scripts/supabase-gen-types.test.mjs
 pnpm db:verify --check-types
 ```
 
-Expected predecessor changes are valid. Reconcile any additional schema/migration/contract changes before exporting; the current checked-in migration chain, not a stale table count or the developer's database, defines the target. Stop if prerequisites are absent or the parity gates are not green.
+Expected predecessor changes are valid. Reconcile any additional schema/migration/contract changes before exporting; the current checked-in migration chain, not a stale table count or the developer's database, defines the target. Stop if the required local contracts are absent or their gates fail. Known documented hosted B2/B3 findings do not block disposable local preparation, and local success does not resolve them.
 
 ## Current state and project constraints
 
@@ -81,11 +90,11 @@ Modify only:
 
 All existing migrations, seeds, application source, generated TypeScript types, deployment scripts, runtime client configuration and hosted state stay unchanged. The committed conversion should add **no** migration under `supabase/migrations/`. If an actual missing schema change is discovered, return it for a separate forward migration before restarting this plan.
 
-Use a branch based on completed Plan 003, for example `advisor/004-supabase-declarative`. Match conventional commits such as `chore(db): adopt declarative schema authoring`. Remote deploy/push/PR actions follow the operator's separate instructions.
+Reuse the existing dedicated checkout `/Users/juangsandrade/.t3/worktrees/chooselife/t3-f4bb91a0` and branch `t3/supabase-schema-workflow`, based on the accepted local003checkpoints. Match conventional commits such as `chore(db): adopt declarative schema authoring`. Remote deploy/push/PR actions follow the operator's separate instructions.
 
 ## Steps
 
-### 1. Confirm engine behavior and enable the documented path
+### 1. Confirm the engine in an owned disposable project
 
 Inspect the exact binary's help:
 
@@ -96,7 +105,7 @@ pnpm exec supabase --workdir . db schema declarative sync --help
 
 On 2.121.0, generation supports explicit `--local`, `--output-dir`, `--overwrite` and shared `--strict-coverage`; sync supports `--no-apply` and shared `--strict-coverage`. No `sync --check` flag exists in the verified interface. Global `--yes` may apply changes; check tooling must use explicit `--no-apply` instead.
 
-Add to the tracked config:
+Create a fresh owned replay with `pnpm db:verify --keep --check-types`. Validate its ownership marker and protect developer-state snapshots. Add the following only to that disposable copy's config; do not modify the tracked config in this checkpoint:
 
 ```toml
 [experimental.pgdelta]
@@ -105,32 +114,34 @@ enabled = true
 
 The historical renewal migration calls `net.http_post`. Current adoption docs require shadow webhook support for migration histories using `pg_net`, so add `[experimental.webhooks]` with `enabled = true` if required by the documented gate. This supports shadow preparation, not deployment of a new live webhook. Preserve all runtime service settings and Postgres 15. Leave `schema_paths` absent; current `pg-delta` orders dependencies itself. Keep the existing CLI version unchanged.
 
-**Verify:** the two help commands expose the required flags; `pnpm db:verify --check-types` still passes under the new config with no migration/type changes. Stop if the config introduces a runtime feature change beyond these documented shadow/engine settings.
+**Verify:** the help commands expose the required flags. The initial fresh `pnpm db:verify --keep --check-types` passes, then explicit local reset/history/catalog/lint/pgTAP and the safe generator `--check` pass under the disposable engine settings, with41migrations/12files/371assertions at this checkpoint. Capture the catalog before verification tools. Tracked config, migration, type and other source checksums stay unchanged. Retain the verified owned descriptor for004.2. Commit notes only. Stop if the disposable settings introduce a runtime feature change beyond documented shadow/engine support.
 
 ### 2. Export the complete clean baseline and require an initial no-op
 
-Start a fresh replay with `pnpm db:verify --keep --check-types`. Set `DB_VERIFY_WORKDIR` to its owned path. After confirming that run passed, reset that owned local DB once more to full migrations and seeds, before running lint/tests again, so any helper extensions installed solely by verification are removed from the export source. Verify its migration versions, then capture its catalog and migration/source-file checksums. Generate from this disposable DB directly into the new desired directory:
+Reuse the accepted004.1 owned descriptor after validating its ownership, or create a new owned replay with the same disposable engine settings if it is gone. Set `DB_VERIFY_WORKDIR` to its owned path. After confirming that run passed, reset that owned local DB once more to full migrations and seeds, before running lint/tests again, so any helper extensions installed solely by verification are removed from the export source. Verify its migration versions, then capture its catalog and migration/source-file checksums. Generate from this disposable DB into an owned temporary export directory, `DB_SCHEMA_EXPORT`, outside the checkout. Keep the tracked config and `supabase/schemas` untouched until this checkpoint receives fresh review:
 
 ```bash
 pnpm exec supabase --workdir "$DB_VERIFY_WORKDIR" db reset --local
-pnpm exec supabase --workdir "$DB_VERIFY_WORKDIR" db schema declarative generate --local --output-dir "$PWD/supabase/schemas" --overwrite --strict-coverage
+pnpm exec supabase --workdir "$DB_VERIFY_WORKDIR" db schema declarative generate --local --output-dir "$DB_SCHEMA_EXPORT" --overwrite --strict-coverage
 ```
 
 Use no schema filter initially: export the complete application-owned scope with supported auth/storage/realtime customizations and extension declarations. Keep the engine's per-object/per-schema layout, `_cluster` output and any default-privilege overlay files such as `adp_wipes.sql`. Do not flatten or rewrite the tree for style; dependency ordering and overlay semantics matter. Extension-owned PostGIS/platform internals must not become copied application tables/functions. Lint/pgTAP helper extensions introduced solely by verification must not become desired application dependencies; distinguish these by the pre-verification replay, not by deleting arbitrary unfamiliar extensions.
 
 Review the export against the catalog inventory. Inspect generated role/config/trigger files for embedded credential literals without printing them. Secrets, password material or webhook authorization values are blockers; report file/line and credential type only. The output should contain definitions and supported extension configuration, not table data, PIX payloads, local personas or Vault secret rows.
 
-Copy the desired tree into the disposable verifier workdir and run `db schema declarative sync -f verify_noop --no-apply --strict-coverage` there. Compare migration filename/content checksums before and after. Require no new or changed migration files. An exit 0 alone is insufficient: sync can successfully write a nonempty migration.
+Copy that complete temporary tree into the disposable verifier workdir and run `db schema declarative sync -f verify_noop --no-apply --strict-coverage` there. Compare migration filename/content checksums before and after. Require no new or changed migration files. An exit 0 alone is insufficient: sync can successfully write a nonempty migration.
 
-**Verify:** the export completes with strict coverage; inventory matches intended object ownership; initial sync changes zero migration files; every historical migration checksum in the checkout remains unchanged. If sync proposes drops, permission changes or any other unexplained SQL, stop and identify the missing declaration or engine limitation before proceeding.
+**Verify:** the temporary export completes with strict coverage; inventory matches intended object ownership; initial sync changes zero migration files; every historical migration, tracked config and type checksum in the checkout remains unchanged. Commit notes only with the private export/descriptor paths, ownership and scan evidence. Fresh Sol review must accept this round-trip before promoting settings/tree or starting reconstruction. If sync proposes drops, permission changes or any other unexplained SQL, stop and identify the missing declaration or engine limitation before proceeding.
 
 ### 3. Independently reconstruct the desired schema and compare catalogs
 
-Implement `scripts/check-declarative-schema.mjs` and a root `db:schema:check` command. Reuse the isolated-workspace machinery, not the developer's DB. Its real-path algorithm is:
+After004.2 fresh review accepts the temporary export, promote its reviewed complete desired tree and only the verified engine/shadow config settings into the checkout, byte-for-byte apart from approved nonsecret path placement. Then implement `scripts/check-declarative-schema.mjs` and a root `db:schema:check` command. Reuse the isolated-workspace machinery, not the developer's DB. Its real-path algorithm is:
 
 1. Create an owned copy of current migrations/config/seeds/tests/schemas. Fresh replay all migrations and seeds. Collect the baseline catalog **before** lint/test tooling installs helper extensions, then run all SQL tests plus complete type parity. If reusing a workspace whose tests already ran, reset it first and collect the catalog before running them again. Stop that owned stack before starting another if memory is limited.
 2. Create a second, uniquely identified owned project with the same platform config/major version but an **empty migration directory** and disabled seeds in its copy only. Include the complete desired schema tree. Start the fresh platform database. Generate a full baseline there using `sync -f declared_baseline --no-apply --strict-coverage`; assert it actually creates one or more SQL migration files. Apply those generated files locally with `migration up --local`. They are verification artifacts and never enter the checkout.
-3. Query the reconstructed catalog and compare it with the replay catalog using the existing comparator. Apply only the already-documented normalization for environment identifiers/ports and platform bookkeeping. Application default privileges, effective grants, owner semantics, auth customizations, function attributes and job definitions must match.
+3. Query both complete raw17-section catalogs using the accepted capture function. Preserve those captures unchanged. Inside the declarative checker only, compare a fixed schema-only projection omitting exactly the `storage_buckets` data section and its count. This is the user-decided retired operational data scope, not a configurable ignore mechanism. The general and hosted comparator remain unchanged and must still detect bucket data differences. All other sections, including Storage policy/ACL/managed-security state, must compare strictly; do not add new environment/body/owner/security allowlists. Add focused tests proving bucket-row differences are omitted only here while Storage policy, grant and managed-security changes still fail.
+
+   Inspect exported `_cluster` role definitions. Because the reusable catalog does not capture roles/memberships, separately compare nonsecret role attributes and memberships on the two local paths before claiming security preservation. Never read `pg_authid`, password columns or password hashes. Include only the metadata required to verify what the engine exports; do not add a general hosted role audit. Application default privileges, effective grants, owner semantics, auth customizations, function attributes and job definitions must match.
 4. Run the critical schema-contract pgTAP file introduced in Step 4 against the reconstruction. This is schema equivalence, not a promise to reconstruct historical data from DDL. The `festival_companion_config` singleton and other DML remain supplied by the retained migrations/seeds on normal resets; do not fabricate those rows in desired SQL to make this test path look like full replay.
 5. In a fresh copy with the **original full migration history**, run no-op sync against the committed declarations. Snapshot the copied migration directory and fail on any new/changed file. Preserve and report the offending SQL artifact path in owned temp state without applying it. Always clean owned resources and propagate failures.
 
@@ -180,19 +191,19 @@ Explain that editing Studio does not update desired files, `db diff` is not the 
 
 Document ordinary DML, bucket rows, singleton configuration data, Vault values and environment-specific webhook provisioning separately. Named cron jobs are supported extension configuration, so keep their desired definitions in the generated tree if the round-trip proves support. Correct the retired renewal/Vault instructions: the cleanup migration already exists, and the final model has no renewal job. Keep local seed order and manual PIX instructions intact.
 
-**Verify:** run `node --test scripts/verify-database.test.mjs scripts/check-database-catalog.test.mjs scripts/check-declarative-schema.test.mjs`, `pnpm db:verify --check-types`, and `pnpm db:schema:check`, matching the workflow. `git diff --exit-code -- supabase/migrations packages/database/database-generated.types.ts supabase/seed.sql supabase/seeds` exits 0 relative to the starting checkout. Root workflow contains no cloud deployment/link/repair/reset target.
+**Verify:** run `node --test scripts/verify-database.test.mjs scripts/check-database-catalog.test.mjs scripts/supabase-gen-types.test.mjs scripts/check-declarative-schema.test.mjs`, `pnpm db:verify --check-types`, and `pnpm db:schema:check`, matching the workflow. `git diff --exit-code -- supabase/migrations packages/database/database-generated.types.ts supabase/seed.sql supabase/seeds` exits 0 relative to the starting checkout. Root workflow contains no cloud deployment/link/repair/reset target.
 
 ## Done criteria
 
 - [ ] Complete desired SQL tree is generated from verified migration replay under exactly CLI 2.121.0.
 - [ ] Root engine settings are limited to the documented declarative/shadow support changes.
 - [ ] Initial and CI no-op syncs create/change no migration files.
-- [ ] Independently reconstructed declarations match replayed application catalogs, including security/operational metadata.
+- [ ] Independently reconstructed declarations match replayed schema catalogs, including all security/operational metadata and exported nonsecret role semantics; only retired Storage bucket data is omitted through the fixed declarative-only projection.
 - [ ] Critical contract tests pass on both paths; all existing SQL tests pass on seeded replay.
 - [ ] Negative policy probe fails and the existing-function authoring probe succeeds without unrelated SQL.
 - [ ] Complete generated types remain unchanged and match replay.
 - [ ] No historical migration, seed, application source, hosted object or credential is changed/copied into the conversion.
-- [ ] CI/docs enforce the new workflow; notes record limits, artifacts, counts and cleanup.
+- [ ] CI/docs enforce the local authoring workflow; notes record limits, artifacts, counts and cleanup, and keep hosted B2/B3 compatibility/release unresolved.
 
 ## STOP conditions and recovery
 
