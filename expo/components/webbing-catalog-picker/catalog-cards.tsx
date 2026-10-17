@@ -13,7 +13,7 @@ import {
   ShieldCheckIcon,
   type LucideIcon,
 } from 'lucide-react-native';
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 import Svg, { Polyline } from 'react-native-svg';
@@ -34,7 +34,10 @@ const MATERIAL_DOT: Record<string, string> = {
 
 export interface CatalogCardProps {
   model: WebbingCatalogSnapshot;
-  /** A Choose Life–owned image; SlackData never supplies one. */
+  /**
+   * Product photo from Choose Life's mirror of SlackData's backup, matched
+   * by ID. Null shows the card without a photo.
+   */
   imageUri?: string | null;
   selected: boolean;
   sortKey: CatalogSortKey;
@@ -47,7 +50,7 @@ export interface CatalogCardProps {
 const round1 = (value: number) => Math.round(value * 10) / 10;
 const orDash = (value: number | null) => (value === null ? '—' : String(value));
 
-/** Shown only when an image exists; never a placeholder. */
+/** Shown only when an image loads; never a placeholder. */
 function CornerPhoto({
   uri,
   size,
@@ -58,11 +61,13 @@ function CornerPhoto({
   name: string;
 }) {
   const { t } = useTranslation();
-  if (!uri) return null;
+  const [failedUri, setFailedUri] = useState<string | null>(null);
+  if (!uri || failedUri === uri) return null;
   return (
     <Image
       source={{ uri }}
       contentFit="cover"
+      onError={() => setFailedUri(uri)}
       accessibilityLabel={t(`${translationKey}.card.photoOf`, { name })}
       style={{
         width: size,

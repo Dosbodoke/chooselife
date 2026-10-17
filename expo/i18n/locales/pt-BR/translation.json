@@ -225,8 +225,6 @@
           "noMatches": "Nenhuma fita corresponde a “{{query}}”.",
           "manual": "Cadastrar manualmente",
           "manualHint": "Nenhum modelo selecionado. Preencha os dados você mesmo.",
-          "legacyTitle": "Modelos disponíveis anteriormente",
-          "legacyUnavailable": "Não foi possível carregar os modelos disponíveis anteriormente.",
           "discontinued": "Descontinuada",
           "selectModelFor": "Selecionar {{name}}",
           "sort": {
@@ -302,7 +300,8 @@
           "attribution": "Dados de equipamentos do SlackData, da International Slackline Association, CC BY-SA 4.0",
           "normalized": "Os campos foram normalizados para exibição.",
           "site": "slackdata.org",
-          "license": "CC BY-SA 4.0"
+          "license": "CC BY-SA 4.0",
+          "photoCredit": "As fotos dos produtos pertencem aos seus respectivos donos, via SlackData/ISA, e não estão cobertas pela CC BY-SA."
         },
         "photo": {
           "label": "Foto",

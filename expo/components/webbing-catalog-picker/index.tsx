@@ -7,21 +7,16 @@ import { Icon } from '~/components/ui/icon';
 import { Label } from '~/components/ui/label';
 import { Text } from '~/components/ui/text';
 
-import { LegacyModelImage } from './legacy-models';
 import { selectionName, type WebbingModelSelection } from './model-selection';
 import { PickerProvider, usePicker } from './picker-context';
 import { PickerSheet } from './picker-sheet';
 
-export type {
-  LegacyWebbingModel,
-  WebbingModelSelection,
-} from './model-selection';
+export type { WebbingModelSelection } from './model-selection';
 
 const translationKey = 'app.(modals).register-webbing.selectModel';
 
 /**
- * Field that opens a sheet for choosing a SlackData model, a previously
- * available Choose Life model, or manual entry (`null`).
+ * Field that opens a sheet for choosing a SlackData model or manual entry (`null`).
  */
 export function WebbingCatalogPicker({
   labelId,
@@ -63,9 +58,6 @@ function PickerTrigger({ labelId }: { labelId: string }) {
     >
       {value ? (
         <View className="flex-1 flex-row items-center gap-3">
-          {value.source === 'legacy' ? (
-            <LegacyModelImage model={value.model} size="sm" />
-          ) : null}
           <Text className="flex-1 text-primary" numberOfLines={2}>
             {selectionName(value)}
           </Text>

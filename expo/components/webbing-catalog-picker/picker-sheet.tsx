@@ -46,6 +46,7 @@ import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 
 import { SpecTilesCard, WideCard } from './catalog-cards';
+import { CatalogFooter } from './catalog-footer';
 import { ResultsHeader } from './catalog-status';
 import {
   GRID_COLUMNS,
@@ -54,7 +55,6 @@ import {
   useGridItemWidth,
   useRowItemWidth,
 } from './grid';
-import { LegacyModels } from './legacy-models';
 import { PickerContextBridge, usePicker } from './picker-context';
 
 const translationKey = 'app.(modals).register-webbing.selectModel';
@@ -324,7 +324,7 @@ function ResultsList() {
       columnWrapperStyle={isGrid ? { gap: GRID_GAP } : undefined}
       contentContainerStyle={styles.listContent}
       ListHeaderComponent={<ResultsHeader />}
-      ListFooterComponent={<LegacyModels />}
+      ListFooterComponent={<CatalogFooter />}
       viewabilityConfig={VIEWABILITY}
       onViewableItemsChanged={handleViewableItemsChanged}
       renderItem={({
@@ -349,7 +349,7 @@ function CatalogResult({
   const gridWidth = useGridItemWidth();
   const rowWidth = useRowItemWidth();
   const {
-    state: { value, sort, layout },
+    state: { value, sort, layout, photoUris },
     actions,
   } = usePicker();
   const isSelected =
@@ -361,8 +361,7 @@ function CatalogResult({
   return (
     <Card
       model={model}
-      // SlackData supplies no images; Choose Life has none yet.
-      imageUri={null}
+      imageUri={photoUris.get(model.sourceId) ?? null}
       selected={isSelected}
       sortKey={sort.key}
       width={layout === 'tiles' ? gridWidth : rowWidth}

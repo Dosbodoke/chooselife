@@ -45,7 +45,6 @@ import {
   useFormContext,
   useFormState,
   useWatch,
-  type Control,
   type UseFormReturn,
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -88,7 +87,6 @@ import { Textarea } from '~/components/ui/textarea';
 import { WebbingCatalogPicker } from '~/components/webbing-catalog-picker';
 import {
   selectionName,
-  useLegacyWebbingModels,
   type WebbingModelSelection,
 } from '~/components/webbing-catalog-picker/model-selection';
 import { SelectedCatalogDetails } from '~/components/webbing-catalog-specs';
@@ -280,7 +278,6 @@ function useRegistration({
   const router = useRouter();
   const queryClient = useQueryClient();
   const isOnline = useOnlineStatus();
-  const selectedLegacy = useSelectedLegacyModel(form.control);
   const [flow, setFlow] = useState<RegistrationFlowState>(
     initialRegistrationFlow,
   );
@@ -296,20 +293,10 @@ function useRegistration({
 
   const saveItem = async (values: RegisterWebbingFormData | null) => {
     if (!values) return null;
-    const webbing = await submit({
-      ...values,
-      // A legacy model's own class is shown locked, not saved as personal.
-      strengthClass: selectedLegacy?.strength_class
-        ? undefined
-        : values.strengthClass,
-    });
+    const webbing = await submit(values);
     if (webbing) {
       captureWebbingRegistered(captureGrowthEvent, experiment, {
-        modelSource: values.catalogSnapshot
-          ? 'catalog'
-          : values.modelID
-            ? 'legacy'
-            : 'manual',
+        modelSource: values.catalogSnapshot ? 'catalog' : 'manual',
         hasPhoto: !!photo,
       });
       flushGrowthEvents();
@@ -363,14 +350,6 @@ function useRegistration({
       finish();
     },
   };
-}
-
-/** The selected legacy model, derived from the draft's `modelID`. */
-function useSelectedLegacyModel(control: Control<RegisterWebbingFormData>) {
-  const modelID = useWatch({ control, name: 'modelID' });
-  const { data } = useLegacyWebbingModels();
-  if (!modelID) return null;
-  return data?.find((model) => String(model.id) === modelID) ?? null;
 }
 
 function OfflineNotice() {
@@ -482,28 +461,19 @@ function ModelField({ experiment }: { experiment: WebbingPickerExperiment }) {
   const { control, setValue, getValues } =
     useFormContext<RegisterWebbingFormData>();
   const catalogSnapshot = useWatch({ control, name: 'catalogSnapshot' });
-  const selectedLegacy = useSelectedLegacyModel(control);
   // The label last filled in automatically; user edits are never replaced.
   const autoLabel = useRef<string | null>(null);
 
   const value: WebbingModelSelection | null = catalogSnapshot
     ? { source: 'catalog', snapshot: catalogSnapshot }
-    : selectedLegacy
-      ? { source: 'legacy', model: selectedLegacy }
-      : null;
+    : null;
 
   const handleChange = (selection: WebbingModelSelection | null) => {
     // The selection is copied into the draft; catalog refetches never replace it.
-    setValue(
-      'catalogSnapshot',
-      selection?.source === 'catalog' ? selection.snapshot : null,
-      { shouldValidate: true },
-    );
-    setValue(
-      'modelID',
-      selection?.source === 'legacy' ? String(selection.model.id) : '',
-      { shouldValidate: true },
-    );
+    setValue('catalogSnapshot', selection?.snapshot ?? null, {
+      shouldValidate: true,
+    });
+    setValue('modelID', '', { shouldValidate: true });
     const suggestion = selection ? selectionName(selection) : null;
     const tagName = getValues('tagName');
     const nextLabel = nextAutoLabel(tagName, autoLabel.current, suggestion);
@@ -523,11 +493,11 @@ function ModelField({ experiment }: { experiment: WebbingPickerExperiment }) {
       />
       {catalogSnapshot ? (
         <SelectedCatalogDetails snapshot={catalogSnapshot} />
-      ) : !selectedLegacy ? (
+      ) : (
         <Text variant="muted" className="text-sm">
           {t(`${translationKey}.selectModel.manualHint`)}
         </Text>
-      ) : null}
+      )}
     </View>
   );
 }
@@ -706,49 +676,35 @@ function PhotoPreview({
   );
 }
 
-// Personal strength class. A legacy model's own class is shown locked; a
-// SlackData class is shown separately and never becomes a personal value.
+// SlackData certification stays separate from the optional personal strength class.
 function StrengthClassSelector() {
   const { t } = useTranslation();
   const { control } = useFormContext<RegisterWebbingFormData>();
   const { field } = useController({ control, name: 'strengthClass' });
   const catalogSnapshot = useWatch({ control, name: 'catalogSnapshot' });
-  const legacyModel = useSelectedLegacyModel(control);
-
-  const lockedClass = legacyModel?.strength_class ?? null;
-  const isLocked = !!lockedClass;
-  const displayValue = isLocked ? lockedClass : field.value;
   const catalogClass = catalogSnapshot?.isaClass ?? null;
-  const recommendedDays = legacyModel?.recommended_lifetime_days ?? null;
 
   return (
     <View className="gap-2">
       <Label nativeID="strengthClass">
-        {t(`${translationKey}.strengthClass.label`)}
-        {!isLocked && (
-          <>
-            {' '}
-            <Text variant="muted">{t('common.optional')}</Text>
-          </>
-        )}
+        {t(`${translationKey}.strengthClass.label`)}{' '}
+        <Text variant="muted">{t('common.optional')}</Text>
       </Label>
 
       <View className="flex-row gap-2">
         {STRENGTH_CLASS_OPTIONS.map((option) => {
-          const isSelected = displayValue === option;
+          const isSelected = field.value === option;
           return (
             <TouchableOpacity
               key={option}
-              disabled={isLocked}
               accessibilityRole="button"
-              accessibilityState={{ selected: isSelected, disabled: isLocked }}
+              accessibilityState={{ selected: isSelected }}
               onPress={() => field.onChange(isSelected ? undefined : option)}
               className={cn(
                 'flex-1 py-3 rounded-lg border items-center justify-center',
                 isSelected
                   ? getStrengthClassColor(option)
                   : 'border-border bg-muted/30',
-                isLocked && !isSelected && 'opacity-40',
               )}
             >
               <Text
@@ -765,9 +721,7 @@ function StrengthClassSelector() {
       </View>
 
       <Text variant="muted" className="text-sm">
-        {t(
-          `${translationKey}.strengthClass.${isLocked ? 'lockedHint' : 'personalHint'}`,
-        )}
+        {t(`${translationKey}.strengthClass.personalHint`)}
       </Text>
       {catalogClass && (
         <Text variant="muted" className="text-sm">
@@ -776,15 +730,6 @@ function StrengthClassSelector() {
           })}
         </Text>
       )}
-
-      {/* Only a legacy model carries a supported recommended lifetime */}
-      {recommendedDays ? (
-        <Text variant="muted" className="text-sm">
-          {t(`${translationKey}.recommendedLifetime`, {
-            days: recommendedDays,
-          })}
-        </Text>
-      ) : null}
     </View>
   );
 }

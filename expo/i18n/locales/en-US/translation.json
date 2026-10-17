@@ -225,8 +225,6 @@
           "noMatches": "No webbings match “{{query}}”.",
           "manual": "Register manually",
           "manualHint": "No model selected. Fill in the details yourself.",
-          "legacyTitle": "Previously available models",
-          "legacyUnavailable": "Previously available models couldn't be loaded.",
           "discontinued": "Discontinued",
           "selectModelFor": "Select {{name}}",
           "sort": {
@@ -302,7 +300,8 @@
           "attribution": "Gear data from SlackData by the International Slackline Association, CC BY-SA 4.0",
           "normalized": "Fields were normalized for display.",
           "site": "slackdata.org",
-          "license": "CC BY-SA 4.0"
+          "license": "CC BY-SA 4.0",
+          "photoCredit": "Product photos belong to their respective owners, via SlackData/ISA, and are not covered by CC BY-SA."
         },
         "photo": {
           "label": "Photo",

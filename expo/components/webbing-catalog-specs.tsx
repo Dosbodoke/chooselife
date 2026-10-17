@@ -24,8 +24,17 @@ const translationKey = 'app.(modals).register-webbing.catalog';
 const specsKey = 'components.webbing-detail.specifications';
 const warningsKey = 'components.webbing-detail.warnings';
 
-/** SlackData credit and license links, required wherever its data shows. */
-export function CatalogAttribution({ className }: { className?: string }) {
+/**
+ * SlackData credit and license links, required wherever its data shows.
+ * Product photos have their own owners, so they get a separate credit.
+ */
+export function CatalogAttribution({
+  className,
+  showPhotoCredit = false,
+}: {
+  className?: string;
+  showPhotoCredit?: boolean;
+}) {
   const { t } = useTranslation();
   return (
     <View className={cn('gap-1', className)}>
@@ -33,6 +42,11 @@ export function CatalogAttribution({ className }: { className?: string }) {
         {t(`${translationKey}.attribution`)}.{' '}
         {t(`${translationKey}.normalized`)}
       </Text>
+      {showPhotoCredit ? (
+        <Text className="text-xs text-muted-foreground">
+          {t(`${translationKey}.photoCredit`)}
+        </Text>
+      ) : null}
       <View className="flex-row gap-4">
         <AttributionLink url={SLACKDATA_SITE_URL}>
           {t(`${translationKey}.site`)}

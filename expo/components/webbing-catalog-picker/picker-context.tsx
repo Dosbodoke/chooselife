@@ -1,6 +1,5 @@
 import type { WebbingCatalogSnapshot } from '@chooselife/ui';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import type { UseQueryResult } from '@tanstack/react-query';
 import {
   captureGrowthEvent,
   flushGrowthEvents,
@@ -10,6 +9,7 @@ import {
   type WebbingPickerExperiment,
   type WebbingPickerLayout,
 } from '~/features/growth/webbing-picker-layout';
+import { matchCatalogPhotos } from '~/features/webbing/catalog-assets';
 import {
   applyCatalogFilters,
   availableCatalogFilters,
@@ -36,12 +36,12 @@ import {
   useWebbingCatalog,
   type WebbingCatalog,
 } from '~/hooks/use-webbing-catalog';
-
 import {
-  useLegacyWebbingModels,
-  type LegacyWebbingModel,
-  type WebbingModelSelection,
-} from './model-selection';
+  slackDataUrl,
+  useWebbingCatalogAssets,
+} from '~/hooks/use-webbing-catalog-assets';
+
+import type { WebbingModelSelection } from './model-selection';
 
 type PickerContextValue = {
   state: {
@@ -53,7 +53,8 @@ type PickerContextValue = {
     hasFilters: boolean;
     /** Catalog models after search, filters and sort. */
     items: WebbingCatalogSnapshot[];
-    legacyItems: LegacyWebbingModel[];
+    /** Optional mirrored product photo per SlackData ID; absent means none. */
+    photoUris: Map<number, string>;
     /** Locked for each presentation of the sheet. */
     layout: WebbingPickerLayout;
     isSortMenuOpen: boolean;
@@ -72,13 +73,11 @@ type PickerContextValue = {
     markExposed: () => void;
     /** `position` is 1-based within the list the user saw. */
     selectCatalog: (snapshot: WebbingCatalogSnapshot, position: number) => void;
-    selectLegacy: (model: LegacyWebbingModel) => void;
     chooseManual: () => void;
   };
   meta: {
     sheetRef: RefObject<BottomSheetModal | null>;
     catalog: WebbingCatalog;
-    legacy: UseQueryResult<LegacyWebbingModel[]>;
     isOnline: boolean;
   };
 };
@@ -125,7 +124,7 @@ export function PickerProvider({
 }) {
   const isOnline = useOnlineStatus();
   const catalog = useWebbingCatalog();
-  const legacy = useLegacyWebbingModels();
+  const assets = useWebbingCatalogAssets();
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<CatalogSort>(DEFAULT_CATALOG_SORT);
   const [filters, setFilters] = useState<CatalogFilter[]>([]);
@@ -140,11 +139,12 @@ export function PickerProvider({
     applyCatalogFilters(filterWebbingCatalog(allItems, search), filters),
     sort,
   );
-  const query = search.trim().toLowerCase();
-  const legacyItems = (legacy.data ?? []).filter(
-    (model) => !query || model.name.toLowerCase().includes(query),
-  );
   const activeFilterIds = new Set(filters.map(catalogFilterId));
+  const photoUris = matchCatalogPhotos(
+    assets.data,
+    allItems,
+    slackDataUrl,
+  ).uris;
 
   const close = () => sheetRef.current?.close();
 
@@ -155,6 +155,7 @@ export function PickerProvider({
     setIsSortMenuOpen(false);
     sheetRef.current?.present();
     catalog.loadOnOpen();
+    assets.loadOnOpen();
   };
 
   const handleDismiss = () => {
@@ -195,7 +196,7 @@ export function PickerProvider({
       activeFilterIds,
       hasFilters: filters.length > 0,
       items,
-      legacyItems,
+      photoUris,
       layout,
       isSortMenuOpen,
     },
@@ -217,16 +218,12 @@ export function PickerProvider({
         session.current?.select('catalog', position, sort);
         select({ source: 'catalog', snapshot });
       },
-      selectLegacy: (model) => {
-        session.current?.select('legacy', 0, sort);
-        select({ source: 'legacy', model });
-      },
       chooseManual: () => {
         session.current?.chooseManual();
         select(null);
       },
     },
-    meta: { sheetRef, catalog, legacy, isOnline },
+    meta: { sheetRef, catalog, isOnline },
   };
 
   return <PickerContext value={contextValue}>{children}</PickerContext>;
