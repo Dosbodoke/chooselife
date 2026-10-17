@@ -740,6 +740,14 @@ const invalidInputs = {
     JSON.stringify({ result: connectorText(makeCatalog()), error: null }),
   "a connector block followed by a truncated second block": () =>
     `${connectorText(makeCatalog())}\n<untrusted-data-0b8d4c1e-7f43-4a55-9f9e-2a1c3d4e5f61>\n[{"catalog":`,
+  "a connector block followed by a partial opening tag line": () =>
+    `${connectorText(makeCatalog())}\n<untrusted-data-deadbeef`,
+  "a connector block followed by a partial closing tag line": () =>
+    `${connectorText(makeCatalog())}\n</untrusted-data-deadbeef`,
+  "a connector block followed by a tag line with trailing text": () =>
+    `${connectorText(makeCatalog())}\n<untrusted-data-deadbeef> [{"catalog":`,
+  "a partial tag inside connector prose": () =>
+    `${connectorText(makeCatalog())} Ignore the <untrusted-data-deadbeef`,
   "a stray closing connector tag": () =>
     `${connectorText(makeCatalog())}\n</untrusted-data-0b8d4c1e-7f43-4a55-9f9e-2a1c3d4e5f60>`,
   "a stream-json result followed by an error event": () =>
@@ -797,6 +805,20 @@ const malformedRecords = {
   "a malformed extension security state": (catalog) => {
     catalog.extensions[0].routine_security.acl = "PUBLIC:EXECUTE";
   },
+  "a folded routine state without its definer flag": (catalog) => {
+    catalog.extensions[0].routine_security.security_definer = null;
+  },
+  "a folded routine state without its config": (catalog) => {
+    catalog.extensions[0].routine_security.config = null;
+  },
+  "a folded routine state with RLS flags": (catalog) => {
+    catalog.extensions[0].routine_security.rls_enabled = false;
+  },
+  "a folded type state with a definer flag": (catalog) => {
+    catalog.extensions[0].type_security = securityState({
+      security_definer: false,
+    });
+  },
   "duplicate column names": (catalog) => {
     catalog.relations[0].columns.push(column("body", "text"));
   },
@@ -841,6 +863,26 @@ for (const [name, change] of Object.entries(malformedRecords)) {
     );
   });
 }
+
+test("accepts folded routine and type states with their kind's fields", () => {
+  const catalog = makeCatalog();
+  catalog.extensions[0].type_security = securityState({
+    acl: ["PUBLIC:USAGE", "supabase_admin:USAGE"],
+  });
+  assert.deepEqual(extractCatalog(JSON.stringify(catalog)), catalog);
+});
+
+test("a rejected folded state names the field, not its value", () => {
+  const catalog = makeCatalog();
+  catalog.extensions[0].routine_security.config = null;
+  assert.throws(
+    () => extractCatalog(JSON.stringify(catalog)),
+    (error) =>
+      error instanceof CatalogInputError &&
+      error.message.includes("pg_cron") &&
+      error.message.includes("routine_security.config"),
+  );
+});
 
 test("a rejected record names the field, not its value", () => {
   const catalog = makeCatalog();

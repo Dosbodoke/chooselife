@@ -59,6 +59,10 @@ const NAMED_LIST_FIELDS = new Set(["columns", "attributes"]);
 // The connector's preamble names the tag in a sentence, so only tags on their
 // own line delimit the data.
 const UNTRUSTED_TAG = /^[ \t]*<(\/?)untrusted-data-([0-9a-f-]+)>[ \t\r]*$/gm;
+// Any tag, complete or not, anywhere in the text or at the start of a line.
+const ANY_TAG = /<\/?untrusted-data-/g;
+const COMPLETE_TAG = /^<\/?untrusted-data-[0-9a-f-]+>/;
+const LINE_STARTING_WITH_TAG = /^[ \t]*<\/?untrusted-data-/gm;
 const MAX_UNWRAP_DEPTH = 6;
 
 const USAGE = `Usage: pnpm db:catalog:compare <left.json> <right.json>
@@ -97,12 +101,15 @@ function parseText(text) {
   }
 
   // Connector text: exactly one opening tag line and its closing tag line.
-  // Any other standalone tag, such as a second or truncated block, is
-  // rejected.
-  const tags = [...trimmed.matchAll(UNTRUSTED_TAG)];
-  if (tags.length > 0) {
+  // Tags elsewhere may only be complete tags named inside a sentence. Any
+  // other tag, such as a second, partial or truncated block, is rejected.
+  const anyTags = [...trimmed.matchAll(ANY_TAG)];
+  if (anyTags.length > 0) {
+    const tags = [...trimmed.matchAll(UNTRUSTED_TAG)];
     const [open, close] = tags;
     if (
+      anyTags.some((tag) => !COMPLETE_TAG.test(trimmed.slice(tag.index))) ||
+      [...trimmed.matchAll(LINE_STARTING_WITH_TAG)].length !== tags.length ||
       tags.length !== 2 ||
       open[1] !== "" ||
       close[1] !== "/" ||
@@ -242,6 +249,10 @@ const MANAGED_KIND_FIELDS = {
   type: [],
 };
 const KIND_SPECIFIC_FIELDS = Object.values(MANAGED_KIND_FIELDS).flat();
+const EXTENSION_STATE_KINDS = [
+  ["routine_security", "function"],
+  ["type_security", "type"],
+];
 
 // Every field each section's entries carry besides `id`, as catalog.sql
 // emits them.
@@ -443,12 +454,28 @@ function validateEntry(section, item, index) {
     if (!check(item[key])) fail(`has a malformed ${key}`);
   }
   if (section === "managed_security") {
-    const required = MANAGED_KIND_FIELDS[item.id.split(" ")[0]];
-    if (!required) fail("has an unknown object kind");
-    for (const key of KIND_SPECIFIC_FIELDS) {
-      if ((item[key] !== null) !== required.includes(key)) {
-        fail(`has a malformed ${key} for its kind`);
+    const kind = item.id.split(" ")[0];
+    if (!Object.hasOwn(MANAGED_KIND_FIELDS, kind)) {
+      fail("has an unknown object kind");
+    }
+    checkKindFields(item, kind, "", fail);
+  }
+  // An extension's common states are those of its functions and its types.
+  if (section === "extensions") {
+    for (const [field, kind] of EXTENSION_STATE_KINDS) {
+      if (item[field] !== null) {
+        checkKindFields(item[field], kind, `${field}.`, fail);
       }
+    }
+  }
+}
+
+// The security fields a kind has must be set; the others must be null.
+function checkKindFields(state, kind, prefix, fail) {
+  const required = MANAGED_KIND_FIELDS[kind];
+  for (const key of KIND_SPECIFIC_FIELDS) {
+    if ((state[key] !== null) !== required.includes(key)) {
+      fail(`has a malformed ${prefix}${key} for its kind`);
     }
   }
 }

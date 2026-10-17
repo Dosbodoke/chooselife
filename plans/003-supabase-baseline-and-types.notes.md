@@ -292,10 +292,10 @@ It fails closed with exit 2 on:
 - a missing or unknown section
 - a count mismatch
 - an entry without an `id`, or a duplicate `id`
-- any record whose shape differs from what `catalog.sql` emits: a missing or extra field, a wrong type or nullability, a malformed digest or ACL entry, `effective` without exactly `anon`, `authenticated` and `service_role`, duplicate column, attribute, ACL, role or label entries, or a managed entry whose kind-specific security fields are missing
+- any record whose shape differs from what `catalog.sql` emits: a missing or extra field, a wrong type or nullability, a malformed digest or ACL entry, `effective` without exactly `anon`, `authenticated` and `service_role`, duplicate column, attribute, ACL, role or label entries, a managed entry whose kind-specific security fields are missing, or a folded extension state that does not have its kind's fields (a routine state needs a boolean definer flag and a settings array, and its RLS flags and columns must be null; every kind-specific field of a type state must be null)
 - counts or environment with missing or extra keys
 - `complete_visibility` false
-- connector text without exactly one opening tag line and its matching closing tag line, so a second or truncated block is rejected
+- connector text without exactly one opening tag line and its matching closing tag line, so a second or truncated block is rejected. Every other tag occurrence must be a complete tag inside a sentence. A partial opening or closing tag anywhere, or a tag line with anything after the tag, is rejected
 - stream-json without exactly one result, or with an `error` event or `error`-level log anywhere
 
 Exit 1 lists semantic differences by section, identity and field path. Exit 0 means the application semantics match.
@@ -458,11 +458,54 @@ Judgments for review and for Step 3:
 - Platform triggers, policies on `cron` tables, platform event triggers and platform default ACL rows are compared because they cannot be told apart from custom ones by catalog provenance. Platform-version differences there will appear by name in Step 3.
 - `managed_security` and the folded extension states follow platform versions. A different storage, auth or realtime release on staging can add or remove platform functions and tables. Those appear as named `only in` lines.
 
+### Revision 2: second fresh review corrections
+
+The second fresh review confirmed the revision 1 fixes and accepted extension folding within its documented scope. It returned FIX-FIRST with two P2 input-validation findings, both reproduced by the parent and the reviewer. Only the checker, its tests and these notes changed. `catalog.sql` and every other file are unchanged, so no database replay or probe was repeated.
+
+**P2, folded routine states accepted null security fields.** `extensions.routine_security` and `type_security` used the shared `SECURITY_STATE` record, whose kind-specific fields are all nullable. A real v2 capture with `routine_security.security_definer` or `.config` set to null was accepted, though `catalog.sql` always emits a boolean and an array for a routine state. The kind check that `managed_security` used is now `checkKindFields(state, kind, prefix, fail)`. Managed entries call it with the kind from their identity. A non-null `routine_security` is checked as `function`: definer flag and settings required, RLS flags and columns null. A non-null `type_security` is checked as `type`: all four null. A wholly null state is still accepted, as `catalog.sql` emits it when an extension has no routines or types (`plpgsql` has neither; only `pg_net` and `postgis` have a type state locally). Errors name the extension and the nested field, such as `extensions entry pg_cron has a malformed routine_security.config for its kind`. The unknown-kind check now uses `Object.hasOwn`, so an identity such as `constructor …` cannot match an inherited key.
+
+**P2, a partial tag after a valid connector block was ignored.** The parser matched only complete tags on their own line. A valid block followed by a standalone `<untrusted-data-deadbeef` without `>` compared equal. Connector parsing now starts whenever `<untrusted-data-` or `</untrusted-data-` appears anywhere. It rejects the input unless every occurrence begins a complete tag, every line that starts with a tag is a delimiter line by itself, and there are exactly two delimiter lines forming a matching pair. The preamble and trailing sentences that name the complete tag inline are still accepted. This is a tag-prefix check, not a general markup parser.
+
+#### Revision 2 verification
+
+| Command | Result |
+| --- | --- |
+| `node --test scripts/check-database-catalog.test.mjs scripts/verify-database.test.mjs` (Node 24.18.0) | exit 0, 124/124: 85 catalog tests, 39 helper tests unchanged |
+| The new catalog tests against the revision 1 checker (`git show HEAD:…`) | 9 fail: the 8 new rejection cases and the folded-state message test. The other 76 pass, including the new accepted type-state case |
+| `pnpm exec prettier --check` on both scripts (pnpm 11.10.0) | exit 0 |
+| `git diff --check` | exit 0 |
+
+New tests:
+
+- Rejected with exit 2:
+  - a folded routine state with a null definer flag
+  - a folded routine state with null settings
+  - a folded routine state with RLS flags
+  - a folded type state with a definer flag
+  - a valid connector block followed by a partial opening tag line
+  - a valid block followed by a partial closing tag line
+  - a valid block followed by a tag line with trailing text
+  - a partial tag inside the trailing prose
+- Accepted: a folded type state with its ACL and every kind field null.
+- A rejected folded state names `pg_cron` and `routine_security.config`.
+
+Checks against real captures, private evidence in `/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-003-2r2-private.CK2hmz` (mode 700):
+
+| Check | Result |
+| --- | --- |
+| The parent's real v2 baseline against itself | exit 0, `Application catalogs match.` |
+| The baseline rewrapped as bare, CLI rows (parsed and text jsonb), agent envelope, stream-json with a warn log, connector text and connector `{result}`, each against the baseline | exit 0 each |
+| Folded states in the real baseline | 10 of 11 extensions have a routine state, all with a boolean definer flag, a settings array and null RLS flags and columns. `plpgsql` has neither state. The `pg_net` and `postgis` type states have every kind field null |
+| Real baseline mutated: `pg_cron` routine definer null, settings null, `rls_enabled` set, `rls_forced` set to a fixture bearer string; `pg_net` type definer set, settings set | exit 2 each, naming the extension and nested field |
+| Real connector text plus a standalone partial opening tag, a partial closing tag, a tag line followed by a fixture URL, a partial tag in prose, and the partial opening tag inside connector `{result}` | exit 2 each, `Input needs exactly one matching pair of untrusted-data tag lines.` |
+| The bad-input messages scanned for the fixture bearer, fixture host and `Bearer` | none found |
+| All 20 saved revision 1 captures against the baseline | none exit 2. The 11 steady-state captures exit 0, including fresh, before tools, after lint, after pgTAP, after probes, the agent envelope, stream-json and connector shapes. The 9 probe captures exit 1, as before |
+
 ### Known limits
 
 - ACL entries omit grantors, so a privilege granted by two grantors is one entry. A revoke by one of them changes nothing effective and is not reported. Any change to who holds a privilege, or to effective privileges, is reported.
 - Platform objects carry only security state. A platform function body, table definition, index or constraint is not compared. In hosted projects the migration role cannot change those because it does not own them. A superuser change would show only through owner, ACL, RLS, definer or settings. Platform triggers and policies are compared fully.
-- Extension members in their extension's common state are folded. An extension upgrade that adds members with that state is not reported beyond the version metadata. A member that leaves the common state is listed by name.
+- Extension members in their extension's common state are folded. For a fixed member set, the common state and the named exceptions preserve the whole security distribution: any member that leaves the common state is listed by name, and any change to the common state is reported on the extension. Members added or removed while sharing the common state are outside the inventory, in the same way that extension implementation objects are excluded and versions are reported only as metadata. No member identity list or hash is kept.
 - Policies, triggers and the other captured-everywhere objects are not marked as platform or application. The stage comparison names them all the same way.
 - Not captured: roles and memberships (which also affect effective privileges), language, large-object, foreign-server and database ACLs, objects in `pg_catalog` and `information_schema`, casts, operators and operator classes, statistics objects, collations, text search configuration, Auth settings outside the database, vault secrets (by design) and stored objects.
 - Deparsed definitions come from the server. A different Postgres major on staging could print equivalent SQL differently; that would show as named differences, not be hidden. Formatting is not normalized beyond CRLF.
@@ -489,5 +532,7 @@ Judgments for review and for Step 3:
 Step 1 is accepted. Prerequisites held: CLI 2.121.0, 39/39 helper tests, and `pnpm db:verify --keep` passing with 41/41 migrations, a clean lint and 12 files with 371 assertions. The clean replay matches the checked-in migrations exactly. It has 38 public tables and 82 public functions, and no `profile_isa_accounts`. The raw compiler baseline in a fresh worktree was web exit 1, mobile exit 1 and UI exit 0, with eight diagnostics from missing framework declarations. After the parent prepared the ignored Next and Expo declarations, all three typechecks exit 0 with no diagnostics. That prepared baseline is the one later steps compare against.
 
 Step 2 revision 1 is done locally and waits for a new fresh review. Step 2 is not accepted. `supabase/verification/catalog.sql` returns one nonsecret `chooselife.catalog.v2` JSON catalog. It includes the security state of platform objects and extension members, application objects of any owner in application schemas, and triggers, policies and publications wherever they are. `pnpm db:catalog:compare` validates every record's complete shape and both wrappers fail closed. It exits 0, 1 or 2. 75 catalog tests pass beside the 39 existing ones. The parent's managed `EXECUTE` revoke, managed RLS flip and non-owner `gis` function are detected live, along with a managed table grant, a managed column grant, a custom `auth.users` webhook trigger and extension grant changes. Every probe rolled back to a byte-identical capture. Two clean replays compare equal, and lint and pgTAP leave no catalog residue. The developer `chooselife` stack is unchanged. The owned stack `chooselife-verify-049997ac2680` is retained at `/private/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-verify-QD2JDJ`, in full migrations-plus-seeds state, for Step 3.
+
+Step 2 revision 2 changes only the checker, its tests and these notes. It answers the second fresh review's two P2 findings. Folded extension states must have their kind's fields, and partial or extra connector tags are rejected. 85 catalog tests pass beside the 39 helper tests. The real baseline still parses and matches itself in every wrapper. The saved revision 1 captures compare as before, and the new bad inputs exit 2 without printing values. `catalog.sql` is unchanged, so the revision 1 live results stand. Revision 2 waits for a new fresh review. Step 2 is not accepted. The owned stack is untouched by this revision.
 
 Steps 3–5 have not started. No staging inspection, versioned reset, type regeneration, route change, runner integration, workflow or README change happened. Plan 003 is not done.
