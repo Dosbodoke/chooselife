@@ -124,3 +124,8 @@ No other owned resource exists. No push or PR. This checkpoint is not accepted u
 ## Parent verification of004.1
 
 Root independently asserted ownership and verified that only the two experimental sections were added to the owned copy. It reran the owned reset, exact41version history, both seed records, pre-tool catalog capture, lint,12files/371SQLassertions and the complete generator check. All passed. The catalog matches the pre-settings baseline, the artifact SHA remains `c30af02141acdd1feecfda4faa3df817edc49ec229d344134b9ee79b65ab9672`, and developer IDs/start times/restart counts/history/volume/network names remain unchanged. The extension inventory is equal before and after lint/pgTAP, with no remaining `pgtap` extension; the earlier claim that helpers remain was corrected. A reset before004.2export remains required by the plan, rather than by an observed lingering helper. Parent evidence: `/tmp/chooselife-parent-0041-ChLDVG/report.json`. Fresh Sol review is still pending; this paragraph does not accept004.1or authorize promotion of tracked settings.
+
+
+## Parent acceptance of004.1
+
+Root accepts local004.1 at `17f895a` after fresh GPT-6.1-Sol High `/root/supabase_004_1_review` returned SHIP with no material findings. It reviewed the corrected extension statement and the independent parent gates above. The owned descriptor is retained for004.2, which must reset and prove strict private export plus a zero-file-change no-op before fresh review and any tracked promotion. The webhook config-push side effect and hostedB2/B3compatibility gates remain unresolved. This acceptance changes no tracked configuration or schema source.

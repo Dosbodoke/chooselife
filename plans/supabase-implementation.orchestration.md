@@ -15,14 +15,14 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 
 ## Current task
 
-- Checkpoint: independent `003.5`, blocking local type parity and reusable catalog capture.
-- Status:003.5 ACCEPTED at `275f23d` including49b4678source, fresh Sol retry SHIP/no material findings. All local gates pass. Publishing accepted checkpoint; a read-only planning review is assessing bounded local004independence while hosted B2/B3 remain unresolved.
-- Client request ID: `supabase-003-step5-r2-docs-opus-r1-20261017`.
-- T3 task ID: `node:delegated-task:command%3Amcp%3A5baeb4a5-e9d3-4b94-a382-c98da762133e%3Adelegate-task%3Asupabase-003-step5-r2-docs-opus-r1-20261017`.
+- Checkpoint: `004.2`, strict private export and initial no-op proof.
+- Status:004.1 ACCEPTED at `17f895a`, fresh Sol SHIP, parent independent owned full reset/history/seeds/catalog/lint/371SQL/type/source/developer checks pass. Publishing and preparing004.2. Tracked settings/tree remain unchanged; hosted B2/B3 unresolved.
+- Client request ID: `supabase-004-step1-opus-r1-20261017`.
+- T3 task ID: `node:delegated-task:command%3Amcp%3A18e252c7-34df-4baf-ad8d-fd554cd79e99%3Adelegate-task%3Asupabase-004-step1-opus-r1-20261017`.
 - Automatic task completion delivery is enabled. Await it without polling or duplicate work.
 - Bootstrap commit: `775f09fbefdc984657cf0994b2ffbd9bb40644c4`.
 - Accepted catalog source head: `0cb874fb60cc59fd01c76315b6026e9c5fda21c2`; accepted remote docs checkpoint `47365e44257b7b3f1d9240f03b5075ca95190440`.
-- Latest accepted reviewer: `/root/supabase_003_5_review_retry`, GPT-6.1-Sol High. SHIP003.5, no material findings; no hosted parity or security exception accepted.
+- Latest accepted reviewer: `/root/supabase_004_1_review`, GPT-6.1-Sol High. SHIP004.1 at17f895a, local preparation only; no tracked promotion or hosted security exception approved.
 - Predecessor evidence: Node24.18.0, frozen install and 39 helper tests pass; real replay passes 41 migrations and 12 files/371 assertions, including independent root runs. Generator negative cases and failure cleanup pass. Existing developer database and protected inputs remain unchanged.
 
 ## Checkpoint status
@@ -36,8 +36,9 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - 003.3: DIAGNOSTIC ACCEPTED at `c2b1ff11360e00034203177ebd46a19fa26410be`, fresh Sol round2 SHIP. Reconciliation remains BLOCKED by B2 schema ACL and B3/other platform security provenance. User R2 decision retires B1 legacy bucket configuration from target.
 - 003.4: ACCEPTED at `f1cc1cd`, fresh Sol SHIP, canonical generator/trigger override/whole types/typed route all verified.
 - 003.5: ACCEPTED at `275f23d` including49b4678source. All local replay/catalog/type/CI config gates complete; hosted parity still unresolved.
-- 004.1: local preparation ready under explicit reviewed independence refinement; hosted003.3unresolved.
-- 004.2–004.5: pending each preceding local checkpoint acceptance, with hosted release gate retained.
+- 004.1: ACCEPTED at `17f895a`, fresh Sol SHIP and parent real post-settings gates passed.
+- 004.2: next strict private export/no-op, then fresh review before promotion.
+- 004.3–004.5: pending preceding local checkpoints, hosted release gate retained.
 
 ## Continuation contract
 
@@ -129,6 +130,10 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - OpusR2docs completed at `275f23d`, two scopedfilesonly; sourceunchanged. Parentdiff/whitespace/protectedREADMEchecksPASS. NEWfreshSol `/root/supabase_003_5_review_retry` SHIPnomaterialfindingsfor275f23dincluding49b4678source, independently238tests/YAML39paths/format/scopeandreadparent66.879secreport. Rootaccepts003.5LOCALimplementation. HostedCI/30mincoldstartunverified, no hostedparity/securityexceptionaccepted. Separatefreshread-onlyplanningadvisor `/root/supabase_parity_next_step_advice` assessingwhether004localauthoringcanproceedfromcompleteacceptedlocalcontractswhile B2/B3hostedreconciliationremainsseparate; no sourcechangeor004dispatchyet.
 
 - Fresh planning advisor `/root/supabase_parity_next_step_advice` recommends boundedlocal004preparationafter003.5acceptance, withoutmarking003.3resolved. Hostedparitynottechnicalprerequisitetotwolocalsameplatformroundtrip. Rootexplicitlyrefines004:004.1engineonlyownedcopy+verifiedfullgate,004.2completeprivateexport+strictno-op+freshreviewbeforepromotion,004.3reviewedpromotion+independentreconstruction. Retainallsecuritychecks/rolesemanticverification;fixeddeclarative-onlyprojectionomitsjustretiredstorage_bucketsdata/count,raw17sectioncapturesandgeneralcomparatorunchanged. B2/B3hostedrisks/releasesremainunresolved,nosecurityexceptionorcloudwriteapproved. EachnumberedcheckpointstillOpusHighthenfreshSol.
+
+- Rootpushedaccepted003.5/R2docscheckpoint `b6160679e753cecaedc12c7051138f5ec9e18d76`, remoteexactSHAverified. Rootcommittedlocal004independencerefinement as `fe5995035bcaba9014d99ba8654eb74fde34d9e3`, plansonly. Userexplicitlysaid "proceed". DispatchedOpus5.5High004.1 task `node:delegated-task:command%3Amcp%3A18e252c7-34df-4baf-ad8d-fd554cd79e99%3Adelegate-task%3Asupabase-004-step1-opus-r1-20261017`, request `supabase-004-step1-opus-r1-20261017`. Fullrefinedplan+preciseone-stepownershipinlined. Ownsnew004notes/privateevidence/onenewownedstack/configonly. Freshbaseline--keep--checktypesthenownedsettings/reset/history/catalogbeforetools/lint371SQL/typeparity/sourcechecksums/developerpreservationrequired. Noexport/syncyet004.2,notrackedconfig/schemaedits,hostedB2/B3remainreleasegate. Alloldowneddescriptorsremoved;mustcreatenew. Retainnewverifieddescriptorfor004.2afterfreshSolreview. Awaitautomaticnotificationnoduplicatepoll.
+
+- Opus004.1 completednotesonly at `34df8fc`; rootcorrectedunsupportedhelperextensionclaim+recordedindependentchecks at `17f895a`. FreshSol `/root/supabase_004_1_review` SHIPnomaterialfindings. Rootaccepts004.1localonly:actualownedreset41exacthistory/bothseeds/catalogequalbaseline/lint/371assertions/typeparity0,source94filesanddeveloperstateunchanged. Extensioninventorybefore/aftertoolsequal,pgtapabsent. Parentreport `/tmp/chooselife-parent-0041-ChLDVG/report.json`. NewLIVEowneddescriptor `/tmp/chooselife-004-1-private.ZwMLAw/descriptor.json`, root `/private/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-verify-Nq18nP`, project `chooselife-verify-9a6d114e5172`, engine+webhookflagsONLYownedcopy. ConfigpushwithwebhookflaghasverifiedhostedenableDatabaseWebhooksideeffect;004.3promotionreviewmustaddress,notapprovedhere. Noexport/syncyet;004.2mustresetagainunderplanandprove strictprivateexport/no-op.
 
 After 002.2 acceptance, commit the current advisor status documents and push the dedicated branch as requested. Checkpoint 002.3 is the next implementation step and must use the same worktree. Real replay and all later plan gates remain pending until their own verification and fresh review.
 
