@@ -56,15 +56,20 @@ const NAMED_SET_FIELDS = new Set(["acl", "roles", "events"]);
 // Ordered lists of objects keyed by `name`.
 const NAMED_LIST_FIELDS = new Set(["columns", "attributes"]);
 
-// The connector's preamble names the tag in a sentence, so only tags on their
-// own line delimit the data. JSON cannot put a line break inside a string, so
-// no payload value can form such a line.
-const UNTRUSTED_TAG = /^[ \t]*<(\/?)untrusted-data-([0-9a-f-]+)>[ \t\r]*$/gm;
+// The connector's preamble names the tag in a sentence, so only a tag alone on
+// a physical line delimits the data. Physical lines end at LF, with an
+// optional CR before it. JSON escapes LF and CR inside strings, so no payload
+// value can form such a line. JSON strings may hold raw U+2028 and U+2029,
+// which JavaScript's multiline anchors treat as line ends, so this pattern is
+// matched against one physical line at a time, never with the `m` flag.
+const TAG_LINE = /^[ \t]*<(\/?)untrusted-data-([0-9a-f-]+)>[ \t\r]*$/;
 // Any tag, complete or not, in the prose around the data, or one starting a
-// line there.
+// line there. Outside the data, a lone CR, U+2028 or U+2029 also counts as a
+// line start, so a tag a reader could take for another tag line fails closed.
 const ANY_TAG = /<\/?untrusted-data-/g;
 const COMPLETE_TAG = /^<\/?untrusted-data-[0-9a-f-]+>/;
-const LINE_STARTING_WITH_TAG = /^[ \t]*<\/?untrusted-data-/m;
+const LINE_STARTING_WITH_TAG =
+  /(?:^|[\n\r\u2028\u2029])[ \t]*<\/?untrusted-data-/;
 const MAX_UNWRAP_DEPTH = 6;
 
 const USAGE = `Usage: pnpm db:catalog:compare <left.json> <right.json>
@@ -147,24 +152,40 @@ function streamResult(events) {
   return results[0];
 }
 
+// The physical lines of `text` that are a lone connector tag, with their
+// offsets.
+function tagLines(text) {
+  const tags = [];
+  let start = 0;
+  for (const line of text.split("\n")) {
+    const match = TAG_LINE.exec(line);
+    if (match) {
+      tags.push({
+        start,
+        end: start + line.length,
+        closing: match[1] === "/",
+        id: match[2],
+      });
+    }
+    start += line.length + 1;
+  }
+  return tags;
+}
+
 // Connector text: exactly one opening tag line and its closing tag line around
 // the JSON. In the prose outside them, tags may only be complete tags named
 // inside a sentence. Any other tag, such as a second, partial or truncated
 // block, is rejected.
 function parseConnectorText(text) {
-  const tags = [...text.matchAll(UNTRUSTED_TAG)];
+  const tags = tagLines(text);
   if (tags.length === 0) {
     throw new CatalogInputError("Input is not valid JSON.");
   }
   const [open, close] = tags;
   const isPair =
-    tags.length === 2 &&
-    open[1] === "" &&
-    close[1] === "/" &&
-    open[2] === close[2];
+    tags.length === 2 && !open.closing && close.closing && open.id === close.id;
   const outside =
-    isPair &&
-    `${text.slice(0, open.index)}\n${text.slice(close.index + close[0].length)}`;
+    isPair && `${text.slice(0, open.start)}\n${text.slice(close.end)}`;
   if (
     !isPair ||
     LINE_STARTING_WITH_TAG.test(outside) ||
@@ -176,8 +197,9 @@ function parseConnectorText(text) {
       "Input needs exactly one matching pair of untrusted-data tag lines.",
     );
   }
+  // Not trimmed: JSON.parse allows only JSON whitespace around the payload.
   return parseJson(
-    text.slice(open.index + open[0].length, close.index).trim(),
+    text.slice(open.end, close.start),
     "The untrusted-data block",
   );
 }

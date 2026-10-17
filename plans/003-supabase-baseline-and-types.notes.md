@@ -588,6 +588,59 @@ The owned database `chooselife-verify-049997ac2680` was stopped and removed thro
 
 A parent metadata-only preflight confirmed the linked project is still `festival-chooselife-stage`, reference `azhdfsfdfyvrvcjkkgbq`, healthy on Postgres `15.8.1.044`. The existing connected Supabase app can read that project metadata. No staging catalog or migration comparison was performed, and no hosted write occurred. This checkpoint is blocked on the parser, not on demonstrated missing credentials.
 
+## Resumed: physical connector framing for Unicode separators
+
+On October 17 the user told the agent to proceed, which resumed the blocked 003.2 checkpoint for one new bounded task. The task fixes the U+2028/U+2029 regression from the parent's final recovery review, then goes to a new fresh review. Only the checker, its tests and these notes changed. `catalog.sql`, the helper, its tests and `package.json` are unchanged. No database was created or queried, because the SQL did not change.
+
+**Cause.** `UNTRUSTED_TAG` used the `m` flag. JavaScript's multiline `^` and `$` also match at U+2028 and U+2029, as well as at a lone CR. JSON escapes LF and CR inside strings but allows raw U+2028 and U+2029, and `JSON.stringify` writes them raw. The old checker comment said a JSON string cannot hold a line break. That was true of physical LF and CR, but not of these two separators. So a schema comment holding complete tags between U+2028 or U+2029 counted as two extra tag lines in connector text and connector `{result}`.
+
+**Fix.**
+
+- `tagLines` splits the connector text on LF only. It matches `TAG_LINE` (no `g` or `m` flag) against one physical line at a time. A CR before the LF stays in the line and is allowed by the trailing `[ \t\r]*`, as before, so LF and CRLF framing both work. U+2028, U+2029 and a lone CR no longer end a line, so they cannot frame the data.
+- The payload is the text between the two tag lines, passed to `JSON.parse` without `.trim()`. Only JSON whitespace is allowed around it. Before, `.trim()` also removed U+2028, U+2029 and other Unicode spaces at the edges of the block.
+- The prose check outside the pair now uses explicit boundaries: `(?:^|[\n\r  ])[ \t]*<\/?untrusted-data-`, without `m`. Outside the data, a tag after any of these characters still fails closed, because a reader could take it for another tag line.
+- The format order is unchanged: one JSON document, then JSON lines (split on LF), then connector text. JSON payload and stream log strings are never scanned for tags. Record shapes, folded-state kind checks and value-free messages are unchanged.
+
+#### Resumed verification
+
+| Command | Result |
+| --- | --- |
+| `node --test scripts/check-database-catalog.test.mjs scripts/verify-database.test.mjs` (Node 24.18.0) | exit 0, 225/225: 186 catalog tests (137 previous plus 49 new), 39 helper tests unchanged |
+| `node --test scripts/check-database-catalog.test.mjs` alone | exit 0, 186/186. Before the new tests were added, the fixed checker passed the 137 previous tests unchanged |
+| The 186 catalog tests against the `d36b641` checker (`git show HEAD:…`) | 15 fail. These are 10 valid U+2028/U+2029 payloads in connector text and `{result}` (LF and CRLF), both cross-wrapper Unicode tests, and 5 framing guards. The old checker accepted connector text framed only by U+2028, U+2029 or lone CRs. It also accepted a U+2028 between the opening tag line and the JSON |
+| `node_modules/.bin/prettier --check` on both scripts | exit 0 |
+| `git diff --check` | exit 0 |
+| `git diff --quiet HEAD -- supabase scripts/verify-database.mjs scripts/verify-database.test.mjs package.json` | exit 0 |
+
+New tests:
+
+- Two wrappers: connector text and connector `{result}` with CRLF line ends. Every accepted-wrapper and tag-like-payload case now also runs in them (11 wrappers).
+- Two tag-like values, built with `String.fromCharCode`: `Documentation:` followed by a complete closing tag and a complete opening tag, separated and ended by U+2028, and the same with U+2029. Each goes in the schema comment, a column default and a function setting. Each must round-trip deep-equal in all 11 wrappers. That is 22 cases.
+- One test per separator, for the reproduced comment-only case. In every wrapper, the raw separator appears unescaped in the wrapped text. The extracted catalog is deep-equal to the input and the comment is exactly the original string. It compares equal to the bare extraction. Against the unmodified fixture it gives exactly `schemas public: comment: differs`.
+- Rejected with exit 2: connector tag lines separated only by U+2028, U+2029 or lone CRs, and U+2028-only framing inside `{result}`. Also a valid block followed by a stray closing tag after U+2028, a partial tag after U+2029, and a second block after U+2028. Also a U+2028 between the opening tag line and the JSON, and a U+2028 payload broken into real LF tag lines. Also a partial tag in the preamble with a U+2029 tag-like payload. For CRLF: mismatched boundaries, two blocks, and a following partial tag line.
+
+Checks against the parent's real v2 baseline, private evidence in `/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-003-2r4-private.oEGqEV` (mode 700). The generator is `bin/make.mjs`, the files are in `w/`, and the exits are in `results.txt`, `saved.txt` and `head-control.txt`.
+
+| Check | Result |
+| --- | --- |
+| The baseline against itself | exit 0 |
+| `schemas[0].comment` (`_realtime`) set to the reproduced value (`Documentation:`, separator, closing tag, separator, opening tag, separator), once for U+2028 and once for U+2029. Each is wrapped 10 ways: bare, CLI rows (pretty), rows with jsonb as text, agent envelope, stream-json with tag-like info and warn logs, stream-json with CRLF, connector text LF and CRLF, connector `{result}` LF and CRLF | 20 files. Each holds the raw separator, extracts deep-equal to the mutated payload, and keeps the comment exactly. Each exits 0 against its bare file. Each exits 1 against the original baseline with the single line `schemas _realtime: comment: differs` |
+| The same 20 files through the `d36b641` checker | the 8 connector text and `{result}` files exit 2, reproducing the parent's report. The other 12 exit 1 |
+| 28 new bad files from the mutated baseline (both separators). These are separator-only framing in text and `{result}`, and a stray closing tag, partial tag or second block after a separator. Also a separator between the opening tag line and the JSON. For CRLF: a partial opening tag, a tag line with a fixture URL, a stray closing tag, two blocks, mismatched boundaries, and a partial tag in `{result}`. Also stream-json with an error event and with an error-level log | exit 2 each |
+| The 17 revision 2 and recovery bad files in `chooselife-003-2r3-private.ZuimSIiolm/w` | exit 2 each, as before |
+| The 7 recovery wrapper files (ASCII tag-like comment) against the baseline | exit 1 each with the comment difference, as before |
+| All 20 saved revision 1 captures against the baseline | 11 steady-state captures exit 0, 9 probe captures exit 1, none exit 2. `saved.txt` is byte-identical to the recovery run's |
+| All checker output scanned for the fixture bearer and host, `Bearer`, `deadbeef` and `Documentation` | none found |
+
+One generator mistake was corrected during the run. The first CRLF mismatched-boundary file replaced the first closing tag in the text, which was now the one inside the Unicode comment. The real frame stayed valid, so the checker correctly read the comment as data and exited 1. The generator now replaces the frame's closing line, and both files exit 2.
+
+Limits of this fix:
+
+- Framing is by LF, with an optional CR before it. Connector text that used lone CRs or Unicode separators as line ends would be rejected, not parsed. No such output has been observed.
+- `parseText` still trims the whole input with `String.prototype.trim` before the format is chosen. That removes Unicode spaces and separators only at the very start and end of the input. It cannot create or hide a tag line, and the format-first logic is unchanged.
+- The live connector path is still untested here, because this task has no cloud access.
+- This fix has not been reviewed. Step 2 is not accepted.
+
 ## How the run ended
 
 Step 1 is accepted. Prerequisites held: CLI 2.121.0, 39/39 helper tests, and `pnpm db:verify --keep` passing with 41/41 migrations, a clean lint and 12 files with 371 assertions. The clean replay matches the checked-in migrations exactly. It has 38 public tables and 82 public functions, and no `profile_isa_accounts`. The raw compiler baseline in a fresh worktree was web exit 1, mobile exit 1 and UI exit 0, with eight diagnostics from missing framework declarations. After the parent prepared the ignored Next and Expo declarations, all three typechecks exit 0 with no diagnostics. That prepared baseline is the one later steps compare against.
@@ -601,3 +654,5 @@ The Step 2 parser recovery changes only the checker, its tests and these notes. 
 Steps 3–5 have not started. No staging inspection, versioned reset, type regeneration, route change, runner integration, workflow or README change happened. Plan 003 is not done.
 
 Final root status: 003.2 remains BLOCKED by the valid Unicode payload regression described above. The disposable database has been removed. The last accepted remote checkpoint remains `6481a036524a872e17a8aedd94709654def0f5e2`; subsequent implementation commits remain local and unaccepted. The metadata-only parent staging preflight is the exception to the earlier no-staging-access statement; no schema comparison has run.
+
+Resumed under the user's October 17 instruction to proceed: the bounded Unicode framing fix changes only the checker, its tests and these notes. Connector tag lines are found on physical LF/CRLF lines, so raw U+2028 and U+2029 in payload strings stay data. 186 catalog tests pass beside the 39 helper tests. The real baseline with the reproduced comment round-trips unchanged in all ten wrappers for both separators. Each compares exit 0 to its bare form and exit 1, comment only, to the original. Every earlier rejection and the new framing guards exit 2 without printing values. The saved captures compare as before. No database was used. The fix awaits a new fresh review; 003.2 is not accepted and nothing was pushed.
