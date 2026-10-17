@@ -10,7 +10,7 @@
 - Depends on: Plan 002, isolated verification and pinned tooling
 - Category: migration, correctness, dx
 - Planned at: commit `427007b`, October 16, 2026
-- Execution status: RESUMED at 003.2 by the user's October 17 instruction to proceed. The next bounded task fixes physical connector framing for valid U+2028/U+2029 payloads, then obtains a new fresh review. Later steps remain pending acceptance.
+- Execution status: IN PROGRESS. Checkpoints003.1 and003.2 are accepted. The resumed Unicode framing fix passed parent verification and fresh Sol review on October17. Next is003.3, read-only staging comparison at the matching migration version.
 
 ## Outcome and decisions
 

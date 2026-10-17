@@ -15,13 +15,13 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 
 ## Current task
 
-- Checkpoint: `003.2`, resumed by the user's October 17 instruction to proceed.
-- Status: New bounded Unicode physical-line fix ready for Opus dispatch at `70041fb`; a fresh Sol review remains required. Earlier stop was honored and is now superseded by the explicit resume.
-- Client request ID: `supabase-003-step2-parser-recovery-v2-20261017`.
-- T3 task ID: `node:delegated-task:command%3Amcp%3Aecda434f-2a44-4533-9586-89b5872b8c2e%3Adelegate-task%3Asupabase-003-step2-parser-recovery-v2-20261017`.
-- Last task is complete. No active execution or watcher is pending.
+- Checkpoint: `003.2` ACCEPTED; preparing003.3.
+- Status: Fresh Sol `/root/supabase_003_2_unicode_review` returned SHIP with no material findings. Root accepts003.2 at `0cb874fb60cc59fd01c76315b6026e9c5fda21c2`; preparing publication and003.3.
+- Client request ID: `supabase-003-step2-unicode-resumed-20261017`.
+- T3 task ID: `node:delegated-task:command%3Amcp%3Abec09b2a-d031-46c4-917a-77f0a860d50a%3Adelegate-task%3Asupabase-003-step2-unicode-resumed-20261017`.
+- Automatic task completion delivery is enabled. Await it without polling or duplicate work.
 - Bootstrap commit: `775f09fbefdc984657cf0994b2ffbd9bb40644c4`.
-- Current recovery base: `83ad81edd9e025040225d6077750f0b02899b32d`; last accepted source checkpoint remains `6481a03`.
+- Current resumed task base: `d36b641c3755e11aa4ecca19429bd452a885120d`; last accepted source checkpoint remains `6481a03`.
 - Latest accepted reviewer: `/root/supabase_003_1_review`, GPT-6.1-Sol High. No blocking findings.
 - Predecessor evidence: Node24.18.0, frozen install and 39 helper tests pass; real replay passes 41 migrations and 12 files/371 assertions, including independent root runs. Generator negative cases and failure cleanup pass. Existing developer database and protected inputs remain unchanged.
 
@@ -32,7 +32,7 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - 002.3: ACCEPTED, head `257657d`, fresh Sol ship and all parent real gates passed.
 - 002.4: ACCEPTED, head `f224e01`, fresh Sol ship and parent exact workflow checks passed. Plan 002 DONE locally; hosted CI unobserved.
 - 003.1: ACCEPTED, head `ff2bd8f`, fresh Sol ship. Parent prepared ignored framework declarations and all three consumer typechecks pass before database-type changes.
-- 003.2: RESUMED by user; Unicode physical-line fix then fresh review. Unaccepted catalog remains local.
+- 003.2: ACCEPTED at `0cb874fb60cc59fd01c76315b6026e9c5fda21c2`, fresh Sol Unicode review SHIP. Parent and reviewer independent Unicode, malformed-input and225-test verification passed. Live connector execution remains due003.3.
 - 003.3–003.5: pending accepted predecessor checkpoint.
 - 004.1–004.5: pending Plans 002 and 003 acceptance.
 
@@ -94,6 +94,11 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - Root cleaned only owned baseline stack `chooselife-verify-049997ac2680` and its temp root through the ownership-validated helper. All12 developer container IDs/start/restarts and history remained byte-identical. The old retained descriptor is no longer live; future verification must create a fresh owned project.
 - Metadata-only parent preflight confirmed existing connected Supabase app access to `festival-chooselife-stage`, reference `azhdfsfdfyvrvcjkkgbq`, healthy Postgres15.8.1.044. No staging catalog/migration comparison or hosted write occurred. If work resumes under a new parser plan, root can use `mcp__codex_apps__supabase_get_project/execute_sql/list_migrations` for authorized read-only staging work; a missing worker-provider connector is not proof that root credentials are missing.
 - User October17: "proceed. is the PR already open?" Root verified `gh pr list --head t3/supabase-schema-workflow --state open` returns an empty list. No PR exists. The explicit instruction resumes the stopped implementation; root refines the task to physical LF/CRLF framing and Unicode payload regressions, preserving all previous contracts. No PR creation was requested in that question.
+- Root committed resumed plan/index/ledger as `d36b641c3755e11aa4ecca19429bd452a885120d` locally, without pushing unaccepted catalog code. Dispatched task `node:delegated-task:command%3Amcp%3Abec09b2a-d031-46c4-917a-77f0a860d50a%3Adelegate-task%3Asupabase-003-step2-unicode-resumed-20261017`, request `supabase-003-step2-unicode-resumed-20261017`, to Opus5.5High. Owns checker/tests/notes only; physical LF/CRLF boundaries, U+2028/U+2029 payload round-trips and all prior negatives. No SQL/DB actions; old owned stack was removed. On completion parent verifies then obtains a NEW fresh Sol review.
+
+- Resumed Unicode task returned COMPLETE at `0cb874fb60cc59fd01c76315b6026e9c5fda21c2`, checker/tests/notes only. Root inspected the full scoped diff and independently passed225 tests, Prettier, whitespace/protected-input checks,28 constructed real-baseline Unicode wrapper round-trips and16 outer-boundary rejections. All45 saved invalid inputs exit2 without fixture values, and20 saved captures retain11 equal/9 semantic differences. SQL/helper/package unchanged; no DB operation repeated. Evidence `/tmp/chooselife-parent-unicode-accepted-1nb3XB/report.json`. NEW fresh GPT-6.1-Sol High reviewer `/root/supabase_003_2_unicode_review` receives full original brief, prior findings/responses, accepted limits and actual parent evidence.
+
+- Fresh Sol Unicode review `/root/supabase_003_2_unicode_review`: SHIP, no material findings. Independently passed225tests,22 real-baseline round-trips across11wrappers/bothseparators and14 malformedframes. Previouschecker rejected8 correspondingconnector cases. Helper/offset handling judged simple enough. Root accepts003.2. SQL security evidence and accepted limitations remain unchanged; live connector execution due003.3. Notes arithmetic typo is documentation-only.
 
 After 002.2 acceptance, commit the current advisor status documents and push the dedicated branch as requested. Checkpoint 002.3 is the next implementation step and must use the same worktree. Real replay and all later plan gates remain pending until their own verification and fresh review.
 
