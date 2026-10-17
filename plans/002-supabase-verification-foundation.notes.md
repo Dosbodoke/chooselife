@@ -14,7 +14,9 @@ Worktree `/Users/juangsandrade/.t3/worktrees/chooselife/t3-f4bb91a0`, branch `t3
 | `2c2ace6` | Step 2: disposable verification workspace, `db:verify` and helper tests |
 | `8467699` | Step 2 revision 1: a failed `start` prints only stderr. Accepted by review |
 | `c09a317` | Advisor docs only. Implementation base for Step 3 |
-| Commit that adds this row | Step 3: real replay and failure-isolation evidence, notes only |
+| `257657d` | Step 3: real replay and failure-isolation evidence, notes only. Accepted |
+| `b16946e` | Root acceptance ledger. Implementation base for Step 4 |
+| Commit that adds this row | Step 4: root `Database` workflow, Supabase README tooling sections and these notes |
 
 Commands ran under Node 24.18.0 from nvm, matching `.nvmrc`. The default `node` on PATH is 25.2.1, so a fresh shell needs `export PATH="$HOME/.nvm/versions/node/v24.18.0/bin:$PATH"` first. pnpm is 11.10.0.
 
@@ -304,7 +306,7 @@ No container, Docker command or real CLI call ran for this revision.
 
 ## Step 3: real replay and failure isolation
 
-Status: done locally, waiting for review. No tracked source changed. This commit only adds these notes.
+Status: accepted at `257657d` after review and an independent parent rerun. No tracked source changed. That commit only added these notes.
 
 Base `c09a317`. Node 24.18.0 from nvm, pnpm 11.10.0, `pnpm exec supabase --workdir . --version` = `2.121.0`. Docker server and client 29.8.2 on the `orbstack` context. Every command ran from the worktree unless noted. Private evidence files lived in a mode-700 scratch directory that is not part of the repository.
 
@@ -382,6 +384,57 @@ Exit 1, 02:30:00–02:31:00 UTC. Project `chooselife-verify-906b7b1b754f`, with 
 
 No hosted project, token or password was used. No command used `--all`, `--linked`, `--db-url` or `--project-ref`. Every start, reset, stop and generation targeted a `chooselife-verify-*` workdir created by `prepareWorkspace`. The one exception is the developer history read, which ran `select` through `docker exec` on the existing DB container. Raw `start` and `status` output was never printed, and no environment or connection string was inspected or recorded. No port or Docker retry was needed.
 
+## Step 4: root database workflow and setup docs
+
+Status: done locally, waiting for review. Hosted CI has not run.
+
+Base `b16946e`. Node 24.18.0 from nvm, pnpm 11.10.0, Docker 29.8.2 on the `orbstack` context.
+
+Changes:
+
+- `.github/workflows/database.yml` (new). Name `Database`, one job `verify` on `ubuntu-latest`.
+  - Triggers: `pull_request` and `push` for `main` and `develop`, plus `workflow_dispatch`. Both event filters list the same 16 paths: `supabase/config.toml`, `supabase/migrations/**`, `supabase/seed.sql`, `supabase/seeds/**`, `supabase/tests/**`, `supabase/schemas/**`, `supabase/verification/**`, both verifier scripts, `supabase-gen-types.sh`, `packages/database/package.json`, root `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.nvmrc` and the workflow itself. `schemas/` and `verification/` do not exist yet. The verifier copies them when present, so Plan 004 does not have to touch the triggers. Plan 003 still has to add type-consumer paths.
+  - `permissions: contents: read`, `timeout-minutes: 30`, and `concurrency` group `database-<PR number or ref>` with `cancel-in-progress: true`, the same group shape as `react-doctor.yml`.
+  - Steps follow `check-translations.yml`: `actions/checkout@v4` with `persist-credentials: false`, `pnpm/action-setup@v4` with `version: 11.10.0`, `actions/setup-node@v4` with `node-version-file: .nvmrc` and the pnpm cache, `pnpm install --frozen-lockfile`, `node --test scripts/verify-database.test.mjs`, `pnpm db:verify`. No new action, no `env:` block, no `secrets.*` reference, no Supabase setup action. The CLI comes only from the pinned `supabase@2.121.0` dependency through the verifier.
+  - It does not run `--check-types` or `db:types:check`. A comment in the workflow says type parity waits for Plan 003.
+- `supabase/README.md`. Replaced the global `npm install -g supabase` and `npx supabase init` intro with a `Tooling` section that uses `pnpm exec supabase`. Added `Local Verification`, covering what `pnpm db:verify` copies and checks, isolation from the `chooselife` stack, cleanup and `Recover with:`, exit codes, `--keep` and the CI workflow, and `Database Types`, covering `pnpm db:types`, `db:types:check`, `--workdir`, `--output`, relative-path resolution, atomic replacement, exit codes and the known drift. `Database Setup` now says it is for a hosted project only, and its link and push commands use `pnpm exec supabase`. The function deploy, PIX, obligation, cron, renewal loose-end and OAuth sections are byte-for-byte unchanged.
+- No runner, generator, package, lockfile, SQL, seed, config, types or app source change.
+
+### Verification
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `pnpm install --frozen-lockfile` | 0 | "Already up to date", no tracked change |
+| `node --test scripts/verify-database.test.mjs` | 0 | 39 tests, 39 pass, about 4.1 s |
+| `pnpm db:verify` | 0 | 02:40:30–02:41:33 UTC. Project `chooselife-verify-56da2c8cc7b8`, 41 migrations, 12 test files, 41 versions match 41 files, lint ok, 12 files and 371 assertions, `Removed the disposable project.` Stderr held only pnpm's script echo |
+| `pnpm exec supabase --version` | 0 | `2.121.0` |
+| `pnpm db:types --help` | 0 | pnpm passes the flag through to the helper, as the README examples assume |
+| Workflow parsed with the installed `yaml` package, `uniqueKeys: true` | 0 | No errors or warnings. Triggers `pull_request`, `push`, `workflow_dispatch`. Identical 16-path lists. Steps exactly as listed above |
+| `grep -nEi 'secret\|token\|password\|link\|push\|deploy\|db-url\|project-ref\|env:'` on the workflow | n/a | Only the `push:` trigger and the comment line |
+| `node --test scripts/verify-database.test.mjs` in a throwaway `node:24.18.0-bookworm` container, `--user node`, `--network none`, worktree mounted read-only | 0 | 39 of 39 pass on Linux aarch64. The hosted runner is x64. The image was pulled for this check and removed afterwards |
+| `actionlint` | n/a | Not installed. Not installed for this step either |
+| `git diff --check` | 0 | clean |
+
+Prettier: the repository's `format` script covers `ts`, `tsx` and `md`, not YAML. The workflow uses single quotes like both existing workflows. Prettier would only switch them to double quotes, and `check-translations.yml` fails Prettier the same way. Prettier's only README complaints are two blank lines inside the untouched obligation and cron sections. The baseline README at `b16946e` already failed the same check.
+
+The helper tests and `pnpm db:verify` both ran on the development Mac. No hosted run was triggered. The branch is not pushed by this step, and the workflow only runs for pull requests and pushes that target `main` or `develop`.
+
+### Postconditions
+
+Captured before the first command and after the last one, read-only, in a mode-700 scratch directory outside the repository. It was deleted afterwards.
+
+| Check | Result |
+| --- | --- |
+| `docker ps -a` ID, name and image | identical. 12 `supabase_*_chooselife` containers |
+| `docker inspect` name, ID, `StartedAt`, `RestartCount`, status | identical |
+| Volume and network names | identical |
+| Developer `schema_migrations` via `docker exec … psql` `select` | 41 rows, sha256 `2b6d8c03…f027`, unchanged since Step 3 |
+| `chooselife-verify` containers, volumes, networks and temp dirs after the run | 0 each |
+| `git diff --exit-code -- supabase/migrations supabase/tests supabase/seed.sql supabase/seeds packages/database/database-generated.types.ts supabase/config.toml` | 0 |
+| `git diff --exit-code b16946e -- packages pnpm-lock.yaml supabase-gen-types.sh package.json scripts next expo plans/README.md plans/supabase-implementation.orchestration.md` and the SQL inputs | 0 |
+
+No hosted project, token or password was used. No link, push, deploy or repair ran.
+
 ## Deviations
 
 - `[functions.*]` sections are dropped from the disposable config. They point at `functions/`, which is not a verification input, and Edge runtime is disabled in the copy. The root config is unchanged.
@@ -399,13 +452,21 @@ No hosted project, token or password was used. No command used `--all`, `--linke
 - Step 3 injected the failing test by running a byte-identical copy of the verifier from a disposable repository copy with one extra fixture, rather than calling `prepareWorkspace` and driving the CLI by hand. This exercises the real `main()` failure and cleanup path without editing committed SQL or adding an injection API.
 - Step 3 also ran a real generator failure against a stopped owned project. The plan only required success, equal-check and drift-check on the kept stack. It also ran `db:types:check` once against the kept stack to record the known tracked-type drift.
 - Step 3 recorded developer migration history with a read-only `select` through `docker exec` on the existing DB container, instead of running a Supabase CLI command against the developer project.
+- Step 4 also triggers on `supabase/schemas/**`, `supabase/verification/**`, root `package.json`, `pnpm-workspace.yaml` and `.nvmrc`. The verifier copies the first two when they exist. The others define `db:verify`, allow the `supabase` package build, and select Node.
+- Step 4 adds `persist-credentials: false` to checkout. Nothing in the job needs the token after checkout, and this keeps it out of `.git/config`.
+- Step 4 repeats the path list under `pull_request` and `push` instead of using a YAML anchor, so older parsers and linters handle it.
+- Step 4 ran the helper tests once on Linux in a disposable container. The plan did not ask for this. It was done because hosted CI could not be observed.
 
 ## How the run ended
 
-Step 1 and revisions 1 and 2 were accepted by the third Sol review. Step 2 and its revision 1 were accepted. Step 3 is done locally and waits for review. Two real disposable replays exited 0, each with 41/41 migrations, both seeds, a clean lint and 12 files with 371 assertions. Real generator success, equal-check, drift-check and failure cases behaved as specified. An injected pgTAP failure exited 1 and cleaned up only its owned resources. The developer `chooselife` stack, its migration history, tracked types, SQL inputs and the root config are unchanged. Step 4 (CI workflow and README) has not started, so the plan is not DONE.
+Step 1 and revisions 1 and 2 were accepted by the third Sol review. Step 2 and its revision 1 were accepted. Step 3 was accepted at `257657d`. Two real disposable replays exited 0, each with 41/41 migrations, both seeds, a clean lint and 12 files with 371 assertions. Real generator success, equal-check, drift-check and failure cases behaved as specified. An injected pgTAP failure exited 1 and cleaned up only its owned resources. The developer `chooselife` stack, its migration history, tracked types, SQL inputs and the root config are unchanged.
+
+Step 4 is done locally and waits for review. The root `Database` workflow exists with read-only contents permission and no secrets, and its exact commands passed locally: frozen install, 39 helper tests, and a third legitimate `pnpm db:verify` with 41/41 migrations and 12 files with 371 assertions. The README documents the repository CLI, isolated verification, `--keep`, cleanup, safe type generation and the known drift. The hosted workflow has not run. It needs a pull request or push targeting `main` or `develop`, which this step did not create. Every local done criterion now has evidence. The plan's status is set only by the root after review.
 
 Remaining risk. The destination check runs before generation. If another process turns the destination into a directory during generation, `mv` would still nest the file inside it. Portable `mv` has no no-target-directory flag on both macOS and Linux, and the artifact path is not shared with other writers. The second review accepted this as residual risk. Revision 2 fixed the unsearchable-parent case.
 
 Step 2 remaining risk. The allocation sockets close before `start` binds the ports, so another process can take one in between. `start` then fails and cleanup removes only the owned project. The verifier does not retry automatically. The plan allows one manual retry with a new workspace. `redact` is pattern-based defense in depth and misses table-formatted values, so `start` stdout is never printed, and successful runs print no status output at all. Stderr and the stdout of later commands still rely on `redact`. Step 3 observed a real `test db` failure. Its output held only pg_prove TAP lines and CLI errors, with no key patterns. A failing `db reset` or `db lint` has still not been observed for real.
 
 Step 3 observations for Step 4 and Plan 003. The printed cleanup command does not pass `--agent no`, so under agent detection `stop` prints a JSON status line. That is harmless and has no credentials. Pinned 2.121.0 generates unformatted TypeScript, 1609 lines against the tracked 3407, and suggests `oxfmt`. Plan 003 must settle formatting before type parity can gate. A cold run that pulls images took about 80 s. Warm runs took about 60 s.
+
+Step 4 remaining risk. The workflow is unobserved on GitHub. These differences from the local runs could still fail it: the x64 Ubuntu runner and its Docker daemon, cold image pulls inside the 30-minute timeout, `pnpm/action-setup@v4` with pnpm 11 (already used by `check-translations.yml`), and a full workspace install, which is the same install the translations job runs. The helper tests passed on Linux aarch64 and `pnpm db:verify` passed on macOS with OrbStack. `pnpm db:verify` has not run on Linux. `deploy-functions.sh` still calls `npx supabase`. That deployment path is out of scope here, and its README section was left as it was.
