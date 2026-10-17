@@ -10,13 +10,14 @@ Worktree `/Users/juangsandrade/.t3/worktrees/chooselife/t3-f4bb91a0`, branch `t3
 | `225af71` | Step 1 source changes |
 | `fce9eee` | Step 1 notes. Implementation base for Step 1 revision 1 |
 | `0d694f1` | Step 1 revision 1: output-path guards and filesystem error exit codes. Implementation base for Step 1 revision 2 |
-| Commit that adds this row | Step 1 revision 2: unsearchable output directory exits 2 |
+| `fd8b6cb` | Step 1 revision 2: unsearchable output directory exits 2. Accepted by the third Sol review. Implementation base for Step 2 |
+| Commit that adds this row | Step 2: disposable verification workspace, `db:verify` and helper tests |
 
 Commands ran under Node 24.18.0 from nvm, matching `.nvmrc`. The default `node` on PATH is 25.2.1, so a fresh shell needs `export PATH="$HOME/.nvm/versions/node/v24.18.0/bin:$PATH"` first. pnpm is 11.10.0.
 
 ## Step 1: pin the CLI and expose safe type generation
 
-Status: implemented and locally verified. Waiting for review.
+Status: accepted by the third Sol review.
 
 Changes:
 
@@ -163,9 +164,131 @@ Real CLI failure gate, repeated. Scratch `$(mktemp -d "$TMPDIR/chooselife-gen-ty
 
 No container, local database or cloud project was touched.
 
+## Step 2: disposable verification workspace
+
+Status: implemented and verified with helper tests and CLI help only. Waiting for review. No container was started, stopped or reset, so a real replay has not run yet. That is Step 3.
+
+Changes:
+
+- `scripts/verify-database.mjs` (new). Node built-ins only, no new dependency.
+- `scripts/verify-database.test.mjs` (new). `node:test`, no Docker.
+- `package.json` adds `"db:verify": "node scripts/verify-database.mjs"`. Other scripts are unchanged.
+
+### Pinned CLI behavior the verifier relies on
+
+All read from `node_modules/.bin/supabase --workdir . <command> --help` on 2.121.0, plus the bundled CLI source where help is silent:
+
+| Need | 2.121.0 behavior |
+| --- | --- |
+| Lifecycle | `start [--exclude] [--ignore-health-check]`; `stop [--project-id] [--no-backup] [--all]`. `start` has no `--local` flag |
+| Replay | `db reset --local` with `--no-seed`, `--sql-paths`, `--version`, `--last`. Global `--yes` answers prompts |
+| Lint | `db lint --local --schema --level warning/error --fail-on none/warning/error` |
+| Tests | `test db [--local] [<path...>]`. The bundled source resolves relative paths against the process cwd, not `--workdir`, and defaults to `<workdir>/supabase/tests`. It runs `pg_prove --ext .pg --ext .sql -r` and streams raw TAP to stdout. The CLI itself reads the `Files=N,` and `Result:` lines |
+| Applied versions | `db query --local [<sql>]`. With `--agent no` and global `--output json`, stdout is a JSON array of row objects and "Connecting to local database..." goes to stderr. Agent mode would wrap rows in an untrusted-data envelope |
+| Output and agent detection | Global `--output-format text/json/stream-json` and `--agent auto/yes/no` |
+| Binary selection | `node_modules/supabase/dist/supabase.js` picks the platform binary unless `SUPABASE_CLI_BINARY_OVERRIDE` is set |
+| Config validation | No offline validator. `config` has only `diff`, `pull` and `push`, which are remote |
+
+### Behavior
+
+`pnpm db:verify [--keep] [--check-types]`. Exit 0 pass, 1 verification or cleanup failure, 2 usage error, 128 + signal number when interrupted. Arguments are parsed before anything else, so unknown options, `--linked`, `--workdir` and `--db-url` exit 2 with no temp directory or CLI call.
+
+1. Prepare. `fs.mkdtemp(<realpath os.tmpdir()>/chooselife-verify-)` creates the root. The project ID is `chooselife-verify-<12 hex>` from `crypto.randomBytes`. From `supabase/` it copies `migrations/` and `tests/` (required), and `seeds/`, `schemas/`, `verification/` and `seed.sql` when present. Copies are regular files only. Dotfiles are skipped, which covers `.env*`, `.temp`, `.branches` and `.DS_Store`. A symlink or special file anywhere in an input, or an input that is itself a link, fails the run instead of being dropped. `functions/`, `scripts/`, `.temp/project-ref` and everything else stay behind.
+2. Config. A line-based rewrite of `config.toml` sets top-level `project_id`. Every `*port` key in `[api]`, `[db]`, `[db.pooler]`, `[studio]`, `[inbucket]`, `[analytics]` and `[edge_runtime]` gets a fresh port, and the expected keys are added when the source relies on defaults, including `db.shadow_port`. Ports come from listening on `127.0.0.1:0` with every socket held until all are allocated, then a uniqueness check. Studio, analytics and Edge runtime get `enabled = false`. `[functions.*]` sections are dropped because Edge runtime is off. Every other line is kept byte-for-byte, including `[db] major_version`, `[db.seed]` `enabled` and `sql_paths` order, `[auth]`, Storage, Realtime, API and the disabled external providers. Ports outside those sections, such as `[auth.email.smtp]`, are left alone. Every literal `sql_paths` entry must exist in the copy and resolve inside `supabase/`.
+3. Discovery. Expected versions come from top-level `migrations/*.sql` matching `^(\d+)_.*\.sql$`. A `.sql` file that does not match fails, because the CLI would skip it. Expected test files are `.sql` and `.pg` files under `tests/`, matching `pg_prove`. Zero migrations or zero test files fail before Docker is touched.
+4. Ownership. `assertOwnedWorkspace` runs at the end of preparation, before `start`, before `db reset` and before every cleanup. The project ID must match the generated pattern. The root must be absolute, a direct child of `realpath(os.tmpdir())`, named `chooselife-verify-XXXXXX`, a real directory rather than a link, owned by the current uid, and its copied `config.toml` must carry that project ID.
+5. Commands. All use `process.execPath <repo>/node_modules/supabase/dist/supabase.js --workdir <owned root> --agent no --output-format text …`, with `stdin` ignored and output captured:
+   - `start`
+   - `db reset --local --yes`
+   - `db query --local --output json "select version from supabase_migrations.schema_migrations order by version"`. Read-only. The sorted versions must equal the migration filenames exactly
+   - `db lint --local --schema public --level error --fail-on error`
+   - `test db --local <root>/supabase/tests`, run from cwd `<root>`. Requires `Result: PASS`, `Files=` equal to the discovered count and `Tests=` above zero. A missing or unparseable summary fails even when the CLI exits 0
+   - cleanup: `stop --project-id <id> --no-backup`
+   
+   No call uses `--all`, `--linked`, `--db-url` or `--project-ref`.
+6. Environment. Child processes get an allowlist: `PATH`, `HOME`, `USER`, `LOGNAME`, `SHELL`, `LANG`, `LC_*`, `TZ`, `CI`, temp dirs, `XDG_*` dirs, `DOCKER_HOST`, `DOCKER_CONTEXT`, `DOCKER_CONFIG`, `DOCKER_CERT_PATH`, `DOCKER_TLS_VERIFY`, `DOCKER_API_VERSION`, CA bundle and proxy variables, and Windows system paths. `NO_COLOR=1` is added. Everything else is dropped, including all `SUPABASE_*` tokens and passwords, `SUPABASE_CLI_BINARY_OVERRIDE`, `OPENAI_API_KEY`, `S3_*`, cloud keys and `DOCKER_PASSWORD`.
+7. Output. Successful runs print only phase names and counts. `start` output is never printed on success. On failure the last 40 lines of that command's output are printed after `redact`, which masks JWTs, `sb_secret_`/`sb_publishable_` keys, URL passwords and `…key|secret|password|token: value` lines.
+8. Cleanup. Without `--keep`, cleanup always runs, including after failures and SIGINT/SIGTERM. It checks ownership, stops the owned project if `start` was attempted, then removes only the owned root. A failed `stop` leaves the root in place, keeps a nonzero primary exit code (or sets 1 after a pass), and prints `Recover with: <command>`. The first signal kills the running CLI call unless cleanup is already running. Repeated signals are ignored so cleanup can finish.
+9. `--keep` skips cleanup, including after a failure, and prints the descriptor below.
+10. `--check-types` runs `bash supabase-gen-types.sh --check --workdir <owned root>` after the tests, against the tracked artifact. Exit 1 fails the run with "This drift is known until Plan 003". Default runs never call it.
+
+### Exported interface for later steps and plans
+
+Importing the module has no side effects. The CLI runs only under `import.meta.main`, available from Node 24.2.
+
+```js
+prepareWorkspace({ repoRoot? }) -> Promise<Workspace>   // copy, rewrite config, allocate ports, discover counts; removes itself on failure
+assertOwnedWorkspace(workspace) -> Promise<void>         // throws VerifyError("Refusing …")
+cleanupWorkspace(workspace, { stopStack = true }) -> Promise<void>  // ownership check, stop --project-id … --no-backup, rm owned root
+describeWorkspace(workspace) -> Descriptor
+transformConfig(source, projectId, takePort) -> { text, ports }
+allocatePorts(count) -> Promise<number[]>
+childEnv(env = process.env) -> object
+parsePgProveSummary(output) -> { files, assertions, result }
+redact(text) -> string
+parseArgs(argv) -> { keep, checkTypes, help }
+main(argv) -> Promise<exitCode>
+
+Workspace = { root, projectId, ports, testsDir, testFiles, migrationVersions }
+```
+
+The retained descriptor holds no credentials:
+
+```json
+{
+  "path": "<realpath tmpdir>/chooselife-verify-XXXXXX",
+  "projectId": "chooselife-verify-<12 hex>",
+  "ports": { "api.port": 0, "db.port": 0, "db.shadow_port": 0, "db.pooler.port": 0, "studio.port": 0, "inbucket.port": 0, "analytics.port": 0, "edge_runtime.inspector_port": 0 },
+  "cleanup": "'<repo>/node_modules/.bin/supabase' --workdir '<path>' stop --project-id <id> --no-backup && rm -rf '<path>'"
+}
+```
+
+### Verification
+
+Base `fd8b6cb`. Node 24.18.0, pnpm 11.10.0.
+
+| Command | Result |
+| --- | --- |
+| `node --test scripts/verify-database.test.mjs` | 38 tests, 38 pass, about 3 s. Four repeated runs were all green. Also passes under the default Node 25.2.1 |
+| `prettier --check scripts/verify-database.mjs scripts/verify-database.test.mjs package.json` (repo Prettier 3.8.1) | clean |
+| `pnpm db:verify --help` | exit 0. Usage names the Docker-compatible runtime requirement |
+| `TMPDIR=<scratch> pnpm db:verify --bogus` and `--linked` | exit 2. No `chooselife-verify-*` directory. The only scratch entry was Node's own `node-compile-cache` from pnpm, and a direct `node scripts/verify-database.mjs --bogus` left the scratch dir empty |
+| `pnpm -w db:verify --nope` from `packages/database` | exit 2, so the root script resolves from a package directory |
+| `git diff --exit-code -- supabase packages pnpm-lock.yaml supabase-gen-types.sh next expo .github plans/README.md` | exit 0 |
+
+What the tests cover. They use temporary fixture repositories and never touch Docker. Each fixture contains a copy of the real `supabase/config.toml`, two migrations (one named `*.sql.sql` like the real tree), nested `.sql`/`.pg` tests, both seed files, decoy `.env`, `.temp/project-ref`, `.branches`, `functions/`, `scripts/` and a symlink. End-to-end cases copy the real verifier into the fixture and run it as a child process with `TMPDIR` pointed at a per-test directory. A fake `node_modules/supabase/dist/supabase.js` records each call's argv, cwd and environment and answers from a behavior file. The child environment is seeded with fake `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_ID`, `SUPABASE_CLI_BINARY_OVERRIDE`, `OPENAI_API_KEY` and `AWS_SECRET_ACCESS_KEY`.
+
+- Import in a fresh process prints nothing and creates nothing.
+- Copy and config: exact copied tree with no links or env/state files. Project ID, seed order, `db.seed.enabled`, `major_version`, auth values and the disabled Apple provider all match the source. API, Realtime, Storage, Auth and Inbucket stay enabled. Studio, analytics and Edge runtime are disabled. No `[functions`. Eight unique ports, none equal to the source ports.
+- `transformConfig` adds missing service ports and disabled flags, and leaves `[auth.email.smtp] port` alone.
+- Preparation failures leave nothing in the temp dir: a linked test, a linked `seeds/`, zero tests, zero migrations, a misnamed migration, a missing seed (single-line and multi-line `sql_paths`), and a missing `tests/`.
+- Ownership: wrong or invalid project ID, the fixture repo, a stranger temp dir, a symlink decoy with a valid name, a subdirectory and a relative path are all refused by both `assertOwnedWorkspace` and `cleanupWorkspace`, and nothing is deleted.
+- `childEnv` keeps runtime and Docker settings and drops every credential listed above.
+- `parsePgProveSummary` rejects empty or partial output. `redact` masks keys, the JWT secret and URL passwords, and keeps the diagnostic text.
+- Invalid arguments exit 2 with zero CLI calls and no temp dir. `--help` exits 0 with zero calls.
+- A passing run calls exactly `start`, `db reset`, `db query`, `db lint`, `test db`, `stop` with the flags in section 5, every call pinned to the owned root. `test db` gets an absolute test path and cwd = root. `stop` gets the printed project ID. No credentials reach any child. No fake key appears in the output. The temp dir ends empty.
+- Each of these exits 1, still ends with `stop`, leaves the temp dir empty and prints no secret: start failure (with secrets in its output), reset failure, mismatched versions, unparseable versions, lint failure, failed test, `Tests=0`, `Files` below the discovered count, unparseable test output.
+- A failed `stop`, after a failed test or after a pass, exits 1, keeps the workspace and prints the exact recovery command.
+- `--keep` exits 0 with no `stop` call. The descriptor has exactly `path`, `projectId`, `ports` and `cleanup`, passes the ownership check and contains no secret.
+- `--check-types` runs the generator with exactly `--check --workdir <owned root>`. Generator exit 0 passes, exit 1 fails with the Plan 003 message. Default runs never call the generator.
+- SIGTERM during `start` exits 143 and calls only `start` and `stop`. SIGTERM during cleanup does not kill `stop`, so the owned root is still removed.
+
+Mutation check. Each change below was applied to a scratch copy of the script, then the original was restored. Every one made at least one test fail: dropping `--local` from reset, passing the whole environment, accepting zero assertions, keeping `[functions.*]`, copying dotfiles, never stopping the stack, losing the primary exit code on cleanup failure, killing `stop` on a signal during cleanup, and single-line-only `sql_paths` parsing.
+
+Non-mutating probe against the real tree. `prepareWorkspace()` reported 41 migrations, 12 test files and 8 unique ports. The copy held only `config.toml`, `migrations`, `seed.sql`, `seeds` and `tests`. Then `supabase --workdir <copy> --agent no --output-format text gen types typescript --local` ran with the filtered environment and exited 1 with `supabase start is not running.`: the pinned CLI loaded the rewritten config and found nothing running for the new project ID. `cleanupWorkspace(ws, { stopStack: false })` removed the copy. No container was started, stopped or reset.
+
+Not covered yet, all for Step 3: whether 2.121.0 starts a stack from the rewritten config, whether `--yes` is needed or accepted by `db reset`, the real `db query` JSON and pg_prove summary, mount behavior of temp paths under Docker or OrbStack, unresolved `env()` references in the copied config with the filtered environment, and port collisions.
+
 ## Deviations
 
-- `db:verify` is not registered yet. `scripts/verify-database.mjs` does not exist until Step 2, and a root script pointing at a missing file would fail with a module error. Step 2 adds the script and its entry together.
+- `[functions.*]` sections are dropped from the disposable config. They point at `functions/`, which is not a verification input, and Edge runtime is disabled in the copy. The root config is unchanged.
+- Links and special files inside copied inputs fail the run instead of being skipped. Skipping one would silently drop a migration, seed or test. Dotfiles are skipped.
+- Literal `sql_paths` entries must exist in the copy and resolve inside `supabase/`. The config template allows `../` paths, but nothing here uses them, and they would fall outside the copied inputs.
+- `--keep` also keeps the workspace after a failed run, since that is when investigation is needed.
+- Explicit `--check-types` fails on known drift. Only the default run, which skips the check, stays green until Plan 003.
+- `db reset` gets global `--yes` so a confirmation prompt cannot hang a non-interactive run. Step 3 confirms whether 2.121.0 prompts at all.
+- Child environments use an allowlist rather than a denylist. A denylist could miss a credential, and an allowlist that misses a needed runtime variable fails visibly in Step 3.
+- A signal received during cleanup does not change the exit code of a run that already passed.
 - The helper passes `--agent no`, which the plan did not ask for. The pinned CLI auto-detects agent environments, and generated stdout should not depend on which shell or agent runs it.
 - A missing artifact in `--check` mode counts as drift (exit 1), not as an error.
 - Revision 1 rejects any existing non-regular `--output`, not just directories. FIFOs and device nodes would otherwise hang `cmp` or be replaced by `mv`, and the same one-line guard covers them.
@@ -173,6 +296,8 @@ No container, local database or cloud project was touched.
 
 ## How the run ended
 
-Step 1 and revisions 1 and 2 are complete and verified locally. Revision 2 waits for a new review. Steps 2–4 have not started.
+Step 1 and revisions 1 and 2 were accepted by the third Sol review. Step 2 is implemented and verified with helper tests, CLI help and one non-mutating config probe. It waits for review. Steps 3 and 4 have not started, and no real replay has run.
 
 Remaining risk. The destination check runs before generation. If another process turns the destination into a directory during generation, `mv` would still nest the file inside it. Portable `mv` has no no-target-directory flag on both macOS and Linux, and the artifact path is not shared with other writers. The second review accepted this as residual risk. Revision 2 fixed the unsearchable-parent case.
+
+Step 2 remaining risk. The allocation sockets close before `start` binds the ports, so another process can take one in between. `start` then fails and cleanup removes only the owned project. The verifier does not retry automatically. The plan allows one manual retry with a new workspace. `redact` is pattern-based defense in depth. Successful runs never print `start` or status output at all.

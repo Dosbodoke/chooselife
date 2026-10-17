@@ -8,7 +8,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "deploy:functions": "./deploy-functions.sh",
     "db:types": "bash supabase-gen-types.sh",
-    "db:types:check": "bash supabase-gen-types.sh --check"
+    "db:types:check": "bash supabase-gen-types.sh --check",
+    "db:verify": "node scripts/verify-database.mjs"
   },
   "devDependencies": {
     "next": "16.3.5",
