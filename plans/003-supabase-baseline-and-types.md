@@ -18,6 +18,8 @@ Make migration replay the reproducible schema authority and regenerate the **ent
 
 Do not deploy the newest migration to staging as part of this plan. A documented staging deployment lag is acceptable when the staged version agrees with a replay at the same version. Undocumented semantic drift must be resolved or reported before declarative adoption.
 
+User scope decision, October17: "No need for staging rules. I currently migrated to R2 storage." R2 is the active storage backend. Legacy Supabase Storage bucket IDs, bucket existence and MIME configuration, previously B1, are retired operational configuration outside this reconciliation target. Do not reproduce them in new migrations or desired schema, and do not change hosted bucket data as part of this work. Existing catalog captures remain historical evidence, including B1; this decision does not silently change the checker or approve unrelated grants, policies or platform security differences. B2 schema `public` ACL and B3/other security provenance remain unresolved. Any future parity-scope implementation must express this narrow target explicitly and receive fresh review.
+
 ## Prerequisite contract and drift check
 
 Plan 002 must have delivered all of the following, regardless of whether its document is available:
@@ -157,7 +159,7 @@ Restore the scratch DB to all checked-in migrations **with** seeds before type g
 
 ### Independence refinement after003.3 findings
 
-The same-version comparison identified legacy bucket configuration, a schema grant and platform security differences. Keep these named blockers visible and do not change migrations, hosted state or comparator semantics to force parity. The full local replay was restored and independently verified at41migrations with12SQLfiles/371assertions. That replay remains the type-generation authority. Step003.4 may therefore proceed independently, and003.5 may verify local type parity, while same-version reconciliation remains BLOCKED. Neither step closes the staging done criterion or authorizes Plan004. The eventual Storage baseline is a maintainer preference; the root recommends preserving existing behavior and has requested that decision. A forward reconciliation migration requires its own reviewed scope.
+The same-version comparison identified legacy bucket configuration, a schema grant and platform security differences. Keep these named blockers visible and do not change migrations, hosted state or comparator semantics to force parity. The full local replay was restored and independently verified at41migrations with12SQLfiles/371assertions. That replay remains the type-generation authority. Step003.4 may therefore proceed independently, and003.5 may verify local type parity, while same-version reconciliation remains BLOCKED. Neither step closes the staging done criterion or authorizes Plan004. The user has decided that legacy Supabase bucket configuration is outside the target because storage migrated to R2. B1 is therefore a retired-scope difference rather than an outstanding preference; B2/B3 and other security provenance remain unresolved. A forward reconciliation migration requires its own reviewed scope.
 
 ### 4. Regenerate the whole artifact and type the entitlement client
 

@@ -13,7 +13,7 @@
 
 ## Outcome and decisions
 
-Maintain the complete desired application schema under `supabase/schemas/`, using the pinned CLI's current `pg-delta` engine. Contributors edit desired SQL, generate and review incremental migrations, then test and release those migrations. Preserve every historical migration and existing runtime behavior.
+Maintain the complete desired application schema under `supabase/schemas/`, using the pinned CLI's current `pg-delta` engine. Contributors edit desired SQL, generate and review incremental migrations, then test and release those migrations. Preserve every historical migration and existing runtime behavior. R2 is the active storage backend under the user's October17 decision. Do not recreate legacy Supabase Storage buckets, IDs or MIME rules in desired schema or new migrations. Historical bucket rows may remain diagnostic evidence; their exclusion from any future parity decision must be narrow and explicit, not a broad ignore of Storage grants, policies or schema objects.
 
 The initial conversion must generate no unexplained migration. Prove more than a visually plausible export: independently reconstruct the declared schema in a fresh platform database and compare its application catalogs with full historical replay. Keep explicit data migrations and operational provisioning separate.
 
