@@ -15,10 +15,10 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 
 ## Current task
 
-- Checkpoint: `002.3`, real isolated replay, generator and failure cleanup verification.
-- Status: ACCEPTED at `257657d`. Parent independently passed real replay, generation, failure and preservation gates; fresh Sol returned SHIP conditional on those now-satisfied gates. Next checkpoint is 002.4.
-- Client request ID: `supabase-002-step3-opus-r1-20261016`.
-- T3 task ID: `node:delegated-task:command%3Amcp%3A8fa173e9-c7dc-4671-afb7-e032d9dd2cc9%3Adelegate-task%3Asupabase-002-step3-opus-r1-20261016`.
+- Checkpoint: `003.1`, clean schema and compiler baseline, ready for dispatch.
+- Status: Plan 002 DONE. Checkpoint 002.4 accepted at `f224e01b09677352a6c2855f75d75a4c3582e9e1` after parent exact-command/preservation checks and fresh Sol SHIP.
+- Client request ID: `supabase-002-step4-opus-r1-20261016`.
+- T3 task ID: `node:delegated-task:command%3Amcp%3A8fa173e9-c7dc-4671-afb7-e032d9dd2cc9%3Adelegate-task%3Asupabase-002-step4-opus-r1-20261016`.
 - Automatic completion delivery is enabled. Await the result rather than starting a duplicate or polling a watcher.
 - Bootstrap commit: `775f09fbefdc984657cf0994b2ffbd9bb40644c4`.
 - Checkpoint implementation range: `fd8b6cbbf6118fe05bee52082356c168b025fffd..84676998a189e74eb63923af433dfd7d6772edbe`.
@@ -30,8 +30,9 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - 002.1: ACCEPTED, head `fd8b6cbbf6118fe05bee52082356c168b025fffd`, fresh Sol round 3 ship.
 - 002.2: ACCEPTED, head `84676998a189e74eb63923af433dfd7d6772edbe`, fresh Sol round 2 ship.
 - 002.3: ACCEPTED, head `257657d`, fresh Sol ship and all parent real gates passed.
-- 002.4: ready for Opus implementation.
-- 003.1–003.5: pending Plan 002 acceptance.
+- 002.4: ACCEPTED, head `f224e01`, fresh Sol ship and parent exact workflow checks passed. Plan 002 DONE locally; hosted CI unobserved.
+- 003.1: ready for Opus dispatch after Plan 002 acceptance.
+- 003.2–003.5: pending accepted predecessor checkpoint.
 - 004.1–004.5: pending Plans 002 and 003 acceptance.
 
 ## Continuation contract
@@ -61,6 +62,11 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - Opus002.3 returned COMPLETE, head `257657d`, changing only its notes. Observed 41 applied migrations, both seeds, clean lint and 12 files with 371 assertions on each of two successful replays. Real generator success/equality/drift/stopped-project preservation passed. A scratch copy with an injected failing test returned 1 and removed owned resources. Developer container identities/start times/restart counts, volumes/networks and 41-row history hash stayed unchanged. Parent is independently rerunning the kept/default/generator/injected-failure gates before fresh review.
 - Fresh Sol `/root/supabase_002_3_review`: SHIP conditional on remaining parent real gates, with no correctness, scope, safety or simplicity findings. Independently passed all 39 helper tests, CLI version and whitespace/protected-input checks. Notes-only verification and byte-identical scratch failure injection are proportionate to Step 3.
 - Parent real rerun PASS: kept and default replays each 41 migrations and 12 files/371 assertions; scratch generation/equality 0, drift 1 with preserved bytes, stopped-project write/check 2 with preserved bytes. An independent one-assertion failure fixture ran 13 files/372 assertions, exited 1 and cleaned owned resources. All 12 developer container identities/start times/restarts, volume/network names and 41-row history hash stayed unchanged. Protected input diff is empty. These results satisfy Sol's conditions, and root accepts 002.3. Private nonsecret evidence file: `/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-parent-s3-d6WOdR/evidence.json`.
+- Committed acceptance docs as `b16946e70c25c670a7d1de6794b367eb158418eb` and pushed the reviewed checkpoint to `origin/t3/supabase-schema-workflow`. Dedicated tree was clean and tracking origin.
+- Dispatched 002.4 to Opus in the existing worktree, task `node:delegated-task:command%3Amcp%3A8fa173e9-c7dc-4671-afb7-e032d9dd2cc9%3Adelegate-task%3Asupabase-002-step4-opus-r1-20261016`. Scope only `.github/workflows/database.yml`, setup/tooling portions of `supabase/README.md` and checkpoint notes. Root index/ledger remain root-owned; no source expansion or cloud operation is authorized. On completion rerun relevant workflow checks and request a fresh Sol review before Plan 002 acceptance or Plan 003 dispatch.
+- Opus002.4 returned COMPLETE at `f224e01b09677352a6c2855f75d75a4c3582e9e1`, with only the three scoped files changed. Frozen install, 39 helper tests and a real 41-migration/12-file/371-assertion replay passed. Hosted CI and actionlint remain unobserved/unavailable. Parent read full diff and launched exact local workflow command/preservation checks. Fresh GPT-6.1-Sol High reviewer `/root/supabase_002_4_review` receives the original brief, actual evidence, prior accepted residuals and simplicity goal.
+- Parent002.4 exact workflow rerun passed: Node24.18.0, pnpm11.10.0, frozen install0, 39 helper tests0, db:verify0 with 41 versions/41 files and 12 files/371 assertions, lint clean and owned project removed. Developer containers/start times/restart counts, volume/network names and migration history were byte-equal before/after. YAML duplicate-key, event/branch/path/permission checks and protected input/diff checks passed. Actionlint is unavailable; GitHub execution unobserved. Evidence: `/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-parent-s4.CrK4P6`.
+- Fresh Sol `/root/supabase_002_4_review`: SHIP, no standards/spec findings. Independently parsed YAML, checked workflow semantics and byte-compared unchanged README billing/deployment/cron/OAuth sections. Parent evidence incorporated. Root accepts002.4 and marks Plan002 DONE for locally verified capability, without claiming hosted CI ran.
 
 After 002.2 acceptance, commit the current advisor status documents and push the dedicated branch as requested. Checkpoint 002.3 is the next implementation step and must use the same worktree. Real replay and all later plan gates remain pending until their own verification and fresh review.
 
