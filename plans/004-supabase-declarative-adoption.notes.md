@@ -91,7 +91,7 @@ A metadata-only query (`coverage-inventory.sql`) ran on the owned DB after the g
 
 ## How the run ended
 
-004.1 succeeded. One owned stack is retained for 004.2: 7 containers running, the engine settings applied, the DB at full 41-migration replay plus seeds, and pgTAP helper extensions present from the last test run. 004.2 must reset before export, as its step requires.
+004.1 succeeded. One owned stack is retained for 004.2: 7 containers running, the engine settings applied, the DB at full 41-migration replay plus seeds, with lint and pgTAP completed. The parent subsequently confirmed the extension inventory is unchanged before/after those tools and that no `pgtap` extension remains. 004.2 must reset before export, as its step requires.
 
 Non-secret descriptor:
 
@@ -119,3 +119,8 @@ Cleanup, after `assertOwnedWorkspace({ root, projectId })`:
 ```
 
 No other owned resource exists. No push or PR. This checkpoint is not accepted until root verification and a fresh review. Hosted B2/B3 remain unresolved release gates.
+
+
+## Parent verification of004.1
+
+Root independently asserted ownership and verified that only the two experimental sections were added to the owned copy. It reran the owned reset, exact41version history, both seed records, pre-tool catalog capture, lint,12files/371SQLassertions and the complete generator check. All passed. The catalog matches the pre-settings baseline, the artifact SHA remains `c30af02141acdd1feecfda4faa3df817edc49ec229d344134b9ee79b65ab9672`, and developer IDs/start times/restart counts/history/volume/network names remain unchanged. The extension inventory is equal before and after lint/pgTAP, with no remaining `pgtap` extension; the earlier claim that helpers remain was corrected. A reset before004.2export remains required by the plan, rather than by an observed lingering helper. Parent evidence: `/tmp/chooselife-parent-0041-ChLDVG/report.json`. Fresh Sol review is still pending; this paragraph does not accept004.1or authorize promotion of tracked settings.
