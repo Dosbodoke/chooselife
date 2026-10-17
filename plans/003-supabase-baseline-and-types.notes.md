@@ -501,6 +501,55 @@ Checks against real captures, private evidence in `/var/folders/4d/px4017t53z7dx
 | The bad-input messages scanned for the fixture bearer, fixture host and `Bearer` | none found |
 | All 20 saved revision 1 captures against the baseline | none exit 2. The 11 steady-state captures exit 0, including fresh, before tools, after lint, after pgTAP, after probes, the agent envelope, stream-json and connector shapes. The 9 probe captures exit 1, as before |
 
+### Recovery: opaque payload strings in connector and stream wrappers
+
+The third fresh review agreed with the revision 2 folded-state fix and found no other material SQL issue. It found one P2 regression from revision 2. The tag-prefix check scanned the whole input, including strings inside the JSON payload. A real baseline with `schemas[0].comment` (`_realtime`) set to `Documentation example: <untrusted-data-deadbeef` was valid as bare JSON and compared equal to itself. The same payload in connector text, connector `{result}` or stream-json exited 2, because the comment was read as connector protocol. The parent and the reviewer both reproduced it. The two-revision loop was closed as BLOCKED, and the plan's wrapper contract was refined in `83ad81e`. This is the one bounded recovery that contract allows. Only the checker, its tests and these notes changed. `catalog.sql` is unchanged, so the revision 1 live results stand and no database action was taken.
+
+**Fix.** `parseText` now decides the format before it looks for any tag:
+
+1. The whole input parses as one JSON document: bare catalog, CLI rows, agent envelope, connector `{result}` or a one-line stream-json result. Unchanged.
+2. Every non-empty line parses as JSON, with at least two lines: stream-json. The error-event, error-log and one-result rules are unchanged. Log messages and result data are never scanned for tags.
+3. Otherwise connector text. The two standalone tag lines are found first and must form one matching open/close pair. The partial-tag, tag-at-line-start and inline-complete-tag checks then run only on the prose outside that pair. Only the text between the lines is parsed as JSON.
+
+A JSON string cannot hold a raw line break, so no payload value can form a standalone tag line. A payload that tries to end the block with an escaped `\n</untrusted-data-…>\n` stays inside its string. Text with no standalone tag lines that is neither JSON nor JSON lines exits 2 with `Input is not valid JSON.` That includes truncated stream-json. Previously that message was `A stream-json line is not valid JSON.`
+
+#### Recovery verification
+
+| Command | Result |
+| --- | --- |
+| `node --test scripts/check-database-catalog.test.mjs scripts/verify-database.test.mjs` (Node 24.18.0) | exit 0, 176/176: 137 catalog tests (85 previous plus 52 new), 39 helper tests unchanged |
+| The new catalog tests against the `83ad81e` checker (`git show HEAD:…`) | 16 of 137 fail: the new stream-json wrapper with tag-like log text, 14 cross-wrapper payload cases (every multi-line stream-json case, and the partial-tag cases in connector text and `{result}`), and the cross-wrapper equality test. All 85 previous tests and the 5 new rejection cases pass. Complete tags and escaped tag lines inside connector payloads already passed |
+| `node_modules/.bin/prettier --check` on both scripts | exit 0 |
+| `git diff --check` | exit 0 |
+
+New tests:
+
+- One wrapper: stream-json whose info and warn logs contain a complete connector tag and a partial tag.
+- Accepted in each of the nine wrappers (bare, CLI rows parsed and as text, agent envelope, three stream-json variants, connector text, connector `{result}`), each round-tripping deep-equal: the schema comment, a column default and a function setting all hold one of five tag-like values. Those values are a partial opening tag, a partial closing tag, the complete connector opening tag, its closing tag, and an escaped newline-framed close/open pair. 45 cases.
+- The partial-opening-tag payload compares equal across all nine wrappers.
+- Rejected with exit 2: a stream-json error whose message looks like a tag; stream-json followed by a standalone partial tag line; a partial tag in connector preamble with a tag-like payload; a valid block with a tag-like payload followed by a standalone partial closing tag; a payload rewritten so its string breaks into real close/open tag lines.
+
+Checks against the real baseline, private evidence in `/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-003-2r3-private.ZuimSIiolm` (mode 700):
+
+| Check | Result |
+| --- | --- |
+| The parent's real v2 baseline against itself | exit 0 |
+| The baseline with the reproduced `_realtime` comment, rewrapped as bare, CLI rows (pretty, parsed), CLI rows (jsonb as text), agent envelope, stream-json with tag-like info and warn logs, connector text and connector `{result}` | each extracts deep-equal to the mutated payload. Each against the bare mutated file exits 0. Each against the original baseline exits 1 with the single line `schemas _realtime: comment: differs` |
+| The same seven files through the `83ad81e` checker | bare, rows, rows-text and envelope exit 0. Connector text, connector `{result}` and stream-json exit 2. This matches the parent's reproduction |
+| The mutated real payload in connector text plus a standalone partial opening tag, partial closing tag, tag line with a fixture URL, partial tag in prose, stray closing tag, second block, truncated second block and mismatched closing tag. Also the partial opening tag inside `{result}` | exit 2 each, `Input needs exactly one matching pair of untrusted-data tag lines.` |
+| The mutated real payload as stream-json with an error event, with an error-level log, and truncated; bare JSON truncated | exit 2 each |
+| Real folded-state mutations inside connector text: `pg_cron` definer null, settings null, `rls_forced` set to a fixture bearer string; `pg_net` type definer set | exit 2 each, naming the extension and field |
+| All checker output scanned for the fixture bearer and host, `Bearer`, `deadbeef` and `Documentation example` | none found |
+| All 20 saved revision 1 captures against the baseline | 11 steady-state captures exit 0, 9 probe captures exit 1, none exit 2. Same as revision 2 |
+| The 18 saved revision 2 wrapper and bad-input files against the baseline | the 7 wrappers exit 0, the 11 bad inputs exit 2. Same as revision 2 |
+
+Exact limits of this recovery:
+
+- The connector delimiter is still recognized by the `untrusted-data-<hex/dash id>` tag shape seen in the connector's current output, on its own line. The live connector path remains untested here, because there is no cloud access in this checkpoint.
+- A stream is identified by every line parsing as JSON. Connector tag lines are never JSON, so connector text cannot be taken for a stream. Text mixing JSON lines with other lines and no tag pair exits 2.
+- Payload strings are only treated as data. The checker never evaluates them, and reports name fields, not values.
+- The recovery has not been reviewed. Step 2 is not accepted.
+
 ### Known limits
 
 - ACL entries omit grantors, so a privilege granted by two grantors is one entry. A revoke by one of them changes nothing effective and is not reported. Any change to who holds a privilege, or to effective privileges, is reported.
@@ -534,5 +583,7 @@ Step 1 is accepted. Prerequisites held: CLI 2.121.0, 39/39 helper tests, and `pn
 Step 2 revision 1 is done locally and waits for a new fresh review. Step 2 is not accepted. `supabase/verification/catalog.sql` returns one nonsecret `chooselife.catalog.v2` JSON catalog. It includes the security state of platform objects and extension members, application objects of any owner in application schemas, and triggers, policies and publications wherever they are. `pnpm db:catalog:compare` validates every record's complete shape and both wrappers fail closed. It exits 0, 1 or 2. 75 catalog tests pass beside the 39 existing ones. The parent's managed `EXECUTE` revoke, managed RLS flip and non-owner `gis` function are detected live, along with a managed table grant, a managed column grant, a custom `auth.users` webhook trigger and extension grant changes. Every probe rolled back to a byte-identical capture. Two clean replays compare equal, and lint and pgTAP leave no catalog residue. The developer `chooselife` stack is unchanged. The owned stack `chooselife-verify-049997ac2680` is retained at `/private/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-verify-QD2JDJ`, in full migrations-plus-seeds state, for Step 3.
 
 Step 2 revision 2 changes only the checker, its tests and these notes. It answers the second fresh review's two P2 findings. Folded extension states must have their kind's fields, and partial or extra connector tags are rejected. 85 catalog tests pass beside the 39 helper tests. The real baseline still parses and matches itself in every wrapper. The saved revision 1 captures compare as before, and the new bad inputs exit 2 without printing values. `catalog.sql` is unchanged, so the revision 1 live results stand. Revision 2 waits for a new fresh review. Step 2 is not accepted. The owned stack is untouched by this revision.
+
+The Step 2 parser recovery changes only the checker, its tests and these notes. It answers the third fresh review's P2 regression. Payload strings stay opaque in every wrapper, and connector tags are only interpreted outside the framed JSON block. 137 catalog tests pass beside the 39 helper tests. The real baseline with the reproduced tag-like schema comment round-trips unchanged and compares exit 0 in bare JSON, CLI rows, the agent envelope, stream-json, connector text and connector `{result}`. Every earlier rejection still exits 2 without printing values, and the saved captures compare as before. This is the single bounded recovery the refined contract allows. It waits for a new fresh review. Step 2 is not accepted. The owned stack was not touched.
 
 Steps 3–5 have not started. No staging inspection, versioned reset, type regeneration, route change, runner integration, workflow or README change happened. Plan 003 is not done.

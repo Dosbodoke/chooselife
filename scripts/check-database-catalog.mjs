@@ -57,12 +57,14 @@ const NAMED_SET_FIELDS = new Set(["acl", "roles", "events"]);
 const NAMED_LIST_FIELDS = new Set(["columns", "attributes"]);
 
 // The connector's preamble names the tag in a sentence, so only tags on their
-// own line delimit the data.
+// own line delimit the data. JSON cannot put a line break inside a string, so
+// no payload value can form such a line.
 const UNTRUSTED_TAG = /^[ \t]*<(\/?)untrusted-data-([0-9a-f-]+)>[ \t\r]*$/gm;
-// Any tag, complete or not, anywhere in the text or at the start of a line.
+// Any tag, complete or not, in the prose around the data, or one starting a
+// line there.
 const ANY_TAG = /<\/?untrusted-data-/g;
 const COMPLETE_TAG = /^<\/?untrusted-data-[0-9a-f-]+>/;
-const LINE_STARTING_WITH_TAG = /^[ \t]*<\/?untrusted-data-/gm;
+const LINE_STARTING_WITH_TAG = /^[ \t]*<\/?untrusted-data-/m;
 const MAX_UNWRAP_DEPTH = 6;
 
 const USAGE = `Usage: pnpm db:catalog:compare <left.json> <right.json>
@@ -92,6 +94,8 @@ export function extractCatalog(text) {
   return validateCatalog(unwrap(parseText(text), 0));
 }
 
+// Strings inside JSON are data. The format is decided before any connector
+// tag is looked for, and tags are only interpreted outside the framed block.
 function parseText(text) {
   const trimmed = text.trim();
   try {
@@ -99,59 +103,83 @@ function parseText(text) {
   } catch {
     // Not a single JSON document; try the other known shapes.
   }
+  const events = parseJsonLines(trimmed);
+  return events ? streamResult(events) : parseConnectorText(trimmed);
+}
 
-  // Connector text: exactly one opening tag line and its closing tag line.
-  // Tags elsewhere may only be complete tags named inside a sentence. Any
-  // other tag, such as a second, partial or truncated block, is rejected.
-  const anyTags = [...trimmed.matchAll(ANY_TAG)];
-  if (anyTags.length > 0) {
-    const tags = [...trimmed.matchAll(UNTRUSTED_TAG)];
-    const [open, close] = tags;
-    if (
-      anyTags.some((tag) => !COMPLETE_TAG.test(trimmed.slice(tag.index))) ||
-      [...trimmed.matchAll(LINE_STARTING_WITH_TAG)].length !== tags.length ||
-      tags.length !== 2 ||
-      open[1] !== "" ||
-      close[1] !== "/" ||
-      open[2] !== close[2]
-    ) {
-      throw new CatalogInputError(
-        "Input needs exactly one matching pair of untrusted-data tag lines.",
-      );
+// CLI stream-json: one JSON event per line. Returns null for other text.
+function parseJsonLines(text) {
+  const lines = text.split("\n").filter((line) => line.trim() !== "");
+  if (lines.length < 2) return null;
+  const events = [];
+  for (const line of lines) {
+    try {
+      events.push(JSON.parse(line));
+    } catch {
+      return null;
     }
-    return parseJson(
-      trimmed.slice(open.index + open[0].length, close.index).trim(),
-      "The untrusted-data block",
+  }
+  return events;
+}
+
+// Exactly one event is the result. Log and progress events may surround it;
+// an error event or error-level log means the command failed, even if a
+// result was printed.
+function streamResult(events) {
+  if (
+    events.some(
+      (event) =>
+        isPlainObject(event) &&
+        (event.type === "error" ||
+          (event.type === "log" && event.level === "error")),
+    )
+  ) {
+    throw new CatalogInputError("The stream-json output reports an error.");
+  }
+  const results = events.filter(
+    (event) => isPlainObject(event) && event.type === "result",
+  );
+  if (results.length !== 1) {
+    throw new CatalogInputError(
+      `Expected one stream-json result event, found ${results.length}.`,
     );
   }
+  return results[0];
+}
 
-  // CLI stream-json: one JSON event per line, exactly one of them the result.
-  // Log and progress events may surround it; an error event or error-level
-  // log means the command failed, even if a result was printed.
-  const lines = trimmed.split("\n").filter((line) => line.trim() !== "");
-  if (lines.length > 1) {
-    const events = lines.map((line) => parseJson(line, "A stream-json line"));
-    if (
-      events.some(
-        (event) =>
-          isPlainObject(event) &&
-          (event.type === "error" ||
-            (event.type === "log" && event.level === "error")),
-      )
-    ) {
-      throw new CatalogInputError("The stream-json output reports an error.");
-    }
-    const results = events.filter(
-      (event) => isPlainObject(event) && event.type === "result",
-    );
-    if (results.length !== 1) {
-      throw new CatalogInputError(
-        `Expected one stream-json result event, found ${results.length}.`,
-      );
-    }
-    return results[0];
+// Connector text: exactly one opening tag line and its closing tag line around
+// the JSON. In the prose outside them, tags may only be complete tags named
+// inside a sentence. Any other tag, such as a second, partial or truncated
+// block, is rejected.
+function parseConnectorText(text) {
+  const tags = [...text.matchAll(UNTRUSTED_TAG)];
+  if (tags.length === 0) {
+    throw new CatalogInputError("Input is not valid JSON.");
   }
-  throw new CatalogInputError("Input is not valid JSON.");
+  const [open, close] = tags;
+  const isPair =
+    tags.length === 2 &&
+    open[1] === "" &&
+    close[1] === "/" &&
+    open[2] === close[2];
+  const outside =
+    isPair &&
+    `${text.slice(0, open.index)}\n${text.slice(close.index + close[0].length)}`;
+  if (
+    !isPair ||
+    LINE_STARTING_WITH_TAG.test(outside) ||
+    [...outside.matchAll(ANY_TAG)].some(
+      (tag) => !COMPLETE_TAG.test(outside.slice(tag.index)),
+    )
+  ) {
+    throw new CatalogInputError(
+      "Input needs exactly one matching pair of untrusted-data tag lines.",
+    );
+  }
+  return parseJson(
+    text.slice(open.index + open[0].length, close.index).trim(),
+    "The untrusted-data block",
+  );
 }
 
 function unwrap(value, depth) {
