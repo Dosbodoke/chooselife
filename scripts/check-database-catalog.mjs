@@ -15,7 +15,7 @@
 import fs from "node:fs/promises";
 import { isDeepStrictEqual } from "node:util";
 
-export const FORMAT = "chooselife.catalog.v1";
+export const FORMAT = "chooselife.catalog.v2";
 
 export const SECTIONS = [
   "extensions",
@@ -30,7 +30,7 @@ export const SECTIONS = [
   "rules",
   "event_triggers",
   "default_acls",
-  "managed_grants",
+  "managed_security",
   "publications",
   "publication_tables",
   "cron_jobs",
@@ -58,8 +58,7 @@ const NAMED_LIST_FIELDS = new Set(["columns", "attributes"]);
 
 // The connector's preamble names the tag in a sentence, so only tags on their
 // own line delimit the data.
-const UNTRUSTED_BLOCK =
-  /^[ \t]*<untrusted-data-([0-9a-f-]+)>[ \t\r]*$([\s\S]*?)^[ \t]*<\/untrusted-data-\1>[ \t\r]*$/gm;
+const UNTRUSTED_TAG = /^[ \t]*<(\/?)untrusted-data-([0-9a-f-]+)>[ \t\r]*$/gm;
 const MAX_UNWRAP_DEPTH = 6;
 
 const USAGE = `Usage: pnpm db:catalog:compare <left.json> <right.json>
@@ -97,20 +96,44 @@ function parseText(text) {
     // Not a single JSON document; try the other known shapes.
   }
 
-  const blocks = [...trimmed.matchAll(UNTRUSTED_BLOCK)];
-  if (blocks.length > 1) {
-    throw new CatalogInputError(
-      "Input has more than one untrusted-data block.",
+  // Connector text: exactly one opening tag line and its closing tag line.
+  // Any other standalone tag, such as a second or truncated block, is
+  // rejected.
+  const tags = [...trimmed.matchAll(UNTRUSTED_TAG)];
+  if (tags.length > 0) {
+    const [open, close] = tags;
+    if (
+      tags.length !== 2 ||
+      open[1] !== "" ||
+      close[1] !== "/" ||
+      open[2] !== close[2]
+    ) {
+      throw new CatalogInputError(
+        "Input needs exactly one matching pair of untrusted-data tag lines.",
+      );
+    }
+    return parseJson(
+      trimmed.slice(open.index + open[0].length, close.index).trim(),
+      "The untrusted-data block",
     );
-  }
-  if (blocks.length === 1) {
-    return parseJson(blocks[0][2].trim(), "The untrusted-data block");
   }
 
   // CLI stream-json: one JSON event per line, exactly one of them the result.
+  // Log and progress events may surround it; an error event or error-level
+  // log means the command failed, even if a result was printed.
   const lines = trimmed.split("\n").filter((line) => line.trim() !== "");
   if (lines.length > 1) {
     const events = lines.map((line) => parseJson(line, "A stream-json line"));
+    if (
+      events.some(
+        (event) =>
+          isPlainObject(event) &&
+          (event.type === "error" ||
+            (event.type === "log" && event.level === "error")),
+      )
+    ) {
+      throw new CatalogInputError("The stream-json output reports an error.");
+    }
     const results = events.filter(
       (event) => isPlainObject(event) && event.type === "result",
     );
@@ -168,6 +191,268 @@ function unwrapRows(rows, depth) {
   return unwrap(cell, depth + 1);
 }
 
+// Value checks for the record shapes below. A failure is reported by section,
+// identity and field, never by value.
+const isString = (value) => typeof value === "string";
+const isBoolean = (value) => typeof value === "boolean";
+// A Postgres "char" code such as relkind or prokind.
+const isFlag = (value) => isString(value) && value.length === 1;
+const isDigest = (value) => isString(value) && /^[0-9a-f]{64}$/.test(value);
+const isAclEntry = (value) => isString(value) && /^.+:[A-Z]+\*?$/.test(value);
+const isPrivilege = (value) => isString(value) && /^[A-Z]+$/.test(value);
+const nullable = (check) => (value) => value === null || check(value);
+const listOf = (check) => (value) => Array.isArray(value) && value.every(check);
+const setOf = (check) => (value) =>
+  listOf(check)(value) && new Set(value).size === value.length;
+const hasExactKeys = (value, keys) =>
+  isPlainObject(value) &&
+  Object.keys(value).length === keys.length &&
+  keys.every((key) => Object.hasOwn(value, key));
+const isRecord = (shape) => (value) =>
+  hasExactKeys(value, Object.keys(shape)) &&
+  Object.entries(shape).every(([key, check]) => check(value[key]));
+// Ordered records with unique names, such as columns.
+const namedListOf = (shape) => (value) =>
+  listOf(isRecord(shape))(value) &&
+  new Set(value.map((item) => item.name)).size === value.length;
+
+const API_ROLES = ["anon", "authenticated", "service_role"];
+const isEffective = (value) =>
+  hasExactKeys(value, API_ROLES) &&
+  API_ROLES.every((role) => setOf(isPrivilege)(value[role]));
+const acl = setOf(isAclEntry);
+const comment = nullable(isString);
+
+const SECURITY_STATE = {
+  owner: isString,
+  acl,
+  effective: isEffective,
+  rls_enabled: nullable(isBoolean),
+  rls_forced: nullable(isBoolean),
+  security_definer: nullable(isBoolean),
+  config: nullable(listOf(isString)),
+  columns: nullable(
+    namedListOf({ name: isString, acl, effective: isEffective }),
+  ),
+};
+// The security fields each managed kind must have; the others must be null.
+const MANAGED_KIND_FIELDS = {
+  relation: ["rls_enabled", "rls_forced", "columns"],
+  function: ["security_definer", "config"],
+  type: [],
+};
+const KIND_SPECIFIC_FIELDS = Object.values(MANAGED_KIND_FIELDS).flat();
+
+// Every field each section's entries carry besides `id`, as catalog.sql
+// emits them.
+const SHAPES = {
+  extensions: {
+    schema: isString,
+    routine_security: nullable(isRecord(SECURITY_STATE)),
+    type_security: nullable(isRecord(SECURITY_STATE)),
+  },
+  schemas: {
+    owner: isString,
+    extension_member: isBoolean,
+    comment,
+    acl,
+    effective: isEffective,
+  },
+  relations: {
+    kind: isFlag,
+    owner: isString,
+    persistence: isFlag,
+    options: listOf(isString),
+    rls_enabled: isBoolean,
+    rls_forced: isBoolean,
+    replica_identity: isFlag,
+    replica_identity_index: nullable(isString),
+    partition_of: nullable(isString),
+    partition_bound: nullable(isString),
+    partition_key: nullable(isString),
+    inherits: listOf(isString),
+    view_digest: nullable(isDigest),
+    comment,
+    acl,
+    effective: isEffective,
+    sequence: nullable(
+      isRecord({
+        type: isString,
+        start: isString,
+        increment: isString,
+        min: isString,
+        max: isString,
+        cache: isString,
+        cycle: isBoolean,
+        owned_by: nullable(isString),
+      }),
+    ),
+    columns: namedListOf({
+      name: isString,
+      type: isString,
+      not_null: isBoolean,
+      default: nullable(isString),
+      identity: nullable(isFlag),
+      generated: nullable(isFlag),
+      collation: nullable(isString),
+      comment,
+      acl,
+      effective: nullable(isEffective),
+    }),
+  },
+  constraints: {
+    on: (value) => value === "table" || value === "domain",
+    type: isFlag,
+    definition: isString,
+    deferrable: isBoolean,
+    deferred: isBoolean,
+    validated: isBoolean,
+    comment,
+  },
+  indexes: {
+    table: isString,
+    definition: isString,
+    unique: isBoolean,
+    primary: isBoolean,
+    valid: isBoolean,
+    constraint: isBoolean,
+    comment,
+  },
+  types: {
+    kind: isFlag,
+    owner: isString,
+    labels: nullable(setOf(isString)),
+    base_type: nullable(isString),
+    not_null: isBoolean,
+    default: nullable(isString),
+    attributes: nullable(namedListOf({ name: isString, type: isString })),
+    comment,
+    acl,
+  },
+  functions: {
+    kind: isFlag,
+    owner: isString,
+    language: isString,
+    returns: nullable(isString),
+    arguments_digest: isDigest,
+    body_digest: isDigest,
+    security_definer: isBoolean,
+    volatility: isFlag,
+    strict: isBoolean,
+    leakproof: isBoolean,
+    parallel: isFlag,
+    cost: isString,
+    rows: isString,
+    config: listOf(isString),
+    comment,
+    acl,
+    effective: isEffective,
+  },
+  policies: {
+    table: isString,
+    command: isFlag,
+    permissive: isBoolean,
+    roles: setOf(isString),
+    using_digest: nullable(isDigest),
+    check_digest: nullable(isDigest),
+    comment,
+  },
+  triggers: {
+    table: isString,
+    function: isString,
+    enabled: isFlag,
+    timing: isString,
+    level: isString,
+    events: setOf(isString),
+    constraint: isBoolean,
+    deferrable: isBoolean,
+    deferred: isBoolean,
+    definition_digest: isDigest,
+    comment,
+  },
+  rules: { enabled: isFlag, definition_digest: isDigest },
+  event_triggers: {
+    owner: isString,
+    event: isString,
+    function: isString,
+    enabled: isFlag,
+    tags: listOf(isString),
+  },
+  default_acls: { acl },
+  managed_security: {
+    kind: isFlag,
+    extension: nullable(isString),
+    ...SECURITY_STATE,
+  },
+  publications: {
+    owner: isString,
+    all_tables: isBoolean,
+    insert: isBoolean,
+    update: isBoolean,
+    delete: isBoolean,
+    truncate: isBoolean,
+    via_root: isBoolean,
+    schemas: setOf(isString),
+  },
+  publication_tables: {
+    columns: nullable(listOf(isString)),
+    row_filter_digest: nullable(isDigest),
+  },
+  cron_jobs: {
+    schedule: isString,
+    active: isBoolean,
+    database: isString,
+    username: isString,
+    command_digest: isDigest,
+  },
+  storage_buckets: {
+    id_is_name: isBoolean,
+    public: nullable(isBoolean),
+    file_size_limit: nullable(Number.isFinite),
+    allowed_mime_types: nullable(listOf(isString)),
+  },
+};
+
+const isEnvironment = isRecord({
+  server_version_num: isString,
+  app_owner: isString,
+  complete_visibility: isBoolean,
+  extension_versions: (value) =>
+    isPlainObject(value) && Object.values(value).every(isString),
+});
+
+function validateEntry(section, item, index) {
+  if (!isPlainObject(item) || !isString(item.id) || item.id === "") {
+    throw new CatalogInputError(
+      `Catalog section ${section} entry ${index} has no id.`,
+    );
+  }
+  const shape = SHAPES[section];
+  const fail = (problem) => {
+    throw new CatalogInputError(
+      `Catalog section ${section} entry ${item.id} ${problem}.`,
+    );
+  };
+  for (const key of Object.keys(item)) {
+    if (key !== "id" && !Object.hasOwn(shape, key)) {
+      fail(`has unexpected field ${key}`);
+    }
+  }
+  for (const [key, check] of Object.entries(shape)) {
+    if (!Object.hasOwn(item, key)) fail(`is missing field ${key}`);
+    if (!check(item[key])) fail(`has a malformed ${key}`);
+  }
+  if (section === "managed_security") {
+    const required = MANAGED_KIND_FIELDS[item.id.split(" ")[0]];
+    if (!required) fail("has an unknown object kind");
+    for (const key of KIND_SPECIFIC_FIELDS) {
+      if ((item[key] !== null) !== required.includes(key)) {
+        fail(`has a malformed ${key} for its kind`);
+      }
+    }
+  }
+}
+
 export function validateCatalog(catalog) {
   if (!isPlainObject(catalog) || catalog.format !== FORMAT) {
     throw new CatalogInputError(`Input is not a ${FORMAT} catalog.`);
@@ -182,28 +467,18 @@ export function validateCatalog(catalog) {
     );
   }
 
-  const environment = catalog.environment;
-  if (
-    !isPlainObject(environment) ||
-    typeof environment.server_version_num !== "string" ||
-    typeof environment.app_owner !== "string" ||
-    typeof environment.complete_visibility !== "boolean" ||
-    !isPlainObject(environment.extension_versions) ||
-    !Object.values(environment.extension_versions).every(
-      (version) => typeof version === "string",
-    )
-  ) {
+  if (!isEnvironment(catalog.environment)) {
     throw new CatalogInputError("Catalog environment is missing or malformed.");
   }
   // Without BYPASSRLS, RLS on cron.job and storage.buckets hides rows silently.
-  if (environment.complete_visibility !== true) {
+  if (catalog.environment.complete_visibility !== true) {
     throw new CatalogInputError(
       "Catalog was captured by a role that does not bypass RLS, so cron jobs and buckets may be missing.",
     );
   }
 
-  if (!isPlainObject(catalog.counts)) {
-    throw new CatalogInputError("Catalog counts are missing.");
+  if (!hasExactKeys(catalog.counts, SECTIONS)) {
+    throw new CatalogInputError("Catalog counts are missing or malformed.");
   }
   for (const section of SECTIONS) {
     const items = catalog[section];
@@ -212,23 +487,19 @@ export function validateCatalog(catalog) {
     }
     if (catalog.counts[section] !== items.length) {
       throw new CatalogInputError(
-        `Catalog section ${section} has ${items.length} entries but its count says ${catalog.counts[section]}.`,
+        `Catalog section ${section} has ${items.length} entries but its count disagrees.`,
       );
     }
     const ids = new Set();
-    for (const item of items) {
-      if (!isPlainObject(item) || typeof item.id !== "string" || !item.id) {
-        throw new CatalogInputError(
-          `Catalog section ${section} has an entry without an id.`,
-        );
-      }
+    items.forEach((item, index) => {
+      validateEntry(section, item, index);
       if (ids.has(item.id)) {
         throw new CatalogInputError(
           `Catalog section ${section} has duplicate id ${item.id}.`,
         );
       }
       ids.add(item.id);
-    }
+    });
   }
   return catalog;
 }

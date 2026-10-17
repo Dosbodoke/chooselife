@@ -13,35 +13,149 @@ import {
 } from "./check-database-catalog.mjs";
 
 // Synthetic metadata only. Digests are placeholders, not hashes of real SQL.
+// Every record has the full shape catalog.sql emits.
 const digest = (seed) => seed.repeat(64).slice(0, 64);
+const none = { anon: [], authenticated: [], service_role: [] };
+
+const column = (name, type, fields = {}) => ({
+  name,
+  type,
+  not_null: false,
+  default: null,
+  identity: null,
+  generated: null,
+  collation: null,
+  comment: null,
+  acl: [],
+  effective: null,
+  ...fields,
+});
+
+const fn = (id, fields = {}) => ({
+  id,
+  kind: "f",
+  owner: "postgres",
+  language: "plpgsql",
+  returns: "void",
+  arguments_digest: digest("1"),
+  body_digest: digest("2"),
+  security_definer: false,
+  volatility: "v",
+  strict: false,
+  leakproof: false,
+  parallel: "u",
+  cost: "100",
+  rows: "0",
+  config: [],
+  comment: null,
+  acl: ["PUBLIC:EXECUTE", "postgres:EXECUTE"],
+  effective: {
+    anon: ["EXECUTE"],
+    authenticated: ["EXECUTE"],
+    service_role: ["EXECUTE"],
+  },
+  ...fields,
+});
+
+const securityState = (fields = {}) => ({
+  owner: "supabase_admin",
+  acl: [],
+  effective: none,
+  rls_enabled: null,
+  rls_forced: null,
+  security_definer: null,
+  config: null,
+  columns: null,
+  ...fields,
+});
+
+const trigger = (id, table, fields = {}) => ({
+  id,
+  table,
+  function: "public.handle_new_user()",
+  enabled: "O",
+  timing: "AFTER",
+  level: "ROW",
+  events: ["INSERT"],
+  constraint: false,
+  deferrable: false,
+  deferred: false,
+  definition_digest: digest("e"),
+  comment: null,
+  ...fields,
+});
 
 function makeCatalog() {
   const sections = {
-    extensions: [{ id: "pg_cron", schema: "pg_catalog" }],
+    extensions: [
+      {
+        id: "pg_cron",
+        schema: "pg_catalog",
+        routine_security: securityState({
+          acl: ["PUBLIC:EXECUTE", "supabase_admin:EXECUTE"],
+          effective: {
+            anon: ["EXECUTE"],
+            authenticated: ["EXECUTE"],
+            service_role: ["EXECUTE"],
+          },
+          security_definer: false,
+          config: [],
+        }),
+        type_security: null,
+      },
+    ],
     schemas: [
       {
         id: "public",
         owner: "pg_database_owner",
+        extension_member: false,
+        comment: "standard public schema",
         acl: ["anon:USAGE", "authenticated:USAGE", "postgres:USAGE"],
-        effective: { anon: ["USAGE"], authenticated: ["USAGE"] },
+        effective: {
+          anon: ["USAGE"],
+          authenticated: ["USAGE"],
+          service_role: ["USAGE"],
+        },
       },
     ],
     relations: [
       {
         id: "public.note",
         kind: "r",
+        owner: "postgres",
+        persistence: "p",
+        options: [],
         rls_enabled: true,
+        rls_forced: false,
+        replica_identity: "d",
+        replica_identity_index: null,
+        partition_of: null,
+        partition_bound: null,
+        partition_key: null,
+        inherits: [],
+        view_digest: null,
+        comment: null,
         acl: ["authenticated:SELECT", "postgres:SELECT"],
-        effective: { anon: [], authenticated: ["INSERT", "SELECT"] },
+        effective: {
+          anon: [],
+          authenticated: ["INSERT", "SELECT"],
+          service_role: ["SELECT"],
+        },
+        sequence: null,
         columns: [
-          {
-            name: "id",
-            type: "uuid",
+          column("id", "uuid", {
             not_null: true,
             default: "gen_random_uuid()",
-          },
-          { name: "owner_id", type: "uuid", not_null: true, default: null },
-          { name: "body", type: "text", not_null: false, default: null },
+          }),
+          column("owner_id", "uuid", { not_null: true }),
+          column("body", "text", {
+            acl: ["authenticated:UPDATE"],
+            effective: {
+              anon: [],
+              authenticated: ["SELECT", "UPDATE"],
+              service_role: ["SELECT"],
+            },
+          }),
         ],
       },
     ],
@@ -51,6 +165,10 @@ function makeCatalog() {
         on: "table",
         type: "p",
         definition: "PRIMARY KEY (id)",
+        deferrable: false,
+        deferred: false,
+        validated: true,
+        comment: null,
       },
     ],
     indexes: [
@@ -59,68 +177,173 @@ function makeCatalog() {
         table: "public.note",
         definition:
           "CREATE INDEX note_owner_created_idx ON public.note USING btree (owner_id, id)",
+        unique: false,
+        primary: false,
+        valid: true,
+        constraint: false,
+        comment: null,
       },
     ],
-    types: [{ id: "public.mood", kind: "e", labels: ["calm", "busy", "away"] }],
-    functions: [
+    types: [
       {
-        id: "public.share_note(note_id uuid, target uuid)",
+        id: "public.mood",
+        kind: "e",
+        owner: "postgres",
+        labels: ["calm", "busy", "away"],
+        base_type: null,
+        not_null: false,
+        default: null,
+        attributes: null,
+        comment: null,
+        acl: ["PUBLIC:USAGE", "postgres:USAGE"],
+      },
+    ],
+    functions: [
+      fn("public.share_note(note_id uuid, target uuid)", {
         security_definer: true,
         config: ["search_path=public"],
         body_digest: digest("a"),
         acl: ["authenticated:EXECUTE", "postgres:EXECUTE"],
-        effective: { anon: [], authenticated: ["EXECUTE"] },
-      },
-      {
-        id: "public.handle_new_user()",
+        effective: { anon: [], authenticated: ["EXECUTE"], service_role: [] },
+      }),
+      fn("public.handle_new_user()", {
+        returns: "trigger",
         security_definer: true,
         config: ["search_path="],
         body_digest: digest("b"),
         acl: ["postgres:EXECUTE"],
-        effective: { anon: [], authenticated: [] },
-      },
+        effective: none,
+      }),
     ],
     policies: [
       {
         id: "public.note.owners read",
+        table: "public.note",
         command: "r",
+        permissive: true,
         roles: ["authenticated"],
         using_digest: digest("c"),
         check_digest: null,
+        comment: null,
       },
       {
         id: "public.note.owners write",
+        table: "public.note",
         command: "a",
+        permissive: true,
         roles: ["anon", "authenticated"],
         using_digest: null,
         check_digest: digest("d"),
+        comment: null,
       },
     ],
     triggers: [
-      {
-        id: "auth.users.on_auth_user_created",
-        table: "auth.users",
-        function: "public.handle_new_user()",
-        enabled: "O",
-        events: ["INSERT"],
-        definition_digest: digest("e"),
-      },
+      trigger("auth.users.on_auth_user_created", "auth.users"),
+      trigger("auth.users.notify_signup_webhook", "auth.users", {
+        function: "supabase_functions.http_request()",
+        definition_digest: digest("8"),
+      }),
     ],
     rules: [],
-    event_triggers: [],
+    event_triggers: [
+      {
+        id: "issue_pg_cron_access",
+        owner: "supabase_admin",
+        event: "ddl_command_end",
+        function: "extensions.grant_pg_cron_access()",
+        enabled: "O",
+        tags: ["CREATE EXTENSION"],
+      },
+    ],
     default_acls: [
       { id: "postgres:public:f", acl: ["anon:EXECUTE", "postgres:EXECUTE"] },
     ],
-    managed_grants: [{ id: "schema cron", acl: ["postgres:USAGE"] }],
-    publications: [{ id: "supabase_realtime", all_tables: false, schemas: [] }],
+    managed_security: [
+      {
+        id: "function storage.foldername(name text)",
+        kind: "f",
+        extension: null,
+        ...securityState({
+          owner: "supabase_storage_admin",
+          acl: ["PUBLIC:EXECUTE", "supabase_storage_admin:EXECUTE"],
+          effective: {
+            anon: ["EXECUTE"],
+            authenticated: ["EXECUTE"],
+            service_role: ["EXECUTE"],
+          },
+          security_definer: false,
+          config: [],
+        }),
+      },
+      {
+        id: "relation storage.objects",
+        kind: "r",
+        extension: null,
+        ...securityState({
+          owner: "supabase_storage_admin",
+          acl: ["anon:SELECT", "authenticated:SELECT", "service_role:SELECT"],
+          effective: {
+            anon: ["SELECT"],
+            authenticated: ["SELECT"],
+            service_role: ["SELECT"],
+          },
+          rls_enabled: true,
+          rls_forced: false,
+          columns: [
+            {
+              name: "owner_id",
+              acl: ["authenticated:UPDATE"],
+              effective: {
+                anon: [],
+                authenticated: ["SELECT", "UPDATE"],
+                service_role: ["SELECT"],
+              },
+            },
+          ],
+        }),
+      },
+      {
+        id: "type auth.aal_level",
+        kind: "e",
+        extension: null,
+        ...securityState({
+          owner: "supabase_auth_admin",
+          acl: ["PUBLIC:USAGE", "supabase_auth_admin:USAGE"],
+          effective: {
+            anon: ["USAGE"],
+            authenticated: ["USAGE"],
+            service_role: ["USAGE"],
+          },
+        }),
+      },
+    ],
+    publications: [
+      {
+        id: "supabase_realtime",
+        owner: "postgres",
+        all_tables: false,
+        insert: true,
+        update: true,
+        delete: true,
+        truncate: true,
+        via_root: false,
+        schemas: [],
+      },
+    ],
     publication_tables: [
-      { id: "supabase_realtime:public.note", columns: null },
+      {
+        id: "supabase_realtime:public.note",
+        columns: null,
+        row_filter_digest: null,
+      },
     ],
     cron_jobs: [
       {
         id: "nightly-cleanup",
         schedule: "0 3 * * *",
         active: true,
+        database: "postgres",
+        username: "postgres",
         command_digest: digest("f"),
       },
     ],
@@ -129,12 +352,13 @@ function makeCatalog() {
         id: "avatars",
         id_is_name: false,
         public: true,
+        file_size_limit: 5242880,
         allowed_mime_types: ["image/png", "image/webp"],
       },
     ],
   };
   return {
-    format: "chooselife.catalog.v1",
+    format: "chooselife.catalog.v2",
     environment: {
       server_version_num: "150019",
       app_owner: "postgres",
@@ -240,6 +464,71 @@ test("enum label order is semantic", () => {
   assert.deepEqual(differences, ["types public.mood: labels: differs"]);
 });
 
+test("a managed EXECUTE revoke is a difference even when it removes every grant", () => {
+  const { differences } = differencesAfter((catalog) => {
+    const managed = find(
+      catalog,
+      "managed_security",
+      "function storage.foldername(name text)",
+    );
+    managed.acl = ["supabase_storage_admin:EXECUTE"];
+    managed.effective = none;
+  });
+  assert.deepEqual(differences, [
+    "managed_security function storage.foldername(name text): acl: only in left: PUBLIC:EXECUTE; only in right: none",
+    "managed_security function storage.foldername(name text): effective.anon: only in left: EXECUTE; only in right: none",
+    "managed_security function storage.foldername(name text): effective.authenticated: only in left: EXECUTE; only in right: none",
+    "managed_security function storage.foldername(name text): effective.service_role: only in left: EXECUTE; only in right: none",
+  ]);
+});
+
+test("a managed RLS flip, table grant and column grant are differences", () => {
+  const { differences } = differencesAfter((catalog) => {
+    const managed = find(
+      catalog,
+      "managed_security",
+      "relation storage.objects",
+    );
+    managed.rls_enabled = false;
+    managed.acl.push("anon:DELETE");
+    managed.columns[0].acl = [];
+  });
+  assert.deepEqual(differences, [
+    "managed_security relation storage.objects: acl: only in left: none; only in right: anon:DELETE",
+    "managed_security relation storage.objects: columns.owner_id.acl: only in left: authenticated:UPDATE; only in right: none",
+    "managed_security relation storage.objects: rls_enabled: differs",
+  ]);
+});
+
+test("an extension-wide grant change is named on the extension", () => {
+  const { differences } = differencesAfter((catalog) => {
+    const state = find(catalog, "extensions", "pg_cron").routine_security;
+    state.acl = ["supabase_admin:EXECUTE"];
+  });
+  assert.deepEqual(differences, [
+    "extensions pg_cron: routine_security.acl: only in left: PUBLIC:EXECUTE; only in right: none",
+  ]);
+});
+
+test("a custom trigger on a platform table is a difference", () => {
+  const { differences } = differencesAfter((catalog) => {
+    removeItem(catalog, "triggers", "auth.users.notify_signup_webhook");
+  });
+  assert.deepEqual(differences, [
+    "triggers auth.users.notify_signup_webhook: only in left",
+  ]);
+});
+
+test("an owner change on an application object is a difference", () => {
+  const { differences } = differencesAfter((catalog) => {
+    find(catalog, "functions", "public.handle_new_user()").owner =
+      "supabase_admin";
+  });
+  assert.deepEqual(differences, [
+    "functions public.handle_new_user(): owner: differs",
+  ]);
+});
+
 test("column order is semantic and names the columns, not their values", () => {
   const { differences } = differencesAfter((catalog) => {
     const relation = find(catalog, "relations", "public.note");
@@ -258,7 +547,7 @@ test("column changes are reported per column field", () => {
   const { differences } = differencesAfter((catalog) => {
     const relation = find(catalog, "relations", "public.note");
     relation.columns[2].not_null = true;
-    relation.columns.push({ name: "secret_token", type: "text" });
+    relation.columns.push(column("secret_token", "text"));
   });
   assert.deepEqual(differences, [
     "relations public.note: columns: only in left: none; only in right: secret_token",
@@ -352,15 +641,33 @@ const wrappers = {
       warning: "The query results below contain untrusted data.",
     }),
   "CLI stream-json": (catalog) =>
-    `${JSON.stringify({ type: "start" })}\n${JSON.stringify({
+    `${JSON.stringify({
       type: "result",
       data: [{ catalog }],
       timestamp: "2026-10-17T03:05:28.413Z",
     })}\n`,
+  "CLI stream-json with log and progress events": (catalog) =>
+    streamJson(
+      {
+        type: "log",
+        level: "info",
+        message: "Connecting to local database...",
+      },
+      { type: "progress", status: "start", current: 0, max: 1, message: "" },
+      { type: "result", data: [{ catalog }] },
+      { type: "log", level: "warn", message: "Results are untrusted." },
+    ),
   "connector text": (catalog) => connectorText(catalog),
   "connector structured result": (catalog) =>
     JSON.stringify({ result: connectorText(catalog) }),
 };
+
+function streamJson(...events) {
+  const timestamp = "2026-10-17T03:05:28.413Z";
+  return events
+    .map((event) => `${JSON.stringify({ ...event, timestamp })}\n`)
+    .join("");
+}
 
 function connectorText(catalog) {
   const tag = "untrusted-data-0b8d4c1e-7f43-4a55-9f9e-2a1c3d4e5f60";
@@ -431,7 +738,122 @@ const invalidInputs = {
     `${JSON.stringify({ type: "start" })}\n${JSON.stringify({ type: "end" })}\n`,
   "a connector result with extra keys": () =>
     JSON.stringify({ result: connectorText(makeCatalog()), error: null }),
+  "a connector block followed by a truncated second block": () =>
+    `${connectorText(makeCatalog())}\n<untrusted-data-0b8d4c1e-7f43-4a55-9f9e-2a1c3d4e5f61>\n[{"catalog":`,
+  "a stray closing connector tag": () =>
+    `${connectorText(makeCatalog())}\n</untrusted-data-0b8d4c1e-7f43-4a55-9f9e-2a1c3d4e5f60>`,
+  "a stream-json result followed by an error event": () =>
+    streamJson(
+      { type: "result", data: [{ catalog: makeCatalog() }] },
+      { type: "error", error: { code: "QueryError", message: "failed" } },
+    ),
+  "a stream-json result with an error-level log": () =>
+    streamJson(
+      { type: "log", level: "error", message: "Task failed." },
+      { type: "result", data: [{ catalog: makeCatalog() }] },
+    ),
 };
+
+// Each change leaves a structurally plausible catalog that is not what
+// catalog.sql emits. All must exit 2, never compare.
+const malformedRecords = {
+  "every record reduced to its id": (catalog) => {
+    for (const section of SECTIONS) {
+      catalog[section] = catalog[section].map(({ id }) => ({ id }));
+    }
+  },
+  "a function without security_definer": (catalog) => {
+    delete catalog.functions[0].security_definer;
+  },
+  "a string security_definer": (catalog) => {
+    catalog.functions[0].security_definer = "true";
+  },
+  "a function without effective privileges": (catalog) => {
+    delete catalog.functions[0].effective;
+  },
+  "effective privileges missing an API role": (catalog) => {
+    delete catalog.functions[0].effective.service_role;
+  },
+  "effective privileges for an extra role": (catalog) => {
+    catalog.functions[0].effective.PUBLIC = ["EXECUTE"];
+  },
+  "a non-boolean rls_enabled": (catalog) => {
+    catalog.relations[0].rls_enabled = "yes";
+  },
+  "a managed table without RLS flags": (catalog) => {
+    find(catalog, "managed_security", "relation storage.objects").rls_forced =
+      null;
+  },
+  "a managed function without its definer flag": (catalog) => {
+    delete find(
+      catalog,
+      "managed_security",
+      "function storage.foldername(name text)",
+    ).security_definer;
+  },
+  "a managed object of unknown kind": (catalog) => {
+    catalog.managed_security[0].id = "operator storage.foldername";
+  },
+  "a malformed extension security state": (catalog) => {
+    catalog.extensions[0].routine_security.acl = "PUBLIC:EXECUTE";
+  },
+  "duplicate column names": (catalog) => {
+    catalog.relations[0].columns.push(column("body", "text"));
+  },
+  "duplicate managed column names": (catalog) => {
+    const managed = find(
+      catalog,
+      "managed_security",
+      "relation storage.objects",
+    );
+    managed.columns.push({ ...managed.columns[0] });
+  },
+  "a duplicate ACL entry": (catalog) => {
+    catalog.functions[0].acl.push(catalog.functions[0].acl[0]);
+  },
+  "an ACL entry without a privilege": (catalog) => {
+    catalog.schemas[0].acl.push("anon");
+  },
+  "a digest that is not a SHA-256 hex": (catalog) => {
+    catalog.policies[0].using_digest = "not-a-digest";
+  },
+  "an unexpected field": (catalog) => {
+    catalog.cron_jobs[0].command = "select 1";
+  },
+  "a numeric cron schedule": (catalog) => {
+    catalog.cron_jobs[0].schedule = 5;
+  },
+  "a count for an unknown section": (catalog) => {
+    catalog.counts.vault_secrets = 0;
+  },
+  "a missing environment field": (catalog) => {
+    delete catalog.environment.app_owner;
+  },
+};
+
+for (const [name, change] of Object.entries(malformedRecords)) {
+  test(`rejects ${name}`, () => {
+    const catalog = makeCatalog();
+    change(catalog);
+    assert.throws(
+      () => extractCatalog(JSON.stringify(catalog)),
+      CatalogInputError,
+    );
+  });
+}
+
+test("a rejected record names the field, not its value", () => {
+  const catalog = makeCatalog();
+  catalog.cron_jobs[0].command_digest = "Bearer fixture-not-a-secret";
+  assert.throws(
+    () => extractCatalog(JSON.stringify(catalog)),
+    (error) =>
+      error instanceof CatalogInputError &&
+      error.message.includes("nightly-cleanup") &&
+      error.message.includes("command_digest") &&
+      !error.message.includes("fixture-not-a-secret"),
+  );
+});
 
 for (const [name, input] of Object.entries(invalidInputs)) {
   test(`rejects ${name}`, () => {
@@ -503,6 +925,13 @@ test("main exits 0 but reports environment-only differences", async () => {
 
 test("main exits 2 for unreadable input or wrong arguments", async () => {
   assert.equal((await runMain("{", JSON.stringify(makeCatalog()))).code, 2);
+  const partial = makeCatalog();
+  partial.functions = partial.functions.map(({ id }) => ({ id }));
+  assert.equal(
+    (await runMain(JSON.stringify(makeCatalog()), JSON.stringify(partial)))
+      .code,
+    2,
+  );
   assert.equal(
     await main(["only-one.json"], { log: () => {}, error: () => {} }),
     2,

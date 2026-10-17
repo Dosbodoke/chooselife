@@ -8,22 +8,29 @@
 -- schema-qualified the same way whichever client runs the query.
 --
 -- Scope, decided from catalog ownership and dependencies rather than names:
--- * Extension members (pg_depend deptype 'e') are never application objects.
--- * Everything else in public is captured, whatever its owner.
--- * In any other schema, objects owned by the database owner (the role that
---   runs migrations) are application customizations. Platform objects belong
---   to the supabase_* roles and are left out.
--- * Policies on non-extension tables in any schema are captured. Triggers are
---   captured on included tables, or anywhere they call a database-owner
---   function, which covers the auth.users trigger.
+-- * Application schemas are public and every non-extension schema owned by
+--   the database owner (the role that runs migrations).
+-- * Application objects are the non-extension relations, functions and types
+--   in application schemas, whatever their owner, plus non-extension objects
+--   the database owner owns anywhere else. They are captured in full, with
+--   their owner.
+-- * Every other relation, function and type is a platform object or an
+--   extension member. Only its security state is captured, in
+--   managed_security: owner, ACL, effective privileges, RLS flags, definer
+--   flag, settings and column ACLs. Extension routines and types that share
+--   their extension's most common state are folded into that extension's
+--   entry; the rest are listed one by one.
+-- * Policies, triggers, rules, event triggers, default ACLs and publications
+--   are captured wherever they are, so a custom trigger or policy on a
+--   platform table always shows up.
 -- * supabase_migrations is the CLI's migration bookkeeping and is skipped.
 -- * Every non-system schema is listed, so an unexpected schema shows up.
 --
 -- Function bodies, view queries, policy and trigger expressions and trigger
 -- arguments appear only as SHA-256 digests of the text with CRLF turned into LF.
 -- A webhook trigger or function could embed a credential, so raw text never
--- leaves the database. Sequence values, cron run history and vault secrets are
--- not read.
+-- leaves the database. Platform function bodies are not read at all. Sequence
+-- values, cron run history and vault secrets are not read.
 --
 -- Capture this before `db lint` or pgTAP run. Those tools install helpers
 -- that are not part of the migrations.
@@ -48,9 +55,10 @@ with
     where rolname in ('anon', 'authenticated', 'service_role')
   ),
   extension_members as (
-    select classid, objid
-    from pg_catalog.pg_depend
-    where deptype = 'e'
+    select d.classid, d.objid, x.extname
+    from pg_catalog.pg_depend d
+    join pg_catalog.pg_extension x on x.oid = d.refobjid
+    where d.deptype = 'e'
   ),
   schemas_in_scope as (
     select n.oid, n.nspname, n.nspowner, n.nspacl
@@ -58,55 +66,74 @@ with
     where n.nspname not in ('pg_catalog', 'information_schema')
       and n.nspname !~ '^pg_(toast|temp_|toast_temp_)'
   ),
-  relations as (
-    select c.oid, c.relkind, c.relowner,
+  -- Schemas whose objects belong to the application whatever their owner.
+  application_schemas as (
+    select n.oid
+    from schemas_in_scope n
+    cross join settings s
+    where n.nspname <> 'supabase_migrations'
+      and (n.nspname = 'public' or n.nspowner = s.app_owner)
+      and not exists (
+        select 1 from extension_members e
+        where e.classid = 'pg_catalog.pg_namespace'::regclass
+          and e.objid = n.oid
+      )
+  ),
+  -- Every relation, function and type in scope, with its extension if any.
+  all_objects as (
+    select 'relation' as kind, c.oid, n.oid as nsp, n.nspname,
+      c.relowner as owner, c.relkind::text as subkind,
       format('%I.%I', n.nspname, c.relname) as id
     from pg_catalog.pg_class c
     join schemas_in_scope n on n.oid = c.relnamespace
-    cross join settings s
     where c.relkind in ('r', 'p', 'v', 'm', 'f', 'S')
-      and n.nspname <> 'supabase_migrations'
-      and (n.nspname = 'public' or c.relowner = s.app_owner)
-      and not exists (
-        select 1 from extension_members e
-        where e.classid = 'pg_catalog.pg_class'::regclass and e.objid = c.oid
-      )
-  ),
-  functions as (
-    select p.oid,
+    union all
+    select 'function', p.oid, n.oid, n.nspname, p.proowner, p.prokind::text,
       format('%I.%I(%s)', n.nspname, p.proname,
-        pg_catalog.pg_get_function_identity_arguments(p.oid)) as id
+        pg_catalog.pg_get_function_identity_arguments(p.oid))
     from pg_catalog.pg_proc p
     join schemas_in_scope n on n.oid = p.pronamespace
-    cross join settings s
-    where n.nspname <> 'supabase_migrations'
-      and (n.nspname = 'public' or p.proowner = s.app_owner)
-      and not exists (
-        select 1 from extension_members e
-        where e.classid = 'pg_catalog.pg_proc'::regclass and e.objid = p.oid
-      )
-  ),
-  types as (
-    select t.oid, format('%I.%I', n.nspname, t.typname) as id
+    union all
+    select 'type', t.oid, n.oid, n.nspname, t.typowner, t.typtype::text,
+      format('%I.%I', n.nspname, t.typname)
     from pg_catalog.pg_type t
     join schemas_in_scope n on n.oid = t.typnamespace
-    cross join settings s
-    where n.nspname <> 'supabase_migrations'
-      and (n.nspname = 'public' or t.typowner = s.app_owner)
-      -- Row types of tables and views, and array types, follow their parent.
-      and (t.typrelid = 0 or (
+    -- Row types of tables and views, and array types, follow their parent.
+    where (t.typrelid = 0 or (
         select relkind from pg_catalog.pg_class where oid = t.typrelid) = 'c')
       and not exists (
         select 1 from pg_catalog.pg_type a where a.typarray = t.oid)
-      and not exists (
-        select 1 from extension_members e
-        where e.classid = 'pg_catalog.pg_type'::regclass and e.objid = t.oid
-      )
+  ),
+  objects as (
+    select o.*, e.extname,
+      e.extname is null and (
+        o.nsp in (select oid from application_schemas)
+        or o.owner = s.app_owner
+      ) as application
+    from all_objects o
+    cross join settings s
+    left join extension_members e
+      on e.objid = o.oid
+      and e.classid = case o.kind
+        when 'relation' then 'pg_catalog.pg_class'::regclass
+        when 'function' then 'pg_catalog.pg_proc'::regclass
+        else 'pg_catalog.pg_type'::regclass end
+    where o.nspname <> 'supabase_migrations'
+  ),
+  relations as (
+    select oid, subkind::"char" as relkind, owner as relowner, id
+    from objects where kind = 'relation' and application
+  ),
+  functions as (
+    select oid, id from objects where kind = 'function' and application
+  ),
+  types as (
+    select oid, id from objects where kind = 'type' and application
   ),
   -- One "grantee:PRIVILEGE" entry per grant, "*" when grantable, PUBLIC for
   -- grantee 0. Grantors are left out.
   acl_entries as (
-    select x.kind, x.oid, x.subid, x.grantor,
+    select x.kind, x.oid, x.subid,
       case when x.grantee = 0 then 'PUBLIC'
         else pg_catalog.pg_get_userbyid(x.grantee) end
       || ':' || x.privilege_type
@@ -126,7 +153,7 @@ with
       union all
       select 'column', t.attrelid, t.attnum, a.*
       from pg_catalog.pg_attribute t
-      join relations r on r.oid = t.attrelid,
+      join objects o on o.kind = 'relation' and o.oid = t.attrelid,
         aclexplode(t.attacl) a
       union all
       select 'function', p.oid, 0, a.*
@@ -134,9 +161,9 @@ with
       join schemas_in_scope n on n.oid = p.pronamespace,
         aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
       union all
-      select 'type', t.oid, 0, a.*
-      from types t
-      join pg_catalog.pg_type y on y.oid = t.oid,
+      select 'type', o.oid, 0, a.*
+      from objects o
+      join pg_catalog.pg_type y on o.kind = 'type' and y.oid = o.oid,
         aclexplode(coalesce(y.typacl, acldefault('T', y.typowner))) a
       union all
       select 'default', d.oid, 0, a.*
@@ -144,15 +171,86 @@ with
         aclexplode(d.defaclacl) a
     ) x
   ),
+  -- Without grantors, two grantors' identical grants are one entry.
   acls as (
     select kind, oid, subid,
-      jsonb_agg(entry order by entry) as acl
+      jsonb_agg(distinct entry order by entry) as acl
     from acl_entries
     group by kind, oid, subid
   ),
+  -- Security state of each object outside the application scope. A revoke
+  -- shows up even when it removes the last grant, because the whole ACL and
+  -- the API roles' effective privileges are recorded.
+  managed as (
+    select o.kind, o.oid, o.id, o.subkind, o.extname,
+      jsonb_build_object(
+        'owner', pg_catalog.pg_get_userbyid(o.owner),
+        'acl', coalesce((select acl from acls a
+          where a.kind = o.kind and a.oid = o.oid and a.subid = 0), '[]'),
+        'effective', (
+          select coalesce(jsonb_object_agg(r.rolname, (
+            select coalesce(jsonb_agg(v order by v), '[]')
+            from unnest(case
+              when o.kind = 'function' then array['EXECUTE']
+              when o.kind = 'type' then array['USAGE']
+              when o.subkind = 'S' then array['SELECT', 'UPDATE', 'USAGE']
+              else array['DELETE', 'INSERT', 'REFERENCES', 'SELECT',
+                'TRIGGER', 'TRUNCATE', 'UPDATE'] end) v
+            where case
+              when o.kind = 'function'
+                then has_function_privilege(r.rolname, o.oid, v)
+              when o.kind = 'type'
+                then has_type_privilege(r.rolname, o.oid, v)
+              when o.subkind = 'S'
+                then has_sequence_privilege(r.rolname, o.oid, v)
+              else has_table_privilege(r.rolname, o.oid, v) end
+          )), '{}')
+          from api_roles r
+        ),
+        'rls_enabled', c.relrowsecurity,
+        'rls_forced', c.relforcerowsecurity,
+        'security_definer', p.prosecdef,
+        'config', case when o.kind = 'function'
+          then coalesce(to_jsonb(p.proconfig), '[]') end,
+        -- Columns that carry their own grants.
+        'columns', case when o.kind = 'relation' then (
+          select coalesce(jsonb_agg(jsonb_build_object(
+            'name', t.attname,
+            'acl', coalesce((select acl from acls a where a.kind = 'column'
+              and a.oid = o.oid and a.subid = t.attnum), '[]'),
+            'effective', (
+              select coalesce(jsonb_object_agg(r.rolname, (
+                select coalesce(jsonb_agg(v order by v), '[]')
+                from unnest(array['INSERT', 'REFERENCES', 'SELECT', 'UPDATE']) v
+                where has_column_privilege(r.rolname, o.oid, t.attnum, v)
+              )), '{}')
+              from api_roles r
+            )
+          ) order by t.attnum), '[]')
+          from pg_catalog.pg_attribute t
+          where t.attrelid = o.oid and t.attnum > 0 and not t.attisdropped
+            and t.attacl is not null
+        ) end
+      ) as state
+    from objects o
+    left join pg_catalog.pg_class c on o.kind = 'relation' and c.oid = o.oid
+    left join pg_catalog.pg_proc p on o.kind = 'function' and p.oid = o.oid
+    where not o.application
+  ),
+  -- Each extension's most common routine state and type state. Members in
+  -- that state are folded into the extension's entry, which keeps hundreds of
+  -- postgis functions out while any grant or revoke on one of them still
+  -- lists it by name.
+  extension_common as (
+    select distinct on (extname, kind) extname, kind, state
+    from managed
+    where extname is not null and kind <> 'relation'
+    group by extname, kind, state
+    order by extname, kind, count(*) desc, state::text
+  ),
   body as (
     select jsonb_build_object(
-      'format', 'chooselife.catalog.v1',
+      'format', 'chooselife.catalog.v2',
       'environment', jsonb_build_object(
         'server_version_num', pg_catalog.current_setting('server_version_num'),
         'app_owner', (select pg_catalog.pg_get_userbyid(app_owner) from settings),
@@ -166,7 +264,11 @@ with
       'extensions', (
         select coalesce(jsonb_agg(jsonb_build_object(
           'id', x.extname,
-          'schema', x.extnamespace::regnamespace::text
+          'schema', x.extnamespace::regnamespace::text,
+          'routine_security', (select state from extension_common c
+            where c.extname = x.extname and c.kind = 'function'),
+          'type_security', (select state from extension_common c
+            where c.extname = x.extname and c.kind = 'type')
         ) order by x.extname), '[]')
         from pg_catalog.pg_extension x
       ),
@@ -433,14 +535,7 @@ with
             'comment', pg_catalog.obj_description(p.oid, 'pg_policy')
           ) as item
           from pg_catalog.pg_policy p
-          join pg_catalog.pg_class c on c.oid = p.polrelid
-          join schemas_in_scope n on n.oid = c.relnamespace
-          where n.nspname <> 'supabase_migrations'
-            and not exists (
-              select 1 from extension_members e
-              where e.classid = 'pg_catalog.pg_class'::regclass
-                and e.objid = c.oid
-            )
+          join objects o on o.kind = 'relation' and o.oid = p.polrelid
         ) x
       ),
 
@@ -474,14 +569,8 @@ with
             'comment', pg_catalog.obj_description(g.oid, 'pg_trigger')
           ) as item
           from pg_catalog.pg_trigger g
-          join pg_catalog.pg_class c on c.oid = g.tgrelid
-          join schemas_in_scope n on n.oid = c.relnamespace
-          join pg_catalog.pg_proc f on f.oid = g.tgfoid
-          cross join settings s
+          join objects o on o.kind = 'relation' and o.oid = g.tgrelid
           where not g.tgisinternal
-            and n.nspname <> 'supabase_migrations'
-            and (g.tgrelid in (select oid from relations)
-              or f.proowner = s.app_owner)
         ) x
       ),
 
@@ -497,26 +586,20 @@ with
           ) as item
           from pg_catalog.pg_rewrite w
           where w.rulename <> '_RETURN'
-            and w.ev_class in (select oid from relations)
+            and w.ev_class in (select oid from objects where kind = 'relation')
         ) x
       ),
 
       'event_triggers', (
         select coalesce(jsonb_agg(jsonb_build_object(
           'id', v.evtname,
+          'owner', pg_catalog.pg_get_userbyid(v.evtowner),
           'event', v.evtevent,
           'function', v.evtfoid::regprocedure::text,
           'enabled', v.evtenabled,
           'tags', coalesce(to_jsonb(v.evttags), '[]')
         ) order by v.evtname), '[]')
         from pg_catalog.pg_event_trigger v
-        cross join settings s
-        where v.evtowner = s.app_owner
-          and not exists (
-            select 1 from extension_members e
-            where e.classid = 'pg_catalog.pg_event_trigger'::regclass
-              and e.objid = v.oid
-          )
       ),
 
       'default_acls', (
@@ -530,41 +613,22 @@ with
               where kind = 'default' and oid = d.oid), '[]')
           ) as item
           from pg_catalog.pg_default_acl d
-          cross join settings s
-          where d.defaclrole = s.app_owner
-            or d.defaclnamespace = 'public'::regnamespace
         ) x
       ),
 
-      -- Grants by the database owner on platform objects, such as the
-      -- migration's USAGE on cron. A revoke leaves no grantor trace.
-      'managed_grants', (
-        select coalesce(jsonb_agg(x.item order by x.item->>'id'), '[]')
-        from (
-          select jsonb_build_object(
-            'id', o.kind || ' ' || o.id,
-            'acl', jsonb_agg(e.entry order by e.entry)
-          ) as item
-          from (
-            select 'relation' as kind, c.oid,
-              format('%I.%I', n.nspname, c.relname) as id, c.relowner as owner
-            from pg_catalog.pg_class c
-            join schemas_in_scope n on n.oid = c.relnamespace
-            where c.oid not in (select oid from relations)
-            union all
-            select 'function', p.oid, p.oid::regprocedure::text, p.proowner
-            from pg_catalog.pg_proc p
-            join schemas_in_scope n on n.oid = p.pronamespace
-            where p.oid not in (select oid from functions)
-            union all
-            select 'schema', n.oid, n.nspname, n.nspowner
-            from schemas_in_scope n
-          ) o
-          join acl_entries e on e.kind = o.kind and e.oid = o.oid and e.subid = 0
-          cross join settings s
-          where e.grantor = s.app_owner and o.owner <> s.app_owner
-          group by o.kind, o.id
-        ) x
+      -- Platform objects and extension members not folded into their
+      -- extension's entry. Schema ACLs are under schemas.
+      'managed_security', (
+        select coalesce(jsonb_agg(jsonb_build_object(
+          'id', m.kind || ' ' || m.id,
+          'kind', m.subkind,
+          'extension', m.extname
+        ) || m.state order by m.kind || ' ' || m.id), '[]')
+        from managed m
+        where not exists (
+          select 1 from extension_common x
+          where x.extname = m.extname and x.kind = m.kind and x.state = m.state
+        )
       ),
 
       'publications', (
@@ -587,12 +651,6 @@ with
           )
         ) order by b.pubname), '[]')
         from pg_catalog.pg_publication b
-        cross join settings s
-        where b.pubowner = s.app_owner
-          or exists (
-            select 1 from pg_catalog.pg_publication_rel m
-            where m.prpubid = b.oid and m.prrelid in (select oid from relations)
-          )
       ),
 
       'publication_tables', (
@@ -612,7 +670,6 @@ with
           ) as item
           from pg_catalog.pg_publication_rel m
           join pg_catalog.pg_publication b on b.oid = m.prpubid
-          where m.prrelid in (select oid from relations)
         ) x
       ),
 
