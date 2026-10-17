@@ -10,7 +10,7 @@
 - Depends on: Plan 002, isolated verification and pinned tooling
 - Category: migration, correctness, dx
 - Planned at: commit `427007b`, October 16, 2026
-- Execution status: IN PROGRESS. Checkpoints003.1 and003.2 are accepted. The resumed Unicode framing fix passed parent verification and fresh Sol review on October17. Next is003.3, read-only staging comparison at the matching migration version.
+- Execution status: RECONCILIATION BLOCKED at003.3 with named same-version differences. Checkpoints003.1–003.2 are accepted. The diagnostic comparison and restored full replay passed independent verification; notes accuracy review is being finalized. Independent003.4 type work may continue from the full replay under the refinement below. Plan004 remains gated by reconciliation.
 
 ## Outcome and decisions
 
@@ -152,6 +152,10 @@ Check actual `db query --help` and machine-output shape on 2.121.0. Redirect cat
 Restore the scratch DB to all checked-in migrations **with** seeds before type generation and tests. Re-run the full SQL suite. Record the intended deployment lag explicitly; do not change hosted state to remove it.
 
 **Verify:** same-version catalog comparison exits 0, or every remaining difference is a named blocker. Full replay is restored and applied versions equal checked-in versions. Notes distinguish this result from uninspected production.
+
+### Independence refinement after003.3 findings
+
+The same-version comparison identified legacy bucket configuration, a schema grant and platform security differences. Keep these named blockers visible and do not change migrations, hosted state or comparator semantics to force parity. The full local replay was restored and independently verified at41migrations with12SQLfiles/371assertions. That replay remains the type-generation authority. Step003.4 may therefore proceed independently, and003.5 may verify local type parity, while same-version reconciliation remains BLOCKED. Neither step closes the staging done criterion or authorizes Plan004. The eventual Storage baseline is a maintainer preference; the root recommends preserving existing behavior and has requested that decision. A forward reconciliation migration requires its own reviewed scope.
 
 ### 4. Regenerate the whole artifact and type the entitlement client
 

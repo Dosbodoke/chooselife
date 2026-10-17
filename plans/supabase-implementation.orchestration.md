@@ -15,10 +15,10 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 
 ## Current task
 
-- Checkpoint: `003.3`, same-version staging comparison.
-- Status: Accepted003.2 and docs pushed at `47365e44257b7b3f1d9240f03b5075ca95190440`, remote SHA independently confirmed. Preparing Opus003.3 with root-bridged read-only staging captures.
-- Client request ID: `supabase-003-step2-unicode-resumed-20261017`.
-- T3 task ID: `node:delegated-task:command%3Amcp%3Abec09b2a-d031-46c4-917a-77f0a860d50a%3Adelegate-task%3Asupabase-003-step2-unicode-resumed-20261017`.
+- Checkpoint: `003.3` diagnostic notes correction review; preparing independent003.4.
+- Status: Opus003.3 returned STOPPED at `77bd0da`, with217 named differences. Parent verified real restored replay and comparison; fresh Sol confirmed STOP and requested documentation accuracy corrections. Root corrected plans-only notes and is obtaining a NEW fresh review. Staging reconciliation stays BLOCKED; independent003.4 is permitted by explicit plan refinement.
+- Client request ID: `supabase-003-step3-opus-r1-20261017`.
+- T3 task ID: `node:delegated-task:command%3Amcp%3Abec09b2a-d031-46c4-917a-77f0a860d50a%3Adelegate-task%3Asupabase-003-step3-opus-r1-20261017`.
 - Automatic task completion delivery is enabled. Await it without polling or duplicate work.
 - Bootstrap commit: `775f09fbefdc984657cf0994b2ffbd9bb40644c4`.
 - Accepted catalog source head: `0cb874fb60cc59fd01c76315b6026e9c5fda21c2`; accepted remote docs checkpoint `47365e44257b7b3f1d9240f03b5075ca95190440`.
@@ -33,7 +33,9 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - 002.4: ACCEPTED, head `f224e01`, fresh Sol ship and parent exact workflow checks passed. Plan 002 DONE locally; hosted CI unobserved.
 - 003.1: ACCEPTED, head `ff2bd8f`, fresh Sol ship. Parent prepared ignored framework declarations and all three consumer typechecks pass before database-type changes.
 - 003.2: ACCEPTED at `0cb874fb60cc59fd01c76315b6026e9c5fda21c2`, fresh Sol Unicode review SHIP. Parent and reviewer independent Unicode, malformed-input and225-test verification passed. Live connector execution remains due003.3.
-- 003.3–003.5: pending accepted predecessor checkpoint.
+- 003.3: DIAGNOSTIC COMPLETE, notes corrections awaiting review; reconciliation BLOCKED by B1 bucket settings/B2 schema ACL/B3 and other platform security provenance.
+- 003.4: independent clean-replay type work next after diagnostic notes review.
+- 003.5: pending003.4; cannot close staging parity or unblock004.
 - 004.1–004.5: pending Plans 002 and 003 acceptance.
 
 ## Continuation contract
@@ -101,6 +103,10 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - Fresh Sol Unicode review `/root/supabase_003_2_unicode_review`: SHIP, no material findings. Independently passed225tests,22 real-baseline round-trips across11wrappers/bothseparators and14 malformedframes. Previouschecker rejected8 correspondingconnector cases. Helper/offset handling judged simple enough. Root accepts003.2. SQL security evidence and accepted limitations remain unchanged; live connector execution due003.3. Notes arithmetic typo is documentation-only.
 
 - Root pushed accepted003.2 and docs as `47365e44257b7b3f1d9240f03b5075ca95190440` through existing SSH. Remote exact SHA verified. No PR created. For003.3 root bridged the already-authorized read-only Supabase connection: linked identity remains `festival-chooselife-stage`, healthy PG15.8.1.044. Its40 migrations exactly match the checked-in41-version prefix, lateststage20261014162921, latestlocal20261015013845. Executed the unchanged metadata-only catalogSELECT through the live connector and stored484197bytes privately at `/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-stage-catalog-x8n_53_a`. Accepted checker extracts actual connector response and compares0to its normalizedpayload. No hostedwrite, userrows, rawbodies or vaultread. This supplies worker access without asking for newcredentials. Opus still owns the actual same-version local comparison, difference investigation and restore/test evidence.
+
+- Root committed003.3 preparation docs as `09b44c2054103c51ec6b3d3059cb028b29182bbc`. Dispatched Opus5.5High task `node:delegated-task:command%3Amcp%3Abec09b2a-d031-46c4-917a-77f0a860d50a%3Adelegate-task%3Asupabase-003-step3-opus-r1-20261017`, request `supabase-003-step3-opus-r1-20261017`. Owns only checkpoint notes/private evidence/new verified-owned local stack. Full plan and actual hostedcapture paths/prefixevidence inlined. No source/SQL changes or remote writes. Named unexplained drift must be reported, not normalized. Restore full41migrations/seeds/lint/SQLsuite before handback, retain owneddescriptor ifhealthy, preserve developerstack. On completion root verifies and obtains a NEW freshSolreview. Awaitautomaticnotification, no duplicate task/polling.
+
+- Opus003.3 returned STOPPED at `77bd0da`, notes only. Actual40-version staging/local comparison exits1with217differences, categorizedwithoutallowlists. Fouradditional40vs41lines exactlymatchpendingwebbingmigration. Parent independently confirmed217/4differences, ownership, live41versioncatalog, full12files371assertionsPASS and developerstatepreservation. Root ran2authorizedreadonlydiagnostics: bucketcreationdates supportpre-existingbuckets; rolemembership confirmsservice_role→pgsodium_keyholder→pgsodium_keyiduser. FreshSol `/root/supabase_003_3_review` confirmsdiagnosticSTOP, requestsplans-onlyaccuracyfixes. Root corrected universalparitywording, causalversioninferences, unsupportedgrant-remediationrestriction androleaccessoverstatement; newfreshreviewpending. NoSQL/sourcechangeorhostedwrite. UserStoragebaselinepreferencequestionpending; independent003.4canproceedbyexplicitplanrefinement, while003.3/Plan004gatesremainBLOCKED. Newretainedownedstack `/private/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-verify-UCnOyZ`, project `chooselife-verify-fb3593e92268`, full41seededstate. Parentreport `/tmp/chooselife-parent-stage-review-e10oQc/report.json`.
 
 After 002.2 acceptance, commit the current advisor status documents and push the dedicated branch as requested. Checkpoint 002.3 is the next implementation step and must use the same worktree. Real replay and all later plan gates remain pending until their own verification and fresh review.
 
