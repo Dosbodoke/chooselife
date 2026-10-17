@@ -5,7 +5,9 @@ Worktree `/Users/juangsandrade/.t3/worktrees/chooselife/t3-f4bb91a0`, branch `t3
 | Commit | Meaning |
 | --- | --- |
 | `abd5a18` | Plan 002 accepted. Implementation base for Step 1 |
-| Commit that adds this file | Step 1: clean migration and compiler baseline, notes only |
+| `ff2bd8f` | Step 1: clean migration and compiler baseline, notes only |
+| `6481a03` | Parent acceptance of Step 1 and prepared compiler baseline. Base for Step 2 |
+| Commit that adds the catalog files | Step 2: catalog query, comparator, tests and `db:catalog:compare` |
 
 Commands ran under Node 24.18.0 from nvm (`export PATH="$HOME/.nvm/versions/node/v24.18.0/bin:$PATH"`), pnpm 11.10.0, repository Supabase CLI 2.121.0, Docker 29.8.2 and TypeScript 7.0.2 in all three consumer packages. `427007b` is an ancestor of `HEAD`.
 
@@ -208,6 +210,170 @@ The parent repeated the exact three compiler commands after preparation. Web, mo
 
 Root accepts checkpoint 003.1. The owned database is still retained for Step 2; source, SQL, config and generated database types remain unchanged.
 
+## Step 2: reusable catalog comparison
+
+Status: done locally, waiting for review. Added `supabase/verification/catalog.sql`, `scripts/check-database-catalog.mjs`, `scripts/check-database-catalog.test.mjs` and the root `db:catalog:compare` script. No migration, seed, SQL test, config, generated type, route, workflow, README, lockfile or dependency changed. `scripts/verify-database.mjs` is untouched; runner integration is Step 5 (checkpoint 003.5). It already copies `supabase/verification/` into the disposable project.
+
+Private evidence: `/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-003-2-private.zIo6uC` (mode 700). It holds the before/after Docker snapshots, every capture under `cap/`, the lint and pgTAP output, and the rollback fixture under `bin/`. The scan for `sb_secret_`, `sb_publishable_`, JWTs, `Bearer`, `decrypted_secret` and `net.http` found nothing in the captures.
+
+### Sources checked first
+
+- Supabase skill and Postgres best practices. The Supabase changelog's breaking changes since 2025 include tables no longer auto-exposed to the Data API (2026-04-28) and Realtime schema lock-down (2026-07-14). Both make default ACLs and managed-schema grants worth capturing. None changes the query interface.
+- Pinned CLI help: `db query [flags] [<sql>]` with `--local`, `--linked`, `--db-url`, `--file/-f`. `db reset` has `--local`, `--version`, `--last`, `--no-seed`.
+- Pinned CLI source at `v2.121.0` (`query.handler.ts`, `query.format.ts`). JSON output is a row array. Agent mode wraps it as `{boundary, rows, warning}` with an optional `advisory`. `--output-format stream-json` emits `{"type":"result","data":…,"timestamp":…}`. Go-style escaping turns `<` into `\u003c`. Local jsonb arrives parsed.
+- Supabase MCP `execute_sql` source: it returns `{result: string}`, where the text wraps `JSON.stringify(rows)` in `<untrusted-data-<uuid>>` tags on their own lines. The preamble sentence also names the tag. The comparator therefore matches only tags on their own line.
+
+All three CLI shapes were exercised live against the owned stack. The connector shape was exercised by wrapping a real capture in the documented format. No connector or cloud call happened in this checkpoint.
+
+### What the query captures
+
+`catalog.sql` is one `SELECT` returning one row with one jsonb column, `catalog`. Its only side effect is `set_config('search_path', '', true)` in a materialized first CTE. The final `SELECT` scans that row before evaluating anything that deparses SQL. Without it, `regclass`, `format_type`, `pg_get_expr`, index and constraint definitions print `public.` or not depending on the client's `search_path`. The CLI and the connector need not agree on that. Evidence: index IDs come out as `public.app_config_pkey`, and function identities as `…language_input public.language`.
+
+Sections, each an array of objects with a stable `id`:
+
+| Section | Facts |
+| --- | --- |
+| `extensions` | Name and schema. Versions live in `environment.extension_versions` |
+| `schemas` | Every non-system schema: owner, extension membership, comment, ACL, effective `USAGE`/`CREATE` |
+| `relations` | Tables, views, materialized and foreign tables, sequences. Kind, owner, persistence, options, RLS enabled/forced, replica identity and its index, partitioning, inheritance, view digest, comment, ACL, effective privileges. Columns are kept in `attnum` order with type, nullability, default, identity, generated, collation, comment, column ACL, and effective column privileges where a column ACL exists. Sequence definitions, never current values |
+| `constraints` | Table and domain constraints: type, definition, deferrability, validation, comment |
+| `indexes` | Definition (key order included), unique, primary, valid, constraint-backed, comment |
+| `types` | Enums with labels in `enumsortorder`, domains, composites with ordered attributes, ACL |
+| `functions` | Identity with ordered arguments, kind, owner, language, result, digest of the full argument list with defaults, body digest, definer flag, volatility, strict, leakproof, parallel, cost, rows, `proconfig`, comment, ACL, effective `EXECUTE` |
+| `policies` | Command, permissive, roles, `USING` and `WITH CHECK` digests, comment |
+| `triggers` | Function identity, enabled state, timing, level, events, constraint/deferral flags, digest of the full definition |
+| `rules`, `event_triggers` | Non-view rules on included relations, and database-owner event triggers |
+| `default_acls` | Rows for the database owner, plus any role's rows in `public` |
+| `managed_grants` | Grants whose grantor is the database owner on objects it does not own, such as the migration's `USAGE` on `cron` |
+| `publications`, `publication_tables` | Flags, owner, schema membership, member tables, column lists, row-filter digest |
+| `cron_jobs` | By name: schedule, active, database, user, command digest |
+| `storage_buckets` | By name: whether `id` equals the name, `public`, size limit, MIME types |
+
+ACL entries read `grantee:PRIVILEGE`, with `*` when grantable. `aclexplode` grantee 0 is `PUBLIC`. A null ACL is expanded through `acldefault`, so an implicit default and the same explicit grants compare equal. Effective privileges come from `has_*_privilege` for `anon`, `authenticated` and `service_role`, never for `PUBLIC`.
+
+`environment` holds the server version, the database owner (`app_owner`), `complete_visibility` (the capturing role is superuser or has `BYPASSRLS`), and extension versions. `counts` repeats every section's length.
+
+### Scope from ownership and dependencies
+
+The live inventory decided the rules. Extension-owned objects have `pg_depend` `deptype = 'e'`; `cron` and `net` are themselves extension-member schemas. Platform objects belong to `supabase_admin`, `supabase_auth_admin`, `supabase_storage_admin`, `supabase_realtime_admin` and `supabase_functions_admin`. The database owner (`pg_database.datdba`, `postgres`) runs migrations, and owns all 82 public functions and the public tables. Outside `public`, it owns only `supabase_migrations`. The `auth.users` trigger calls `public.handle_new_user()`, owned by `postgres`, while every platform trigger's function shares its table's platform owner.
+
+So the query keeps:
+
+- Every non-extension object in `public`, whatever its owner, with the owner recorded.
+- Objects anywhere else owned by the database owner. `gis` is an application schema created by a migration; it is listed and currently empty.
+- Policies on any non-extension table, since policies have no owner. Today none exist outside `public`. The two `cron` policies sit on extension-member tables.
+- Triggers on included tables, or calling a database-owner function. That keeps `auth.users.on_auth_user_created` and drops the ten storage, realtime and cron platform triggers.
+- Every non-system schema, so an extra schema appears by name.
+
+There is one name-based exclusion: `supabase_migrations`, the migration bookkeeping the plan excludes. No platform object-name ignore list exists.
+
+Counts on the clean replay: 11 extensions, 15 schemas, 47 relations (38 tables and 9 sequences), 180 constraints, 109 indexes, 21 types (all enums), 82 functions, 66 policies, 29 triggers, 0 rules, 0 event triggers, 9 default ACLs, 3 managed grants, 1 publication with 4 tables, 3 cron jobs and 4 buckets.
+
+### Comparator
+
+`node scripts/check-database-catalog.mjs <left> <right>` (or `pnpm db:catalog:compare`) uses only Node built-ins. It accepts:
+
+- the bare document
+- CLI rows, with jsonb parsed or as text
+- the agent envelope
+- stream-json, either one line or with other events alongside exactly one result
+- connector text, or connector `{result}`
+
+It fails closed with exit 2 on:
+
+- empty, malformed or truncated JSON
+- zero or multiple rows, or an extra column
+- a wrong `format`
+- a missing or unknown section
+- a count mismatch
+- an entry without an `id`, or a duplicate `id`
+- `complete_visibility` false
+- mismatched or repeated connector blocks, or stream-json without a result
+
+Exit 1 lists semantic differences by section, identity and field path. Exit 0 means the application semantics match.
+
+- Sections are matched by `id`, so their order never matters.
+- Columns and composite attributes are compared by name sequence first, then per name.
+- Enum labels and column lists are compared in order.
+- Index key order lives in the index definition, and argument order in the function identity.
+- Set fields ignore order: ACLs, policy roles, trigger events, options, `proconfig`, publication schemas, event trigger tags, inheritance and MIME types, plus every list under `effective`.
+- Only grant entries, roles, events, privileges, column names and identities are named. Digests, definitions, defaults, comments and config values are reported as `differs`.
+
+Platform patch differences, the server version and extension versions, are printed as environment metadata and do not change the exit code. A missing extension, a different schema placement or a different database owner is semantic.
+
+### Verification
+
+| Command | Result |
+| --- | --- |
+| `node --test scripts/check-database-catalog.test.mjs` | exit 0, 44/44 |
+| `node --test scripts/check-database-catalog.test.mjs scripts/verify-database.test.mjs` | exit 0, 83/83 (39 existing helper tests unchanged) |
+| `prettier --check scripts/*.mjs` (repository Prettier 3.8.1) | exit 0 after `--write` on the two new files |
+
+The tests use synthetic metadata only:
+
+- Each of these is detected, with an exact message: a lost policy, a changed `EXECUTE` grant (ACL and effective), an altered body digest, a missing `auth.users` trigger, a changed cron command digest, changed enum order, changed column order and column fields, changed index key order and changed function argument order.
+- Reversed sections, ACLs, roles, effective lists, MIME types and object key order compare equal.
+- Platform patch versions are environment metadata. A missing extension and an owner change are semantic.
+- Seven wrapper forms are accepted and 17 invalid inputs are rejected.
+- `main` returns exit 0, 1 and 2 as specified, and no digest or definition text appears in its output.
+
+Live checks on the owned stack. `assertOwnedWorkspace({root, projectId})` from `scripts/verify-database.mjs` passed before every query, reset and transaction. Each capture used `supabase --workdir "$DB_VERIFY_WORKDIR" --agent no db query --local --file "$PWD/supabase/verification/catalog.sql" --output json` with stdout redirected.
+
+| Check | Result |
+| --- | --- |
+| Two read-only captures of the retained stack | exit 0 each, byte-identical (sha256 `e00afe4c…6baf6`), compare exit 0 |
+| `--agent yes` envelope and `--output-format stream-json` captures of the same state | each compares equal to the JSON capture, exit 0 |
+| Real capture rewrapped as connector `{result}` text | compares equal, exit 0 |
+| `psql` as `supabase_admin` in the owned DB container, `begin; catalog; rollback` | equal to the CLI capture as `postgres`, exit 0 |
+| Rolled-back mutations, run as `supabase_admin` in one transaction | compare exit 1 with exactly 10 lines. Listed below |
+| CLI capture after that rollback | equal to the baseline, exit 0 |
+
+The ten rollback mutations and what each one reported:
+
+- Dropped the `choosen_course_entitlements` read policy: `policies …: only in left`.
+- Revoked `EXECUTE` on `register_festival_companion_token` from `authenticated`: the `acl` and `effective.authenticated` lines.
+- Granted `SELECT` on `choosen_course_entitlements` to `anon`: the `acl` and `effective.anon` lines.
+- Prefixed `slugify`'s body with one space: `body_digest: differs`.
+- Dropped `auth.users.on_auth_user_created`: `only in left`.
+- Ran `cron.alter_job` on `festival-schedule-reconcile-every-minute` with a trailing space: `command_digest: differs`.
+- Ran `alter type public.language add value … before 'en'`: `labels: differs`.
+- Added a column to `app_config`: `columns: … only in right: fixture_note`.
+
+### Verification-tool provenance
+
+Run against the owned stack after an ownership check:
+
+1. Reset it to all migrations with seeds: `db reset --local --yes`, exit 0, 03:13:37–03:14:04 UTC. The CLI recreated the owned DB container (new ID, same name and image), and its volumes stayed. Applied history then had 41 rows, `20250206202200`–`20261015013845`.
+2. Captured the catalog before lint or pgTAP. Extensions at that point: `pg_cron 1.6.4, pg_graphql 1.6.2, pg_net 0.20.4, pg_stat_statements 1.10, pgcrypto 1.3, pgjwt 0.2.0, plpgsql 1.0, postgis 3.3.2, supabase_vault 0.3.1, unaccent 1.1, uuid-ossp 1.1`. All of them come from migrations or the platform image; `unaccent` comes from `20261009120000_add_highline_slug.sql:5`.
+3. Ran the verifier's lint, `db lint --local --schema public --level error --fail-on error`: exit 0. Then captured.
+4. Ran the verifier's pgTAP, `test db --local <workdir>/supabase/tests`: exit 0, `Files=12, Tests=371`, `Result: PASS`. Then captured.
+
+Pre-tool vs after lint, after lint vs after pgTAP, and pre-tool vs after pgTAP all exit 0. The extension list is identical afterwards. The pre-tool capture also equals the capture of the stack Step 1 retained after its full verification. Lint and pgTAP leave nothing in the catalog, so no verification-only exclusion exists in the query. Step 5 should still capture before lint and pgTAP, so a future helper that leaks shows up as a difference instead of hiding.
+
+The same replay showed why buckets are keyed by name. `20250407023808_buckets.sql` inserts `gen_random_uuid()` IDs, and the `avatars` ID changed between the retained stack and the fresh reset. Comparing raw bucket IDs would make two clean replays differ.
+
+### Preservation and retained stack
+
+Developer stack, read the same way as Step 1:
+
+- The 12 `supabase_*_chooselife` inspect records (name, ID, `StartedAt`, `RestartCount`) are byte-identical before and after.
+- Volume and network names are identical.
+- The history dump is identical, sha256 `2b6d8c03…f027`, 41 rows.
+- The only `docker ps` difference is the owned DB container recreated by the reset.
+
+The owned stack `chooselife-verify-049997ac2680` is retained at the same path, ports and cleanup command recorded in Step 1. It has seven containers, two volumes and one network. Its state is again all 41 migrations with seeds, after lint and pgTAP, the same as Step 1 left it. Clean it up only through that cleanup command, after `assertOwnedWorkspace`.
+
+### Known limits
+
+- Grantors are omitted from ACL entries. A revoke on a platform object leaves no trace, so `managed_grants` sees only database-owner grants.
+- Outside `public`, an object owned by a role other than the database owner is not captured; only its schema is listed. For example, something created as `supabase_admin` in a managed schema. In `public`, every non-extension object is captured with its owner.
+- A platform-created policy on a managed table would be captured as if it were the application's. None exists locally; the stage comparison would show it by name.
+- Not captured: roles and memberships, casts, operators and operator classes, statistics objects, collations, text search configuration, foreign servers, Auth settings outside the database, vault secrets (by design) and stored objects.
+- Deparsed definitions come from the server. A different Postgres major on staging could print equivalent SQL differently; that would show as named differences, not be hidden. Formatting is not normalized beyond CRLF.
+- The query requires Postgres 15+ catalogs (`prattrs`, `pg_publication_namespace`), `cron.job` and `storage.buckets`. If one is missing it errors instead of returning a partial result.
+- A role that neither is superuser nor has `BYPASSRLS` would see RLS-filtered `cron.job` and `storage.buckets` rows. The comparator rejects such a capture rather than trusting it.
+- The live connector path and its size limits are untested, because this checkpoint has no cloud access. The compact payload is about 300 KB; the CLI's pretty JSON is about 500 KB.
+
 ## Deviations
 
 - Plan text says the companion RPCs are `register_festival_companion_installation` and `unregister_festival_companion_installation`. The migration `supabase/migrations/20260730140837_festival_live_companion.sql:65` defines `register_festival_companion_token(installation_id_input uuid, token_type_input text, activity_name_input text, token_input text, language_input language)`, and `:139` defines `unregister_festival_companion_installation(uuid)`. No `register_festival_companion_installation` exists in the migrations, the replay, or any tracked source. Step 4's `rg` identity check should use `register_festival_companion_token`. Otherwise it cannot find all five identities from a correct full regeneration. This is a plan correction, not a schema difference. Neither function is in the current tracked type artifact.
@@ -215,9 +381,15 @@ Root accepts checkpoint 003.1. The owned database is still retained for Step 2; 
 - The compiler baseline fails in web and mobile before any type change. Recorded above. Nothing was fixed.
 - Inventory queries passed SQL as the positional argument with `--output json` and `--agent no`. Step 3's `--file` form is unchanged and will be checked when `catalog.sql` exists.
 - The worktree was not based on the parent's current `HEAD` `b793adf` (`refactor(webbing): clear React Doctor issues in the catalog picker`). That commit is not an ancestor of this branch. The compiler baseline therefore reflects `abd5a18`, not the parent checkout.
+- Step 2 adds a `storage_buckets` section that the plan's list does not name. Bucket rows are platform configuration, not user data, and `public` controls anonymous reads. Buckets are keyed by name because a migration assigns random IDs (see Step 2). This is the only value normalization besides CRLF.
+- Step 2 treats extension presence and schema placement as application semantics and only extension versions as environment metadata. The plan lists all three as environment metadata; a missing extension would break application functions, so it is not reported as harmless.
+- Step 2 sets `search_path` to empty for the query's own transaction with `set_config`. That is the one statement-level side effect in an otherwise read-only query. Without it, identities and definitions depend on the client.
+- Step 2 found no verification-only extension or helper to exclude. The plan anticipated some. The pre-tool and post-tool captures are equal, so the query has no provenance exclusion.
 
 ## How the run ended
 
-Step 1 is done locally and waits for a fresh review. Prerequisites hold: CLI 2.121.0, 39/39 helper tests, and `pnpm db:verify --keep` passing with 41/41 migrations, a clean lint and 12 files with 371 assertions. The clean replay's applied versions equal the checked-in migrations exactly. `profile_isa_accounts` is absent from both the migrations and the replay. The public inventory is 38 tables and 82 functions. The compiler baseline is web exit 1 (1 diagnostic), mobile exit 1 (7) and UI exit 0. The developer `chooselife` stack is unchanged. The owned stack `chooselife-verify-049997ac2680` is retained at `/private/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-verify-QD2JDJ` for the next steps.
+Step 1 is accepted. Prerequisites held: CLI 2.121.0, 39/39 helper tests, and `pnpm db:verify --keep` passing with 41/41 migrations, a clean lint and 12 files with 371 assertions. The clean replay matches the checked-in migrations exactly. It has 38 public tables and 82 public functions, and no `profile_isa_accounts`. The raw compiler baseline in a fresh worktree was web exit 1, mobile exit 1 and UI exit 0, with eight diagnostics from missing framework declarations. After the parent prepared the ignored Next and Expo declarations, all three typechecks exit 0 with no diagnostics. That prepared baseline is the one later steps compare against.
 
-Steps 2–5 have not started. No catalog SQL, comparator, type regeneration, route change, workflow change or hosted inspection happened. Plan 003 is not done.
+Step 2 is done locally and waits for review. `supabase/verification/catalog.sql` returns one nonsecret JSON catalog. `pnpm db:catalog:compare` compares two captures and exits 0, 1 or 2. 44 new tests pass beside the 39 existing ones. Two real captures compare equal. Live rolled-back mutations are each detected by identity. Lint and pgTAP leave no catalog residue. The developer `chooselife` stack is unchanged. The owned stack `chooselife-verify-049997ac2680` is retained at `/private/var/folders/4d/px4017t53z7dx66qvy4fcvx00000gn/T/chooselife-verify-QD2JDJ`, in full migrations-plus-seeds state, for Step 3.
+
+Steps 3–5 have not started. No staging inspection, versioned reset, type regeneration, route change, runner integration, workflow or README change happened. Plan 003 is not done.
