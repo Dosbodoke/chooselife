@@ -15,8 +15,8 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 
 ## Current task
 
-- Checkpoint: `003.2`, BLOCKED after the one bounded opaque-payload parser recovery.
-- Status: Recovery commit `1a09e07170d6fe8f13981e482b019f47cd49f4bf` still fails valid U+2028/U+2029 payloads. Fresh Sol FIX-FIRST and parent reproduction agree. Both the two-round limit and revised recovery allowance are exhausted; execution stopped with no active child task.
+- Checkpoint: `003.2`, resumed by the user's October 17 instruction to proceed.
+- Status: New bounded Unicode physical-line fix ready for Opus dispatch at `70041fb`; a fresh Sol review remains required. Earlier stop was honored and is now superseded by the explicit resume.
 - Client request ID: `supabase-003-step2-parser-recovery-v2-20261017`.
 - T3 task ID: `node:delegated-task:command%3Amcp%3Aecda434f-2a44-4533-9586-89b5872b8c2e%3Adelegate-task%3Asupabase-003-step2-parser-recovery-v2-20261017`.
 - Last task is complete. No active execution or watcher is pending.
@@ -32,7 +32,7 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - 002.3: ACCEPTED, head `257657d`, fresh Sol ship and all parent real gates passed.
 - 002.4: ACCEPTED, head `f224e01`, fresh Sol ship and parent exact workflow checks passed. Plan 002 DONE locally; hosted CI unobserved.
 - 003.1: ACCEPTED, head `ff2bd8f`, fresh Sol ship. Parent prepared ignored framework declarations and all three consumer typechecks pass before database-type changes.
-- 003.2: BLOCKED after recovery `1a09e07`; Unicode separators in valid payload strings still create false connector boundaries. No further correction loop started.
+- 003.2: RESUMED by user; Unicode physical-line fix then fresh review. Unaccepted catalog remains local.
 - 003.3–003.5: pending accepted predecessor checkpoint.
 - 004.1–004.5: pending Plans 002 and 003 acceptance.
 
@@ -93,6 +93,7 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - Recovery allowance exhausted. Root leaves003.2/Plan003 BLOCKED and stops further execution rather than starting another correction loop. All implementation/evidence preserved locally, no unaccepted checkpoint pushed. Remote branch remains accepted head `6481a036524a872e17a8aedd94709654def0f5e2`.
 - Root cleaned only owned baseline stack `chooselife-verify-049997ac2680` and its temp root through the ownership-validated helper. All12 developer container IDs/start/restarts and history remained byte-identical. The old retained descriptor is no longer live; future verification must create a fresh owned project.
 - Metadata-only parent preflight confirmed existing connected Supabase app access to `festival-chooselife-stage`, reference `azhdfsfdfyvrvcjkkgbq`, healthy Postgres15.8.1.044. No staging catalog/migration comparison or hosted write occurred. If work resumes under a new parser plan, root can use `mcp__codex_apps__supabase_get_project/execute_sql/list_migrations` for authorized read-only staging work; a missing worker-provider connector is not proof that root credentials are missing.
+- User October17: "proceed. is the PR already open?" Root verified `gh pr list --head t3/supabase-schema-workflow --state open` returns an empty list. No PR exists. The explicit instruction resumes the stopped implementation; root refines the task to physical LF/CRLF framing and Unicode payload regressions, preserving all previous contracts. No PR creation was requested in that question.
 
 After 002.2 acceptance, commit the current advisor status documents and push the dedicated branch as requested. Checkpoint 002.3 is the next implementation step and must use the same worktree. Real replay and all later plan gates remain pending until their own verification and fresh review.
 

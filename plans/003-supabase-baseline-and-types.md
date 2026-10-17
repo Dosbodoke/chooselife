@@ -10,7 +10,7 @@
 - Depends on: Plan 002, isolated verification and pinned tooling
 - Category: migration, correctness, dx
 - Planned at: commit `427007b`, October 16, 2026
-- Execution status: BLOCKED at 003.2 after the bounded parser recovery. Valid U+2028/U+2029 payload strings are still rejected by connector parsing. Later steps remain pending acceptance.
+- Execution status: RESUMED at 003.2 by the user's October 17 instruction to proceed. The next bounded task fixes physical connector framing for valid U+2028/U+2029 payloads, then obtains a new fresh review. Later steps remain pending acceptance.
 
 ## Outcome and decisions
 
@@ -128,6 +128,8 @@ Wrapper contract refined after the October 17 review: JSON payload strings are o
 The original checkpoint exhausted two correction rounds and is blocked on the reproduced regression: setting a schema comment to `Documentation example: <untrusted-data-deadbeef` is valid in bare JSON but rejected in connector and stream wrappers. One bounded parser recovery under this refined contract may change only the comparator, its tests and notes. It must prove valid payload prefixes round-trip across wrappers while preserving every prior rejection case, then receive a new fresh Sol review. If that recovery fails, retain BLOCKED status and report the concrete remaining issue instead of starting another correction loop.
 
 Recovery outcome: the ASCII case is fixed, but the final fresh review reproduced another valid JSON case. Raw U+2028 or U+2029 inside a payload string makes JavaScript multiline regex anchors recognize extra connector delimiter lines. Bare JSON accepts the same payload. The next parser proposal must distinguish physical connector framing from every character allowed in JSON strings, including these Unicode separators. The single recovery allowance is exhausted; no further implementation loop was started.
+
+The user subsequently instructed the agent to proceed on October 17, explicitly resuming this blocked checkpoint. One new bounded task may correct physical LF/CRLF framing without interpreting U+2028/U+2029 inside JSON strings as protocol boundaries. Keep the prior opaque-payload, strict-input and security contracts. Add the two Unicode regressions across supported wrappers and verify LF/CRLF delimiters and malformed outer tags. Obtain a fresh Sol review before acceptance or pushing. This is a resumed task under new user authorization, not an extension of the exhausted prior loop.
 
 **Verify:** `node --test scripts/check-database-catalog.test.mjs` passes. Fixture tests must detect a lost RLS policy, changed EXECUTE grant, altered function body, missing auth trigger, changed cron command and changed enum order; reordered unordered object arrays must compare equal. Include connector-wrapper and invalid-input cases, valid tag-like text inside payload strings across supported wrappers, and malformed tag prefixes outside the connector payload. Test fixtures contain synthetic metadata only.
 
