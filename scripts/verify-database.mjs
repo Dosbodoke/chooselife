@@ -640,10 +640,14 @@ export async function main(argv) {
     await assertOwnedWorkspace(workspace);
     started = true;
     await step("Starting disposable stack", async () => {
-      // start prints keys, so its output is only shown redacted on failure.
-      await runCliStep(workspace, "supabase start (is Docker running?)", [
-        "start",
-      ]);
+      // start prints keys and the JWT secret to stdout, including table cells
+      // redact cannot recognize, so a failure shows only stderr.
+      const result = await runCli(workspace, ["start"]);
+      if (result.code !== 0)
+        throw new VerifyError(
+          `supabase start (is Docker running?) failed (${result.signal ?? `exit ${result.code}`}).`,
+          result.stderr,
+        );
     });
     checkInterrupt();
     await assertOwnedWorkspace(workspace);

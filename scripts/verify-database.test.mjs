@@ -761,6 +761,71 @@ test("verification failures exit 1 and still remove the owned project", async (t
   }
 });
 
+test("a start failure prints its stderr but none of its credential stdout", async () => {
+  const sentinels = [
+    "SENTINEL_UNICODE_PUBLISHABLE",
+    "SENTINEL_UNICODE_SECRET",
+    "SENTINEL_UNICODE_JWT",
+    "SENTINEL_S3_ACCESS",
+    "SENTINEL_S3_SECRET",
+    "SENTINEL_ASCII_SECRET",
+    "SENTINEL_ASCII_JWT",
+    "SENTINEL_PLAIN",
+    "SENTINEL_STDERR",
+  ];
+  const stdout = [
+    "╭───────────────────────────────────────────╮",
+    "│ 🔑 Authentication Keys                    │",
+    "├─────────────┬─────────────────────────────┤",
+    "│ Publishable │ SENTINEL_UNICODE_PUBLISHABLE │",
+    "│ Secret      │ SENTINEL_UNICODE_SECRET      │",
+    "│ JWT Secret  │ SENTINEL_UNICODE_JWT         │",
+    "╰─────────────┴─────────────────────────────╯",
+    "┌────────────┬────────────────────┐",
+    "│ Access Key │ SENTINEL_S3_ACCESS │",
+    "│ Secret Key │ SENTINEL_S3_SECRET │",
+    "└────────────┴────────────────────┘",
+    "+------------+-----------------------+",
+    "| Secret Key | SENTINEL_ASCII_SECRET |",
+    "| JWT Secret | SENTINEL_ASCII_JWT    |",
+    "+------------+-----------------------+",
+    "SENTINEL_PLAIN",
+    "",
+  ].join("\n");
+  // The table cells are the gap: redact alone would let them through.
+  assert.ok(sentinels.some((value) => redact(stdout).includes(value)));
+
+  const fixture = await makeFixture();
+  await setBehavior(fixture, {
+    start: {
+      code: 1,
+      stdout,
+      stderr:
+        "failed to start docker container: Ports are not available: exposing port TCP 127.0.0.1:54321\nJWT secret: SENTINEL_STDERR\n",
+    },
+  });
+  const result = await runVerifier(fixture, []);
+  assert.equal(result.code, 1, result.output);
+  assert.match(
+    result.stderr,
+    /supabase start \(is Docker running\?\) failed \(exit 1\)/,
+  );
+  assert.match(result.stderr, /Ports are not available: exposing port TCP/);
+  for (const value of sentinels)
+    assert.ok(!result.output.includes(value), value);
+  assert.deepEqual(
+    (await readCalls(fixture)).map((call) => call.command),
+    ["start", "stop"],
+  );
+  assert.deepEqual(await tmpEntries(), []);
+  for (const kept of [
+    "supabase/config.toml",
+    "supabase/migrations/20250101000000_init.sql",
+    "supabase/.temp/project-ref",
+  ])
+    await fs.access(path.join(fixture, kept));
+});
+
 test("a failed cleanup keeps the primary exit code and prints recovery steps", async (t) => {
   for (const [name, behavior] of [
     [

@@ -204,10 +204,10 @@ All read from `node_modules/.bin/supabase --workdir . <command> --help` on 2.121
    - `db lint --local --schema public --level error --fail-on error`
    - `test db --local <root>/supabase/tests`, run from cwd `<root>`. Requires `Result: PASS`, `Files=` equal to the discovered count and `Tests=` above zero. A missing or unparseable summary fails even when the CLI exits 0
    - cleanup: `stop --project-id <id> --no-backup`
-   
+
    No call uses `--all`, `--linked`, `--db-url` or `--project-ref`.
 6. Environment. Child processes get an allowlist: `PATH`, `HOME`, `USER`, `LOGNAME`, `SHELL`, `LANG`, `LC_*`, `TZ`, `CI`, temp dirs, `XDG_*` dirs, `DOCKER_HOST`, `DOCKER_CONTEXT`, `DOCKER_CONFIG`, `DOCKER_CERT_PATH`, `DOCKER_TLS_VERIFY`, `DOCKER_API_VERSION`, CA bundle and proxy variables, and Windows system paths. `NO_COLOR=1` is added. Everything else is dropped, including all `SUPABASE_*` tokens and passwords, `SUPABASE_CLI_BINARY_OVERRIDE`, `OPENAI_API_KEY`, `S3_*`, cloud keys and `DOCKER_PASSWORD`.
-7. Output. Successful runs print only phase names and counts. `start` output is never printed on success. On failure the last 40 lines of that command's output are printed after `redact`, which masks JWTs, `sb_secret_`/`sb_publishable_` keys, URL passwords and `…key|secret|password|token: value` lines.
+7. Output. Successful runs print only phase names and counts. `start` stdout is never printed, on success or failure. A failed `start` prints only the last 40 lines of its stderr. Other failed commands print the last 40 lines of stderr plus stdout. Both pass through `redact`, which masks JWTs, `sb_secret_`/`sb_publishable_` keys, URL passwords and `…key|secret|password|token: value` lines.
 8. Cleanup. Without `--keep`, cleanup always runs, including after failures and SIGINT/SIGTERM. It checks ownership, stops the owned project if `start` was attempted, then removes only the owned root. A failed `stop` leaves the root in place, keeps a nonzero primary exit code (or sets 1 after a pass), and prints `Recover with: <command>`. The first signal kills the running CLI call unless cleanup is already running. Repeated signals are ignored so cleanup can finish.
 9. `--keep` skips cleanup, including after a failure, and prints the descriptor below.
 10. `--check-types` runs `bash supabase-gen-types.sh --check --workdir <owned root>` after the tests, against the tracked artifact. Exit 1 fails the run with "This drift is known until Plan 003". Default runs never call it.
@@ -279,6 +279,26 @@ Non-mutating probe against the real tree. `prepareWorkspace()` reported 41 migra
 
 Not covered yet, all for Step 3: whether 2.121.0 starts a stack from the rewritten config, whether `--yes` is needed or accepted by `db reset`, the real `db query` JSON and pg_prove summary, mount behavior of temp paths under Docker or OrbStack, unresolved `env()` references in the copied config with the filtered environment, and port collisions.
 
+### Revision 1: start failure output
+
+Sol round 1 found that a failed `start` printed its stdout through `redact`. The pinned CLI's `status-pretty.ts` prints S3 Access Key and Secret Key as plain table values, and `redact` only matches `label: value` or `label=value`, so a JWT secret or key in a Unicode or ASCII table cell survived.
+
+Fix, local to the `start` step in `main`: it calls `runCli` directly and, on a nonzero exit, throws with stderr only. `runCliStep`, `redact` and every other step are unchanged.
+
+New test `a start failure prints its stderr but none of its credential stdout`. The fake `start` exits 1 with stdout holding synthetic sentinels in Unicode box tables (keys, JWT secret, S3 Access Key and Secret Key), an ASCII table and a bare line, and stderr holding a port error plus a `JWT secret:` line. The test first asserts that `redact(stdout)` alone still leaks a sentinel, so it exercises the gap. It then requires exit 1, the `supabase start (is Docker running?) failed (exit 1)` message, the port error from stderr, no sentinel anywhere in stdout or stderr, exactly `start` then `stop`, an empty temp dir, and the fixture's `config.toml`, migration and `.temp/project-ref` still present.
+
+Base `2c2ace6`. Node 24.18.0 from `/Users/juangsandrade/.nvm/versions/node/v24.18.0/bin`.
+
+| Command | Result |
+| --- | --- |
+| `node --test scripts/verify-database.test.mjs` | 39 tests, 39 pass, about 3.7 s |
+| Mutation: start error output set back to `result.stderr + result.stdout` in a scratch edit, then restored | 38 pass, 1 fail: the new test. Restored file matches the fix |
+| `node_modules/.bin/prettier --check scripts/verify-database.mjs scripts/verify-database.test.mjs` (3.8.1) | clean |
+| `git diff --check fd8b6cb..HEAD` after commit | clean. Also removed the trailing whitespace on the blank line after the `cleanup:` command in section 5 |
+| `git diff --exit-code 2c2ace6 -- supabase packages pnpm-lock.yaml supabase-gen-types.sh package.json next expo .github plans/README.md` | exit 0 |
+
+No container, Docker command or real CLI call ran for this revision.
+
 ## Deviations
 
 - `[functions.*]` sections are dropped from the disposable config. They point at `functions/`, which is not a verification input, and Edge runtime is disabled in the copy. The root config is unchanged.
@@ -296,8 +316,8 @@ Not covered yet, all for Step 3: whether 2.121.0 starts a stack from the rewritt
 
 ## How the run ended
 
-Step 1 and revisions 1 and 2 were accepted by the third Sol review. Step 2 is implemented and verified with helper tests, CLI help and one non-mutating config probe. It waits for review. Steps 3 and 4 have not started, and no real replay has run.
+Step 1 and revisions 1 and 2 were accepted by the third Sol review. Step 2 is implemented and verified with helper tests, CLI help and one non-mutating config probe. Revision 1 stops printing `start` stdout on failure. It waits for review. Steps 3 and 4 have not started, and no real replay has run.
 
 Remaining risk. The destination check runs before generation. If another process turns the destination into a directory during generation, `mv` would still nest the file inside it. Portable `mv` has no no-target-directory flag on both macOS and Linux, and the artifact path is not shared with other writers. The second review accepted this as residual risk. Revision 2 fixed the unsearchable-parent case.
 
-Step 2 remaining risk. The allocation sockets close before `start` binds the ports, so another process can take one in between. `start` then fails and cleanup removes only the owned project. The verifier does not retry automatically. The plan allows one manual retry with a new workspace. `redact` is pattern-based defense in depth. Successful runs never print `start` or status output at all.
+Step 2 remaining risk. The allocation sockets close before `start` binds the ports, so another process can take one in between. `start` then fails and cleanup removes only the owned project. The verifier does not retry automatically. The plan allows one manual retry with a new workspace. `redact` is pattern-based defense in depth and misses table-formatted values, so `start` stdout is never printed, and successful runs print no status output at all. Stderr and the stdout of later commands still rely on `redact`. A failing `db reset`, `db lint` or `test db` is not expected to print keys, but Step 3 has not observed their real failure output yet.
