@@ -1100,3 +1100,8 @@ The first fresh Sol review, `/root/supabase_003_5_review`, failed on provider us
 ### State left
 
 003.5 is not accepted. This commit is local on `t3/supabase-schema-workflow`, with no push or PR. Plan 003 is not done: staging reconciliation stays BLOCKED on B2 and B3, and Plan 004 remains gated.
+
+
+## Parent acceptance of003.5 local implementation
+
+Root accepts003.5 at `275f23d`, including source49b4678, after NEWfresh GPT-6.1-Sol High `/root/supabase_003_5_review_retry` returned SHIP with no material findings. The prior usage-limited reviewer supplied no verdict and was not counted as approval. Parent independently passed238tooling tests,3consumer typechecks,17web/11mobile tests, strictYAML/39path/config checks and hostedREADMEbyte preservation. The fresh real owned gate completed66.879seconds:41versions,17sections/787objects,371SQLassertions and fulltypeparity0. Scratchdrift correctly exits1withoutwrites. Developer state is unchanged and all owned resources were removed. Report `/tmp/chooselife-parent-0035-real-FKUMVk/report.json`. No hosted CI or cold-start30minute budget is claimed verified. All local Plan003capabilities are complete, but hostedB2/B3reconciliation remains unresolved. B1legacy bucket configuration is outside target under the explicit R2 decision; the general checker and historical captures remain unchanged. A separate planning assessment may refine local Plan004 prerequisites; this acceptance itself approves no hosted security exception.

@@ -16,13 +16,13 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 ## Current task
 
 - Checkpoint: independent `003.5`, blocking local type parity and reusable catalog capture.
-- Status: Opus003.5 completed at `49b467873612a7624290e11068dcaf0ec229422c`. Parent238tests/3typechecks/web17/mobile11 and real66.9second41migration/catalog/371SQL/type gate pass. First fresh Sol reviewer hit a provider usage limit before any verdict, not approval. User clarified R2 migration: B1 legacy buckets are outside target. Preparing Opus docs correction and a NEW fresh Sol review; B2/B3 remain unresolved.
-- Client request ID: `supabase-003-step5-opus-r1-20261017`.
-- T3 task ID: `node:delegated-task:command%3Amcp%3Abec09b2a-d031-46c4-917a-77f0a860d50a%3Adelegate-task%3Asupabase-003-step5-opus-r1-20261017`.
+- Status:003.5 ACCEPTED at `275f23d` including49b4678source, fresh Sol retry SHIP/no material findings. All local gates pass. Publishing accepted checkpoint; a read-only planning review is assessing bounded local004independence while hosted B2/B3 remain unresolved.
+- Client request ID: `supabase-003-step5-r2-docs-opus-r1-20261017`.
+- T3 task ID: `node:delegated-task:command%3Amcp%3A5baeb4a5-e9d3-4b94-a382-c98da762133e%3Adelegate-task%3Asupabase-003-step5-r2-docs-opus-r1-20261017`.
 - Automatic task completion delivery is enabled. Await it without polling or duplicate work.
 - Bootstrap commit: `775f09fbefdc984657cf0994b2ffbd9bb40644c4`.
 - Accepted catalog source head: `0cb874fb60cc59fd01c76315b6026e9c5fda21c2`; accepted remote docs checkpoint `47365e44257b7b3f1d9240f03b5075ca95190440`.
-- Latest accepted reviewer: `/root/supabase_003_4_review`, GPT-6.1-Sol High. SHIP003.4, no material findings; staging parity and security acceptance remain separate unresolved gates.
+- Latest accepted reviewer: `/root/supabase_003_5_review_retry`, GPT-6.1-Sol High. SHIP003.5, no material findings; no hosted parity or security exception accepted.
 - Predecessor evidence: Node24.18.0, frozen install and 39 helper tests pass; real replay passes 41 migrations and 12 files/371 assertions, including independent root runs. Generator negative cases and failure cleanup pass. Existing developer database and protected inputs remain unchanged.
 
 ## Checkpoint status
@@ -35,7 +35,7 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 - 003.2: ACCEPTED at `0cb874fb60cc59fd01c76315b6026e9c5fda21c2`, fresh Sol Unicode review SHIP. Parent and reviewer independent Unicode, malformed-input and225-test verification passed. Live connector execution remains due003.3.
 - 003.3: DIAGNOSTIC ACCEPTED at `c2b1ff11360e00034203177ebd46a19fa26410be`, fresh Sol round2 SHIP. Reconciliation remains BLOCKED by B2 schema ACL and B3/other platform security provenance. User R2 decision retires B1 legacy bucket configuration from target.
 - 003.4: ACCEPTED at `f1cc1cd`, fresh Sol SHIP, canonical generator/trigger override/whole types/typed route all verified.
-- 003.5: RUNNING independent local CI/catalog integration; cannot close staging parity or unblock004.
+- 003.5: ACCEPTED at `275f23d` including49b4678source. All local replay/catalog/type/CI config gates complete; hosted parity still unresolved.
 - 004.1–004.5: pending Plans 002 and 003 acceptance.
 
 ## Continuation contract
@@ -122,6 +122,10 @@ User authorization, October 16, 2026: implement Plans 002–004 in one dedicated
 
 - Opus003.5 completed at `49b467873612a7624290e11068dcaf0ec229422c`, five scopedfiles, no push. Parent inspectedfullsource/test/docsdiff; independentlypassed238tests,3typechecks0,web17/mobile11. Realownedkeep--check-types replay completed66.879seconds with41exactversions,valid17section/787objectcatalogbeforelint,371SQLassertionsPASS,typeparity0; freshcatalogequalacceptedfull, scratchdrift1withnoproductionwrites,developerstatepreservedandownedrootremoved. Evidence `/tmp/chooselife-parent-0035-real-FKUMVk/report.json`. Noownedstackleft. FirstfreshSol `/root/supabase_003_5_review` hitproviderusagebeforeverdict; NOTapproval. Workerfirst31.5minrunvs62secsecondcauseunknown,coldCI30mintimeoutunobserved; hostedCInotrun.
 - UserOctober17 answeredStoragepreference: "No need for staging rules. I currently migrated to R2 storage." RootrecordsR2active;B1legacybucketIDs/existence/MIMEoutside reconciliation/desiredstate target. No hostedcleanupornewbucketmigration. Existing17sectionchecker/raw217differencesremainhistoricalevidence;no broadsecurityignoreapproved. B2/B3/othersecurityprovenancestillunresolved. Opus003.5README/notesmustreflectdecisionbeforefreshreview/publication.
+
+- RootcommitteduserR2scopeplans at `4d60d1a8528ada69e5f6fe8098c8f1948dfa02e9`, no sourcemutation/push. Opusdocumentationtask `node:delegated-task:command%3Amcp%3A5baeb4a5-e9d3-4b94-a382-c98da762133e%3Adelegate-task%3Asupabase-003-step5-r2-docs-opus-r1-20261017`, request `supabase-003-step5-r2-docs-opus-r1-20261017`, ownsREADMEaboveDatabaseSetupandnotesonly. RecordB1retiredtarget/R2active,retainB2/B3block/historical217evidence/nohostedcleanup. Sourceandartifacthashesunchanged;fullDBrerunnotneededfordocsonly. OncompletionverifydiffthenNEWfreshGPTSolreviewofentire003.5; priorreviewusagefailureisNOTapproval. Noownedstacksleft; parentrealrunreportexistsandcleanupconfirmed.
+
+- OpusR2docs completed at `275f23d`, two scopedfilesonly; sourceunchanged. Parentdiff/whitespace/protectedREADMEchecksPASS. NEWfreshSol `/root/supabase_003_5_review_retry` SHIPnomaterialfindingsfor275f23dincluding49b4678source, independently238tests/YAML39paths/format/scopeandreadparent66.879secreport. Rootaccepts003.5LOCALimplementation. HostedCI/30mincoldstartunverified, no hostedparity/securityexceptionaccepted. Separatefreshread-onlyplanningadvisor `/root/supabase_parity_next_step_advice` assessingwhether004localauthoringcanproceedfromcompleteacceptedlocalcontractswhile B2/B3hostedreconciliationremainsseparate; no sourcechangeor004dispatchyet.
 
 After 002.2 acceptance, commit the current advisor status documents and push the dedicated branch as requested. Checkpoint 002.3 is the next implementation step and must use the same worktree. Real replay and all later plan gates remain pending until their own verification and fresh review.
 
