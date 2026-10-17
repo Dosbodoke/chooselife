@@ -1,6 +1,6 @@
 # SlackData backup mirror
 
-`sync.py` copies SlackData's daily backup ([emilebragard/slackdata-data](https://github.com/emilebragard/slackdata-data)) into Choose Life's R2 bucket under `slackdata/`. It publishes an index keyed by webbing ID so the mobile picker can show the right product photo. Emile, the backup's maintainer, invited us to pull its media and data. The plan is [plans/005-slackdata-backup-sync.md](../../plans/005-slackdata-backup-sync.md).
+`sync.py` copies SlackData's daily backup ([emilebragard/slackdata-data](https://github.com/emilebragard/slackdata-data)) into Choose Life's R2 bucket under `slackdata/`. It publishes an index keyed by webbing ID so the mobile picker can show the right product photo. Emile, the backup's maintainer, invited us to pull its media and data.
 
 It needs Python 3.9+ (standard library only), git, and rclone. It never executes anything from the backup, writes to the database, or touches saved webbing snapshots.
 
