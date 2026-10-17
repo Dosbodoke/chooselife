@@ -10,7 +10,7 @@
 - Depends on: Plan 002, isolated verification and pinned tooling
 - Category: migration, correctness, dx
 - Planned at: commit `427007b`, October 16, 2026
-- Execution status: RECONCILIATION BLOCKED at003.3 with named same-version differences. Checkpoints003.1–003.2 are accepted. The diagnostic comparison and restored full replay passed independent verification; notes accuracy review is being finalized. Independent003.4 type work may continue from the full replay under the refinement below. Plan004 remains gated by reconciliation.
+- Execution status: RECONCILIATION BLOCKED at003.3 with named same-version differences. Checkpoints003.1–003.2 are accepted. The diagnostic report is accepted after parent verification and fresh Sol round2 SHIP at `c2b1ff1`; the restored full replay passes371SQLassertions. Independent003.4 type work may continue from the full replay under the refinement below. Plan004 remains gated by reconciliation.
 
 ## Outcome and decisions
 
