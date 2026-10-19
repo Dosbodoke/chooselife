@@ -30,7 +30,6 @@ const draft = (overrides: Partial<WebbingRegistrationInput> = {}): WebbingRegist
   tagName: 'Red line',
   note: '',
   strengthClass: null,
-  legacyModelId: null,
   catalogSnapshot: snapshot,
   ...overrides,
 });
@@ -86,7 +85,7 @@ describe('parseWebbingLength', () => {
 });
 
 describe('buildWebbingRegistrationRow', () => {
-  it('builds the catalog shape with a null legacy model', () => {
+  it('builds the catalog shape without a legacy model id', () => {
     const row = buildWebbingRegistrationRow(USER, draft({ strengthClass: 'B' }));
     expect(row).toEqual({
       user_id: USER,
@@ -97,21 +96,20 @@ describe('buildWebbingRegistrationRow', () => {
       tag_name: 'Red line',
       description: '',
       strength_class: 'B',
-      model: null,
       catalog_snapshot: snapshot,
     });
   });
 
-  it('builds the legacy and manual shapes', () => {
-    expect(
-      buildWebbingRegistrationRow(USER, draft({ catalogSnapshot: null, legacyModelId: '4' })),
-    ).toMatchObject({ model: 4, catalog_snapshot: null });
-    expect(
-      buildWebbingRegistrationRow(USER, draft({ catalogSnapshot: null, strengthClass: 'A' })),
-    ).toMatchObject({ model: null, catalog_snapshot: null, strength_class: 'A' });
+  it('builds the manual shape', () => {
+    const row = buildWebbingRegistrationRow(
+      USER,
+      draft({ catalogSnapshot: null, strengthClass: 'A' }),
+    );
+    expect(row).toMatchObject({ catalog_snapshot: null, strength_class: 'A' });
+    expect(row).not.toHaveProperty('model');
   });
 
-  it('rejects conflicting and invalid selections', () => {
+  it('rejects invalid selections', () => {
     const invalid = (input: WebbingRegistrationInput) => {
       try {
         buildWebbingRegistrationRow(USER, input);
@@ -120,9 +118,6 @@ describe('buildWebbingRegistrationRow', () => {
       }
       return false;
     };
-    expect(invalid(draft({ legacyModelId: 4 }))).toBe(true);
-    expect(invalid(draft({ catalogSnapshot: null, legacyModelId: '1.5' }))).toBe(true);
-    expect(invalid(draft({ catalogSnapshot: null, legacyModelId: -1 }))).toBe(true);
     expect(invalid(draft({ catalogSnapshot: { ...snapshot, sourceId: 0 } }))).toBe(true);
     expect(invalid(draft({ length: '20abc' }))).toBe(true);
     expect(invalid(draft({ tagName: '  ' }))).toBe(true);
@@ -241,6 +236,5 @@ describe('registerWebbing', () => {
       repository,
     });
     expect(repository.rows[0].strength_class).toBe('A');
-    expect(repository.rows[0].model).toBeNull();
   });
 });

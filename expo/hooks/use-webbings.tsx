@@ -7,8 +7,7 @@ import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
 
 // Create a temporary query builder instance JUST for type inference.
-const webbingSelectStatement = `*, 
-  model (*),
+const webbingSelectStatement = `*,
   rig_setup_webbing (
     id,
     setup_id,
@@ -137,7 +136,7 @@ export const useWebbing = (id: number) => {
 export const getWebbingName = (
   webbing: Omit<WebbingWithModel[number], 'rig_setup_webbing'> | null,
 ) => {
-  // Label, then saved SlackData name, then legacy model name.
+  // Label, then saved SlackData name, then frozen legacy model name.
   return (
     getWebbingDisplayName(webbing) ||
     i18next.t('context.rig-form.unknownWebbing')

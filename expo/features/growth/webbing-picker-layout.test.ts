@@ -140,7 +140,7 @@ describe('WebbingPickerSession', () => {
     s.filter('material:Nylon', true, 1);
     s.search('raed');
     advance(4_200);
-    s.select('catalog', 3, { key: 'strength', desc: true });
+    s.select(3, { key: 'strength', desc: true });
     s.close('dismissed');
     s.sort('width', false);
 

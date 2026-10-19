@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+import {
+  parseLegacyModelSnapshot,
+  type LegacyModelSnapshot,
+} from './legacy-model-snapshot';
+
 // ============================================================================
 // SlackData source constants
 // ============================================================================
@@ -253,30 +258,21 @@ export function isSafeExternalUrl(url: string | null | undefined): url is string
 // Resolved display
 // ============================================================================
 
-/** The legacy Choose Life `webbing_model` fields used for display. */
-export interface LegacyWebbingModelSpecs {
-  name: string;
-  material: string;
-  weave: string;
-  strength_class?: string | null;
-  recommended_lifetime_days?: number | null;
-  image_url?: string | null;
-}
-
 export interface WebbingSpecsInput {
   catalog_snapshot?: unknown;
-  model?: LegacyWebbingModelSpecs | null;
+  legacy_model_snapshot?: unknown;
   strength_class?: string | null;
 }
 
 export type ResolvedWebbingSpecs = {
   /**
    * `catalog`: a valid saved SlackData snapshot. `unsupported`: a snapshot is
-   * stored but this build cannot read it. `legacy`: the old Choose Life model.
+   * stored but this build cannot read it. `legacy`: the frozen details of a
+   * retired Choose Life model.
    */
   source: 'catalog' | 'unsupported' | 'legacy' | 'unknown';
   catalog: WebbingCatalogSnapshot | null;
-  legacyModel: LegacyWebbingModelSpecs | null;
+  legacyModel: LegacyModelSnapshot | null;
   modelName: string | null;
   materials: string[] | null;
   construction: string | null;
@@ -286,7 +282,7 @@ export type ResolvedWebbingSpecs = {
   personalStrengthClass: string | null;
   /** Only the legacy model ever carries a supported lifetime. */
   recommendedLifetimeDays: number | null;
-  legacyImageUrl: string | null;
+  legacyImagePath: string | null;
 };
 
 export function resolveWebbingSpecs(webbing: WebbingSpecsInput): ResolvedWebbingSpecs {
@@ -310,27 +306,25 @@ export function resolveWebbingSpecs(webbing: WebbingSpecsInput): ResolvedWebbing
         : null,
       personalStrengthClass,
       recommendedLifetimeDays: null,
-      legacyImageUrl: null,
+      legacyImagePath: null,
     };
   }
 
-  const model = webbing.model ?? null;
-  if (model) {
-    const lifetime = model.recommended_lifetime_days;
+  const legacyModel = parseLegacyModelSnapshot(webbing.legacy_model_snapshot);
+  if (legacyModel) {
     return {
       source: 'legacy',
       catalog: null,
-      legacyModel: model,
-      modelName: model.name,
-      materials: model.material ? [model.material] : null,
-      construction: model.weave ?? null,
-      modelStrengthClass: model.strength_class
-        ? { value: model.strength_class, origin: 'legacy' }
+      legacyModel,
+      modelName: legacyModel.name,
+      materials: legacyModel.material ? [legacyModel.material] : null,
+      construction: legacyModel.weave ?? null,
+      modelStrengthClass: legacyModel.strengthClass
+        ? { value: legacyModel.strengthClass, origin: 'legacy' }
         : null,
       personalStrengthClass,
-      recommendedLifetimeDays:
-        typeof lifetime === 'number' && lifetime > 0 ? lifetime : null,
-      legacyImageUrl: model.image_url ?? null,
+      recommendedLifetimeDays: legacyModel.recommendedLifetimeDays ?? null,
+      legacyImagePath: legacyModel.imagePath ?? null,
     };
   }
 
@@ -344,7 +338,7 @@ export function resolveWebbingSpecs(webbing: WebbingSpecsInput): ResolvedWebbing
     modelStrengthClass: null,
     personalStrengthClass,
     recommendedLifetimeDays: null,
-    legacyImageUrl: null,
+    legacyImagePath: null,
   };
 }
 
@@ -368,5 +362,5 @@ export function getWebbingDisplayName(
   if (webbing.tag_name) return webbing.tag_name;
   const snapshot = parseWebbingCatalogSnapshot(webbing.catalog_snapshot);
   if (snapshot) return formatCatalogModelName(snapshot);
-  return webbing.model?.name || null;
+  return parseLegacyModelSnapshot(webbing.legacy_model_snapshot)?.name ?? null;
 }

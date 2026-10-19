@@ -204,18 +204,23 @@ describe('resolveWebbingSpecs', () => {
     isaClass: 'B',
   };
   const legacyModel = {
+    schemaVersion: 1,
+    source: 'chooselife',
+    modelId: 7,
     name: 'Brasileirinha',
     material: 'polyester',
     weave: 'flat',
-    strength_class: 'A',
-    recommended_lifetime_days: 720,
-    image_url: 'models/brasileirinha.png',
+    strengthClass: 'A',
+    recommendedLifetimeDays: 720,
+    imagePath: 'models/brasileirinha.png',
+    capturedAt: '2026-10-18T12:00:00+00:00',
+    capturedBy: 'backfill',
   };
 
   it('prefers a valid snapshot and never derives a lifetime from it', () => {
     const resolved = resolveWebbingSpecs({
       catalog_snapshot: snapshot,
-      model: null,
+      legacy_model_snapshot: null,
       strength_class: 'C',
     });
     expect(resolved.source).toBe('catalog');
@@ -223,13 +228,13 @@ describe('resolveWebbingSpecs', () => {
     expect(resolved.modelStrengthClass).toEqual({ value: 'B', origin: 'slackdata' });
     expect(resolved.personalStrengthClass).toBe('C');
     expect(resolved.recommendedLifetimeDays).toBeNull();
-    expect(resolved.legacyImageUrl).toBeNull();
+    expect(resolved.legacyImagePath).toBeNull();
   });
 
-  it('keeps legacy gear resolving from its local model unchanged', () => {
+  it('resolves legacy gear from its frozen model snapshot', () => {
     const resolved = resolveWebbingSpecs({
       catalog_snapshot: null,
-      model: legacyModel,
+      legacy_model_snapshot: legacyModel,
       strength_class: null,
     });
     expect(resolved.source).toBe('legacy');
@@ -237,7 +242,33 @@ describe('resolveWebbingSpecs', () => {
     expect(resolved.materials).toEqual(['polyester']);
     expect(resolved.modelStrengthClass).toEqual({ value: 'A', origin: 'legacy' });
     expect(resolved.recommendedLifetimeDays).toBe(720);
-    expect(resolved.legacyImageUrl).toBe('models/brasileirinha.png');
+    expect(resolved.legacyImagePath).toBe('models/brasileirinha.png');
+  });
+
+  it('reads a sparse legacy snapshot without inventing values', () => {
+    const resolved = resolveWebbingSpecs({
+      legacy_model_snapshot: {
+        schemaVersion: 1,
+        source: 'chooselife',
+        modelId: 8,
+        name: 'Sparse',
+        capturedAt: '2026-10-18T12:00:00+00:00',
+        capturedBy: 'legacy-client',
+      },
+    });
+    expect(resolved.source).toBe('legacy');
+    expect(resolved.materials).toBeNull();
+    expect(resolved.modelStrengthClass).toBeNull();
+    expect(resolved.recommendedLifetimeDays).toBeNull();
+    expect(resolved.legacyImagePath).toBeNull();
+  });
+
+  it('treats an unreadable legacy snapshot as unknown gear', () => {
+    const resolved = resolveWebbingSpecs({
+      legacy_model_snapshot: { ...legacyModel, schemaVersion: 2 },
+    });
+    expect(resolved.source).toBe('unknown');
+    expect(resolved.legacyModel).toBeNull();
   });
 
   it('reports manual gear as unknown, keeping personal strength separate', () => {
@@ -270,7 +301,14 @@ describe('getWebbingDisplayName', () => {
     expect(
       getWebbingDisplayName({
         tag_name: null,
-        model: { name: 'Legacy', material: 'nylon', weave: 'flat' },
+        legacy_model_snapshot: {
+          schemaVersion: 1,
+          source: 'chooselife',
+          modelId: 1,
+          name: 'Legacy',
+          capturedAt: '2026-10-18T12:00:00+00:00',
+          capturedBy: 'backfill',
+        },
       }),
     ).toBe('Legacy');
     expect(getWebbingDisplayName({ tag_name: null })).toBeNull();

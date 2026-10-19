@@ -1807,6 +1807,7 @@ export type Database = {
           id: number
           image_path: string | null
           left_loop: boolean
+          legacy_model_snapshot: Json | null
           length: number
           model: number | null
           registration_key: string | null
@@ -1823,6 +1824,7 @@ export type Database = {
           id?: never
           image_path?: string | null
           left_loop: boolean
+          legacy_model_snapshot?: Json | null
           length: number
           model?: number | null
           registration_key?: string | null
@@ -1839,6 +1841,7 @@ export type Database = {
           id?: never
           image_path?: string | null
           left_loop?: boolean
+          legacy_model_snapshot?: Json | null
           length?: number
           model?: number | null
           registration_key?: string | null
@@ -2638,6 +2641,10 @@ export type Database = {
       }
       unregister_push_token: { Args: { p_token: string }; Returns: boolean }
       validate_locale_keys: { Args: { json_data: Json }; Returns: boolean }
+      webbing_legacy_model_snapshot: {
+        Args: { captured_by: string; model_id: number }
+        Returns: Json
+      }
     }
     Enums: {
       blood_type_enum:

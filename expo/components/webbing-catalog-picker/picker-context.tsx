@@ -215,7 +215,7 @@ export function PickerProvider({
       clearFilters: () => setFilters([]),
       markExposed: () => session.current?.expose(items.length),
       selectCatalog: (snapshot, position) => {
-        session.current?.select('catalog', position, sort);
+        session.current?.select(position, sort);
         select({ source: 'catalog', snapshot });
       },
       chooseManual: () => {

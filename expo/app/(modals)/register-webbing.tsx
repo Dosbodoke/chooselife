@@ -522,7 +522,6 @@ function ModelField({ experiment }: { experiment: WebbingPickerExperiment }) {
     setValue('catalogSnapshot', selection?.snapshot ?? null, {
       shouldValidate: true,
     });
-    setValue('modelID', '', { shouldValidate: true });
     const suggestion = selection ? selectionName(selection) : null;
     const tagName = getValues('tagName');
     const nextLabel = nextAutoLabel(tagName, autoLabel.current, suggestion);

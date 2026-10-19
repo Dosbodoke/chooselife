@@ -1,6 +1,5 @@
 import type { Tables } from '@chooselife/database';
 
-export type WebbingModel = Tables<'webbing_model'>;
 export type Webbing = Tables<'webbing'>;
 export type RigSetup = Tables<'rig_setup'>;
 export type RigSetupWebbing = Tables<'rig_setup_webbing'>;
@@ -39,7 +38,6 @@ export interface WebbingRigHistory {
   webbingType: 'main' | 'backup';
 }
 
-export interface WebbingWithUsage extends Omit<Webbing, 'model'> {
-  model: WebbingModel | null;
+export interface WebbingWithUsage extends Webbing {
   usage: WebbingUsage | null;
 }

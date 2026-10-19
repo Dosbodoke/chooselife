@@ -35,22 +35,16 @@ export const webbingSchema = z.object({
 });
 
 /**
- * Extended schema for webbing registration. A draft selects at most one of a
- * SlackData snapshot or a legacy model; manual registrations have neither.
+ * Extended schema for webbing registration. A draft carries a SlackData
+ * snapshot, or none for manual entry.
  */
-export const registerWebbingSchema = webbingSchema
-  .extend({
-    modelID: z.string().optional(),
-    catalogSnapshot: webbingCatalogSnapshotSchema.nullable().optional(),
-    registrationKey: z.string().uuid().optional(),
-    note: z.string(),
-    tagName: z.string().trim().min(1, 'Tag name is required'),
-    strengthClass: z.enum(STRENGTH_CLASS_OPTIONS).optional(),
-  })
-  .refine((data) => !(data.modelID && data.catalogSnapshot), {
-    message: 'Choose either a catalog model or a previous model, not both',
-    path: ['modelID'],
-  });
+export const registerWebbingSchema = webbingSchema.extend({
+  catalogSnapshot: webbingCatalogSnapshotSchema.nullable().optional(),
+  registrationKey: z.string().uuid().optional(),
+  note: z.string(),
+  tagName: z.string().trim().min(1, 'Tag name is required'),
+  strengthClass: z.enum(STRENGTH_CLASS_OPTIONS).optional(),
+});
 
 export type WebbingFormData = z.infer<typeof webbingSchema>;
 export type RegisterWebbingFormData = z.infer<typeof registerWebbingSchema>;
@@ -126,7 +120,6 @@ export function useRegisterWebbing(
     resolver: zodResolver(registerWebbingSchema),
     mode: 'onChange',
     defaultValues: {
-      modelID: '',
       catalogSnapshot: null,
       registrationKey,
       note: '',
@@ -153,7 +146,6 @@ export function useRegisterWebbing(
           tagName: data.tagName,
           note: data.note,
           strengthClass: data.strengthClass,
-          legacyModelId: data.modelID || null,
           catalogSnapshot: data.catalogSnapshot ?? null,
         },
       });

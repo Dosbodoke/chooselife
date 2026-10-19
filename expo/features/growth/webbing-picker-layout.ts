@@ -72,7 +72,7 @@ export function webbingPickerExperimentProperties(
   };
 }
 
-export type PickerOutcome = 'catalog' | 'legacy' | 'manual' | 'dismissed';
+export type PickerOutcome = 'catalog' | 'manual' | 'dismissed';
 
 /**
  * One presentation of the picker sheet. Exposure is recorded when catalog
@@ -133,14 +133,10 @@ export class WebbingPickerSession {
     });
   }
 
-  /** `position` is 1-based within the list the user saw; 0 for legacy. */
-  select(
-    source: 'catalog' | 'legacy',
-    position: number,
-    sort: { key: string; desc: boolean },
-  ) {
+  /** `position` is 1-based within the list the user saw. */
+  select(position: number, sort: { key: string; desc: boolean }) {
     this.emit('webbing_picker_model_selected', {
-      model_source: source,
+      model_source: 'catalog',
       position,
       sort_key: sort.key,
       sort_direction: sort.desc ? 'desc' : 'asc',
@@ -148,7 +144,7 @@ export class WebbingPickerSession {
       searched: this.searched,
       seconds_since_exposure: this.seconds(this.exposedAt),
     });
-    this.close(source);
+    this.close('catalog');
   }
 
   chooseManual() {
@@ -177,7 +173,7 @@ export class WebbingPickerSession {
 export function captureWebbingRegistered(
   capture: Capture,
   experiment: WebbingPickerExperiment,
-  details: { modelSource: 'catalog' | 'legacy' | 'manual'; hasPhoto: boolean },
+  details: { modelSource: 'catalog' | 'manual'; hasPhoto: boolean },
 ) {
   capture('webbing_registered', {
     ...webbingPickerExperimentProperties(experiment),

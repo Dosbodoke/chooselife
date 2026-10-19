@@ -19,7 +19,6 @@ export interface WebbingRegistrationInput {
   tagName: string;
   note: string;
   strengthClass: TStrengthClass | null | undefined;
-  legacyModelId: number | string | null | undefined;
   catalogSnapshot: WebbingCatalogSnapshot | null | undefined;
 }
 
@@ -32,7 +31,6 @@ export interface WebbingRegistrationRow {
   tag_name: string;
   description: string;
   strength_class: TStrengthClass | null;
-  model: number | null;
   catalog_snapshot: WebbingCatalogSnapshot | null;
 }
 
@@ -90,26 +88,11 @@ export function buildWebbingRegistrationRow(
     throw invalid('Invalid registration key');
   }
 
-  let model: number | null = null;
-  if (
-    input.legacyModelId !== null &&
-    input.legacyModelId !== undefined &&
-    input.legacyModelId !== ''
-  ) {
-    model = Number(input.legacyModelId);
-    if (!Number.isSafeInteger(model) || model <= 0) {
-      throw invalid('Invalid model');
-    }
-  }
-
   let catalogSnapshot: WebbingCatalogSnapshot | null = null;
   if (input.catalogSnapshot) {
     const parsed = webbingCatalogSnapshotSchema.safeParse(input.catalogSnapshot);
     if (!parsed.success) throw invalid('Invalid catalog selection');
     catalogSnapshot = parsed.data;
-  }
-  if (model !== null && catalogSnapshot !== null) {
-    throw invalid('Choose either a catalog model or a previous model, not both');
   }
 
   const strengthClass = input.strengthClass ?? null;
@@ -126,7 +109,6 @@ export function buildWebbingRegistrationRow(
     tag_name: tagName,
     description: input.note,
     strength_class: strengthClass,
-    model,
     catalog_snapshot: catalogSnapshot,
   };
 }
@@ -139,7 +121,7 @@ export const WEBBING_REGISTRATION_KEY_INDEX = 'webbing_user_id_registration_key_
 
 /** Columns read back to recover and compare a registration. */
 export const WEBBING_REGISTRATION_SELECT =
-  'id, user_id, image_path, registration_key, length, left_loop, right_loop, tag_name, description, strength_class, model, catalog_snapshot';
+  'id, user_id, image_path, registration_key, length, left_loop, right_loop, tag_name, description, strength_class, catalog_snapshot';
 
 export type StoredWebbingRegistration = RegisteredWebbing &
   Omit<WebbingRegistrationRow, 'catalog_snapshot' | 'strength_class'> & {
@@ -198,7 +180,6 @@ function canonicalRegistration(row: {
   tag_name: string | null;
   description: string | null;
   strength_class: string | null;
-  model: number | null;
   catalog_snapshot: unknown;
 }) {
   return stableStringify({
@@ -210,7 +191,6 @@ function canonicalRegistration(row: {
     tag_name: row.tag_name ?? '',
     description: row.description ?? '',
     strength_class: row.strength_class ?? null,
-    model: row.model ?? null,
     catalog_snapshot: row.catalog_snapshot ?? null,
   });
 }

@@ -4,4 +4,5 @@ export * from './use-webbing-usage';
 export * from './use-webbing-history';
 export * from './use-register-webbing';
 export * from './catalog-snapshot';
+export * from './legacy-model-snapshot';
 export * from './register-webbing';

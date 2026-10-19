@@ -372,23 +372,23 @@ function SpecificationsCard({
           label={t(`${key}.length`)}
           value={`${webbing.length}m`}
         />
-        {specs.source === 'legacy' && specs.legacyModel && (
-          <>
-            <SpecRow
-              icon={FactoryIcon}
-              tone="emerald"
-              label={t(`${key}.material`)}
-              value={specs.legacyModel.material}
-              valueClassName="capitalize"
-            />
-            <SpecRow
-              icon={LayersIcon}
-              tone="amber"
-              label={t(`${key}.weave`)}
-              value={specs.legacyModel.weave}
-              valueClassName="capitalize"
-            />
-          </>
+        {specs.legacyModel?.material && (
+          <SpecRow
+            icon={FactoryIcon}
+            tone="emerald"
+            label={t(`${key}.material`)}
+            value={specs.legacyModel.material}
+            valueClassName="capitalize"
+          />
+        )}
+        {specs.legacyModel?.weave && (
+          <SpecRow
+            icon={LayersIcon}
+            tone="amber"
+            label={t(`${key}.weave`)}
+            value={specs.legacyModel.weave}
+            valueClassName="capitalize"
+          />
         )}
         {/* Model class and personal class keep their sources */}
         {specs.modelStrengthClass && (

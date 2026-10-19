@@ -128,7 +128,7 @@ function useWebbingPhotoTile(webbing: WebbingWithUsage) {
       ? { uri: storedUri }
       : null;
   // Personal photos only; saved SlackData snapshots never carry upstream images.
-  const legacyImage = resolveWebbingSpecs(webbing).legacyImageUrl;
+  const legacyImage = resolveWebbingSpecs(webbing).legacyImagePath;
 
   const save = (asset: LocalPhoto | null) => {
     if (asset) photo.report(photoProgress('preparing'));
