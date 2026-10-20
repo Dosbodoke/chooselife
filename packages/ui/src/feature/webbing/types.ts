@@ -1,6 +1,5 @@
 import type { Tables } from '@chooselife/database';
 
-export type WebbingModel = Tables<'webbing_model'>;
 export type Webbing = Tables<'webbing'>;
 export type RigSetup = Tables<'rig_setup'>;
 export type RigSetupWebbing = Tables<'rig_setup_webbing'>;
@@ -12,15 +11,22 @@ export type RigSetupWebbing = Tables<'rig_setup_webbing'>;
 export const STRENGTH_CLASS_OPTIONS = ['A+', 'A', 'B', 'C'] as const;
 export type TStrengthClass = (typeof STRENGTH_CLASS_OPTIONS)[number];
 
-export interface WebbingUsage {
+/** Recorded use from rig history, independent of any lifetime estimate. */
+export interface WebbingUsageRecord {
   usageDays: number;
   rigCount: number;
+}
+
+export interface WebbingUsage extends WebbingUsageRecord {
   recommendedLifetimeDays: number | null;
-  percentageUsed: number;
+  /** Null when there is no supported lifetime to compare against. */
+  percentageUsed: number | null;
+  remainingDays: number | null;
   status: WebbingLifetimeStatus;
 }
 
-export type WebbingLifetimeStatus = 'good' | 'inspect' | 'replace';
+/** `unknown` means no supported lifetime estimate, never "good". */
+export type WebbingLifetimeStatus = 'good' | 'inspect' | 'replace' | 'unknown';
 
 export interface WebbingRigHistory {
   setupId: number;
@@ -32,7 +38,6 @@ export interface WebbingRigHistory {
   webbingType: 'main' | 'backup';
 }
 
-export interface WebbingWithUsage extends Omit<Webbing, 'model'> {
-  model: WebbingModel | null;
+export interface WebbingWithUsage extends Webbing {
   usage: WebbingUsage | null;
 }

@@ -204,11 +204,74 @@
         "finishLabel": "Cadastrar",
         "selectModel": {
           "label": "Modelo da fita",
-          "placeholder": "Ex.: Brasileirinha",
+          "placeholder": "Busque no SlackData ou cadastre manualmente",
           "clear": "Remover seleção",
           "emptyState": {
             "title": "Nenhum modelo disponível",
             "description": "Não há modelos que correspondam aos seus critérios"
+          },
+          "searchPlaceholder": "Buscar marca ou modelo",
+          "loading": "Carregando o catálogo do SlackData…",
+          "unavailable": "O catálogo do SlackData está indisponível agora. Você ainda pode cadastrar esta fita manualmente.",
+          "offline": "Você está offline. O catálogo carrega quando a conexão voltar; você ainda pode preencher os dados manualmente.",
+          "retry": "Tentar novamente",
+          "retryIn": "Tentar novamente em {{seconds}}s",
+          "retryHint": "Espera sugerida antes de tentar de novo, não um limite.",
+          "refresh": "Atualizar",
+          "stale": "Catálogo carregado {{time}}. Pode estar desatualizado.",
+          "refreshFailed": "Não foi possível atualizar. Mostrando o catálogo carregado {{time}}.",
+          "incomplete": "Alguns itens do catálogo não puderam ser lidos, então a lista pode estar incompleta.",
+          "emptyCatalog": "O catálogo do SlackData não tem fitas.",
+          "noMatches": "Nenhuma fita corresponde a “{{query}}”.",
+          "manual": "Cadastrar manualmente",
+          "manualHint": "Nenhum modelo selecionado. Preencha os dados você mesmo.",
+          "discontinued": "Descontinuada",
+          "selectModelFor": "Selecionar {{name}}",
+          "sort": {
+            "title": "Ordenar por",
+            "close": "Fechar menu de ordenação",
+            "a11y": "Ordenar por {{option}}",
+            "brand": "Marca, A–Z",
+            "strength": "Resistência à ruptura (kN)",
+            "width": "Largura (mm)",
+            "weight": "Peso (g/m)",
+            "stretch": "Elasticidade a 10 kN (%)",
+            "highToLow": "Maior → menor · toque de novo para inverter",
+            "lowToHigh": "Menor → maior · toque de novo para inverter",
+            "short": {
+              "brand": "Marca",
+              "strength": "kN",
+              "width": "mm",
+              "weight": "g/m",
+              "stretch": "Elasticidade"
+            }
+          },
+          "filters": {
+            "isaCertified": "Certificada ISA",
+            "inProduction": "Em produção"
+          },
+          "count_one": "{{count}} modelo",
+          "count_other": "{{count}} modelos",
+          "countFiltered": "{{shown}} de {{total}} modelos",
+          "source": "Dados de",
+          "sourceA11y": "Abrir slackdata.org, a fonte deste catálogo",
+          "noFilterMatches": "Nenhuma fita corresponde a estes filtros.",
+          "clearFilters": "Limpar filtros",
+          "flags": {
+            "isa": "ISA {{class}}",
+            "isaCertified": "Certificada ISA",
+            "notForHighline": "Não para highline",
+            "discontinued": "Descontinuada"
+          },
+          "card": {
+            "kn": "kN",
+            "mm": "mm",
+            "gramsPerMeter": "g/m",
+            "stretchAt": "% a {{kn}} kN",
+            "atKn": "a {{kn}} kN",
+            "stretch": "elasticidade",
+            "stretchCurve": "curva de elasticidade",
+            "photoOf": "Foto de {{name}}"
           }
         },
         "tagName": {
@@ -223,14 +286,38 @@
         "strengthClass": {
           "label": "Classe de Resistência",
           "lockedHint": "Determinada pelo modelo selecionado",
-          "placeholder": "Selecione a classe de resistência"
+          "placeholder": "Selecione a classe de resistência",
+          "personalHint": "Sua própria classificação, salva como informada por você. Não é uma certificação.",
+          "catalogClass": "O SlackData indica classe ISA {{value}}"
         },
         "authRequired": {
           "title": "Login necessário",
           "description": "Você precisa estar logado para cadastrar uma fita.",
           "action": "Entrar"
         },
-        "recommendedLifetime": "Vida útil recomendada: {{days}} dias"
+        "recommendedLifetime": "Vida útil recomendada: {{days}} dias",
+        "catalog": {
+          "attribution": "Dados de equipamentos do SlackData, da International Slackline Association, CC BY-SA 4.0",
+          "normalized": "Os campos foram normalizados para exibição.",
+          "site": "slackdata.org",
+          "license": "CC BY-SA 4.0",
+          "photoCredit": "As fotos dos produtos pertencem aos seus respectivos donos, via SlackData/ISA, e não estão cobertas pela CC BY-SA."
+        },
+        "photo": {
+          "label": "Foto",
+          "instructions": "Uma foto ajuda a diferenciar esta fita das outras"
+        },
+        "photoPhase": {
+          "failedDescription": "Sua fita foi cadastrada. Tente enviar a foto acima de novo ou continue sem ela — você pode adicionar depois em Minhas fitas.",
+          "continue": "Continuar sem foto",
+          "uploadPhoto": "Enviar foto"
+        },
+        "errors": {
+          "draft-conflict": "Este cadastro já foi salvo com outros dados. Feche e inicie um novo cadastro.",
+          "unconfirmed": "Não conseguimos confirmar se sua fita foi salva. Tente novamente — ela não será duplicada.",
+          "lookup-failed": "Não foi possível conectar ao Choose Life. Verifique sua conexão e tente novamente.",
+          "offline": "Conecte-se à internet para salvar esta fita."
+        }
       }
     },
     "(tabs)": {
@@ -679,10 +766,8 @@
           "placeholder": "Fale um pouco sobre este Highline. Aqui é o lugar perfeito para dar informações de acesso, segurança, dica para montagem ou rolê, etc..."
         },
         "image": {
-          "maxSize": "Tamanho máximo do arquivo é 6MB",
-          "accepted": "Formatos aceitos são: .jpg, .jpeg, .png e .webp",
           "label": "Foto do highline",
-          "instructions": "Clique aqui para escolher a foto que será usada como capa para este Highline"
+          "instructions": "Uma foto ampla do highline fica melhor como capa"
         },
         "create": "Registrar Highline",
         "update": "Atualizar Highline",
@@ -724,18 +809,18 @@
         "emptyDescription": "Adicione sua primeira fita para acompanhar o uso e escolher uma foto.",
         "loadError": "Não foi possível carregar suas fitas.",
         "retry": "Tentar novamente",
-        "addPhoto": "Adicionar foto",
-        "addPhotoFor": "Adicionar foto de {{name}}",
-        "changePhotoFor": "Trocar foto de {{name}}",
-        "removePhotoFor": "Remover foto pessoal de {{name}}",
-        "photoErrorTitle": "Não foi possível salvar a foto",
-        "photoError": "Tente novamente com uma imagem menor que 10 MB. Sua foto anterior foi mantida.",
         "viewHistory": "Ver histórico de {{name}}",
         "strength": "Tipo {{strength}}",
         "riggedNow": "Montada agora",
         "daysUsed": "{{used}} / {{total}} dias usados",
         "noLifetime": "Sem recomendação de vida útil",
-        "usageError": "O uso está indisponível no momento."
+        "usageError": "O uso está indisponível no momento.",
+        "rigs_one": "{{count}} montagem",
+        "rigs_other": "{{count}} montagens",
+        "usedDays_one": "{{count}} dia de uso",
+        "usedDays_other": "{{count}} dias de uso",
+        "personalStrength": "Tipo {{strength}} (seu)",
+        "keepPreviousPhoto": "Manter foto anterior"
       }
     },
     "webbing-detail": {
@@ -749,19 +834,62 @@
         "learnMore": "Saiba mais sobre padrões ISA",
         "statusGood": "Bom",
         "statusInspect": "Inspecionar",
-        "statusReplace": "Substituir"
+        "statusReplace": "Substituir",
+        "unknown": "Não há estimativa de vida útil suportada para esta fita. O uso registrado continua sendo acompanhado.",
+        "loadError": "Não foi possível carregar o uso.",
+        "retry": "Tentar novamente"
       },
       "specifications": {
         "title": "Especificações",
         "length": "Comprimento",
         "material": "Material",
         "weave": "Trama",
-        "loops": "Olhais"
+        "loops": "Olhais",
+        "materials": "Material",
+        "construction": "Construção",
+        "width": "Largura",
+        "thickness": "Espessura",
+        "weight": "Peso",
+        "breakingStrength": "Resistência à ruptura",
+        "stretch": "Elasticidade",
+        "stretchAt": "{{percent}}% a {{kn}} kN",
+        "isaCertified": "Certificada pela ISA",
+        "isaClass": "Classe ISA (SlackData)",
+        "isaCertificate": "Certificado ISA",
+        "modelStrength": "Classe de resistência (modelo)",
+        "personalStrength": "Classe de resistência (informada por você)",
+        "status": "Situação",
+        "discontinued": "Descontinuada",
+        "active": "Em produção",
+        "yes": "Sim",
+        "no": "Não",
+        "notRecorded": "Não registrado",
+        "productPage": "Página do produto",
+        "mm": "{{value}} mm",
+        "gramsPerMeter": "{{value}} g/m",
+        "kn": "{{value}} kN"
       },
       "history": {
         "title": "Histórico de Uso ({{count}} montagens)",
         "empty": "Nenhum histórico de uso.\nVincule esta fita ao montar um highline.",
-        "days": "{{days}} dias"
+        "days": "{{days}} dias",
+        "loadError": "Não foi possível carregar o histórico."
+      },
+      "usage": {
+        "days_one": "{{count}} dia de uso",
+        "days_other": "{{count}} dias de uso",
+        "rigs_one": "{{count}} montagem",
+        "rigs_other": "{{count}} montagens"
+      },
+      "warnings": {
+        "notForHighline": "O fabricante informa que esta fita não é para uso em highline.",
+        "notForHighlineSource": "Fonte: {{source}}",
+        "isaWarning": "Aviso da ISA"
+      },
+      "source": {
+        "title": "Dados de catálogo salvos",
+        "retrievedAt": "Salvo do SlackData em {{date}}. Estes dados não são atualizados automaticamente e não são uma certificação atual.",
+        "unsupported": "Os dados de catálogo salvos precisam de uma versão mais nova do app para serem exibidos."
       }
     },
     "event-card": {
@@ -826,7 +954,40 @@
         "label": "Fita de:"
       }
     },
-    "offlineBannerMessage": "Você está offline"
+    "offlineBannerMessage": "Você está offline",
+    "photo-picker": {
+      "add": "Adicionar foto",
+      "replace": "Trocar",
+      "remove": "Remover foto",
+      "retry": "Tentar de novo",
+      "saved": "Salva",
+      "limits": "JPEG ou PNG · até 10 MB",
+      "status": {
+        "queued": "Aguardando envio…",
+        "preparing": "Preparando foto…",
+        "sending": "Enviando {{percent}}%",
+        "saving": "Salvando…"
+      },
+      "a11y": {
+        "replace": "Trocar foto",
+        "progress": "Envio da foto",
+        "addFor": "Adicionar foto de {{name}}",
+        "replaceFor": "Trocar foto de {{name}}",
+        "removeFor": "Remover foto pessoal de {{name}}",
+        "retryFor": "Tentar enviar de novo a foto de {{name}}"
+      },
+      "errors": {
+        "unsupported-type": "Escolha uma foto JPEG ou PNG.",
+        "animated": "Imagens animadas não são aceitas. Escolha um JPEG ou PNG estático.",
+        "invalid-image": "Este arquivo não é um JPEG ou PNG válido.",
+        "too-large": "Escolha uma imagem menor que 10 MB.",
+        "unreadable": "Não foi possível ler a foto selecionada.",
+        "upload-failed": "Não foi possível enviar a foto.",
+        "rejected": "Não foi possível salvar a foto.",
+        "unconfirmed": "Não conseguimos confirmar se a foto foi salva. Tente novamente para verificar.",
+        "conflict": "Esta foto foi alterada em outro lugar. Sua nova foto não foi aplicada."
+      }
+    }
   },
   "context": {
     "auth": {

@@ -3,8 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { useSupabase } from '../../supabase-provider';
-import { buildWebbingUsage } from './lifetime-utils';
-import type { WebbingUsage } from './types';
+import { deriveWebbingUsage } from './lifetime-utils';
+import type { WebbingUsage, WebbingUsageRecord } from './types';
 
 /**
  * Response type from get_webbing_usage_days RPC
@@ -17,40 +17,34 @@ interface WebbingUsageRpcResponse {
 }
 
 /**
- * Default webbing usage when data is loading or unavailable
- */
-export const DEFAULT_WEBBING_USAGE: WebbingUsage = {
-  usageDays: 0,
-  rigCount: 0,
-  recommendedLifetimeDays: null,
-  percentageUsed: 0,
-  status: 'good',
-};
-
-/**
- * Query key factory for webbing usage
+ * Query key factory for webbing usage. Keys are scoped by the viewer so one
+ * account never reads another account's cached inventory.
  */
 export const webbingUsageKeyFactory = {
   all: () => ['webbing-usage'] as const,
-  byId: (webbingId: number) => ['webbing-usage', webbingId] as const,
+  byId: (webbingId: number, viewerId: string | undefined) =>
+    ['webbing-usage', viewerId ?? 'public', webbingId] as const,
 };
 
 /**
- * Hook to fetch usage days for a specific webbing
- * Calls the get_webbing_usage_days database function
- * Returns DEFAULT_WEBBING_USAGE while loading - data is guaranteed to be defined
+ * Hook to fetch recorded usage for a specific webbing.
+ *
+ * Only the raw RPC result is cached; the lifetime assessment is derived from
+ * the current `recommendedLifetimeDays`, so metadata that arrives later
+ * updates the assessment without another fetch. `data` is null while loading
+ * or after an error -- never a zero-use or "good" placeholder.
  */
 export function useWebbingUsage(
   webbingId: number | undefined,
   recommendedLifetimeDays: number | null = null,
 ) {
-  const { supabase } = useSupabase();
+  const { supabase, userId } = useSupabase();
 
   const query = useQuery({
-    queryKey: webbingUsageKeyFactory.byId(webbingId ?? 0),
+    queryKey: webbingUsageKeyFactory.byId(webbingId ?? 0, userId),
     enabled: !!webbingId,
-    placeholderData: DEFAULT_WEBBING_USAGE,
-    queryFn: async (): Promise<WebbingUsage> => {
+    meta: { authScope: userId },
+    queryFn: async (): Promise<WebbingUsageRecord> => {
       if (!webbingId) {
         throw new Error('Webbing ID is required');
       }
@@ -70,18 +64,22 @@ export function useWebbingUsage(
 
       // Function returns array with single row
       const result = Array.isArray(data) ? data[0] : null;
-      const usageDays = result?.usage_days ?? 0;
-      const rigCount = result?.rig_count ?? 0;
-
-      return buildWebbingUsage(usageDays, rigCount, recommendedLifetimeDays);
+      return {
+        usageDays: result?.usage_days ?? 0,
+        rigCount: result?.rig_count ?? 0,
+      };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Return with guaranteed data (never undefined due to placeholderData)
+  const usage: WebbingUsage | null = deriveWebbingUsage(
+    query.data,
+    recommendedLifetimeDays,
+  );
+
   return {
     ...query,
-    data: query.data ?? DEFAULT_WEBBING_USAGE,
+    record: query.data,
+    data: usage,
   };
 }
-

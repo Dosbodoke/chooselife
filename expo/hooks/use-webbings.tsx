@@ -1,3 +1,4 @@
+import { getWebbingDisplayName } from '@chooselife/ui';
 import { QueryData } from '@supabase/supabase-js';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import i18next from 'i18next';
@@ -6,8 +7,7 @@ import { useAuth } from '~/context/auth';
 import { supabase } from '~/lib/supabase';
 
 // Create a temporary query builder instance JUST for type inference.
-const webbingSelectStatement = `*, 
-  model (*),
+const webbingSelectStatement = `*,
   rig_setup_webbing (
     id,
     setup_id,
@@ -31,9 +31,14 @@ export type WebbingWithUsage = SingleWebbingWithModel & {
   isUsed: boolean;
 };
 
-export const useWebbingsKeyFactory = {
-  webbings: () => ['webbings'] as const,
-  webbing: (id: number) => [...useWebbingsKeyFactory.webbings(), id] as const,
+// Private inventory: keys and `authScope` carry the viewer so a different
+// account never reads this cache. `all()` prefixes every viewer's entries.
+export const webbingKeys = {
+  all: () => ['webbings'] as const,
+  webbings: (viewerId: string | undefined) =>
+    [...webbingKeys.all(), viewerId ?? 'anonymous'] as const,
+  webbing: (viewerId: string | undefined, id: number) =>
+    [...webbingKeys.webbings(viewerId), id] as const,
 };
 
 // Helper function to compute 'isUsed' and transform a single webbing object
@@ -60,7 +65,8 @@ export const useUserWebbings = () => {
   const { profile } = useAuth();
 
   return useQuery<WebbingWithUsage[]>({
-    queryKey: useWebbingsKeyFactory.webbings(),
+    queryKey: webbingKeys.webbings(profile?.id),
+    meta: { authScope: profile?.id },
     queryFn: async (): Promise<WebbingWithUsage[]> => {
       if (!profile?.id) {
         return [];
@@ -89,12 +95,14 @@ export const useUserWebbings = () => {
 
 export const useWebbing = (id: number) => {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
 
   return useQuery<WebbingWithUsage | null>({
-    queryKey: useWebbingsKeyFactory.webbing(id),
+    queryKey: webbingKeys.webbing(profile?.id, id),
+    meta: { authScope: profile?.id },
     queryFn: async (): Promise<WebbingWithUsage | null> => {
       const cachedWebbings = queryClient.getQueryData<WebbingWithUsage[]>(
-        useWebbingsKeyFactory.webbings(),
+        webbingKeys.webbings(profile?.id),
       );
       if (cachedWebbings) {
         const foundInCache = cachedWebbings.find((w) => w.id === id);
@@ -117,7 +125,7 @@ export const useWebbing = (id: number) => {
     },
     initialData: () => {
       const cachedWebbings = queryClient.getQueryData<WebbingWithUsage[]>(
-        useWebbingsKeyFactory.webbings(),
+        webbingKeys.webbings(profile?.id),
       );
       return cachedWebbings?.find((w) => w.id === id);
     },
@@ -128,9 +136,9 @@ export const useWebbing = (id: number) => {
 export const getWebbingName = (
   webbing: Omit<WebbingWithModel[number], 'rig_setup_webbing'> | null,
 ) => {
+  // Label, then saved SlackData name, then frozen legacy model name.
   return (
-    webbing?.tag_name ||
-    webbing?.model?.name ||
+    getWebbingDisplayName(webbing) ||
     i18next.t('context.rig-form.unknownWebbing')
   );
 };

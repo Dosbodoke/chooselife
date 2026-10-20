@@ -1,61 +1,65 @@
 import {
-  getMaterialColor,
-  getMaterialIconColor,
-  getRecommendedLifetimeDays,
   getStrengthClassColor,
-  getWeaveColor,
   STRENGTH_CLASS_OPTIONS,
   useRegisterWebbing,
   type RegisterWebbingFormData,
 } from '@chooselife/ui';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { useQueryClient } from '@tanstack/react-query';
 import {
-  BottomSheetBackdropProps,
-  BottomSheetModal,
-  BottomSheetModalProvider,
-  BottomSheetScrollView,
-} from '@gorhom/bottom-sheet';
-import { useQuery } from '@tanstack/react-query';
-import { Image } from 'expo-image';
+  captureGrowthEvent,
+  flushGrowthEvents,
+} from '~/features/growth/analytics';
+import {
+  captureWebbingRegistered,
+  type WebbingPickerExperiment,
+} from '~/features/growth/webbing-picker-layout';
+import {
+  isPhotoFileError,
+  photoProgress,
+  type LocalPhoto,
+  type PhotoProgress,
+} from '~/features/photos/photo-file';
+import { PHOTO_SPECS } from '~/features/photos/pick-photo';
+import { saveWebbingPhoto } from '~/features/webbing/photo-upload';
+import {
+  advanceRegistration,
+  continueWithoutPhoto,
+  initialRegistrationFlow,
+  nextAutoLabel,
+  type RegistrationFlowState,
+} from '~/features/webbing/registration-flow';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { AlertTriangleIcon, CloudOffIcon } from 'lucide-react-native';
+import { useId, useRef, useState, type ReactNode } from 'react';
 import {
-  AlertTriangleIcon,
-  ChevronDownIcon,
-  PackagePlusIcon,
-  TorusIcon,
-} from 'lucide-react-native';
-import React, { useCallback, useId, useMemo, useRef } from 'react';
-import {
-  Control,
   Controller,
+  FormProvider,
   useController,
-  UseFormReturn,
+  useFormContext,
+  useFormState,
   useWatch,
+  type UseFormReturn,
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  Dimensions,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import Animated, {
-  interpolate,
-  useAnimatedStyle,
-} from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import { v4 as uuid } from 'uuid';
 
 import { useAuth } from '~/context/auth';
+import { useOnlineStatus } from '~/context/react-query';
+import {
+  createWebbingPhotoDeps,
+  setCachedWebbingPhoto,
+} from '~/hooks/use-webbing-photo';
+import { useWebbingPickerExperiment } from '~/hooks/use-webbing-picker-experiment';
 import RegisterWebbingIllustration from '~/lib/icons/register-webbing';
-import { getR2PublicUrl } from '~/lib/r2';
-import { supabase } from '~/lib/supabase';
 import { cn } from '~/lib/utils';
-import { Tables } from '~/utils/database.types';
 import { requestReview } from '~/utils/request-review';
 
 import { OnboardHeader, OnboardNavigator } from '~/components/onboard';
+import { PhotoCover, type PhotoTransfer } from '~/components/photo-picker';
 import { SafeAreaView } from '~/components/styled';
 import {
   Alert,
@@ -65,285 +69,616 @@ import {
   AlertTitle,
 } from '~/components/ui/alert';
 import { Button } from '~/components/ui/button';
-import { Icon } from '~/components/ui/icon';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
-import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 import { Textarea } from '~/components/ui/textarea';
+import { WebbingCatalogPicker } from '~/components/webbing-catalog-picker';
+import {
+  selectionName,
+  type WebbingModelSelection,
+} from '~/components/webbing-catalog-picker/model-selection';
+import { SelectedCatalogDetails } from '~/components/webbing-catalog-specs';
 import { WebbingInput } from '~/components/webbing-input';
 
+const translationKey = 'app.(modals).register-webbing';
+const ROOT_ERROR_CODES = new Set([
+  'draft-conflict',
+  'unconfirmed',
+  'lookup-failed',
+  'offline',
+]);
+
+type RegisterWebbingForm = UseFormReturn<RegisterWebbingFormData>;
+
 export default function RegisterWebbing() {
-  const { t } = useTranslation();
-  const router = useRouter();
-  const { session, sessionLoading, isLoginPending } = useAuth();
-  const handleLogin = useCallback(() => {
-    router.push('/(modals)/login');
-  }, [router]);
+  const { session, sessionLoading } = useAuth();
+  const userId = session?.user.id;
 
-  const { form, handleSubmit, isLoading } = useRegisterWebbing({
-    onSuccess: () => {
-      requestReview();
-      router.back();
-    },
-  });
-  const submitError = form.formState.errors.root?.message;
-
-  if (sessionLoading || !session?.user.id) {
+  if (sessionLoading) {
     return (
-      <BottomSheetModalProvider>
-        <SafeAreaView className="flex-1">
-          <View className="flex-1 px-6 pt-3 pb-8 gap-6">
-            <OnboardHeader total={1} selectedIndex={0} onBack={router.back} />
-
-            <View className="h-52">
-              <RegisterWebbingIllustration className="w-full h-full" />
-            </View>
-
-            <View>
-              <Text variant="h3" className="text-left">
-                {t('app.(modals).register-webbing.title')}
-              </Text>
-              <Text variant="muted" className="text-left">
-                {t('app.(modals).register-webbing.description')}
-              </Text>
-            </View>
-
-            {sessionLoading ? (
-              <View className="items-center py-8">
-                <ActivityIndicator />
-              </View>
-            ) : (
-              <>
-                <Alert variant="warning">
-                  <AlertIcon icon={AlertTriangleIcon} />
-                  <AlertContent>
-                    <AlertTitle>
-                      {t('app.(modals).register-webbing.authRequired.title')}
-                    </AlertTitle>
-                    <AlertDescription>
-                      {t(
-                        'app.(modals).register-webbing.authRequired.description',
-                      )}
-                    </AlertDescription>
-                  </AlertContent>
-                </Alert>
-
-                <View className="flex-grow" />
-
-                <Button
-                  className="w-full rounded-full"
-                  disabled={isLoginPending}
-                  onPress={handleLogin}
-                >
-                  <Text>
-                    {t('app.(modals).register-webbing.authRequired.action')}
-                  </Text>
-                </Button>
-              </>
-            )}
-          </View>
-        </SafeAreaView>
-      </BottomSheetModalProvider>
+      <SignedOutScreen>
+        <View className="items-center py-8">
+          <ActivityIndicator />
+        </View>
+      </SignedOutScreen>
     );
   }
+  if (!userId) {
+    return (
+      <SignedOutScreen>
+        <SignInRequired />
+      </SignedOutScreen>
+    );
+  }
+  return <RegistrationForm userId={userId} />;
+}
 
+function SignedOutScreen({ children }: { children: ReactNode }) {
+  const router = useRouter();
   return (
-    <BottomSheetModalProvider>
-      <SafeAreaView className="flex-1">
-        <KeyboardAwareScrollView
-          contentContainerClassName="px-6 pt-3 pb-8 gap-4"
-          keyboardShouldPersistTaps="handled"
-        >
-          <OnboardHeader total={1} selectedIndex={0} onBack={router.back} />
-          <PrefillForm form={form} />
-
-          {submitError ? (
-            <Alert variant="destructive">
-              <AlertIcon icon={AlertTriangleIcon} />
-              <AlertContent>
-                <AlertDescription>{submitError}</AlertDescription>
-              </AlertContent>
-            </Alert>
-          ) : null}
-
-          <View className="flex-grow">
-            {/* Spacer to push paginator down */}
-          </View>
-
-          <OnboardNavigator
-            total={1}
-            selectedIndex={0}
-            onIndexChange={() => {}} // There is only one step
-            onFinish={handleSubmit}
-            goBack={router.back}
-            isLoading={isLoading}
-            finishLabel={t('app.(modals).register-webbing.finishLabel')}
-            showBack={false}
-          />
-        </KeyboardAwareScrollView>
-      </SafeAreaView>
-    </BottomSheetModalProvider>
+    <SafeAreaView className="flex-1">
+      <View className="flex-1 px-6 pt-3 pb-8 gap-6">
+        <OnboardHeader total={1} selectedIndex={0} onBack={router.back} />
+        <RegistrationIntro />
+        {children}
+      </View>
+    </SafeAreaView>
   );
 }
 
-const PrefillForm: React.FC<{
-  form: UseFormReturn<RegisterWebbingFormData>;
-}> = ({ form }) => {
+function SignInRequired() {
   const { t } = useTranslation();
-  const [leftLoop, rightLoop, length, modelID] = useWatch({
-    control: form.control,
-    name: ['leftLoop', 'rightLoop', 'length', 'modelID'],
-  });
-
-  // Fetch models to get the selected model's strength class
-  const { data: models } = useQuery({
-    queryKey: ['webbingModels'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('webbing_model')
-        .select('*')
-        .order('name');
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // Get selected model's strength class
-  const selectedModel = models?.find((m) => m.id.toString() === modelID);
-  const modelStrengthClass =
-    (selectedModel as { strength_class?: string } | undefined)
-      ?.strength_class ?? null;
+  const router = useRouter();
+  const { isLoginPending } = useAuth();
 
   return (
-    <View className="gap-6">
+    <>
+      <Alert variant="warning">
+        <AlertIcon icon={AlertTriangleIcon} />
+        <AlertContent>
+          <AlertTitle>{t(`${translationKey}.authRequired.title`)}</AlertTitle>
+          <AlertDescription>
+            {t(`${translationKey}.authRequired.description`)}
+          </AlertDescription>
+        </AlertContent>
+      </Alert>
+
+      <View className="flex-grow" />
+
+      <Button
+        className="w-full rounded-full"
+        disabled={isLoginPending}
+        onPress={() => router.push('/(modals)/login')}
+      >
+        <Text>{t(`${translationKey}.authRequired.action`)}</Text>
+      </Button>
+    </>
+  );
+}
+
+function RegistrationIntro() {
+  const { t } = useTranslation();
+  return (
+    <>
       <View className="h-52">
         <RegisterWebbingIllustration className="w-full h-full" />
       </View>
-
       <View>
         <Text variant="h3" className="text-left">
-          {t('app.(modals).register-webbing.title')}
+          {t(`${translationKey}.title`)}
         </Text>
         <Text variant="muted" className="text-left">
-          {t('app.(modals).register-webbing.description')}
+          {t(`${translationKey}.description`)}
         </Text>
       </View>
+    </>
+  );
+}
 
-      <WebbingInput
-        leftLoop={leftLoop}
-        rightLoop={rightLoop}
-        length={length}
-        onLeftLoopChange={(value) => form.setValue('leftLoop', value)}
-        onRightLoopChange={(value) => form.setValue('rightLoop', value)}
-        onLengthChange={(value) => form.setValue('length', value)}
-        error={form.formState.errors.length?.message ?? null}
-      />
-      <SelectModel control={form.control} />
-      <StrengthClassSelector
-        control={form.control}
-        modelStrengthClass={modelStrengthClass}
-      />
+function RegistrationForm({ userId }: { userId: string }) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const isOnline = useOnlineStatus();
+  const { form, submit } = useRegisterWebbing({ createRegistrationKey: uuid });
+  const experiment = useWebbingPickerExperiment();
+  const [photo, setPhoto] = useState<LocalPhoto | null>(null);
+  const registration = useRegistration({
+    userId,
+    form,
+    submit,
+    photo,
+    experiment,
+  });
+  const { flow } = registration;
 
-      <Controller
-        control={form.control}
-        name="tagName"
-        render={({ field, fieldState }) => (
-          <View className="gap-2">
-            <Label nativeID="tagname">
-              {t('app.(modals).register-webbing.tagName.label')}
-            </Label>
-            <Input
-              value={field.value}
-              onChangeText={field.onChange}
-              placeholder={t(
-                'app.(modals).register-webbing.tagName.placeholder',
-              )}
-              className={fieldState.error && 'border-destructive'}
-            />
-            {fieldState.error ? (
-              <Text variant="small" className="text-destructive">
-                {fieldState.error.message}
-              </Text>
-            ) : null}
-          </View>
-        )}
-      />
+  return (
+    <FormProvider {...form}>
+      <BottomSheetModalProvider>
+        <SafeAreaView className="flex-1">
+          <KeyboardAwareScrollView
+            contentContainerClassName="px-6 pt-3 pb-8 gap-4"
+            keyboardShouldPersistTaps="handled"
+          >
+            <OnboardHeader total={1} selectedIndex={0} onBack={router.back} />
+            <View className="gap-6">
+              <RegistrationIntro />
+              <LengthField />
+              <ModelField experiment={experiment} />
+              <StrengthClassSelector />
+              <TagNameField />
+              <PhotoField
+                photo={photo}
+                onChange={setPhoto}
+                transfer={registration.photoTransfer}
+                onRetry={
+                  registration.canRetryPhoto
+                    ? registration.retryPhoto
+                    : undefined
+                }
+                disabled={registration.isLocked}
+              />
+              <NoteField />
+            </View>
 
-      <Controller
-        control={form.control}
-        name="note"
-        render={({ field, fieldState }) => (
-          <View className="gap-2">
-            <Label nativeID="note">
-              {t('app.(modals).register-webbing.note.label')}{' '}
-              <Text variant="muted">{t('common.optional')}</Text>
-            </Label>
-            <Textarea
-              keyboardType="default"
-              returnKeyType="done"
-              placeholder={t('app.(modals).register-webbing.note.placeholder')}
-              {...field}
-              submitBehavior="blurAndSubmit"
-              onChangeText={(text) => field.onChange(text)}
-              value={field.value}
-              className={fieldState.error && 'border-destructive'}
-              aria-labelledby="note"
-            />
-            {fieldState.error ? (
-              <Text variant="small" className="text-destructive">
-                {fieldState.error.message}
-              </Text>
-            ) : null}
-          </View>
-        )}
+            {!isOnline && <OfflineNotice />}
+            {flow.phase === 'editing' && <SubmitError />}
+
+            {/* Spacer to push paginator down */}
+            <View className="flex-grow" />
+
+            {registration.photoFailed ? (
+              <PhotoFailedActions
+                onUpload={
+                  registration.canUploadNewPhoto
+                    ? registration.retryPhoto
+                    : undefined
+                }
+                onContinue={registration.continueWithoutPhoto}
+              />
+            ) : (
+              <OnboardNavigator
+                total={1}
+                selectedIndex={0}
+                onIndexChange={() => {}} // There is only one step
+                onFinish={registration.submit}
+                goBack={router.back}
+                isLoading={registration.isLocked}
+                finishLabel={t(`${translationKey}.finishLabel`)}
+                showBack={false}
+              />
+            )}
+          </KeyboardAwareScrollView>
+        </SafeAreaView>
+      </BottomSheetModalProvider>
+    </FormProvider>
+  );
+}
+
+/** Save the item, then its photo, then leave; each phase is recoverable. */
+function useRegistration({
+  userId,
+  form,
+  submit,
+  photo,
+  experiment,
+}: {
+  userId: string;
+  form: RegisterWebbingForm;
+  submit: ReturnType<typeof useRegisterWebbing>['submit'];
+  photo: LocalPhoto | null;
+  experiment: WebbingPickerExperiment;
+}) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const isOnline = useOnlineStatus();
+  const [flow, setFlow] = useState<RegistrationFlowState>(
+    initialRegistrationFlow,
+  );
+  // The photo the last upload was for, and how far it got.
+  const [attempt, setAttempt] = useState<{
+    photo: LocalPhoto;
+    progress: PhotoProgress;
+  } | null>(null);
+  const finished = useRef(false);
+
+  const finish = () => {
+    // Navigate back and ask for a review exactly once.
+    if (finished.current) return;
+    finished.current = true;
+    requestReview();
+    router.back();
+  };
+
+  const saveItem = async (values: RegisterWebbingFormData | null) => {
+    if (!values) return null;
+    const webbing = await submit(values);
+    if (webbing) {
+      captureWebbingRegistered(captureGrowthEvent, experiment, {
+        modelSource: values.catalogSnapshot ? 'catalog' : 'manual',
+        hasPhoto: !!photo,
+      });
+      flushGrowthEvents();
+    }
+    return webbing;
+  };
+
+  const run = async (values: RegisterWebbingFormData | null) => {
+    if (photo) setAttempt({ photo, progress: photoProgress('preparing') });
+    const state = await advanceRegistration(
+      flow,
+      photo,
+      {
+        saveItem: () => saveItem(values),
+        savePhoto: async ({ webbing, asset, pending }) => {
+          const imagePath = await saveWebbingPhoto({
+            webbingId: webbing.id,
+            previousPath: webbing.image_path,
+            asset,
+            pending,
+            onProgress: (progress) => setAttempt({ photo: asset, progress }),
+            deps: createWebbingPhotoDeps(webbing.id, userId),
+          });
+          setCachedWebbingPhoto(queryClient, userId, webbing.id, imagePath);
+          return imagePath;
+        },
+      },
+      setFlow,
+    );
+    if (state.phase === 'completed') {
+      if (photo) {
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        );
+      }
+      finish();
+    } else if (state.photoError) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+  };
+
+  const photoFailed =
+    flow.phase === 'savedPhotoFailed' ||
+    flow.phase === 'photoCommitUnconfirmed';
+  // Replacing the photo after a failure starts over from an idle field.
+  const isAttempted = !!photo && attempt?.photo === photo;
+
+  return {
+    flow,
+    photoTransfer: derivePhotoTransfer(
+      flow,
+      photo,
+      isAttempted ? attempt.progress : null,
+      t,
+    ),
+    /** Retry the same photo, when retrying can help. */
+    canRetryPhoto:
+      photoFailed &&
+      isOnline &&
+      isAttempted &&
+      !!flow.photoError &&
+      !isPhotoFileError(flow.photoError),
+    /** A different photo was chosen after the failure. */
+    canUploadNewPhoto: photoFailed && isOnline && !!photo && !isAttempted,
+    /** Saving, uploading or done: the draft can no longer change. */
+    isLocked:
+      flow.phase === 'savingItem' ||
+      flow.phase === 'uploadingPhoto' ||
+      flow.phase === 'completed',
+    photoFailed,
+    submit: () => {
+      if (!isOnline) {
+        form.setError('root', { type: 'offline', message: 'offline' });
+        return;
+      }
+      void form.handleSubmit((values) => run(values))();
+    },
+    retryPhoto: () => void run(null),
+    continueWithoutPhoto: () => {
+      setFlow(continueWithoutPhoto(flow));
+      finish();
+    },
+  };
+}
+
+/** The photo field's state, read off the registration phase. */
+function derivePhotoTransfer(
+  flow: RegistrationFlowState,
+  photo: LocalPhoto | null,
+  progress: PhotoProgress | null,
+  t: ReturnType<typeof useTranslation>['t'],
+): PhotoTransfer {
+  if (!photo) return { state: 'idle' };
+  switch (flow.phase) {
+    case 'savingItem':
+      return { state: 'queued' };
+    case 'uploadingPhoto':
+      return {
+        state: 'uploading',
+        ...(progress ?? photoProgress('preparing')),
+      };
+    case 'savedPhotoFailed':
+    case 'photoCommitUnconfirmed':
+      if (!progress) return { state: 'idle' };
+      return {
+        state: 'failed',
+        progress: progress.progress,
+        message: t(
+          `components.photo-picker.errors.${flow.photoError ?? 'upload-failed'}`,
+        ),
+      };
+    case 'completed':
+      return { state: 'saved' };
+    default:
+      return { state: 'idle' };
+  }
+}
+
+function OfflineNotice() {
+  const { t } = useTranslation();
+  return (
+    <Alert variant="default">
+      <AlertIcon icon={CloudOffIcon} />
+      <AlertContent>
+        <AlertDescription>
+          {t(`${translationKey}.errors.offline`)}
+        </AlertDescription>
+      </AlertContent>
+    </Alert>
+  );
+}
+
+function SubmitError() {
+  const { t } = useTranslation();
+  const { errors } = useFormState<RegisterWebbingFormData>();
+  const rootError = errors.root;
+  if (!rootError) return null;
+
+  const type = String(rootError.type ?? '');
+  const message = ROOT_ERROR_CODES.has(type)
+    ? t(`${translationKey}.errors.${type}`)
+    : rootError.message;
+  if (!message) return null;
+
+  return (
+    <Alert variant="destructive">
+      <AlertIcon icon={AlertTriangleIcon} />
+      <AlertContent>
+        <AlertDescription>{message}</AlertDescription>
+      </AlertContent>
+    </Alert>
+  );
+}
+
+/** The webbing is saved; offer to finish without the photo. */
+function PhotoFailedActions({
+  onUpload,
+  onContinue,
+}: {
+  onUpload?: () => void;
+  onContinue: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <View className="gap-3">
+      {onUpload ? (
+        <Button className="w-full rounded-full" onPress={onUpload}>
+          <Text>{t(`${translationKey}.photoPhase.uploadPhoto`)}</Text>
+        </Button>
+      ) : null}
+      <Button
+        variant="outline"
+        className="w-full rounded-full"
+        onPress={onContinue}
+      >
+        <Text>{t(`${translationKey}.photoPhase.continue`)}</Text>
+      </Button>
+      <Text variant="muted" className="text-center text-sm">
+        {t(`${translationKey}.photoPhase.failedDescription`)}
+      </Text>
+    </View>
+  );
+}
+
+function LengthField() {
+  const { control, setValue } = useFormContext<RegisterWebbingFormData>();
+  const [leftLoop, rightLoop, length] = useWatch({
+    control,
+    name: ['leftLoop', 'rightLoop', 'length'],
+  });
+  const { errors } = useFormState({ control, name: 'length' });
+
+  return (
+    <WebbingInput
+      leftLoop={leftLoop}
+      rightLoop={rightLoop}
+      length={length}
+      onLeftLoopChange={(value) => setValue('leftLoop', value)}
+      onRightLoopChange={(value) => setValue('rightLoop', value)}
+      onLengthChange={(value) =>
+        setValue('length', value, { shouldValidate: true })
+      }
+      error={errors.length?.message ?? null}
+    />
+  );
+}
+
+function ModelField({ experiment }: { experiment: WebbingPickerExperiment }) {
+  const { t } = useTranslation();
+  const labelId = useId();
+  const { control, setValue, getValues } =
+    useFormContext<RegisterWebbingFormData>();
+  const catalogSnapshot = useWatch({ control, name: 'catalogSnapshot' });
+  // The label last filled in automatically; user edits are never replaced.
+  const autoLabel = useRef<string | null>(null);
+
+  const value: WebbingModelSelection | null = catalogSnapshot
+    ? { source: 'catalog', snapshot: catalogSnapshot }
+    : null;
+
+  const handleChange = (selection: WebbingModelSelection | null) => {
+    // The selection is copied into the draft; catalog refetches never replace it.
+    setValue('catalogSnapshot', selection?.snapshot ?? null, {
+      shouldValidate: true,
+    });
+    const suggestion = selection ? selectionName(selection) : null;
+    const tagName = getValues('tagName');
+    const nextLabel = nextAutoLabel(tagName, autoLabel.current, suggestion);
+    if (nextLabel !== tagName) {
+      setValue('tagName', nextLabel, { shouldValidate: !!nextLabel });
+    }
+    autoLabel.current = suggestion;
+  };
+
+  return (
+    <View className="gap-3">
+      <WebbingCatalogPicker
+        labelId={labelId}
+        value={value}
+        onChange={handleChange}
+        experiment={experiment}
+      />
+      {catalogSnapshot ? (
+        <SelectedCatalogDetails snapshot={catalogSnapshot} />
+      ) : (
+        <Text variant="muted" className="text-sm">
+          {t(`${translationKey}.selectModel.manualHint`)}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+function TagNameField() {
+  const { t } = useTranslation();
+  const { control } = useFormContext<RegisterWebbingFormData>();
+  return (
+    <Controller
+      control={control}
+      name="tagName"
+      render={({ field, fieldState }) => (
+        <View className="gap-2">
+          <Label nativeID="tagname">
+            {t(`${translationKey}.tagName.label`)}
+          </Label>
+          <Input
+            value={field.value}
+            onChangeText={field.onChange}
+            placeholder={t(`${translationKey}.tagName.placeholder`)}
+            className={fieldState.error && 'border-destructive'}
+            aria-labelledby="tagname"
+          />
+          <FieldError message={fieldState.error?.message} />
+        </View>
+      )}
+    />
+  );
+}
+
+function NoteField() {
+  const { t } = useTranslation();
+  const { control } = useFormContext<RegisterWebbingFormData>();
+  return (
+    <Controller
+      control={control}
+      name="note"
+      render={({ field, fieldState }) => (
+        <View className="gap-2">
+          <Label nativeID="note">
+            {t(`${translationKey}.note.label`)}{' '}
+            <Text variant="muted">{t('common.optional')}</Text>
+          </Label>
+          <Textarea
+            keyboardType="default"
+            returnKeyType="done"
+            placeholder={t(`${translationKey}.note.placeholder`)}
+            {...field}
+            submitBehavior="blurAndSubmit"
+            onChangeText={(text) => field.onChange(text)}
+            value={field.value}
+            className={fieldState.error && 'border-destructive'}
+            aria-labelledby="note"
+          />
+          <FieldError message={fieldState.error?.message} />
+        </View>
+      )}
+    />
+  );
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <Text variant="small" className="text-destructive">
+      {message}
+    </Text>
+  );
+}
+
+// Personal photo for the physical item, uploaded after the item is saved.
+function PhotoField({
+  photo,
+  onChange,
+  transfer,
+  onRetry,
+  disabled,
+}: {
+  photo: LocalPhoto | null;
+  onChange: (photo: LocalPhoto | null) => void;
+  transfer: PhotoTransfer;
+  onRetry?: () => void;
+  disabled: boolean;
+}) {
+  const { t } = useTranslation();
+  return (
+    <View className="gap-2">
+      <Label nativeID="photo">
+        {t(`${translationKey}.photo.label`)}{' '}
+        <Text variant="muted">{t('common.optional')}</Text>
+      </Label>
+      <PhotoCover
+        spec={PHOTO_SPECS.webbing}
+        value={photo}
+        onChange={onChange}
+        transfer={transfer}
+        onRetry={onRetry}
+        disabled={disabled}
+        instructions={t(`${translationKey}.photo.instructions`)}
       />
     </View>
   );
-};
+}
 
-// Strength class selector component
-const StrengthClassSelector: React.FC<{
-  control: Control<RegisterWebbingFormData>;
-  modelStrengthClass: string | null;
-}> = ({ control, modelStrengthClass }) => {
+// SlackData certification stays separate from the optional personal strength class.
+function StrengthClassSelector() {
   const { t } = useTranslation();
+  const { control } = useFormContext<RegisterWebbingFormData>();
   const { field } = useController({ control, name: 'strengthClass' });
-
-  // Use model's strength class when available, otherwise use form field value
-  const hasModel = !!modelStrengthClass;
-  const displayValue = hasModel ? modelStrengthClass : field.value;
-  const recommendedDays = getRecommendedLifetimeDays(
-    (displayValue as 'A+' | 'A' | 'B' | 'C') ?? null,
-  );
+  const catalogSnapshot = useWatch({ control, name: 'catalogSnapshot' });
+  const catalogClass = catalogSnapshot?.isaClass ?? null;
 
   return (
     <View className="gap-2">
       <Label nativeID="strengthClass">
-        {t('app.(modals).register-webbing.strengthClass.label')}
-        {!hasModel && (
-          <>
-            {' '}
-            <Text variant="muted">{t('common.optional')}</Text>
-          </>
-        )}
+        {t(`${translationKey}.strengthClass.label`)}{' '}
+        <Text variant="muted">{t('common.optional')}</Text>
       </Label>
 
-      {/* Strength class buttons */}
       <View className="flex-row gap-2">
         {STRENGTH_CLASS_OPTIONS.map((option) => {
-          const isSelected = displayValue === option;
+          const isSelected = field.value === option;
           return (
             <TouchableOpacity
               key={option}
-              disabled={hasModel}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
               onPress={() => field.onChange(isSelected ? undefined : option)}
               className={cn(
                 'flex-1 py-3 rounded-lg border items-center justify-center',
                 isSelected
                   ? getStrengthClassColor(option)
                   : 'border-border bg-muted/30',
-                hasModel && !isSelected && 'opacity-40',
               )}
             >
               <Text
@@ -359,309 +694,16 @@ const StrengthClassSelector: React.FC<{
         })}
       </View>
 
-      {/* Recommended lifetime info */}
-      {recommendedDays && (
+      <Text variant="muted" className="text-sm">
+        {t(`${translationKey}.strengthClass.personalHint`)}
+      </Text>
+      {catalogClass && (
         <Text variant="muted" className="text-sm">
-          {t('app.(modals).register-webbing.recommendedLifetime', {
-            days: recommendedDays,
+          {t(`${translationKey}.strengthClass.catalogClass`, {
+            value: catalogClass,
           })}
         </Text>
       )}
     </View>
   );
-};
-
-// Grid layout constants - 2 columns
-const screenWidth = Dimensions.get('window').width;
-const numColumns = 2;
-const horizontalPadding = 32; // p-4 on each side
-const gap = 12;
-const availableSpace = screenWidth - horizontalPadding - (numColumns - 1) * gap;
-const itemWidth = availableSpace / numColumns;
-
-const EmptyState = () => {
-  const { t } = useTranslation();
-  return (
-    <View className="items-center justify-center py-10 gap-4">
-      <Icon as={PackagePlusIcon} size={48} className="text-muted-foreground" />
-      <Text className="text-center text-lg font-medium">
-        {t('app.(modals).register-webbing.selectModel.emptyState.title')}
-      </Text>
-      <Text className="text-center text-muted-foreground mb-4">
-        {t('app.(modals).register-webbing.selectModel.emptyState.description')}
-      </Text>
-    </View>
-  );
-};
-
-const SelectModel: React.FC<{ control: Control<RegisterWebbingFormData> }> = ({
-  control,
-}) => {
-  const { t } = useTranslation();
-  const { field: modelIDField } = useController({
-    control,
-    name: 'modelID',
-  });
-  const { field: tagNameField } = useController({
-    control,
-    name: 'tagName',
-  });
-  const id = useId();
-  const { isLoading, data: models } = useQuery({
-    queryKey: ['webbingModels'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('webbing_model')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-
-      return data;
-    },
-  });
-  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-
-  const handleSelect = useCallback(
-    (selectedWebbing: Tables<'webbing_model'> | null) => {
-      modelIDField.onChange(
-        selectedWebbing ? selectedWebbing.id.toString() : '',
-      );
-      // Update the label with the webbing name
-      tagNameField.onChange(selectedWebbing?.name ?? '');
-      bottomSheetModalRef.current?.close();
-    },
-    [],
-  );
-
-  const handleOpenPress = useCallback(() => {
-    bottomSheetModalRef.current?.present();
-  }, []);
-
-  // Custom backdrop that blocks all touch gestures from propagating to parent modal
-  const renderBackdrop = useCallback((props: BottomSheetBackdropProps) => {
-    const CustomBackdrop = () => {
-      const animatedStyle = useAnimatedStyle(() => ({
-        opacity: interpolate(props.animatedIndex.value, [-1, 0], [0, 0.5]),
-      }));
-
-      // Pan gesture that captures swipes but does nothing - prevents propagation
-      const panGesture = Gesture.Pan();
-
-      // Tap gesture to close the modal
-      const closeModal = () => bottomSheetModalRef.current?.close();
-      const tapGesture = Gesture.Tap().onEnd(() => {
-        scheduleOnRN(closeModal);
-      });
-
-      // Compose gestures - pan takes priority to block swipes
-      const composedGesture = Gesture.Race(panGesture, tapGesture);
-
-      return (
-        <GestureDetector gesture={composedGesture}>
-          <Animated.View
-            style={[
-              StyleSheet.absoluteFill,
-              { backgroundColor: 'black' },
-              animatedStyle,
-            ]}
-          />
-        </GestureDetector>
-      );
-    };
-
-    return <CustomBackdrop />;
-  }, []);
-
-  const renderWebbingImage = useCallback(
-    (model: Tables<'webbing_model'>, size: 'sm' | 'lg') => {
-      const dimensions = size === 'sm' ? 'h-10 w-10' : 'h-20 w-20';
-      const iconSize = size === 'sm' ? 20 : 40;
-      const borderRadius = size === 'sm' ? 'rounded-lg' : 'rounded-xl';
-
-      if (model.image_url) {
-        return (
-          <View
-            className={`relative ${dimensions} overflow-hidden ${borderRadius} border border-border bg-muted`}
-          >
-            <Image
-              source={{
-                uri: getR2PublicUrl('webbings', model.image_url),
-              }}
-              contentFit="cover"
-              alt={`${model.name}`}
-              style={{ width: '100%', height: '100%' }}
-            />
-          </View>
-        );
-      }
-
-      // Fallback with styled background and icon
-      return (
-        <View
-          className={`${dimensions} flex items-center justify-center ${borderRadius} border border-border bg-muted/50`}
-        >
-          <Icon
-            as={TorusIcon}
-            size={iconSize}
-            className={getMaterialIconColor(model.material)}
-          />
-        </View>
-      );
-    },
-    [],
-  );
-
-  // Memoize the selector button to prevent re-renders
-  const SelectorButton = useMemo(() => {
-    const selectedModel = models?.find(
-      (m) => m.id.toString() === modelIDField.value,
-    );
-
-    return (
-      <TouchableOpacity
-        id={id}
-        onPress={handleOpenPress}
-        className="flex-row justify-between items-center px-4 py-3 rounded-md border border-input bg-background"
-      >
-        {selectedModel ? (
-          <View className="flex flex-row items-center gap-3">
-            {renderWebbingImage(selectedModel, 'sm')}
-            <Text className="text-primary">{selectedModel.name}</Text>
-          </View>
-        ) : (
-          <Text className="text-muted-foreground">
-            {t('app.(modals).register-webbing.selectModel.placeholder')}
-          </Text>
-        )}
-        <Icon as={ChevronDownIcon} className="text-foreground" />
-      </TouchableOpacity>
-    );
-  }, [id, handleOpenPress, renderWebbingImage, modelIDField.value, t]);
-
-  const renderModelItem = useCallback(
-    (item: Tables<'webbing_model'>) => {
-      const isSelected = item.id.toString() === modelIDField.value;
-
-      return (
-        <TouchableOpacity
-          key={item.id}
-          onPress={() => handleSelect(item)}
-          style={{
-            width: itemWidth,
-          }}
-          className={cn(
-            'flex flex-col items-center p-4 rounded-2xl border',
-            isSelected
-              ? 'border-primary bg-primary/5'
-              : 'border-border bg-muted/30',
-          )}
-        >
-          {/* Webbing image */}
-          {renderWebbingImage(item, 'lg')}
-
-          {/* Details */}
-          <View className="flex flex-col items-center gap-2 w-full mt-3">
-            <Text
-              className="font-semibold text-foreground text-sm text-center"
-              numberOfLines={1}
-            >
-              {item.name}
-            </Text>
-            <View className="flex flex-row flex-wrap justify-center gap-1.5">
-              <View
-                className={cn(
-                  'rounded-full px-2.5 py-0.5',
-                  getMaterialColor(item.material),
-                )}
-              >
-                <Text className="text-xs font-medium capitalize">
-                  {item.material}
-                </Text>
-              </View>
-              <View
-                className={cn(
-                  'rounded-full px-2.5 py-0.5',
-                  getWeaveColor(item.weave),
-                )}
-              >
-                <Text className="text-xs font-medium capitalize">
-                  {item.weave}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-      );
-    },
-    [modelIDField.value, renderWebbingImage, handleSelect],
-  );
-
-  return (
-    <View className="gap-2 w-full">
-      <Label htmlFor={id} nativeID={id}>
-        {t('app.(modals).register-webbing.selectModel.label')}
-      </Label>
-
-      {isLoading ? (
-        <Skeleton className="w-full h-12 rounded-md" />
-      ) : (
-        <>
-          {SelectorButton}
-
-          <BottomSheetModal
-            ref={bottomSheetModalRef}
-            snapPoints={['70%']}
-            enablePanDownToClose
-            backdropComponent={renderBackdrop}
-            handleIndicatorStyle={{ backgroundColor: '#ccc', width: 40 }}
-            enableDynamicSizing={false}
-            activeOffsetY={[-10, 10]}
-            failOffsetX={[-5, 5]}
-            backgroundStyle={{ backgroundColor: '#ffffff' }}
-          >
-            <View className="flex-1 px-4 pb-4">
-              {/* Header */}
-              <View className="pb-4 border-b border-border mb-4">
-                <Text className="text-xl font-bold text-center text-foreground">
-                  {t('app.(modals).register-webbing.selectModel.label')}
-                </Text>
-              </View>
-
-              {/* Grid */}
-              <BottomSheetScrollView
-                contentContainerStyle={{
-                  flexDirection: 'row',
-                  flexWrap: 'wrap',
-                  gap: gap,
-                  paddingBottom: 80,
-                }}
-              >
-                {models ? (
-                  models.map((item) => renderModelItem(item))
-                ) : (
-                  <EmptyState />
-                )}
-              </BottomSheetScrollView>
-
-              {/* Clear button */}
-              {modelIDField.value && (
-                <View className="absolute bottom-4 left-4 right-4">
-                  <Button
-                    variant="outline"
-                    onPress={() => handleSelect(null)}
-                    className="bg-background"
-                  >
-                    <Text>
-                      {t('app.(modals).register-webbing.selectModel.clear')}
-                    </Text>
-                  </Button>
-                </View>
-              )}
-            </View>
-          </BottomSheetModal>
-        </>
-      )}
-    </View>
-  );
-};
+}
