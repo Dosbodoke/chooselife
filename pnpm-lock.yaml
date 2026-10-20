@@ -99,8 +99,8 @@ importers:
         specifier: ^1.5.2
         version: 1.5.2(react-native-web@0.21.4(encoding@0.1.13)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
       '@rnmapbox/maps':
-        specifier: 10.3.5
-        version: 10.3.5(expo@58.0.16)(react-dom@19.3.0(react@19.3.0))(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
+        specifier: 10.3.10
+        version: 10.3.10(expo@58.0.16)(react-dom@19.3.0(react@19.3.0))(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
       '@sentry/react-native':
         specifier: ^8.28.0
         version: 8.28.0(@babel/core@7.29.0)(@expo/config-types@58.0.3)(@expo/config@58.0.6(@typescript/typescript6@6.0.2))(@expo/env@2.5.2)(dotenv@17.4.2)(encoding@0.1.13)(expo-router@58.0.24)(expo-updates@58.0.17(expo-dev-client@58.0.14(expo@58.0.16)(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0)))(expo@58.0.16)(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0))(expo@58.0.16)(metro-config@0.87.1)(metro-resolver@0.87.1)(metro@0.87.1)(open@8.4.2)(promise@8.3.0)(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
@@ -256,7 +256,7 @@ importers:
         version: 0.24.9(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
       react-native-clusterer:
         specifier: ^5.0.2
-        version: 5.0.2(react-native-nitro-modules@0.35.2(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0))(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
+        version: 5.0.2(react-native-nitro-modules@0.37.1(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0))(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
       react-native-fast-squircle:
         specifier: ^1.1.2
         version: 1.1.2(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
@@ -273,8 +273,8 @@ importers:
         specifier: ^3.13.0
         version: 3.13.0(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
       react-native-nitro-modules:
-        specifier: ^0.35.2
-        version: 0.35.2(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
+        specifier: ^0.37.1
+        version: 0.37.1(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
       react-native-pdf:
         specifier: 7.0.5
         version: 7.0.5(react-native-blob-util@0.24.9(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0))(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
@@ -3320,8 +3320,8 @@ packages:
       react-native-web:
         optional: true
 
-  '@rnmapbox/maps@10.3.5':
-    resolution: {integrity: sha512-ShQppktl1H4HHPp/aninsEVK7+tsHmN48ULxpB1rfmx7W3WogB21Q1NAEw7CzxERnLZveijyutszJG2y3EBn2Q==}
+  '@rnmapbox/maps@10.3.10':
+    resolution: {integrity: sha512-PX7AuAWWoGYECqzCXy3Cq+HyI6+6YI12hX7h9iZtLwsDoz2eRpUzKWaaWskKlkgy1oXyFcN9mTqqkVWvVMoBwA==}
     peerDependencies:
       expo: '>=47.0.0'
       mapbox-gl: ^2.9.0
@@ -8614,8 +8614,8 @@ packages:
       react: '>=16.8.0'
       react-native: '>=0.40.0'
 
-  react-native-nitro-modules@0.35.2:
-    resolution: {integrity: sha512-97cZcCh3ZAuWAfutel2Q3qLfc45XXh7F9Ei5tEjahP0kV3q8hQelwLIulKXmjN+f0JI5Zf/wCsfwwdVWYU2tKA==}
+  react-native-nitro-modules@0.37.1:
+    resolution: {integrity: sha512-KpW6EQVQ/bfegpCGxN9Be+ndvsfj56t4IESEvCASu9gWpJa/NDfHpIeIwCOvZQ3eXmLEj6YD4wCLqcC1FJPr2w==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -13545,7 +13545,7 @@ snapshots:
       react-native: 0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0)
       react-native-web: 0.21.4(encoding@0.1.13)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
 
-  '@rnmapbox/maps@10.3.5(expo@58.0.16)(react-dom@19.3.0(react@19.3.0))(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)':
+  '@rnmapbox/maps@10.3.10(expo@58.0.16)(react-dom@19.3.0(react@19.3.0))(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)':
     dependencies:
       '@turf/along': 6.5.0
       '@turf/distance': 6.5.0
@@ -19548,12 +19548,12 @@ snapshots:
       react: 19.3.0
       react-native: 0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0)
 
-  react-native-clusterer@5.0.2(react-native-nitro-modules@0.35.2(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0))(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0):
+  react-native-clusterer@5.0.2(react-native-nitro-modules@0.37.1(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0))(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0):
     dependencies:
       '@mapbox/geo-viewport': 0.5.0
       react: 19.3.0
       react-native: 0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0)
-      react-native-nitro-modules: 0.35.2(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
+      react-native-nitro-modules: 0.37.1(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
 
   react-native-drawer-layout@4.2.12(react-native-gesture-handler@3.3.0(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0))(react-native-reanimated@4.7.1(react-native-worklets@0.13.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0))(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0))(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0):
     dependencies:
@@ -19598,7 +19598,7 @@ snapshots:
       react: 19.3.0
       react-native: 0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0)
 
-  react-native-nitro-modules@0.35.2(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0):
+  react-native-nitro-modules@0.37.1(react-native@0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0):
     dependencies:
       react: 19.3.0
       react-native: 0.88.0(@babel/core@7.29.0)(@react-native/metro-config@0.88.0(@babel/core@7.29.0))(@types/react@19.3.0)(react@19.3.0)
