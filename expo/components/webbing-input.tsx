@@ -1,6 +1,12 @@
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  type TextInputInstance,
+} from 'react-native';
 import { z } from 'zod';
 
 import { cn } from '~/lib/utils';
@@ -74,7 +80,7 @@ export const WebbingInput: React.FC<{
 }) => {
   const { t } = useTranslation();
 
-  const textInputRef = useRef<TextInput>(null);
+  const textInputRef = useRef<TextInputInstance>(null);
 
   const handlePress = () => {
     if (!disabled && textInputRef.current) {

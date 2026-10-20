@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   View,
+  type ScrollViewInstance,
 } from 'react-native';
 import Animated, {
   Easing,
@@ -177,7 +178,7 @@ function OnboardingWizard({
 }: OnboardingWizardProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
 
   const [initialForm] = useState<MembershipApplicationForm>(() =>
     createInitialForm({

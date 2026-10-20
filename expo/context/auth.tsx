@@ -2,7 +2,6 @@ import { AuthError, type Session } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { makeRedirectUri } from 'expo-auth-session';
-import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as Linking from 'expo-linking';
 import { useRouter, type Href } from 'expo-router';
 import AsyncStorage from 'expo-sqlite/kv-store';
@@ -639,8 +638,23 @@ export const useAuth = () => {
   return authContext;
 };
 
+// expo-auth-session no longer exports its QueryParams helper. Supabase returns
+// the tokens in the hash fragment, so merge it with the search params.
+const getQueryParams = (input: string) => {
+  const url = new URL(input, 'https://phony.example');
+  const errorCode = url.searchParams.get('errorCode');
+  url.searchParams.delete('errorCode');
+
+  const params: Record<string, string> = Object.fromEntries(url.searchParams);
+  new URLSearchParams(url.hash.replace(/^#/, '')).forEach((value, key) => {
+    params[key] = value;
+  });
+
+  return { errorCode, params };
+};
+
 const createSessionFromUrl = async (url: string) => {
-  const { params, errorCode } = QueryParams.getQueryParams(url);
+  const { params, errorCode } = getQueryParams(url);
 
   if (errorCode) throw new Error(errorCode);
   const { access_token, refresh_token } = params;

@@ -55,7 +55,7 @@ Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_PUBLIC_KEY!);
 
 // https://docs.expo.dev/router/advanced/router-settings/
 export const unstable_settings = {
-  initialRouteName: '(tabs)/index',
+  anchor: '(tabs)',
 };
 
 // Only one theme is needed now.

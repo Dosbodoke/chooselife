@@ -208,7 +208,8 @@ function AddHighlineButton({ visible }: { visible: boolean }) {
 export function FloatingTabBar({
   state,
   descriptors,
-  navigation,
+  emitter,
+  navigateToTab,
 }: TabBarProps) {
   const dockBottom = useDockBottom();
   const isKeyboardVisible = useKeyboardState((s) => s.isVisible);
@@ -293,19 +294,19 @@ export function FloatingTabBar({
                   : (options.title ?? route.name);
 
               const onPress = () => {
-                const event = navigation.emit({
+                const event = emitter.emit({
                   type: 'tabPress',
                   target: route.key,
                   canPreventDefault: true,
                 });
                 if (!focused && !event.defaultPrevented) {
                   Haptics.selectionAsync();
-                  navigation.navigate(route.name, route.params);
+                  navigateToTab(route.key);
                 }
               };
 
               const onLongPress = () => {
-                navigation.emit({
+                emitter.emit({
                   type: 'tabLongPress',
                   target: route.key,
                 });

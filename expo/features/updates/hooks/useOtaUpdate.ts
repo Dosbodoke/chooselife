@@ -159,7 +159,7 @@ export function useOtaUpdate(): OtaUpdateState & OtaUpdateActions {
   // Check for updates when app comes to foreground (throttled)
   useEffect(() => {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
-      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+      if (appState.current?.match(/inactive|background/) && nextAppState === 'active') {
         // Throttle foreground checks
         const lastCheck = await getLastOtaCheckTime();
         const now = Date.now();
