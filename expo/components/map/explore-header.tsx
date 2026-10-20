@@ -18,6 +18,7 @@ import {
   ScrollView,
   TouchableOpacity,
   View,
+  type ScrollViewInstance,
 } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -133,7 +134,7 @@ const ExploreHeader = React.memo(() => {
     [t],
   );
 
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const categoryLayouts = useRef<Array<{ x: number; width: number }>>([]);
   const indicatorX = useSharedValue(0);
   const indicatorWidth = useSharedValue(0);

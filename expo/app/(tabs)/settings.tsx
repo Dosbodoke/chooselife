@@ -348,7 +348,7 @@ const EditProfileButton: React.FC = () => {
         >
           <Button
             className="w-full"
-            onPress={form.handleSubmit((data) => mutation.mutate(data))}
+            onPress={() => form.handleSubmit((data) => mutation.mutate(data))()}
             disabled={!form.formState.isDirty || mutation.isPending}
           >
             <Text>{t('app.(tabs).settings.editProfile.submitLabel')}</Text>

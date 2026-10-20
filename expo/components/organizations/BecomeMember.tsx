@@ -2,7 +2,7 @@ import { ENABLE_MEMBERSHIP_REGISTRATION } from '@chooselife/ui';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { View, type ViewInstance } from 'react-native';
 
 import { Button } from '~/components/ui/button';
 import { Text } from '~/components/ui/text';
@@ -12,7 +12,7 @@ export const BecomeMember = ({
   ref,
 }: {
   slug: string;
-  ref?: React.RefObject<View | null>;
+  ref?: React.RefObject<ViewInstance | null>;
 }) => {
   const { t } = useTranslation();
   const router = useRouter();

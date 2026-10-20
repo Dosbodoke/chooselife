@@ -12,6 +12,7 @@ import {
   Text,
   View,
   type StyleProp,
+  type TextInstance,
   type TextProps,
   type ViewStyle,
 } from 'react-native';
@@ -309,7 +310,7 @@ function DropdownMenuSeparator({
 function DropdownMenuShortcut({
   className,
   ...props
-}: TextProps & React.RefAttributes<Text>) {
+}: TextProps & React.RefAttributes<TextInstance>) {
   return (
     <Text
       className={cn(

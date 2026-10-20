@@ -445,7 +445,7 @@ export const HighlineForm: React.FC<{ highline?: Highline }> = ({
             )}
           />
 
-          <Button onPress={submit} disabled={mutation.isPending}>
+          <Button onPress={() => submit()} disabled={mutation.isPending}>
             <Text>
               {t(
                 `components.map.register-modal.${highline ? 'update' : 'create'}`,

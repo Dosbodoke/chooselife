@@ -6,6 +6,7 @@ import {
   ScrollView,
   View,
   type LayoutChangeEvent,
+  type ScrollViewInstance,
 } from 'react-native';
 
 import { cn } from '~/lib/utils';
@@ -61,7 +62,7 @@ export function FestivalScheduleDayChips({
   selectedDayKey,
 }: FestivalScheduleDayChipsProps) {
   const { locale } = useI18n();
-  const scrollViewRef = React.useRef<ScrollView>(null);
+  const scrollViewRef = React.useRef<ScrollViewInstance>(null);
   const dayChipLayoutsRef = React.useRef<
     Record<string, { width: number; x: number }>
   >({});

@@ -30,7 +30,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
-  type ViewToken,
+  type ListViewToken,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -305,7 +305,7 @@ function ResultsList() {
   const handleViewableItemsChanged = ({
     viewableItems,
   }: {
-    viewableItems: ViewToken[];
+    viewableItems: ListViewToken[];
   }) => {
     if (viewableItems.length > 0) actions.markExposed();
   };
