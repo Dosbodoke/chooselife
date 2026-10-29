@@ -1,4 +1,5 @@
 import { useMapStore } from '~/store/map-store';
+import { useTabBarStore } from '~/store/tab-bar-store';
 import {
   GlassContainer,
   GlassView,
@@ -57,6 +58,17 @@ const ADD_BUTTON_TRANSITION: CSSTransitionProperties<ViewStyle> = {
   // iOS-style ease out: fast start, long settle.
   transitionTimingFunction: cubicBezier(0.32, 0.72, 0, 1),
 };
+
+// Overlays tuck the dock away by sliding it under the screen edge. Only the
+// transform moves: fading it would drop the glass (see `GlassSurface`). It
+// comes back a beat after the overlay starts leaving, so the two never cross.
+const DOCK_HIDE_TRANSITION: CSSTransitionProperties<ViewStyle> = {
+  transitionProperty: 'transform',
+  transitionDuration: 420,
+  transitionTimingFunction: cubicBezier(0.32, 0.72, 0, 1),
+};
+const DOCK_HIDDEN_SCALE = 0.92;
+const DOCK_RETURN_DELAY = 140;
 
 /** iOS `tertiarySystemFill`: reads on both glass and the solid fallback. */
 const INDICATOR_COLOR = 'rgba(120,120,128,0.12)';
@@ -214,6 +226,7 @@ export function FloatingTabBar({
   const dockBottom = useDockBottom();
   const isKeyboardVisible = useKeyboardState((s) => s.isVisible);
   const areMapCardsVisible = useMapStore((s) => s.clusteredMarkers.length > 0);
+  const isHiddenByOverlay = useTabBarStore((s) => s.isHidden);
 
   const activeRoute = state.routes[state.index].name;
   const isExplore = activeRoute === EXPLORE_ROUTE;
@@ -245,13 +258,27 @@ export function FloatingTabBar({
   }
 
   return (
-    <View
-      pointerEvents="box-none"
+    <Animated.View
+      pointerEvents={isHiddenByOverlay ? 'none' : 'box-none'}
+      accessibilityElementsHidden={isHiddenByOverlay}
+      importantForAccessibility={
+        isHiddenByOverlay ? 'no-hide-descendants' : 'auto'
+      }
       style={{
         position: 'absolute',
         left: DOCK_SIDE_INSET,
         right: DOCK_SIDE_INSET,
         bottom: dockBottom,
+        transform: [
+          {
+            translateY: isHiddenByOverlay
+              ? dockBottom + DOCK_HEIGHT + DOCK_CONTENT_GAP
+              : 0,
+          },
+          { scale: isHiddenByOverlay ? DOCK_HIDDEN_SCALE : 1 },
+        ],
+        ...DOCK_HIDE_TRANSITION,
+        transitionDelay: isHiddenByOverlay ? 0 : DOCK_RETURN_DELAY,
       }}
     >
       <GlassContainer spacing={16} style={{ flexDirection: 'row' }}>
@@ -340,6 +367,6 @@ export function FloatingTabBar({
         </GlassSurface>
         <AddHighlineButton visible={isExplore} />
       </GlassContainer>
-    </View>
+    </Animated.View>
   );
 }

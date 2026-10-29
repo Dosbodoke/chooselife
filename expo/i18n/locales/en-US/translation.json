@@ -353,6 +353,12 @@
       "settings": {
         "viewProfile": "View profile",
         "logOut": "Log Out",
+        "signOutSheet": {
+          "title": "Sign out of Choose Life?",
+          "description": "Your sessions and records stay safe in your account. You can sign back in any time.",
+          "confirm": "Sign out",
+          "cancel": "Cancel"
+        },
         "delete": {
           "label": "Delete Account",
           "alertLabel": "Delete your account",

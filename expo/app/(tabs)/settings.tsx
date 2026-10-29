@@ -9,6 +9,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
+import * as Haptics from 'expo-haptics';
 import { Link, useRouter } from 'expo-router';
 import {
   ChevronRightIcon,
@@ -42,6 +43,7 @@ import {
 } from '~/components/floating-tab-bar';
 import { LanguageSwitcher } from '~/components/language-switcher';
 import { SafeAreaOfflineView } from '~/components/offline-banner';
+import { SignOutSheet } from '~/components/settings/sign-out-sheet';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
@@ -49,7 +51,7 @@ import { Text } from '~/components/ui/text';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
-  const { profile, logout, isLoginPending } = useAuth();
+  const { profile, isLoginPending } = useAuth();
   const isOnline = useOnlineStatus();
   const tabBarHeight = useFloatingTabBarHeight();
   const router = useRouter();
@@ -108,12 +110,7 @@ export default function SettingsPage() {
 
           {/* Account Actions */}
           <View className="bg-white rounded-xl overflow-hidden">
-            <SettingsItem
-              icon={LogOutIcon}
-              iconColor="#8E8E93"
-              label={t('app.(tabs).settings.logOut')}
-              onPress={logout}
-            />
+            <SignOut />
             <DeleteAccount isLast />
           </View>
 
@@ -382,6 +379,29 @@ const EditProfileButton: React.FC = () => {
           <ProfileInfoForm form={form} layout="sheet" />
         </BottomSheetView>
       </BottomSheetModal>
+    </>
+  );
+};
+
+const SignOut: React.FC = () => {
+  const { t } = useTranslation();
+  const { logout } = useAuth();
+  const bottomSheetModalRef = React.useRef<BottomSheetModal>(null);
+
+  const openModal = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    bottomSheetModalRef.current?.present();
+  };
+
+  return (
+    <>
+      <SettingsItem
+        icon={LogOutIcon}
+        iconColor="#8E8E93"
+        label={t('app.(tabs).settings.logOut')}
+        onPress={openModal}
+      />
+      <SignOutSheet ref={bottomSheetModalRef} onConfirm={logout} />
     </>
   );
 };

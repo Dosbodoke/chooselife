@@ -353,6 +353,12 @@
       "settings": {
         "viewProfile": "Visualizar perfil",
         "logOut": "Sair da conta",
+        "signOutSheet": {
+          "title": "Sair do Choose Life?",
+          "description": "Seus rolês e registros continuam salvos na sua conta. Você pode entrar de novo quando quiser.",
+          "confirm": "Sair",
+          "cancel": "Cancelar"
+        },
         "delete": {
           "label": "Deletar Conta",
           "alertLabel": "Deletar sua Conta",
