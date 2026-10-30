@@ -81,7 +81,21 @@ Recurring contributions use the matching
 Nonpayment never ends or suspends a membership — each missed contribution stays
 a distinct owed obligation until an admin settles or voids it.
 
-There is no automatic settlement, no provider webhook, and no renewal job.
+There is no automatic settlement and no provider webhook. Recurring
+obligations are materialized by the `membership-billing-generate-obligations`
+pg_cron job, which calls `generate_membership_billing_obligations()` hourly. It
+creates every period whose availability date has arrived since admission, once,
+and sends no notification. To inspect a run, query `cron.job_run_details`; to
+see per-schedule failures, call `generate_membership_billing_obligations()` as
+the database owner and read the rows whose `result` is `failed`. Calling it by
+hand is safe: it only creates periods that are missing.
+
+Association admins can send one person a push reminder about an open payment
+from the admin billing workspace. `send_membership_payment_reminder(...)`
+inserts a targeted row into `notifications`, and the existing database webhook
+delivers it through the `push-notification` Edge Function. It refuses
+broadcasts, people with nothing due or no registered device, and a repeat
+within 20 hours.
 
 ## Cron Jobs Secrets
 
