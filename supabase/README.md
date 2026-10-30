@@ -97,6 +97,12 @@ delivers it through the `push-notification` Edge Function. It refuses
 broadcasts, people with nothing due or no registered device, and a repeat
 within 20 hours.
 
+Environments without an existing notifications webhook use the private push
+dispatcher. Configure `project_url` and the legacy JWT `service_role_key` in
+Supabase Vault for that environment. The dispatcher reads them at runtime and
+keeps credentials out of trigger arguments. Local databases without those
+settings skip external delivery. Existing dashboard webhooks are preserved.
+
 Admins can waive selected overdue recurring contributions of one person with
 `waive_recurring_contributions(organization_id, user_id, obligation_ids, reason)`.
 The command accepts up to 60 distinct contributions and a reason of 1 to 500
