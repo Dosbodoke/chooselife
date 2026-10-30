@@ -97,6 +97,22 @@ delivers it through the `push-notification` Edge Function. It refuses
 broadcasts, people with nothing due or no registered device, and a repeat
 within 20 hours.
 
+Admins can waive selected overdue recurring contributions of one person with
+`waive_recurring_contributions(organization_id, user_id, obligation_ids, reason)`.
+The command accepts up to 60 distinct contributions and a reason of 1 to 500
+characters. It rejects settled charges, admission payments, charges not yet
+overdue, and payments under review. A batch succeeds in full or changes nothing.
+Admins may waive their own arrears; the audit records the acting admin.
+
+A waived contribution becomes `void`, retains its original amount, and has an
+immutable record in `payment_obligation_waivers`. It is no longer payable and
+never counts as paid. Its schedule-period row stays in place so generation
+cannot recreate the debt. Future contributions continue normally. There is no
+undo command. The admin workspace reads the audit through
+`get_billing_workspace_waivers(organization_id)`; clients cannot access the audit
+table directly. These authenticated RPCs use `SECURITY DEFINER` intentionally
+and check association-admin permissions before returning data or making changes.
+
 ## Cron Jobs Secrets
 
 Some migrations schedule cron jobs that require secrets to run. You need to [set them up in the Supabase Vault](https://supabase.com/docs/guides/database/vault).

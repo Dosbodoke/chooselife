@@ -1539,6 +1539,65 @@ export type Database = {
           },
         ]
       }
+      payment_obligation_waivers: {
+        Row: {
+          actor_user_id: string | null
+          association_person_id: string
+          created_at: string
+          id: string
+          obligation_id: string
+          organization_id: string
+          reason: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          association_person_id: string
+          created_at?: string
+          id?: string
+          obligation_id: string
+          organization_id: string
+          reason: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          association_person_id?: string
+          created_at?: string
+          id?: string
+          obligation_id?: string
+          organization_id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_obligation_waivers_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_obligation_waivers_association_person_id_fkey"
+            columns: ["association_person_id"]
+            isOneToOne: false
+            referencedRelation: "association_people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_obligation_waivers_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: true
+            referencedRelation: "payment_obligations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_obligation_waivers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_obligations: {
         Row: {
           amount: number
@@ -2333,6 +2392,18 @@ export type Database = {
           reject_command: string
         }[]
       }
+      get_billing_workspace_waivers: {
+        Args: { p_organization_id: string }
+        Returns: {
+          member_user_id: string
+          obligation_id: string
+          reason: string
+          waived_at: string
+          waived_by_handle: string
+          waived_by_name: string
+          waived_by_user_id: string
+        }[]
+      }
       get_crossing_time: {
         Args: { highline_id: string; page_number: number; page_size: number }
         Returns: {
@@ -2727,6 +2798,26 @@ export type Database = {
       }
       unregister_push_token: { Args: { p_token: string }; Returns: boolean }
       validate_locale_keys: { Args: { json_data: Json }; Returns: boolean }
+      waive_recurring_contributions: {
+        Args: {
+          p_obligation_ids: string[]
+          p_organization_id: string
+          p_reason: string
+          p_user_id: string
+        }
+        Returns: {
+          amount: number
+          currency: string
+          due_on: string
+          obligation_id: string
+          period_key: string
+          reason: string
+          waived_at: string
+          waived_by_user_id: string
+          waived_now: boolean
+          waiver_id: string
+        }[]
+      }
       webbing_legacy_model_snapshot: {
         Args: { captured_by: string; model_id: number }
         Returns: Json
