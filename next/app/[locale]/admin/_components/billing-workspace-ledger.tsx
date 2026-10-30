@@ -68,6 +68,9 @@ const FINANCIAL_TONES: Record<FinancialStatus, Tone> = {
     dot: "bg-orange-500",
   },
   scheduled: { chip: "border-blue-200 bg-blue-50 text-blue-700", dot: "bg-blue-500" },
+  // Forgiven without money changing hands: neither the green of paid nor the
+  // grey of a month that never had a charge.
+  waived: { chip: "border-violet-200 bg-violet-50 text-violet-700", dot: "bg-violet-500" },
   no_obligation: { chip: "border-slate-200 bg-slate-50 text-slate-600", dot: "bg-slate-400" },
 };
 
@@ -143,6 +146,7 @@ export default function BillingWorkspaceLedger({
     rejected: t("ledger.financial.rejected"),
     scheduled: t("ledger.financial.scheduled"),
     under_review: t("ledger.financial.underReview"),
+    waived: t("ledger.financial.waived"),
   };
 
   const renderCell = (row: MemberTableRow, columnId: string) => {
@@ -205,8 +209,15 @@ export default function BillingWorkspaceLedger({
     }
 
     if (columnId === "amount") {
+      // A waived month shows what was billed, struck through: it is on record
+      // but nobody owes it.
       return (
-        <span className="font-medium tabular-nums text-slate-800">
+        <span
+          className={cn(
+            "font-medium tabular-nums",
+            period.status === "waived" ? "text-slate-400 line-through" : "text-slate-800",
+          )}
+        >
           {formatCurrency(period.amount, period.currency, displayLocale)}
         </span>
       );
@@ -324,6 +335,11 @@ export default function BillingWorkspaceLedger({
                 value: "paid",
                 label: t("ledger.financial.paid"),
                 tone: FINANCIAL_TONES.paid,
+              },
+              {
+                value: "waived",
+                label: t("ledger.financial.waived"),
+                tone: FINANCIAL_TONES.waived,
               },
               {
                 value: "no_obligation",

@@ -36,6 +36,7 @@ function period(
     payerType: null,
     payerName: null,
     attentionReason: null,
+    waiver: null,
   };
 }
 
@@ -111,4 +112,22 @@ test("a void period carries no amount and an empty ledger sums to zero", () => {
       (entry) => entry.people === 0 && entry.amount === 0,
     ),
   );
+});
+
+test("a waived month is not owed and adds nothing to any total", () => {
+  const summary = summarizeFinancialAttention(
+    [
+      row("forgiven", [
+        period("2026-10", "overdue"),
+        period("2026-09", "waived"),
+      ]),
+    ],
+    "all",
+  );
+
+  assert.equal(
+    summary.find((entry) => entry.status === "overdue")?.amount,
+    2500,
+  );
+  assert.ok(summary.every((entry) => (entry.status as string) !== "waived"));
 });

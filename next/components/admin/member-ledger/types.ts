@@ -11,6 +11,7 @@ export type FinancialStatus =
   | "awaiting_payment"
   | "overdue"
   | "scheduled"
+  | "waived"
   | "no_obligation";
 
 export type ClaimStatus = "under_review" | "approved" | "rejected";
@@ -18,6 +19,13 @@ export type ClaimStatus = "under_review" | "approved" | "rejected";
 export type ObligationKind = "initial_admission" | "recurring";
 
 export type PeriodKey = `${number}-${number}`;
+
+/** Why, when and by whom an admin waived a charge. */
+export type PeriodWaiver = {
+  reason: string;
+  waivedAt: string;
+  waivedByName: string | null;
+};
 
 /** `all` collapses every period into the member's most urgent open charge. */
 export type PeriodFilter = PeriodKey | "all";
@@ -41,6 +49,7 @@ export type MemberPeriod = {
   payerType: string | null;
   payerName: string | null;
   attentionReason: string | null;
+  waiver: PeriodWaiver | null;
 };
 
 export type MemberRow = {

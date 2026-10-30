@@ -15,15 +15,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "@/i18n/navigation";
+import type { WaivableCharge } from "@/lib/contribution-waiver";
 import { supabaseBrowser } from "@/utils/supabase/client";
 
 import {
   ApplicationRevisionFields,
   DetailField,
 } from "./application-revision-fields";
+import BillingWorkspaceContributionWaiver from "./billing-workspace-contribution-waiver";
 import BillingWorkspacePaymentReminder from "./billing-workspace-payment-reminder";
 
 const supabase = supabaseBrowser();
+
+/** How many periods the history shows before the admin asks for the rest. */
+const RECENT_HISTORY_LENGTH = 6;
 
 /** Same "September 2026" shape the real period rows use. */
 function monthLabel(dueOn: string, locale: string) {
@@ -40,6 +45,7 @@ function statusTone(status: FinancialStatus) {
   if (status === "under_review") return "border-amber-200 bg-amber-50 text-amber-800";
   if (status === "awaiting_payment") return "border-orange-200 bg-orange-50 text-orange-800";
   if (status === "scheduled") return "border-blue-200 bg-blue-50 text-blue-700";
+  if (status === "waived") return "border-violet-200 bg-violet-50 text-violet-700";
   return "border-slate-200 bg-slate-50 text-slate-600";
 }
 
@@ -90,11 +96,14 @@ export default function BillingWorkspaceMemberReview({
   member,
   onClose,
   organizationId,
+  waivableCharges,
 }: {
   member: MemberTableRow;
   onClose: () => void;
   organizationId: string | null;
+  waivableCharges: WaivableCharge[];
 }) {
+  const [showFullHistory, setShowFullHistory] = useState(false);
   // Addressed by person, not by claim: this drawer opens on people who have no
   // claim to look up -- long-standing members, ex-members, anyone already decided.
   const detailQuery = useQuery({
@@ -140,7 +149,11 @@ export default function BillingWorkspaceMemberReview({
     rejected: t("ledger.financial.rejected"),
     scheduled: t("ledger.financial.scheduled"),
     under_review: t("ledger.financial.underReview"),
+    waived: t("ledger.financial.waived"),
   };
+  const visibleHistory = showFullHistory
+    ? member.history
+    : member.history.slice(0, RECENT_HISTORY_LENGTH);
   const planLabel =
     member.plan === "annual"
       ? t("plans.annual")
@@ -193,6 +206,20 @@ export default function BillingWorkspaceMemberReview({
           organizationId={organizationId}
         />
 
+        <BillingWorkspaceContributionWaiver
+          key={`waiver-${member.id}`}
+          charges={waivableCharges}
+          memberId={member.id}
+          memberLabel={
+            member.name
+              ? member.handle
+                ? `${member.name} · ${member.handle}`
+                : member.name
+              : member.handle || t("common.unnamedMember")
+          }
+          organizationId={organizationId}
+        />
+
         <section>
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
             <CalendarDays className="size-4 text-slate-500" aria-hidden="true" />
@@ -233,7 +260,7 @@ export default function BillingWorkspaceMemberReview({
                   </span>
                 </div>
               ) : null}
-              {member.history.slice(0, 6).map((history) => (
+              {visibleHistory.map((history) => (
                 <div
                   key={`${member.id}-${history.periodKey}`}
                   className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
@@ -250,6 +277,27 @@ export default function BillingWorkspaceMemberReview({
                         })}
                       </span>
                     ) : null}
+                    {/* A waived month names who forgave it and why, since
+                        nothing else on the row explains the missing payment. */}
+                    {history.waiver ? (
+                      <>
+                        <span className="mt-0.5 block text-xs text-slate-500">
+                          {history.waiver.waivedByName
+                            ? t("ledgerReview.waivedBy", {
+                                date: formatDateTime(history.waiver.waivedAt, displayLocale),
+                                name: history.waiver.waivedByName,
+                              })
+                            : t("ledgerReview.waivedAt", {
+                                date: formatDateTime(history.waiver.waivedAt, displayLocale),
+                              })}
+                        </span>
+                        <span className="mt-0.5 block break-words text-xs text-slate-500">
+                          {t("ledgerReview.waiverReason", {
+                            reason: history.waiver.reason,
+                          })}
+                        </span>
+                      </>
+                    ) : null}
                   </span>
                   <span className="flex shrink-0 items-center gap-3">
                     <span
@@ -263,8 +311,11 @@ export default function BillingWorkspaceMemberReview({
                     </span>
                     {/* Last, so the figures line up as a column the eye can add
                         up. `formatCurrency` renders a void period's null as an
-                        em dash rather than R$ 0,00. */}
-                    <span className="font-semibold tabular-nums text-slate-900">
+                        em dash rather than R$ 0,00; a waived month keeps its
+                        billed amount, struck through because it is not owed. */}
+                    <span
+                      className={`font-semibold tabular-nums ${history.status === "waived" ? "text-slate-400 line-through" : "text-slate-900"}`}
+                    >
                       {formatCurrency(history.amount, history.currency, displayLocale)}
                     </span>
                   </span>
@@ -276,6 +327,20 @@ export default function BillingWorkspaceMemberReview({
               {t("ledgerReview.noHistory")}
             </p>
           )}
+          {member.history.length > RECENT_HISTORY_LENGTH ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="mt-2 rounded-lg text-slate-600"
+              aria-expanded={showFullHistory}
+              onClick={() => setShowFullHistory((shown) => !shown)}
+            >
+              {showFullHistory
+                ? t("ledgerReview.showRecent")
+                : t("ledgerReview.showAll", { count: member.history.length })}
+            </Button>
+          ) : null}
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">

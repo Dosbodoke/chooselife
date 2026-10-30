@@ -604,6 +604,7 @@
         "overdue": "Overdue",
         "rejected": "Rejected",
         "scheduled": "Scheduled",
+        "waived": "Waived",
         "noObligation": "No charge"
       },
       "loadedAnnouncement": "Member list loaded with {count} people.",
@@ -621,7 +622,12 @@
       "joined": "Joined",
       "paidAt": "Paid {date}",
       "recentPeriods": "Payment history",
-      "noHistory": "There is no payment history for this person yet."
+      "noHistory": "There is no payment history for this person yet.",
+      "waivedBy": "Waived {date} by {name}",
+      "waivedAt": "Waived {date}",
+      "waiverReason": "Reason: {reason}",
+      "showAll": "Show full history ({count})",
+      "showRecent": "Show recent only"
     },
     "memberDetail": {
       "title": "Member details",
@@ -723,6 +729,37 @@
         "nothingDue": "This person no longer has an open payment. Nothing was sent.",
         "unauthorized": "You are not authorized to send reminders for this association.",
         "unknown": "We couldn't confirm whether the reminder was queued. Refresh its status before trying again."
+      }
+    },
+    "waiver": {
+      "title": "Waive overdue contributions",
+      "intro": "{count, plural, one {# overdue contribution can be waived.} other {# overdue contributions can be waived.}} Waiving does not record a payment.",
+      "start": "Choose months to waive",
+      "selectAll": "Select {count, plural, one {# overdue month} other {# overdue months}}",
+      "dueOn": "Was due {date}",
+      "reasonLabel": "Reason",
+      "reasonHint": "Kept in the history with your name and the date.",
+      "reasonCount": "{count}/{max}",
+      "selectionRequired": "Select at least one month.",
+      "reasonRequired": "Write a reason to continue.",
+      "review": "Review waiver",
+      "back": "Back",
+      "cancel": "Cancel",
+      "recipient": "Person",
+      "periods": "Months",
+      "total": "Total waived",
+      "consequence": "These charges can no longer be paid and will not be marked as paid. The record stays in the history and cannot be undone here. Upcoming monthly charges continue as usual.",
+      "confirm": "{count, plural, one {Waive contribution} other {Waive # contributions}}",
+      "confirming": "Waiving…",
+      "done": "{count, plural, one {# contribution waived} other {# contributions waived}}, {total} in total. Upcoming monthly charges continue as usual.",
+      "errors": {
+        "invalidSelection": "The selection does not apply to this person. Nothing was waived. The data was refreshed; review the months.",
+        "reasonRequired": "Write a reason for the waiver. Nothing was waived.",
+        "reasonTooLong": "The reason must be 500 characters or fewer. Nothing was waived.",
+        "underReview": "One of the months has a payment under review. Decide that payment before waiving. Nothing was waived.",
+        "notWaivable": "One of the months changed and can no longer be waived. Nothing was waived. The data was refreshed; review the selection.",
+        "unauthorized": "You are not allowed to waive contributions of this association.",
+        "unknown": "Could not confirm whether the waiver was recorded. The data was refreshed. Check the history before trying again."
       }
     }
   }
