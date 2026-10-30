@@ -1,5 +1,7 @@
 import type { Table } from "@tanstack/react-table";
 
+import type { AttentionSummary } from "@/lib/billing-workspace-summary";
+
 export type LifecycleStatus = "active" | "pending" | "inactive";
 
 export type FinancialStatus =
@@ -9,6 +11,7 @@ export type FinancialStatus =
   | "awaiting_payment"
   | "overdue"
   | "scheduled"
+  | "waived"
   | "no_obligation";
 
 export type ClaimStatus = "under_review" | "approved" | "rejected";
@@ -16,6 +19,13 @@ export type ClaimStatus = "under_review" | "approved" | "rejected";
 export type ObligationKind = "initial_admission" | "recurring";
 
 export type PeriodKey = `${number}-${number}`;
+
+/** Why, when and by whom an admin waived a charge. */
+export type PeriodWaiver = {
+  reason: string;
+  waivedAt: string;
+  waivedByName: string | null;
+};
 
 /** `all` collapses every period into the member's most urgent open charge. */
 export type PeriodFilter = PeriodKey | "all";
@@ -39,6 +49,7 @@ export type MemberPeriod = {
   payerType: string | null;
   payerName: string | null;
   attentionReason: string | null;
+  waiver: PeriodWaiver | null;
 };
 
 export type MemberRow = {
@@ -83,6 +94,8 @@ export type MemberTableController = {
   table: Table<MemberTableRow>;
   filters: MemberTableFilters;
   counts: MemberTableCounts;
+  /** Overdue, refused, awaiting and in-review totals for the selected period. */
+  attentionSummary: AttentionSummary[];
   periodOptions: ReadonlyArray<{ key: PeriodKey; label: string }>;
   lifecycleOptions: ReadonlyArray<{
     value: LifecycleFilter;

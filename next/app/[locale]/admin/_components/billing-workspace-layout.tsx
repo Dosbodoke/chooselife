@@ -122,8 +122,8 @@ export default function BillingWorkspaceLayout({
           direction={reviewDirection}
           className={
             isDesktop
-              ? "max-w-xl overflow-hidden rounded-none border-l p-0"
-              : "max-h-[96dvh] overflow-hidden rounded-t-3xl p-0"
+              ? "max-w-xl overflow-clip rounded-none border-l p-0"
+              : "max-h-[96dvh] overflow-clip rounded-t-3xl p-0"
           }
         >
           <DrawerHeader className="sr-only">

@@ -1044,6 +1044,65 @@ export type Database = {
           },
         ]
       }
+      membership_payment_reminders: {
+        Row: {
+          created_at: string
+          device_count: number
+          id: string
+          notification_id: number | null
+          organization_id: string
+          recipient_user_id: string
+          sent_by_user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_count: number
+          id?: string
+          notification_id?: number | null
+          organization_id: string
+          recipient_user_id: string
+          sent_by_user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_count?: number
+          id?: string
+          notification_id?: number | null
+          organization_id?: string
+          recipient_user_id?: string
+          sent_by_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_payment_reminders_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_payment_reminders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_payment_reminders_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_payment_reminders_sent_by_user_id_fkey"
+            columns: ["sent_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       news: {
         Row: {
           content: string
@@ -1473,6 +1532,65 @@ export type Database = {
           },
           {
             foreignKeyName: "payment_claims_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_obligation_waivers: {
+        Row: {
+          actor_user_id: string | null
+          association_person_id: string
+          created_at: string
+          id: string
+          obligation_id: string
+          organization_id: string
+          reason: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          association_person_id: string
+          created_at?: string
+          id?: string
+          obligation_id: string
+          organization_id: string
+          reason: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          association_person_id?: string
+          created_at?: string
+          id?: string
+          obligation_id?: string
+          organization_id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_obligation_waivers_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_obligation_waivers_association_person_id_fkey"
+            columns: ["association_person_id"]
+            isOneToOne: false
+            referencedRelation: "association_people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_obligation_waivers_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: true
+            referencedRelation: "payment_obligations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_obligation_waivers_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -2274,6 +2392,18 @@ export type Database = {
           reject_command: string
         }[]
       }
+      get_billing_workspace_waivers: {
+        Args: { p_organization_id: string }
+        Returns: {
+          member_user_id: string
+          obligation_id: string
+          reason: string
+          waived_at: string
+          waived_by_handle: string
+          waived_by_name: string
+          waived_by_user_id: string
+        }[]
+      }
       get_crossing_time: {
         Args: { highline_id: string; page_number: number; page_size: number }
         Returns: {
@@ -2422,6 +2552,24 @@ export type Database = {
           p_organization_id: string
         }
         Returns: Json
+      }
+      get_membership_payment_reminder_preview: {
+        Args: { p_organization_id: string; p_user_id: string }
+        Returns: {
+          blocked_reason: string
+          body: Json
+          device_count: number
+          last_sent_at: string
+          next_available_at: string
+          oldest_due_on: string
+          open_count: number
+          overdue_count: number
+          recipient_handle: string
+          recipient_language: Database["public"]["Enums"]["language"]
+          recipient_name: string
+          recipient_user_id: string
+          title: Json
+        }[]
       }
       get_payment_obligation_instructions: {
         Args: { p_obligation_id: string }
@@ -2618,6 +2766,15 @@ export type Database = {
         Args: { p_organization_id: string; p_user_id: string }
         Returns: string
       }
+      send_membership_payment_reminder: {
+        Args: { p_organization_id: string; p_user_id: string }
+        Returns: {
+          device_count: number
+          notification_id: number
+          reminder_id: string
+          sent_at: string
+        }[]
+      }
       slugify: { Args: { value: string }; Returns: string }
       submit_association_application: {
         Args: {
@@ -2641,6 +2798,26 @@ export type Database = {
       }
       unregister_push_token: { Args: { p_token: string }; Returns: boolean }
       validate_locale_keys: { Args: { json_data: Json }; Returns: boolean }
+      waive_recurring_contributions: {
+        Args: {
+          p_obligation_ids: string[]
+          p_organization_id: string
+          p_reason: string
+          p_user_id: string
+        }
+        Returns: {
+          amount: number
+          currency: string
+          due_on: string
+          obligation_id: string
+          period_key: string
+          reason: string
+          waived_at: string
+          waived_by_user_id: string
+          waived_now: boolean
+          waiver_id: string
+        }[]
+      }
       webbing_legacy_model_snapshot: {
         Args: { captured_by: string; model_id: number }
         Returns: Json

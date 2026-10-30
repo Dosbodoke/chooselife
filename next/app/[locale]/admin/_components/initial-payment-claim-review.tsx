@@ -1,26 +1,14 @@
 "use client";
 
-import {
-  AlertTriangle,
-  CalendarDays,
-  CheckCircle2,
-  Clock3,
-  FileText,
-  Loader2,
-  UserRound,
-  X,
-} from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock3, FileText } from "lucide-react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
-import type { ReactNode } from "react";
 
 import {
   ClaimDecisionFooter,
   ClaimResolvedNotice,
 } from "@/components/admin/claim-decision-footer";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import type {
   InitialPaymentClaimDetail,
   InitialPaymentClaimQueueRow,
@@ -31,6 +19,17 @@ import {
   DetailField,
 } from "./application-revision-fields";
 import { formatAmount, formatDate } from "./initial-payment-claim-formatters";
+import {
+  ClaimHistoryList,
+  ReviewAlert,
+  ReviewDrawerBody,
+  ReviewDrawerFrame,
+  ReviewDrawerHeader,
+  ReviewFieldGrid,
+  ReviewLoading,
+  type ReviewPerson,
+  ReviewSection,
+} from "./review-drawer";
 
 function getInitials(name: string | null, handle: string | null) {
   const source = name?.trim() || handle?.replace(/^@/, "") || "A";
@@ -120,6 +119,7 @@ export function InitialPaymentClaimReview({
   onApprove,
   onClose,
   onReject,
+  person,
   rejectionReason,
   onRejectionReasonChange,
 }: {
@@ -130,12 +130,17 @@ export function InitialPaymentClaimReview({
   onApprove: () => Promise<void>;
   onClose: () => void;
   onReject: () => Promise<void>;
+  person: ReviewPerson;
   rejectionReason: string;
   onRejectionReasonChange: (value: string) => void;
 }) {
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-background">
-      <ReviewHeader action={action} detail={detail} onClose={onClose} />
+    <ReviewDrawerFrame>
+      <ReviewDrawerHeader
+        closeDisabled={action !== null}
+        onClose={onClose}
+        person={person}
+      />
       <ReviewDetails
         actionError={actionError}
         detail={detail}
@@ -149,62 +154,7 @@ export function InitialPaymentClaimReview({
         rejectionReason={rejectionReason}
         onRejectionReasonChange={onRejectionReasonChange}
       />
-    </div>
-  );
-}
-
-function ReviewHeader({
-  action,
-  detail,
-  onClose,
-}: {
-  action: ReviewAction;
-  detail: InitialPaymentClaimDetail | null;
-  onClose: () => void;
-}) {
-  const t = useTranslations("admin");
-
-  return (
-    <div className="flex items-start justify-between gap-4 border-b px-5 py-5 md:px-7">
-      <div className="flex min-w-0 items-center gap-3">
-        {detail ? (
-          <ApplicantAvatar
-            name={detail.applicant_name}
-            handle={detail.applicant_handle}
-            picture={detail.applicant_profile_picture}
-          />
-        ) : (
-          <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-muted">
-            <UserRound
-              className="size-6 text-muted-foreground"
-              aria-hidden="true"
-            />
-          </span>
-        )}
-        <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            {t("initialReview.eyebrow")}
-          </p>
-          <h2 className="mt-1 truncate text-xl font-semibold">
-            {detail?.applicant_name || t("common.loadingApplicant")}
-          </h2>
-          <p className="truncate text-sm text-muted-foreground">
-            {detail?.applicant_handle || detail?.organization_name || ""}
-          </p>
-        </div>
-      </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        onClick={onClose}
-        disabled={action !== null}
-        aria-label={t("common.closeReview")}
-        className="shrink-0 rounded-xl"
-      >
-        <X className="size-5" aria-hidden="true" />
-      </Button>
-    </div>
+    </ReviewDrawerFrame>
   );
 }
 
@@ -219,178 +169,113 @@ function ReviewDetails({
 }) {
   const locale = useLocale();
   const t = useTranslations("admin");
-  const claimHistory = getHistory(detail?.claim_history);
-  const auditHistory = getHistory(detail?.audit_history);
 
-  return (
-    <div className="scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-5 md:px-7 md:py-6">
-      {detailLoading ? (
-        <div className="flex min-h-72 items-center justify-center">
-          <Loader2
-            className="size-7 animate-spin text-muted-foreground"
-            aria-label={t("common.loadingClaimDetails")}
-          />
-        </div>
-      ) : !detail ? (
-        <div className="flex min-h-72 items-center justify-center">
-          <Alert variant="destructive" className="max-w-lg">
-            <AlertTriangle className="size-4" aria-hidden="true" />
-            <AlertTitle>{t("initialReview.reviewUnavailableTitle")}</AlertTitle>
-            <AlertDescription>
-              {actionError || t("initialReview.refreshQueue")}
-            </AlertDescription>
-          </Alert>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {actionError ? (
-            <Alert variant="destructive" aria-live="assertive">
-              <AlertTriangle className="size-4" aria-hidden="true" />
-              <AlertTitle>
-                {t("initialReview.decisionNotCompletedTitle")}
-              </AlertTitle>
-              <AlertDescription>{actionError}</AlertDescription>
-            </Alert>
-          ) : null}
+  if (detailLoading) {
+    return (
+      <ReviewDrawerBody>
+        <ReviewLoading label={t("common.loadingClaimDetails")} />
+      </ReviewDrawerBody>
+    );
+  }
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <SummaryCard
-              label={t("common.claimAmount")}
-              value={`${formatAmount(detail.amount, detail.currency, locale)} · ${
-                detail.plan_type === "annual"
-                  ? t("plans.annual")
-                  : t("plans.monthly")
-              }`}
-            />
-            <SummaryCard
-              label={t("common.submitted")}
-              value={formatDate(detail.claim_created_at, locale)}
-            />
-          </div>
-
-          <section aria-labelledby="payment-evidence-title">
-            <SectionHeading
-              id="payment-evidence-title"
-              icon={<CheckCircle2 className="size-4" aria-hidden="true" />}
-              title={t("initialReview.paymentEvidence")}
-            />
-            <div className="mt-3 grid gap-x-6 gap-y-4 rounded-2xl border bg-muted/20 p-4 sm:grid-cols-2">
-              <DetailField label={t("common.payer")}>
-                {detail.payer_type === "applicant"
-                  ? t("common.applicant")
-                  : detail.payer_name || t("common.otherPayer")}
-              </DetailField>
-              <DetailField label={t("common.claimAttempts")}>
-                {detail.attempt_count}
-              </DetailField>
-              <DetailField label={t("common.claimCreated")}>
-                {formatDate(detail.claim_created_at, locale)}
-              </DetailField>
-              <DetailField label={t("common.termsVersion")}>
-                {detail.terms_version}
-              </DetailField>
-            </div>
-          </section>
-
-          <ApplicationRevision detail={detail} />
-
-          {claimHistory.length > 0 || auditHistory.length > 0 ? (
-            <ClaimHistory
-              claimHistory={claimHistory}
-              auditHistory={auditHistory}
-            />
-          ) : null}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ApplicationRevision({
-  detail,
-}: {
-  detail: InitialPaymentClaimDetail;
-}) {
-  const t = useTranslations("admin");
-
-  return (
-    <section aria-labelledby="application-title">
-      <SectionHeading
-        id="application-title"
-        icon={<FileText className="size-4" aria-hidden="true" />}
-        title={t("initialReview.applicationRevision")}
-      />
-      <div className="mt-3">
-        <ApplicationRevisionFields
-          handle={detail.applicant_handle}
-          revision={detail}
+  if (!detail) {
+    return (
+      <ReviewDrawerBody>
+        <ReviewAlert
+          title={t("initialReview.reviewUnavailableTitle")}
+          description={actionError || t("initialReview.refreshQueue")}
         />
-      </div>
-    </section>
-  );
-}
+      </ReviewDrawerBody>
+    );
+  }
 
-function ClaimHistory({
-  auditHistory,
-  claimHistory,
-}: {
-  auditHistory: Record<string, unknown>[];
-  claimHistory: Record<string, unknown>[];
-}) {
-  const locale = useLocale();
-  const t = useTranslations("admin");
   const stateLabel = (status: string) => {
     if (status === "under_review") return t("states.underReview");
     if (status === "approved") return t("states.approved");
     if (status === "rejected") return t("states.rejected");
     return status;
   };
+  const claimStates = getHistory(detail.claim_history).map((history) => ({
+    key: String(history.claim_id),
+    label: stateLabel(String(history.status)),
+    detail: `${formatDate(String(history.created_at), locale)}${
+      history.decision_reason ? ` · ${String(history.decision_reason)}` : ""
+    }`,
+  }));
+  const auditEvents = getHistory(detail.audit_history).map((history) => ({
+    key: String(history.id),
+    label: `${stateLabel(String(history.previous_state))} → ${stateLabel(
+      String(history.next_state),
+    )}`,
+    detail: `${formatDate(String(history.created_at), locale)}${
+      history.reason ? ` · ${String(history.reason)}` : ""
+    }`,
+  }));
 
   return (
-    <section aria-labelledby="history-title">
-      <SectionHeading
-        id="history-title"
-        icon={<CalendarDays className="size-4" aria-hidden="true" />}
-        title={t("initialReview.immutableHistory")}
-      />
-      <div className="mt-3 grid gap-3 rounded-2xl border bg-muted/20 p-4 lg:grid-cols-2">
-        <HistoryColumn title={t("initialReview.claimStates")}>
-          {claimHistory.map((history) => (
-            <div
-              key={String(history.claim_id)}
-              className="flex flex-wrap items-center justify-between gap-2 text-sm"
-            >
-              <span className="font-medium">
-                {stateLabel(String(history.status))}
-              </span>
-              <span className="text-muted-foreground">
-                {formatDate(String(history.created_at), locale)}
-                {history.decision_reason
-                  ? ` · ${String(history.decision_reason)}`
-                  : ""}
-              </span>
-            </div>
-          ))}
-        </HistoryColumn>
-        <HistoryColumn title={t("initialReview.auditEvents")}>
-          {auditHistory.map((history) => (
-            <div
-              key={String(history.id)}
-              className="flex flex-wrap items-center justify-between gap-2 text-sm"
-            >
-              <span className="font-medium">
-                {stateLabel(String(history.previous_state))} →{" "}
-                {stateLabel(String(history.next_state))}
-              </span>
-              <span className="text-muted-foreground">
-                {formatDate(String(history.created_at), locale)}
-                {history.reason ? ` · ${String(history.reason)}` : ""}
-              </span>
-            </div>
-          ))}
-        </HistoryColumn>
-      </div>
-    </section>
+    <ReviewDrawerBody>
+      {actionError ? (
+        <ReviewAlert
+          title={t("initialReview.decisionNotCompletedTitle")}
+          description={actionError}
+        />
+      ) : null}
+
+      <ReviewSection
+        card
+        icon={<CheckCircle2 aria-hidden="true" />}
+        title={t("initialReview.paymentEvidence")}
+      >
+        <ReviewFieldGrid>
+          <DetailField label={t("common.claimAmount")}>
+            {`${formatAmount(detail.amount, detail.currency, locale)} · ${
+              detail.plan_type === "annual"
+                ? t("plans.annual")
+                : t("plans.monthly")
+            }`}
+          </DetailField>
+          <DetailField label={t("common.submitted")}>
+            {formatDate(detail.claim_created_at, locale)}
+          </DetailField>
+          <DetailField label={t("common.payer")}>
+            {detail.payer_type === "applicant"
+              ? t("common.applicant")
+              : detail.payer_name || t("common.otherPayer")}
+          </DetailField>
+          <DetailField label={t("common.claimAttempts")}>
+            {detail.attempt_count}
+          </DetailField>
+          <DetailField label={t("common.termsVersion")}>
+            {detail.terms_version}
+          </DetailField>
+        </ReviewFieldGrid>
+      </ReviewSection>
+
+      <ReviewSection
+        card
+        icon={<FileText aria-hidden="true" />}
+        title={t("initialReview.applicationRevision")}
+      >
+        <ApplicationRevisionFields
+          handle={detail.applicant_handle}
+          revision={detail}
+        />
+      </ReviewSection>
+
+      {claimStates.length > 0 || auditEvents.length > 0 ? (
+        <ReviewSection
+          icon={<CalendarDays aria-hidden="true" />}
+          title={t("initialReview.immutableHistory")}
+        >
+          <ClaimHistoryList
+            claimStates={claimStates}
+            claimStatesTitle={t("initialReview.claimStates")}
+            auditEvents={auditEvents}
+            auditTitle={t("initialReview.auditEvents")}
+          />
+        </ReviewSection>
+      ) : null}
+    </ReviewDrawerBody>
   );
 }
 
@@ -444,52 +329,5 @@ function ReviewActions({
       rejectionReason={rejectionReason}
       onRejectionReasonChange={onRejectionReasonChange}
     />
-  );
-}
-
-function SummaryCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-        {label}
-      </p>
-      <p className="mt-1 truncate font-semibold tabular-nums text-slate-950">
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function SectionHeading({
-  icon,
-  id,
-  title,
-}: {
-  icon: ReactNode;
-  id: string;
-  title: string;
-}) {
-  return (
-    <h3 id={id} className="flex items-center gap-2 text-sm font-semibold">
-      <span className="text-muted-foreground">{icon}</span>
-      {title}
-    </h3>
-  );
-}
-
-function HistoryColumn({
-  children,
-  title,
-}: {
-  children: ReactNode;
-  title: string;
-}) {
-  return (
-    <div>
-      <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
-        {title}
-      </p>
-      <div className="mt-2 space-y-2">{children}</div>
-    </div>
   );
 }
