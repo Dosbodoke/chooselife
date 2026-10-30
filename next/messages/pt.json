@@ -428,6 +428,7 @@
       "closeReview": "Fechar revisão",
       "copyLink": "Copiar link desta visualização",
       "linkCopied": "Link copiado",
+      "copyLinkFailed": "Não foi possível copiar o link. Copie-o pela barra de endereço.",
       "loadingApplicant": "Carregando candidato",
       "loadingMember": "Carregando membro",
       "loadingClaimDetails": "Carregando detalhes da solicitação",
@@ -640,7 +641,6 @@
       "unavailable": "Não foi possível carregar os detalhes do membro."
     },
     "initialReview": {
-      "eyebrow": "Revisão da solicitação inicial",
       "reviewUnavailableTitle": "Revisão indisponível",
       "refreshQueue": "Atualize a fila e tente novamente.",
       "decisionNotCompletedTitle": "Decisão não concluída",
@@ -679,7 +679,6 @@
       "confirmRejection": "Confirmar recusa"
     },
     "recurringReview": {
-      "eyebrow": "Revisão da solicitação recorrente",
       "reviewUnavailableTitle": "Revisão indisponível",
       "refreshWorkspace": "Atualize a área financeira e tente novamente.",
       "decisionNotCompletedTitle": "Decisão não concluída",

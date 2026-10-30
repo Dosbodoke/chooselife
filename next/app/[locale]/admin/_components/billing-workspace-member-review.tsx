@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Check, FileText, Link2, UserRound, X } from "lucide-react";
+import { CalendarDays, FileText, UserRound } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -14,7 +14,6 @@ import {
 } from "@/components/admin/member-ledger";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "@/i18n/navigation";
 import type { WaivableCharge } from "@/lib/contribution-waiver";
 import { supabaseBrowser } from "@/utils/supabase/client";
 
@@ -24,6 +23,13 @@ import {
 } from "./application-revision-fields";
 import BillingWorkspaceContributionWaiver from "./billing-workspace-contribution-waiver";
 import BillingWorkspacePaymentReminder from "./billing-workspace-payment-reminder";
+import {
+  ReviewDrawerBody,
+  ReviewDrawerFrame,
+  ReviewDrawerHeader,
+  ReviewFieldGrid,
+  ReviewSection,
+} from "./review-drawer";
 
 const supabase = supabaseBrowser();
 
@@ -47,49 +53,6 @@ function statusTone(status: FinancialStatus) {
   if (status === "scheduled") return "border-blue-200 bg-blue-50 text-blue-700";
   if (status === "waived") return "border-violet-200 bg-violet-50 text-violet-700";
   return "border-slate-200 bg-slate-50 text-slate-600";
-}
-
-/**
- * Copies the address bar as it stands, which the ledger keeps in sync with the
- * open filters and the focused member -- so what lands in the recipient's
- * browser is the screen the sender is looking at, not a bare /admin.
- */
-function CopyViewLinkButton() {
-  const t = useTranslations("admin");
-  const [copied, setCopied] = useState(false);
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error("Error copying link to clipboard:", error);
-    }
-  };
-
-  return (
-    <>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="shrink-0 rounded-lg"
-        onClick={copy}
-        aria-label={t("common.copyLink")}
-      >
-        {copied ? (
-          <Check className="size-5 text-emerald-600" aria-hidden="true" />
-        ) : (
-          <Link2 className="size-5" aria-hidden="true" />
-        )}
-      </Button>
-      {/* The icon swap is the sighted confirmation; this is its spoken twin. */}
-      <span role="status" aria-live="polite" className="sr-only">
-        {copied ? t("common.linkCopied") : ""}
-      </span>
-    </>
-  );
 }
 
 export default function BillingWorkspaceMemberReview({
@@ -162,41 +125,13 @@ export default function BillingWorkspaceMemberReview({
         : t("plans.noActivePlan");
 
   return (
-    <div className="flex max-h-[100dvh] flex-col overflow-hidden bg-white">
-      <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-5 md:px-7">
-        <div className="min-w-0">
-          <h2 className="truncate text-xl font-semibold text-slate-950">
-            {member.name || t("common.unnamedMember")}
-          </h2>
-          <p className="truncate text-sm text-slate-500">
-            {member.handle ? (
-              <Link
-                href={`/profile/${member.handle.replace("@", "")}`}
-                className="rounded-sm font-medium text-blue-700 underline-offset-2 transition-colors hover:text-blue-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-              >
-                {member.handle}
-              </Link>
-            ) : (
-              t("common.noHandle")
-            )}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <CopyViewLinkButton />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="shrink-0 rounded-lg"
-            onClick={onClose}
-            aria-label={t("common.closeReview")}
-          >
-            <X className="size-5" aria-hidden="true" />
-          </Button>
-        </div>
-      </header>
+    <ReviewDrawerFrame>
+      <ReviewDrawerHeader
+        onClose={onClose}
+        person={{ name: member.name, handle: member.handle }}
+      />
 
-      <div className="scrollbar flex-1 space-y-7 overflow-y-auto px-5 py-5 md:px-7">
+      <ReviewDrawerBody>
         {/* Leads the drawer on a financial review: the one action an admin
             takes here, followed by the facts it is based on. Renders nothing
             for somebody who owes nothing. */}
@@ -220,13 +155,12 @@ export default function BillingWorkspaceMemberReview({
           organizationId={organizationId}
         />
 
-        <section>
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <CalendarDays className="size-4 text-slate-500" aria-hidden="true" />
-            {t("ledgerReview.recentPeriods")}
-          </div>
+        <ReviewSection
+          icon={<CalendarDays aria-hidden="true" />}
+          title={t("ledgerReview.recentPeriods")}
+        >
           {nextCharge || member.history.length > 0 ? (
-            <div className="mt-3 divide-y divide-slate-100 rounded-2xl border border-slate-200">
+            <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200">
               {/* Leads the list because it is the only future-dated row, and the
                   rest run newest-first. Derived, so it carries no obligation id
                   and nothing to click into yet. */}
@@ -323,7 +257,7 @@ export default function BillingWorkspaceMemberReview({
               ))}
             </div>
           ) : (
-            <p className="mt-3 rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm text-slate-500">
+            <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm text-slate-500">
               {t("ledgerReview.noHistory")}
             </p>
           )}
@@ -341,15 +275,14 @@ export default function BillingWorkspaceMemberReview({
                 : t("ledgerReview.showAll", { count: member.history.length })}
             </Button>
           ) : null}
-        </section>
+        </ReviewSection>
 
-        <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <UserRound className="size-4 text-slate-500" aria-hidden="true" />
-            {t("memberDetail.title")}
-          </div>
-
-          <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+        <ReviewSection
+          card
+          icon={<UserRound aria-hidden="true" />}
+          title={t("memberDetail.title")}
+        >
+          <ReviewFieldGrid>
             <DetailField label={t("memberDetail.memberSince")}>
               {formatDate(detail?.joined_at ?? member.joinedAt, displayLocale)}
             </DetailField>
@@ -366,42 +299,43 @@ export default function BillingWorkspaceMemberReview({
                 {detail.departure_reason}
               </DetailField>
             ) : null}
-          </dl>
+          </ReviewFieldGrid>
+        </ReviewSection>
 
-          <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <FileText className="size-4 text-slate-500" aria-hidden="true" />
-            {t("memberDetail.applicationForm")}
-            {detail?.revision_number ? (
-              <span className="text-xs font-medium text-slate-500">
-                {t("common.revision", { number: detail.revision_number })}
-                {detail.submitted_at
-                  ? ` · ${formatDate(detail.submitted_at, displayLocale)}`
-                  : ""}
-              </span>
-            ) : null}
-          </div>
+        <ReviewSection
+          card
+          icon={<FileText aria-hidden="true" />}
+          title={t("memberDetail.applicationForm")}
+          aside={
+            detail?.revision_number
+              ? `${t("common.revision", { number: detail.revision_number })}${
+                  detail.submitted_at
+                    ? ` · ${formatDate(detail.submitted_at, displayLocale)}`
+                    : ""
+                }`
+              : null
+          }
+        >
 
           {detailQuery.isPending ? (
             <FieldGridSkeleton label={t("memberDetail.loading")} />
           ) : detailQuery.isError ? (
-            <p className="mt-3 text-sm text-slate-500">
+            <p className="text-sm text-slate-500">
               {t("memberDetail.unavailable")}
             </p>
           ) : detail?.application_revision_id ? (
-            <div className="mt-3">
-              <ApplicationRevisionFields handle={member.handle} revision={detail} />
-            </div>
+            <ApplicationRevisionFields handle={member.handle} revision={detail} />
           ) : (
             /* A member admitted before applications existed, or admitted by
                hand, genuinely has no form -- say so instead of showing a grid
                of em dashes. */
-            <p className="mt-3 rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+            <p className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
               {t("memberDetail.noApplication")}
             </p>
           )}
-        </section>
-      </div>
-    </div>
+        </ReviewSection>
+      </ReviewDrawerBody>
+    </ReviewDrawerFrame>
   );
 }
 
@@ -417,7 +351,7 @@ function FieldGridSkeleton({ label }: { label: string }) {
     <div
       role="status"
       aria-label={label}
-      className="mt-3 grid gap-x-6 gap-y-4 rounded-2xl border bg-muted/20 p-4 sm:grid-cols-2"
+      className="grid gap-x-6 gap-y-4 sm:grid-cols-2"
     >
       {Array.from({ length: 6 }, (_, index) => (
         <div key={index} aria-hidden="true">

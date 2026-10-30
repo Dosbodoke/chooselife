@@ -315,7 +315,9 @@ export default function BillingWorkspace({
     });
   };
 
-  const reviewSurface = selectedClaim ? (
+  // Every drawer names the person from the ledger row, so the header is
+  // already right while a claim's own detail is still loading.
+  const reviewSurface = selectedClaim && selectedMember ? (
     selectedClaim.purpose === "initial_admission" ? (
       <InitialPaymentClaimReview
         action={
@@ -336,6 +338,7 @@ export default function BillingWorkspace({
         onApprove={handleApprove}
         onClose={closeReview}
         onReject={handleReject}
+        person={selectedMember}
         rejectionReason={rejectionReason}
         onRejectionReasonChange={setRejectionReason}
       />
@@ -361,6 +364,7 @@ export default function BillingWorkspace({
         onApprove={handleApprove}
         onClose={closeReview}
         onReject={handleReject}
+        person={selectedMember}
         rejectionReason={rejectionReason}
         onRejectionReasonChange={setRejectionReason}
       />

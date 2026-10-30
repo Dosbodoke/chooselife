@@ -428,6 +428,7 @@
       "closeReview": "Close review",
       "copyLink": "Copy link to this view",
       "linkCopied": "Link copied",
+      "copyLinkFailed": "Couldn't copy the link. Copy it from the address bar instead.",
       "loadingApplicant": "Loading applicant",
       "loadingMember": "Loading member",
       "loadingClaimDetails": "Loading claim details",
@@ -640,7 +641,6 @@
       "unavailable": "Member details could not be loaded."
     },
     "initialReview": {
-      "eyebrow": "Initial claim review",
       "reviewUnavailableTitle": "Review unavailable",
       "refreshQueue": "Refresh the queue and try again.",
       "decisionNotCompletedTitle": "Decision not completed",
@@ -679,7 +679,6 @@
       "confirmRejection": "Confirm rejection"
     },
     "recurringReview": {
-      "eyebrow": "Recurring claim review",
       "reviewUnavailableTitle": "Review unavailable",
       "refreshWorkspace": "Refresh the workspace and try again.",
       "decisionNotCompletedTitle": "Decision not completed",
