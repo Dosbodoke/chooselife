@@ -21,6 +21,7 @@ import {
   ApplicationRevisionFields,
   DetailField,
 } from "./application-revision-fields";
+import BillingWorkspacePaymentReminder from "./billing-workspace-payment-reminder";
 
 const supabase = supabaseBrowser();
 
@@ -182,66 +183,17 @@ export default function BillingWorkspaceMemberReview({
         </div>
       </header>
 
-      <div className="scrollbar flex-1 overflow-y-auto px-5 py-5 md:px-7">
-        <section className="mt-7 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <UserRound className="size-4 text-slate-500" aria-hidden="true" />
-            {t("memberDetail.title")}
-          </div>
+      <div className="scrollbar flex-1 space-y-7 overflow-y-auto px-5 py-5 md:px-7">
+        {/* Leads the drawer on a financial review: the one action an admin
+            takes here, followed by the facts it is based on. Renders nothing
+            for somebody who owes nothing. */}
+        <BillingWorkspacePaymentReminder
+          key={member.id}
+          memberId={member.id}
+          organizationId={organizationId}
+        />
 
-          <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
-            <DetailField label={t("memberDetail.memberSince")}>
-              {formatDate(detail?.joined_at ?? member.joinedAt, displayLocale)}
-            </DetailField>
-            <DetailField label={t("common.plan")}>{planLabel}</DetailField>
-            {/* Only an ex-member has these, so they appear rather than
-                rendering two permanent em dashes for everybody else. */}
-            {detail?.departed_at ? (
-              <DetailField label={t("memberDetail.departedOn")}>
-                {formatDate(detail.departed_at, displayLocale)}
-              </DetailField>
-            ) : null}
-            {detail?.departure_reason ? (
-              <DetailField label={t("memberDetail.departureReason")}>
-                {detail.departure_reason}
-              </DetailField>
-            ) : null}
-          </dl>
-
-          <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <FileText className="size-4 text-slate-500" aria-hidden="true" />
-            {t("memberDetail.applicationForm")}
-            {detail?.revision_number ? (
-              <span className="text-xs font-medium text-slate-500">
-                {t("common.revision", { number: detail.revision_number })}
-                {detail.submitted_at
-                  ? ` · ${formatDate(detail.submitted_at, displayLocale)}`
-                  : ""}
-              </span>
-            ) : null}
-          </div>
-
-          {detailQuery.isPending ? (
-            <FieldGridSkeleton label={t("memberDetail.loading")} />
-          ) : detailQuery.isError ? (
-            <p className="mt-3 text-sm text-slate-500">
-              {t("memberDetail.unavailable")}
-            </p>
-          ) : detail?.application_revision_id ? (
-            <div className="mt-3">
-              <ApplicationRevisionFields handle={member.handle} revision={detail} />
-            </div>
-          ) : (
-            /* A member admitted before applications existed, or admitted by
-               hand, genuinely has no form -- say so instead of showing a grid
-               of em dashes. */
-            <p className="mt-3 rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
-              {t("memberDetail.noApplication")}
-            </p>
-          )}
-        </section>
-
-        <section className="mt-7">
+        <section>
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
             <CalendarDays className="size-4 text-slate-500" aria-hidden="true" />
             {t("ledgerReview.recentPeriods")}
@@ -322,6 +274,64 @@ export default function BillingWorkspaceMemberReview({
           ) : (
             <p className="mt-3 rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm text-slate-500">
               {t("ledgerReview.noHistory")}
+            </p>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <UserRound className="size-4 text-slate-500" aria-hidden="true" />
+            {t("memberDetail.title")}
+          </div>
+
+          <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+            <DetailField label={t("memberDetail.memberSince")}>
+              {formatDate(detail?.joined_at ?? member.joinedAt, displayLocale)}
+            </DetailField>
+            <DetailField label={t("common.plan")}>{planLabel}</DetailField>
+            {/* Only an ex-member has these, so they appear rather than
+                rendering two permanent em dashes for everybody else. */}
+            {detail?.departed_at ? (
+              <DetailField label={t("memberDetail.departedOn")}>
+                {formatDate(detail.departed_at, displayLocale)}
+              </DetailField>
+            ) : null}
+            {detail?.departure_reason ? (
+              <DetailField label={t("memberDetail.departureReason")}>
+                {detail.departure_reason}
+              </DetailField>
+            ) : null}
+          </dl>
+
+          <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <FileText className="size-4 text-slate-500" aria-hidden="true" />
+            {t("memberDetail.applicationForm")}
+            {detail?.revision_number ? (
+              <span className="text-xs font-medium text-slate-500">
+                {t("common.revision", { number: detail.revision_number })}
+                {detail.submitted_at
+                  ? ` · ${formatDate(detail.submitted_at, displayLocale)}`
+                  : ""}
+              </span>
+            ) : null}
+          </div>
+
+          {detailQuery.isPending ? (
+            <FieldGridSkeleton label={t("memberDetail.loading")} />
+          ) : detailQuery.isError ? (
+            <p className="mt-3 text-sm text-slate-500">
+              {t("memberDetail.unavailable")}
+            </p>
+          ) : detail?.application_revision_id ? (
+            <div className="mt-3">
+              <ApplicationRevisionFields handle={member.handle} revision={detail} />
+            </div>
+          ) : (
+            /* A member admitted before applications existed, or admitted by
+               hand, genuinely has no form -- say so instead of showing a grid
+               of em dashes. */
+            <p className="mt-3 rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+              {t("memberDetail.noApplication")}
             </p>
           )}
         </section>

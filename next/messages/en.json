@@ -607,7 +607,12 @@
         "noObligation": "No charge"
       },
       "loadedAnnouncement": "Member list loaded with {count} people.",
-      "reviewPerson": "Review {name}"
+      "reviewPerson": "Review {name}",
+      "summary": {
+        "label": "Payments needing attention",
+        "people": "{count, plural, one {# person} other {# people}}",
+        "nothingOpen": "Nothing open"
+      }
     },
     "ledgerReview": {
       "periodDetail": "Period detail",
@@ -688,6 +693,37 @@
       "rejectClaim": "Reject payment",
       "confirmPayment": "Confirm payment",
       "confirmRejection": "Confirm rejection"
+    },
+    "reminder": {
+      "title": "Payment reminder",
+      "loading": "Loading reminder status",
+      "unavailable": "Reminders are not available for this person right now.",
+      "overdueSummary": "{count, plural, one {# contribution overdue since {date}.} other {# contributions overdue, the oldest since {date}.}}",
+      "openSummary": "{count, plural, one {# contribution is} other {# contributions are}} open for payment.",
+      "review": "Review reminder",
+      "to": "To",
+      "message": "Message",
+      "devices": "{count, plural, one {# device} other {# devices}} registered",
+      "language": {
+        "pt": "Portuguese",
+        "en": "English"
+      },
+      "deliveryNote": "Delivery depends on the app's push service and device permissions. Receipt isn't confirmed.",
+      "cooldownNote": "Each person can get one reminder every 20 hours.",
+      "cancel": "Cancel",
+      "send": "Send reminder",
+      "sending": "Sending…",
+      "sent": "Reminder queued at {time} for {count, plural, one {# registered device} other {# registered devices}}.",
+      "cooldown": "A reminder was sent on {last}. The next one can go out after {next}.",
+      "noDevices": "{name} has no device registered for notifications, so a push reminder would not reach them. Contact them another way.",
+      "errors": {
+        "cooldown": "A reminder was already sent to this person recently. Nothing was sent.",
+        "noDevices": "This person no longer has a device registered. Nothing was sent.",
+        "notMember": "This person is not a member or applicant of the association. Nothing was sent.",
+        "nothingDue": "This person no longer has an open payment. Nothing was sent.",
+        "unauthorized": "You are not authorized to send reminders for this association.",
+        "unknown": "We couldn't confirm whether the reminder was queued. Refresh its status before trying again."
+      }
     }
   }
 }

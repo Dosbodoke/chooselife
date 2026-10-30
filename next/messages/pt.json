@@ -607,7 +607,12 @@
         "noObligation": "Sem cobrança"
       },
       "loadedAnnouncement": "Lista de associados carregada com {count} pessoas.",
-      "reviewPerson": "Revisar {name}"
+      "reviewPerson": "Revisar {name}",
+      "summary": {
+        "label": "Pagamentos que pedem atenção",
+        "people": "{count, plural, one {# pessoa} other {# pessoas}}",
+        "nothingOpen": "Nada em aberto"
+      }
     },
     "ledgerReview": {
       "periodDetail": "Detalhes do período",
@@ -688,6 +693,37 @@
       "rejectClaim": "Recusar pagamento",
       "confirmPayment": "Confirmar pagamento",
       "confirmRejection": "Confirmar recusa"
+    },
+    "reminder": {
+      "title": "Lembrete de pagamento",
+      "loading": "Carregando situação do lembrete",
+      "unavailable": "Não é possível enviar lembretes para esta pessoa agora.",
+      "overdueSummary": "{count, plural, one {# contribuição vencida desde {date}.} other {# contribuições vencidas, a mais antiga desde {date}.}}",
+      "openSummary": "{count, plural, one {# contribuição disponível} other {# contribuições disponíveis}} para pagamento.",
+      "review": "Revisar lembrete",
+      "to": "Para",
+      "message": "Mensagem",
+      "devices": "{count, plural, one {# dispositivo cadastrado} other {# dispositivos cadastrados}}",
+      "language": {
+        "pt": "Português",
+        "en": "Inglês"
+      },
+      "deliveryNote": "A entrega depende do serviço de notificações e das permissões do dispositivo. O recebimento não é confirmado.",
+      "cooldownNote": "Cada pessoa pode receber um lembrete a cada 20 horas.",
+      "cancel": "Cancelar",
+      "send": "Enviar lembrete",
+      "sending": "Enviando…",
+      "sent": "Lembrete na fila às {time} para {count, plural, one {# dispositivo cadastrado} other {# dispositivos cadastrados}}.",
+      "cooldown": "Um lembrete foi enviado em {last}. O próximo pode ser enviado depois de {next}.",
+      "noDevices": "{name} não tem dispositivo cadastrado para notificações, então um lembrete push não chegaria. Entre em contato por outro meio.",
+      "errors": {
+        "cooldown": "Um lembrete já foi enviado para esta pessoa recentemente. Nada foi enviado.",
+        "noDevices": "Esta pessoa não tem mais dispositivo cadastrado. Nada foi enviado.",
+        "notMember": "Esta pessoa não é associada nem candidata da associação. Nada foi enviado.",
+        "nothingDue": "Esta pessoa não tem mais pagamento em aberto. Nada foi enviado.",
+        "unauthorized": "Você não tem permissão para enviar lembretes desta associação.",
+        "unknown": "Não foi possível confirmar se o lembrete entrou na fila. Atualize a situação antes de tentar novamente."
+      }
     }
   }
 }

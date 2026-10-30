@@ -334,6 +334,48 @@ export default function BillingWorkspaceLedger({
             icon={<SlidersHorizontal className="size-3.5" aria-hidden="true" />}
           />
         </div>
+
+        {/* What needs chasing, at a glance. Each figure is also the shortcut to
+            its filter, and pressing it again clears that filter. */}
+        <div
+          role="group"
+          aria-label={t("ledger.summary.label")}
+          className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4"
+        >
+          {model.attentionSummary.map((entry) => {
+            const active = model.filters.financial === entry.status;
+            const tone = FINANCIAL_TONES[entry.status];
+
+            return (
+              <button
+                key={entry.status}
+                type="button"
+                aria-pressed={active}
+                onClick={() =>
+                  model.setFinancialFilter(active ? "all" : entry.status)
+                }
+                className={cn(
+                  "flex min-w-0 touch-manipulation flex-col items-start rounded-xl border px-3.5 py-2.5 text-left transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  active ? tone.chip : "border-slate-200 bg-white hover:bg-slate-50",
+                )}
+              >
+                <span className="flex min-w-0 items-center gap-1.5 text-xs font-medium">
+                  <ChipDot tone={tone} />
+                  <span className="truncate">{financialLabels[entry.status]}</span>
+                </span>
+                <span className="mt-1 text-base font-semibold tabular-nums text-slate-950">
+                  {t("ledger.summary.people", { count: entry.people })}
+                </span>
+                <span className="text-xs tabular-nums text-slate-500">
+                  {entry.amount > 0
+                    ? formatCurrency(entry.amount, entry.currency, displayLocale)
+                    : t("ledger.summary.nothingOpen")}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto">

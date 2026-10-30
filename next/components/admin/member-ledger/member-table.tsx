@@ -22,6 +22,8 @@ import {
 } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
 
+import { summarizeFinancialAttention } from "@/lib/billing-workspace-summary";
+
 import type {
   FinancialFilter,
   FinancialStatus,
@@ -136,11 +138,13 @@ const dueDateSorting: SortingFn<MemberTableRow> = (left, right) => {
   return leftDue.localeCompare(rightDue);
 };
 
-const globalFilter: FilterFn<MemberTableRow> = (row, _columnId, value) => {
+const globalFilter: FilterFn<MemberTableRow> = (row, _columnId, value) =>
+  matchesMemberSearch(row.original, value);
+
+function matchesMemberSearch(original: MemberTableRow, value: unknown) {
   const search = String(value).trim().toLocaleLowerCase();
   if (!search) return true;
 
-  const original = row.original;
   return [
     original.name,
     original.handle,
@@ -153,7 +157,7 @@ const globalFilter: FilterFn<MemberTableRow> = (row, _columnId, value) => {
   ]
     .filter(Boolean)
     .some((field) => String(field).toLocaleLowerCase().includes(search));
-};
+}
 
 function noObligationFor(
   periodKey: PeriodKey,
@@ -372,6 +376,17 @@ export function useMemberTable({
     };
   }, [periodRows]);
 
+  const attentionSummary = useMemo(
+    () => summarizeFinancialAttention(
+      periodRows.filter((row) =>
+        (lifecycle === "all" || row.lifecycle === lifecycle) &&
+        matchesMemberSearch(row, search),
+      ),
+      periodKey,
+    ),
+    [lifecycle, periodKey, periodRows, search],
+  );
+
   const tableOptions = useMemo<TableOptions<MemberTableRow>>(
     () => ({
       data: filteredRows,
@@ -464,6 +479,7 @@ export function useMemberTable({
     table,
     filters: { search, lifecycle, financial, periodKey },
     counts,
+    attentionSummary,
     periodOptions,
     lifecycleOptions,
     financialOptions,

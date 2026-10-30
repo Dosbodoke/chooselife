@@ -1,5 +1,7 @@
 import type { Table } from "@tanstack/react-table";
 
+import type { AttentionSummary } from "@/lib/billing-workspace-summary";
+
 export type LifecycleStatus = "active" | "pending" | "inactive";
 
 export type FinancialStatus =
@@ -83,6 +85,8 @@ export type MemberTableController = {
   table: Table<MemberTableRow>;
   filters: MemberTableFilters;
   counts: MemberTableCounts;
+  /** Overdue, refused, awaiting and in-review totals for the selected period. */
+  attentionSummary: AttentionSummary[];
   periodOptions: ReadonlyArray<{ key: PeriodKey; label: string }>;
   lifecycleOptions: ReadonlyArray<{
     value: LifecycleFilter;
