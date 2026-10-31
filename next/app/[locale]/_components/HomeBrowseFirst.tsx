@@ -20,7 +20,7 @@ export function HomeBrowseFirst() {
 
   return (
     <div
-      className="relative z-20 mx-2 max-w-screen-xl space-y-6 md:mx-auto"
+      className="relative z-20 mx-2 max-w-screen-xl space-y-6 md:mx-auto md:w-full"
       style={{ marginTop: "70dvh" }}
     >
       <Search />
