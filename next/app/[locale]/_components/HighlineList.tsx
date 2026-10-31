@@ -14,20 +14,21 @@ const PAGE_SIZE = 6;
 export function HighlineList() {
   const [searchValue = ""] = useQueryState("q");
 
-  const { data, fetchNextPage, hasNextPage, isFetching } = useInfiniteQuery({
-    queryKey: ["highlines", { searchValue }],
-    queryFn: ({ pageParam }) =>
-      getHighline({
-        pageParam,
-        searchValue: searchValue ?? undefined,
-        pageSize: PAGE_SIZE,
-      }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage, pages) => {
-      const nextPage = pages.length + 1;
-      return lastPage.data?.length === PAGE_SIZE ? nextPage : undefined;
-    },
-  });
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isPending } =
+    useInfiniteQuery({
+      queryKey: ["highlines", { searchValue }],
+      queryFn: ({ pageParam }) =>
+        getHighline({
+          pageParam,
+          searchValue: searchValue ?? undefined,
+          pageSize: PAGE_SIZE,
+        }),
+      initialPageParam: 1,
+      getNextPageParam: (lastPage, pages) => {
+        const nextPage = pages.length + 1;
+        return lastPage.data?.length === PAGE_SIZE ? nextPage : undefined;
+      },
+    });
 
   return (
     <>
@@ -35,7 +36,9 @@ export function HighlineList() {
         {data?.pages.map((page) =>
           page.data?.map((high) => <Highline key={high.id} highline={high} />),
         )}
-        {isFetching ? <HighlineListSkeleton /> : null}
+        {isPending || isFetchingNextPage ? (
+          <HighlineListSkeleton count={PAGE_SIZE} />
+        ) : null}
       </section>
       <motion.div
         key={data?.pages.length}
