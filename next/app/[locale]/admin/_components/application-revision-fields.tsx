@@ -68,7 +68,7 @@ export function ApplicationRevisionFields({
   const t = useTranslations("admin");
 
   return (
-    <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+    <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
       <DetailField label={t("initialReview.fullName")}>
         {revision.full_name}
       </DetailField>
@@ -137,6 +137,6 @@ export function ApplicationRevisionFields({
           .filter(Boolean)
           .join(" · ")}
       </DetailField>
-    </div>
+    </dl>
   );
 }

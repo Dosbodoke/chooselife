@@ -68,6 +68,9 @@ const FINANCIAL_TONES: Record<FinancialStatus, Tone> = {
     dot: "bg-orange-500",
   },
   scheduled: { chip: "border-blue-200 bg-blue-50 text-blue-700", dot: "bg-blue-500" },
+  // Forgiven without money changing hands: neither the green of paid nor the
+  // grey of a month that never had a charge.
+  waived: { chip: "border-violet-200 bg-violet-50 text-violet-700", dot: "bg-violet-500" },
   no_obligation: { chip: "border-slate-200 bg-slate-50 text-slate-600", dot: "bg-slate-400" },
 };
 
@@ -143,6 +146,7 @@ export default function BillingWorkspaceLedger({
     rejected: t("ledger.financial.rejected"),
     scheduled: t("ledger.financial.scheduled"),
     under_review: t("ledger.financial.underReview"),
+    waived: t("ledger.financial.waived"),
   };
 
   const renderCell = (row: MemberTableRow, columnId: string) => {
@@ -205,8 +209,15 @@ export default function BillingWorkspaceLedger({
     }
 
     if (columnId === "amount") {
+      // A waived month shows what was billed, struck through: it is on record
+      // but nobody owes it.
       return (
-        <span className="font-medium tabular-nums text-slate-800">
+        <span
+          className={cn(
+            "font-medium tabular-nums",
+            period.status === "waived" ? "text-slate-400 line-through" : "text-slate-800",
+          )}
+        >
           {formatCurrency(period.amount, period.currency, displayLocale)}
         </span>
       );
@@ -326,6 +337,11 @@ export default function BillingWorkspaceLedger({
                 tone: FINANCIAL_TONES.paid,
               },
               {
+                value: "waived",
+                label: t("ledger.financial.waived"),
+                tone: FINANCIAL_TONES.waived,
+              },
+              {
                 value: "no_obligation",
                 label: t("ledger.financial.noObligation"),
                 tone: FINANCIAL_TONES.no_obligation,
@@ -333,6 +349,48 @@ export default function BillingWorkspaceLedger({
             ]}
             icon={<SlidersHorizontal className="size-3.5" aria-hidden="true" />}
           />
+        </div>
+
+        {/* What needs chasing, at a glance. Each figure is also the shortcut to
+            its filter, and pressing it again clears that filter. */}
+        <div
+          role="group"
+          aria-label={t("ledger.summary.label")}
+          className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4"
+        >
+          {model.attentionSummary.map((entry) => {
+            const active = model.filters.financial === entry.status;
+            const tone = FINANCIAL_TONES[entry.status];
+
+            return (
+              <button
+                key={entry.status}
+                type="button"
+                aria-pressed={active}
+                onClick={() =>
+                  model.setFinancialFilter(active ? "all" : entry.status)
+                }
+                className={cn(
+                  "flex min-w-0 touch-manipulation flex-col items-start rounded-xl border px-3.5 py-2.5 text-left transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  active ? tone.chip : "border-slate-200 bg-white hover:bg-slate-50",
+                )}
+              >
+                <span className="flex min-w-0 items-center gap-1.5 text-xs font-medium">
+                  <ChipDot tone={tone} />
+                  <span className="truncate">{financialLabels[entry.status]}</span>
+                </span>
+                <span className="mt-1 text-base font-semibold tabular-nums text-slate-950">
+                  {t("ledger.summary.people", { count: entry.people })}
+                </span>
+                <span className="text-xs tabular-nums text-slate-500">
+                  {entry.amount > 0
+                    ? formatCurrency(entry.amount, entry.currency, displayLocale)
+                    : t("ledger.summary.nothingOpen")}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

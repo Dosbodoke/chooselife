@@ -15,6 +15,9 @@ export type BillingWorkspacePaymentRow =
 export type BillingWorkspaceMemberRow =
   Database["public"]["Functions"]["get_billing_workspace_members"]["Returns"][number];
 
+export type BillingWorkspaceWaiverRow =
+  Database["public"]["Functions"]["get_billing_workspace_waivers"]["Returns"][number];
+
 export type BillingWorkspacePersonRow =
   Database["public"]["Functions"]["get_billing_workspace_people"]["Returns"][number];
 

@@ -428,6 +428,7 @@
       "closeReview": "Fechar revisão",
       "copyLink": "Copiar link desta visualização",
       "linkCopied": "Link copiado",
+      "copyLinkFailed": "Não foi possível copiar o link. Copie-o pela barra de endereço.",
       "loadingApplicant": "Carregando candidato",
       "loadingMember": "Carregando membro",
       "loadingClaimDetails": "Carregando detalhes da solicitação",
@@ -604,10 +605,16 @@
         "overdue": "Vencido",
         "rejected": "Recusado",
         "scheduled": "Agendado",
+        "waived": "Dispensada",
         "noObligation": "Sem cobrança"
       },
       "loadedAnnouncement": "Lista de associados carregada com {count} pessoas.",
-      "reviewPerson": "Revisar {name}"
+      "reviewPerson": "Revisar {name}",
+      "summary": {
+        "label": "Pagamentos que pedem atenção",
+        "people": "{count, plural, one {# pessoa} other {# pessoas}}",
+        "nothingOpen": "Nada em aberto"
+      }
     },
     "ledgerReview": {
       "periodDetail": "Detalhes do período",
@@ -616,7 +623,12 @@
       "joined": "Entrada",
       "paidAt": "Pago em {date}",
       "recentPeriods": "Histórico de Contribuições",
-      "noHistory": "Ainda não há histórico de pagamentos para esta pessoa."
+      "noHistory": "Ainda não há histórico de pagamentos para esta pessoa.",
+      "waivedBy": "Dispensada em {date} por {name}",
+      "waivedAt": "Dispensada em {date}",
+      "waiverReason": "Motivo: {reason}",
+      "showAll": "Mostrar todo o histórico ({count})",
+      "showRecent": "Mostrar só os mais recentes"
     },
     "memberDetail": {
       "title": "Detalhes do membro",
@@ -629,7 +641,6 @@
       "unavailable": "Não foi possível carregar os detalhes do membro."
     },
     "initialReview": {
-      "eyebrow": "Revisão da solicitação inicial",
       "reviewUnavailableTitle": "Revisão indisponível",
       "refreshQueue": "Atualize a fila e tente novamente.",
       "decisionNotCompletedTitle": "Decisão não concluída",
@@ -668,7 +679,6 @@
       "confirmRejection": "Confirmar recusa"
     },
     "recurringReview": {
-      "eyebrow": "Revisão da solicitação recorrente",
       "reviewUnavailableTitle": "Revisão indisponível",
       "refreshWorkspace": "Atualize a área financeira e tente novamente.",
       "decisionNotCompletedTitle": "Decisão não concluída",
@@ -688,6 +698,68 @@
       "rejectClaim": "Recusar pagamento",
       "confirmPayment": "Confirmar pagamento",
       "confirmRejection": "Confirmar recusa"
+    },
+    "reminder": {
+      "title": "Lembrete de pagamento",
+      "loading": "Carregando situação do lembrete",
+      "unavailable": "Não é possível enviar lembretes para esta pessoa agora.",
+      "overdueSummary": "{count, plural, one {# contribuição vencida desde {date}.} other {# contribuições vencidas, a mais antiga desde {date}.}}",
+      "openSummary": "{count, plural, one {# contribuição disponível} other {# contribuições disponíveis}} para pagamento.",
+      "review": "Revisar lembrete",
+      "to": "Para",
+      "message": "Mensagem",
+      "devices": "{count, plural, one {# dispositivo cadastrado} other {# dispositivos cadastrados}}",
+      "language": {
+        "pt": "Português",
+        "en": "Inglês"
+      },
+      "deliveryNote": "A entrega depende do serviço de notificações e das permissões do dispositivo. O recebimento não é confirmado.",
+      "cooldownNote": "Cada pessoa pode receber um lembrete a cada 20 horas.",
+      "cancel": "Cancelar",
+      "send": "Enviar lembrete",
+      "sending": "Enviando…",
+      "sent": "Lembrete na fila às {time} para {count, plural, one {# dispositivo cadastrado} other {# dispositivos cadastrados}}.",
+      "cooldown": "Um lembrete foi enviado em {last}. O próximo pode ser enviado depois de {next}.",
+      "noDevices": "{name} não tem dispositivo cadastrado para notificações, então um lembrete push não chegaria. Entre em contato por outro meio.",
+      "errors": {
+        "cooldown": "Um lembrete já foi enviado para esta pessoa recentemente. Nada foi enviado.",
+        "noDevices": "Esta pessoa não tem mais dispositivo cadastrado. Nada foi enviado.",
+        "notMember": "Esta pessoa não é associada nem candidata da associação. Nada foi enviado.",
+        "nothingDue": "Esta pessoa não tem mais pagamento em aberto. Nada foi enviado.",
+        "unauthorized": "Você não tem permissão para enviar lembretes desta associação.",
+        "unknown": "Não foi possível confirmar se o lembrete entrou na fila. Atualize a situação antes de tentar novamente."
+      }
+    },
+    "waiver": {
+      "title": "Dispensar cobranças em atraso",
+      "intro": "{count, plural, one {# contribuição em atraso pode ser dispensada.} other {# contribuições em atraso podem ser dispensadas.}} A dispensa não registra pagamento.",
+      "start": "Escolher meses para dispensar",
+      "selectAll": "Selecionar {count, plural, one {# mês em atraso} other {# meses em atraso}}",
+      "dueOn": "Venceu em {date}",
+      "reasonLabel": "Motivo",
+      "reasonHint": "Fica no histórico com seu nome e a data.",
+      "reasonCount": "{count}/{max}",
+      "selectionRequired": "Selecione ao menos um mês.",
+      "reasonRequired": "Escreva o motivo para continuar.",
+      "review": "Revisar dispensa",
+      "back": "Voltar",
+      "cancel": "Cancelar",
+      "recipient": "Pessoa",
+      "periods": "Meses",
+      "total": "Total dispensado",
+      "consequence": "Essas cobranças deixam de poder ser pagas e não serão marcadas como pagas. O registro continua no histórico e não pode ser desfeito por aqui. As próximas mensalidades continuam normalmente.",
+      "confirm": "{count, plural, one {Dispensar cobrança} other {Dispensar # cobranças}}",
+      "confirming": "Dispensando…",
+      "done": "{count, plural, one {# cobrança dispensada} other {# cobranças dispensadas}}, total de {total}. As próximas mensalidades continuam normalmente.",
+      "errors": {
+        "invalidSelection": "A seleção não vale para esta pessoa. Nada foi dispensado. Atualizamos os dados; revise os meses.",
+        "reasonRequired": "Escreva o motivo da dispensa. Nada foi dispensado.",
+        "reasonTooLong": "O motivo deve ter até 500 caracteres. Nada foi dispensado.",
+        "underReview": "Um dos meses tem um pagamento em conferência. Decida esse pagamento antes de dispensar. Nada foi dispensado.",
+        "notWaivable": "Um dos meses mudou e não pode mais ser dispensado. Nada foi dispensado. Atualizamos os dados; revise a seleção.",
+        "unauthorized": "Você não tem permissão para dispensar cobranças desta associação.",
+        "unknown": "Não foi possível confirmar se a dispensa foi registrada. Atualizamos os dados. Confira o histórico antes de tentar de novo."
+      }
     }
   }
 }

@@ -4,11 +4,13 @@ import type {
   MemberPeriod,
   MemberRow,
   PeriodKey,
+  PeriodWaiver,
 } from "@/components/admin/member-ledger";
 
 import type {
   BillingWorkspacePaymentRow,
   BillingWorkspacePersonRow,
+  BillingWorkspaceWaiverRow,
 } from "./billing-workspace";
 
 const financialRank: Record<FinancialStatus, number> = {
@@ -18,8 +20,29 @@ const financialRank: Record<FinancialStatus, number> = {
   awaiting_payment: 3,
   scheduled: 4,
   paid: 5,
-  no_obligation: 6,
+  waived: 6,
+  no_obligation: 7,
 };
+
+/** Show the most urgent open charge, or the latest resolved period. */
+export function mostUrgentMemberPeriod(history: readonly MemberPeriod[]) {
+  const resolved = (period: MemberPeriod) =>
+    period.status === "paid" ||
+    period.status === "waived" ||
+    period.status === "no_obligation";
+  return [...history].sort((left, right) => {
+    const leftResolved = resolved(left);
+    const rightResolved = resolved(right);
+    if (leftResolved && rightResolved) {
+      return (right.dueDate ?? "").localeCompare(left.dueDate ?? "");
+    }
+    return (
+      (leftResolved ? 6 : financialRank[left.status]) -
+        (rightResolved ? 6 : financialRank[right.status]) ||
+      (left.dueDate ?? "").localeCompare(right.dueDate ?? "")
+    );
+  })[0];
+}
 
 function currentPeriodKey() {
   const now = new Date();
@@ -52,6 +75,7 @@ function normalizePeriodKey(payment: BillingWorkspacePaymentRow): PeriodKey {
 function financialStatus(
   value: string,
   latestClaimStatus: ClaimStatus | null,
+  waiver: PeriodWaiver | null,
 ): FinancialStatus {
   switch (value) {
     case "settled":
@@ -64,6 +88,10 @@ function financialStatus(
       return "overdue";
     case "scheduled":
       return "scheduled";
+    // A void charge is either a refused admission or a waived month. Only the
+    // waiver audit tells them apart, and only a waiver is worth naming.
+    case "void":
+      return waiver ? "waived" : "no_obligation";
     default:
       return "no_obligation";
   }
@@ -85,6 +113,7 @@ function isPreferredPeriod(
 function toMemberPeriod(
   payment: BillingWorkspacePaymentRow,
   locale: string,
+  waiver: PeriodWaiver | null,
 ): MemberPeriod {
   const periodKey = normalizePeriodKey(payment);
 
@@ -99,9 +128,15 @@ function toMemberPeriod(
     status: financialStatus(
       payment.effective_payment_state,
       payment.latest_claim_status,
+      waiver,
     ),
+    // A waived month keeps the amount it was billed at, so the history shows
+    // what was forgiven. It no longer counts as owed: every total sums only
+    // the statuses that still need paying.
     amount:
-      payment.effective_payment_state === "void" ? null : payment.amount,
+      payment.effective_payment_state === "void" && !waiver
+        ? null
+        : payment.amount,
     currency: payment.currency,
     availableDate: payment.available_on,
     dueDate: payment.due_on,
@@ -114,6 +149,7 @@ function toMemberPeriod(
     payerType: null,
     payerName: null,
     attentionReason: null,
+    waiver,
   };
 }
 
@@ -121,7 +157,18 @@ export function buildBillingWorkspaceMemberRows(
   people: BillingWorkspacePersonRow[],
   payments: BillingWorkspacePaymentRow[],
   locale = "en-US",
+  waivers: BillingWorkspaceWaiverRow[] = [],
 ) {
+  const waiverByObligation = new Map<string, PeriodWaiver>(
+    waivers.map((waiver) => [
+      waiver.obligation_id,
+      {
+        reason: waiver.reason,
+        waivedAt: waiver.waived_at,
+        waivedByName: waiver.waived_by_name || waiver.waived_by_handle || null,
+      },
+    ]),
+  );
   const paymentsByMember = new Map<string, BillingWorkspacePaymentRow[]>();
   const periodKeys = new Set<PeriodKey>([currentPeriodKey()]);
 
@@ -137,7 +184,11 @@ export function buildBillingWorkspaceMemberRows(
     const periods: Partial<Record<PeriodKey, MemberPeriod>> = {};
 
     for (const payment of memberPayments) {
-      const period = toMemberPeriod(payment, locale);
+      const period = toMemberPeriod(
+        payment,
+        locale,
+        waiverByObligation.get(payment.obligation_id) ?? null,
+      );
       if (isPreferredPeriod(periods[period.periodKey], period)) {
         periods[period.periodKey] = period;
       }

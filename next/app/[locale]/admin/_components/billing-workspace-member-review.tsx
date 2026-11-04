@@ -1,7 +1,8 @@
 "use client";
 
+import type { Database } from "@chooselife/database";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Check, FileText, Link2, UserRound, X } from "lucide-react";
+import { CalendarDays, FileText, UserRound } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -10,27 +11,33 @@ import {
   formatCurrency,
   formatDate,
   formatDateTime,
+  formatMonth,
+  type MemberPeriod,
   type MemberTableRow,
 } from "@/components/admin/member-ledger";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "@/i18n/navigation";
+import type { WaivableCharge } from "@/lib/contribution-waiver";
 import { supabaseBrowser } from "@/utils/supabase/client";
 
 import {
   ApplicationRevisionFields,
   DetailField,
 } from "./application-revision-fields";
+import BillingWorkspaceContributionWaiver from "./billing-workspace-contribution-waiver";
+import BillingWorkspacePaymentReminder from "./billing-workspace-payment-reminder";
+import {
+  ReviewDrawerBody,
+  ReviewDrawerFrame,
+  ReviewDrawerHeader,
+  ReviewFieldGrid,
+  ReviewSection,
+} from "./review-drawer";
 
 const supabase = supabaseBrowser();
 
-/** Same "September 2026" shape the real period rows use. */
-function monthLabel(dueOn: string, locale: string) {
-  return new Intl.DateTimeFormat(locale, {
-    month: "long",
-    year: "numeric",
-  }).format(new Date(`${dueOn.slice(0, 7)}-01T00:00:00`));
-}
+/** How many periods the history shows before the admin asks for the rest. */
+const RECENT_HISTORY_LENGTH = 6;
 
 function statusTone(status: FinancialStatus) {
   if (status === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-700";
@@ -39,60 +46,20 @@ function statusTone(status: FinancialStatus) {
   if (status === "under_review") return "border-amber-200 bg-amber-50 text-amber-800";
   if (status === "awaiting_payment") return "border-orange-200 bg-orange-50 text-orange-800";
   if (status === "scheduled") return "border-blue-200 bg-blue-50 text-blue-700";
+  if (status === "waived") return "border-violet-200 bg-violet-50 text-violet-700";
   return "border-slate-200 bg-slate-50 text-slate-600";
-}
-
-/**
- * Copies the address bar as it stands, which the ledger keeps in sync with the
- * open filters and the focused member -- so what lands in the recipient's
- * browser is the screen the sender is looking at, not a bare /admin.
- */
-function CopyViewLinkButton() {
-  const t = useTranslations("admin");
-  const [copied, setCopied] = useState(false);
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error("Error copying link to clipboard:", error);
-    }
-  };
-
-  return (
-    <>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="shrink-0 rounded-lg"
-        onClick={copy}
-        aria-label={t("common.copyLink")}
-      >
-        {copied ? (
-          <Check className="size-5 text-emerald-600" aria-hidden="true" />
-        ) : (
-          <Link2 className="size-5" aria-hidden="true" />
-        )}
-      </Button>
-      {/* The icon swap is the sighted confirmation; this is its spoken twin. */}
-      <span role="status" aria-live="polite" className="sr-only">
-        {copied ? t("common.linkCopied") : ""}
-      </span>
-    </>
-  );
 }
 
 export default function BillingWorkspaceMemberReview({
   member,
   onClose,
   organizationId,
+  waivableCharges,
 }: {
   member: MemberTableRow;
   onClose: () => void;
   organizationId: string | null;
+  waivableCharges: WaivableCharge[];
 }) {
   // Addressed by person, not by claim: this drawer opens on people who have no
   // claim to look up -- long-standing members, ex-members, anyone already decided.
@@ -115,31 +82,272 @@ export default function BillingWorkspaceMemberReview({
     enabled: organizationId !== null,
   });
   const detail = detailQuery.data ?? null;
-  /**
-   * The next charge the member owes. Derived by the RPC rather than read from an
-   * obligation, because the generator runs on cron and the upcoming period has
-   * no row for most of a cycle -- yet "when is the next payment due" is the
-   * question an admin actually gets asked.
-   */
-  const nextCharge = detail?.next_charge_due_on
-    ? {
-        amount: detail.next_charge_amount,
-        currency: detail.next_charge_currency,
-        dueOn: detail.next_charge_due_on,
-      }
-    : null;
   const locale = useLocale();
   const displayLocale = locale.toLowerCase().startsWith("pt") ? "pt-BR" : "en-US";
   const t = useTranslations("admin");
-  const financialLabels: Record<FinancialStatus, string> = {
-    awaiting_payment: t("ledger.financial.awaitingPayment"),
-    no_obligation: t("ledger.financial.noObligation"),
-    overdue: t("ledger.financial.overdue"),
-    paid: t("ledger.financial.paid"),
-    rejected: t("ledger.financial.rejected"),
-    scheduled: t("ledger.financial.scheduled"),
-    under_review: t("ledger.financial.underReview"),
+
+  return (
+    <ReviewDrawerFrame>
+      <ReviewDrawerHeader
+        onClose={onClose}
+        person={{ name: member.name, handle: member.handle }}
+      />
+
+      <ReviewDrawerBody>
+        {/* Leads the drawer on a financial review: the one action an admin
+            takes here, followed by the facts it is based on. Renders nothing
+            for somebody who owes nothing. */}
+        <BillingWorkspacePaymentReminder
+          key={member.id}
+          memberId={member.id}
+          organizationId={organizationId}
+        />
+
+        <BillingWorkspaceContributionWaiver
+          key={`waiver-${member.id}`}
+          charges={waivableCharges}
+          memberId={member.id}
+          memberLabel={memberLabel(member, t("common.unnamedMember"))}
+          organizationId={organizationId}
+        />
+
+        <MemberHistorySection
+          displayLocale={displayLocale}
+          member={member}
+          nextCharge={nextChargeOf(detail)}
+        />
+
+        <MemberDetailSection
+          detail={detail}
+          displayLocale={displayLocale}
+          member={member}
+        />
+
+        <ApplicationFormSection
+          detail={detail}
+          displayLocale={displayLocale}
+          handle={member.handle}
+          isError={detailQuery.isError}
+          isPending={detailQuery.isPending}
+        />
+      </ReviewDrawerBody>
+    </ReviewDrawerFrame>
+  );
+}
+
+type MemberDetail =
+  Database["public"]["Functions"]["get_association_member_detail"]["Returns"][number];
+
+type NextCharge = { amount: number | null; currency: string | null; dueOn: string };
+
+function memberLabel(member: MemberTableRow, unnamed: string) {
+  if (member.name && member.handle) return `${member.name} · ${member.handle}`;
+  return member.name || member.handle || unnamed;
+}
+
+/**
+ * The next charge the member owes. Derived by the RPC rather than read from an
+ * obligation, because the generator runs on cron and the upcoming period has
+ * no row for most of a cycle -- yet "when is the next payment due" is the
+ * question an admin actually gets asked.
+ */
+function nextChargeOf(detail: MemberDetail | null): NextCharge | null {
+  if (!detail?.next_charge_due_on) return null;
+  return {
+    amount: detail.next_charge_amount,
+    currency: detail.next_charge_currency,
+    dueOn: detail.next_charge_due_on,
   };
+}
+
+function StatusBadge({ status }: { status: FinancialStatus }) {
+  const t = useTranslations("admin.ledger.financial");
+  const labels: Record<FinancialStatus, string> = {
+    awaiting_payment: t("awaitingPayment"),
+    no_obligation: t("noObligation"),
+    overdue: t("overdue"),
+    paid: t("paid"),
+    rejected: t("rejected"),
+    scheduled: t("scheduled"),
+    under_review: t("underReview"),
+    waived: t("waived"),
+  };
+
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${statusTone(status)}`}
+    >
+      <span
+        className="mr-1.5 size-1.5 shrink-0 rounded-full bg-current"
+        aria-hidden="true"
+      />
+      {labels[status]}
+    </span>
+  );
+}
+
+function MemberHistorySection({
+  displayLocale,
+  member,
+  nextCharge,
+}: {
+  displayLocale: string;
+  member: MemberTableRow;
+  nextCharge: NextCharge | null;
+}) {
+  const t = useTranslations("admin");
+  const [showFullHistory, setShowFullHistory] = useState(false);
+  const visibleHistory = showFullHistory
+    ? member.history
+    : member.history.slice(0, RECENT_HISTORY_LENGTH);
+
+  return (
+    <ReviewSection
+      icon={<CalendarDays aria-hidden="true" />}
+      title={t("ledgerReview.recentPeriods")}
+    >
+      {nextCharge || member.history.length > 0 ? (
+        <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200">
+          {nextCharge ? (
+            <NextChargeRow nextCharge={nextCharge} displayLocale={displayLocale} />
+          ) : null}
+          {visibleHistory.map((period) => (
+            <HistoryRow
+              key={`${member.id}-${period.periodKey}`}
+              displayLocale={displayLocale}
+              period={period}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm text-slate-500">
+          {t("ledgerReview.noHistory")}
+        </p>
+      )}
+      {member.history.length > RECENT_HISTORY_LENGTH ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="mt-2 rounded-lg text-slate-600"
+          aria-expanded={showFullHistory}
+          onClick={() => setShowFullHistory((shown) => !shown)}
+        >
+          {showFullHistory
+            ? t("ledgerReview.showRecent")
+            : t("ledgerReview.showAll", { count: member.history.length })}
+        </Button>
+      ) : null}
+    </ReviewSection>
+  );
+}
+
+/**
+ * Leads the list because it is the only future-dated row, and the rest run
+ * newest-first. Derived, so it carries no obligation id and nothing to click
+ * into yet.
+ */
+function NextChargeRow({
+  displayLocale,
+  nextCharge,
+}: {
+  displayLocale: string;
+  nextCharge: NextCharge;
+}) {
+  const t = useTranslations("admin");
+
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+      <span className="min-w-0">
+        <span className="block text-slate-600">
+          {formatMonth(nextCharge.dueOn, displayLocale)}
+        </span>
+        <span className="mt-0.5 block truncate text-xs text-slate-500">
+          {t("common.due")} · {formatDate(nextCharge.dueOn, displayLocale)}
+        </span>
+      </span>
+      <span className="flex shrink-0 items-center gap-3">
+        <StatusBadge status="scheduled" />
+        <span className="font-semibold tabular-nums text-slate-900">
+          {formatCurrency(
+            nextCharge.amount,
+            nextCharge.currency ?? undefined,
+            displayLocale,
+          )}
+        </span>
+      </span>
+    </div>
+  );
+}
+
+function HistoryRow({
+  displayLocale,
+  period,
+}: {
+  displayLocale: string;
+  period: MemberPeriod;
+}) {
+  const t = useTranslations("admin.ledgerReview");
+  const waiver = period.waiver;
+
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+      <span className="min-w-0">
+        <span className="block text-slate-600">{period.periodLabel}</span>
+        {/* Only a settled period has a payment time, and that time is
+            the answer to "when did this get paid?" -- so it belongs on
+            the period it settled, not in a single top-level stat. */}
+        {period.paidAt ? (
+          <span className="mt-0.5 block truncate text-xs text-slate-500">
+            {t("paidAt", { date: formatDateTime(period.paidAt, displayLocale) })}
+          </span>
+        ) : null}
+        {/* A waived month names who forgave it and why, since
+            nothing else on the row explains the missing payment. */}
+        {waiver ? (
+          <>
+            <span className="mt-0.5 block text-xs text-slate-500">
+              {waiver.waivedByName
+                ? t("waivedBy", {
+                    date: formatDateTime(waiver.waivedAt, displayLocale),
+                    name: waiver.waivedByName,
+                  })
+                : t("waivedAt", {
+                    date: formatDateTime(waiver.waivedAt, displayLocale),
+                  })}
+            </span>
+            <span className="mt-0.5 block break-words text-xs text-slate-500">
+              {t("waiverReason", { reason: waiver.reason })}
+            </span>
+          </>
+        ) : null}
+      </span>
+      <span className="flex shrink-0 items-center gap-3">
+        <StatusBadge status={period.status} />
+        {/* Last, so the figures line up as a column the eye can add
+            up. `formatCurrency` renders a void period's null as an
+            em dash rather than R$ 0,00; a waived month keeps its
+            billed amount, struck through because it is not owed. */}
+        <span
+          className={`font-semibold tabular-nums ${period.status === "waived" ? "text-slate-400 line-through" : "text-slate-900"}`}
+        >
+          {formatCurrency(period.amount, period.currency, displayLocale)}
+        </span>
+      </span>
+    </div>
+  );
+}
+
+function MemberDetailSection({
+  detail,
+  displayLocale,
+  member,
+}: {
+  detail: MemberDetail | null;
+  displayLocale: string;
+  member: MemberTableRow;
+}) {
+  const t = useTranslations("admin");
   const planLabel =
     member.plan === "annual"
       ? t("plans.annual")
@@ -148,185 +356,77 @@ export default function BillingWorkspaceMemberReview({
         : t("plans.noActivePlan");
 
   return (
-    <div className="flex max-h-[100dvh] flex-col overflow-hidden bg-white">
-      <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-5 md:px-7">
-        <div className="min-w-0">
-          <h2 className="truncate text-xl font-semibold text-slate-950">
-            {member.name || t("common.unnamedMember")}
-          </h2>
-          <p className="truncate text-sm text-slate-500">
-            {member.handle ? (
-              <Link
-                href={`/profile/${member.handle.replace("@", "")}`}
-                className="rounded-sm font-medium text-blue-700 underline-offset-2 transition-colors hover:text-blue-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-              >
-                {member.handle}
-              </Link>
-            ) : (
-              t("common.noHandle")
-            )}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <CopyViewLinkButton />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="shrink-0 rounded-lg"
-            onClick={onClose}
-            aria-label={t("common.closeReview")}
-          >
-            <X className="size-5" aria-hidden="true" />
-          </Button>
-        </div>
-      </header>
+    <ReviewSection
+      card
+      icon={<UserRound aria-hidden="true" />}
+      title={t("memberDetail.title")}
+    >
+      <ReviewFieldGrid>
+        <DetailField label={t("memberDetail.memberSince")}>
+          {formatDate(detail?.joined_at ?? member.joinedAt, displayLocale)}
+        </DetailField>
+        <DetailField label={t("common.plan")}>{planLabel}</DetailField>
+        {/* Only an ex-member has these, so they appear rather than
+            rendering two permanent em dashes for everybody else. */}
+        {detail?.departed_at ? (
+          <DetailField label={t("memberDetail.departedOn")}>
+            {formatDate(detail.departed_at, displayLocale)}
+          </DetailField>
+        ) : null}
+        {detail?.departure_reason ? (
+          <DetailField label={t("memberDetail.departureReason")}>
+            {detail.departure_reason}
+          </DetailField>
+        ) : null}
+      </ReviewFieldGrid>
+    </ReviewSection>
+  );
+}
 
-      <div className="scrollbar flex-1 overflow-y-auto px-5 py-5 md:px-7">
-        <section className="mt-7 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <UserRound className="size-4 text-slate-500" aria-hidden="true" />
-            {t("memberDetail.title")}
-          </div>
+function ApplicationFormSection({
+  detail,
+  displayLocale,
+  handle,
+  isError,
+  isPending,
+}: {
+  detail: MemberDetail | null;
+  displayLocale: string;
+  handle: string;
+  isError: boolean;
+  isPending: boolean;
+}) {
+  const t = useTranslations("admin");
+  const submittedOn = detail?.submitted_at
+    ? ` · ${formatDate(detail.submitted_at, displayLocale)}`
+    : "";
 
-          <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
-            <DetailField label={t("memberDetail.memberSince")}>
-              {formatDate(detail?.joined_at ?? member.joinedAt, displayLocale)}
-            </DetailField>
-            <DetailField label={t("common.plan")}>{planLabel}</DetailField>
-            {/* Only an ex-member has these, so they appear rather than
-                rendering two permanent em dashes for everybody else. */}
-            {detail?.departed_at ? (
-              <DetailField label={t("memberDetail.departedOn")}>
-                {formatDate(detail.departed_at, displayLocale)}
-              </DetailField>
-            ) : null}
-            {detail?.departure_reason ? (
-              <DetailField label={t("memberDetail.departureReason")}>
-                {detail.departure_reason}
-              </DetailField>
-            ) : null}
-          </dl>
-
-          <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <FileText className="size-4 text-slate-500" aria-hidden="true" />
-            {t("memberDetail.applicationForm")}
-            {detail?.revision_number ? (
-              <span className="text-xs font-medium text-slate-500">
-                {t("common.revision", { number: detail.revision_number })}
-                {detail.submitted_at
-                  ? ` · ${formatDate(detail.submitted_at, displayLocale)}`
-                  : ""}
-              </span>
-            ) : null}
-          </div>
-
-          {detailQuery.isPending ? (
-            <FieldGridSkeleton label={t("memberDetail.loading")} />
-          ) : detailQuery.isError ? (
-            <p className="mt-3 text-sm text-slate-500">
-              {t("memberDetail.unavailable")}
-            </p>
-          ) : detail?.application_revision_id ? (
-            <div className="mt-3">
-              <ApplicationRevisionFields handle={member.handle} revision={detail} />
-            </div>
-          ) : (
-            /* A member admitted before applications existed, or admitted by
-               hand, genuinely has no form -- say so instead of showing a grid
-               of em dashes. */
-            <p className="mt-3 rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
-              {t("memberDetail.noApplication")}
-            </p>
-          )}
-        </section>
-
-        <section className="mt-7">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <CalendarDays className="size-4 text-slate-500" aria-hidden="true" />
-            {t("ledgerReview.recentPeriods")}
-          </div>
-          {nextCharge || member.history.length > 0 ? (
-            <div className="mt-3 divide-y divide-slate-100 rounded-2xl border border-slate-200">
-              {/* Leads the list because it is the only future-dated row, and the
-                  rest run newest-first. Derived, so it carries no obligation id
-                  and nothing to click into yet. */}
-              {nextCharge ? (
-                <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                  <span className="min-w-0">
-                    <span className="block text-slate-600">
-                      {monthLabel(nextCharge.dueOn, displayLocale)}
-                    </span>
-                    <span className="mt-0.5 block truncate text-xs text-slate-500">
-                      {t("common.due")} · {formatDate(nextCharge.dueOn, displayLocale)}
-                    </span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-3">
-                    <span
-                      className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${statusTone("scheduled")}`}
-                    >
-                      <span
-                        className="mr-1.5 size-1.5 shrink-0 rounded-full bg-current"
-                        aria-hidden="true"
-                      />
-                      {financialLabels.scheduled}
-                    </span>
-                    <span className="font-semibold tabular-nums text-slate-900">
-                      {formatCurrency(
-                        nextCharge.amount,
-                        nextCharge.currency ?? undefined,
-                        displayLocale,
-                      )}
-                    </span>
-                  </span>
-                </div>
-              ) : null}
-              {member.history.slice(0, 6).map((history) => (
-                <div
-                  key={`${member.id}-${history.periodKey}`}
-                  className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
-                >
-                  <span className="min-w-0">
-                    <span className="block text-slate-600">{history.periodLabel}</span>
-                    {/* Only a settled period has a payment time, and that time is
-                        the answer to "when did this get paid?" -- so it belongs on
-                        the period it settled, not in a single top-level stat. */}
-                    {history.paidAt ? (
-                      <span className="mt-0.5 block truncate text-xs text-slate-500">
-                        {t("ledgerReview.paidAt", {
-                          date: formatDateTime(history.paidAt, displayLocale),
-                        })}
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="flex shrink-0 items-center gap-3">
-                    <span
-                      className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${statusTone(history.status)}`}
-                    >
-                      <span
-                        className="mr-1.5 size-1.5 shrink-0 rounded-full bg-current"
-                        aria-hidden="true"
-                      />
-                      {financialLabels[history.status]}
-                    </span>
-                    {/* Last, so the figures line up as a column the eye can add
-                        up. `formatCurrency` renders a void period's null as an
-                        em dash rather than R$ 0,00. */}
-                    <span className="font-semibold tabular-nums text-slate-900">
-                      {formatCurrency(history.amount, history.currency, displayLocale)}
-                    </span>
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-3 rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm text-slate-500">
-              {t("ledgerReview.noHistory")}
-            </p>
-          )}
-        </section>
-      </div>
-    </div>
+  return (
+    <ReviewSection
+      card
+      icon={<FileText aria-hidden="true" />}
+      title={t("memberDetail.applicationForm")}
+      aside={
+        detail?.revision_number
+          ? `${t("common.revision", { number: detail.revision_number })}${submittedOn}`
+          : null
+      }
+    >
+      {isPending ? (
+        <FieldGridSkeleton label={t("memberDetail.loading")} />
+      ) : isError ? (
+        <p className="text-sm text-slate-500">{t("memberDetail.unavailable")}</p>
+      ) : detail?.application_revision_id ? (
+        <ApplicationRevisionFields handle={handle} revision={detail} />
+      ) : (
+        /* A member admitted before applications existed, or admitted by
+           hand, genuinely has no form -- say so instead of showing a grid
+           of em dashes. */
+        <p className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+          {t("memberDetail.noApplication")}
+        </p>
+      )}
+    </ReviewSection>
   );
 }
 
@@ -342,7 +442,7 @@ function FieldGridSkeleton({ label }: { label: string }) {
     <div
       role="status"
       aria-label={label}
-      className="mt-3 grid gap-x-6 gap-y-4 rounded-2xl border bg-muted/20 p-4 sm:grid-cols-2"
+      className="grid gap-x-6 gap-y-4 sm:grid-cols-2"
     >
       {Array.from({ length: 6 }, (_, index) => (
         <div key={index} aria-hidden="true">

@@ -428,6 +428,7 @@
       "closeReview": "Close review",
       "copyLink": "Copy link to this view",
       "linkCopied": "Link copied",
+      "copyLinkFailed": "Couldn't copy the link. Copy it from the address bar instead.",
       "loadingApplicant": "Loading applicant",
       "loadingMember": "Loading member",
       "loadingClaimDetails": "Loading claim details",
@@ -604,10 +605,16 @@
         "overdue": "Overdue",
         "rejected": "Rejected",
         "scheduled": "Scheduled",
+        "waived": "Waived",
         "noObligation": "No charge"
       },
       "loadedAnnouncement": "Member list loaded with {count} people.",
-      "reviewPerson": "Review {name}"
+      "reviewPerson": "Review {name}",
+      "summary": {
+        "label": "Payments needing attention",
+        "people": "{count, plural, one {# person} other {# people}}",
+        "nothingOpen": "Nothing open"
+      }
     },
     "ledgerReview": {
       "periodDetail": "Period detail",
@@ -616,7 +623,12 @@
       "joined": "Joined",
       "paidAt": "Paid {date}",
       "recentPeriods": "Payment history",
-      "noHistory": "There is no payment history for this person yet."
+      "noHistory": "There is no payment history for this person yet.",
+      "waivedBy": "Waived {date} by {name}",
+      "waivedAt": "Waived {date}",
+      "waiverReason": "Reason: {reason}",
+      "showAll": "Show full history ({count})",
+      "showRecent": "Show recent only"
     },
     "memberDetail": {
       "title": "Member details",
@@ -629,7 +641,6 @@
       "unavailable": "Member details could not be loaded."
     },
     "initialReview": {
-      "eyebrow": "Initial claim review",
       "reviewUnavailableTitle": "Review unavailable",
       "refreshQueue": "Refresh the queue and try again.",
       "decisionNotCompletedTitle": "Decision not completed",
@@ -668,7 +679,6 @@
       "confirmRejection": "Confirm rejection"
     },
     "recurringReview": {
-      "eyebrow": "Recurring claim review",
       "reviewUnavailableTitle": "Review unavailable",
       "refreshWorkspace": "Refresh the workspace and try again.",
       "decisionNotCompletedTitle": "Decision not completed",
@@ -688,6 +698,68 @@
       "rejectClaim": "Reject payment",
       "confirmPayment": "Confirm payment",
       "confirmRejection": "Confirm rejection"
+    },
+    "reminder": {
+      "title": "Payment reminder",
+      "loading": "Loading reminder status",
+      "unavailable": "Reminders are not available for this person right now.",
+      "overdueSummary": "{count, plural, one {# contribution overdue since {date}.} other {# contributions overdue, the oldest since {date}.}}",
+      "openSummary": "{count, plural, one {# contribution is} other {# contributions are}} open for payment.",
+      "review": "Review reminder",
+      "to": "To",
+      "message": "Message",
+      "devices": "{count, plural, one {# device} other {# devices}} registered",
+      "language": {
+        "pt": "Portuguese",
+        "en": "English"
+      },
+      "deliveryNote": "Delivery depends on the app's push service and device permissions. Receipt isn't confirmed.",
+      "cooldownNote": "Each person can get one reminder every 20 hours.",
+      "cancel": "Cancel",
+      "send": "Send reminder",
+      "sending": "Sending…",
+      "sent": "Reminder queued at {time} for {count, plural, one {# registered device} other {# registered devices}}.",
+      "cooldown": "A reminder was sent on {last}. The next one can go out after {next}.",
+      "noDevices": "{name} has no device registered for notifications, so a push reminder would not reach them. Contact them another way.",
+      "errors": {
+        "cooldown": "A reminder was already sent to this person recently. Nothing was sent.",
+        "noDevices": "This person no longer has a device registered. Nothing was sent.",
+        "notMember": "This person is not a member or applicant of the association. Nothing was sent.",
+        "nothingDue": "This person no longer has an open payment. Nothing was sent.",
+        "unauthorized": "You are not authorized to send reminders for this association.",
+        "unknown": "We couldn't confirm whether the reminder was queued. Refresh its status before trying again."
+      }
+    },
+    "waiver": {
+      "title": "Waive overdue contributions",
+      "intro": "{count, plural, one {# overdue contribution can be waived.} other {# overdue contributions can be waived.}} Waiving does not record a payment.",
+      "start": "Choose months to waive",
+      "selectAll": "Select {count, plural, one {# overdue month} other {# overdue months}}",
+      "dueOn": "Was due {date}",
+      "reasonLabel": "Reason",
+      "reasonHint": "Kept in the history with your name and the date.",
+      "reasonCount": "{count}/{max}",
+      "selectionRequired": "Select at least one month.",
+      "reasonRequired": "Write a reason to continue.",
+      "review": "Review waiver",
+      "back": "Back",
+      "cancel": "Cancel",
+      "recipient": "Person",
+      "periods": "Months",
+      "total": "Total waived",
+      "consequence": "These charges can no longer be paid and will not be marked as paid. The record stays in the history and cannot be undone here. Upcoming monthly charges continue as usual.",
+      "confirm": "{count, plural, one {Waive contribution} other {Waive # contributions}}",
+      "confirming": "Waiving…",
+      "done": "{count, plural, one {# contribution waived} other {# contributions waived}}, {total} in total. Upcoming monthly charges continue as usual.",
+      "errors": {
+        "invalidSelection": "The selection does not apply to this person. Nothing was waived. The data was refreshed; review the months.",
+        "reasonRequired": "Write a reason for the waiver. Nothing was waived.",
+        "reasonTooLong": "The reason must be 500 characters or fewer. Nothing was waived.",
+        "underReview": "One of the months has a payment under review. Decide that payment before waiving. Nothing was waived.",
+        "notWaivable": "One of the months changed and can no longer be waived. Nothing was waived. The data was refreshed; review the selection.",
+        "unauthorized": "You are not allowed to waive contributions of this association.",
+        "unknown": "Could not confirm whether the waiver was recorded. The data was refreshed. Check the history before trying again."
+      }
     }
   }
 }

@@ -81,7 +81,43 @@ Recurring contributions use the matching
 Nonpayment never ends or suspends a membership — each missed contribution stays
 a distinct owed obligation until an admin settles or voids it.
 
-There is no automatic settlement, no provider webhook, and no renewal job.
+There is no automatic settlement and no provider webhook. Recurring
+obligations are materialized by the `membership-billing-generate-obligations`
+pg_cron job, which calls `generate_membership_billing_obligations()` hourly. It
+creates every period whose availability date has arrived since admission, once,
+and sends no notification. To inspect a run, query `cron.job_run_details`; to
+see per-schedule failures, call `generate_membership_billing_obligations()` as
+the database owner and read the rows whose `result` is `failed`. Calling it by
+hand is safe: it only creates periods that are missing.
+
+Association admins can send one person a push reminder about an open payment
+from the admin billing workspace. `send_membership_payment_reminder(...)`
+inserts a targeted row into `notifications`, and the existing database webhook
+delivers it through the `push-notification` Edge Function. It refuses
+broadcasts, people with nothing due or no registered device, and a repeat
+within 20 hours.
+
+Environments without an existing notifications webhook use the private push
+dispatcher. Configure `project_url` and the legacy JWT `service_role_key` in
+Supabase Vault for that environment. The dispatcher reads them at runtime and
+keeps credentials out of trigger arguments. Local databases without those
+settings skip external delivery. Existing dashboard webhooks are preserved.
+
+Admins can waive selected overdue recurring contributions of one person with
+`waive_recurring_contributions(organization_id, user_id, obligation_ids, reason)`.
+The command accepts up to 60 distinct contributions and a reason of 1 to 500
+characters. It rejects settled charges, admission payments, charges not yet
+overdue, and payments under review. A batch succeeds in full or changes nothing.
+Admins may waive their own arrears; the audit records the acting admin.
+
+A waived contribution becomes `void`, retains its original amount, and has an
+immutable record in `payment_obligation_waivers`. It is no longer payable and
+never counts as paid. Its schedule-period row stays in place so generation
+cannot recreate the debt. Future contributions continue normally. There is no
+undo command. The admin workspace reads the audit through
+`get_billing_workspace_waivers(organization_id)`; clients cannot access the audit
+table directly. These authenticated RPCs use `SECURITY DEFINER` intentionally
+and check association-admin permissions before returning data or making changes.
 
 ## Cron Jobs Secrets
 

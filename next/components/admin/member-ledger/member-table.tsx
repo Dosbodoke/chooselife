@@ -22,6 +22,9 @@ import {
 } from "nuqs";
 import { useCallback, useMemo, useState } from "react";
 
+import { mostUrgentMemberPeriod } from "@/lib/billing-workspace-ledger";
+import { summarizeFinancialAttention } from "@/lib/billing-workspace-summary";
+
 import type {
   FinancialFilter,
   FinancialStatus,
@@ -52,6 +55,7 @@ const FINANCIAL_VALUES = [
   "awaiting_payment",
   "overdue",
   "scheduled",
+  "waived",
   "no_obligation",
 ] as const satisfies readonly FinancialFilter[];
 
@@ -109,6 +113,7 @@ const DEFAULT_FINANCIAL_OPTIONS = [
   { value: "awaiting_payment", label: "Awaiting payment" },
   { value: "scheduled", label: "Scheduled" },
   { value: "paid", label: "Paid" },
+  { value: "waived", label: "Waived" },
   { value: "no_obligation", label: "No charge" },
 ] as const;
 
@@ -119,7 +124,8 @@ const financialRank: Record<FinancialStatus, number> = {
   awaiting_payment: 3,
   scheduled: 4,
   paid: 5,
-  no_obligation: 6,
+  waived: 6,
+  no_obligation: 7,
 };
 
 const financialSorting: SortingFn<MemberTableRow> = (left, right) =>
@@ -136,11 +142,13 @@ const dueDateSorting: SortingFn<MemberTableRow> = (left, right) => {
   return leftDue.localeCompare(rightDue);
 };
 
-const globalFilter: FilterFn<MemberTableRow> = (row, _columnId, value) => {
+const globalFilter: FilterFn<MemberTableRow> = (row, _columnId, value) =>
+  matchesMemberSearch(row.original, value);
+
+function matchesMemberSearch(original: MemberTableRow, value: unknown) {
   const search = String(value).trim().toLocaleLowerCase();
   if (!search) return true;
 
-  const original = row.original;
   return [
     original.name,
     original.handle,
@@ -153,7 +161,7 @@ const globalFilter: FilterFn<MemberTableRow> = (row, _columnId, value) => {
   ]
     .filter(Boolean)
     .some((field) => String(field).toLocaleLowerCase().includes(search));
-};
+}
 
 function noObligationFor(
   periodKey: PeriodKey,
@@ -179,6 +187,7 @@ function noObligationFor(
     payerType: null,
     payerName: null,
     attentionReason: null,
+    waiver: null,
   };
 }
 
@@ -248,22 +257,6 @@ export type UseMemberTableOptions = {
   initialColumnVisibility?: VisibilityState;
 };
 
-/**
- * With no month selected the row still has to show a single charge, so it shows
- * the one an admin would act on: the most urgent unsettled period, earliest due
- * first. A member who owes nothing falls back to their latest period, which is
- * how a fully paid row still reads as "paid" instead of "no charge".
- */
-function mostUrgentPeriod(row: MemberRow): MemberPeriod | undefined {
-  const ranked = [...row.history].sort(
-    (left, right) =>
-      financialRank[left.status] - financialRank[right.status] ||
-      (left.dueDate ?? "").localeCompare(right.dueDate ?? ""),
-  );
-
-  return ranked[0];
-}
-
 export function resolvePeriodRows(
   data: MemberRow[],
   periodKey: PeriodFilter,
@@ -272,7 +265,7 @@ export function resolvePeriodRows(
   return data.map<MemberTableRow>((row) => ({
     ...row,
     selectedPeriod:
-      (periodKey === "all" ? mostUrgentPeriod(row) : row.periods[periodKey]) ??
+      (periodKey === "all" ? mostUrgentMemberPeriod(row.history) : row.periods[periodKey]) ??
       noObligationFor(
         periodKey === "all" ? currentPeriodKeyOf(periodOptions) : periodKey,
         periodOptions,
@@ -372,6 +365,17 @@ export function useMemberTable({
     };
   }, [periodRows]);
 
+  const attentionSummary = useMemo(
+    () => summarizeFinancialAttention(
+      periodRows.filter((row) =>
+        (lifecycle === "all" || row.lifecycle === lifecycle) &&
+        matchesMemberSearch(row, search),
+      ),
+      periodKey,
+    ),
+    [lifecycle, periodKey, periodRows, search],
+  );
+
   const tableOptions = useMemo<TableOptions<MemberTableRow>>(
     () => ({
       data: filteredRows,
@@ -464,6 +468,7 @@ export function useMemberTable({
     table,
     filters: { search, lifecycle, financial, periodKey },
     counts,
+    attentionSummary,
     periodOptions,
     lifecycleOptions,
     financialOptions,

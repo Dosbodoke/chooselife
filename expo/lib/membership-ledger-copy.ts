@@ -113,7 +113,16 @@ export const getObligationTitle = (obligation: LedgerObligation) => {
   return period ? `Contribuição ${period}` : 'Contribuição';
 };
 
+/**
+ * A recurring charge only becomes void when the association waives it; a void
+ * admission payment is a refused application. Only the first is forgiveness.
+ */
+const isWaived = (obligation: LedgerObligation) =>
+  obligation.status === 'void' && obligation.purpose === 'recurring';
+
 export const getObligationMeta = (obligation: LedgerObligation) => {
+  if (isWaived(obligation))
+    return 'A associação dispensou esta contribuição. Ela não precisa ser paga.';
   if (obligation.status === 'void') return 'Esta contribuição foi cancelada.';
 
   const claims = obligation.claims ?? [];
@@ -158,6 +167,11 @@ const obligationStatusCopy: Record<string, string> = {
 
 export const getObligationStatusLabel = (status: string) =>
   obligationStatusCopy[status] ?? status;
+
+export const getLedgerObligationStatusLabel = (obligation: LedgerObligation) =>
+  isWaived(obligation)
+    ? 'Dispensada'
+    : getObligationStatusLabel(obligation.status);
 
 export const isApplicantWithDraft = (ledger: MembershipBillingLedger) =>
   ledger.legal_membership_state === 'applicant' &&
