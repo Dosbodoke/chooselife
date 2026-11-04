@@ -33,3 +33,8 @@ minimumReleaseAgeExclude:
   - expo-localization@58.0.5
   - expo-location@58.0.18
   - expo-router@58.0.24
+patchedDependencies:
+  # SDK 58 uses AGP 9, which rejects the legacy proguard-android.txt default.
+  react-native-blob-util@0.24.9: patches/react-native-blob-util@0.24.9.patch
+  # Match React Native 0.88's Kotlin/Java delegate compatibility handling.
+  react-native-fast-squircle@1.1.2: patches/react-native-fast-squircle@1.1.2.patch
