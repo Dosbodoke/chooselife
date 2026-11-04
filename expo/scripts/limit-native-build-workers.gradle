@@ -1,0 +1,15 @@
+// Gradle's --max-workers does not limit the compiler jobs spawned by Ninja.
+// Share a pool for compilation and linking to keep native builds within the
+// memory available on EAS's medium Android builder.
+gradle.beforeProject { project ->
+    ['com.android.application', 'com.android.library'].each { pluginId ->
+        project.pluginManager.withPlugin(pluginId) {
+            def android = project.extensions.getByName('android')
+            android.defaultConfig.externalNativeBuild.cmake.arguments.addAll([
+                '-DCMAKE_JOB_POOLS=chooselife_native=2',
+                '-DCMAKE_JOB_POOL_COMPILE=chooselife_native',
+                '-DCMAKE_JOB_POOL_LINK=chooselife_native',
+            ])
+        }
+    }
+}
