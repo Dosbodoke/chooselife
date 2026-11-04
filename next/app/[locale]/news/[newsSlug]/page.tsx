@@ -8,6 +8,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { ShareButton } from "@/components/ShareButton";
+import { profilePictureUrl } from "@/lib/storage/r2";
 
 export const revalidate = 300; // Revalidate every 5 minutes (ISR)
 
@@ -124,7 +125,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
                 <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-gray-200">
                   <Image
                     src={
-                      comment.user?.profile_picture ||
+                      profilePictureUrl(comment.user?.profile_picture) ??
                       "/default-profile-picture.png"
                     }
                     fill={true}

@@ -20,6 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounceValue } from "@/hooks/use-debounce-value";
+import { profilePictureUrl } from "@/lib/storage/r2";
 import { cn } from "@/lib/utils";
 import { supabaseBrowser } from "@/utils/supabase/client";
 import { Tables } from "@/utils/supabase/database.types";
@@ -374,7 +375,7 @@ const VerifiedUser: React.FC<{
       {profile.profile_picture && (
         <Image
           alt={`${username} profile picture`}
-          src={profile.profile_picture || "/placeholder.svg"}
+          src={profilePictureUrl(profile.profile_picture) ?? "/placeholder.svg"}
           width={24}
           height={24}
           className="h-6 w-6 rounded-full"
