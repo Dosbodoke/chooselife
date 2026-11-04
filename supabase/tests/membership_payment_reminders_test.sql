@@ -321,7 +321,7 @@ select results_eq(
     'membership_payment_reminder',
     'reminder-association',
     'Lembrete de contribuição',
-    '/organizations/reminder-association'
+    '/organizations'
   )$$,
   'exactly one targeted, localized notification is enqueued for the webhook'
 );
