@@ -6,10 +6,7 @@ const rigSetupSelectStatement = `
     *,
     rig_setup_webbing (
       *,
-      webbing_id (
-        *,
-        model ( * )
-      )
+      webbing_id ( * )
     )
 `;
 

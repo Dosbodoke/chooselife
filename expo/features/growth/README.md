@@ -72,3 +72,59 @@ After the test, ship the winning default in code and retire the experiment. Do n
 - Remove QA overrides and restart Expo to return to the normal default.
 
 References: [React Native SDK](https://posthog.com/docs/libraries/react-native), [experiment setup](https://posthog.com/docs/experiments/start-here), [metrics](https://posthog.com/docs/experiments/metrics).
+
+# Second growth experiment: webbing picker layout
+
+Hypothesis: one-column **wide cards** (stat strip and stretch curve) help people find and register their exact webbing model more often than two-column **spec tiles**. Both layouts were chosen from the October 2026 native prototypes; neither is a legacy baseline, so `control` is simply the two-column design.
+
+Nothing has been created in PostHog yet. `webbing-picker-experiment.json` is the reproducible API payload for a draft experiment; it does not launch anything.
+
+## Assignment and exposure
+
+- Experiment / flag key: `webbing-picker-layout-v1`.
+- Variants: `control` = spec tiles (two columns, four labelled tiles, the sorted tile inverted), `wide` = wide cards (one column, stat strip, stretch curve), weighted 50/50.
+- Unit: anonymous installation, sticky like the map experiment. The first valid variant is persisted under `experiment:webbing-picker-layout-v1`; later flag changes never move an installation. Login does not rebucket.
+- Assignment resolves when the registration screen mounts, with the same 1.8-second flag timeout. Until it resolves, and for missing keys, inactive flags, unexpected variants, timeouts, or storage failures, the picker shows spec tiles and events are `experiment_eligible = false`.
+- The layout is locked when the sheet opens; a late assignment never changes a sheet already on screen.
+- Exposure is `webbing_picker_exposed`, emitted once per sheet presentation when catalog cards first become visible (FlatList viewability, 50% visible). Offline, outage, and empty-catalog sheets are not exposures. Count unique installations.
+- Configure custom exposure, not `$feature_flag_called` (automatic flag events stay disabled). Eligible events carry `$feature/webbing-picker-layout-v1`.
+
+## Event contract
+
+Every event includes `experiment`, `experiment_eligible`, and `layout`; eligible events also include `variant` and `$feature/webbing-picker-layout-v1`. No search text, model names, user IDs, or free text are sent. `filter` values are fixed ids (`isa-certified`, `in-production`, `material:<SlackData material>`).
+
+| Event                           | Extra properties                                                                                                                                                                  | Trigger                                                                  |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `webbing_picker_exposed`        | `result_count`                                                                                                                                                                    | Catalog cards first visible in this sheet.                               |
+| `webbing_picker_sorted`         | `sort_key`, `sort_direction`                                                                                                                                                      | Sort menu choice.                                                        |
+| `webbing_picker_filtered`       | `filter`, `enabled`, `filter_count`                                                                                                                                               | Filter chip toggled.                                                     |
+| `webbing_picker_model_selected` | `model_source` (`catalog`/`legacy`), `position` (1-based, 0 for legacy), `sort_key`, `sort_direction`, `filter_count`, `searched`, `seconds_since_exposure` (-1 if never exposed) | Model tapped.                                                            |
+| `webbing_picker_manual_chosen`  | `seconds_since_exposure`                                                                                                                                                          | "Register manually" tapped.                                              |
+| `webbing_picker_closed`         | `outcome` (`catalog`/`legacy`/`manual`/`dismissed`), `exposed`, `seconds_open`, `searched`, `sorted`, `filter_count`                                                              | Sheet closes; exactly once per presentation.                             |
+| `webbing_registered`            | `model_source` (`catalog`/`legacy`/`manual`), `has_photo`                                                                                                                         | The physical webbing row is created or recovered, once per registration. |
+
+## Success metrics
+
+| Role      | Metric               | Definition                                                                                             |
+| --------- | -------------------- | ------------------------------------------------------------------------------------------------------ |
+| Primary   | Catalog registration | Unique exposed installations with `webbing_registered` where `model_source = catalog` within 24 hours. |
+| Secondary | Catalog pick         | Exposed installations with `webbing_picker_model_selected` (`catalog`) within 1 hour.                  |
+| Secondary | Time to pick         | Mean `seconds_since_exposure` on catalog picks (≥ 0).                                                  |
+| Secondary | Manual fallback      | Exposed installations with `webbing_picker_manual_chosen` within 1 hour. Lower is better.              |
+| Guardrail | Any registration     | Exposed installations with `webbing_registered` (any source) within 24 hours. Must not drop.           |
+
+Also useful outside the experiment report: `position` of catalog picks (how far people scroll), and `searched`/`sorted`/`filter_count` on `webbing_picker_closed` (how much each layout relies on search versus scanning).
+
+Registrations are rare compared with map visits. Estimate weekly exposed installations before launching; this test may need several weeks to reach a meaningful sample. Do not stop when a daily result first looks favorable.
+
+## Launch, stop, adopt
+
+1. Release a build containing this instrumentation (development builds never transmit).
+2. Create the draft from `webbing-picker-experiment.json`, exclude internal test accounts, confirm events in Live events, then launch.
+3. Disable the flag to stop enrollment; enrolled installations keep their persisted layout until the code changes. Ship the winner in code and retire the key; never reuse `webbing-picker-layout-v1` for a new test.
+
+## Local verification
+
+- `pnpm test features/growth features/webbing --runInBand --watchman=false`.
+- `EXPO_PUBLIC_DEV_WEBBING_PICKER_VARIANT=control` or `wide`, then restart Expo with `-c`. QA arms use separate storage and never send events.
+- `EXPO_PUBLIC_DEV_GROWTH_DEBUG=true` prints events and properties to the Metro log without sending them.

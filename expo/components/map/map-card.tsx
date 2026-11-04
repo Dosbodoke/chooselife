@@ -5,6 +5,7 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   useWindowDimensions,
+  type ScrollViewInstance,
 } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import Animated, { Easing, FadeIn, FadeOut } from 'react-native-reanimated';
@@ -54,7 +55,7 @@ export const MapCardList = ({
 }: MapCardListProps) => {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const scrollRef = React.useRef<ScrollView>(null);
+  const scrollRef = React.useRef<ScrollViewInstance>(null);
   const isSwiping = React.useRef(false);
 
   const bottomSheetHandlerHeight = useMapStore(

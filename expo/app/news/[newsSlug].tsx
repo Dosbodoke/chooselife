@@ -8,6 +8,7 @@ import {
   ScrollView,
   TextInput,
   View,
+  type ViewInstance,
 } from 'react-native';
 import { KeyboardControllerView } from 'react-native-keyboard-controller';
 import { Markdown } from 'react-native-remark';
@@ -73,7 +74,7 @@ export default function NewsDetail() {
 
   const [bottomPadding, setBottomPadding] = useState(0);
 
-  const becomeMemberRef = useRef<View>(null);
+  const becomeMemberRef = useRef<ViewInstance>(null);
 
   const { share } = useShare();
 

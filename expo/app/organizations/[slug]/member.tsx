@@ -73,7 +73,7 @@ export default function MemberShowcaseScreen() {
   return (
     <View className="flex-1 bg-white">
       <Pressable
-        onPress={router.back}
+        onPress={() => router.back()}
         accessibilityLabel="Fechar"
         className="absolute right-5 z-50 h-11 w-11 items-center justify-center rounded-full bg-white"
         style={{

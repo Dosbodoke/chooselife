@@ -100,9 +100,9 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
           }
         } catch (fallbackError) {
           console.error('Failed to initialize fallback i18n:', fallbackError);
+          // Nothing will render, so AnimatedSplashScreen never takes over.
+          await SplashScreen.hideAsync().catch(() => undefined);
         }
-      } finally {
-        await SplashScreen.hideAsync().catch(() => undefined);
       }
     }
 

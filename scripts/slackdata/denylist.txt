@@ -1,0 +1,3 @@
+# Media keys removed on request (one per line, relative to data/media/).
+# Listed keys are left out of the generated index and never uploaded.
+# See README.md, "Removal requests".

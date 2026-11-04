@@ -25,7 +25,7 @@ import {
   getHistoryCountLabel,
   getObligationMeta,
   getObligationPeriodName,
-  getObligationStatusLabel,
+  getLedgerObligationStatusLabel,
   getRejectedClaimReason,
 } from '~/lib/membership-ledger-copy';
 
@@ -99,7 +99,7 @@ function ContributionRow({
             {formatLedgerAmount(obligation.amount, obligation.currency)}
           </Text>
           <Text className="text-xs font-medium" style={{ color: style.fg }}>
-            {getObligationStatusLabel(obligation.status)}
+            {getLedgerObligationStatusLabel(obligation)}
           </Text>
         </View>
       </View>

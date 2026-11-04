@@ -1,3 +1,4 @@
+import { putWithProgress } from '~/lib/put-with-progress';
 import { supabase } from '~/lib/supabase';
 
 const DEFAULT_R2_PUBLIC_URL = 'https://cdn.chooselife.club';
@@ -24,13 +25,15 @@ export function getR2PublicUrl(bucket: string, path: string): string {
 
 /**
  * Uploads a file to R2 via presigned URL from the API.
- * Returns the file key (path) on success.
+ * Returns the file key (path) on success. `onProgress` receives the share of
+ * bytes sent (0–1).
  */
 export async function uploadToR2(
   bucket: string,
   key: string,
   body: ArrayBuffer | Uint8Array,
   contentType: string,
+  onProgress?: (sent: number) => void,
 ): Promise<string> {
   const session = await supabase.auth.getSession();
   const token = session.data.session?.access_token;
@@ -59,6 +62,16 @@ export async function uploadToR2(
 
   // Upload directly to R2
   const uploadBody = body instanceof Uint8Array ? body.buffer : body;
+
+  if (onProgress) {
+    await putWithProgress(
+      presignedUrl,
+      uploadBody as ArrayBuffer,
+      contentType,
+      onProgress,
+    );
+    return resolvedKey;
+  }
 
   const uploadRes = await fetch(presignedUrl, {
     method: 'PUT',

@@ -1,4 +1,9 @@
-import type { WebbingLifetimeStatus, WebbingUsage, TStrengthClass } from './types';
+import type {
+  TStrengthClass,
+  WebbingLifetimeStatus,
+  WebbingUsage,
+  WebbingUsageRecord,
+} from './types';
 
 /**
  * ISA recommended lifetime days by strength class and material
@@ -39,8 +44,17 @@ export function getRecommendedLifetimeDays(
   return LIFETIME_DEFAULTS[material]?.[strengthClass] ?? null;
 }
 
+function hasSupportedLifetime(recommendedDays: number | null): recommendedDays is number {
+  return (
+    typeof recommendedDays === 'number' &&
+    Number.isFinite(recommendedDays) &&
+    recommendedDays > 0
+  );
+}
+
 /**
  * Calculate lifetime status based on usage percentage
+ * - unknown: no supported recommended lifetime
  * - good: < 75% used
  * - inspect: 75-90% used
  * - replace: >= 90% used
@@ -49,7 +63,7 @@ export function getLifetimeStatus(
   usageDays: number,
   recommendedDays: number | null,
 ): WebbingLifetimeStatus {
-  if (!recommendedDays || recommendedDays <= 0) return 'good';
+  if (!hasSupportedLifetime(recommendedDays)) return 'unknown';
 
   const percentage = (usageDays / recommendedDays) * 100;
 
@@ -59,13 +73,13 @@ export function getLifetimeStatus(
 }
 
 /**
- * Calculate usage percentage (capped at 100%)
+ * Calculate usage percentage (capped at 100%), or null when unknown
  */
 export function getUsagePercentage(
   usageDays: number,
   recommendedDays: number | null,
-): number {
-  if (!recommendedDays || recommendedDays <= 0) return 0;
+): number | null {
+  if (!hasSupportedLifetime(recommendedDays)) return null;
   return Math.min(100, (usageDays / recommendedDays) * 100);
 }
 
@@ -76,7 +90,7 @@ export function getRemainingDays(
   usageDays: number,
   recommendedDays: number | null,
 ): number | null {
-  if (!recommendedDays) return null;
+  if (!hasSupportedLifetime(recommendedDays)) return null;
   return Math.max(0, recommendedDays - usageDays);
 }
 
@@ -102,11 +116,16 @@ export function getStatusColor(status: WebbingLifetimeStatus): {
         border: 'border-amber-200',
       };
     case 'good':
-    default:
       return {
         bg: 'bg-emerald-100',
         text: 'text-emerald-700',
         border: 'border-emerald-200',
+      };
+    case 'unknown':
+      return {
+        bg: 'bg-slate-100',
+        text: 'text-slate-600',
+        border: 'border-slate-200',
       };
   }
 }
@@ -119,16 +138,19 @@ const STATUS_TRANSLATIONS: Record<string, Record<WebbingLifetimeStatus, string>>
     good: 'Good',
     inspect: 'Inspect',
     replace: 'Replace',
+    unknown: 'No estimate',
   },
   pt: {
     good: 'Bom',
     inspect: 'Inspecionar',
     replace: 'Substituir',
+    unknown: 'Sem estimativa',
   },
   es: {
     good: 'Bueno',
     inspect: 'Inspeccionar',
     replace: 'Reemplazar',
+    unknown: 'Sin estimación',
   },
 };
 
@@ -155,16 +177,34 @@ export function buildWebbingUsage(
   rigCount: number,
   recommendedLifetimeDays: number | null,
 ): WebbingUsage {
-  const status = getLifetimeStatus(usageDays, recommendedLifetimeDays);
-  const percentageUsed = getUsagePercentage(usageDays, recommendedLifetimeDays);
+  const lifetime = hasSupportedLifetime(recommendedLifetimeDays)
+    ? recommendedLifetimeDays
+    : null;
 
   return {
     usageDays,
     rigCount,
-    recommendedLifetimeDays,
-    percentageUsed,
-    status,
+    recommendedLifetimeDays: lifetime,
+    percentageUsed: getUsagePercentage(usageDays, lifetime),
+    remainingDays: getRemainingDays(usageDays, lifetime),
+    status: getLifetimeStatus(usageDays, lifetime),
   };
+}
+
+/**
+ * Derive the assessment from cached raw usage and the current lifetime input.
+ * Null while usage is unavailable, so loading never reads as zero use.
+ */
+export function deriveWebbingUsage(
+  record: WebbingUsageRecord | undefined,
+  recommendedLifetimeDays: number | null,
+): WebbingUsage | null {
+  if (!record) return null;
+  return buildWebbingUsage(
+    record.usageDays,
+    record.rigCount,
+    recommendedLifetimeDays,
+  );
 }
 
 // ============================================================================

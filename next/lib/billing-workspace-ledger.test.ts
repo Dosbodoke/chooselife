@@ -4,10 +4,11 @@ import test from "node:test";
 import type {
   BillingWorkspacePaymentRow,
   BillingWorkspacePersonRow,
+  BillingWorkspaceWaiverRow,
 } from "./billing-workspace";
 // Node's native TypeScript runner requires an explicit extension.
 // @ts-expect-error TypeScript resolves the same source file for the web build.
-import { buildBillingWorkspaceMemberRows } from "./billing-workspace-ledger.ts";
+import { buildBillingWorkspaceMemberRows, mostUrgentMemberPeriod } from "./billing-workspace-ledger.ts";
 
 /**
  * Supabase's generator types every `RETURNS TABLE` column as non-nullable, but
@@ -66,14 +67,35 @@ function payment(
   } as unknown as BillingWorkspacePaymentRow;
 }
 
-function statusOf(payments: BillingWorkspacePaymentRow[]) {
+function statusOf(
+  payments: BillingWorkspacePaymentRow[],
+  waivers: BillingWorkspaceWaiverRow[] = [],
+) {
+  return periodOf(payments, waivers).status;
+}
+
+function periodOf(
+  payments: BillingWorkspacePaymentRow[],
+  waivers: BillingWorkspaceWaiverRow[] = [],
+) {
   const { rows } = buildBillingWorkspaceMemberRows(
     [person],
     payments,
     "pt-BR",
+    waivers,
   );
-  return rows[0].periods[rows[0].history[0].periodKey]!.status;
+  return rows[0].periods[rows[0].history[0].periodKey]!;
 }
+
+const waiver = {
+  obligation_id: "obligation-1",
+  member_user_id: "user-1",
+  reason: "Dificuldade financeira",
+  waived_at: "2026-10-30T18:00:00Z",
+  waived_by_user_id: "admin-1",
+  waived_by_name: "Admin",
+  waived_by_handle: "@admin",
+} satisfies BillingWorkspaceWaiverRow;
 
 test("a refused payment reads as rejected, not as awaiting payment", () => {
   assert.equal(
@@ -135,4 +157,61 @@ test("an approved claim reads as paid", () => {
     ]),
     "paid",
   );
+});
+
+test("a waived month reads as waived and keeps what was billed", () => {
+  const period = periodOf(
+    [
+      payment({
+        purpose: "recurring",
+        period_key: "2026-09",
+        obligation_status: "void",
+        effective_payment_state: "void",
+        latest_claim_id: null,
+      }),
+    ],
+    [waiver],
+  );
+
+  assert.equal(period.status, "waived");
+  assert.equal(period.amount, 36000);
+  assert.equal(period.paidAt, null);
+  assert.deepEqual(period.waiver, {
+    reason: "Dificuldade financeira",
+    waivedAt: "2026-10-30T18:00:00Z",
+    waivedByName: "Admin",
+  });
+});
+
+test("a void charge without a waiver still reads as no charge", () => {
+  const period = periodOf([
+    payment({ obligation_status: "void", effective_payment_state: "void" }),
+  ]);
+
+  assert.equal(period.status, "no_obligation");
+  assert.equal(period.amount, null);
+  assert.equal(period.waiver, null);
+});
+
+test("the latest waived month takes priority over an older paid admission", () => {
+  const paid = periodOf([
+    payment({ effective_payment_state: "settled", due_on: "2026-07-20" }),
+  ]);
+  const waived = periodOf([
+    payment({ effective_payment_state: "void", due_on: "2026-10-10" }),
+  ], [waiver]);
+
+  assert.equal(mostUrgentMemberPeriod([paid, waived]), waived);
+  assert.equal(mostUrgentMemberPeriod([waived, paid]), waived);
+});
+
+test("remaining overdue debt takes priority over a newer waived month", () => {
+  const overdue = periodOf([
+    payment({ effective_payment_state: "overdue", due_on: "2026-09-10" }),
+  ]);
+  const waived = periodOf([
+    payment({ effective_payment_state: "void", due_on: "2026-10-10" }),
+  ], [waiver]);
+
+  assert.equal(mostUrgentMemberPeriod([waived, overdue]), overdue);
 });

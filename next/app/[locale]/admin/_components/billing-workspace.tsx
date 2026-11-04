@@ -17,9 +17,11 @@ import {
   type BillingWorkspacePaymentRow,
   type BillingWorkspacePersonRow,
   type BillingWorkspaceQueueRow,
+  type BillingWorkspaceWaiverRow,
   normalizeDecisionReason,
 } from "@/lib/billing-workspace";
 import { buildBillingWorkspaceMemberRows } from "@/lib/billing-workspace-ledger";
+import { waivableCharges } from "@/lib/contribution-waiver";
 import { supabaseBrowser } from "@/utils/supabase/client";
 
 import BillingWorkspaceClaimReview from "./billing-workspace-claim-review";
@@ -39,6 +41,7 @@ type RpcError = {
 type WorkspaceData = {
   payments: BillingWorkspacePaymentRow[];
   people: BillingWorkspacePersonRow[];
+  waivers: BillingWorkspaceWaiverRow[];
 };
 
 type ClaimDetailEnvelope =
@@ -72,27 +75,39 @@ function getRpcErrorMessage(error: RpcError, copy: WorkspaceErrorCopy) {
 async function fetchWorkspaceData(
   organizationId: string,
 ): Promise<WorkspaceData> {
-  const [peopleResult, paymentsResult] = await Promise.all([
+  const [peopleResult, paymentsResult, waiversResult] = await Promise.all([
     supabase.rpc("get_billing_workspace_people", {
       p_organization_id: organizationId,
     }),
     supabase.rpc("get_billing_workspace_payments", {
       p_organization_id: organizationId,
     }),
+    // Only the waiver audit tells a forgiven month from any other void charge.
+    supabase.rpc("get_billing_workspace_waivers", {
+      p_organization_id: organizationId,
+    }),
   ]);
 
   if (peopleResult.error) throw peopleResult.error;
   if (paymentsResult.error) throw paymentsResult.error;
+  if (waiversResult.error) throw waiversResult.error;
 
   return {
     people: peopleResult.data ?? [],
     payments: paymentsResult.data ?? [],
+    waivers: waiversResult.data ?? [],
   };
 }
 
 function memberToClaim(member: MemberTableRow): BillingWorkspaceQueueRow | null {
   const period = member.selectedPeriod;
   if (!period.claimId || !period.obligationId || !period.obligationKind) {
+    return null;
+  }
+
+  // A decided recurring claim belongs in member history. In particular, a
+  // rejected payment must still open the drawer where its debt can be waived.
+  if (period.obligationKind === "recurring" && period.claimStatus !== "under_review") {
     return null;
   }
 
@@ -175,11 +190,16 @@ export default function BillingWorkspace({
     enabled: activeOrganizationId.length > 0,
   });
 
-  const workspaceData = workspaceQuery.data ?? { people: [], payments: [] };
+  const workspaceData = workspaceQuery.data ?? {
+    people: [],
+    payments: [],
+    waivers: [],
+  };
   const ledger = buildBillingWorkspaceMemberRows(
     workspaceData.people,
     workspaceData.payments,
     locale.toLowerCase().startsWith("pt") ? "pt-BR" : "en-US",
+    workspaceData.waivers,
   );
 
   const selectedMember =
@@ -295,7 +315,9 @@ export default function BillingWorkspace({
     });
   };
 
-  const reviewSurface = selectedClaim ? (
+  // Every drawer names the person from the ledger row, so the header is
+  // already right while a claim's own detail is still loading.
+  const reviewSurface = selectedClaim && selectedMember ? (
     selectedClaim.purpose === "initial_admission" ? (
       <InitialPaymentClaimReview
         action={
@@ -316,6 +338,7 @@ export default function BillingWorkspace({
         onApprove={handleApprove}
         onClose={closeReview}
         onReject={handleReject}
+        person={selectedMember}
         rejectionReason={rejectionReason}
         onRejectionReasonChange={setRejectionReason}
       />
@@ -341,15 +364,21 @@ export default function BillingWorkspace({
         onApprove={handleApprove}
         onClose={closeReview}
         onReject={handleReject}
+        person={selectedMember}
         rejectionReason={rejectionReason}
         onRejectionReasonChange={setRejectionReason}
       />
     )
   ) : selectedMember ? (
     <BillingWorkspaceMemberReview
+      key={selectedMember.id}
       member={selectedMember}
       onClose={closeReview}
       organizationId={activeOrganizationId}
+      waivableCharges={waivableCharges(
+        workspaceData.payments,
+        selectedMember.id,
+      )}
     />
   ) : null;
 

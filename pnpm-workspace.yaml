@@ -11,10 +11,25 @@ allowBuilds:
   sharp: true
   supabase: true
   unrs-resolver: true
-patchedDependencies:
-  expo-backdrop@0.1.1: patches/expo-backdrop@0.1.1.patch
 minimumReleaseAgeExclude:
   - react-native-skia-graphite-android@154.0.1
   - react-native-skia-graphite-apple-ios@154.0.1
   - react-native-skia-graphite-apple-macos@154.0.1
   - react-native-skia@3.0.1
+  - '@expo/cli@58.1.13'
+  - '@expo/metro-config@58.0.15'
+  - '@expo/router-server@58.0.15'
+  - babel-preset-expo@58.0.18
+  - expo-asset@58.0.17
+  - expo-file-system@58.0.10
+  - expo-font@58.0.9
+  - expo-modules-cli@0.3.1
+  - expo-modules-core@58.0.23
+  - expo-modules-jsi@58.0.16
+  - expo@58.0.16
+  - '@expo/ui@58.0.21'
+  - expo-blur@58.0.5
+  - expo-image@58.0.16
+  - expo-localization@58.0.5
+  - expo-location@58.0.18
+  - expo-router@58.0.24

@@ -1,15 +1,15 @@
-import { getTranslatedStatus, useWebbingUsage } from '@chooselife/ui';
-import * as ImagePicker from 'expo-image-picker';
-import { Link } from 'expo-router';
 import {
-  CameraIcon,
-  ChevronRightIcon,
-  PackageIcon,
-  XIcon,
-} from 'lucide-react-native';
-import { useState } from 'react';
+  getTranslatedStatus,
+  resolveWebbingSpecs,
+  useWebbingUsage,
+  type ResolvedWebbingSpecs,
+  type WebbingLifetimeStatus,
+} from '@chooselife/ui';
+import { photoProgress, type LocalPhoto } from '~/features/photos/photo-file';
+import { Link } from 'expo-router';
+import { ChevronRightIcon, PackageIcon } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Image, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
 import { useOnlineStatus } from '~/context/react-query';
@@ -21,6 +21,11 @@ import {
 } from '~/hooks/use-webbings';
 import { getR2PublicUrl } from '~/lib/r2';
 
+import {
+  photoErrorMessage,
+  PhotoTile,
+  usePhotoTransfer,
+} from '~/components/photo-picker';
 import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
 import { Skeleton } from '~/components/ui/skeleton';
@@ -98,196 +103,222 @@ export function MyWebbings() {
   );
 }
 
-function WebbingPhoto({ webbing }: { webbing: WebbingWithUsage }) {
+/**
+ * The row's photo: saves as soon as one is picked or removed. While saving,
+ * and after a failed upload, the tile shows the picked photo, not the stored
+ * one.
+ */
+function useWebbingPhotoTile(webbing: WebbingWithUsage) {
   const { t } = useTranslation();
-  const [isPicking, setIsPicking] = useState(false);
-  const [failedUri, setFailedUri] = useState<string>();
-  const mutation = useWebbingPhoto(webbing);
   const isOnline = useOnlineStatus();
-  const imagePath = webbing.image_path ?? webbing.model?.image_url;
-  const uri = imagePath ? getR2PublicUrl('webbings', imagePath) : undefined;
-  const image = uri && uri !== failedUri ? uri : undefined;
-  const busy = isPicking || mutation.isPending;
-  const disabled = busy || !isOnline;
-  const name = getWebbingName(webbing);
+  const mutation = useWebbingPhoto(webbing);
+  const photo = usePhotoTransfer();
+  const change = mutation.variables;
+  const showsChange =
+    !!change &&
+    (mutation.isPending ||
+      mutation.isSuccess ||
+      (mutation.isError && !!change.asset));
+  const storedUri = webbing.image_path
+    ? getR2PublicUrl('webbings', webbing.image_path)
+    : null;
+  const value = showsChange
+    ? change.asset
+    : storedUri
+      ? { uri: storedUri }
+      : null;
+  // Personal photos only; saved SlackData snapshots never carry upstream images.
+  const legacyImage = resolveWebbingSpecs(webbing).legacyImagePath;
 
-  const showError = () =>
-    Alert.alert(
-      t(`${translationKey}.photoErrorTitle`),
-      t(`${translationKey}.photoError`),
+  const save = (asset: LocalPhoto | null) => {
+    if (asset) photo.report(photoProgress('preparing'));
+    else photo.reset();
+    mutation.mutate(
+      { asset, onProgress: asset ? photo.report : undefined },
+      {
+        onSuccess: () => {
+          if (asset) photo.succeed();
+        },
+        onError: (error) => {
+          if (asset) photo.fail(photoErrorMessage(t, error));
+        },
+      },
     );
-  const choose = async () => {
-    if (disabled) return;
-    setIsPicking(true);
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-        exif: false,
-      });
-      if (!result.canceled && result.assets[0])
-        await mutation.mutateAsync(result.assets[0]);
-    } catch {
-      showError();
-    }
-    setIsPicking(false);
   };
 
+  return {
+    tile: {
+      value,
+      fallbackUri: legacyImage
+        ? getR2PublicUrl('webbings', legacyImage)
+        : undefined,
+      onChange: save,
+      transfer: photo.transfer,
+      onRetry: isOnline && change?.asset ? () => save(change.asset) : undefined,
+      disabled: !isOnline,
+      name: getWebbingName(webbing),
+    },
+    error: mutation.isError ? photoErrorMessage(t, mutation.error) : null,
+    /** After a failed upload, go back to the stored photo. */
+    keepPrevious:
+      mutation.isError && change?.asset
+        ? () => {
+            mutation.reset();
+            photo.reset();
+          }
+        : undefined,
+  };
+}
+
+const STATUS_COLORS: Record<WebbingLifetimeStatus, string> = {
+  good: '#059669',
+  unknown: '#059669',
+  inspect: '#b45309',
+  replace: '#dc2626',
+};
+
+function WebbingPhotoRow({ webbing }: { webbing: WebbingWithUsage }) {
+  const { t } = useTranslation();
+  const specs = resolveWebbingSpecs(webbing);
+  const photo = useWebbingPhotoTile(webbing);
+
   return (
-    <View className="h-24 w-20 rounded-xl overflow-hidden bg-slate-100">
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t(
-          `${translationKey}.${image ? 'changePhotoFor' : 'addPhotoFor'}`,
-          { name },
-        )}
-        accessibilityState={{ disabled, busy }}
-        disabled={disabled}
-        onPress={() => void choose()}
-        className="flex-1 items-center justify-center gap-1"
-      >
-        {image ? (
-          <Image
-            source={{ uri: image }}
-            onError={() => setFailedUri(image)}
-            resizeMode={webbing.image_path ? 'cover' : 'contain'}
-            className="absolute inset-0 h-full w-full"
-          />
-        ) : (
-          <>
-            <Icon as={CameraIcon} size={22} className="text-slate-400" />
-            <Text className="text-[11px] text-slate-500">
-              {t(`${translationKey}.addPhoto`)}
-            </Text>
-          </>
-        )}
-        {image && !busy && (
-          <View className="absolute bottom-1 right-1 rounded-full bg-white/90 p-1.5">
-            <Icon as={CameraIcon} size={14} className="text-slate-800" />
-          </View>
-        )}
-        {busy && (
-          <View className="absolute inset-0 items-center justify-center bg-white/80">
-            <ActivityIndicator />
-          </View>
-        )}
-      </Pressable>
-      {webbing.image_path && !busy && (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(`${translationKey}.removePhotoFor`, { name })}
-          accessibilityState={{ disabled }}
-          disabled={disabled}
-          onPress={() => mutation.mutate(null, { onError: showError })}
-          className="absolute right-0 top-0 h-11 w-11 items-center justify-center"
-        >
-          <View className="rounded-full bg-white/90 p-1">
-            <Icon as={XIcon} size={14} />
-          </View>
-        </Pressable>
-      )}
+    <View className="rounded-2xl bg-white border border-slate-200 p-4 gap-4">
+      <View className="flex-row gap-3">
+        <PhotoTile {...photo.tile} />
+        <WebbingSummaryLink webbing={webbing} specs={specs} />
+      </View>
+      {photo.error ? (
+        <View className="flex-row flex-wrap items-center gap-x-3 gap-y-1">
+          <Text className="text-xs text-destructive">{photo.error}</Text>
+          {photo.keepPrevious ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={photo.keepPrevious}
+              hitSlop={8}
+            >
+              <Text className="text-xs font-semibold text-primary">
+                {t(`${translationKey}.keepPreviousPhoto`)}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+      <WebbingLifetime
+        webbingId={webbing.id}
+        lifetime={specs.recommendedLifetimeDays}
+      />
     </View>
   );
 }
 
-function WebbingPhotoRow({ webbing }: { webbing: WebbingWithUsage }) {
-  const { t, i18n } = useTranslation();
-  const lifetime = webbing.model?.recommended_lifetime_days;
-  const strength = webbing.strength_class ?? webbing.model?.strength_class;
-  const {
-    data: usage,
-    isPending: usagePending,
-    isPlaceholderData: usagePlaceholder,
-    isError: usageError,
-  } = useWebbingUsage(webbing.id, lifetime ?? null);
+function WebbingSummaryLink({
+  webbing,
+  specs,
+}: {
+  webbing: WebbingWithUsage;
+  specs: ResolvedWebbingSpecs;
+}) {
+  const { t } = useTranslation();
+  const name = getWebbingName(webbing);
   const loops = Number(webbing.left_loop) + Number(webbing.right_loop);
-  const color =
-    usage.status === 'replace'
-      ? '#dc2626'
-      : usage.status === 'inspect'
-        ? '#b45309'
-        : '#059669';
-  const specs = [
+  const modelStrength = specs.modelStrengthClass?.value;
+  const strength = modelStrength
+    ? t(`${translationKey}.strength`, { strength: modelStrength })
+    : specs.personalStrengthClass
+      ? t(`${translationKey}.personalStrength`, {
+          strength: specs.personalStrengthClass,
+        })
+      : null;
+  const details = [
+    `ID ${webbing.id}`,
+    strength,
+    webbing.isUsed ? t(`${translationKey}.riggedNow`) : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const specLine = [
     `${webbing.length} m`,
-    webbing.model?.material,
-    webbing.model?.weave,
+    specs.materials?.join(' / '),
+    specs.construction,
     `${loops} ${t(loops === 1 ? 'common.loop' : 'common.loops')}`,
   ]
     .filter(Boolean)
     .join(' · ');
 
   return (
-    <View className="rounded-2xl bg-white border border-slate-200 p-4 gap-4">
-      <View className="flex-row gap-3">
-        <WebbingPhoto webbing={webbing} />
-        <Link asChild href={`/webbing/${webbing.id}`}>
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel={t(`${translationKey}.viewHistory`, {
-              name: getWebbingName(webbing),
-            })}
-            className="flex-1 flex-row items-center gap-2 min-h-11"
-          >
-            <View className="flex-1 gap-1.5">
-              <Text className="text-base font-semibold text-slate-900">
-                {getWebbingName(webbing)}
-              </Text>
-              <Text className="text-xs text-slate-500">
-                ID {webbing.id}
-                {strength
-                  ? ` · ${t(`${translationKey}.strength`, { strength })}`
-                  : ''}
-                {webbing.isUsed ? ` · ${t(`${translationKey}.riggedNow`)}` : ''}
-              </Text>
-              <Text className="text-xs leading-5 text-slate-500">{specs}</Text>
-            </View>
-            <Icon as={ChevronRightIcon} size={16} className="text-slate-400" />
-          </Pressable>
-        </Link>
+    <Link asChild href={`/webbing/${webbing.id}`}>
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={t(`${translationKey}.viewHistory`, { name })}
+        className="flex-1 flex-row items-center gap-2 min-h-11"
+      >
+        <View className="flex-1 gap-1.5">
+          <Text className="text-base font-semibold text-slate-900">{name}</Text>
+          <Text className="text-xs text-slate-500">{details}</Text>
+          <Text className="text-xs leading-5 text-slate-500">{specLine}</Text>
+        </View>
+        <Icon as={ChevronRightIcon} size={16} className="text-slate-400" />
+      </Pressable>
+    </Link>
+  );
+}
+
+function WebbingLifetime({
+  webbingId,
+  lifetime,
+}: {
+  webbingId: number;
+  lifetime: number | null;
+}) {
+  const { t, i18n } = useTranslation();
+  const { data: usage, isError } = useWebbingUsage(webbingId, lifetime);
+
+  if (isError) {
+    return (
+      <Text className="text-xs text-muted-foreground">
+        {t(`${translationKey}.usageError`)}
+      </Text>
+    );
+  }
+  if (!usage) return <Skeleton className="h-4 w-full rounded" />;
+  if (!lifetime || usage.percentageUsed === null) {
+    // No supported lifetime: show recorded use, no bar or remaining life.
+    return (
+      <Text className="text-xs text-slate-500">
+        {t(`${translationKey}.usedDays`, { count: usage.usageDays })} ·{' '}
+        {t(`${translationKey}.rigs`, { count: usage.rigCount })} ·{' '}
+        {t(`${translationKey}.noLifetime`)}
+      </Text>
+    );
+  }
+
+  const color = STATUS_COLORS[usage.status];
+  const percent = Math.max(0, Math.min(100, usage.percentageUsed));
+  return (
+    <View className="gap-1.5">
+      <View className="flex-row justify-between gap-2 flex-wrap">
+        <Text className="text-xs text-slate-500">
+          {t(`${translationKey}.daysUsed`, {
+            used: usage.usageDays,
+            total: lifetime,
+          })}
+        </Text>
+        <Text className="text-xs font-semibold" style={{ color }}>
+          {getTranslatedStatus(usage.status, i18n.language)}
+        </Text>
       </View>
-      {lifetime ? (
-        usagePending || usagePlaceholder ? (
-          <Skeleton className="h-4 w-full rounded" />
-        ) : usageError ? (
-          <Text className="text-xs text-muted-foreground">
-            {t(`${translationKey}.usageError`)}
-          </Text>
-        ) : (
-          <View className="gap-1.5">
-            <View className="flex-row justify-between gap-2 flex-wrap">
-              <Text className="text-xs text-slate-500">
-                {t(`${translationKey}.daysUsed`, {
-                  used: usage.usageDays,
-                  total: lifetime,
-                })}
-              </Text>
-              <Text className="text-xs font-semibold" style={{ color }}>
-                {getTranslatedStatus(usage.status, i18n.language)}
-              </Text>
-            </View>
-            <View
-              accessibilityRole="progressbar"
-              accessibilityLabel={t('components.webbing-detail.lifetime.title')}
-              accessibilityValue={{
-                min: 0,
-                max: 100,
-                now: Math.max(0, Math.min(100, usage.percentageUsed)),
-              }}
-              className="h-1 rounded-full bg-slate-100 overflow-hidden"
-            >
-              <View
-                className="h-full rounded-full"
-                style={{
-                  width: `${Math.max(0, Math.min(100, usage.percentageUsed))}%`,
-                  backgroundColor: color,
-                }}
-              />
-            </View>
-          </View>
-        )
-      ) : null}
+      <View
+        accessibilityRole="progressbar"
+        accessibilityLabel={t('components.webbing-detail.lifetime.title')}
+        accessibilityValue={{ min: 0, max: 100, now: percent }}
+        className="h-1 rounded-full bg-slate-100 overflow-hidden"
+      >
+        <View
+          className="h-full rounded-full"
+          style={{ width: `${percent}%`, backgroundColor: color }}
+        />
+      </View>
     </View>
   );
 }

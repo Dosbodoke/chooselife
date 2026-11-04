@@ -29,6 +29,7 @@ import { supabase } from '~/lib/supabase';
 import { setAndroidNavigationBar } from '~/utils/android-navigation-bar';
 import { NAV_THEME } from '~/utils/constants';
 
+import { AnimatedSplashScreen } from '~/components/animated-splash-screen';
 import { OfflineBanner } from '~/components/offline-banner';
 
 Sentry.init({
@@ -55,7 +56,7 @@ Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_PUBLIC_KEY!);
 
 // https://docs.expo.dev/router/advanced/router-settings/
 export const unstable_settings = {
-  initialRouteName: '(tabs)/index',
+  anchor: '(tabs)',
 };
 
 // Only one theme is needed now.
@@ -70,7 +71,7 @@ export {
   ErrorBoundary,
 } from 'expo-router';
 
-// Prevent the splash screen from auto-hiding.
+// Keep the native splash up until AnimatedSplashScreen takes over.
 SplashScreen.preventAutoHideAsync();
 Uniwind.setTheme('light');
 
@@ -187,6 +188,7 @@ export default Sentry.wrap(function RootLayout() {
                         <UpdatePrompt />
                         <StoreUpdateModal />
                         <PortalHost />
+                        <AnimatedSplashScreen />
                       </UpdateProvider>
                     </NotificationProvider>
                   </ThemeProvider>

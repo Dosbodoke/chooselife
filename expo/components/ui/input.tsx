@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
   type TextInputProps as PrimitiveTextInputProps,
+  type TextInputInstance,
 } from 'react-native';
 
 import { cn } from '~/lib/utils';
@@ -23,7 +24,7 @@ function Input({
   rightIcon,
   onRightIconPress,
   ...props
-}: TextInputProps & React.RefAttributes<TextInput>) {
+}: TextInputProps & React.RefAttributes<TextInputInstance>) {
   return (
     <View>
       <TextInput
@@ -76,7 +77,7 @@ function PasswordInput({
   onChangeText,
   editable = true,
   ...props
-}: PasswordInputProps & React.RefAttributes<TextInput>) {
+}: PasswordInputProps & React.RefAttributes<TextInputInstance>) {
   const [isVisible, setIsVisible] = React.useState(false);
 
   const toggleVisibility = () => setIsVisible((prev) => !prev);

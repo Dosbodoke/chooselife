@@ -2,21 +2,45 @@ import AsyncStorage from 'expo-sqlite/kv-store';
 import PostHog from 'posthog-react-native';
 
 import { MAP_DEFAULT_EXPERIMENT, type ExperimentStorage } from './map-default';
+import {
+  isWebbingPickerVariant,
+  WEBBING_PICKER_EXPERIMENT,
+} from './webbing-picker-layout';
 
 let client: PostHog | null | undefined;
+
+/** QA arms get their own storage so they never contaminate real enrollment. */
+function experimentStorage(
+  experiment: string,
+  qaVariant: string | undefined,
+): ExperimentStorage {
+  const prefix = qaVariant ? `qa:${experiment}:${qaVariant}:` : '';
+  return {
+    getItem: (key) => AsyncStorage.getItem(`${prefix}${key}`),
+    setItem: (key, value) => AsyncStorage.setItem(`${prefix}${key}`, value),
+  };
+}
 
 export function getMapStyleStorage(): ExperimentStorage {
   const qaVariant = __DEV__
     ? process.env.EXPO_PUBLIC_DEV_MAP_VARIANT
     : undefined;
-  const prefix =
+  return experimentStorage(
+    MAP_DEFAULT_EXPERIMENT,
     qaVariant === 'control' || qaVariant === 'illustrated'
-      ? `qa:${MAP_DEFAULT_EXPERIMENT}:${qaVariant}:`
-      : '';
-  return {
-    getItem: (key) => AsyncStorage.getItem(`${prefix}${key}`),
-    setItem: (key, value) => AsyncStorage.setItem(`${prefix}${key}`, value),
-  };
+      ? qaVariant
+      : undefined,
+  );
+}
+
+export function getWebbingPickerStorage(): ExperimentStorage {
+  const qaVariant = __DEV__
+    ? process.env.EXPO_PUBLIC_DEV_WEBBING_PICKER_VARIANT
+    : undefined;
+  return experimentStorage(
+    WEBBING_PICKER_EXPERIMENT,
+    isWebbingPickerVariant(qaVariant) ? qaVariant : undefined,
+  );
 }
 
 function getClient() {
@@ -47,11 +71,26 @@ function getClient() {
   return client;
 }
 
-export async function getMapExperimentVariant(): Promise<unknown> {
-  if (__DEV__) {
-    // QA-only override; never sends events or affects a release build.
-    return process.env.EXPO_PUBLIC_DEV_MAP_VARIANT;
-  }
+export function getMapExperimentVariant(): Promise<unknown> {
+  // QA-only override; never sends events or affects a release build.
+  return getExperimentVariant(
+    MAP_DEFAULT_EXPERIMENT,
+    __DEV__ ? process.env.EXPO_PUBLIC_DEV_MAP_VARIANT : undefined,
+  );
+}
+
+export function getWebbingPickerVariant(): Promise<unknown> {
+  return getExperimentVariant(
+    WEBBING_PICKER_EXPERIMENT,
+    __DEV__ ? process.env.EXPO_PUBLIC_DEV_WEBBING_PICKER_VARIANT : undefined,
+  );
+}
+
+async function getExperimentVariant(
+  flagKey: string,
+  devOverride: string | undefined,
+): Promise<unknown> {
+  if (__DEV__) return devOverride;
   const posthog = getClient();
   if (!posthog) return undefined;
 
@@ -62,7 +101,7 @@ export async function getMapExperimentVariant(): Promise<unknown> {
         await posthog.ready();
         // Read only fresh responses, so stopped flags aren't revived from cache.
         const flags = await posthog.reloadFeatureFlagsAsync();
-        return flags?.[MAP_DEFAULT_EXPERIMENT];
+        return flags?.[flagKey];
       })(),
       new Promise<undefined>((resolve) => {
         timeout = setTimeout(() => resolve(undefined), 1800);

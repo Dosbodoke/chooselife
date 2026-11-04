@@ -8,6 +8,7 @@ import {
   formatLedgerDate,
   formatLedgerShortDate,
   getHistoryCountLabel,
+  getLedgerObligationStatusLabel,
   getLedgerStatus,
   getMemberSince,
   getObligationMeta,
@@ -190,8 +191,16 @@ describe('getObligationMeta', () => {
   });
 
   it('states plainly that a cancelled contribution is not owed', () => {
+    expect(
+      getObligationMeta(
+        obligation({ status: 'void', purpose: 'initial_admission' }),
+      ),
+    ).toBe('Esta contribuição foi cancelada.');
+  });
+
+  it('tells the member a waived month no longer needs paying', () => {
     expect(getObligationMeta(obligation({ status: 'void' }))).toBe(
-      'Esta contribuição foi cancelada.',
+      'A associação dispensou esta contribuição. Ela não precisa ser paga.',
     );
   });
 });
@@ -239,6 +248,17 @@ describe('getObligationStatusLabel', () => {
       'Confirmada',
       'Cancelada',
     ]);
+  });
+
+  it('names a waived month, and keeps a refused admission as cancelled', () => {
+    expect(getLedgerObligationStatusLabel(obligation({ status: 'void' }))).toBe(
+      'Dispensada',
+    );
+    expect(
+      getLedgerObligationStatusLabel(
+        obligation({ status: 'void', purpose: 'initial_admission' }),
+      ),
+    ).toBe('Cancelada');
   });
 
   it('shows an unknown status instead of an empty label', () => {

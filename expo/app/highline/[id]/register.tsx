@@ -11,7 +11,7 @@ import i18next from 'i18next';
 import React, { useRef, useState } from 'react';
 import { Controller, FieldErrors, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Keyboard, Platform, View } from 'react-native';
+import { ActivityIndicator, Keyboard, Platform, View, type ViewInstance } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
@@ -464,7 +464,7 @@ export default function RegisterWalk() {
         >
           <Button
             className="w-full rounded-3xl"
-            onPress={form.handleSubmit(onValid, onInvalid)}
+            onPress={() => form.handleSubmit(onValid, onInvalid)()}
             disabled={formMutation.isPending}
           >
             <Text>
@@ -488,7 +488,7 @@ const SuccessCard: React.FC<SuccessCardProps> = ({ offline, data }) => {
   const router = useRouter();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const shareableContentRef = useRef<View>(null);
+  const shareableContentRef = useRef<ViewInstance>(null);
   const [isSharing, setIsSharing] = useState(false);
 
   const onShare = async () => {

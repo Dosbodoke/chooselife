@@ -1,5 +1,6 @@
 import {
   getRigSetupDays,
+  getWebbingDisplayName,
   type RiggerProfile,
   type RigStatuses,
   type Setup,
@@ -104,13 +105,12 @@ export function useRiggerCountLabel(count: number) {
 export function useWebbingLabels() {
   const { t } = useTranslation();
   const hasRegisteredName = (w: SetupWebbing) =>
-    !!(w.webbing_id?.model?.name || w.webbing_id?.tag_name);
+    !!getWebbingDisplayName(w.webbing_id);
 
   return {
     // Unregistered webbing usually carries its name in `description`.
     name: (w: SetupWebbing) =>
-      w.webbing_id?.model?.name ||
-      w.webbing_id?.tag_name ||
+      getWebbingDisplayName(w.webbing_id) ||
       w.description ||
       t('components.highline.history.details.unregistered'),
     /** Description, unless `name` already used it. */
