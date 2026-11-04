@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   localizedReminderText,
+  type PaymentReminderBlock,
   type PaymentReminderFailure,
   type PaymentReminderPreview,
   type PaymentReminderSent,
@@ -42,13 +43,10 @@ export default function BillingWorkspacePaymentReminder({
   const t = useTranslations("admin.reminder");
   const locale = useLocale();
   const displayLocale = locale.toLowerCase().startsWith("pt") ? "pt-BR" : "en-US";
-  const queryClient = useQueryClient();
-  const [reviewing, setReviewing] = useState(false);
   const [sent, setSent] = useState<PaymentReminderSent | null>(null);
-  const queryKey = ["membership-payment-reminder", organizationId, memberId];
 
   const previewQuery = useQuery<PaymentReminderPreview | null, RpcError>({
-    queryKey,
+    queryKey: reminderQueryKey(organizationId, memberId),
     queryFn: async () => {
       const { data, error } = await supabase.rpc(
         "get_membership_payment_reminder_preview",
@@ -59,38 +57,6 @@ export default function BillingWorkspacePaymentReminder({
     },
     enabled: organizationId !== null,
   });
-
-  const sendMutation = useMutation<PaymentReminderSent, RpcError>({
-    mutationFn: async () => {
-      const { data, error } = await supabase.rpc(
-        "send_membership_payment_reminder",
-        { p_organization_id: organizationId!, p_user_id: memberId },
-      );
-      if (error) throw error;
-      const row = data?.[0];
-      if (!row) throw { code: "unknown" } satisfies RpcError;
-      return row;
-    },
-    onSuccess: (row) => {
-      setSent(row);
-      setReviewing(false);
-      void queryClient.invalidateQueries({ queryKey });
-    },
-    onError: () => {
-      // Refresh after a refusal or a lost response. The command may already
-      // have committed even when the client did not receive its result.
-      void queryClient.invalidateQueries({ queryKey });
-    },
-  });
-
-  const failureCopy: Record<PaymentReminderFailure, string> = {
-    cooldown: t("errors.cooldown"),
-    no_devices: t("errors.noDevices"),
-    not_member: t("errors.notMember"),
-    nothing_due: t("errors.nothingDue"),
-    unauthorized: t("errors.unauthorized"),
-    unknown: t("errors.unknown"),
-  };
 
   if (previewQuery.isPending) {
     return (
@@ -119,130 +85,262 @@ export default function BillingWorkspacePaymentReminder({
     return null;
   }
 
-  const recipient = preview.recipient_name || preview.recipient_handle;
-  const language = preview.recipient_language ?? "pt";
-  const title = localizedReminderText(preview.title, language);
-  const body = localizedReminderText(preview.body, language);
-
   return (
     <ReminderSection title={t("title")}>
-      {preview.open_count > 0 ? (
-        <p className="mt-1 text-sm text-slate-600">
-          {preview.overdue_count > 0
-            ? t("overdueSummary", {
-                count: preview.overdue_count,
-                date: formatDate(preview.oldest_due_on, displayLocale),
-              })
-            : t("openSummary", { count: preview.open_count })}
-        </p>
-      ) : null}
-
+      <ReminderSummary preview={preview} displayLocale={displayLocale} />
       {sent ? (
-        <div
-          role="status"
-          className="mt-3 flex gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-sm text-emerald-900"
-        >
-          <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          <span>
-            {t("sent", {
-              count: sent.device_count,
-              time: formatDateTime(sent.sent_at, displayLocale),
-            })}{" "}
-            <span className="text-emerald-800/80">{t("deliveryNote")}</span>
-          </span>
-        </div>
-      ) : block === "cooldown" ? (
-        <p className="mt-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-600">
-          {t("cooldown", {
-            last: formatDateTime(preview.last_sent_at, displayLocale),
-            next: formatDateTime(preview.next_available_at, displayLocale),
-          })}
-        </p>
-      ) : block === "no_devices" ? (
-        <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm text-amber-900">
-          {t("noDevices", { name: recipient })}
-        </p>
+        <ReminderSentNotice sent={sent} displayLocale={displayLocale} />
       ) : block ? (
-        <p className="mt-3 text-sm text-slate-500">{t("unavailable")}</p>
-      ) : reviewing ? (
-        <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4">
-          <dl className="grid gap-3 text-sm sm:grid-cols-[auto_1fr] sm:gap-x-4">
-            <dt className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
-              {t("to")}
-            </dt>
-            <dd className="min-w-0 text-slate-900">
-              <span className="font-medium">{recipient}</span>
-              {preview.recipient_name && preview.recipient_handle ? (
-                <span className="text-slate-500"> · {preview.recipient_handle}</span>
-              ) : null}
-              <span className="block text-xs text-slate-500">
-                {t("devices", { count: preview.device_count })} ·{" "}
-                {t(`language.${language === "en" ? "en" : "pt"}`)}
-              </span>
-            </dd>
-            <dt className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
-              {t("message")}
-            </dt>
-            <dd className="min-w-0 rounded-lg bg-slate-50 px-3 py-2.5">
-              <p className="font-semibold text-slate-900">{title}</p>
-              <p className="mt-0.5 text-slate-700">{body}</p>
-            </dd>
-          </dl>
-
-          <p className="mt-3 text-xs text-slate-500">
-            {t("deliveryNote")} {t("cooldownNote")}
-          </p>
-
-          {sendMutation.isError ? (
-            <p
-              role="alert"
-              className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
-            >
-              {failureCopy[reminderFailure(sendMutation.error)]}
-            </p>
-          ) : null}
-
-          <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-lg"
-              disabled={sendMutation.isPending}
-              onClick={() => {
-                setReviewing(false);
-                sendMutation.reset();
-              }}
-            >
-              {t("cancel")}
-            </Button>
-            <Button
-              type="button"
-              className="rounded-lg"
-              disabled={sendMutation.isPending}
-              aria-busy={sendMutation.isPending}
-              onClick={() => sendMutation.mutate()}
-            >
-              {sendMutation.isPending ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <BellRing className="size-4" aria-hidden="true" />
-              )}
-              {sendMutation.isPending ? t("sending") : t("send")}
-            </Button>
-          </div>
-        </div>
+        <ReminderBlockedNotice
+          block={block}
+          preview={preview}
+          displayLocale={displayLocale}
+        />
       ) : (
+        <ReminderComposer
+          memberId={memberId}
+          organizationId={organizationId}
+          preview={preview}
+          onSent={setSent}
+        />
+      )}
+    </ReminderSection>
+  );
+}
+
+function reminderQueryKey(organizationId: string | null, memberId: string) {
+  return ["membership-payment-reminder", organizationId, memberId];
+}
+
+function recipientLabel(preview: PaymentReminderPreview) {
+  return preview.recipient_name || preview.recipient_handle;
+}
+
+function ReminderSummary({
+  displayLocale,
+  preview,
+}: {
+  displayLocale: string;
+  preview: PaymentReminderPreview;
+}) {
+  const t = useTranslations("admin.reminder");
+
+  if (preview.open_count === 0) return null;
+
+  return (
+    <p className="mt-1 text-sm text-slate-600">
+      {preview.overdue_count > 0
+        ? t("overdueSummary", {
+            count: preview.overdue_count,
+            date: formatDate(preview.oldest_due_on, displayLocale),
+          })
+        : t("openSummary", { count: preview.open_count })}
+    </p>
+  );
+}
+
+function ReminderSentNotice({
+  displayLocale,
+  sent,
+}: {
+  displayLocale: string;
+  sent: PaymentReminderSent;
+}) {
+  const t = useTranslations("admin.reminder");
+
+  return (
+    <div
+      role="status"
+      className="mt-3 flex gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-sm text-emerald-900"
+    >
+      <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      <span>
+        {t("sent", {
+          count: sent.device_count,
+          time: formatDateTime(sent.sent_at, displayLocale),
+        })}{" "}
+        <span className="text-emerald-800/80">{t("deliveryNote")}</span>
+      </span>
+    </div>
+  );
+}
+
+/** Why the database would refuse a reminder right now. */
+function ReminderBlockedNotice({
+  block,
+  displayLocale,
+  preview,
+}: {
+  block: PaymentReminderBlock | "unknown";
+  displayLocale: string;
+  preview: PaymentReminderPreview;
+}) {
+  const t = useTranslations("admin.reminder");
+
+  if (block === "cooldown") {
+    return (
+      <p className="mt-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-600">
+        {t("cooldown", {
+          last: formatDateTime(preview.last_sent_at, displayLocale),
+          next: formatDateTime(preview.next_available_at, displayLocale),
+        })}
+      </p>
+    );
+  }
+
+  if (block === "no_devices") {
+    return (
+      <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm text-amber-900">
+        {t("noDevices", { name: recipientLabel(preview) })}
+      </p>
+    );
+  }
+
+  return <p className="mt-3 text-sm text-slate-500">{t("unavailable")}</p>;
+}
+
+/** Opens the exact message for review, and is the only place that sends it. */
+function ReminderComposer({
+  memberId,
+  organizationId,
+  preview,
+  onSent,
+}: {
+  memberId: string;
+  organizationId: string | null;
+  preview: PaymentReminderPreview;
+  onSent: (sent: PaymentReminderSent) => void;
+}) {
+  const t = useTranslations("admin.reminder");
+  const queryClient = useQueryClient();
+  const [reviewing, setReviewing] = useState(false);
+  const queryKey = reminderQueryKey(organizationId, memberId);
+
+  const sendMutation = useMutation<PaymentReminderSent, RpcError>({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc(
+        "send_membership_payment_reminder",
+        { p_organization_id: organizationId!, p_user_id: memberId },
+      );
+      if (error) throw error;
+      const row = data?.[0];
+      if (!row) throw { code: "unknown" } satisfies RpcError;
+      return row;
+    },
+    onSuccess: (row) => {
+      onSent(row);
+      setReviewing(false);
+      void queryClient.invalidateQueries({ queryKey });
+    },
+    onError: () => {
+      // Refresh after a refusal or a lost response. The command may already
+      // have committed even when the client did not receive its result.
+      void queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  if (!reviewing) {
+    return (
+      <Button
+        type="button"
+        variant="outline"
+        className="mt-3 rounded-lg"
+        onClick={() => setReviewing(true)}
+      >
+        <BellRing className="size-4" aria-hidden="true" />
+        {t("review")}
+      </Button>
+    );
+  }
+
+  const language = preview.recipient_language ?? "pt";
+  const pending = sendMutation.isPending;
+
+  return (
+    <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4">
+      <dl className="grid gap-3 text-sm sm:grid-cols-[auto_1fr] sm:gap-x-4">
+        <dt className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
+          {t("to")}
+        </dt>
+        <dd className="min-w-0 text-slate-900">
+          <span className="font-medium">{recipientLabel(preview)}</span>
+          {preview.recipient_name && preview.recipient_handle ? (
+            <span className="text-slate-500"> · {preview.recipient_handle}</span>
+          ) : null}
+          <span className="block text-xs text-slate-500">
+            {t("devices", { count: preview.device_count })} ·{" "}
+            {t(`language.${language === "en" ? "en" : "pt"}`)}
+          </span>
+        </dd>
+        <dt className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
+          {t("message")}
+        </dt>
+        <dd className="min-w-0 rounded-lg bg-slate-50 px-3 py-2.5">
+          <p className="font-semibold text-slate-900">
+            {localizedReminderText(preview.title, language)}
+          </p>
+          <p className="mt-0.5 text-slate-700">
+            {localizedReminderText(preview.body, language)}
+          </p>
+        </dd>
+      </dl>
+
+      <p className="mt-3 text-xs text-slate-500">
+        {t("deliveryNote")} {t("cooldownNote")}
+      </p>
+
+      {sendMutation.isError ? <ReminderFailureAlert error={sendMutation.error} /> : null}
+
+      <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button
           type="button"
           variant="outline"
-          className="mt-3 rounded-lg"
-          onClick={() => setReviewing(true)}
+          className="rounded-lg"
+          disabled={pending}
+          onClick={() => {
+            setReviewing(false);
+            sendMutation.reset();
+          }}
         >
-          <BellRing className="size-4" aria-hidden="true" />
-          {t("review")}
+          {t("cancel")}
         </Button>
-      )}
-    </ReminderSection>
+        <Button
+          type="button"
+          className="rounded-lg"
+          disabled={pending}
+          aria-busy={pending}
+          onClick={() => sendMutation.mutate()}
+        >
+          {pending ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <BellRing className="size-4" aria-hidden="true" />
+          )}
+          {pending ? t("sending") : t("send")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ReminderFailureAlert({ error }: { error: RpcError }) {
+  const t = useTranslations("admin.reminder");
+  const failureCopy: Record<PaymentReminderFailure, string> = {
+    cooldown: t("errors.cooldown"),
+    no_devices: t("errors.noDevices"),
+    not_member: t("errors.notMember"),
+    nothing_due: t("errors.nothingDue"),
+    unauthorized: t("errors.unauthorized"),
+    unknown: t("errors.unknown"),
+  };
+
+  return (
+    <p
+      role="alert"
+      className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+    >
+      {failureCopy[reminderFailure(error)]}
+    </p>
   );
 }
 

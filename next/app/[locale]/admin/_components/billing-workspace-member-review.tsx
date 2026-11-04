@@ -10,6 +10,7 @@ import {
   formatCurrency,
   formatDate,
   formatDateTime,
+  formatMonth,
   type MemberTableRow,
 } from "@/components/admin/member-ledger";
 import { Button } from "@/components/ui/button";
@@ -35,14 +36,6 @@ const supabase = supabaseBrowser();
 
 /** How many periods the history shows before the admin asks for the rest. */
 const RECENT_HISTORY_LENGTH = 6;
-
-/** Same "September 2026" shape the real period rows use. */
-function monthLabel(dueOn: string, locale: string) {
-  return new Intl.DateTimeFormat(locale, {
-    month: "long",
-    year: "numeric",
-  }).format(new Date(`${dueOn.slice(0, 7)}-01T00:00:00`));
-}
 
 function statusTone(status: FinancialStatus) {
   if (status === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-700";
@@ -168,7 +161,7 @@ export default function BillingWorkspaceMemberReview({
                 <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
                   <span className="min-w-0">
                     <span className="block text-slate-600">
-                      {monthLabel(nextCharge.dueOn, displayLocale)}
+                      {formatMonth(nextCharge.dueOn, displayLocale)}
                     </span>
                     <span className="mt-0.5 block truncate text-xs text-slate-500">
                       {t("common.due")} · {formatDate(nextCharge.dueOn, displayLocale)}
