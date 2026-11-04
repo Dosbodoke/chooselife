@@ -21,7 +21,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getR2PublicUrl } from "@/lib/storage/r2";
+import { profilePictureUrl } from "@/lib/storage/r2";
 import { cn } from "@/lib/utils";
 
 import { getAppUrl } from "./app-link";
@@ -246,13 +246,9 @@ function Riggers({
 }
 
 function RiggerAvatar({ profile }: { profile: RiggerProfile | undefined }) {
-  const picture = profile?.profile_picture;
-  // Google sign-in stores the full URL; uploaded pictures store an R2 path.
-  const src = picture
-    ? /^https?:\/\//.test(picture)
-      ? picture
-      : getR2PublicUrl("avatars", picture)
-    : "/default-profile-picture.png";
+  const src =
+    profilePictureUrl(profile?.profile_picture) ??
+    "/default-profile-picture.png";
   const name = profile?.username ? `@${profile.username}` : profile?.name;
 
   return (

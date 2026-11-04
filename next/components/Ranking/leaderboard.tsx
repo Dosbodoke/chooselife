@@ -4,6 +4,7 @@ import Image from "next/image";
 import React from "react";
 
 import { Link } from "@/i18n/navigation";
+import { profilePictureUrl } from "@/lib/storage/r2";
 import { cn } from "@/lib/utils";
 
 import { UsernameLink } from "./UsernameLink";
@@ -56,7 +57,7 @@ const ProfilePicture = ({
     <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-neutral-200/40 dark:bg-neutral-800/60 md:h-16 md:w-16">
       {username ? (
         <Image
-          src={src || "/default-profile-picture.png"}
+          src={profilePictureUrl(src) ?? "/default-profile-picture.png"}
           fill={true}
           alt="Profile picture"
           className="rounded-full"

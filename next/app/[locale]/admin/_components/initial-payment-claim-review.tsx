@@ -13,6 +13,7 @@ import type {
   InitialPaymentClaimDetail,
   InitialPaymentClaimQueueRow,
 } from "@/lib/initial-payment-claims";
+import { profilePictureUrl } from "@/lib/storage/r2";
 
 import {
   ApplicationRevisionFields,
@@ -88,14 +89,15 @@ export function ApplicantAvatar({
   size?: "sm" | "md";
 }) {
   const sizeClass = size === "sm" ? "size-10 text-sm" : "size-14 text-base";
+  const src = profilePictureUrl(picture);
 
   return (
     <div
       className={`relative flex ${sizeClass} shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted font-semibold text-muted-foreground outline outline-1 outline-black/10 dark:outline-white/10`}
     >
-      {picture ? (
+      {src ? (
         <Image
-          src={picture}
+          src={src}
           alt=""
           fill
           sizes={size === "sm" ? "40px" : "56px"}
