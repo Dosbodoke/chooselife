@@ -40,14 +40,14 @@ const supabase = supabaseBrowser();
 const RECENT_HISTORY_LENGTH = 6;
 
 function statusTone(status: FinancialStatus) {
-  if (status === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  if (status === "overdue") return "border-red-200 bg-red-50 text-red-700";
-  if (status === "rejected") return "border-rose-300 bg-rose-100 text-rose-900";
-  if (status === "under_review") return "border-amber-200 bg-amber-50 text-amber-800";
-  if (status === "awaiting_payment") return "border-orange-200 bg-orange-50 text-orange-800";
-  if (status === "scheduled") return "border-blue-200 bg-blue-50 text-blue-700";
-  if (status === "waived") return "border-violet-200 bg-violet-50 text-violet-700";
-  return "border-slate-200 bg-slate-50 text-slate-600";
+  if (status === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300";
+  if (status === "overdue") return "border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300";
+  if (status === "rejected") return "border-rose-300 bg-rose-100 text-rose-900 dark:border-rose-500/40 dark:bg-rose-500/15 dark:text-rose-200";
+  if (status === "under_review") return "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300";
+  if (status === "awaiting_payment") return "border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300";
+  if (status === "scheduled") return "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300";
+  if (status === "waived") return "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300";
+  return "border-border bg-muted/50 text-muted-foreground";
 }
 
 export default function BillingWorkspaceMemberReview({
@@ -207,7 +207,7 @@ function MemberHistorySection({
       title={t("ledgerReview.recentPeriods")}
     >
       {nextCharge || member.history.length > 0 ? (
-        <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200">
+        <div className="divide-y divide-border/60 rounded-2xl border border-border">
           {nextCharge ? (
             <NextChargeRow nextCharge={nextCharge} displayLocale={displayLocale} />
           ) : null}
@@ -220,7 +220,7 @@ function MemberHistorySection({
           ))}
         </div>
       ) : (
-        <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm text-slate-500">
+        <p className="rounded-2xl border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
           {t("ledgerReview.noHistory")}
         </p>
       )}
@@ -229,7 +229,7 @@ function MemberHistorySection({
           type="button"
           variant="ghost"
           size="sm"
-          className="mt-2 rounded-lg text-slate-600"
+          className="mt-2 rounded-lg text-muted-foreground"
           aria-expanded={showFullHistory}
           onClick={() => setShowFullHistory((shown) => !shown)}
         >
@@ -259,16 +259,16 @@ function NextChargeRow({
   return (
     <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
       <span className="min-w-0">
-        <span className="block text-slate-600">
+        <span className="block text-muted-foreground">
           {formatMonth(nextCharge.dueOn, displayLocale)}
         </span>
-        <span className="mt-0.5 block truncate text-xs text-slate-500">
+        <span className="mt-0.5 block truncate text-xs text-muted-foreground">
           {t("common.due")} · {formatDate(nextCharge.dueOn, displayLocale)}
         </span>
       </span>
       <span className="flex shrink-0 items-center gap-3">
         <StatusBadge status="scheduled" />
-        <span className="font-semibold tabular-nums text-slate-900">
+        <span className="font-semibold tabular-nums text-foreground">
           {formatCurrency(
             nextCharge.amount,
             nextCharge.currency ?? undefined,
@@ -293,12 +293,12 @@ function HistoryRow({
   return (
     <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
       <span className="min-w-0">
-        <span className="block text-slate-600">{period.periodLabel}</span>
+        <span className="block text-muted-foreground">{period.periodLabel}</span>
         {/* Only a settled period has a payment time, and that time is
             the answer to "when did this get paid?" -- so it belongs on
             the period it settled, not in a single top-level stat. */}
         {period.paidAt ? (
-          <span className="mt-0.5 block truncate text-xs text-slate-500">
+          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
             {t("paidAt", { date: formatDateTime(period.paidAt, displayLocale) })}
           </span>
         ) : null}
@@ -306,7 +306,7 @@ function HistoryRow({
             nothing else on the row explains the missing payment. */}
         {waiver ? (
           <>
-            <span className="mt-0.5 block text-xs text-slate-500">
+            <span className="mt-0.5 block text-xs text-muted-foreground">
               {waiver.waivedByName
                 ? t("waivedBy", {
                     date: formatDateTime(waiver.waivedAt, displayLocale),
@@ -316,7 +316,7 @@ function HistoryRow({
                     date: formatDateTime(waiver.waivedAt, displayLocale),
                   })}
             </span>
-            <span className="mt-0.5 block break-words text-xs text-slate-500">
+            <span className="mt-0.5 block break-words text-xs text-muted-foreground">
               {t("waiverReason", { reason: waiver.reason })}
             </span>
           </>
@@ -329,7 +329,7 @@ function HistoryRow({
             em dash rather than R$ 0,00; a waived month keeps its
             billed amount, struck through because it is not owed. */}
         <span
-          className={`font-semibold tabular-nums ${period.status === "waived" ? "text-slate-400 line-through" : "text-slate-900"}`}
+          className={`font-semibold tabular-nums ${period.status === "waived" ? "text-muted-foreground/70 line-through" : "text-foreground"}`}
         >
           {formatCurrency(period.amount, period.currency, displayLocale)}
         </span>
@@ -415,14 +415,14 @@ function ApplicationFormSection({
       {isPending ? (
         <FieldGridSkeleton label={t("memberDetail.loading")} />
       ) : isError ? (
-        <p className="text-sm text-slate-500">{t("memberDetail.unavailable")}</p>
+        <p className="text-sm text-muted-foreground">{t("memberDetail.unavailable")}</p>
       ) : detail?.application_revision_id ? (
         <ApplicationRevisionFields handle={handle} revision={detail} />
       ) : (
         /* A member admitted before applications existed, or admitted by
            hand, genuinely has no form -- say so instead of showing a grid
            of em dashes. */
-        <p className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+        <p className="rounded-2xl border border-dashed border-border bg-card px-4 py-5 text-sm text-muted-foreground">
           {t("memberDetail.noApplication")}
         </p>
       )}

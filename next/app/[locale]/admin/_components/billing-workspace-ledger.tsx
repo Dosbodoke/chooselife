@@ -2,7 +2,9 @@
 
 import { flexRender } from "@tanstack/react-table";
 import {
+  ArrowDown,
   ArrowDownUp,
+  ArrowUp,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
@@ -38,10 +40,24 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
+import { ApplicantAvatar } from "./initial-payment-claim-review";
+
 function sortIcon(sorted: false | "asc" | "desc") {
-  if (sorted === "asc") return <span aria-hidden="true">↑</span>;
-  if (sorted === "desc") return <span aria-hidden="true">↓</span>;
-  return <ArrowDownUp className="size-3.5 opacity-40" aria-hidden="true" />;
+  if (sorted === "asc") return <ArrowUp className="size-3.5" aria-hidden="true" />;
+  if (sorted === "desc") return <ArrowDown className="size-3.5" aria-hidden="true" />;
+  // Six idle arrows in a row are noise; the hint only shows where the pointer is.
+  return (
+    <ArrowDownUp
+      className="size-3.5 opacity-0 transition-opacity duration-150 group-hover/sort:opacity-50 group-focus-visible/sort:opacity-50"
+      aria-hidden="true"
+    />
+  );
+}
+
+function ariaSort(sorted: false | "asc" | "desc") {
+  if (sorted === "asc") return "ascending";
+  if (sorted === "desc") return "descending";
+  return undefined;
 }
 
 /**
@@ -51,45 +67,72 @@ function sortIcon(sorted: false | "asc" | "desc") {
  */
 type Tone = { chip: string; dot: string };
 
+// Spelled out in full so Tailwind can see every class at build time.
+const TINTS = {
+  emerald:
+    "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300",
+  red: "border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300",
+  rose: "border-rose-300 bg-rose-100 text-rose-900 dark:border-rose-500/40 dark:bg-rose-500/15 dark:text-rose-200",
+  amber:
+    "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300",
+  orange:
+    "border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300",
+  blue: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300",
+  violet:
+    "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300",
+  indigo:
+    "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300",
+} satisfies Record<string, string>;
+
+/**
+ * A tinted chip: pastel on light, a low-alpha wash of the same hue on dark, so
+ * the colour still reads as that status against a near-black background.
+ */
+function tinted(hue: keyof typeof TINTS, dot: string): Tone {
+  return { chip: TINTS[hue], dot };
+}
+
 const NEUTRAL_TONE: Tone = {
-  chip: "border-slate-200 bg-white text-slate-700",
-  dot: "bg-slate-300",
+  chip: "border-border bg-card text-foreground",
+  dot: "bg-muted-foreground/40",
+};
+
+const QUIET_TONE: Tone = {
+  chip: "border-border bg-muted/50 text-muted-foreground",
+  dot: "bg-muted-foreground/60",
 };
 
 const FINANCIAL_TONES: Record<FinancialStatus, Tone> = {
-  paid: { chip: "border-emerald-200 bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
-  overdue: { chip: "border-red-200 bg-red-50 text-red-700", dot: "bg-red-500" },
+  paid: tinted("emerald", "bg-emerald-500"),
+  overdue: tinted("red", "bg-red-500"),
   // Deeper and more saturated than `overdue`, so a refusal is not mistaken for a
   // missed due date when the two sit in the same column.
-  rejected: { chip: "border-rose-300 bg-rose-100 text-rose-900", dot: "bg-rose-700" },
-  under_review: { chip: "border-amber-200 bg-amber-50 text-amber-800", dot: "bg-amber-500" },
-  awaiting_payment: {
-    chip: "border-orange-200 bg-orange-50 text-orange-800",
-    dot: "bg-orange-500",
-  },
-  scheduled: { chip: "border-blue-200 bg-blue-50 text-blue-700", dot: "bg-blue-500" },
+  rejected: tinted("rose", "bg-rose-700 dark:bg-rose-400"),
+  under_review: tinted("amber", "bg-amber-500"),
+  awaiting_payment: tinted("orange", "bg-orange-500"),
+  scheduled: tinted("blue", "bg-blue-500"),
   // Forgiven without money changing hands: neither the green of paid nor the
   // grey of a month that never had a charge.
-  waived: { chip: "border-violet-200 bg-violet-50 text-violet-700", dot: "bg-violet-500" },
-  no_obligation: { chip: "border-slate-200 bg-slate-50 text-slate-600", dot: "bg-slate-400" },
+  waived: tinted("violet", "bg-violet-500"),
+  no_obligation: QUIET_TONE,
 };
 
 /** `not_paid` groups several statuses, so it gets its own neutral-but-marked tone. */
 const NOT_PAID_TONE: Tone = {
-  chip: "border-slate-300 bg-slate-100 text-slate-700",
-  dot: "bg-slate-500",
+  chip: "border-input bg-muted text-foreground",
+  dot: "bg-muted-foreground",
 };
 
 const LIFECYCLE_TONES: Record<LifecycleStatus, Tone> = {
-  active: { chip: "border-emerald-200 bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
-  pending: { chip: "border-violet-200 bg-violet-50 text-violet-700", dot: "bg-violet-500" },
-  inactive: { chip: "border-red-200 bg-red-50 text-red-700", dot: "bg-red-500" },
+  active: tinted("emerald", "bg-emerald-500"),
+  pending: tinted("violet", "bg-violet-500"),
+  inactive: tinted("red", "bg-red-500"),
 };
 
 /** The plan is not a status, so it stays quiet -- annual is the only tinted one. */
 const PLAN_TONES: Record<"annual" | "monthly", Tone> = {
-  annual: { chip: "border-indigo-200 bg-indigo-50 text-indigo-700", dot: "bg-indigo-500" },
-  monthly: { chip: "border-slate-200 bg-slate-50 text-slate-600", dot: "bg-slate-400" },
+  annual: tinted("indigo", "bg-indigo-500"),
+  monthly: QUIET_TONE,
 };
 
 function financialTone(status: FinancialFilter): Tone {
@@ -155,18 +198,17 @@ export default function BillingWorkspaceLedger({
     if (columnId === "name") {
       return (
         <div className="flex min-w-[220px] items-center gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600">
-            {row.name
-              .split(" ")
-              .map((part) => part[0])
-              .slice(0, 2)
-              .join("") || "?"}
-          </div>
+          <ApplicantAvatar
+            name={row.name}
+            handle={row.handle}
+            picture={row.profilePicture}
+            size="sm"
+          />
           <div className="min-w-0">
-            <p className="truncate font-semibold text-slate-900">
+            <p className="truncate font-semibold text-foreground">
               {row.name || t("common.unnamedMember")}
             </p>
-            <p className="truncate text-xs text-slate-500">
+            <p className="truncate text-xs text-muted-foreground">
               {row.handle || t("common.noHandle")}
             </p>
           </div>
@@ -202,7 +244,7 @@ export default function BillingWorkspaceLedger({
           {row.plan === "annual" ? t("plans.annual") : t("plans.monthly")}
         </StatusChip>
       ) : (
-        <span className="text-slate-300" aria-hidden="true">
+        <span className="text-muted-foreground/50" aria-hidden="true">
           —
         </span>
       );
@@ -215,7 +257,7 @@ export default function BillingWorkspaceLedger({
         <span
           className={cn(
             "font-medium tabular-nums",
-            period.status === "waived" ? "text-slate-400 line-through" : "text-slate-800",
+            period.status === "waived" ? "text-muted-foreground/70 line-through" : "text-foreground",
           )}
         >
           {formatCurrency(period.amount, period.currency, displayLocale)}
@@ -225,7 +267,7 @@ export default function BillingWorkspaceLedger({
 
     if (columnId === "dueDate") {
       return (
-        <span className="whitespace-nowrap text-slate-600">
+        <span className="whitespace-nowrap text-muted-foreground">
           {formatDate(period.dueDate, displayLocale)}
         </span>
       );
@@ -234,28 +276,57 @@ export default function BillingWorkspaceLedger({
     return <span>{String(row[columnId as keyof MemberTableRow] ?? "—")}</span>;
   };
 
+  const rows = model.table.getRowModel().rows;
+  const emptyState = (
+    <>
+      <p className="font-semibold text-foreground">{t("ledger.emptyTitle")}</p>
+      <p className="mt-1 text-pretty text-sm text-muted-foreground">
+        {t("ledger.emptyDescription")}
+      </p>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="mt-4 rounded-lg"
+        onClick={model.resetFilters}
+      >
+        {t("ledger.resetFilters")}
+      </Button>
+    </>
+  );
+
   return (
     <section
       aria-labelledby="billing-ledger-title"
       className="flex min-h-0 flex-1 flex-col overflow-hidden"
     >
-      <div className="shrink-0 border-b border-slate-200/80 pb-5 pt-0">
-        <h1 id="billing-ledger-title" className="text-xl font-semibold tracking-tight text-slate-950">
-          {t("ledger.title")}
-        </h1>
+      <div className="shrink-0 pb-4 pt-1">
+        <div className="flex items-baseline gap-2.5">
+          <h1
+            id="billing-ledger-title"
+            className="text-balance text-2xl font-semibold tracking-tight text-foreground"
+          >
+            {t("ledger.title")}
+          </h1>
+          <span className="text-sm tabular-nums text-muted-foreground">
+            {t("ledger.summary.people", { count: data.length })}
+          </span>
+        </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-[minmax(220px,1.5fr)_repeat(3,minmax(150px,1fr))]">
-          <label className="relative block">
+        {/* Two columns on a phone: four full-width rows of filters would push
+            the members below the fold before anyone has typed anything. */}
+        <div className="mt-4 grid grid-cols-2 gap-2.5 md:grid-cols-[minmax(220px,1.5fr)_repeat(3,minmax(150px,1fr))] md:gap-3">
+          <label className="relative col-span-2 block md:col-span-1">
             <span className="sr-only">{t("ledger.searchLabel")}</span>
             <Search
-              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/70"
               aria-hidden="true"
             />
             <Input
               value={model.filters.search}
               onChange={(event) => model.setSearch(event.target.value)}
               placeholder={t("ledger.searchPlaceholder")}
-              className="h-10 rounded-xl border-slate-200 pl-9"
+              className="h-10 rounded-xl border-border bg-card pl-9 shadow-none"
             />
           </label>
           <FilterSelect
@@ -348,6 +419,7 @@ export default function BillingWorkspaceLedger({
               },
             ]}
             icon={<SlidersHorizontal className="size-3.5" aria-hidden="true" />}
+            className="col-span-2 md:col-span-1"
           />
         </div>
 
@@ -356,11 +428,14 @@ export default function BillingWorkspaceLedger({
         <div
           role="group"
           aria-label={t("ledger.summary.label")}
-          className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4"
+          className="mt-2.5 grid grid-cols-2 gap-2.5 md:mt-3 md:gap-3 lg:grid-cols-4"
         >
           {model.attentionSummary.map((entry) => {
             const active = model.filters.financial === entry.status;
             const tone = FINANCIAL_TONES[entry.status];
+            // An empty bucket stays pressable but steps back, so the eye lands
+            // on the buckets that actually have someone to chase.
+            const empty = entry.people === 0 && !active;
 
             return (
               <button
@@ -371,19 +446,30 @@ export default function BillingWorkspaceLedger({
                   model.setFinancialFilter(active ? "all" : entry.status)
                 }
                 className={cn(
-                  "flex min-w-0 touch-manipulation flex-col items-start rounded-xl border px-3.5 py-2.5 text-left transition-colors",
+                  "flex min-w-0 touch-manipulation flex-col items-start rounded-xl border px-3.5 py-3 text-left",
+                  "transition-[background-color,border-color,transform] duration-150 ease-out active:scale-[0.97] motion-reduce:active:scale-100",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  active ? tone.chip : "border-slate-200 bg-white hover:bg-slate-50",
+                  active ? tone.chip : "border-border bg-card hover:bg-muted/60",
                 )}
               >
-                <span className="flex min-w-0 items-center gap-1.5 text-xs font-medium">
+                <span
+                  className={cn(
+                    "flex min-w-0 items-center gap-1.5 text-xs font-medium",
+                    !active && "text-muted-foreground",
+                  )}
+                >
                   <ChipDot tone={tone} />
                   <span className="truncate">{financialLabels[entry.status]}</span>
                 </span>
-                <span className="mt-1 text-base font-semibold tabular-nums text-slate-950">
+                <span
+                  className={cn(
+                    "mt-1.5 text-lg font-semibold leading-tight tabular-nums",
+                    empty ? "text-muted-foreground/70" : "text-foreground",
+                  )}
+                >
                   {t("ledger.summary.people", { count: entry.people })}
                 </span>
-                <span className="text-xs tabular-nums text-slate-500">
+                <span className="mt-0.5 text-xs tabular-nums text-muted-foreground">
                   {entry.amount > 0
                     ? formatCurrency(entry.amount, entry.currency, displayLocale)
                     : t("ledger.summary.nothingOpen")}
@@ -394,21 +480,74 @@ export default function BillingWorkspaceLedger({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto">
-        <table className="min-w-[1050px] w-full border-collapse text-left text-sm">
+      {/* A six-column table does not fit a phone, so below `md` the same page
+          of rows is a list that leads with what an admin acts on: who, what
+          state, how much. */}
+      <ul
+        aria-label={t("ledger.tableLabel")}
+        className="min-h-0 flex-1 divide-y divide-border/60 overflow-auto rounded-2xl border border-border bg-card text-sm md:hidden"
+      >
+        {rows.length > 0 ? (
+          rows.map((row) => {
+            const period = row.original.selectedPeriod;
+
+            return (
+              <li key={row.id}>
+                <button
+                  type="button"
+                  className="flex w-full touch-manipulation items-center gap-3 px-4 py-3 text-left transition-colors duration-150 active:bg-muted/60 focus-visible:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                  onClick={() => model.setSelectedRowId(row.id)}
+                >
+                  <ApplicantAvatar
+                    name={row.original.name}
+                    handle={row.original.handle}
+                    picture={row.original.profilePicture}
+                    size="sm"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium text-foreground">
+                      {row.original.name || t("common.unnamedMember")}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {period.dueDate
+                        ? formatDate(period.dueDate, displayLocale)
+                        : row.original.handle || t("common.noHandle")}
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 flex-col items-end gap-1.5">
+                    {renderCell(row.original, "financialStatus")}
+                    {period.amount !== null
+                      ? renderCell(row.original, "amount")
+                      : null}
+                  </span>
+                </button>
+              </li>
+            );
+          })
+        ) : (
+          <li className="px-6 py-14 text-center">{emptyState}</li>
+        )}
+      </ul>
+
+      <div className="hidden min-h-0 flex-1 overflow-auto rounded-2xl border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)] md:block">
+        <table className="w-full min-w-[960px] border-separate border-spacing-0 text-left text-sm">
           <caption className="sr-only">{t("ledger.tableLabel")}</caption>
-          <thead className="text-xs uppercase tracking-[0.08em] text-slate-500">
+          {/* Sticky so the column names stay put while a long ledger scrolls
+              underneath. The rule is an inset shadow because a sticky cell's
+              own border scrolls away with the body. */}
+          <thead className="sticky top-0 z-10 text-xs text-muted-foreground">
             {model.table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="border-b border-slate-200 px-5 py-3 font-semibold md:px-6"
+                    aria-sort={ariaSort(header.column.getIsSorted())}
+                    className="bg-card px-4 py-2.5 font-medium shadow-[inset_0_-1px_0_var(--color-border)] first:pl-5"
                   >
                     {header.isPlaceholder ? null : (
                       <button
                         type="button"
-                        className="inline-flex items-center gap-2 whitespace-nowrap outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-ring"
+                        className="group/sort -mx-1 inline-flex items-center gap-1.5 whitespace-nowrap rounded px-1 py-0.5 outline-none transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={header.column.getToggleSortingHandler()}
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
@@ -420,9 +559,9 @@ export default function BillingWorkspaceLedger({
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-slate-100">
-            {model.table.getRowModel().rows.length > 0 ? (
-              model.table.getRowModel().rows.map((row) => (
+          <tbody>
+            {rows.length > 0 ? (
+              rows.map((row) => (
                 <tr
                   key={row.id}
                   // The row is the only way in now that the action column is
@@ -432,7 +571,7 @@ export default function BillingWorkspaceLedger({
                   aria-label={t("ledger.reviewPerson", {
                     name: row.original.name || t("common.unnamedMember"),
                   })}
-                  className="cursor-pointer transition-colors hover:bg-white/60 focus-visible:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                  className="group/row cursor-pointer transition-colors duration-150 hover:bg-muted/50 focus-visible:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                   onClick={() => model.setSelectedRowId(row.id)}
                   onKeyDown={(event) => {
                     if (event.key !== "Enter" && event.key !== " ") return;
@@ -441,7 +580,10 @@ export default function BillingWorkspaceLedger({
                   }}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="whitespace-nowrap px-5 py-4 align-middle md:px-6">
+                    <td
+                      key={cell.id}
+                      className="whitespace-nowrap border-b border-border/60 px-4 py-3 align-middle first:pl-5 group-last/row:border-b-0"
+                    >
                       {renderCell(row.original, cell.column.id)}
                     </td>
                   ))}
@@ -450,21 +592,7 @@ export default function BillingWorkspaceLedger({
             ) : (
               <tr>
                 <td colSpan={6} className="px-6 py-16 text-center">
-                  <p className="font-semibold text-slate-900">
-                    {t("ledger.emptyTitle")}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {t("ledger.emptyDescription")}
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-4 rounded-lg"
-                    onClick={model.resetFilters}
-                  >
-                    {t("ledger.resetFilters")}
-                  </Button>
+                  {emptyState}
                 </td>
               </tr>
             )}
@@ -472,10 +600,10 @@ export default function BillingWorkspaceLedger({
         </table>
       </div>
 
-      <div className="flex shrink-0 flex-col gap-3 border-t border-slate-200/80 py-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex shrink-0 items-center justify-between gap-3 py-3 text-sm text-muted-foreground">
         <span>
           {t("ledger.showing", {
-            shown: model.table.getRowModel().rows.length,
+            shown: rows.length,
             total: model.table.getFilteredRowModel().rows.length,
           })}
         </span>
@@ -491,7 +619,7 @@ export default function BillingWorkspaceLedger({
           >
             <ChevronLeft className="size-4" aria-hidden="true" />
           </Button>
-          <span className="min-w-16 text-center text-xs font-medium tabular-nums text-slate-600">
+          <span className="min-w-12 text-center text-xs font-medium tabular-nums text-muted-foreground">
             {model.table.getState().pagination.pageIndex + 1} / {Math.max(model.table.getPageCount(), 1)}
           </span>
           <Button
@@ -553,12 +681,14 @@ type FilterOption = { value: string; label: string; tone?: Tone };
  */
 function FilterSelect({
   ariaLabel,
+  className,
   icon,
   onChange,
   options,
   value,
 }: {
   ariaLabel: string;
+  className?: string;
   icon?: React.ReactNode;
   onChange: (value: string) => void;
   options: FilterOption[];
@@ -582,7 +712,8 @@ function FilterSelect({
           "[&>span:first-child]:flex",
           "focus:ring-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
           "data-[state=open]:ring-2 data-[state=open]:ring-ring",
-          tone.chip
+          tone.chip,
+          className,
         )}
       >
         <span className="flex min-w-0 items-center gap-2">
@@ -601,12 +732,13 @@ function FilterSelect({
           <span className="truncate">{selected?.label}</span>
         </span>
       </SelectTrigger>
-      <SelectContent className="rounded-xl border-slate-200 p-1.5">
+      {/* Grows out of the trigger it belongs to, not out of its own centre. */}
+      <SelectContent className="origin-(--radix-select-content-transform-origin) rounded-xl border-border p-1.5">
         {options.map((option) => (
           <SelectItem
             key={option.value}
             value={option.value}
-            className="cursor-pointer rounded-lg py-2 pl-2.5 pr-8 text-sm text-slate-700 focus:bg-slate-100 focus:text-slate-900"
+            className="cursor-pointer rounded-lg py-2 pl-2.5 pr-8 text-sm text-foreground/80 focus:bg-accent focus:text-accent-foreground"
           >
             <span className="flex items-center gap-2.5">
               {option.tone ? (
