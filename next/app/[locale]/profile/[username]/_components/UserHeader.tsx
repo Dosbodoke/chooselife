@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { profilePictureUrl } from "@/lib/storage/r2";
 import type { Tables } from "@/utils/supabase/database.types";
 
 interface Props {
@@ -60,7 +61,10 @@ function UserHeader({ profile, username }: Props) {
         <div className="flex gap-4">
           <div className="relative h-24 w-24 sm:h-32 sm:w-32">
             <Image
-              src={profile.profile_picture || "/default-profile-picture.png"}
+              src={
+                profilePictureUrl(profile.profile_picture) ??
+                "/default-profile-picture.png"
+              }
               fill={true}
               alt="Profile picture"
               className="rounded-full"
