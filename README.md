@@ -1,4 +1,4 @@
-r# Chooselife
+# Chooselife
 
 Mobile and WEB apps made **for Highliners**
 
