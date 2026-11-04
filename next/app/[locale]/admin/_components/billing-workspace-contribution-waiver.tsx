@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, HandCoins, Loader2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useId, useState } from "react";
+import { useId, useState } from "react";
 
 import { formatCurrency, formatDate, formatMonth } from "@/components/admin/member-ledger";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,15 @@ type RpcError = { code?: string; hint?: string | null; message?: string };
 type Step = "closed" | "select" | "review";
 
 type Waived = { count: number; amount: number; currency: string };
+
+/**
+ * Each step replaces the button that opened it, so focus would fall back to the
+ * page. Landing it on the step itself keeps keyboard and screen reader users in
+ * place without picking a control for them.
+ */
+const focusOnMount = (node: HTMLElement | null) => {
+  node?.focus();
+};
 
 /** What still stops the admin from reviewing, or null when nothing does. */
 function missingInput(selection: WaivableCharge[], reason: string | null) {
@@ -292,14 +301,17 @@ function WaiverSelectStep({
   };
 
   return (
-    <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4">
+    <div
+      tabIndex={-1}
+      ref={focusOnMount}
+      aria-label={t("start")}
+      className="mt-3 rounded-xl border border-slate-200 bg-white p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       <fieldset>
         <legend className="sr-only">{t("periods")}</legend>
         <label className="flex cursor-pointer items-center gap-3 border-b border-slate-100 pb-3 text-sm font-medium text-slate-900">
-          {/* Lands keyboard focus inside the step that just opened. */}
           <input
             type="checkbox"
-            autoFocus
             className="size-4 rounded border-slate-300 accent-slate-900"
             checked={allSelected}
             onChange={toggleAll}
@@ -403,14 +415,11 @@ function WaiverReviewStep({
   onConfirm: () => void;
 }) {
   const t = useTranslations("admin.waiver");
-  const focusReview = useCallback((node: HTMLDivElement | null) => {
-    node?.focus();
-  }, []);
 
   return (
     <div
       tabIndex={-1}
-      ref={focusReview}
+      ref={focusOnMount}
       aria-label={t("review")}
       className="mt-3 rounded-xl border border-slate-200 bg-white p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
