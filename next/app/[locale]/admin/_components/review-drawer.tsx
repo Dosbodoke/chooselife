@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { copyViewLink, profilePath } from "@/lib/admin-review-link";
+import { cn } from "@/lib/utils";
 
 /**
  * The pieces every /admin drawer is built from, whichever record it opened on:
@@ -29,7 +30,7 @@ export type ReviewPerson = {
  */
 export function ReviewDrawerFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-clip bg-white">
+    <div className="flex min-h-0 flex-1 flex-col overflow-clip bg-card">
       {children}
     </div>
   );
@@ -47,16 +48,16 @@ export function ReviewDrawerHeader({
   const t = useTranslations("admin");
 
   return (
-    <header className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-5 md:px-7">
+    <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-5 md:px-7">
       <div className="min-w-0">
-        <h2 className="truncate text-xl font-semibold text-slate-950">
+        <h2 className="truncate text-xl font-semibold tracking-tight text-foreground">
           {person.name || t("common.unnamedMember")}
         </h2>
-        <p className="truncate text-sm text-slate-500">
+        <p className="truncate text-sm text-muted-foreground">
           {person.handle ? (
             <Link
               href={profilePath(person.handle)}
-              className="rounded-sm font-medium text-blue-700 underline-offset-2 transition-colors hover:text-blue-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+              className="rounded-sm font-medium text-blue-700 underline-offset-2 transition-colors hover:text-blue-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:text-blue-400 dark:hover:text-blue-300"
             >
               {person.handle}
             </Link>
@@ -114,11 +115,22 @@ function CopyViewLinkButton() {
         aria-label={t("common.copyLink")}
         title={t("common.copyLink")}
       >
-        {copied ? (
-          <Check className="size-5 text-emerald-600" aria-hidden="true" />
-        ) : (
-          <Link2 className="size-5" aria-hidden="true" />
-        )}
+        {/* Both icons stay mounted and cross-fade, so the swap reads as one
+            icon changing state rather than one replacing the other. */}
+        <span className="relative size-5" aria-hidden="true">
+          <Link2
+            className={cn(
+              "absolute inset-0 size-5 transition-[opacity,transform,filter] duration-200 ease-out",
+              copied && "scale-50 opacity-0 blur-[2px]",
+            )}
+          />
+          <Check
+            className={cn(
+              "absolute inset-0 size-5 text-emerald-600 transition-[opacity,transform,filter] duration-200 ease-out dark:text-emerald-400",
+              !copied && "scale-50 opacity-0 blur-[2px]",
+            )}
+          />
+        </span>
       </Button>
       {/* The icon swap is the sighted confirmation; this is its spoken twin. */}
       <span role="status" aria-live="polite" className="sr-only">
@@ -156,14 +168,14 @@ export function ReviewSection({
   return (
     <section
       className={
-        card ? "rounded-2xl border border-slate-200 bg-slate-50/70 p-4" : undefined
+        card ? "rounded-2xl border border-border bg-muted/40 p-4" : undefined
       }
     >
-      <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-slate-900">
-        <span className="text-slate-500 [&_svg]:size-4">{icon}</span>
+      <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-foreground">
+        <span className="text-muted-foreground [&_svg]:size-4">{icon}</span>
         {title}
         {aside ? (
-          <span className="text-xs font-medium text-slate-500">{aside}</span>
+          <span className="text-xs font-medium text-muted-foreground">{aside}</span>
         ) : null}
       </h3>
       <div className="mt-3">{children}</div>
@@ -246,14 +258,14 @@ function ClaimHistoryGroup({
       <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
         {title}
       </p>
-      <ul className="mt-2 divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
+      <ul className="mt-2 divide-y divide-border/60 rounded-2xl border border-border bg-card">
         {entries.map((entry) => (
           <li
             key={entry.key}
             className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-4 py-3 text-sm"
           >
-            <span className="font-medium text-slate-900">{entry.label}</span>
-            <span className="min-w-0 break-words text-slate-500">
+            <span className="font-medium text-foreground">{entry.label}</span>
+            <span className="min-w-0 break-words text-muted-foreground">
               {entry.detail}
             </span>
           </li>
