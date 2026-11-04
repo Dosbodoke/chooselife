@@ -276,3 +276,12 @@ entrypoint = "./functions/user-self-deletion/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/user-self-deletion/*.html" ]
+
+# Pin the declarative engine; dependency ordering is handled by pg-delta.
+[experimental.pgdelta]
+enabled = true
+
+# Required for shadow replay of historical pg_net webhook migrations.
+# Do not run config push: that would also change hosted webhook settings.
+[experimental.webhooks]
+enabled = true
