@@ -143,14 +143,14 @@ export default function BillingWorkspaceContributionWaiver({
   };
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-      <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-        <HandCoins className="size-4 text-slate-500" aria-hidden="true" />
+    <section className="rounded-2xl border border-border bg-muted/40 p-4">
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+        <HandCoins className="size-4 text-muted-foreground" aria-hidden="true" />
         {t("title")}
       </h3>
 
       {charges.length > 0 ? (
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-muted-foreground">
           {t("intro", { count: charges.length })}
         </p>
       ) : null}
@@ -169,7 +169,7 @@ export default function BillingWorkspaceContributionWaiver({
             setStep("select");
           }}
         >
-          <HandCoins className="size-4" aria-hidden="true" />
+          <HandCoins className="mr-2 size-4" aria-hidden="true" />
           {t("start")}
         </Button>
       ) : null}
@@ -217,7 +217,7 @@ function WaiverDoneNotice({
   return (
     <div
       role="status"
-      className="mt-3 flex gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-sm text-emerald-900"
+      className="mt-3 flex gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-sm text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200"
     >
       <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <span>
@@ -245,7 +245,7 @@ function WaiverFailureAlert({ error }: { error: RpcError }) {
   return (
     <p
       role="alert"
-      className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+      className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
     >
       {failureCopy[waiverFailure(error)]}
     </p>
@@ -305,40 +305,40 @@ function WaiverSelectStep({
       tabIndex={-1}
       ref={focusOnMount}
       aria-label={t("start")}
-      className="mt-3 rounded-xl border border-slate-200 bg-white p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="mt-3 rounded-xl border border-border bg-card p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <fieldset>
         <legend className="sr-only">{t("periods")}</legend>
-        <label className="flex cursor-pointer items-center gap-3 border-b border-slate-100 pb-3 text-sm font-medium text-slate-900">
+        <label className="flex cursor-pointer items-center gap-3 border-b border-border/60 pb-3 text-sm font-medium text-foreground">
           <input
             type="checkbox"
-            className="size-4 rounded border-slate-300 accent-slate-900"
+            className="size-4 rounded border-input accent-foreground"
             checked={allSelected}
             onChange={toggleAll}
           />
           {t("selectAll", { count: selectable })}
         </label>
-        <ul className="mt-1 divide-y divide-slate-100">
+        <ul className="mt-1 divide-y divide-border/60">
           {charges.map((charge) => (
             <li key={charge.obligationId}>
               <label className="flex cursor-pointer items-center justify-between gap-3 py-2.5 text-sm">
                 <span className="flex min-w-0 items-center gap-3">
                   <input
                     type="checkbox"
-                    className="size-4 shrink-0 rounded border-slate-300 accent-slate-900"
+                    className="size-4 shrink-0 rounded border-input accent-foreground"
                     checked={selectedIds.has(charge.obligationId)}
                     onChange={() => toggle(charge.obligationId)}
                   />
                   <span className="min-w-0">
-                    <span className="block text-slate-700">
+                    <span className="block text-foreground/80">
                       {formatMonth(charge.dueOn, displayLocale)}
                     </span>
-                    <span className="block text-xs text-slate-500">
+                    <span className="block text-xs text-muted-foreground">
                       {t("dueOn", { date: formatDate(charge.dueOn, displayLocale) })}
                     </span>
                   </span>
                 </span>
-                <span className="shrink-0 font-semibold tabular-nums text-slate-900">
+                <span className="shrink-0 font-semibold tabular-nums text-foreground">
                   {formatCurrency(charge.amount, charge.currency, displayLocale)}
                 </span>
               </label>
@@ -348,20 +348,20 @@ function WaiverSelectStep({
       </fieldset>
 
       <div className="mt-4">
-        <label htmlFor={reasonId} className="text-sm font-medium text-slate-900">
+        <label htmlFor={reasonId} className="text-sm font-medium text-foreground">
           {t("reasonLabel")}
         </label>
         <Textarea
           id={reasonId}
           aria-describedby={reasonHintId}
-          className="mt-1.5 min-h-20 rounded-lg bg-white"
+          className="mt-1.5 min-h-20 rounded-lg bg-card"
           maxLength={WAIVER_REASON_MAX_LENGTH}
           value={reason}
           onChange={(event) => onReasonChange(event.target.value)}
         />
         <p
           id={reasonHintId}
-          className="mt-1 flex justify-between gap-3 text-xs text-slate-500"
+          className="mt-1 flex justify-between gap-3 text-xs text-muted-foreground"
         >
           <span>{t("reasonHint")}</span>
           <span className="tabular-nums">
@@ -373,7 +373,7 @@ function WaiverSelectStep({
         </p>
       </div>
 
-      {missing ? <p className="mt-3 text-xs text-slate-500">{missing}</p> : null}
+      {missing ? <p className="mt-3 text-xs text-muted-foreground">{missing}</p> : null}
 
       <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" className="rounded-lg" onClick={onCancel}>
@@ -421,14 +421,14 @@ function WaiverReviewStep({
       tabIndex={-1}
       ref={focusOnMount}
       aria-label={t("review")}
-      className="mt-3 rounded-xl border border-slate-200 bg-white p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="mt-3 rounded-xl border border-border bg-card p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <dl className="grid gap-3 text-sm sm:grid-cols-[auto_1fr] sm:gap-x-4">
-        <dt className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
+        <dt className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
           {t("recipient")}
         </dt>
-        <dd className="min-w-0 font-medium text-slate-900">{memberLabel}</dd>
-        <dt className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
+        <dd className="min-w-0 font-medium text-foreground">{memberLabel}</dd>
+        <dt className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
           {t("periods")}
         </dt>
         <dd className="min-w-0">
@@ -436,7 +436,7 @@ function WaiverReviewStep({
             {selection.map((charge) => (
               <li
                 key={charge.obligationId}
-                className="flex justify-between gap-3 text-slate-700"
+                className="flex justify-between gap-3 text-foreground/80"
               >
                 <span>{formatMonth(charge.dueOn, displayLocale)}</span>
                 <span className="tabular-nums">
@@ -446,21 +446,21 @@ function WaiverReviewStep({
             ))}
           </ul>
         </dd>
-        <dt className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
+        <dt className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
           {t("total")}
         </dt>
-        <dd className="font-semibold tabular-nums text-slate-900">
+        <dd className="font-semibold tabular-nums text-foreground">
           {formatCurrency(sumCharges(selection), currency, displayLocale)}
         </dd>
-        <dt className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
+        <dt className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
           {t("reasonLabel")}
         </dt>
-        <dd className="min-w-0 whitespace-pre-wrap break-words text-slate-700">
+        <dd className="min-w-0 whitespace-pre-wrap break-words text-foreground/80">
           {reason}
         </dd>
       </dl>
 
-      <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
+      <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
         {t("consequence")}
       </p>
 

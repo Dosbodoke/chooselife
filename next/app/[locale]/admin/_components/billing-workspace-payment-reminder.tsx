@@ -72,7 +72,7 @@ export default function BillingWorkspacePaymentReminder({
   if (previewQuery.isError) {
     return (
       <ReminderSection title={t("title")}>
-        <p className="mt-2 text-sm text-slate-500">{t("unavailable")}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{t("unavailable")}</p>
       </ReminderSection>
     );
   }
@@ -128,7 +128,7 @@ function ReminderSummary({
   if (preview.open_count === 0) return null;
 
   return (
-    <p className="mt-1 text-sm text-slate-600">
+    <p className="mt-1 text-sm text-muted-foreground">
       {preview.overdue_count > 0
         ? t("overdueSummary", {
             count: preview.overdue_count,
@@ -151,7 +151,7 @@ function ReminderSentNotice({
   return (
     <div
       role="status"
-      className="mt-3 flex gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-sm text-emerald-900"
+      className="mt-3 flex gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-sm text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200"
     >
       <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <span>
@@ -159,7 +159,7 @@ function ReminderSentNotice({
           count: sent.device_count,
           time: formatDateTime(sent.sent_at, displayLocale),
         })}{" "}
-        <span className="text-emerald-800/80">{t("deliveryNote")}</span>
+        <span className="text-emerald-800/80 dark:text-emerald-200/80">{t("deliveryNote")}</span>
       </span>
     </div>
   );
@@ -179,7 +179,7 @@ function ReminderBlockedNotice({
 
   if (block === "cooldown") {
     return (
-      <p className="mt-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-600">
+      <p className="mt-3 rounded-xl border border-border bg-card px-3.5 py-3 text-sm text-muted-foreground">
         {t("cooldown", {
           last: formatDateTime(preview.last_sent_at, displayLocale),
           next: formatDateTime(preview.next_available_at, displayLocale),
@@ -190,13 +190,13 @@ function ReminderBlockedNotice({
 
   if (block === "no_devices") {
     return (
-      <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm text-amber-900">
+      <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
         {t("noDevices", { name: recipientLabel(preview) })}
       </p>
     );
   }
 
-  return <p className="mt-3 text-sm text-slate-500">{t("unavailable")}</p>;
+  return <p className="mt-3 text-sm text-muted-foreground">{t("unavailable")}</p>;
 }
 
 /** Opens the exact message for review, and is the only place that sends it. */
@@ -247,7 +247,7 @@ function ReminderComposer({
         className="mt-3 rounded-lg"
         onClick={() => setReviewing(true)}
       >
-        <BellRing className="size-4" aria-hidden="true" />
+        <BellRing className="mr-2 size-4" aria-hidden="true" />
         {t("review")}
       </Button>
     );
@@ -257,35 +257,35 @@ function ReminderComposer({
   const pending = sendMutation.isPending;
 
   return (
-    <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4">
+    <div className="mt-3 rounded-xl border border-border bg-card p-4">
       <dl className="grid gap-3 text-sm sm:grid-cols-[auto_1fr] sm:gap-x-4">
-        <dt className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
+        <dt className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
           {t("to")}
         </dt>
-        <dd className="min-w-0 text-slate-900">
+        <dd className="min-w-0 text-foreground">
           <span className="font-medium">{recipientLabel(preview)}</span>
           {preview.recipient_name && preview.recipient_handle ? (
-            <span className="text-slate-500"> · {preview.recipient_handle}</span>
+            <span className="text-muted-foreground"> · {preview.recipient_handle}</span>
           ) : null}
-          <span className="block text-xs text-slate-500">
+          <span className="block text-xs text-muted-foreground">
             {t("devices", { count: preview.device_count })} ·{" "}
             {t(`language.${language === "en" ? "en" : "pt"}`)}
           </span>
         </dd>
-        <dt className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
+        <dt className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
           {t("message")}
         </dt>
-        <dd className="min-w-0 rounded-lg bg-slate-50 px-3 py-2.5">
-          <p className="font-semibold text-slate-900">
+        <dd className="min-w-0 rounded-lg bg-muted/50 px-3 py-2.5">
+          <p className="font-semibold text-foreground">
             {localizedReminderText(preview.title, language)}
           </p>
-          <p className="mt-0.5 text-slate-700">
+          <p className="mt-0.5 text-foreground/80">
             {localizedReminderText(preview.body, language)}
           </p>
         </dd>
       </dl>
 
-      <p className="mt-3 text-xs text-slate-500">
+      <p className="mt-3 text-xs text-muted-foreground">
         {t("deliveryNote")} {t("cooldownNote")}
       </p>
 
@@ -312,9 +312,9 @@ function ReminderComposer({
           onClick={() => sendMutation.mutate()}
         >
           {pending ? (
-            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
           ) : (
-            <BellRing className="size-4" aria-hidden="true" />
+            <BellRing className="mr-2 size-4" aria-hidden="true" />
           )}
           {pending ? t("sending") : t("send")}
         </Button>
@@ -337,7 +337,7 @@ function ReminderFailureAlert({ error }: { error: RpcError }) {
   return (
     <p
       role="alert"
-      className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+      className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
     >
       {failureCopy[reminderFailure(error)]}
     </p>
@@ -352,9 +352,9 @@ function ReminderSection({
   title: string;
 }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-      <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-        <BellRing className="size-4 text-slate-500" aria-hidden="true" />
+    <section className="rounded-2xl border border-border bg-muted/40 p-4">
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+        <BellRing className="size-4 text-muted-foreground" aria-hidden="true" />
         {title}
       </h3>
       {children}

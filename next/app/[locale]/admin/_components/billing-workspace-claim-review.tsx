@@ -206,7 +206,7 @@ function ClaimDetails({
         icon={<ShieldCheck aria-hidden="true" />}
         title={t("recurringReview.decisionScope")}
       >
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted-foreground">
           {t("recurringReview.decisionScopeDescription")}
         </p>
       </ReviewSection>
