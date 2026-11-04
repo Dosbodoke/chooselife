@@ -1,12 +1,14 @@
 // Gradle's --max-workers does not limit the compiler jobs spawned by Ninja.
-// Share a pool for compilation and linking to keep native builds within the
-// memory available on EAS's medium Android builder.
+// Skia's heavy C++ files must compile one at a time on EAS's medium builder.
+// Two concurrent compiler jobs still caused the Gradle daemon to disappear.
+// https://github.com/wcandillon/react-native-skia/issues/4272
+// Share the pool with linking so it cannot overlap another compiler job.
 gradle.beforeProject { project ->
     ['com.android.application', 'com.android.library'].each { pluginId ->
         project.pluginManager.withPlugin(pluginId) {
             def android = project.extensions.getByName('android')
             android.defaultConfig.externalNativeBuild.cmake.arguments.addAll([
-                '-DCMAKE_JOB_POOLS=chooselife_native=2',
+                '-DCMAKE_JOB_POOLS=chooselife_native=1',
                 '-DCMAKE_JOB_POOL_COMPILE=chooselife_native',
                 '-DCMAKE_JOB_POOL_LINK=chooselife_native',
             ])
