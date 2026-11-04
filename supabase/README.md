@@ -28,8 +28,12 @@ For a schema change:
    when needed.
 4. Run `pnpm db:schema:check`. It fresh-replays all migrations and seeds, verifies
    exact migration history, checks no-op sync, hashes application/auth/storage
-   rows and sequence state before and after, lints SQL, runs every pgTAP file,
+   rows and sequence state around that no-op, lints SQL, runs every pgTAP file,
    and independently reconstructs the declarations on a fresh platform.
+   The hashes confirm that verification itself leaves those rows unchanged;
+   they do not test data preservation across future migrations, which are
+   replayed before the first hash is taken. Test each data conversion against
+   representative existing data separately before release.
    Catalogs (including direct/effective/default permissions, RLS, managed-schema
    customizations, functions, triggers, Realtime, and cron) must match. Role
    attributes/memberships and parameter ACLs are compared separately.
@@ -39,6 +43,9 @@ For a schema change:
    columns and normalizes CHECK expressions, and omits some platform extension
    grants. Raw declarations must preserve column order and exact permissions;
    differences are not ignored to accommodate the emitter.
+   If generated SQL changes column order or CHECK expression structure, adjust
+   the new incremental migration to preserve the intended definitions and rerun
+   these checks. Keep applied historical migrations unchanged.
 5. Commit both the desired SQL and the reviewed incremental migration.
 
 `pnpm db:verify` runs just the isolated historical replay, catalog capture, lint,

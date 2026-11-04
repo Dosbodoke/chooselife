@@ -121,7 +121,7 @@ if $CHECK; then
         echo "Database types are up to date: $OUTPUT" >&2
         exit 0
     fi
-    echo "Database types are out of date: $OUTPUT. Run pnpm db:types to regenerate." >&2
+    echo "Database types are out of date: $OUTPUT. Run bash supabase-gen-types.sh with the same --workdir and --output options to regenerate." >&2
     exit 1
 fi
 
