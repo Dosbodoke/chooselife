@@ -66,6 +66,61 @@ export function assertNoMigrationChanges(before, after) {
   }
 }
 
+const literal = (value) => `'${String(value).replaceAll("'", "''")}'`;
+// Resolves a catalog function id back to its oid with the id's own format.
+const functionOid = (id) => `(select p.oid from pg_catalog.pg_proc p
+  join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+  where format('%I.%I(%s)', n.nspname, p.proname,
+    pg_catalog.pg_get_function_identity_arguments(p.oid)) = ${literal(id)})`;
+
+// Parity is only meaningful if the capture sees real drift. Mutations a bad
+// declaration could cause, chosen from the captured catalog, each with the
+// difference compareCatalogs must report for it.
+export function captureCanary(catalog) {
+  const pick = (section, label, predicate) => {
+    const item = catalog[section].find(
+      (item) => item.id.startsWith("public.") && predicate(item),
+    );
+    if (!item) throw new Error(`Capture canary found no ${label}.`);
+    return item;
+  };
+  const policy = pick("policies", "public policy", () => true);
+  const granted = pick(
+    "functions",
+    "public function without anon EXECUTE",
+    (f) => f.kind === "f" && !f.effective.anon?.includes("EXECUTE"),
+  );
+  const rewritten = pick(
+    "functions",
+    "public PL/pgSQL function",
+    (f) => f.kind === "f" && f.language === "plpgsql",
+  );
+  const enumType = pick("types", "public enum", (t) => t.kind === "e");
+  // db query runs one prepared statement, so everything goes in one DO block.
+  return {
+    sql: `do $canary$ begin
+  execute ${literal(`drop policy ${policy.id.slice(policy.table.length + 1)} on ${policy.table}`)};
+  execute format('grant execute on function %s to anon', ${functionOid(granted.id)}::regprocedure);
+  execute regexp_replace(pg_catalog.pg_get_functiondef(${functionOid(rewritten.id)}),
+    '\\$function\\$\\s*$', E'-- capture canary\\n$function$');
+  execute ${literal(`alter type ${enumType.id} add value 'capture_canary' before ${literal(enumType.labels[0])}`)};
+end $canary$`,
+    expected: [
+      `policies ${policy.id}: only in left`,
+      `functions ${granted.id}: effective.anon:`,
+      `functions ${rewritten.id}: body_digest: differs`,
+      `types ${enumType.id}: labels: differs`,
+    ],
+  };
+}
+
+export function missingCanaryDifferences(expected, differences) {
+  return expected.filter(
+    (prefix) =>
+      !differences.some((difference) => difference.startsWith(prefix)),
+  );
+}
+
 // Supplement the application catalog with role attributes/memberships and
 // parameter ACLs. pg_roles deliberately excludes password hashes.
 const SECURITY_SQL = `select jsonb_build_object(
@@ -160,7 +215,7 @@ async function sync(workspace, name) {
 export async function main(argv) {
   if (argv.includes("--help")) {
     console.log(
-      "Usage: pnpm db:schema:check [--keep]\nChecks replay, pgTAP, no-op sync, row preservation and independent catalog/security parity in disposable projects.",
+      "Usage: pnpm db:schema:check [--keep]\nChecks replay, pgTAP, no-op sync, row preservation, independent catalog/security parity and that the capture detects canary drift, in disposable projects.",
     );
     return 0;
   }
@@ -289,6 +344,32 @@ export async function main(argv) {
     );
     log(
       `Independent parity: ${count} catalog objects; role attributes, memberships and parameter ACLs match`,
+    );
+    const canary = captureCanary(reconstructed);
+    const canaryFile = path.join(declared.root, "capture-canary.sql");
+    await fs.writeFile(canaryFile, canary.sql);
+    await runCliStep(declared, "Applying capture canary mutations", [
+      "db",
+      "query",
+      "--local",
+      "--file",
+      canaryFile,
+    ]);
+    await fs.rm(declared.catalogFile);
+    await captureCatalog(declared);
+    const missing = missingCanaryDifferences(
+      canary.expected,
+      compareCatalogs(
+        schemaCatalog(reconstructed),
+        schemaCatalog(await readCatalog(declared.catalogFile)),
+      ).differences,
+    );
+    if (missing.length)
+      throw new Error(
+        `Catalog capture missed canary mutations:\n${missing.join("\n")}`,
+      );
+    log(
+      `Capture canary: dropped policy, anon EXECUTE grant, function body and enum label order all detected`,
     );
     log("All declarative schema checks passed.");
   } catch (error) {

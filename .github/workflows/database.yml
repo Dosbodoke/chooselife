@@ -46,6 +46,24 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+          # A pull_request checkout is a merge commit whose first parent is the base tip.
+          fetch-depth: 2
+      # Applied migrations are history: compare every file that exists on the
+      # base branch byte-for-byte. New migration files are allowed.
+      - name: Check historical migrations are unchanged
+        if: github.event_name == 'pull_request'
+        run: |
+          git rev-parse --verify --quiet HEAD^2 > /dev/null || {
+            echo "::error::Expected the pull request merge commit; cannot find the base branch tip."
+            exit 1
+          }
+          changed="$(git diff --no-renames --name-only --diff-filter=DMT HEAD^1 HEAD -- supabase/migrations)"
+          if [ -n "$changed" ]; then
+            echo "::error::Historical migrations changed. Restore them and add a new migration instead (pnpm db:schema:diff <name>):"
+            echo "$changed"
+            exit 1
+          fi
+          echo "$(git ls-tree --name-only HEAD^1 supabase/migrations/ | grep -c '\.sql$') base migrations unchanged"
       - uses: pnpm/action-setup@v4
         with:
           version: 11.10.0

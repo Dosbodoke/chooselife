@@ -8,6 +8,8 @@ import {
   schemaCatalog,
   migrationSnapshot,
   assertNoMigrationChanges,
+  captureCanary,
+  missingCanaryDifferences,
   main,
 } from "./check-declarative-schema.mjs";
 
@@ -79,6 +81,69 @@ for (const [section, original, changed] of [
     );
   });
 }
+
+function canaryCatalog() {
+  return {
+    ...catalog(),
+    policies: [
+      { id: 'storage.objects."own files"', table: "storage.objects" },
+      { id: `public.note."owner's notes"`, table: "public.note" },
+    ],
+    functions: [
+      {
+        id: "public.open()",
+        kind: "f",
+        language: "sql",
+        effective: { anon: ["EXECUTE"] },
+      },
+      {
+        id: "public.share(note_id uuid)",
+        kind: "f",
+        language: "plpgsql",
+        effective: { anon: [] },
+      },
+    ],
+    types: [{ id: "public.mood", kind: "e", labels: ["it's", "calm"] }],
+  };
+}
+
+test("capture canary mutates public objects and names the expected differences", () => {
+  const { sql, expected } = captureCanary(canaryCatalog());
+  assert.deepEqual(expected, [
+    `policies public.note."owner's notes": only in left`,
+    "functions public.share(note_id uuid): effective.anon:",
+    "functions public.share(note_id uuid): body_digest: differs",
+    "types public.mood: labels: differs",
+  ]);
+  assert.match(sql, /^do \$canary\$/);
+  assert.ok(sql.includes(`'drop policy "owner''s notes" on public.note'`));
+  assert.ok(
+    sql.includes(
+      `'alter type public.mood add value ''capture_canary'' before ''it''''s'''`,
+    ),
+  );
+  assert.doesNotMatch(sql, /storage|public\.open/);
+});
+
+test("capture canary refuses to run without a target", () => {
+  assert.throws(
+    () => captureCanary({ ...canaryCatalog(), types: [] }),
+    /no public enum/,
+  );
+});
+
+test("a blind capture leaves canary differences missing", () => {
+  const { expected } = captureCanary(canaryCatalog());
+  const seen = [
+    "functions public.share(note_id uuid): acl: only in left: none; only in right: anon:EXECUTE",
+    "functions public.share(note_id uuid): effective.anon: only in left: none; only in right: EXECUTE",
+    "functions public.share(note_id uuid): body_digest: differs",
+  ];
+  assert.deepEqual(missingCanaryDifferences(expected, seen), [
+    expected[0],
+    expected[3],
+  ]);
+});
 
 test("no-op verification detects added, removed and modified migrations by content", async () => {
   const root = await fs.mkdtemp(

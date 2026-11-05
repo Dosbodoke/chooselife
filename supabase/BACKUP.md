@@ -58,6 +58,23 @@ Database dumps contain Storage metadata, not stored file binaries or R2 objects.
 See [Supabase's backup and restore guide](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore)
 for whole-project recovery and encryption-key handling.
 
+## What the restore drill proves
+
+A passing drill shows that the archive is complete and readable, and that its
+schema and row data load into a fresh database with every archived COPY section
+matching, including Vault ciphertext. It does **not** show:
+
+- restored ownership or grants, and so which roles can reach each object,
+  because it runs with `--no-owner --no-privileges`;
+- that Vault secrets decrypt, because the drill has no production root key;
+- Storage file binaries, R2 objects, Auth settings or other project
+  configuration, which are not in a database dump.
+
+A full production recovery still depends on the original archive, the role
+file, the project's encryption keys and Supabase's whole-project restore
+process. Describe evidence in PRs and release notes with the same limits, for
+example "data-level restore verified", not "production restore verified".
+
 Before declaring the PR ready, confirm the fresh backup and successful local
 restore are recorded in the private manifest. If deployment is delayed or the
 migration set changes, take another fresh backup before applying any SQL.

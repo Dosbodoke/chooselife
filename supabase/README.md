@@ -46,13 +46,27 @@ For a schema change:
    If generated SQL changes column order or CHECK expression structure, adjust
    the new incremental migration to preserve the intended definitions and rerun
    these checks. Keep applied historical migrations unchanged.
+   Finally it drops a policy, grants anon EXECUTE on an RPC, edits a function
+   body and inserts an enum label in the reconstructed database, and fails
+   unless the catalog capture reports each change, so parity cannot pass
+   because the capture went blind.
 5. Commit both the desired SQL and the reviewed incremental migration.
 
 `pnpm db:verify` runs just the isolated historical replay, catalog capture, lint,
 and SQL tests. `--keep` retains that disposable project and prints its cleanup
 command. `pnpm db:schema:check --keep` retains failure artifacts only. Neither
 checker accepts a hosted target or resets the normal developer stack. CI runs
-these checks without cloud credentials and performs no deployment.
+these checks without cloud credentials and performs no deployment. On pull
+requests, CI also fails if any migration file that exists on the base branch is
+modified, deleted or renamed.
+
+`packages/database/database-generated.types.ts` is generated from a clean
+replay. To regenerate it, run `pnpm db:verify --keep`, then
+`bash supabase-gen-types.sh --workdir <path printed by --keep>`, then run the
+printed cleanup command. `pnpm db:verify --check-types` fails when the artifact
+differs. CI does not run that check yet: the artifact predates several tables and
+functions and the pinned CLI's newer output shape, so regenerate it in a
+separate change that also typechecks the apps, then add `--check-types` to CI.
 
 To use the schema in your normal local app, run `pnpm exec supabase start`,
 then `pnpm exec supabase migration up --local`. A local `db reset --local`
@@ -77,7 +91,9 @@ never overwrite desired files from an arbitrary developer database.
 
 Before merging this adoption PR, create a fresh production database backup and
 verify a restore locally, recording the project reference, UTC time, checksums,
-and verification result privately. See [the backup runbook](BACKUP.md).
+and verification result privately. See [the backup runbook](BACKUP.md). The
+local drill verifies data, not ownership, grants or Vault decryption; the
+runbook lists what it does not prove.
 Production had no physical backups or PITR at the start of this work. A local
 seed database is not a production backup.
 
