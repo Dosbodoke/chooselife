@@ -100,7 +100,7 @@ test("no-op verification detects added, removed and modified migrations by conte
           ...before,
           "2_unexpected.sql": "hash",
         }),
-      /2_unexpected/,
+      /2_unexpected.*db:schema:diff.*--keep/,
     );
     assert.throws(() => assertNoMigrationChanges(before, {}), /1_original/);
     await fs.rm(path.join(dir, "2_unexpected.sql"));

@@ -61,7 +61,7 @@ export function assertNoMigrationChanges(before, after) {
       ...new Set([...Object.keys(before), ...Object.keys(after)]),
     ].filter((name) => before[name] !== after[name]);
     throw new Error(
-      `Declarations differ from migration history: ${changed.join(", ")}. Review generated SQL in the disposable project.`,
+      `Declarations differ from migration history: ${changed.join(", ")}. Run pnpm db:schema:diff <name> for the intended change, or rerun with --keep to inspect the generated SQL in the disposable project.`,
     );
   }
 }
