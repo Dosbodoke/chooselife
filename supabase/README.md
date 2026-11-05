@@ -2,29 +2,112 @@
 
 Supabase provides the database and authentication for Chooselife. Run the commands in this guide from the repository root.
 
-First of all, install the CLI
+## Local database and declarative schemas
 
-- Supabase CLI (`npm install -g supabase`)
+Use Node 24.18.0, pnpm 11.10.0, and Docker (Docker Desktop, OrbStack, or
+Colima). Run `pnpm install --frozen-lockfile`; the repository pins Supabase CLI
+2.121.0. Use `pnpm exec supabase`, since a globally installed CLI may use a
+different engine or targeting convention.
 
-1.  **Create a Supabase Project:**
-    - You can either run Supabase locally with `npx supabase init` or create a cloud project at [supabase.com/dashboard/new/new-project](https://supabase.com/dashboard/new/new-project).
-    - This guide focuses on cloud setup.
+The complete desired **application schema** lives in `supabase/schemas/`,
+organized by schema and object. The export includes `public` and `private`
+functions, tables, enum types, constraints, indexes, policies, grants, default
+privileges, the signup trigger on `auth.users`, Realtime publication membership,
+and named cron jobs. Supabase maintains its own platform tables. Keep the
+export metadata and default-privilege overlays alongside the SQL files.
 
-## Database Setup
+For a schema change:
 
-1.  **Link to Your Project:**
-    - Use the following command, replacing `<project-id>` with your project's ID (found in the dashboard URL):
+1. Edit the current object definition under `supabase/schemas/`.
+2. Run `pnpm db:schema:diff <descriptive_name>` to generate a migration without
+   applying it. The wrapper rejects extra flags and enables strict coverage.
+3. Review the generated SQL. Pay particular attention to DROP/TRUNCATE,
+   drop-and-add column renames, narrowing types, table recreation, grants,
+   security-definer functions, and changed cron jobs. A successful diff does
+   not prove a data conversion is safe; write an explicit forward data migration
+   when needed.
+4. Run `pnpm db:schema:check`. It fresh-replays all migrations and seeds, verifies
+   exact migration history, checks no-op sync, hashes application/auth/storage
+   rows and sequence state around that no-op, lints SQL, runs every pgTAP file,
+   and independently reconstructs the declarations on a fresh platform.
+   The hashes confirm that verification itself leaves those rows unchanged;
+   they do not test data preservation across future migrations, which are
+   replayed before the first hash is taken. Test each data conversion against
+   representative existing data separately before release.
+   Catalogs (including direct/effective/default permissions, RLS, managed-schema
+   customizations, functions, triggers, Realtime, and cron) must match. Role
+   attributes/memberships and parameter ACLs are compared separately.
+   Reconstruction executes the declared SQL directly in an owned empty database,
+   deferring constraints to resolve dependencies. This deliberately uses a
+   different path from the diff engine: its full-baseline emitter moves enum
+   columns and normalizes CHECK expressions, and omits some platform extension
+   grants. Raw declarations must preserve column order and exact permissions;
+   differences are not ignored to accommodate the emitter.
+   If generated SQL changes column order or CHECK expression structure, adjust
+   the new incremental migration to preserve the intended definitions and rerun
+   these checks. Keep applied historical migrations unchanged.
+   Finally it drops a policy, grants anon EXECUTE on an RPC, edits a function
+   body and inserts an enum label in the reconstructed database, and fails
+   unless the catalog capture reports each change, so parity cannot pass
+   because the capture went blind.
+5. Commit both the desired SQL and the reviewed incremental migration.
 
-      ```bash
-      npx supabase link --project-ref <project-id>
-      ```
+`pnpm db:verify` runs just the isolated historical replay, catalog capture, lint,
+and SQL tests. `--keep` retains that disposable project and prints its cleanup
+command. `pnpm db:schema:check --keep` retains failure artifacts only. Neither
+checker accepts a hosted target or resets the normal developer stack. CI runs
+these checks without cloud credentials and performs no deployment. On pull
+requests, CI also fails if any migration file that exists on the base branch is
+modified, deleted or renamed.
 
-2.  **Push Migrations:**
-    - Apply database migrations from `supabase/migrations` to your remote database:
+`packages/database/database-generated.types.ts` is generated from a clean
+replay. To regenerate it, run `pnpm db:verify --keep`, then
+`bash supabase-gen-types.sh --workdir <path printed by --keep>`, then run the
+printed cleanup command. `pnpm db:verify --check-types` fails when the artifact
+differs. CI does not run that check yet: the artifact predates several tables and
+functions and the pinned CLI's newer output shape, so regenerate it in a
+separate change that also typechecks the apps, then add `--check-types` to CI.
 
-      ```bash
-      npx supabase db push
-      ```
+To use the schema in your normal local app, run `pnpm exec supabase start`,
+then `pnpm exec supabase migration up --local`. A local `db reset --local`
+erases local rows; use the isolated checker for verification.
+
+Keep every historical migration immutable. The initial adoption adds no
+migration: it must be a no-op against the existing 47-file history. Ordinary
+DML, historical backfills, bucket rows, festival configuration rows, and local
+personas remain in migrations/seeds. The independent schema comparison omits
+only `storage.buckets` row data; Storage policies and permissions remain checked.
+R2 is the current application media backend.
+
+Do not use `db diff` for declarative authoring on this engine: it reads the live
+database rather than the desired files. Direct Studio/SQL-editor changes do not
+update declarations. To refresh the tree deliberately, export from a verified
+clean replay with `db schema declarative generate --local --strict-coverage`;
+never overwrite desired files from an arbitrary developer database.
+
+[Supabase declarative schema guide](https://supabase.com/docs/guides/local-development/declarative-database-schemas)
+
+## Release and backup gate
+
+Before merging this adoption PR, create a fresh production database backup and
+verify a restore locally, recording the project reference, UTC time, checksums,
+and verification result privately. See [the backup runbook](BACKUP.md). The
+local drill verifies data, not ownership, grants or Vault decryption; the
+runbook lists what it does not prove.
+Production had no physical backups or PITR at the start of this work. A local
+seed database is not a production backup.
+
+This PR does not deploy SQL, repair hosted migration history, or change hosted
+configuration. The declarative export represents clean migration replay; hosted
+platform versions and privileges can differ. Never apply a full generated
+baseline or local platform privilege changes to an existing hosted database.
+For future releases, confirm target migration history, inspect the exact pending
+migration list and SQL, take and verify the backup, then use the established
+release process to deploy reviewed forward migrations only.
+
+`[experimental.webhooks]` supports replay of historical pg_net calls in the
+shadow database. Do not run `supabase config push` with this local config: it
+can also change hosted webhook and Auth settings.
 
 ## Deploying Edge Functions
 
@@ -68,7 +151,6 @@ database already created.
     who made the transfer. The obligation moves to `under_review`.
 4.  An association admin verifies the PIX by hand in the admin billing
     workspace. There are exactly two decisions, and both are atomic:
-
     - `approve_initial_claim(claim_id)` settles the obligation, admits the
       applicant, and opens the contribution schedule with its plan snapshot.
     - `reject_initial_claim(claim_id, reason)` is the single refusal command. It
@@ -132,16 +214,10 @@ select vault.create_secret('https://<your-project-ref>.supabase.co', 'project_ur
 select vault.create_secret('<your-secret-key>', 'secret_key', 'Supabase Secret key');
 ```
 
-> **Known loose end.** `20251113121601_schedule-payment.sql` scheduled a
-> `daily-renewal-check` cron job that POSTs to
-> `/functions/v1/generate-renewal-payments`. That function no longer exists —
-> there are no automatic renewal payments. On any project where the job is
-> still registered it now calls a missing endpoint once a day. Unscheduling it
-> needs a migration:
->
-> ```sql
-> select cron.unschedule('daily-renewal-check');
-> ```
+The old `daily-renewal-check` job is removed by the retained billing
+reconciliation migration. The current declared jobs are the three festival jobs
+and `membership-billing-generate-obligations`; preserve their definitions when
+reviewing generated migrations.
 
 ## OAuth Configuration
 
@@ -159,4 +235,3 @@ select vault.create_secret('<your-secret-key>', 'secret_key', 'Supabase Secret k
       - [Setup Apple oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-apple?queryGroups=platform&platform=react-native)
       - [Setup Google oAuth on EXPO](https://supabase.com/docs/guides/auth/social-login/auth-google?queryGroups=platform&platform=react-native)
     - [Use Auth locally](https://supabase.com/docs/guides/local-development/overview#use-auth-locally)
-

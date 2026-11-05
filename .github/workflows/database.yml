@@ -1,0 +1,79 @@
+name: Database
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "supabase/**"
+      - "scripts/*database*"
+      - "scripts/*declarative*"
+      - "scripts/supabase-gen-types.test.mjs"
+      - "supabase-gen-types.sh"
+      - "packages/database/package.json"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".nvmrc"
+      - ".github/workflows/database.yml"
+  push:
+    branches: [main, develop]
+    paths:
+      - "supabase/**"
+      - "scripts/*database*"
+      - "scripts/*declarative*"
+      - "scripts/supabase-gen-types.test.mjs"
+      - "supabase-gen-types.sh"
+      - "packages/database/package.json"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".nvmrc"
+      - ".github/workflows/database.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          # A pull_request checkout is a merge commit whose first parent is the base tip.
+          fetch-depth: 2
+      # Applied migrations are history: compare every file that exists on the
+      # base branch byte-for-byte. New migration files are allowed.
+      - name: Check historical migrations are unchanged
+        if: github.event_name == 'pull_request'
+        run: |
+          git rev-parse --verify --quiet HEAD^2 > /dev/null || {
+            echo "::error::Expected the pull request merge commit; cannot find the base branch tip."
+            exit 1
+          }
+          changed="$(git diff --no-renames --name-only --diff-filter=DMT HEAD^1 HEAD -- supabase/migrations)"
+          if [ -n "$changed" ]; then
+            echo "::error::Historical migrations changed. Restore them and add a new migration instead (pnpm db:schema:diff <name>):"
+            echo "$changed"
+            exit 1
+          fi
+          echo "$(git ls-tree --name-only HEAD^1 supabase/migrations/ | grep -c '\.sql$') base migrations unchanged"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.10.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Test verification helpers
+        run: node --test scripts/verify-database.test.mjs scripts/check-database-catalog.test.mjs scripts/check-declarative-schema.test.mjs scripts/declarative-reconstruction.test.mjs scripts/supabase-gen-types.test.mjs
+      # No hosted credentials, link, deployment, or remote schema changes.
+      - name: Check migration replay, SQL tests, declarations and data preservation
+        run: pnpm db:schema:check

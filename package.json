@@ -6,14 +6,19 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "deploy:functions": "./deploy-functions.sh"
+    "deploy:functions": "./deploy-functions.sh",
+    "db:verify": "node scripts/verify-database.mjs",
+    "db:catalog:compare": "node scripts/check-database-catalog.mjs",
+    "db:schema:check": "node scripts/check-declarative-schema.mjs",
+    "db:schema:diff": "node scripts/generate-declarative-migration.mjs"
   },
   "devDependencies": {
     "next": "16.3.5",
     "prettier": "^3.0.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "turbo": "^2.6.1"
+    "turbo": "^2.6.1",
+    "supabase": "2.121.0"
   },
   "engines": {
     "node": "24.18.0"
