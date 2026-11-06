@@ -24,7 +24,12 @@ import { Text } from '~/components/ui/text';
 
 const NewsDetailSkeleton = () => {
   return (
-    <View className="flex-1 p-4 bg-white">
+    <ScrollView
+      className="flex-1 bg-white"
+      contentContainerClassName="p-4"
+      contentInsetAdjustmentBehavior="always"
+      scrollEnabled={false}
+    >
       {/* Title */}
       <Skeleton className="h-8 w-3/4 mb-6 bg-gray-300" />
 
@@ -51,7 +56,7 @@ const NewsDetailSkeleton = () => {
           </View>
         ))}
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -196,6 +201,7 @@ export default function NewsDetail() {
           <ScrollView
             className="flex-1 p-4"
             contentContainerStyle={{ paddingBottom: bottomPadding + 20 }}
+            contentInsetAdjustmentBehavior="automatic"
           >
             <Text className="text-sm text-gray-600 mb-2">
               {new Date(news.created_at).toLocaleDateString()}
