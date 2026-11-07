@@ -38,6 +38,7 @@ const Page = () => {
     <SafeAreaView className="flex-1">
       <KeyboardAwareScrollView
         contentContainerClassName="px-6 pt-3 pb-8 gap-4"
+        contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
       >
         <LogoSection />
