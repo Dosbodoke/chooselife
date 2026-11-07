@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Platform, View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
   Easing,
@@ -16,15 +16,15 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from '~/components/styled';
 
-import { useAuth, type LoginMethod, type OAuthMethod } from '~/context/auth';
+import { useAuth, type OAuthMethod } from '~/context/auth';
 import { AppleIcon } from '~/lib/icons/Apple';
 import ChooselifeIcon from '~/lib/icons/chooselife-icon';
 import { GoogleIcon } from '~/lib/icons/Google';
 import { useMountEffect } from '~/hooks/use-mount-effect';
-import { cn } from '~/lib/utils';
 
-import { Button, buttonTextVariants } from '~/components/ui/button';
+import { Button } from '~/components/ui/button';
 import { Input, PasswordInput } from '~/components/ui/input';
+import { PrimaryButton } from '~/components/ui/primary-button';
 import { Separator } from '~/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { Text } from '~/components/ui/text';
@@ -32,8 +32,6 @@ import { Text } from '~/components/ui/text';
 const _layoutTransition = LinearTransition.springify()
   .damping(80)
   .stiffness(200);
-const AnimatedButton = Animated.createAnimatedComponent(Button);
-const AnimatedText = Animated.createAnimatedComponent(Text);
 
 const Page = () => {
   return (
@@ -256,17 +254,22 @@ const EmailSection: React.FC = () => {
         </Animated.View>
       )}
 
-      <AnimatedAuthButton
-        onPress={tab === 'login' ? handleLogin : handleSignup}
-        label={
-          tab === 'login'
-            ? t('app.(modals).login.EmailSection.loginButton')
-            : t('app.(modals).login.EmailSection.signupButton')
-        }
-        lastLoginMethod={lastLoginMethod}
-        isLoading={isLoginPending}
-        disabled={isLoginPending}
-      />
+      <Animated.View layout={_layoutTransition}>
+        <PrimaryButton
+          onPress={tab === 'login' ? handleLogin : handleSignup}
+          label={
+            tab === 'login'
+              ? t('app.(modals).login.EmailSection.loginButton')
+              : t('app.(modals).login.EmailSection.signupButton')
+          }
+          loading={isLoginPending}
+          accessory={
+            tab === 'login' && lastLoginMethod === 'email' ? (
+              <GreenDot pulse />
+            ) : null
+          }
+        />
+      </Animated.View>
     </View>
   );
 };
@@ -281,49 +284,6 @@ const MethodSeparator = () => {
       </Text>
       <Separator className="flex-1" />
     </View>
-  );
-};
-
-const AnimatedAuthButton: React.FC<{
-  isLoading: boolean;
-  onPress: () => void;
-  label: string;
-  lastLoginMethod?: LoginMethod | null;
-  disabled?: boolean;
-}> = ({ isLoading, onPress, label, lastLoginMethod, disabled }) => {
-  const { t } = useTranslation();
-  return (
-    <AnimatedButton
-      className="flex-1"
-      variant="default"
-      onPress={onPress}
-      disabled={disabled || isLoading}
-      layout={_layoutTransition}
-    >
-      {isLoading ? (
-        <Animated.View
-          entering={FadeInDown.springify().damping(80).stiffness(200)}
-          exiting={FadeOutUp.springify().damping(80).stiffness(200)}
-        >
-          <ActivityIndicator
-            className={cn(buttonTextVariants({ variant: 'default' }))}
-          />
-        </Animated.View>
-      ) : (
-        <AnimatedText
-          key={label}
-          className={cn(buttonTextVariants({ variant: 'default' }))}
-          entering={FadeInDown.springify().damping(80).stiffness(200)}
-          exiting={FadeOutUp.springify().damping(80).stiffness(200)}
-        >
-          {label}
-        </AnimatedText>
-      )}
-      {label === t('app.(modals).login.EmailSection.loginButton') &&
-      lastLoginMethod === 'email' ? (
-        <GreenDot pulse />
-      ) : null}
-    </AnimatedButton>
   );
 };
 

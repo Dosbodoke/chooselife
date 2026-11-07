@@ -1,11 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
 import Animated, {
-  FadeInDown,
   FadeInLeft,
   FadeOutLeft,
-  FadeOutUp,
   interpolateColor,
   LinearTransition,
   SharedValue,
@@ -14,9 +12,8 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 
-import { cn } from '~/lib/utils';
-
-import { Button, buttonTextVariants } from '~/components/ui/button';
+import { Button } from '~/components/ui/button';
+import { PrimaryButton } from '~/components/ui/primary-button';
 import { Text } from '~/components/ui/text';
 
 const _layoutTransition = LinearTransition.springify()
@@ -30,7 +27,6 @@ const _activeDot = '#fff';
 const _inactiveDot = '#aaa';
 
 const AnimatedButton = Animated.createAnimatedComponent(Button);
-const AnimatedText = Animated.createAnimatedComponent(Text);
 
 function Dot({
   index,
@@ -197,6 +193,7 @@ export function OnboardNavigator({
       {showBack && (selectedIndex > 0 || goBack) ? (
         <AnimatedButton
           variant="outline"
+          className="h-14 rounded-full px-6"
           onPress={handleBack}
           disabled={isLoading}
           entering={_entering}
@@ -206,40 +203,17 @@ export function OnboardNavigator({
           <Text>{t('components.onboard.goBack')}</Text>
         </AnimatedButton>
       ) : null}
-      <AnimatedButton
-        className="flex-1 rounded-full"
-        variant="default"
-        onPress={handleForward}
-        disabled={isLoading}
-        entering={_entering}
-        exiting={_exiting}
-        layout={_layoutTransition}
-      >
-        {isLoading ? (
-          <ActivityIndicator
-            className={cn(buttonTextVariants({ variant: 'default' }))}
-          />
-        ) : selectedIndex === total - 1 ? (
-          <AnimatedText
-            key="finish"
-            className={cn(buttonTextVariants({ variant: 'default' }))}
-            entering={FadeInDown.springify().damping(80).stiffness(200)}
-            exiting={FadeOutUp.springify().damping(80).stiffness(200)}
-          >
-            {finishLabel ? finishLabel : t('components.onboard.finish')}
-          </AnimatedText>
-        ) : (
-          <AnimatedText
-            key="continue"
-            className={cn(buttonTextVariants({ variant: 'default' }))}
-            layout={_layoutTransition}
-            entering={FadeInDown.springify().damping(80).stiffness(200)}
-            exiting={FadeOutUp.springify().damping(80).stiffness(200)}
-          >
-            {t('components.onboard.continue')}
-          </AnimatedText>
-        )}
-      </AnimatedButton>
+      <Animated.View className="flex-1" layout={_layoutTransition}>
+        <PrimaryButton
+          onPress={handleForward}
+          loading={isLoading}
+          label={
+            selectedIndex === total - 1
+              ? (finishLabel ?? t('components.onboard.finish'))
+              : t('components.onboard.continue')
+          }
+        />
+      </Animated.View>
     </View>
   );
 }
