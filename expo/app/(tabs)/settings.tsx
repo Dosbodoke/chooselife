@@ -46,6 +46,7 @@ import { SafeAreaOfflineView } from '~/components/offline-banner';
 import { SignOutSheet } from '~/components/settings/sign-out-sheet';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
+import { PrimaryButton } from '~/components/ui/primary-button';
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 
@@ -137,12 +138,10 @@ export default function SettingsPage() {
           asChild
           disabled={!isOnline || isLoginPending}
         >
-          <Button
+          <PrimaryButton
             disabled={!isOnline || isLoginPending}
-            className="w-full bg-primary"
-          >
-            <Text>{t('app.(tabs).settings.logIn')}</Text>
-          </Button>
+            label={t('app.(tabs).settings.logIn')}
+          />
         </Link>
         {!isOnline ? (
           <Text className="text-center text-sm text-muted-foreground">

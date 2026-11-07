@@ -34,6 +34,7 @@ import { requestReview } from '~/utils/request-review';
 
 import SuccessAnimation from '~/components/animations/success-animation';
 import { Button } from '~/components/ui/button';
+import { PrimaryButton } from '~/components/ui/primary-button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import NumberPicker from '~/components/ui/number-picker';
@@ -462,17 +463,16 @@ export default function RegisterWalk() {
           className="border-t border-gray-100 bg-white px-4 pt-3"
           style={{ paddingBottom: footerBottomInset + 16 }}
         >
-          <Button
-            className="w-full rounded-3xl"
+          <PrimaryButton
             onPress={() => form.handleSubmit(onValid, onInvalid)()}
-            disabled={formMutation.isPending}
-          >
-            <Text>
-              {formMutation.isPending
+            loading={formMutation.isPending}
+            label={t('app.highline.register.buttons.submit.default')}
+            accessibilityLabel={
+              formMutation.isPending
                 ? t('app.highline.register.buttons.submit.loading')
-                : t('app.highline.register.buttons.submit.default')}
-            </Text>
-          </Button>
+                : undefined
+            }
+          />
         </View>
       </View>
     </BottomSheetModalProvider>

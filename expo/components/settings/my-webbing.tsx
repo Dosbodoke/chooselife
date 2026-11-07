@@ -28,6 +28,7 @@ import {
 } from '~/components/photo-picker';
 import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
+import { PrimaryButton } from '~/components/ui/primary-button';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
 
@@ -43,9 +44,7 @@ export function MyWebbings() {
       <View className="gap-4 p-4">
         <Text>{t(`${translationKey}.loginRequired`)}</Text>
         <Link asChild href="/(modals)/login">
-          <Button>
-            <Text>{t('app.(tabs).settings.logIn')}</Text>
-          </Button>
+          <PrimaryButton label={t('app.(tabs).settings.logIn')} />
         </Link>
       </View>
     );
