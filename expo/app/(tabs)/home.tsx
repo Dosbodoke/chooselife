@@ -1,4 +1,5 @@
 import { useEvents } from '@chooselife/ui';
+import SlacCabeMaisImage from '~/assets/images/slac-cabe-mais.png';
 import { Link, useRouter } from 'expo-router';
 import { StatusBar, StatusBarStyle } from 'expo-status-bar';
 import { CalendarIcon } from 'lucide-react-native';
@@ -14,7 +15,6 @@ import {
 import Animated from 'react-native-reanimated';
 
 import { useOnlineStatus } from '~/context/react-query';
-import { getR2PublicUrl } from '~/lib/r2';
 import { _layoutAnimation } from '~/utils/constants';
 
 import { EventCard, EventCardSkeleton } from '~/components/event-card';
@@ -24,46 +24,64 @@ import { QuickActions } from '~/components/quick-actions';
 import { Card, CardContent } from '~/components/ui/card';
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
-import { Widget, WIDGET_HERO_BASE_HEIGHT } from '~/components/widget';
-
-const STATUS_BAR_SWITCH_OFFSET = WIDGET_HERO_BASE_HEIGHT - 48;
+// PROTOTYPE: home widget variants, see components/prototypes/home-widget.
+import {
+  HOME_WIDGET_META,
+  HOME_WIDGET_VARIANTS,
+  HomeWidgetPrototype,
+  prototypeSampleItems,
+} from '~/components/prototypes/home-widget';
+import {
+  PrototypeSwitcher,
+  usePrototypeVariant,
+} from '~/components/prototypes/prototype-switcher';
 
 export default function HomeScreen() {
   const router = useRouter();
   const isOnline = useOnlineStatus();
-  const [statusBarStyle, setStatusBarStyle] =
+  const [variant, setVariant] = usePrototypeVariant(HOME_WIDGET_VARIANTS);
+  const { heroHeight, statusBarAtTop } = HOME_WIDGET_META[variant];
+  const [slideStatusBar, setSlideStatusBar] =
     React.useState<StatusBarStyle>('light');
+  const [isPastHero, setIsPastHero] = React.useState(false);
 
-  const handleScroll = React.useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const nextStyle: StatusBarStyle =
-        event.nativeEvent.contentOffset.y >= STATUS_BAR_SWITCH_OFFSET
-          ? 'dark'
-          : 'light';
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    setIsPastHero(
+      heroHeight > 0 && event.nativeEvent.contentOffset.y >= heroHeight - 48,
+    );
+  };
 
-      setStatusBarStyle((currentStyle) =>
-        currentStyle === nextStyle ? currentStyle : nextStyle,
-      );
-    },
-    [],
-  );
+  const statusBarStyle: StatusBarStyle =
+    !isOnline || isPastHero
+      ? 'dark'
+      : statusBarAtTop === 'dynamic'
+        ? slideStatusBar
+        : statusBarAtTop;
 
   return (
     <SafeAreaOfflineView edges={['left', 'right']}>
-      <StatusBar style={isOnline ? statusBarStyle : 'dark'} />
+      <StatusBar style={statusBarStyle} />
       <ScrollView onScroll={handleScroll} scrollEventThrottle={16}>
-        <Widget
+        <HomeWidgetPrototype
+          key={variant}
+          variant={variant}
+          onStatusBarChange={setSlideStatusBar}
           items={[
             {
-              id: 'slack',
-              title: 'SLACK',
-              subtitle: 'Conheça a associação',
-              background: getR2PublicUrl('promo', 'slack-promo.png'),
-              contentPosition: 'center',
+              id: 'slac',
+              eyebrow: 'Associação',
+              title: 'SLAC',
+              subtitle: 'Conheça os Slackliners Associados do Cerrado',
+              cta: 'Conhecer',
+              image: SlacCabeMaisImage,
+              kind: 'brand',
+              surface: '#18181b',
+              glow: 'rgba(139, 92, 246, 0.55)',
               onPress: () => {
                 router.push('/organizations');
               },
             },
+            ...prototypeSampleItems(router),
           ]}
         />
 
@@ -75,6 +93,11 @@ export default function HomeScreen() {
         </View>
         <FloatingTabBarSpacer />
       </ScrollView>
+      <PrototypeSwitcher
+        variants={HOME_WIDGET_VARIANTS}
+        current={variant}
+        onChange={setVariant}
+      />
     </SafeAreaOfflineView>
   );
 }
