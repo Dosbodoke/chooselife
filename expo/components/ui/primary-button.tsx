@@ -14,12 +14,20 @@ const AnimatedText = Animated.createAnimatedComponent(Text);
 const _labelEntering = FadeInDown.springify().damping(80).stiffness(200);
 const _labelExiting = FadeOutUp.springify().damping(80).stiffness(200);
 
+const TONES = {
+  /** Dark pill for light surfaces. */
+  default: { button: '', label: 'text-primary-foreground' },
+  /** Light pill for dark surfaces, e.g. a hero card. */
+  inverse: { button: 'bg-white active:bg-gray-100', label: 'text-black' },
+} as const;
+
 type PrimaryButtonProps = Omit<ButtonProps, 'children' | 'variant' | 'size'> & {
   label: string;
   /** Swaps the label for a spinner and marks the button busy. */
   loading?: boolean;
   /** Extra content pinned inside the button, e.g. a status dot. */
   accessory?: React.ReactNode;
+  tone?: keyof typeof TONES;
 };
 
 /**
@@ -30,12 +38,14 @@ function PrimaryButton({
   label,
   loading = false,
   accessory,
+  tone = 'default',
   disabled,
   className,
   accessibilityLabel,
   ...props
 }: PrimaryButtonProps) {
   const isDisabled = Boolean(disabled || loading);
+  const colors = TONES[tone];
 
   return (
     <Button
@@ -45,6 +55,7 @@ function PrimaryButton({
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       className={cn(
         'h-14 w-full rounded-full px-6 active:scale-[0.98]',
+        colors.button,
         // Busy isn't the same as unavailable: keep full contrast while loading.
         loading && 'opacity-100',
         className,
@@ -53,14 +64,17 @@ function PrimaryButton({
     >
       <LayoutAnimationConfig skipEntering>
         {loading ? (
-          <ActivityIndicator className="text-primary-foreground" />
+          <ActivityIndicator className={colors.label} />
         ) : (
           <AnimatedText
             key={label}
             numberOfLines={1}
             entering={_labelEntering}
             exiting={_labelExiting}
-            className="text-[17px] font-semibold leading-[22px] text-primary-foreground"
+            className={cn(
+              'text-[17px] font-semibold leading-[22px]',
+              colors.label,
+            )}
           >
             {label}
           </AnimatedText>

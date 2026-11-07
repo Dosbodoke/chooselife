@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
 
-import { Button } from '~/components/ui/button';
+import { PrimaryButton } from '~/components/ui/primary-button';
 import { Text } from '~/components/ui/text';
 
 type BecomeMemberCardProps = {
@@ -65,13 +65,11 @@ export function BecomeMemberCard({
         </Text>
       </View>
 
-      <Button
-        accessibilityLabel={buttonLabel}
+      <PrimaryButton
+        tone="inverse"
+        label={buttonLabel}
         onPress={() => router.push(`/organizations/${slug}/member`)}
-        className="w-full bg-white active:bg-gray-100 active:scale-[0.98]"
-      >
-        <Text className="font-bold text-black">{buttonLabel}</Text>
-      </Button>
+      />
     </View>
   );
 }
