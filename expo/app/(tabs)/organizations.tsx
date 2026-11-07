@@ -30,6 +30,14 @@ import { AssembleiaCard } from '~/components/organizations/assembleia-card';
 import { BecomeMemberCard } from '~/components/organizations/become-member-card';
 import { MembershipLedger } from '~/components/organizations/MembershipLedger';
 import { News } from '~/components/organizations/News';
+import {
+  ORG_HEADER_VARIANTS,
+  PrototypeOrgHeader,
+} from '~/components/organizations/prototype-org-header';
+import {
+  PrototypeSwitcher,
+  usePrototypeVariant,
+} from '~/components/prototype-switcher';
 import { OrganizationErrorState } from '~/components/organizations/organization-error-state';
 import { OrganizationLoadingState } from '~/components/organizations/organization-loading-state';
 import { Icon } from '~/components/ui/icon';
@@ -53,6 +61,7 @@ function OrganizationDetailsPage() {
   const queryClient = useQueryClient();
   const { session } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
+  const headerVariant = usePrototypeVariant(ORG_HEADER_VARIANTS);
   const userId = session?.user.id;
 
   const { data: organization, isLoading } = useOrganization(ORG_SLUG);
@@ -152,25 +161,14 @@ function OrganizationDetailsPage() {
           />
         }
       >
-        {/* Header Group */}
-        <View className="bg-white rounded-xl p-4 gap-2">
-          <View className="flex-row items-center gap-4">
-            {/* Placeholder for Logo if needed, matching Settings profile pic style if we had one */}
-            {/* <View className="size-16 rounded-full bg-gray-200" /> */}
-            <View className="flex-1">
-              <Text className="text-xl font-bold text-foreground">
-                {organization.name}
-              </Text>
-              <Text className="text-muted-foreground">
-                Slackliners Associados do Cerrado
-              </Text>
-            </View>
-          </View>
-          <Text className="text-gray-600 leading-6 mt-2">
-            Associação esportiva, cultural e artística de slackline sem fins
-            lucrativos, dedicada ao desenvolvimento e disseminação do esporte.
-          </Text>
-        </View>
+        {/* PROTOTYPE: header variants, switch with ?variant=A|B|C|D */}
+        <PrototypeOrgHeader
+          variant={headerVariant}
+          shortName={organization.name}
+          fullName="Slackliners Associados do Cerrado"
+          description="Associação esportiva, cultural e artística de slackline sem fins lucrativos, dedicada ao desenvolvimento e disseminação do esporte."
+          city="Anápolis"
+        />
 
         {/* Info Group */}
         <View className="bg-white rounded-xl overflow-hidden">
@@ -234,6 +232,10 @@ function OrganizationDetailsPage() {
         </Text>
         <FloatingTabBarSpacer />
       </ScrollView>
+      <PrototypeSwitcher
+        variants={ORG_HEADER_VARIANTS}
+        current={headerVariant}
+      />
     </SafeAreaOfflineView>
   );
 }
