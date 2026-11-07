@@ -348,6 +348,15 @@
             "noEventsDescription": "No momento não tem nenhum evento planejado."
           },
           "Ranking": "🏆 Ranking da Semana"
+        },
+        "widget": {
+          "nextHint": "Toque para ver o próximo destaque",
+          "slac": {
+            "eyebrow": "Associação",
+            "title": "SLAC",
+            "subtitle": "Conheça os Slackliners Associados do Cerrado",
+            "cta": "Conhecer"
+          }
         }
       },
       "settings": {
