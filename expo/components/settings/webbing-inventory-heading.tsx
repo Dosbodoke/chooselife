@@ -3,6 +3,7 @@ import {
   type InventoryGroupSubject,
   type InventorySection,
 } from '~/features/webbing/inventory';
+import { modelSpecs } from '~/features/webbing/inventory-display';
 import { Image } from 'expo-image';
 import {
   ChevronDownIcon,
@@ -18,6 +19,8 @@ import { cn } from '~/lib/utils';
 
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
+
+import { InventoryChip } from './inventory-chip';
 
 const translationKey = 'components.settings.my-webbing';
 
@@ -39,17 +42,16 @@ export function WebbingInventoryHeading({
 }) {
   const { t, i18n } = useTranslation();
   const title = useSubjectTitle(group.subject);
-  const specs = group.subject.kind === 'model' ? group.subject.specs : null;
-  const modelClass = specs?.modelStrengthClass?.value;
-  const facts = specs
-    ? [
-        specs.materials?.join(' / '),
-        specs.construction,
-        modelClass
-          ? t(`${translationKey}.strength`, { strength: modelClass })
-          : null,
-      ].filter(Boolean)
-    : [];
+  const facts = (
+    group.subject.kind === 'model' ? modelSpecs(group.subject.specs) : []
+  ).map(({ kind, value }) => ({
+    key: `${kind}:${value}`,
+    isClass: kind === 'class',
+    text:
+      kind === 'class'
+        ? t(`${translationKey}.strength`, { strength: value })
+        : value,
+  }));
   const tally = [
     searching
       ? t(`${translationKey}.searchResults`, {
@@ -57,8 +59,10 @@ export function WebbingInventoryHeading({
           count: group.entries.length,
         })
       : t(`${translationKey}.count`, { count: group.entries.length }),
-    `${totalLength(matches).toLocaleString(i18n.language)} m`,
-  ].join(' · ');
+    t(`${translationKey}.totalLength`, {
+      length: totalLength(matches).toLocaleString(i18n.language),
+    }),
+  ];
   const ids = group.entries.map(({ webbing }) => `ID ${webbing.id}`);
 
   return (
@@ -68,8 +72,8 @@ export function WebbingInventoryHeading({
       accessibilityRole="button"
       accessibilityLabel={[
         title,
-        ...facts,
-        tally,
+        ...facts.map((fact) => fact.text),
+        ...tally,
         ...(expanded ? [] : ids),
       ].join(', ')}
       accessibilityState={{ expanded, disabled: searching }}
@@ -81,9 +85,28 @@ export function WebbingInventoryHeading({
           {title}
         </Text>
         {facts.length ? (
-          <Text className="text-xs text-slate-500">{facts.join(' · ')}</Text>
+          <View className="mt-0.5 flex-row flex-wrap gap-1">
+            {facts.map(({ key, isClass, text }) => (
+              <InventoryChip
+                key={key}
+                // On the page background, so white rather than grey.
+                className={cn('bg-white', isClass && 'border border-slate-300')}
+                textClassName={
+                  isClass ? 'font-semibold text-slate-800' : undefined
+                }
+              >
+                {text}
+              </InventoryChip>
+            ))}
+          </View>
         ) : null}
-        <Text className="text-xs text-slate-500">{tally}</Text>
+        <View className="flex-row flex-wrap gap-x-3">
+          {tally.map((text) => (
+            <Text key={text} className="text-xs leading-5 text-slate-500">
+              {text}
+            </Text>
+          ))}
+        </View>
         {!expanded ? (
           <View className="mt-1 flex-row flex-wrap gap-1">
             {ids.map((id) => (

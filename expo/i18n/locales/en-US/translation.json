@@ -816,12 +816,14 @@
         "retry": "Try again",
         "strength": "Type {{strength}}",
         "riggedNow": "Rigged now",
-        "daysUsed": "{{used}} / {{total}} days used",
         "usageError": "Usage is currently unavailable.",
-        "rigs_one": "{{count}} rig",
-        "rigs_other": "{{count}} rigs",
-        "usedDays_one": "{{count}} day used",
-        "usedDays_other": "{{count}} days used",
+        "usage": {
+          "days_one": "day used",
+          "days_other": "days used",
+          "ofLifetime": "/ {{total}} days used",
+          "rigs_one": "rig",
+          "rigs_other": "rigs"
+        },
         "personalStrength": "Type {{strength}} (yours)",
         "keepPreviousPhoto": "Keep previous photo",
         "groupBy": "Group by",
@@ -843,6 +845,10 @@
         "searchResults_other": "{{shown}} of {{count}} webbings",
         "noResults": "No webbing matches “{{query}}”.",
         "viewHistoryHint": "Opens its history",
+        "a11y": {
+          "model": "Model: {{model}}",
+          "name": "Name: {{name}}"
+        },
         "missing": {
           "model": "No model",
           "unsupported-model": "Unrecognized model",

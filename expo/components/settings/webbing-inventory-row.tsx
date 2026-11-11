@@ -9,9 +9,17 @@ import type {
   InventoryGroupSubject,
   StrengthClaim,
 } from '~/features/webbing/inventory';
+import {
+  summarizeUsage,
+  type UsageSummary,
+} from '~/features/webbing/inventory-display';
 import { Link } from 'expo-router';
-import { ChevronRightIcon } from 'lucide-react-native';
-import { Fragment } from 'react';
+import {
+  ChevronRightIcon,
+  PackageIcon,
+  TagIcon,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -29,6 +37,8 @@ import {
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 
+import { InventoryChip } from './inventory-chip';
+
 const translationKey = 'components.settings.my-webbing';
 
 const STATUS_COLORS: Record<WebbingLifetimeStatus, string> = {
@@ -38,13 +48,26 @@ const STATUS_COLORS: Record<WebbingLifetimeStatus, string> = {
   replace: '#dc2626',
 };
 
-type Detail = { text: string; className?: string; color?: string };
-// Nested `Text` resets to the base size, so each span restates it.
-const DETAIL_TEXT = 'text-xs leading-4 text-slate-500';
+const STATUS_CHIP: Record<WebbingLifetimeStatus, string> = {
+  good: 'bg-emerald-50',
+  unknown: 'bg-slate-100',
+  inspect: 'bg-amber-50',
+  replace: 'bg-red-50',
+};
+
+const STATUS_TEXT: Record<WebbingLifetimeStatus, string> = {
+  good: 'text-emerald-700',
+  unknown: 'text-slate-600',
+  inspect: 'text-amber-800',
+  replace: 'text-red-700',
+};
 
 /**
- * One physical webbing, led by its ID. The whole row opens its history; the
- * photo tile on top of it is a separate button for the personal photo.
+ * One physical webbing, led by its ID and length. Below them, at full width,
+ * each kind of detail gets its own place: model and the owner's name as
+ * labelled lines, rigged state and strength claims as chips, then use. The
+ * whole row opens its history; the photo tile on top of it is a separate
+ * button for the personal photo.
  */
 export function WebbingInventoryRow({
   entry,
@@ -68,64 +91,33 @@ export function WebbingInventoryRow({
 }) {
   const { t, i18n } = useTranslation();
   const { webbing, specs, customName } = entry;
-  const lifetime = specs.recommendedLifetimeDays;
-  const { data: usage, isError: usageError } = useWebbingUsage(
+  const { data, isError: usageError } = useWebbingUsage(
     webbing.id,
-    lifetime,
+    specs.recommendedLifetimeDays,
   );
+  const usage = summarizeUsage(data);
   const model = useModelLabel(entry, subject);
   const idLabel = `ID ${webbing.id}`;
-  const length = `${webbing.length.toLocaleString(i18n.language)} m`;
+  // A no-break space keeps the unit with its number.
+  const length = `${webbing.length.toLocaleString(i18n.language)}\u00A0m`;
   const photo = useWebbingPhotoTile(
     webbing,
     `${idLabel} · ${getWebbingName(webbing)}`,
     fallbackUri,
   );
-  const percentUsed =
-    lifetime && usage?.percentageUsed != null
-      ? Math.max(0, Math.min(100, usage.percentageUsed))
+  const claimLabels = claims.map(({ strength, claim }) => ({
+    text: t(
+      `${translationKey}.${claim === 'model' ? 'strength' : 'personalStrength'}`,
+      { strength },
+    ),
+    // An owner's class next to a different model class is a conflict.
+    conflict: claim === 'personal' && !!specs.modelStrengthClass,
+  }));
+  const metrics = useUsageMetrics(usage);
+  const status =
+    usage?.kind === 'lifetime'
+      ? getTranslatedStatus(usage.status, i18n.language)
       : null;
-
-  const details: Detail[] = [];
-  if (customName)
-    details.push({ text: customName, className: 'text-slate-700' });
-  for (const { strength, claim } of claims)
-    details.push({
-      text: t(
-        `${translationKey}.${claim === 'model' ? 'strength' : 'personalStrength'}`,
-        { strength },
-      ),
-      // An owner's class next to a different model class is a conflict.
-      className:
-        claim === 'personal' && specs.modelStrengthClass
-          ? 'text-amber-700'
-          : undefined,
-    });
-  if (webbing.isUsed)
-    details.push({
-      text: t(`${translationKey}.riggedNow`),
-      className: 'text-emerald-700',
-    });
-  if (usageError) details.push({ text: t(`${translationKey}.usageError`) });
-  else if (usage && percentUsed !== null)
-    details.push(
-      {
-        text: t(`${translationKey}.daysUsed`, {
-          used: usage.usageDays,
-          total: lifetime,
-        }),
-      },
-      {
-        text: getTranslatedStatus(usage.status, i18n.language),
-        className: 'font-semibold',
-        color: STATUS_COLORS[usage.status],
-      },
-    );
-  else if (usage)
-    details.push(
-      { text: t(`${translationKey}.usedDays`, { count: usage.usageDays }) },
-      { text: t(`${translationKey}.rigs`, { count: usage.rigCount }) },
-    );
 
   return (
     <View
@@ -136,16 +128,25 @@ export function WebbingInventoryRow({
         hidden && 'hidden',
       )}
     >
-      {!first ? <View className="ml-[68px] h-px bg-slate-100" /> : null}
-      <View className="flex-row items-center gap-3 py-2.5 pl-3 pr-2">
+      {!first ? <View className="mx-3 h-px bg-slate-100" /> : null}
+      <View>
         <Link asChild href={`/webbing/${webbing.id}`}>
           <Pressable
             accessibilityRole="link"
             accessibilityLabel={[
               idLabel,
               length,
-              model?.text,
-              ...details.map((d) => d.text),
+              webbing.isUsed ? t(`${translationKey}.riggedNow`) : null,
+              model
+                ? t(`${translationKey}.a11y.model`, { model: model.text })
+                : null,
+              customName
+                ? t(`${translationKey}.a11y.name`, { name: customName })
+                : null,
+              ...claimLabels.map((claim) => claim.text),
+              ...metrics.map(({ value, label }) => `${value} ${label}`),
+              status,
+              usageError ? t(`${translationKey}.usageError`) : null,
             ]
               .filter(Boolean)
               .join(', ')}
@@ -154,69 +155,53 @@ export function WebbingInventoryRow({
             className={cn(
               'active:bg-slate-50',
               first && 'rounded-t-2xl',
-              last && 'rounded-b-2xl',
+              last && !photo.error && 'rounded-b-2xl',
             )}
           />
         </Link>
-        <View
-          pointerEvents="none"
-          importantForAccessibility="no-hide-descendants"
-          accessibilityElementsHidden
-          className="flex-1 min-w-0 flex-row items-center gap-3"
-        >
-          <IdBadge id={webbing.id} />
-          <View className="flex-1 min-w-0 gap-0.5">
-            <Text className="text-[15px] leading-5 text-slate-900">
-              <Text className="text-[15px] font-semibold text-slate-900">
+        <View pointerEvents="box-none" className="gap-2 py-2.5 pl-3 pr-2">
+          <View
+            pointerEvents="box-none"
+            className="flex-row items-center gap-3"
+          >
+            <View
+              pointerEvents="none"
+              importantForAccessibility="no-hide-descendants"
+              accessibilityElementsHidden
+              // At large text sizes the length moves under the ID, whole.
+              className="flex-1 min-w-0 flex-row flex-wrap items-center gap-x-3 gap-y-1"
+            >
+              <IdBadge id={webbing.id} />
+              <Text
+                className="text-[17px] font-semibold leading-6 text-slate-900"
+                style={{ fontVariant: ['tabular-nums'] }}
+              >
                 {length}
               </Text>
-              {model ? (
-                <Text
-                  className={cn(
-                    'text-[15px] text-slate-600',
-                    model.muted && 'text-slate-400',
-                  )}
-                >
-                  {' · '}
-                  {model.text}
-                </Text>
-              ) : null}
-            </Text>
-            {details.length ? (
-              <Text className={DETAIL_TEXT}>
-                {details.map((detail, index) => (
-                  <Fragment key={index}>
-                    {index ? ' · ' : null}
-                    <Text
-                      className={cn(DETAIL_TEXT, detail.className)}
-                      style={detail.color ? { color: detail.color } : undefined}
-                    >
-                      {detail.text}
-                    </Text>
-                  </Fragment>
-                ))}
-              </Text>
-            ) : null}
-            {percentUsed !== null && usage ? (
-              <View className="mt-1 h-1 overflow-hidden rounded-full bg-slate-100">
-                <View
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${percentUsed}%`,
-                    backgroundColor: STATUS_COLORS[usage.status],
-                  }}
-                />
-              </View>
-            ) : null}
+            </View>
+            <PhotoTile {...photo.tile} compact />
+            <View pointerEvents="none">
+              <Icon
+                as={ChevronRightIcon}
+                size={16}
+                className="text-slate-300"
+              />
+            </View>
           </View>
-        </View>
-        <PhotoTile {...photo.tile} compact />
-        <View pointerEvents="none">
-          <Icon as={ChevronRightIcon} size={16} className="text-slate-300" />
+          <RowDetails
+            model={model}
+            customName={customName}
+            rigged={webbing.isUsed}
+            claims={claimLabels}
+            usage={usage}
+            usageError={usageError}
+            metrics={metrics}
+            status={status}
+          />
         </View>
       </View>
       {photo.error ? (
-        <View className="flex-row flex-wrap items-center gap-x-3 pb-2.5 pl-[68px] pr-3">
+        <View className="flex-row flex-wrap items-center gap-x-3 pb-2.5 pl-3 pr-3">
           <Text className="text-xs text-destructive">{photo.error}</Text>
           {photo.keepPrevious ? (
             <Pressable
@@ -233,6 +218,199 @@ export function WebbingInventoryRow({
       ) : null}
     </View>
   );
+}
+
+/** Everything below the ID and length, at full width; nothing if empty. */
+function RowDetails({
+  model,
+  customName,
+  rigged,
+  claims,
+  usage,
+  usageError,
+  metrics,
+  status,
+}: {
+  model: { text: string; muted?: boolean } | null;
+  customName: string | null;
+  rigged: boolean;
+  claims: { text: string; conflict: boolean }[];
+  usage: UsageSummary | null;
+  usageError: boolean;
+  metrics: { value: string; label: string }[];
+  status: string | null;
+}) {
+  const { t } = useTranslation();
+  if (
+    !model &&
+    !customName &&
+    !rigged &&
+    !claims.length &&
+    !usage &&
+    !usageError
+  )
+    return null;
+  return (
+    <View
+      pointerEvents="none"
+      importantForAccessibility="no-hide-descendants"
+      accessibilityElementsHidden
+      className="gap-1.5 pr-1"
+    >
+      {model ? (
+        <DetailLine
+          icon={PackageIcon}
+          className={model.muted ? 'text-slate-400' : 'text-slate-600'}
+        >
+          {model.text}
+        </DetailLine>
+      ) : null}
+      {customName ? (
+        <DetailLine icon={TagIcon} className="text-slate-800">
+          {customName}
+        </DetailLine>
+      ) : null}
+      <RowChips rigged={rigged} claims={claims} />
+      {usageError ? (
+        <Text className="text-xs leading-4 text-slate-500">
+          {t(`${translationKey}.usageError`)}
+        </Text>
+      ) : usage ? (
+        <UsageDetails usage={usage} metrics={metrics} status={status} />
+      ) : null}
+    </View>
+  );
+}
+
+/** The rigged state and strength claims, each a chip that wraps whole. */
+function RowChips({
+  rigged,
+  claims,
+}: {
+  rigged: boolean;
+  claims: { text: string; conflict: boolean }[];
+}) {
+  const { t } = useTranslation();
+  if (!rigged && !claims.length) return null;
+  return (
+    <View className="flex-row flex-wrap gap-1.5">
+      {rigged ? (
+        <InventoryChip
+          className="rounded-full bg-emerald-50 px-2"
+          textClassName="font-semibold text-emerald-700"
+          leading={<View className="size-1.5 rounded-full bg-emerald-500" />}
+        >
+          {t(`${translationKey}.riggedNow`)}
+        </InventoryChip>
+      ) : null}
+      {claims.map(({ text, conflict }) => (
+        <InventoryChip
+          key={text}
+          className={cn(
+            'border bg-white',
+            conflict ? 'border-amber-300' : 'border-slate-200',
+          )}
+          textClassName={conflict ? 'text-amber-800' : undefined}
+        >
+          {text}
+        </InventoryChip>
+      ))}
+    </View>
+  );
+}
+
+/** Use as separate figures; against a lifetime, a verdict and a gauge too. */
+function UsageDetails({
+  usage,
+  metrics,
+  status,
+}: {
+  usage: UsageSummary;
+  metrics: { value: string; label: string }[];
+  status: string | null;
+}) {
+  return (
+    <View className="gap-1.5">
+      <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
+        {/* Nested `Text` resets to the base size, so each span restates it. */}
+        {metrics.map(({ value, label }) => (
+          <Text
+            key={label}
+            className="text-[13px] leading-[18px] text-slate-500"
+          >
+            <Text
+              className="text-[13px] font-semibold text-slate-800"
+              style={{ fontVariant: ['tabular-nums'] }}
+            >
+              {value}
+            </Text>{' '}
+            {label}
+          </Text>
+        ))}
+        {usage.kind === 'lifetime' && status ? (
+          <InventoryChip
+            className={cn('ml-auto', STATUS_CHIP[usage.status])}
+            textClassName={cn('font-semibold', STATUS_TEXT[usage.status])}
+          >
+            {status}
+          </InventoryChip>
+        ) : null}
+      </View>
+      {usage.kind === 'lifetime' ? (
+        <View className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+          <View
+            className="h-full rounded-full"
+            style={{
+              width: `${usage.percentUsed}%`,
+              backgroundColor: STATUS_COLORS[usage.status],
+            }}
+          />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** A labelled line of text; the icon says what kind of text it is. */
+function DetailLine({
+  icon,
+  className,
+  children,
+}: {
+  icon: LucideIcon;
+  className?: string;
+  children: string;
+}) {
+  return (
+    <View className="flex-row items-start gap-1.5">
+      <Icon as={icon} size={14} className="mt-[3px] text-slate-400" />
+      <Text className={cn('flex-1 text-sm leading-5', className)}>
+        {children}
+      </Text>
+    </View>
+  );
+}
+
+/** Use as separate figures, each with its own unit, in the owner's locale. */
+function useUsageMetrics(usage: UsageSummary | null) {
+  const { t, i18n } = useTranslation();
+  if (!usage) return [];
+  const format = (value: number) => value.toLocaleString(i18n.language);
+  return [
+    {
+      value: format(usage.usageDays),
+      label:
+        usage.kind === 'lifetime'
+          ? t(`${translationKey}.usage.ofLifetime`, {
+              total: format(usage.lifetimeDays),
+            })
+          : t(`${translationKey}.usage.days`, { count: usage.usageDays }),
+    },
+    {
+      value: format(usage.rigCount),
+      label: t(`${translationKey}.usage.rigs`, { count: usage.rigCount }),
+    },
+  ];
 }
 
 function IdBadge({ id }: { id: number }) {

@@ -816,12 +816,14 @@
         "retry": "Tentar novamente",
         "strength": "Tipo {{strength}}",
         "riggedNow": "Montada agora",
-        "daysUsed": "{{used}} / {{total}} dias usados",
         "usageError": "O uso está indisponível no momento.",
-        "rigs_one": "{{count}} montagem",
-        "rigs_other": "{{count}} montagens",
-        "usedDays_one": "{{count}} dia de uso",
-        "usedDays_other": "{{count}} dias de uso",
+        "usage": {
+          "days_one": "dia de uso",
+          "days_other": "dias de uso",
+          "ofLifetime": "/ {{total}} dias usados",
+          "rigs_one": "montagem",
+          "rigs_other": "montagens"
+        },
         "personalStrength": "Tipo {{strength}} (seu)",
         "keepPreviousPhoto": "Manter foto anterior",
         "groupBy": "Agrupar por",
@@ -843,6 +845,10 @@
         "searchResults_other": "{{shown}} de {{count}} fitas",
         "noResults": "Nenhuma fita corresponde a “{{query}}”.",
         "viewHistoryHint": "Abre o histórico",
+        "a11y": {
+          "model": "Modelo: {{model}}",
+          "name": "Nome: {{name}}"
+        },
         "missing": {
           "model": "Sem modelo",
           "unsupported-model": "Modelo não reconhecido",
