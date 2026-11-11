@@ -30,6 +30,8 @@ export default function MyWebbingsScreen() {
         }}
       />
       <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         contentInsetAdjustmentBehavior="automatic"
         contentContainerClassName="p-4"
       >

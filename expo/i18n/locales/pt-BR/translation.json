@@ -806,7 +806,6 @@
       "my-webbing": {
         "title": "Minhas fitas",
         "add": "Adicionar",
-        "description": "Visualize e acompanhe o histórico de suas fitas.",
         "empty": "Você ainda não cadastrou nenhuma fita",
         "gearSection": "Meu equipamento",
         "count_one": "{{count}} fita",
@@ -815,18 +814,41 @@
         "emptyDescription": "Adicione sua primeira fita para acompanhar o uso e escolher uma foto.",
         "loadError": "Não foi possível carregar suas fitas.",
         "retry": "Tentar novamente",
-        "viewHistory": "Ver histórico de {{name}}",
         "strength": "Tipo {{strength}}",
         "riggedNow": "Montada agora",
         "daysUsed": "{{used}} / {{total}} dias usados",
-        "noLifetime": "Sem recomendação de vida útil",
         "usageError": "O uso está indisponível no momento.",
         "rigs_one": "{{count}} montagem",
         "rigs_other": "{{count}} montagens",
         "usedDays_one": "{{count}} dia de uso",
         "usedDays_other": "{{count}} dias de uso",
         "personalStrength": "Tipo {{strength}} (seu)",
-        "keepPreviousPhoto": "Manter foto anterior"
+        "keepPreviousPhoto": "Manter foto anterior",
+        "groupBy": "Agrupar por",
+        "grouping": {
+          "model": "Modelo",
+          "brand": "Marca",
+          "type": "Tipo",
+          "none": "Nenhum"
+        },
+        "search": "ID, modelo ou marca",
+        "clearSearch": "Limpar busca",
+        "totalLength": "{{length}} m no total",
+        "collapseAll": "Recolher todos",
+        "expandAll": "Expandir todos",
+        "orderedById": "Ordenado por ID",
+        "groupCount_one": "{{count}} grupo",
+        "groupCount_other": "{{count}} grupos",
+        "searchResults_one": "{{shown}} de {{count}} fita",
+        "searchResults_other": "{{shown}} de {{count}} fitas",
+        "noResults": "Nenhuma fita corresponde a “{{query}}”.",
+        "viewHistoryHint": "Abre o histórico",
+        "missing": {
+          "model": "Sem modelo",
+          "unsupported-model": "Modelo não reconhecido",
+          "brand": "Sem marca registrada",
+          "class": "Sem tipo"
+        }
       }
     },
     "webbing-detail": {
