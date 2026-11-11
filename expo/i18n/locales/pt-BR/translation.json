@@ -816,6 +816,7 @@
         "retry": "Tentar novamente",
         "strength": "Tipo {{strength}}",
         "riggedNow": "Montada agora",
+        "length": "Comprimento",
         "usageError": "O uso está indisponível no momento.",
         "usage": {
           "days_one": "dia de uso",

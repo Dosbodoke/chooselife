@@ -20,8 +20,14 @@ import {
   TagIcon,
   type LucideIcon,
 } from 'lucide-react-native';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type LayoutChangeEvent,
+} from 'react-native';
 
 import { useOnlineStatus } from '~/context/react-query';
 import { useWebbingPhoto } from '~/hooks/use-webbing-photo';
@@ -62,6 +68,11 @@ const STATUS_TEXT: Record<WebbingLifetimeStatus, string> = {
   replace: 'text-red-700',
 };
 
+/** The ID field's end padding, the hairline and the length field's start. */
+const FIELD_SEPARATION = 16 + 1 + 16;
+
+const FIELD_VALUE = 'text-[17px] font-semibold leading-[22px] text-slate-900';
+
 /**
  * One physical webbing, led by its ID and length. Below them, at full width,
  * each kind of detail gets its own place: model and the owner's name as
@@ -72,6 +83,7 @@ const STATUS_TEXT: Record<WebbingLifetimeStatus, string> = {
 export function WebbingInventoryRow({
   entry,
   subject,
+  idDigits,
   claims,
   fallbackUri,
   hidden,
@@ -81,6 +93,8 @@ export function WebbingInventoryRow({
   entry: InventoryEntry<WebbingWithUsage>;
   /** The group the row sits in, so it does not repeat the heading. */
   subject: InventoryGroupSubject;
+  /** Digits in the card's widest ID, so every row's length lines up. */
+  idDigits: number;
   claims: StrengthClaim[];
   /** The model photo, unless the group heading already shows it. */
   fallbackUri?: string;
@@ -135,7 +149,7 @@ export function WebbingInventoryRow({
             accessibilityRole="link"
             accessibilityLabel={[
               idLabel,
-              length,
+              `${t(`${translationKey}.length`)} ${length}`,
               webbing.isUsed ? t(`${translationKey}.riggedNow`) : null,
               model
                 ? t(`${translationKey}.a11y.model`, { model: model.text })
@@ -164,21 +178,11 @@ export function WebbingInventoryRow({
             pointerEvents="box-none"
             className="flex-row items-center gap-3"
           >
-            <View
-              pointerEvents="none"
-              importantForAccessibility="no-hide-descendants"
-              accessibilityElementsHidden
-              // At large text sizes the length moves under the ID, whole.
-              className="flex-1 min-w-0 flex-row flex-wrap items-center gap-x-3 gap-y-1"
-            >
-              <IdBadge id={webbing.id} />
-              <Text
-                className="text-[17px] font-semibold leading-6 text-slate-900"
-                style={{ fontVariant: ['tabular-nums'] }}
-              >
-                {length}
-              </Text>
-            </View>
+            <IdentityFields
+              id={webbing.id}
+              idDigits={idDigits}
+              length={length}
+            />
             <PhotoTile {...photo.tile} compact />
             <View pointerEvents="none">
               <Icon
@@ -413,18 +417,97 @@ function useUsageMetrics(usage: UsageSummary | null) {
   ];
 }
 
-function IdBadge({ id }: { id: number }) {
+/**
+ * ID and length as two labelled fields of equal weight, split by a hairline.
+ * The ID field is as wide as the card's widest ID. When both fields do not
+ * fit on one line, at large text sizes or narrow widths, the length moves
+ * under the ID, whole, and the hairline goes with it.
+ */
+function IdentityFields({
+  id,
+  idDigits,
+  length,
+}: {
+  id: number;
+  idDigits: number;
+  length: string;
+}) {
+  const { t } = useTranslation();
+  const [widths, setWidths] = useState({ available: 0, id: 0, length: 0 });
+  // Fields are measured without their separation, so stacking them never
+  // changes what decides it.
+  const measure =
+    (key: keyof typeof widths) =>
+    ({ nativeEvent }: LayoutChangeEvent) => {
+      const { width } = nativeEvent.layout;
+      setWidths((current) =>
+        current[key] === width ? current : { ...current, [key]: width },
+      );
+    };
+  const stacked =
+    widths.available > 0 &&
+    widths.id + FIELD_SEPARATION + widths.length > widths.available;
+
   return (
-    <View className="min-h-11 min-w-11 items-center justify-center rounded-[10px] bg-slate-900 px-1.5 py-1">
-      <Text className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">
-        ID
-      </Text>
-      <Text
-        className="text-base font-bold leading-5 text-white"
-        style={{ fontVariant: ['tabular-nums'] }}
-      >
-        {id}
-      </Text>
+    <View
+      pointerEvents="none"
+      importantForAccessibility="no-hide-descendants"
+      accessibilityElementsHidden
+      onLayout={measure('available')}
+      className="flex-1 min-w-0"
+    >
+      <View className={stacked ? 'items-start gap-1.5' : 'flex-row'}>
+        <View className={stacked ? undefined : 'pr-4'}>
+          <Field label="ID" onLayout={measure('id')}>
+            <Text
+              className={FIELD_VALUE}
+              style={{ fontVariant: ['tabular-nums'] }}
+            >
+              {id}
+            </Text>
+            {/* Tabular digits share one width, so this reserves the widest. */}
+            <Text
+              className={cn(FIELD_VALUE, 'h-0 opacity-0')}
+              style={{ fontVariant: ['tabular-nums'] }}
+            >
+              {'0'.repeat(idDigits)}
+            </Text>
+          </Field>
+        </View>
+        <View
+          className={stacked ? undefined : 'border-l border-slate-200 pl-4'}
+        >
+          <Field
+            label={t(`${translationKey}.length`)}
+            onLayout={measure('length')}
+          >
+            <Text
+              className={FIELD_VALUE}
+              style={{ fontVariant: ['tabular-nums'] }}
+            >
+              {length}
+            </Text>
+          </Field>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** A quiet label above its value. */
+function Field({
+  label,
+  onLayout,
+  children,
+}: {
+  label: string;
+  onLayout: (event: LayoutChangeEvent) => void;
+  children: ReactNode;
+}) {
+  return (
+    <View onLayout={onLayout}>
+      <Text className="text-xs leading-4 text-slate-500">{label}</Text>
+      {children}
     </View>
   );
 }

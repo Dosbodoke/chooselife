@@ -109,14 +109,24 @@ export function WebbingInventoryHeading({
         </View>
         {!expanded ? (
           <View className="mt-1 flex-row flex-wrap gap-1">
-            {ids.map((id) => (
-              <Text
-                key={id}
-                className="overflow-hidden rounded-md bg-slate-900 px-1.5 py-0.5 text-[11px] font-semibold text-white"
-                style={{ fontVariant: ['tabular-nums'] }}
+            {group.entries.map(({ webbing }) => (
+              <InventoryChip
+                key={webbing.id}
+                // Outlined and light, like the row's labelled ID field.
+                className="border border-slate-200 bg-white py-px"
+                textClassName="text-[11px] font-semibold text-slate-800"
               >
-                {id}
-              </Text>
+                {/* Nested `Text` resets to the base size, so it restates it. */}
+                <Text className="text-[11px] font-medium text-slate-500">
+                  ID{'\u00A0'}
+                </Text>
+                <Text
+                  className="text-[11px] font-semibold text-slate-800"
+                  style={{ fontVariant: ['tabular-nums'] }}
+                >
+                  {webbing.id}
+                </Text>
+              </InventoryChip>
             ))}
           </View>
         ) : null}

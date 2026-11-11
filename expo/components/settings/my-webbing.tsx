@@ -196,6 +196,10 @@ function WebbingInventory({ webbings }: { webbings: WebbingWithUsage[] }) {
         {sections.flatMap((section) => {
           const { group, matches, expanded } = section;
           const visible = expanded ? matches : [];
+          const idDigits = Math.max(
+            2,
+            ...matches.map(({ webbing }) => String(webbing.id).length),
+          );
           const headingPhoto =
             group.subject.kind === 'model'
               ? modelPhoto(group.subject.specs)
@@ -215,6 +219,7 @@ function WebbingInventory({ webbings }: { webbings: WebbingWithUsage[] }) {
                 key={`webbing:${entry.webbing.id}`}
                 entry={entry}
                 subject={group.subject}
+                idDigits={idDigits}
                 claims={rowStrengthClaims(entry, group.subject)}
                 fallbackUri={
                   group.subject.kind === 'model'
