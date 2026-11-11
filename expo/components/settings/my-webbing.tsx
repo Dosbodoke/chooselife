@@ -13,6 +13,7 @@ import { Pressable, View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
 import { useOnlineStatus } from '~/context/react-query';
+import { useSavedWebbingCatalogPhotos } from '~/hooks/use-webbing-catalog-assets';
 import { useWebbingPhoto } from '~/hooks/use-webbing-photo';
 import {
   getWebbingName,
@@ -31,6 +32,7 @@ import { Icon } from '~/components/ui/icon';
 import { PrimaryButton } from '~/components/ui/primary-button';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
+import { CatalogAttribution } from '~/components/webbing-catalog-specs';
 
 const translationKey = 'components.settings.my-webbing';
 
@@ -38,6 +40,9 @@ export function MyWebbings() {
   const { t } = useTranslation();
   const { profile } = useAuth();
   const { data: webbings, isPending, isError, refetch } = useUserWebbings();
+  const catalogPhotos = useSavedWebbingCatalogPhotos(
+    profile ? webbings : undefined,
+  );
 
   if (!profile) {
     return (
@@ -94,8 +99,17 @@ export function MyWebbings() {
       ) : (
         <View className="gap-3">
           {webbings.map((webbing) => (
-            <WebbingPhotoRow key={webbing.id} webbing={webbing} />
+            <WebbingPhotoRow
+              key={webbing.id}
+              webbing={webbing}
+              catalogPhotoUri={catalogPhotos.get(
+                resolveWebbingSpecs(webbing).catalog?.sourceId ?? -1,
+              )}
+            />
           ))}
+          {catalogPhotos.size > 0 ? (
+            <CatalogAttribution showPhotoCredit />
+          ) : null}
         </View>
       )}
     </View>
@@ -107,7 +121,10 @@ export function MyWebbings() {
  * and after a failed upload, the tile shows the picked photo, not the stored
  * one.
  */
-function useWebbingPhotoTile(webbing: WebbingWithUsage) {
+function useWebbingPhotoTile(
+  webbing: WebbingWithUsage,
+  catalogPhotoUri?: string,
+) {
   const { t } = useTranslation();
   const isOnline = useOnlineStatus();
   const mutation = useWebbingPhoto(webbing);
@@ -126,7 +143,7 @@ function useWebbingPhotoTile(webbing: WebbingWithUsage) {
     : storedUri
       ? { uri: storedUri }
       : null;
-  // Personal photos only; saved SlackData snapshots never carry upstream images.
+  // Catalog photos are optional display assets, never saved as personal photos.
   const legacyImage = resolveWebbingSpecs(webbing).legacyImagePath;
 
   const save = (asset: LocalPhoto | null) => {
@@ -148,9 +165,9 @@ function useWebbingPhotoTile(webbing: WebbingWithUsage) {
   return {
     tile: {
       value,
-      fallbackUri: legacyImage
-        ? getR2PublicUrl('webbings', legacyImage)
-        : undefined,
+      fallbackUri:
+        catalogPhotoUri ??
+        (legacyImage ? getR2PublicUrl('webbings', legacyImage) : undefined),
       onChange: save,
       transfer: photo.transfer,
       onRetry: isOnline && change?.asset ? () => save(change.asset) : undefined,
@@ -176,10 +193,16 @@ const STATUS_COLORS: Record<WebbingLifetimeStatus, string> = {
   replace: '#dc2626',
 };
 
-function WebbingPhotoRow({ webbing }: { webbing: WebbingWithUsage }) {
+function WebbingPhotoRow({
+  webbing,
+  catalogPhotoUri,
+}: {
+  webbing: WebbingWithUsage;
+  catalogPhotoUri?: string;
+}) {
   const { t } = useTranslation();
   const specs = resolveWebbingSpecs(webbing);
-  const photo = useWebbingPhotoTile(webbing);
+  const photo = useWebbingPhotoTile(webbing, catalogPhotoUri);
 
   return (
     <View className="rounded-2xl bg-white border border-slate-200 p-4 gap-4">
