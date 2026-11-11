@@ -310,3 +310,9 @@ WHERE key = 'min_app_version';
 ```
 
 Any user running a version below `1.4.0` will see a blocking modal and cannot use the app until they update from the store.
+
+### My webbings inventory
+
+My webbings groups physical pieces by model by default. The native grouping menu also offers brand, strength type, and an ungrouped list sorted by ID; the selected grouping is remembered on the device. Model groups use saved SlackData IDs or legacy model IDs, never display names or lengths. Brand comes only from saved catalog data. Type means the existing A+/A/B class: model classes and personally entered classes remain separate, with missing data in explicit unknown groups.
+
+Search covers the whole inventory: a number (or `ID 30`) matches IDs by prefix; other words must all appear in the model, brand, or personal name. Search temporarily reveals matching rows in collapsed groups; clearing it restores the collapsed state. IDs and lengths remain visible in every layout, and collapsed groups summarize their IDs. Model photos appear once in known-model headings; other layouts show each row's model-photo fallback. Personal photos still belong to individual physical pieces. Inventory grouping/search never changes a webbing or its saved specifications.

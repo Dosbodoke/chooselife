@@ -21,6 +21,8 @@ const translationKey = 'components.photo-picker';
 
 export interface PhotoTileProps {
   spec?: PhotoSpec;
+  /** A square list-row tile with an icon-only add hint; labels stay the same. */
+  compact?: boolean;
   /** The personal photo, picked or stored. Only this one can be removed. */
   value: { uri: string } | null;
   /** Shown (contained) when there is no personal photo, e.g. a model image. */
@@ -37,6 +39,7 @@ export interface PhotoTileProps {
 /** Compact photo for list rows that save as soon as a photo is picked. */
 export function PhotoTile({
   spec = PHOTO_SPECS.webbing,
+  compact = false,
   value,
   fallbackUri,
   onChange,
@@ -57,7 +60,8 @@ export function PhotoTile({
   return (
     <View
       className={cn(
-        'h-24 w-20 overflow-hidden rounded-xl border border-border',
+        'overflow-hidden rounded-xl border border-border',
+        compact ? 'size-12' : 'h-24 w-20',
         image
           ? 'bg-muted'
           : 'border-dashed border-muted-foreground/35 bg-muted/50',
@@ -75,6 +79,7 @@ export function PhotoTile({
         className="flex-1 items-center justify-center gap-1.5 active:bg-muted/60"
       >
         <TileFace
+          compact={compact}
           image={image}
           isPersonal={!!value}
           onError={setBrokenUri}
@@ -94,11 +99,13 @@ export function PhotoTile({
 }
 
 function TileFace({
+  compact,
   image,
   isPersonal,
   showAddHint,
   onError,
 }: {
+  compact: boolean;
   image: string | undefined;
   isPersonal: boolean;
   showAddHint: boolean;
@@ -111,9 +118,11 @@ function TileFace({
         <View className="size-8 items-center justify-center rounded-full border border-border bg-background shadow-sm shadow-black/5">
           <Icon as={ImagePlusIcon} className="size-4 text-foreground" />
         </View>
-        <Text className="text-[11px] font-medium text-muted-foreground">
-          {t(`${translationKey}.add`)}
-        </Text>
+        {!compact ? (
+          <Text className="text-[11px] font-medium text-muted-foreground">
+            {t(`${translationKey}.add`)}
+          </Text>
+        ) : null}
       </>
     );
   }
