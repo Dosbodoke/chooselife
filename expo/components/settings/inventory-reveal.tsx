@@ -60,11 +60,13 @@ export function InventoryReveal({
   const contentHeight = useSharedValue(0);
 
   useAnimatedReaction(
-    () => ({ hidden, gone, measured: contentHeight.get() > 0 }),
+    () => ({ hidden, gone, motion, measured: contentHeight.get() > 0 }),
     (current, previous) => {
       if (!previous) return;
       const changed =
-        current.hidden !== previous.hidden || current.gone !== previous.gone;
+        current.hidden !== previous.hidden ||
+        current.gone !== previous.gone ||
+        current.motion !== previous.motion;
       // Content first laid out on its way back: its space can open now.
       const sized = current.measured && !previous.measured && open.get() < 1;
       if (!changed && !sized) return;
@@ -137,13 +139,13 @@ export function InventoryReveal({
 
   return (
     <Animated.View
-      style={spaceStyle}
+      style={[styles.space, spaceStyle]}
       className={gone ? 'hidden' : undefined}
       pointerEvents={hidden ? 'none' : 'auto'}
       accessibilityElementsHidden={hidden}
       importantForAccessibility={hidden ? 'no-hide-descendants' : 'auto'}
     >
-      {/* Not clipped: content below slides over what is fading out. */}
+      {/* Keep fading text inside its shrinking space as the next group moves. */}
       <Animated.View
         style={[styles.content, contentStyle]}
         className={className}
@@ -158,4 +160,7 @@ export function InventoryReveal({
   );
 }
 
-const styles = StyleSheet.create({ content: { top: 0, left: 0, right: 0 } });
+const styles = StyleSheet.create({
+  space: { overflow: 'hidden' },
+  content: { top: 0, left: 0, right: 0 },
+});

@@ -6,7 +6,7 @@ live in `components/settings/inventory-motion.ts`.
 
 ## Reference
 
-- File: `02196428-…-b31c0d94-6ca1-4447-a3b6-74336667326e-mov.mov` (T3
+- File: `726d5f7cb4cd87b7840dff67e352be6e391dc891.mov` (T3
   attachment; not committed). 7.43 s, constant 30 fps, 223 frames,
   2132×2400.
 - Content: a finance "Overview" screen. A card opens a floating sheet of
@@ -58,16 +58,17 @@ here and were not copied. The detail screen keeps its native sheet.
 | Search           | No motion.                                                                                                                                                                                                                                                      | —                                         |
 
 Rows never unmount: `InventoryReveal` animates the row's space and keeps it
-mounted, so photo uploads and the lifetime meter keep their state. Content
-below is not clipped; it slides over what is fading out, as in the
-reference. While the space animates, the content is positioned absolutely so
+mounted, so photo uploads and the lifetime meter keep their state. Each shrinking space clips its departing content so the following heading
+cannot overlap fading row text. This adapts the reference to our transparent
+group headings. While the space animates, the content is positioned absolutely so
 it keeps its own height (in the normal flow, Yoga squeezed it into the
 shrinking space and its measured height collapsed).
 
 ## Rules
 
 - Only an owner's tap on a heading, or Collapse all / Expand all, animates.
-  Search, regrouping and first render show the result at once.
+  Search and first render show the result at once. Regrouping reorders at once
+  with a brief opacity reveal.
 - More than 60 rows in one toggle: instant.
 - Reduce Motion: collapse and expand are instant, the regroup fade is skipped,
   and Reanimated's system setting makes the press and chevron jump to their
@@ -89,6 +90,9 @@ shrinking space and its measured height collapsed).
   animation, but another session took over the simulator before a final
   screen recording, so the fixed motion has not been compared frame by frame
   with the reference on a device.
+- Parent review added clipping to avoid heading/row overlap and resets active
+  transitions when motion is disabled (for example, when search starts).
+  These final adjustments have static validation only.
 - Reduce Motion and Android were not tried on a device.
 - Simulator recordings are variable frame rate; use them for order and rough
   timing, not for fitting.
