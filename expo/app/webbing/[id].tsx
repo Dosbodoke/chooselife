@@ -7,7 +7,7 @@ import {
   type WebbingLifetimeStatus,
   type WebbingRigHistory,
 } from '@chooselife/ui';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   CalendarIcon,
   ExternalLinkIcon,
@@ -17,6 +17,7 @@ import {
   MapPinIcon,
   MoveHorizontalIcon,
   ShieldIcon,
+  XIcon,
   type LucideIcon,
 } from 'lucide-react-native';
 import type { ReactNode } from 'react';
@@ -24,9 +25,11 @@ import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Linking,
+  Pressable,
   ScrollView,
   TouchableOpacity,
   View,
+  type ColorValue,
 } from 'react-native';
 
 import {
@@ -77,25 +80,54 @@ export default function WebbingDetailScreen() {
   const { data: webbings, isPending } = useUserWebbings();
   const webbing = webbings?.find((w) => w.id === webbingId);
 
-  if (isPending) {
-    return (
-      <View className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
+  return (
+    <>
+      {/* Swipe still dismisses; this is the visible way out in every state */}
+      <Stack.Screen
+        options={{
+          headerRight: ({ tintColor }) => <CloseButton tintColor={tintColor} />,
+        }}
+      />
+      {isPending ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" />
+        </View>
+      ) : webbing ? (
+        <WebbingDetail webbing={webbing} />
+      ) : (
+        <View className="flex-1 items-center justify-center p-4">
+          <Text className="text-muted-foreground">
+            {t(`${translationKey}.notFound`)}
+          </Text>
+        </View>
+      )}
+    </>
+  );
+}
 
-  if (!webbing) {
-    return (
-      <View className="flex-1 items-center justify-center p-4">
-        <Text className="text-muted-foreground">
-          {t(`${translationKey}.notFound`)}
-        </Text>
-      </View>
-    );
-  }
+function CloseButton({ tintColor }: { tintColor?: ColorValue }) {
+  const router = useRouter();
+  const { t } = useTranslation();
 
-  return <WebbingDetail webbing={webbing} />;
+  // A cold-opened link has nothing beneath it to return to
+  const close = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/my-webbings');
+    }
+  };
+
+  return (
+    <Pressable
+      onPress={close}
+      accessibilityRole="button"
+      accessibilityLabel={t('common.close')}
+      className="h-11 w-11 items-center justify-center"
+    >
+      <Icon as={XIcon} color={tintColor ?? '#000'} size={24} />
+    </Pressable>
+  );
 }
 
 function WebbingDetail({ webbing }: { webbing: WebbingWithUsage }) {
@@ -103,24 +135,21 @@ function WebbingDetail({ webbing }: { webbing: WebbingWithUsage }) {
   const specs = resolveWebbingSpecs(webbing);
 
   return (
-    <>
-      <Stack.Screen options={{ title: '', headerTransparent: true }} />
-      <ScrollView
-        className="flex-1 bg-muted/30"
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerClassName="pt-16 pb-12 gap-4"
-      >
-        <IdentityCard webbing={webbing} modelName={specs.modelName} />
-        {/* Always shown for an owned item */}
-        <LifetimeCard webbingId={webbing.id} specs={specs} />
-        <SpecificationsCard webbing={webbing} specs={specs} />
-        <CatalogSourceCard specs={specs} />
-        <UsageHistoryCard
-          webbingId={webbing.id}
-          recommendedDays={specs.recommendedLifetimeDays}
-        />
-      </ScrollView>
-    </>
+    <ScrollView
+      className="flex-1 bg-muted/30"
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerClassName="pt-4 pb-12 gap-4"
+    >
+      <IdentityCard webbing={webbing} modelName={specs.modelName} />
+      {/* Always shown for an owned item */}
+      <LifetimeCard webbingId={webbing.id} specs={specs} />
+      <SpecificationsCard webbing={webbing} specs={specs} />
+      <CatalogSourceCard specs={specs} />
+      <UsageHistoryCard
+        webbingId={webbing.id}
+        recommendedDays={specs.recommendedLifetimeDays}
+      />
+    </ScrollView>
   );
 }
 
