@@ -44,6 +44,7 @@ import {
   CatalogAttribution,
   CatalogSpecs,
 } from '~/components/webbing-catalog-specs';
+import { WebbingLifetimeMeter } from '~/components/webbing-lifetime-meter';
 
 const translationKey = 'components.webbing-detail';
 
@@ -55,10 +56,10 @@ const STATUS_COLORS: Record<
   WebbingLifetimeStatus,
   { text: string; bar: string }
 > = {
-  good: { text: 'text-emerald-700', bar: 'bg-emerald-500' },
-  inspect: { text: 'text-amber-700', bar: 'bg-amber-500' },
-  replace: { text: 'text-red-700', bar: 'bg-red-500' },
-  unknown: { text: 'text-muted-foreground', bar: 'bg-slate-300' },
+  good: { text: 'text-emerald-700', bar: '#10b981' },
+  inspect: { text: 'text-amber-700', bar: '#f59e0b' },
+  replace: { text: 'text-red-700', bar: '#ef4444' },
+  unknown: { text: 'text-muted-foreground', bar: '#cbd5e1' },
 };
 
 const ICON_TONES = {
@@ -294,17 +295,11 @@ function UsageProgress({
     <>
       {/* Only against a supported lifetime */}
       {data.percentageUsed !== null && (
-        <View className="mb-2 h-3 rounded-full bg-muted overflow-hidden">
-          <View
-            className={cn(
-              'h-full rounded-full',
-              STATUS_COLORS[data.status].bar,
-            )}
-            style={{
-              width: `${Math.max(0, Math.min(100, data.percentageUsed))}%`,
-            }}
-          />
-        </View>
+        <WebbingLifetimeMeter
+          percentUsed={data.percentageUsed}
+          color={STATUS_COLORS[data.status].bar}
+          className="mb-2 h-3 bg-muted"
+        />
       )}
       <View className="flex-row justify-between mb-3">
         <Text className="text-sm text-muted-foreground">

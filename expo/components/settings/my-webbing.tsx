@@ -221,11 +221,7 @@ function WebbingInventory({ webbings }: { webbings: WebbingWithUsage[] }) {
                 subject={group.subject}
                 idDigits={idDigits}
                 claims={rowStrengthClaims(entry, group.subject)}
-                fallbackUri={
-                  group.subject.kind === 'model'
-                    ? undefined
-                    : modelPhoto(entry.specs)
-                }
+                hasModelPhoto={!!modelPhoto(entry.specs)}
                 hidden={!visible.includes(entry)}
                 first={visible[0] === entry}
                 last={visible[visible.length - 1] === entry}
