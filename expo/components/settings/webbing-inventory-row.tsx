@@ -36,7 +36,6 @@ import { getR2PublicUrl } from '~/lib/r2';
 import { cn } from '~/lib/utils';
 
 import {
-  PhotoAddButton,
   photoErrorMessage,
   PhotoTile,
   usePhotoTransfer,
@@ -82,9 +81,8 @@ const FIELD_VALUE = 'text-[17px] font-semibold leading-[22px] text-slate-900';
  * whole row opens its history; the photo control on top of it is a separate
  * button for the personal photo.
  *
- * Only a personal photo is shown in the row. When the model has a catalog
- * photo, adding one is a quiet icon; with no picture anywhere, an empty
- * frame asks for one.
+ * A model with a catalog photo needs no personal-photo control in its short
+ * card. Models without a catalog image keep the personal-photo picker.
  */
 export function WebbingInventoryRow({
   entry,
@@ -188,11 +186,7 @@ export function WebbingInventoryRow({
               idDigits={idDigits}
               length={length}
             />
-            {photo.tile.value || !hasModelPhoto ? (
-              <PhotoTile {...photo.tile} compact />
-            ) : (
-              <PhotoAddButton {...photo.tile} />
-            )}
+            {!hasModelPhoto ? <PhotoTile {...photo.tile} compact /> : null}
             <View pointerEvents="none">
               <Icon
                 as={ChevronRightIcon}

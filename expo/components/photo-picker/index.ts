@@ -1,4 +1,3 @@
-export { PhotoAddButton } from './photo-add-button';
 export { PhotoCover, type PhotoCoverProps } from './photo-cover';
 export { PhotoTile, type PhotoTileProps } from './photo-tile';
 export {
