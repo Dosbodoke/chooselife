@@ -1,35 +1,43 @@
+import type { ResolvedWebbingSpecs } from '@chooselife/ui';
 import {
-  getTranslatedStatus,
-  resolveWebbingSpecs,
-  useWebbingUsage,
-  type ResolvedWebbingSpecs,
-  type WebbingLifetimeStatus,
-} from '@chooselife/ui';
-import { photoProgress, type LocalPhoto } from '~/features/photos/photo-file';
+  groupInventory,
+  layoutInventory,
+  rowStrengthClaims,
+  toInventoryEntries,
+  totalLength,
+  WEBBING_GROUPINGS,
+  type WebbingGrouping,
+} from '~/features/webbing/inventory';
 import { Link } from 'expo-router';
-import { ChevronRightIcon, PackageIcon } from 'lucide-react-native';
+import { PackageIcon, SearchIcon, XIcon } from 'lucide-react-native';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { useAuth } from '~/context/auth';
-import { useOnlineStatus } from '~/context/react-query';
-import { useWebbingPhoto } from '~/hooks/use-webbing-photo';
-import {
-  getWebbingName,
-  useUserWebbings,
-  type WebbingWithUsage,
-} from '~/hooks/use-webbings';
+import { useSavedWebbingCatalogPhotos } from '~/hooks/use-webbing-catalog-assets';
+import { useWebbingGrouping } from '~/hooks/use-webbing-grouping';
+import { useUserWebbings, type WebbingWithUsage } from '~/hooks/use-webbings';
 import { getR2PublicUrl } from '~/lib/r2';
 
-import {
-  photoErrorMessage,
-  PhotoTile,
-  usePhotoTransfer,
-} from '~/components/photo-picker';
 import { Button } from '~/components/ui/button';
 import { Icon } from '~/components/ui/icon';
+import { PrimaryButton } from '~/components/ui/primary-button';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Text } from '~/components/ui/text';
+import { CatalogAttribution } from '~/components/webbing-catalog-specs';
+
+import { InventoryGroupingMenu } from './inventory-grouping-menu';
+import { MAX_ANIMATED_ROWS, REVEAL } from './inventory-motion';
+import { WebbingInventoryHeading } from './webbing-inventory-heading';
+import { WebbingInventoryRow } from './webbing-inventory-row';
 
 const translationKey = 'components.settings.my-webbing';
 
@@ -43,282 +51,286 @@ export function MyWebbings() {
       <View className="gap-4 p-4">
         <Text>{t(`${translationKey}.loginRequired`)}</Text>
         <Link asChild href="/(modals)/login">
-          <Button>
-            <Text>{t('app.(tabs).settings.logIn')}</Text>
-          </Button>
+          <PrimaryButton label={t('app.(tabs).settings.logIn')} />
         </Link>
       </View>
     );
   }
-
-  return (
-    <View className="gap-5">
-      <View className="gap-1">
-        {!isPending && !isError && (
-          <Text className="text-base font-semibold">
-            {t(`${translationKey}.count`, { count: webbings?.length ?? 0 })}
-          </Text>
-        )}
-        <Text className="text-sm text-muted-foreground">
-          {t(`${translationKey}.description`)}
+  if (isPending) {
+    return (
+      <View className="gap-3">
+        <Skeleton className="h-5 w-24 rounded" />
+        <Skeleton className="h-11 rounded-xl" />
+        {[0, 1, 2].map((id) => (
+          <Skeleton key={id} className="h-16 rounded-2xl" />
+        ))}
+      </View>
+    );
+  }
+  if (isError) {
+    return (
+      <View className="gap-4 rounded-2xl bg-white p-6">
+        <Text>{t(`${translationKey}.loadError`)}</Text>
+        <Button variant="outline" onPress={() => void refetch()}>
+          <Text>{t(`${translationKey}.retry`)}</Text>
+        </Button>
+      </View>
+    );
+  }
+  if (!webbings.length) {
+    return (
+      <View className="items-center gap-3 rounded-2xl bg-white px-6 py-10">
+        <Icon as={PackageIcon} size={32} className="text-muted-foreground" />
+        <Text className="text-center text-base font-semibold">
+          {t(`${translationKey}.empty`)}
+        </Text>
+        <Text className="text-center text-sm text-muted-foreground">
+          {t(`${translationKey}.emptyDescription`)}
         </Text>
       </View>
-      {isPending ? (
-        <View className="gap-3">
-          {[0, 1, 2].map((id) => (
-            <View key={id} className="flex-row gap-3 rounded-2xl bg-white p-4">
-              <Skeleton className="h-24 w-20 rounded-xl" />
-              <View className="flex-1 justify-center gap-3">
-                <Skeleton className="h-4 w-3/4 rounded" />
-                <Skeleton className="h-3 w-1/2 rounded" />
-              </View>
-            </View>
-          ))}
-        </View>
-      ) : isError ? (
-        <View className="gap-4 rounded-2xl bg-white p-6">
-          <Text>{t(`${translationKey}.loadError`)}</Text>
-          <Button variant="outline" onPress={() => void refetch()}>
-            <Text>{t(`${translationKey}.retry`)}</Text>
+    );
+  }
+  // A different viewer starts with a fresh search, collapse and photo state.
+  return <WebbingInventory key={profile.id} webbings={webbings} />;
+}
+
+function WebbingInventory({ webbings }: { webbings: WebbingWithUsage[] }) {
+  const { t, i18n } = useTranslation();
+  const grouping = useWebbingGrouping((state) => state.grouping);
+  const setGrouping = useWebbingGrouping((state) => state.setGrouping);
+  const [query, setQuery] = useState('');
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+  // Groups whose next collapse or expand animates. Only the owner toggling a
+  // group animates it; search and regrouping change the list at once.
+  const [animated, setAnimated] = useState<ReadonlySet<string>>(new Set());
+  const catalogPhotos = useSavedWebbingCatalogPhotos(webbings);
+  const regroupStyle = useRegroupFade();
+
+  const entries = toInventoryEntries(webbings);
+  const sections = layoutInventory(
+    groupInventory(entries, grouping, i18n.language),
+    { query, collapsed },
+  );
+  const searching = !!query.trim();
+  const matchCount = sections.reduce((n, s) => n + s.matches.length, 0);
+  const grouped = grouping !== 'none';
+  const anyExpanded = sections.some((section) => section.expanded);
+
+  const modelPhoto = (specs: ResolvedWebbingSpecs) =>
+    (specs.catalog && catalogPhotos.get(specs.catalog.sourceId)) ||
+    (specs.legacyImagePath
+      ? getR2PublicUrl('webbings', specs.legacyImagePath)
+      : undefined);
+
+  const updateCollapsed = (keys: string[], collapse: boolean) => {
+    setCollapsed((current) => {
+      const next = new Set(current);
+      for (const key of keys) {
+        if (collapse) next.add(key);
+        else next.delete(key);
+      }
+      return next;
+    });
+    const toggled = new Set(keys);
+    const rows = sections
+      .filter((section) => toggled.has(section.group.key))
+      .reduce((n, section) => n + section.matches.length, 0);
+    setAnimated((current) =>
+      rows > MAX_ANIMATED_ROWS ? new Set() : new Set([...current, ...keys]),
+    );
+  };
+  const stopAnimating = () =>
+    setAnimated((current) => (current.size ? new Set() : current));
+  const search = (value: string) => {
+    stopAnimating();
+    setQuery(value);
+  };
+  const regroup = (value: WebbingGrouping) => {
+    stopAnimating();
+    regroupStyle.start();
+    setGrouping(value);
+  };
+
+  return (
+    <View className="gap-3">
+      <View className="flex-row flex-wrap items-baseline justify-between gap-x-3">
+        <Text className="text-base font-semibold text-slate-900">
+          {t(`${translationKey}.count`, { count: entries.length })}
+        </Text>
+        <Text className="text-xs text-slate-500">
+          {t(`${translationKey}.totalLength`, {
+            length: totalLength(entries).toLocaleString(i18n.language),
+          })}
+        </Text>
+      </View>
+
+      {/* At large text sizes the menu wraps below the search field. */}
+      <View className="flex-row flex-wrap items-center gap-2">
+        <InventorySearch value={query} onChangeText={search} />
+        <InventoryGroupingMenu
+          value={grouping}
+          options={WEBBING_GROUPINGS.map((value) => ({
+            value,
+            label: t(`${translationKey}.grouping.${value}`),
+          }))}
+          onChange={regroup}
+          title={t(`${translationKey}.groupBy`)}
+        />
+      </View>
+
+      <View className="min-h-6 flex-row items-center justify-between gap-3 px-1">
+        <Text className="flex-1 text-xs text-slate-500">
+          {searching
+            ? t(`${translationKey}.searchResults`, {
+                shown: matchCount,
+                count: entries.length,
+              })
+            : grouped
+              ? t(`${translationKey}.groupCount`, { count: sections.length })
+              : t(`${translationKey}.orderedById`)}
+        </Text>
+        {grouped && !searching && sections.length > 1 ? (
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+            onPress={() =>
+              updateCollapsed(
+                sections.map((section) => section.group.key),
+                anyExpanded,
+              )
+            }
+          >
+            <Text className="text-xs font-semibold text-blue-600">
+              {t(
+                `${translationKey}.${anyExpanded ? 'collapseAll' : 'expandAll'}`,
+              )}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
+
+      {!matchCount ? (
+        <View className="items-center gap-3 rounded-2xl bg-white px-6 py-8">
+          <Text className="text-center text-sm text-slate-500">
+            {t(`${translationKey}.noResults`, { query: query.trim() })}
+          </Text>
+          <Button variant="outline" onPress={() => search('')}>
+            <Text>{t(`${translationKey}.clearSearch`)}</Text>
           </Button>
         </View>
-      ) : !webbings?.length ? (
-        <View className="items-center rounded-2xl bg-white px-6 py-10 gap-3">
-          <Icon as={PackageIcon} size={32} className="text-muted-foreground" />
-          <Text className="text-base font-semibold text-center">
-            {t(`${translationKey}.empty`)}
-          </Text>
-          <Text className="text-sm text-center text-muted-foreground">
-            {t(`${translationKey}.emptyDescription`)}
-          </Text>
-        </View>
-      ) : (
-        <View className="gap-3">
-          {webbings.map((webbing) => (
-            <WebbingPhotoRow key={webbing.id} webbing={webbing} />
-          ))}
-        </View>
-      )}
+      ) : null}
+
+      {/* One flat, keyed list across every grouping: a row never remounts
+          when it changes group, so an in-flight photo save keeps its state.
+          Collapsed and filtered rows hide instead of unmounting; that is
+          never more than the fully expanded list this screen starts with. */}
+      <Animated.View style={regroupStyle.style}>
+        {sections.flatMap((section) => {
+          const { group, matches, expanded } = section;
+          const visible = expanded ? matches : [];
+          const shown = new Set(visible);
+          const idDigits = Math.max(
+            2,
+            ...matches.map(({ webbing }) => String(webbing.id).length),
+          );
+          const headingPhoto =
+            group.subject.kind === 'model'
+              ? modelPhoto(group.subject.specs)
+              : undefined;
+          return [
+            grouped && matches.length ? (
+              <WebbingInventoryHeading
+                key={`heading:${group.key}`}
+                section={section}
+                searching={searching}
+                animate={animated.has(group.key)}
+                photoUri={headingPhoto}
+                onToggle={() => updateCollapsed([group.key], expanded)}
+              />
+            ) : null,
+            ...group.entries.map((entry, order) => (
+              <WebbingInventoryRow
+                key={`webbing:${entry.webbing.id}`}
+                entry={entry}
+                subject={group.subject}
+                idDigits={idDigits}
+                claims={rowStrengthClaims(entry, group.subject)}
+                hasModelPhoto={!!modelPhoto(entry.specs)}
+                hidden={!shown.has(entry)}
+                animate={animated.has(group.key)}
+                order={order}
+                first={visible[0] === entry}
+                last={visible[visible.length - 1] === entry}
+              />
+            )),
+          ];
+        })}
+      </Animated.View>
+
+      {catalogPhotos.size > 0 && matchCount > 0 ? (
+        <CatalogAttribution showPhotoCredit className="mt-2 px-1" />
+      ) : null}
     </View>
   );
 }
 
 /**
- * The row's photo: saves as soon as one is picked or removed. While saving,
- * and after a failed upload, the tile shows the picked photo, not the stored
- * one.
+ * Regrouping reorders the same row instances in one step; the list then
+ * fades back in like content returning in the reference, instead of
+ * cutting to the new order.
  */
-function useWebbingPhotoTile(webbing: WebbingWithUsage) {
-  const { t } = useTranslation();
-  const isOnline = useOnlineStatus();
-  const mutation = useWebbingPhoto(webbing);
-  const photo = usePhotoTransfer();
-  const change = mutation.variables;
-  const showsChange =
-    !!change &&
-    (mutation.isPending ||
-      mutation.isSuccess ||
-      (mutation.isError && !!change.asset));
-  const storedUri = webbing.image_path
-    ? getR2PublicUrl('webbings', webbing.image_path)
-    : null;
-  const value = showsChange
-    ? change.asset
-    : storedUri
-      ? { uri: storedUri }
-      : null;
-  // Personal photos only; saved SlackData snapshots never carry upstream images.
-  const legacyImage = resolveWebbingSpecs(webbing).legacyImagePath;
-
-  const save = (asset: LocalPhoto | null) => {
-    if (asset) photo.report(photoProgress('preparing'));
-    else photo.reset();
-    mutation.mutate(
-      { asset, onProgress: asset ? photo.report : undefined },
-      {
-        onSuccess: () => {
-          if (asset) photo.succeed();
-        },
-        onError: (error) => {
-          if (asset) photo.fail(photoErrorMessage(t, error));
-        },
-      },
-    );
-  };
-
+function useRegroupFade() {
+  const reduced = useReducedMotion();
+  const shown = useSharedValue(1);
+  const style = useAnimatedStyle(() => ({ opacity: shown.get() }));
   return {
-    tile: {
-      value,
-      fallbackUri: legacyImage
-        ? getR2PublicUrl('webbings', legacyImage)
-        : undefined,
-      onChange: save,
-      transfer: photo.transfer,
-      onRetry: isOnline && change?.asset ? () => save(change.asset) : undefined,
-      disabled: !isOnline,
-      name: getWebbingName(webbing),
+    style,
+    start: () => {
+      if (reduced) return;
+      shown.set(
+        withSequence(
+          withTiming(0, { duration: 0 }),
+          withTiming(1, { duration: REVEAL.duration, easing: REVEAL.easing }),
+        ),
+      );
     },
-    error: mutation.isError ? photoErrorMessage(t, mutation.error) : null,
-    /** After a failed upload, go back to the stored photo. */
-    keepPrevious:
-      mutation.isError && change?.asset
-        ? () => {
-            mutation.reset();
-            photo.reset();
-          }
-        : undefined,
   };
 }
 
-const STATUS_COLORS: Record<WebbingLifetimeStatus, string> = {
-  good: '#059669',
-  unknown: '#059669',
-  inspect: '#b45309',
-  replace: '#dc2626',
-};
-
-function WebbingPhotoRow({ webbing }: { webbing: WebbingWithUsage }) {
+function InventorySearch({
+  value,
+  onChangeText,
+}: {
+  value: string;
+  onChangeText: (value: string) => void;
+}) {
   const { t } = useTranslation();
-  const specs = resolveWebbingSpecs(webbing);
-  const photo = useWebbingPhotoTile(webbing);
-
   return (
-    <View className="rounded-2xl bg-white border border-slate-200 p-4 gap-4">
-      <View className="flex-row gap-3">
-        <PhotoTile {...photo.tile} />
-        <WebbingSummaryLink webbing={webbing} specs={specs} />
-      </View>
-      {photo.error ? (
-        <View className="flex-row flex-wrap items-center gap-x-3 gap-y-1">
-          <Text className="text-xs text-destructive">{photo.error}</Text>
-          {photo.keepPrevious ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={photo.keepPrevious}
-              hitSlop={8}
-            >
-              <Text className="text-xs font-semibold text-primary">
-                {t(`${translationKey}.keepPreviousPhoto`)}
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
-      ) : null}
-      <WebbingLifetime
-        webbingId={webbing.id}
-        lifetime={specs.recommendedLifetimeDays}
+    <View className="min-h-11 grow basis-52 flex-row items-center rounded-xl border border-slate-200 bg-white pl-3">
+      <Icon as={SearchIcon} size={16} className="text-slate-400" />
+      <TextInput
+        accessibilityLabel={t(`${translationKey}.search`)}
+        placeholder={t(`${translationKey}.search`)}
+        placeholderTextColor="#94a3b8"
+        value={value}
+        onChangeText={onChangeText}
+        autoCorrect={false}
+        autoCapitalize="none"
+        returnKeyType="search"
+        className="min-w-0 flex-1 py-2.5 pl-2 text-[15px] text-slate-900"
       />
-    </View>
-  );
-}
-
-function WebbingSummaryLink({
-  webbing,
-  specs,
-}: {
-  webbing: WebbingWithUsage;
-  specs: ResolvedWebbingSpecs;
-}) {
-  const { t } = useTranslation();
-  const name = getWebbingName(webbing);
-  const loops = Number(webbing.left_loop) + Number(webbing.right_loop);
-  const modelStrength = specs.modelStrengthClass?.value;
-  const strength = modelStrength
-    ? t(`${translationKey}.strength`, { strength: modelStrength })
-    : specs.personalStrengthClass
-      ? t(`${translationKey}.personalStrength`, {
-          strength: specs.personalStrengthClass,
-        })
-      : null;
-  const details = [
-    `ID ${webbing.id}`,
-    strength,
-    webbing.isUsed ? t(`${translationKey}.riggedNow`) : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
-  const specLine = [
-    `${webbing.length} m`,
-    specs.materials?.join(' / '),
-    specs.construction,
-    `${loops} ${t(loops === 1 ? 'common.loop' : 'common.loops')}`,
-  ]
-    .filter(Boolean)
-    .join(' · ');
-
-  return (
-    <Link asChild href={`/webbing/${webbing.id}`}>
-      <Pressable
-        accessibilityRole="link"
-        accessibilityLabel={t(`${translationKey}.viewHistory`, { name })}
-        className="flex-1 flex-row items-center gap-2 min-h-11"
-      >
-        <View className="flex-1 gap-1.5">
-          <Text className="text-base font-semibold text-slate-900">{name}</Text>
-          <Text className="text-xs text-slate-500">{details}</Text>
-          <Text className="text-xs leading-5 text-slate-500">{specLine}</Text>
-        </View>
-        <Icon as={ChevronRightIcon} size={16} className="text-slate-400" />
-      </Pressable>
-    </Link>
-  );
-}
-
-function WebbingLifetime({
-  webbingId,
-  lifetime,
-}: {
-  webbingId: number;
-  lifetime: number | null;
-}) {
-  const { t, i18n } = useTranslation();
-  const { data: usage, isError } = useWebbingUsage(webbingId, lifetime);
-
-  if (isError) {
-    return (
-      <Text className="text-xs text-muted-foreground">
-        {t(`${translationKey}.usageError`)}
-      </Text>
-    );
-  }
-  if (!usage) return <Skeleton className="h-4 w-full rounded" />;
-  if (!lifetime || usage.percentageUsed === null) {
-    // No supported lifetime: show recorded use, no bar or remaining life.
-    return (
-      <Text className="text-xs text-slate-500">
-        {t(`${translationKey}.usedDays`, { count: usage.usageDays })} ·{' '}
-        {t(`${translationKey}.rigs`, { count: usage.rigCount })} ·{' '}
-        {t(`${translationKey}.noLifetime`)}
-      </Text>
-    );
-  }
-
-  const color = STATUS_COLORS[usage.status];
-  const percent = Math.max(0, Math.min(100, usage.percentageUsed));
-  return (
-    <View className="gap-1.5">
-      <View className="flex-row justify-between gap-2 flex-wrap">
-        <Text className="text-xs text-slate-500">
-          {t(`${translationKey}.daysUsed`, {
-            used: usage.usageDays,
-            total: lifetime,
-          })}
-        </Text>
-        <Text className="text-xs font-semibold" style={{ color }}>
-          {getTranslatedStatus(usage.status, i18n.language)}
-        </Text>
-      </View>
-      <View
-        accessibilityRole="progressbar"
-        accessibilityLabel={t('components.webbing-detail.lifetime.title')}
-        accessibilityValue={{ min: 0, max: 100, now: percent }}
-        className="h-1 rounded-full bg-slate-100 overflow-hidden"
-      >
-        <View
-          className="h-full rounded-full"
-          style={{ width: `${percent}%`, backgroundColor: color }}
-        />
-      </View>
+      {value ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t(`${translationKey}.clearSearch`)}
+          onPress={() => onChangeText('')}
+          className="size-11 items-center justify-center"
+        >
+          <View className="size-5 items-center justify-center rounded-full bg-slate-200">
+            <Icon as={XIcon} size={12} className="text-slate-600" />
+          </View>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

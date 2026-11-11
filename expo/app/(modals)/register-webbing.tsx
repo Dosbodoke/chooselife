@@ -69,6 +69,7 @@ import {
   AlertTitle,
 } from '~/components/ui/alert';
 import { Button } from '~/components/ui/button';
+import { PrimaryButton } from '~/components/ui/primary-button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { Text } from '~/components/ui/text';
@@ -146,13 +147,11 @@ function SignInRequired() {
 
       <View className="flex-grow" />
 
-      <Button
-        className="w-full rounded-full"
+      <PrimaryButton
         disabled={isLoginPending}
         onPress={() => router.push('/(modals)/login')}
-      >
-        <Text>{t(`${translationKey}.authRequired.action`)}</Text>
-      </Button>
+        label={t(`${translationKey}.authRequired.action`)}
+      />
     </>
   );
 }

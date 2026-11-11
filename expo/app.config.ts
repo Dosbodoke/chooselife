@@ -8,7 +8,7 @@ if (!["development", "preview", "production"].includes(appVariant)) {
 }
 const isDevelopment = appVariant === "development";
 const isProduction = appVariant === "production";
-const version = "1.9.6";
+const version = "1.9.7";
 const applicationId = isProduction
   ? "com.bodok.chooselife"
   : `com.bodok.chooselife.${isDevelopment ? "dev" : "preview"}`;

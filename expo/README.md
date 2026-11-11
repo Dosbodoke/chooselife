@@ -179,6 +179,8 @@ pnpm test features/updates
 
 Webbing registration on iOS/Android searches the hosted, read-only [SlackData](https://slackdata.org) catalog at the fixed `https://slackdata.org/api` base. The browse catalog lives only in the in-memory query cache: it loads when the picker first opens, is never persisted to disk, and is not available offline after a restart. Only the model a user selects is saved, as a normalized `catalog_snapshot` on that physical webbing, and it is never refreshed automatically. Manual registration always works; saving still needs a connection to Choose Life. Catalog data is CC BY-SA 4.0 and its attribution must stay visible wherever it is shown.
 
+Saved webbings also resolve optional product photos from the mirrored SlackData image index when My webbings opens. This shares the picker's memory-only asset cache and matches the saved SlackData ID, model name and brand; it does not fetch or update the saved model specifications. Personal photos take priority, legacy model photos remain available, and missing or unavailable catalog images leave the add-photo placeholder.
+
 Client, photo and registration-flow logic is covered by `pnpm test features/webbing` with injected fixtures, never live requests. Native rendering, bottom-sheet behavior and real uploads still need a manual pass on a development build against local or stage, never production.
 
 ### E2E Tests with Maestro
@@ -308,3 +310,9 @@ WHERE key = 'min_app_version';
 ```
 
 Any user running a version below `1.4.0` will see a blocking modal and cannot use the app until they update from the store.
+
+### My webbings inventory
+
+My webbings groups physical pieces by model by default. The native grouping menu also offers brand, strength type, and an ungrouped list sorted by ID; the selected grouping is remembered on the device. Model groups use saved SlackData IDs or legacy model IDs, never display names or lengths. Brand comes only from saved catalog data. Type means the existing A+/A/B class: model classes and personally entered classes remain separate, with missing data in explicit unknown groups.
+
+Search covers the whole inventory: a number (or `ID 30`) matches IDs by prefix; other words must all appear in the model, brand, or personal name. Search temporarily reveals matching rows in collapsed groups; clearing it restores the collapsed state. IDs and lengths remain visible in every layout, and collapsed groups summarize their IDs. Model photos appear once in known-model headings and never repeat in rows. Short cards omit the personal-photo control when the model has a catalog photo. Without a catalog photo, the row keeps its personal-photo picker. Personal photos still belong to individual physical pieces. The lifetime meter (in rows and on the webbing's detail screen) fills once when it appears and eases to a new value when use changes; with Reduce Motion it only fades in. Inventory grouping/search never changes a webbing or its saved specifications.

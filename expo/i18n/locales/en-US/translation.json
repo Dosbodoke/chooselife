@@ -6,7 +6,8 @@
     "loops": "Loops",
     "optional": "*optional",
     "cancel": "Cancel",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "close": "Close"
   },
   "app": {
     "(festival)": {
@@ -806,7 +807,6 @@
       "my-webbing": {
         "title": "My Webbings",
         "add": "Add",
-        "description": "View and track the history of your webbings.",
         "empty": "You haven't registered any webbing yet",
         "gearSection": "My gear",
         "count_one": "{{count}} webbing",
@@ -815,18 +815,48 @@
         "emptyDescription": "Add your first webbing to track its use and choose a personal photo.",
         "loadError": "Your webbings could not be loaded.",
         "retry": "Try again",
-        "viewHistory": "View history for {{name}}",
         "strength": "Type {{strength}}",
         "riggedNow": "Rigged now",
-        "daysUsed": "{{used}} / {{total}} days used",
-        "noLifetime": "No lifetime recommendation",
+        "length": "Length",
         "usageError": "Usage is currently unavailable.",
-        "rigs_one": "{{count}} rig",
-        "rigs_other": "{{count}} rigs",
-        "usedDays_one": "{{count}} day used",
-        "usedDays_other": "{{count}} days used",
+        "usage": {
+          "days_one": "day used",
+          "days_other": "days used",
+          "ofLifetime": "/ {{total}} days used",
+          "rigs_one": "rig",
+          "rigs_other": "rigs"
+        },
         "personalStrength": "Type {{strength}} (yours)",
-        "keepPreviousPhoto": "Keep previous photo"
+        "keepPreviousPhoto": "Keep previous photo",
+        "groupBy": "Group by",
+        "grouping": {
+          "model": "Model",
+          "brand": "Brand",
+          "type": "Type",
+          "none": "None"
+        },
+        "search": "ID, model or brand",
+        "clearSearch": "Clear search",
+        "totalLength": "{{length}} m in total",
+        "collapseAll": "Collapse all",
+        "expandAll": "Expand all",
+        "orderedById": "Sorted by ID",
+        "groupCount_one": "{{count}} group",
+        "groupCount_other": "{{count}} groups",
+        "searchResults_one": "{{shown}} of {{count}} webbing",
+        "searchResults_other": "{{shown}} of {{count}} webbings",
+        "noResults": "No webbing matches “{{query}}”.",
+        "viewHistoryHint": "Opens its history",
+        "a11y": {
+          "model": "Model: {{model}}",
+          "name": "Name: {{name}}"
+        },
+        "missing": {
+          "model": "No model",
+          "unsupported-model": "Unrecognized model",
+          "brand": "No brand recorded",
+          "class": "No type"
+        }
       }
     },
     "webbing-detail": {
