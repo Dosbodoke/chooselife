@@ -28,6 +28,11 @@ import {
   View,
   type LayoutChangeEvent,
 } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { useOnlineStatus } from '~/context/react-query';
 import { useWebbingPhoto } from '~/hooks/use-webbing-photo';
@@ -45,6 +50,8 @@ import { Text } from '~/components/ui/text';
 import { WebbingLifetimeMeter } from '~/components/webbing-lifetime-meter';
 
 import { InventoryChip } from './inventory-chip';
+import { PRESS_IN } from './inventory-motion';
+import { InventoryReveal } from './inventory-reveal';
 
 const translationKey = 'components.settings.my-webbing';
 
@@ -91,6 +98,8 @@ export function WebbingInventoryRow({
   claims,
   hasModelPhoto,
   hidden,
+  animate,
+  order,
   first,
   last,
 }: {
@@ -104,6 +113,10 @@ export function WebbingInventoryRow({
   hasModelPhoto: boolean;
   /** Collapsed or filtered out: kept mounted so a photo save keeps its state. */
   hidden: boolean;
+  /** Whether a change in `hidden` came from collapsing or expanding. */
+  animate: boolean;
+  /** Position in the group, for the short stagger when it expands. */
+  order: number;
   first: boolean;
   last: boolean;
 }) {
@@ -135,17 +148,21 @@ export function WebbingInventoryRow({
     usage?.kind === 'lifetime'
       ? getTranslatedStatus(usage.status, i18n.language)
       : null;
+  const shape = useLastShownShape(hidden, first, last);
+  const press = usePressHighlight();
 
   return (
-    <View
+    <InventoryReveal
+      hidden={hidden}
+      animate={animate}
+      order={order}
       className={cn(
         'border-x border-slate-200 bg-white',
-        first && 'rounded-t-2xl border-t',
-        last && 'rounded-b-2xl border-b',
-        hidden && 'hidden',
+        shape.first && 'rounded-t-2xl border-t',
+        shape.last && 'rounded-b-2xl border-b',
       )}
     >
-      {!first ? <View className="mx-4 h-px bg-slate-100" /> : null}
+      {!shape.first ? <View className="mx-4 h-px bg-slate-100" /> : null}
       <View>
         <Link asChild href={`/webbing/${webbing.id}`}>
           <Pressable
@@ -168,13 +185,20 @@ export function WebbingInventoryRow({
               .filter(Boolean)
               .join(', ')}
             accessibilityHint={t(`${translationKey}.viewHistoryHint`)}
+            onPressIn={press.onPressIn}
+            onPressOut={press.onPressOut}
             style={StyleSheet.absoluteFill}
             className={cn(
-              'active:bg-slate-50',
-              first && 'rounded-t-2xl',
-              last && !photo.error && 'rounded-b-2xl',
+              'overflow-hidden',
+              shape.first && 'rounded-t-2xl',
+              shape.last && !photo.error && 'rounded-b-2xl',
             )}
-          />
+          >
+            <Animated.View
+              style={[StyleSheet.absoluteFill, press.style]}
+              className="bg-slate-50"
+            />
+          </Pressable>
         </Link>
         <View pointerEvents="box-none" className="gap-2.5 py-3 pl-4 pr-2">
           <View
@@ -223,8 +247,30 @@ export function WebbingInventoryRow({
           ) : null}
         </View>
       ) : null}
-    </View>
+    </InventoryReveal>
   );
+}
+
+/** Where the row sat in its card when last shown: it fades out as it was. */
+function useLastShownShape(hidden: boolean, first: boolean, last: boolean) {
+  const [shape, setShape] = useState({ first, last });
+  if (!hidden && (shape.first !== first || shape.last !== last))
+    setShape({ first, last });
+  return shape;
+}
+
+/**
+ * The row's pressed tint: in over ~100 ms like the reference press, out a
+ * little slower so a quick tap still registers.
+ */
+function usePressHighlight() {
+  const pressed = useSharedValue(0);
+  const style = useAnimatedStyle(() => ({ opacity: pressed.get() }));
+  return {
+    style,
+    onPressIn: () => pressed.set(withTiming(1, PRESS_IN)),
+    onPressOut: () => pressed.set(withTiming(0, { duration: 150 })),
+  };
 }
 
 /** Everything below the ID and length, at full width; nothing if empty. */

@@ -6,12 +6,20 @@ import {
   toInventoryEntries,
   totalLength,
   WEBBING_GROUPINGS,
+  type WebbingGrouping,
 } from '~/features/webbing/inventory';
 import { Link } from 'expo-router';
 import { PackageIcon, SearchIcon, XIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, TextInput, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { useAuth } from '~/context/auth';
 import { useSavedWebbingCatalogPhotos } from '~/hooks/use-webbing-catalog-assets';
@@ -27,6 +35,7 @@ import { Text } from '~/components/ui/text';
 import { CatalogAttribution } from '~/components/webbing-catalog-specs';
 
 import { InventoryGroupingMenu } from './inventory-grouping-menu';
+import { MAX_ANIMATED_ROWS, REVEAL } from './inventory-motion';
 import { WebbingInventoryHeading } from './webbing-inventory-heading';
 import { WebbingInventoryRow } from './webbing-inventory-row';
 
@@ -91,7 +100,11 @@ function WebbingInventory({ webbings }: { webbings: WebbingWithUsage[] }) {
   const setGrouping = useWebbingGrouping((state) => state.setGrouping);
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+  // Groups whose next collapse or expand animates. Only the owner toggling a
+  // group animates it; search and regrouping change the list at once.
+  const [animated, setAnimated] = useState<ReadonlySet<string>>(new Set());
   const catalogPhotos = useSavedWebbingCatalogPhotos(webbings);
+  const regroupStyle = useRegroupFade();
 
   const entries = toInventoryEntries(webbings);
   const sections = layoutInventory(
@@ -109,7 +122,7 @@ function WebbingInventory({ webbings }: { webbings: WebbingWithUsage[] }) {
       ? getR2PublicUrl('webbings', specs.legacyImagePath)
       : undefined);
 
-  const updateCollapsed = (keys: string[], collapse: boolean) =>
+  const updateCollapsed = (keys: string[], collapse: boolean) => {
     setCollapsed((current) => {
       const next = new Set(current);
       for (const key of keys) {
@@ -118,6 +131,25 @@ function WebbingInventory({ webbings }: { webbings: WebbingWithUsage[] }) {
       }
       return next;
     });
+    const toggled = new Set(keys);
+    const rows = sections
+      .filter((section) => toggled.has(section.group.key))
+      .reduce((n, section) => n + section.matches.length, 0);
+    setAnimated((current) =>
+      rows > MAX_ANIMATED_ROWS ? new Set() : new Set([...current, ...keys]),
+    );
+  };
+  const stopAnimating = () =>
+    setAnimated((current) => (current.size ? new Set() : current));
+  const search = (value: string) => {
+    stopAnimating();
+    setQuery(value);
+  };
+  const regroup = (value: WebbingGrouping) => {
+    stopAnimating();
+    regroupStyle.start();
+    setGrouping(value);
+  };
 
   return (
     <View className="gap-3">
@@ -134,14 +166,14 @@ function WebbingInventory({ webbings }: { webbings: WebbingWithUsage[] }) {
 
       {/* At large text sizes the menu wraps below the search field. */}
       <View className="flex-row flex-wrap items-center gap-2">
-        <InventorySearch value={query} onChangeText={setQuery} />
+        <InventorySearch value={query} onChangeText={search} />
         <InventoryGroupingMenu
           value={grouping}
           options={WEBBING_GROUPINGS.map((value) => ({
             value,
             label: t(`${translationKey}.grouping.${value}`),
           }))}
-          onChange={setGrouping}
+          onChange={regroup}
           title={t(`${translationKey}.groupBy`)}
         />
       </View>
@@ -182,7 +214,7 @@ function WebbingInventory({ webbings }: { webbings: WebbingWithUsage[] }) {
           <Text className="text-center text-sm text-slate-500">
             {t(`${translationKey}.noResults`, { query: query.trim() })}
           </Text>
-          <Button variant="outline" onPress={() => setQuery('')}>
+          <Button variant="outline" onPress={() => search('')}>
             <Text>{t(`${translationKey}.clearSearch`)}</Text>
           </Button>
         </View>
@@ -192,10 +224,11 @@ function WebbingInventory({ webbings }: { webbings: WebbingWithUsage[] }) {
           when it changes group, so an in-flight photo save keeps its state.
           Collapsed and filtered rows hide instead of unmounting; that is
           never more than the fully expanded list this screen starts with. */}
-      <View>
+      <Animated.View style={regroupStyle.style}>
         {sections.flatMap((section) => {
           const { group, matches, expanded } = section;
           const visible = expanded ? matches : [];
+          const shown = new Set(visible);
           const idDigits = Math.max(
             2,
             ...matches.map(({ webbing }) => String(webbing.id).length),
@@ -210,11 +243,12 @@ function WebbingInventory({ webbings }: { webbings: WebbingWithUsage[] }) {
                 key={`heading:${group.key}`}
                 section={section}
                 searching={searching}
+                animate={animated.has(group.key)}
                 photoUri={headingPhoto}
                 onToggle={() => updateCollapsed([group.key], expanded)}
               />
             ) : null,
-            ...group.entries.map((entry) => (
+            ...group.entries.map((entry, order) => (
               <WebbingInventoryRow
                 key={`webbing:${entry.webbing.id}`}
                 entry={entry}
@@ -222,20 +256,45 @@ function WebbingInventory({ webbings }: { webbings: WebbingWithUsage[] }) {
                 idDigits={idDigits}
                 claims={rowStrengthClaims(entry, group.subject)}
                 hasModelPhoto={!!modelPhoto(entry.specs)}
-                hidden={!visible.includes(entry)}
+                hidden={!shown.has(entry)}
+                animate={animated.has(group.key)}
+                order={order}
                 first={visible[0] === entry}
                 last={visible[visible.length - 1] === entry}
               />
             )),
           ];
         })}
-      </View>
+      </Animated.View>
 
       {catalogPhotos.size > 0 && matchCount > 0 ? (
         <CatalogAttribution showPhotoCredit className="mt-2 px-1" />
       ) : null}
     </View>
   );
+}
+
+/**
+ * Regrouping reorders the same row instances in one step; the list then
+ * fades back in like content returning in the reference, instead of
+ * cutting to the new order.
+ */
+function useRegroupFade() {
+  const reduced = useReducedMotion();
+  const shown = useSharedValue(1);
+  const style = useAnimatedStyle(() => ({ opacity: shown.get() }));
+  return {
+    style,
+    start: () => {
+      if (reduced) return;
+      shown.set(
+        withSequence(
+          withTiming(0, { duration: 0 }),
+          withTiming(1, { duration: REVEAL.duration, easing: REVEAL.easing }),
+        ),
+      );
+    },
+  };
 }
 
 function InventorySearch({
