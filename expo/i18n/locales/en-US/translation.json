@@ -6,7 +6,8 @@
     "loops": "Loops",
     "optional": "*optional",
     "cancel": "Cancel",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "close": "Close"
   },
   "app": {
     "(festival)": {

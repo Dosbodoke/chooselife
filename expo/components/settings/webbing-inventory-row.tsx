@@ -28,6 +28,11 @@ import {
   View,
   type LayoutChangeEvent,
 } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { useOnlineStatus } from '~/context/react-query';
 import { useWebbingPhoto } from '~/hooks/use-webbing-photo';
@@ -42,8 +47,11 @@ import {
 } from '~/components/photo-picker';
 import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
+import { WebbingLifetimeMeter } from '~/components/webbing-lifetime-meter';
 
 import { InventoryChip } from './inventory-chip';
+import { PRESS_IN } from './inventory-motion';
+import { InventoryReveal } from './inventory-reveal';
 
 const translationKey = 'components.settings.my-webbing';
 
@@ -77,16 +85,21 @@ const FIELD_VALUE = 'text-[17px] font-semibold leading-[22px] text-slate-900';
  * One physical webbing, led by its ID and length. Below them, at full width,
  * each kind of detail gets its own place: model and the owner's name as
  * labelled lines, rigged state and strength claims as chips, then use. The
- * whole row opens its history; the photo tile on top of it is a separate
+ * whole row opens its history; the photo control on top of it is a separate
  * button for the personal photo.
+ *
+ * A model with a catalog photo needs no personal-photo control in its short
+ * card. Models without a catalog image keep the personal-photo picker.
  */
 export function WebbingInventoryRow({
   entry,
   subject,
   idDigits,
   claims,
-  fallbackUri,
+  hasModelPhoto,
   hidden,
+  animate,
+  order,
   first,
   last,
 }: {
@@ -96,10 +109,14 @@ export function WebbingInventoryRow({
   /** Digits in the card's widest ID, so every row's length lines up. */
   idDigits: number;
   claims: StrengthClaim[];
-  /** The model photo, unless the group heading already shows it. */
-  fallbackUri?: string;
+  /** The model has a catalog photo, in the heading or not. */
+  hasModelPhoto: boolean;
   /** Collapsed or filtered out: kept mounted so a photo save keeps its state. */
   hidden: boolean;
+  /** Whether a change in `hidden` came from collapsing or expanding. */
+  animate: boolean;
+  /** Position in the group, for the short stagger when it expands. */
+  order: number;
   first: boolean;
   last: boolean;
 }) {
@@ -117,7 +134,6 @@ export function WebbingInventoryRow({
   const photo = useWebbingPhotoTile(
     webbing,
     `${idLabel} · ${getWebbingName(webbing)}`,
-    fallbackUri,
   );
   const claimLabels = claims.map(({ strength, claim }) => ({
     text: t(
@@ -132,17 +148,21 @@ export function WebbingInventoryRow({
     usage?.kind === 'lifetime'
       ? getTranslatedStatus(usage.status, i18n.language)
       : null;
+  const shape = useLastShownShape(hidden, first, last);
+  const press = usePressHighlight();
 
   return (
-    <View
+    <InventoryReveal
+      hidden={hidden}
+      animate={animate}
+      order={order}
       className={cn(
         'border-x border-slate-200 bg-white',
-        first && 'rounded-t-2xl border-t',
-        last && 'rounded-b-2xl border-b',
-        hidden && 'hidden',
+        shape.first && 'rounded-t-2xl border-t',
+        shape.last && 'rounded-b-2xl border-b',
       )}
     >
-      {!first ? <View className="mx-3 h-px bg-slate-100" /> : null}
+      {!shape.first ? <View className="mx-4 h-px bg-slate-100" /> : null}
       <View>
         <Link asChild href={`/webbing/${webbing.id}`}>
           <Pressable
@@ -165,15 +185,22 @@ export function WebbingInventoryRow({
               .filter(Boolean)
               .join(', ')}
             accessibilityHint={t(`${translationKey}.viewHistoryHint`)}
+            onPressIn={press.onPressIn}
+            onPressOut={press.onPressOut}
             style={StyleSheet.absoluteFill}
             className={cn(
-              'active:bg-slate-50',
-              first && 'rounded-t-2xl',
-              last && !photo.error && 'rounded-b-2xl',
+              'overflow-hidden',
+              shape.first && 'rounded-t-2xl',
+              shape.last && !photo.error && 'rounded-b-2xl',
             )}
-          />
+          >
+            <Animated.View
+              style={[StyleSheet.absoluteFill, press.style]}
+              className="bg-slate-50"
+            />
+          </Pressable>
         </Link>
-        <View pointerEvents="box-none" className="gap-2 py-2.5 pl-3 pr-2">
+        <View pointerEvents="box-none" className="gap-2.5 py-3 pl-4 pr-2">
           <View
             pointerEvents="box-none"
             className="flex-row items-center gap-3"
@@ -183,7 +210,7 @@ export function WebbingInventoryRow({
               idDigits={idDigits}
               length={length}
             />
-            <PhotoTile {...photo.tile} compact />
+            {!hasModelPhoto ? <PhotoTile {...photo.tile} compact /> : null}
             <View pointerEvents="none">
               <Icon
                 as={ChevronRightIcon}
@@ -205,7 +232,7 @@ export function WebbingInventoryRow({
         </View>
       </View>
       {photo.error ? (
-        <View className="flex-row flex-wrap items-center gap-x-3 pb-2.5 pl-3 pr-3">
+        <View className="flex-row flex-wrap items-center gap-x-3 pb-3 pl-4 pr-3">
           <Text className="text-xs text-destructive">{photo.error}</Text>
           {photo.keepPrevious ? (
             <Pressable
@@ -220,8 +247,30 @@ export function WebbingInventoryRow({
           ) : null}
         </View>
       ) : null}
-    </View>
+    </InventoryReveal>
   );
+}
+
+/** Where the row sat in its card when last shown: it fades out as it was. */
+function useLastShownShape(hidden: boolean, first: boolean, last: boolean) {
+  const [shape, setShape] = useState({ first, last });
+  if (!hidden && (shape.first !== first || shape.last !== last))
+    setShape({ first, last });
+  return shape;
+}
+
+/**
+ * The row's pressed tint: in over ~100 ms like the reference press, out a
+ * little slower so a quick tap still registers.
+ */
+function usePressHighlight() {
+  const pressed = useSharedValue(0);
+  const style = useAnimatedStyle(() => ({ opacity: pressed.get() }));
+  return {
+    style,
+    onPressIn: () => pressed.set(withTiming(1, PRESS_IN)),
+    onPressOut: () => pressed.set(withTiming(0, { duration: 150 })),
+  };
 }
 
 /** Everything below the ID and length, at full width; nothing if empty. */
@@ -259,7 +308,7 @@ function RowDetails({
       pointerEvents="none"
       importantForAccessibility="no-hide-descendants"
       accessibilityElementsHidden
-      className="gap-1.5 pr-1"
+      className="gap-2 pr-2"
     >
       {model ? (
         <DetailLine
@@ -334,7 +383,7 @@ function UsageDetails({
   status: string | null;
 }) {
   return (
-    <View className="gap-1.5">
+    <View className="gap-2">
       <View className="flex-row flex-wrap items-center gap-x-4 gap-y-1">
         {/* Nested `Text` resets to the base size, so each span restates it. */}
         {metrics.map(({ value, label }) => (
@@ -361,15 +410,11 @@ function UsageDetails({
         ) : null}
       </View>
       {usage.kind === 'lifetime' ? (
-        <View className="h-1.5 overflow-hidden rounded-full bg-slate-100">
-          <View
-            className="h-full rounded-full"
-            style={{
-              width: `${usage.percentUsed}%`,
-              backgroundColor: STATUS_COLORS[usage.status],
-            }}
-          />
-        </View>
+        <WebbingLifetimeMeter
+          percentUsed={usage.percentUsed}
+          color={STATUS_COLORS[usage.status]}
+          className="h-1.5"
+        />
       ) : null}
     </View>
   );
@@ -543,11 +588,7 @@ function useModelLabel(
  * The row's personal photo: saves as soon as one is picked or removed. While
  * saving, and after a failed upload, the tile shows the picked photo.
  */
-function useWebbingPhotoTile(
-  webbing: WebbingWithUsage,
-  name: string,
-  fallbackUri?: string,
-) {
+function useWebbingPhotoTile(webbing: WebbingWithUsage, name: string) {
   const { t } = useTranslation();
   const isOnline = useOnlineStatus();
   const mutation = useWebbingPhoto(webbing);
@@ -583,8 +624,6 @@ function useWebbingPhotoTile(
   return {
     tile: {
       value,
-      // Model photos are display-only fallbacks, never saved as personal photos.
-      fallbackUri,
       onChange: save,
       transfer: photo.transfer,
       onRetry: isOnline && change?.asset ? () => save(change.asset) : undefined,

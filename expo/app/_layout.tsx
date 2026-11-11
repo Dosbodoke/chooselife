@@ -128,7 +128,10 @@ export default Sentry.wrap(function RootLayout() {
                             options={{
                               presentation: 'modal',
                               animation: 'slide_from_bottom',
-                              headerShown: false,
+                              title: '',
+                              headerShadowVisible: false,
+                              // The close button replaces Android's header back arrow
+                              headerBackVisible: false,
                             }}
                           />
                           <Stack.Screen

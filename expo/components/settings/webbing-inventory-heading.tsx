@@ -5,14 +5,18 @@ import {
 } from '~/features/webbing/inventory';
 import { modelSpecs } from '~/features/webbing/inventory-display';
 import { Image } from 'expo-image';
-import {
-  ChevronDownIcon,
-  ChevronRightIcon,
-  PackageIcon,
-} from 'lucide-react-native';
+import { ChevronRightIcon, PackageIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useDerivedValue,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 import type { WebbingWithUsage } from '~/hooks/use-webbings';
 import { cn } from '~/lib/utils';
@@ -21,8 +25,21 @@ import { Icon } from '~/components/ui/icon';
 import { Text } from '~/components/ui/text';
 
 import { InventoryChip } from './inventory-chip';
+import {
+  COLLAPSE_SPRING,
+  EXPAND_SPRING,
+  PRESS_IN,
+  PRESS_RELEASE_SPRING,
+} from './inventory-motion';
+import { InventoryReveal } from './inventory-reveal';
 
 const translationKey = 'components.settings.my-webbing';
+
+/**
+ * The wide pill in the reference pressed to 0.96. A section heading is not a
+ * primary button, so it gives a little less.
+ */
+const PRESSED_SCALE = 0.97;
 
 /**
  * A group's heading and collapse toggle. While searching, matching groups are
@@ -31,11 +48,14 @@ const translationKey = 'components.settings.my-webbing';
 export function WebbingInventoryHeading({
   section: { group, matches, expanded },
   searching,
+  animate,
   photoUri,
   onToggle,
 }: {
   section: InventorySection<WebbingWithUsage>;
   searching: boolean;
+  /** Whether a change in `expanded` came from the owner toggling it. */
+  animate: boolean;
   /** The model photo, for model groups. */
   photoUri?: string;
   onToggle: () => void;
@@ -64,10 +84,13 @@ export function WebbingInventoryHeading({
     }),
   ];
   const ids = group.entries.map(({ webbing }) => `ID ${webbing.id}`);
+  const press = usePressScale();
 
   return (
     <Pressable
       onPress={onToggle}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
       disabled={searching}
       accessibilityRole="button"
       accessibilityLabel={[
@@ -77,38 +100,48 @@ export function WebbingInventoryHeading({
         ...(expanded ? [] : ids),
       ].join(', ')}
       accessibilityState={{ expanded, disabled: searching }}
-      className="min-h-14 flex-row items-center gap-3 px-1 pb-2 pt-5 active:opacity-70"
     >
-      <SubjectMark subject={group.subject} photoUri={photoUri} />
-      <View className="flex-1 min-w-0 gap-0.5">
-        <Text className="text-[15px] font-semibold leading-5 text-slate-900">
-          {title}
-        </Text>
-        {facts.length ? (
-          <View className="mt-0.5 flex-row flex-wrap gap-1">
-            {facts.map(({ key, isClass, text }) => (
-              <InventoryChip
-                key={key}
-                // On the page background, so white rather than grey.
-                className={cn('bg-white', isClass && 'border border-slate-300')}
-                textClassName={
-                  isClass ? 'font-semibold text-slate-800' : undefined
-                }
-              >
+      <Animated.View
+        style={press.style}
+        className="min-h-14 flex-row items-center gap-3 px-1 pb-2 pt-5"
+      >
+        <SubjectMark subject={group.subject} photoUri={photoUri} />
+        <View className="flex-1 min-w-0 gap-0.5">
+          <Text className="text-[15px] font-semibold leading-5 text-slate-900">
+            {title}
+          </Text>
+          {facts.length ? (
+            <View className="mt-0.5 flex-row flex-wrap gap-1">
+              {facts.map(({ key, isClass, text }) => (
+                <InventoryChip
+                  key={key}
+                  // On the page background, so white rather than grey.
+                  className={cn(
+                    'bg-white',
+                    isClass && 'border border-slate-300',
+                  )}
+                  textClassName={
+                    isClass ? 'font-semibold text-slate-800' : undefined
+                  }
+                >
+                  {text}
+                </InventoryChip>
+              ))}
+            </View>
+          ) : null}
+          <View className="flex-row flex-wrap gap-x-3">
+            {tally.map((text) => (
+              <Text key={text} className="text-xs leading-5 text-slate-500">
                 {text}
-              </InventoryChip>
+              </Text>
             ))}
           </View>
-        ) : null}
-        <View className="flex-row flex-wrap gap-x-3">
-          {tally.map((text) => (
-            <Text key={text} className="text-xs leading-5 text-slate-500">
-              {text}
-            </Text>
-          ))}
-        </View>
-        {!expanded ? (
-          <View className="mt-1 flex-row flex-wrap gap-1">
+          {/* The IDs stand in for the rows: they arrive as the rows leave. */}
+          <InventoryReveal
+            hidden={expanded}
+            animate={animate}
+            className="flex-row flex-wrap gap-1 pt-1"
+          >
             {group.entries.map(({ webbing }) => (
               <InventoryChip
                 key={webbing.id}
@@ -128,18 +161,51 @@ export function WebbingInventoryHeading({
                 </Text>
               </InventoryChip>
             ))}
-          </View>
-        ) : null}
-      </View>
-      {!searching ? (
-        <Icon
-          as={expanded ? ChevronDownIcon : ChevronRightIcon}
-          size={18}
-          className="text-slate-400"
-        />
-      ) : null}
+          </InventoryReveal>
+        </View>
+        {!searching ? <Chevron expanded={expanded} animate={animate} /> : null}
+      </Animated.View>
     </Pressable>
   );
+}
+
+/** Points down when open; turns with the rows rather than swapping. */
+function Chevron({
+  expanded,
+  animate,
+}: {
+  expanded: boolean;
+  animate: boolean;
+}) {
+  const reduced = useReducedMotion();
+  const turn = useDerivedValue(() =>
+    animate && !reduced
+      ? withSpring(expanded ? 1 : 0, expanded ? EXPAND_SPRING : COLLAPSE_SPRING)
+      : expanded
+        ? 1
+        : 0,
+  );
+  const style = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${turn.get() * 90}deg` }],
+  }));
+  return (
+    <Animated.View style={style}>
+      <Icon as={ChevronRightIcon} size={18} className="text-slate-400" />
+    </Animated.View>
+  );
+}
+
+/** Presses in over ~100 ms and springs back, as measured in the reference. */
+function usePressScale() {
+  const scale = useSharedValue(1);
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.get() }],
+  }));
+  return {
+    style,
+    onPressIn: () => scale.set(withTiming(PRESSED_SCALE, PRESS_IN)),
+    onPressOut: () => scale.set(withSpring(1, PRESS_RELEASE_SPRING)),
+  };
 }
 
 function useSubjectTitle(subject: InventoryGroupSubject) {
