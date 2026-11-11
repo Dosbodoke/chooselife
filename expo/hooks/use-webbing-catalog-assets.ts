@@ -1,8 +1,10 @@
+import { resolveWebbingSpecs, type WebbingSpecsInput } from '@chooselife/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   catalogAssetsQueryKey,
   catalogAssetsQueryOptions,
   fetchCatalogAssets,
+  matchCatalogPhotos,
   shouldLoadCatalogAssets,
 } from '~/features/webbing/catalog-assets';
 
@@ -15,12 +17,17 @@ const queryFn = ({ signal }: { signal: AbortSignal }) =>
 
 /**
  * Optional catalog photos, loaded alongside the hosted catalog when the
- * picker opens. Errors are never surfaced: without assets, cards simply
- * show no photo.
+ * picker opens, or on mount for saved catalog webbings. Without assets,
+ * cards simply show no photo.
  */
-export function useWebbingCatalogAssets() {
+export function useWebbingCatalogAssets({ enabled = false } = {}) {
   const queryClient = useQueryClient();
-  const query = useQuery({ ...catalogAssetsQueryOptions, queryFn });
+  const query = useQuery({
+    ...catalogAssetsQueryOptions,
+    queryFn,
+    enabled,
+    refetchOnMount: enabled,
+  });
 
   const loadOnOpen = () => {
     if (
@@ -34,4 +41,16 @@ export function useWebbingCatalogAssets() {
   };
 
   return { data: query.data, loadOnOpen };
+}
+
+/** Resolve optional photos from saved specs, without fetching the live catalog. */
+export function useSavedWebbingCatalogPhotos(
+  webbings: WebbingSpecsInput[] = [],
+) {
+  const snapshots = webbings.flatMap((webbing) => {
+    const catalog = resolveWebbingSpecs(webbing).catalog;
+    return catalog ? [catalog] : [];
+  });
+  const assets = useWebbingCatalogAssets({ enabled: snapshots.length > 0 });
+  return matchCatalogPhotos(assets.data, snapshots, slackDataUrl).uris;
 }

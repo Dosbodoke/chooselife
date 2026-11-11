@@ -179,6 +179,8 @@ pnpm test features/updates
 
 Webbing registration on iOS/Android searches the hosted, read-only [SlackData](https://slackdata.org) catalog at the fixed `https://slackdata.org/api` base. The browse catalog lives only in the in-memory query cache: it loads when the picker first opens, is never persisted to disk, and is not available offline after a restart. Only the model a user selects is saved, as a normalized `catalog_snapshot` on that physical webbing, and it is never refreshed automatically. Manual registration always works; saving still needs a connection to Choose Life. Catalog data is CC BY-SA 4.0 and its attribution must stay visible wherever it is shown.
 
+Saved webbings also resolve optional product photos from the mirrored SlackData image index when My webbings opens. This shares the picker's memory-only asset cache and matches the saved SlackData ID, model name and brand; it does not fetch or update the saved model specifications. Personal photos take priority, legacy model photos remain available, and missing or unavailable catalog images leave the add-photo placeholder.
+
 Client, photo and registration-flow logic is covered by `pnpm test features/webbing` with injected fixtures, never live requests. Native rendering, bottom-sheet behavior and real uploads still need a manual pass on a development build against local or stage, never production.
 
 ### E2E Tests with Maestro
