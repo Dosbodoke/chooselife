@@ -111,10 +111,24 @@ from (
 
 select count(*) from public.generate_membership_billing_obligations();
 
--- Run the generator a couple of weeks ahead too, so the next month already
--- exists as a charge that is not yet due.
+-- Run the generator again on the next due date (the 10th), so the next month
+-- already exists as a charge that is not yet due. A fixed offset such as
+-- "two weeks ahead" misses that charge's availability date (the 3rd, seven
+-- lead days earlier) whenever the test runs between about the 11th and 19th.
 select count(*)
-from public.generate_membership_billing_obligations_at(clock_timestamp() + interval '14 days');
+from (
+  select timezone('America/Sao_Paulo', clock_timestamp())::date as today
+) local_date,
+lateral public.generate_membership_billing_obligations_at(
+  timezone(
+    'America/Sao_Paulo',
+    case
+      when extract(day from local_date.today) <= 10
+        then date_trunc('month', local_date.today::timestamp) + interval '9 days 12 hours'
+      else date_trunc('month', local_date.today::timestamp) + interval '1 month 9 days 12 hours'
+    end
+  )
+);
 
 -- The debtor's admission payment, which is never waivable here.
 insert into public.membership_applications (

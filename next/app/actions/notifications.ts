@@ -1,9 +1,11 @@
 "use server";
 
+import { createHash, timingSafeEqual } from "node:crypto";
 import { revalidatePath } from "next/cache";
 
 import type { Database } from "@/utils/supabase/database.types";
 import { createSupabaseClient } from "@/utils/supabase/server";
+import { createSupabaseServiceRoleClient } from "@/utils/supabase/service-role";
 
 import {
   type NotificationFormData,
@@ -16,6 +18,17 @@ type ActionResult = {
   error?: string;
   fieldErrors?: Record<string, string[]>;
 };
+
+function isAdminPassword(password: string) {
+  const expected = process.env.NOTIFICATIONS_ADMIN_PASSWORD;
+  // Unset means nobody can send, rather than an empty password being accepted.
+  if (!expected) return false;
+
+  // Hashing first gives equal-length buffers, so the comparison does not leak
+  // the password's length or how many leading characters matched.
+  const digest = (value: string) => createHash("sha256").update(value).digest();
+  return timingSafeEqual(digest(password), digest(expected));
+}
 
 export async function sendNotification(
   data: NotificationFormData,
@@ -44,8 +57,7 @@ export async function sendNotification(
     const { password, userId, titleEn, titlePt, bodyEn, bodyPt } =
       validationResult.data;
 
-    // Check password
-    if (password !== "cl.produssa") {
+    if (!isAdminPassword(password)) {
       return {
         success: false,
         error: "Senha inválida",
@@ -55,7 +67,8 @@ export async function sendNotification(
       };
     }
 
-    const supabase = await createSupabaseClient();
+    // Clients cannot insert notifications: every row is pushed to devices.
+    const supabase = createSupabaseServiceRoleClient();
 
     // Prepare notification data
     const title = {

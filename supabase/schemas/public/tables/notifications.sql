@@ -19,23 +19,14 @@ CREATE TRIGGER notifications_dispatch_push
   FOR EACH ROW
   EXECUTE FUNCTION private.dispatch_notification_push();
 
-CREATE POLICY "Anyone can insert notifications" ON "public"."notifications"
-  FOR INSERT
-  TO "anon", "authenticated"
-  WITH CHECK (true);
-
-CREATE POLICY "Anyone can read notifications" ON "public"."notifications"
+CREATE POLICY "Read broadcasts and own notifications" ON "public"."notifications"
   FOR SELECT
   TO "anon", "authenticated"
-  USING (true);
+  USING (user_id IS NULL OR user_id = (SELECT auth.uid()));
 
 REVOKE ALL ON SEQUENCE "public"."notifications_id_seq" FROM "anon";
 
-GRANT SELECT, UPDATE, USAGE ON SEQUENCE "public"."notifications_id_seq" TO "anon";
-
 REVOKE ALL ON SEQUENCE "public"."notifications_id_seq" FROM "authenticated";
-
-GRANT SELECT, UPDATE, USAGE ON SEQUENCE "public"."notifications_id_seq" TO "authenticated";
 
 REVOKE ALL ON SEQUENCE "public"."notifications_id_seq" FROM "postgres";
 
@@ -45,7 +36,9 @@ REVOKE ALL ON SEQUENCE "public"."notifications_id_seq" FROM "service_role";
 
 GRANT SELECT, UPDATE, USAGE ON SEQUENCE "public"."notifications_id_seq" TO "service_role";
 
-GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON TABLE "public"."notifications" TO "anon", "authenticated";
+REVOKE ALL ON TABLE "public"."notifications" FROM "anon", "authenticated";
+
+GRANT SELECT ON TABLE "public"."notifications" TO "anon", "authenticated";
 
 GRANT DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON TABLE "public"."notifications" TO "service_role";
 
