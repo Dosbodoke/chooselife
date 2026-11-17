@@ -345,6 +345,26 @@ async function fetchTargetTokens(
   return targetTokens;
 }
 
+/**
+ * Only the notifications webhook, which authenticates with the service role
+ * key, may trigger a push. `verify_jwt = true` makes the gateway reject a
+ * forged signature, but the public anon key is a valid JWT too, so without
+ * this check anyone could post a fake INSERT payload and broadcast.
+ */
+function isServiceRoleRequest(req: Request): boolean {
+  const token = req.headers.get("Authorization")?.match(/^Bearer (.+)$/)?.[1];
+  const payload = token?.split(".")[1];
+  if (!payload) return false;
+
+  try {
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const claims = JSON.parse(atob(base64));
+    return claims?.role === "service_role";
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
   const startTime = Date.now();
 
@@ -356,6 +376,16 @@ Deno.serve(async (req) => {
         {
           headers: { "Content-Type": "application/json" },
           status: 405,
+        },
+      );
+    }
+
+    if (!isServiceRoleRequest(req)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Forbidden" }),
+        {
+          headers: { "Content-Type": "application/json" },
+          status: 403,
         },
       );
     }
