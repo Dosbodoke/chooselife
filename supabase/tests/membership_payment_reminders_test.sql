@@ -287,6 +287,10 @@ select throws_ok(
   'another association''s admin cannot preview'
 );
 
+-- An admin can only read their own notifications, not the ones they send to
+-- members, so the enqueued rows are checked as postgres.
+set local role postgres;
+
 select is(
   (select count(*)::integer
    from public.notifications n
@@ -294,6 +298,8 @@ select is(
   0,
   'no refused attempt enqueued a notification'
 );
+
+set local role authenticated;
 
 -- The real send.
 select set_config(
@@ -312,6 +318,16 @@ select is(
   'the admin can send a reminder and learns how many devices it targets'
 );
 
+select is(
+  (select count(*)::integer
+   from public.notifications n
+   where n.id > (select last_id from notifications_before)),
+  0,
+  'the sending admin cannot read the member''s notification'
+);
+
+set local role postgres;
+
 select results_eq(
   $$select n.user_id, n.data->>'type', n.data->>'organization_slug', n.title->>'pt', n.data->>'url'
     from public.notifications n
@@ -325,6 +341,8 @@ select results_eq(
   )$$,
   'exactly one targeted, localized notification is enqueued for the webhook'
 );
+
+set local role authenticated;
 
 select throws_ok(
   $$select * from public.send_membership_payment_reminder(
@@ -353,6 +371,8 @@ select ok(
   'the preview says when the next reminder is allowed'
 );
 
+set local role postgres;
+
 select is(
   (select count(*)::integer
    from public.notifications n
@@ -360,8 +380,6 @@ select is(
   1,
   'the refused repeat did not enqueue a second notification'
 );
-
-set local role postgres;
 
 select results_eq(
   $$select sent_by_user_id, recipient_user_id, device_count, notification_id is not null

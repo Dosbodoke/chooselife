@@ -257,7 +257,9 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 [functions.push-notification]
 enabled = true
-verify_jwt = true
+# The webhook authenticates with an sb_secret_ key, which is not a JWT. The
+# function checks that key itself, so the gateway's JWT check must stay off.
+verify_jwt = false
 import_map = "./functions/push-notification/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
