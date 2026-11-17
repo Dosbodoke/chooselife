@@ -14,7 +14,7 @@ set local role postgres;
 
 -- pg_net dispatches after COMMIT and this test rolls back, but keep the rows
 -- below from even queueing a request.
-delete from vault.secrets where name in ('project_url', 'service_role_key');
+delete from vault.secrets where name in ('project_url', 'notifications_webhook_key');
 
 insert into auth.users (
   id,

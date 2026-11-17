@@ -4,7 +4,7 @@ select * from plan(7);
 
 -- pg_net dispatches after COMMIT. This entire test rolls back, so no request
 -- reaches an Edge Function or a device, even with Vault configured below.
-delete from vault.secrets where name in ('project_url', 'service_role_key');
+delete from vault.secrets where name in ('project_url', 'notifications_webhook_key');
 
 create temporary table webhook_queue_baseline as
 select coalesce(max(id), 0) as request_id from net.http_request_queue;
@@ -43,7 +43,7 @@ select is(
 );
 
 select vault.create_secret('https://stage.example.invalid', 'project_url');
-select vault.create_secret('local-test-token', 'service_role_key');
+select vault.create_secret('local-test-token', 'notifications_webhook_key');
 
 create temporary table webhook_notification as
 with inserted as (
@@ -65,8 +65,8 @@ select is(
 );
 
 select results_eq(
-  $$select url, headers->>'Authorization' from queued_webhook$$,
-  $$values ('https://stage.example.invalid/functions/v1/push-notification', 'Bearer local-test-token')$$,
+  $$select url, headers->>'apikey', headers ? 'Authorization' from queued_webhook$$,
+  $$values ('https://stage.example.invalid/functions/v1/push-notification', 'local-test-token', false)$$,
   'the webhook uses the environment Vault URL and credential'
 );
 

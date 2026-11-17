@@ -345,24 +345,69 @@ async function fetchTargetTokens(
   return targetTokens;
 }
 
-/**
- * Only the notifications webhook, which authenticates with the service role
- * key, may trigger a push. `verify_jwt = true` makes the gateway reject a
- * forged signature, but the public anon key is a valid JWT too, so without
- * this check anyone could post a fake INSERT payload and broadcast.
- */
-function isServiceRoleRequest(req: Request): boolean {
-  const token = req.headers.get("Authorization")?.match(/^Bearer (.+)$/)?.[1];
-  const payload = token?.split(".")[1];
-  if (!payload) return false;
+async function sha256(value: string): Promise<Uint8Array> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  return new Uint8Array(digest);
+}
 
-  try {
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const claims = JSON.parse(atob(base64));
-    return claims?.role === "service_role";
-  } catch {
-    return false;
+/** Compares digests so the time taken does not depend on the secret. */
+async function matchesAny(
+  presented: string,
+  candidates: string[],
+): Promise<boolean> {
+  const presentedDigest = await sha256(presented);
+  let matched = false;
+  for (const candidate of candidates) {
+    const candidateDigest = await sha256(candidate);
+    let diff = 0;
+    for (let i = 0; i < presentedDigest.length; i++) {
+      diff |= presentedDigest[i] ^ candidateDigest[i];
+    }
+    matched ||= diff === 0;
   }
+  return matched;
+}
+
+/**
+ * Only the notifications webhook may trigger a push. Without this check anyone
+ * holding the public publishable key could post a fake INSERT payload and
+ * broadcast to every device.
+ *
+ * The webhook sends one of the project's sb_secret_ keys on the `apikey`
+ * header. Those keys are not JWTs, so `verify_jwt` is off for this function
+ * and the key is checked here against SUPABASE_SECRET_KEYS, the JSON
+ * dictionary of secret keys the platform injects.
+ */
+async function isAuthorizedWebhook(req: Request): Promise<boolean> {
+  const apiKey = req.headers.get("apikey");
+  if (apiKey) {
+    let secretKeys: string[] = [];
+    try {
+      secretKeys = Object.values(
+        JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}"),
+      ).filter((key): key is string => typeof key === "string" && key !== "");
+    } catch {
+      console.error("SUPABASE_SECRET_KEYS is not valid JSON");
+    }
+    if (secretKeys.length > 0 && await matchesAny(apiKey, secretKeys)) {
+      return true;
+    }
+  }
+
+  // Transitional: until 20261117153638_notifications_webhook_secret_key runs,
+  // the webhook still sends the legacy service_role JWT as a bearer token.
+  // An exact match is required, since `verify_jwt` no longer checks it.
+  // Remove once the migration is applied on every project.
+  const legacyServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const bearer = req.headers.get("Authorization")?.match(/^Bearer (.+)$/)?.[1];
+  if (legacyServiceRoleKey && bearer) {
+    return await matchesAny(bearer, [legacyServiceRoleKey]);
+  }
+
+  return false;
 }
 
 Deno.serve(async (req) => {
@@ -380,7 +425,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!isServiceRoleRequest(req)) {
+    if (!(await isAuthorizedWebhook(req))) {
       return new Response(
         JSON.stringify({ success: false, error: "Forbidden" }),
         {
