@@ -1,4 +1,5 @@
 import { useEvents } from '@chooselife/ui';
+import SlacCabeMaisImage from '~/assets/images/slac-cabe-mais.png';
 import { Link, useRouter } from 'expo-router';
 import { StatusBar, StatusBarStyle } from 'expo-status-bar';
 import { CalendarIcon } from 'lucide-react-native';
@@ -14,7 +15,6 @@ import {
 import Animated from 'react-native-reanimated';
 
 import { useOnlineStatus } from '~/context/react-query';
-import { getR2PublicUrl } from '~/lib/r2';
 import { _layoutAnimation } from '~/utils/constants';
 
 import { EventCard, EventCardSkeleton } from '~/components/event-card';
@@ -29,6 +29,7 @@ import { Widget, WIDGET_HERO_BASE_HEIGHT } from '~/components/widget';
 const STATUS_BAR_SWITCH_OFFSET = WIDGET_HERO_BASE_HEIGHT - 48;
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const isOnline = useOnlineStatus();
   const [statusBarStyle, setStatusBarStyle] =
@@ -55,11 +56,15 @@ export default function HomeScreen() {
         <Widget
           items={[
             {
-              id: 'slack',
-              title: 'SLACK',
-              subtitle: 'Conheça a associação',
-              background: getR2PublicUrl('promo', 'slack-promo.png'),
-              contentPosition: 'center',
+              id: 'slac',
+              eyebrow: t('app.(tabs).home.widget.slac.eyebrow'),
+              title: t('app.(tabs).home.widget.slac.title'),
+              subtitle: t('app.(tabs).home.widget.slac.subtitle'),
+              cta: t('app.(tabs).home.widget.slac.cta'),
+              image: SlacCabeMaisImage,
+              kind: 'brand',
+              surface: '#18181b',
+              glow: 'rgba(139, 92, 246, 0.55)',
               onPress: () => {
                 router.push('/organizations');
               },

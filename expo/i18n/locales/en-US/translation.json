@@ -349,6 +349,15 @@
             "noEventsDescription": "There are no upcoming events at the moment."
           },
           "Ranking": "🏆 Weekly Ranking"
+        },
+        "widget": {
+          "nextHint": "Tap to see the next highlight",
+          "slac": {
+            "eyebrow": "Association",
+            "title": "SLAC",
+            "subtitle": "Meet the Slackliners Associados do Cerrado",
+            "cta": "Learn more"
+          }
         }
       },
       "settings": {

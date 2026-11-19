@@ -1,378 +1,327 @@
-import { Image as ExpoImage, ImageSource } from 'expo-image';
+import { Image, type ImageSource } from 'expo-image';
+import { useFocusEffect } from 'expo-router';
 import { ArrowRightIcon } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  Dimensions,
-  FlatList,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   Pressable,
+  StyleSheet,
   Text,
+  useWindowDimensions,
   View,
-  type ListRenderItemInfo,
+  type AccessibilityActionEvent,
 } from 'react-native';
 import Animated, {
-  interpolate,
-  type SharedValue,
-  useAnimatedScrollHandler,
+  cancelAnimation,
+  Easing,
+  FadeIn,
+  FadeInDown,
+  FadeOut,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
+  withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { useMountEffect } from '~/hooks/use-mount-effect';
 
 import { Icon } from '~/components/ui/icon';
 
-const { width: screenWidth } = Dimensions.get('window');
-const CARD_WIDTH = screenWidth;
-export const WIDGET_HERO_BASE_HEIGHT = 320;
-const CONTENT_HORIZONTAL_PADDING = 16;
+export const WIDGET_HERO_BASE_HEIGHT = 400;
+const SLIDE_MS = 6000;
+/** Share of the width, from the left, that goes back a slide on tap. */
+const PREVIOUS_ZONE = 0.3;
 
-interface WidgetItem {
+export type WidgetItem = {
   id: string;
+  eyebrow: string;
   title: string;
   subtitle?: string;
-  background: string | ImageSource;
-  /** How to align the background when cropped with cover. Defaults to center. */
-  contentPosition?: 'center' | 'top';
-  content?: React.ReactNode;
+  cta: string;
+  image: string | ImageSource;
+  /**
+   * `photo` fills the slide and can be cropped. `brand` is a transparent
+   * mark (stamp, logo) set as a tilted watermark on a dark `surface`.
+   */
+  kind: 'photo' | 'brand';
+  /** Brand only: slide background. */
+  surface?: string;
+  /** Brand only: colour of the soft glow in the top-right corner. */
+  glow?: string;
   onPress?: () => void;
-}
-
-interface WidgetProps {
-  items: WidgetItem[];
-}
-
-type WidgetSlideProps = {
-  heroHeight: number;
-  index: number;
-  item: WidgetItem;
-  scrollX: SharedValue<number>;
-  topInset: number;
 };
 
-function WidgetSlide({
-  heroHeight,
-  index,
-  item,
-  scrollX,
-  topInset,
-}: WidgetSlideProps) {
-  const backgroundAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateX: interpolate(
-          scrollX.value,
-          [
-            (index - 1) * CARD_WIDTH,
-            index * CARD_WIDTH,
-            (index + 1) * CARD_WIDTH,
-          ],
-          [-24, 0, 24],
-          'clamp',
-        ),
+/**
+ * Home hero. Shows one promo at a time, full bleed, with white copy and a
+ * pill button. With several promos it auto-advances like a story: tap the
+ * right side for next, the left side for previous, hold to pause.
+ */
+export function Widget({ items }: { items: WidgetItem[] }) {
+  const { t } = useTranslation();
+  const { top } = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const height = WIDGET_HERO_BASE_HEIGHT + top;
+  const [index, setIndex] = useState(0);
+  const indexRef = useRef(0);
+  const active = useSharedValue(0);
+  const progress = useSharedValue(0);
+  const hasMany = items.length > 1;
+  const item = items[index % items.length];
+
+  const play = (from: number) => {
+    if (!hasMany) return;
+    progress.value = from;
+    progress.value = withTiming(
+      1,
+      { duration: SLIDE_MS * (1 - from), easing: Easing.linear },
+      (finished) => {
+        if (finished) scheduleOnRN(goTo, indexRef.current + 1);
       },
-    ],
-  }));
+    );
+  };
 
-  return (
-    <Animated.View
-      className="justify-center items-center"
-      style={{ width: CARD_WIDTH, height: heroHeight }}
-    >
-      <Animated.View className="flex-1 w-full">
-        <Pressable
-          onPress={item.onPress}
-          className="flex-1 w-full overflow-hidden bg-black"
-        >
-          <Animated.View
-            className="absolute inset-0"
-            style={backgroundAnimatedStyle}
-          >
-            <ExpoImage
-              source={
-                typeof item.background === 'string'
-                  ? { uri: item.background }
-                  : item.background
-              }
-              style={{ flex: 1, width: '100%', height: '100%' }}
-              contentFit="cover"
-              contentPosition={item.contentPosition ?? 'center'}
-              cachePolicy="disk"
-            />
-          </Animated.View>
+  function goTo(next: number) {
+    const i = (next + items.length) % items.length;
+    indexRef.current = i;
+    active.value = i;
+    setIndex(i);
+    play(0);
+  }
 
-          <View className="absolute inset-0 bg-black/20" />
-          <View className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent" />
-          <View className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
-
-          <View
-            className="absolute inset-x-0 bottom-0 z-10"
-            style={{
-              paddingHorizontal: CONTENT_HORIZONTAL_PADDING,
-              paddingTop: topInset + 16,
-              paddingBottom: 24,
-            }}
-          >
-            {item.content || <WidgetSlideContent item={item} />}
-          </View>
-
-          <View className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
-        </Pressable>
-      </Animated.View>
-    </Animated.View>
+  // Only run the timer while home is the visible tab.
+  useFocusEffect(
+    React.useCallback(() => {
+      play(progress.value < 1 ? progress.value : 0);
+      return () => cancelAnimation(progress);
+    }, [hasMany]),
   );
-}
 
-function WidgetSlideContent({ item }: { item: WidgetItem }) {
+  if (!item) return null;
+
+  const onTap = (x: number) => {
+    if (!hasMany) return item.onPress?.();
+    goTo(indexRef.current + (x < width * PREVIOUS_ZONE ? -1 : 1));
+  };
+
+  const onAccessibilityAction = (event: AccessibilityActionEvent) => {
+    if (event.nativeEvent.actionName === 'increment')
+      goTo(indexRef.current + 1);
+    if (event.nativeEvent.actionName === 'decrement')
+      goTo(indexRef.current - 1);
+  };
+
   return (
-    <View className="bg-black/35 backdrop-blur-md rounded-[28px] p-5 border border-white/15">
-      <View className="flex-row items-start justify-between mb-2">
-        <View className="flex-1">
+    <View style={{ height }} className="overflow-hidden bg-black">
+      <Animated.View
+        key={item.id}
+        entering={FadeIn.duration(450)}
+        exiting={FadeOut.duration(450)}
+        style={StyleSheet.absoluteFill}
+      >
+        <SlideBackground item={item} top={top} />
+      </Animated.View>
+
+      {/* Tap zones sit under the copy; the copy lets touches fall through. */}
+      <Pressable
+        style={StyleSheet.absoluteFill}
+        onPress={(e) => onTap(e.nativeEvent.locationX)}
+        onPressIn={() => cancelAnimation(progress)}
+        onPressOut={() => play(progress.value)}
+        onLongPress={() => {}}
+        delayLongPress={220}
+        accessibilityLabel={item.title}
+        {...(hasMany
+          ? {
+              accessibilityRole: 'adjustable' as const,
+              accessibilityHint: t('app.(tabs).home.widget.nextHint'),
+              accessibilityValue: { min: 1, max: items.length, now: index + 1 },
+              accessibilityActions: [
+                { name: 'increment' as const },
+                { name: 'decrement' as const },
+              ],
+              onAccessibilityAction,
+            }
+          : { accessibilityRole: 'button' as const })}
+      />
+
+      {hasMany ? (
+        <View
+          pointerEvents="none"
+          className="absolute inset-x-4 flex-row gap-1"
+          style={{ top: top + 8 }}
+        >
+          {items.map((it, i) => (
+            <ProgressSegment
+              key={it.id}
+              index={i}
+              active={active}
+              progress={progress}
+            />
+          ))}
+        </View>
+      ) : null}
+
+      <View
+        pointerEvents="box-none"
+        className="absolute inset-x-0 bottom-0 px-5 pb-6"
+      >
+        <Animated.View
+          key={item.id}
+          entering={FadeInDown.duration(450).delay(120)}
+          pointerEvents="box-none"
+          className="gap-2"
+        >
+          <Text className="text-xs font-bold uppercase tracking-[2px] text-white/70">
+            {item.eyebrow}
+          </Text>
           <Text
-            className="text-2xl font-black text-white mb-2 leading-tight tracking-tight"
-            style={{
-              textShadowColor: 'rgba(0, 0, 0, 0.8)',
-              textShadowOffset: { width: 0, height: 2 },
-              textShadowRadius: 8,
-            }}
+            className="text-[34px] font-black leading-[38px] tracking-tight text-white"
+            numberOfLines={2}
           >
             {item.title}
           </Text>
           {item.subtitle ? (
             <Text
-              className="text-lg font-semibold text-white/85 leading-snug mb-3"
-              style={{
-                textShadowColor: 'rgba(0, 0, 0, 0.6)',
-                textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 4,
-              }}
+              className="text-[15px] leading-6 text-white/80"
+              style={{ maxWidth: '88%' }}
+              numberOfLines={2}
             >
               {item.subtitle}
             </Text>
           ) : null}
-        </View>
-
-        {item.onPress ? (
-          <View className="bg-white/15 rounded-full p-3 ml-3">
-            <Icon as={ArrowRightIcon} size={20} className="text-white" />
-          </View>
-        ) : null}
+          <Pressable
+            onPress={item.onPress}
+            accessibilityRole="button"
+            accessibilityLabel={item.cta}
+            className="mt-2 min-h-11 flex-row items-center gap-2 self-start rounded-full bg-white px-5 py-3 active:opacity-80"
+          >
+            <Text className="text-[15px] font-semibold text-black">
+              {item.cta}
+            </Text>
+            <Icon
+              as={ArrowRightIcon}
+              size={16}
+              strokeWidth={2.5}
+              color="#000"
+            />
+          </Pressable>
+        </Animated.View>
       </View>
     </View>
   );
 }
 
-type WidgetDotsProps = {
-  itemCount: number;
-  onSelect: (index: number) => void;
-  scrollX: SharedValue<number>;
-};
+function SlideBackground({ item, top }: { item: WidgetItem; top: number }) {
+  const reduceMotion = useReducedMotion();
+  // Slow push-in so a still image feels alive while the slide is up.
+  const scale = useSharedValue(reduceMotion ? 1 : 1.08);
+  useMountEffect(() => {
+    if (!reduceMotion)
+      scale.value = withTiming(1, { duration: SLIDE_MS + 1000 });
+  });
+  const zoom = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+  const source =
+    typeof item.image === 'string' ? { uri: item.image } : item.image;
 
-function WidgetDots({ itemCount, onSelect, scrollX }: WidgetDotsProps) {
-  return (
-    <View className="flex-row items-center justify-center gap-1">
-      {Array.from({ length: itemCount }, (_, index) => (
-        <WidgetDot
-          key={index}
-          index={index}
-          itemCount={itemCount}
-          onPress={() => onSelect(index)}
-          scrollX={scrollX}
+  if (item.kind === 'brand') {
+    const surface = item.surface ?? '#18181b';
+    return (
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: surface }]}>
+        {item.glow ? (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                experimental_backgroundImage: `radial-gradient(circle at 100% 0%, ${item.glow} 0%, rgba(0, 0, 0, 0) 65%)`,
+              },
+            ]}
+          />
+        ) : null}
+        {/* The mark bleeds off the top-right corner, tilted like a stamp. */}
+        <Animated.View
+          style={[
+            {
+              position: 'absolute',
+              top: top + 4,
+              right: -56,
+              width: 290,
+              height: 290,
+            },
+            zoom,
+          ]}
+        >
+          <Image
+            source={source}
+            style={{ flex: 1, opacity: 0.3, transform: [{ rotate: '14deg' }] }}
+            contentFit="contain"
+          />
+        </Animated.View>
+        {/* Fades the mark out behind the copy so the text stays legible. */}
+        <View
+          className="absolute inset-x-0 bottom-0"
+          style={{
+            height: '60%',
+            experimental_backgroundImage: `linear-gradient(to top, ${surface} 35%, rgba(24, 24, 27, 0) 100%)`,
+          }}
         />
-      ))}
-    </View>
+      </View>
+    );
+  }
+
+  return (
+    <>
+      <Animated.View style={[StyleSheet.absoluteFill, zoom]}>
+        <Image
+          source={source}
+          style={{ flex: 1 }}
+          contentFit="cover"
+          cachePolicy="disk"
+        />
+      </Animated.View>
+      {/* Keeps the status bar and progress bars readable on bright photos. */}
+      <View
+        className="absolute inset-x-0 top-0"
+        style={{
+          height: top + 96,
+          experimental_backgroundImage:
+            'linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 100%)',
+        }}
+      />
+      <View
+        className="absolute inset-x-0 bottom-0"
+        style={{
+          height: '75%',
+          experimental_backgroundImage:
+            'linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.55) 45%, rgba(0, 0, 0, 0) 100%)',
+        }}
+      />
+    </>
   );
 }
 
-function WidgetDot({
+function ProgressSegment({
   index,
-  itemCount,
-  onPress,
-  scrollX,
+  active,
+  progress,
 }: {
   index: number;
-  itemCount: number;
-  onPress: () => void;
-  scrollX: SharedValue<number>;
+  active: SharedValue<number>;
+  progress: SharedValue<number>;
 }) {
-  const animatedStyle = useAnimatedStyle(() => {
-    const currentIndex = Math.round(scrollX.value / CARD_WIDTH) % itemCount;
-    const normalizedIndex = (currentIndex + itemCount) % itemCount;
-    const distance = Math.abs(index - normalizedIndex);
-    const adjustedDistance = Math.min(distance, itemCount - distance);
-
-    return {
-      transform: [
-        {
-          scale: interpolate(
-            adjustedDistance,
-            [0, 1],
-            [1.25, 0.85],
-            'clamp',
-          ),
-        },
-      ],
-      opacity: interpolate(adjustedDistance, [0, 1], [1, 0.55], 'clamp'),
-      backgroundColor: '#fff',
-    };
+  const fill = useAnimatedStyle(() => {
+    const amount =
+      index < active.value ? 1 : index === active.value ? progress.value : 0;
+    return { width: `${amount * 100}%` };
   });
 
   return (
-    <Pressable onPress={onPress} className="p-1.5">
-      <Animated.View
-        className="w-2 h-2 rounded-full"
-        style={animatedStyle}
-      />
-    </Pressable>
-  );
-}
-
-// Number of copies to repeat for infinite scroll (odd number recommended)
-const REPEAT_COUNT = 5;
-
-export function Widget({ items }: WidgetProps) {
-  const { top } = useSafeAreaInsets();
-  const scrollViewRef = useRef<FlatList<WidgetItem>>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const scrollX = useSharedValue(0);
-  const heroHeight = WIDGET_HERO_BASE_HEIGHT + top;
-
-  // Build infinite array (REPEAT_COUNT copies of original items)
-  const infiniteItems = Array(REPEAT_COUNT).fill(items).flat();
-  const totalItems = infiniteItems.length;
-  const originalLength = items.length;
-  // Start at the middle set (so we have enough room in both directions)
-  const middleStartIndex = Math.floor(REPEAT_COUNT / 2) * originalLength;
-  // Reset thresholds: when we are within the first or last original-length chunk, jump back
-  const resetThresholdLow = originalLength;
-  const resetThresholdHigh = totalItems - originalLength;
-
-  useMountEffect(() => {
-    // Initialize scroll position to the middle set without animation
-    const timer = setTimeout(() => {
-      scrollViewRef.current?.scrollToOffset({
-        offset: middleStartIndex * CARD_WIDTH,
-        animated: false,
-      });
-    }, 50);
-    return () => clearTimeout(timer);
-  });
-
-  const updateCurrentIndex = (offsetX: number) => {
-    const rawIndex = Math.round(offsetX / CARD_WIDTH);
-    // Convert to real index within original items
-    const realIndex =
-      ((rawIndex % originalLength) + originalLength) % originalLength;
-    setCurrentIndex(realIndex);
-  };
-
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollX.value = event.contentOffset.x;
-    },
-  });
-
-  const onMomentumScrollEnd = (
-    event: NativeSyntheticEvent<NativeScrollEvent>,
-  ) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const rawIndex = Math.round(offsetX / CARD_WIDTH);
-    updateCurrentIndex(offsetX);
-
-    // Reset scroll position if we are near the boundaries
-    if (rawIndex <= resetThresholdLow) {
-      // Jump forward to the middle set + low threshold
-      const newOffset = (middleStartIndex + resetThresholdLow) * CARD_WIDTH;
-      scrollViewRef.current?.scrollToOffset({
-        offset: newOffset,
-        animated: false,
-      });
-    } else if (rawIndex >= resetThresholdHigh) {
-      // Jump backward to the middle set - (totalItems - resetThresholdHigh)
-      const newOffset =
-        (middleStartIndex - (totalItems - resetThresholdHigh)) * CARD_WIDTH;
-      scrollViewRef.current?.scrollToOffset({
-        offset: newOffset,
-        animated: false,
-      });
-    }
-  };
-
-  const scrollToIndex = (targetRealIndex: number) => {
-    if (targetRealIndex === currentIndex) return;
-
-    const currentScrollIndex = Math.round(scrollX.value / CARD_WIDTH);
-    // Find the closest occurrence of targetRealIndex in the infinite array
-    // We search within a reasonable range around currentScrollIndex
-    let closestIndex = -1;
-    let minDistance = Infinity;
-    for (let i = -originalLength; i <= originalLength; i++) {
-      const candidate = currentScrollIndex + i;
-      if (candidate >= 0 && candidate < totalItems) {
-        if (
-          ((candidate % originalLength) + originalLength) % originalLength ===
-          targetRealIndex
-        ) {
-          const distance = Math.abs(candidate - currentScrollIndex);
-          if (distance < minDistance) {
-            minDistance = distance;
-            closestIndex = candidate;
-          }
-        }
-      }
-    }
-    if (closestIndex !== -1) {
-      scrollViewRef.current?.scrollToOffset({
-        offset: closestIndex * CARD_WIDTH,
-        animated: true,
-      });
-    }
-  };
-
-  const renderWidgetItem = ({ item, index }: ListRenderItemInfo<WidgetItem>) =>
-    <WidgetSlide
-      heroHeight={heroHeight}
-      index={index}
-      item={item}
-      scrollX={scrollX}
-      topInset={top}
-    />;
-
-  return (
-    <View style={{ height: heroHeight }} className="bg-transparent">
-      <View className="flex-1 bg-transparent">
-        <View className="flex-1 bg-transparent relative">
-          <Animated.FlatList
-            ref={scrollViewRef}
-            data={infiniteItems}
-            renderItem={renderWidgetItem}
-            keyExtractor={(item, index) => `${item.id}-${index}`}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            pagingEnabled
-            decelerationRate="fast"
-            snapToInterval={CARD_WIDTH}
-            snapToAlignment="start"
-            style={{ backgroundColor: 'transparent' }}
-            contentContainerStyle={{ backgroundColor: 'transparent' }}
-            onScroll={scrollHandler}
-            onMomentumScrollEnd={onMomentumScrollEnd}
-            scrollEventThrottle={16}
-          />
-
-          <View className="absolute inset-x-0 bottom-6 items-center">
-            <View className="bg-black/25 rounded-full px-3 py-2">
-              <WidgetDots
-                itemCount={items.length}
-                onSelect={scrollToIndex}
-                scrollX={scrollX}
-              />
-            </View>
-          </View>
-        </View>
-      </View>
+    <View className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/35">
+      <Animated.View className="h-full rounded-full bg-white" style={fill} />
     </View>
   );
 }
