@@ -1,0 +1,25 @@
+diff --git a/android/src/main/java/com/fastsquircle/FastSquircleViewManager.kt b/android/src/main/java/com/fastsquircle/FastSquircleViewManager.kt
+index 4ecd81e49bc9c3146e495edc332c7fab6f577bf0..0ac4e47c3ab9515781d8afebe21b7b575b72f380 100644
+--- a/android/src/main/java/com/fastsquircle/FastSquircleViewManager.kt
++++ b/android/src/main/java/com/fastsquircle/FastSquircleViewManager.kt
+@@ -65,6 +65,10 @@ class SplitDelegate(
+   private val specificDelegate: ViewManagerDelegate<FastSquircleView>
+ ) : ViewManagerDelegate<ReactViewGroup> {
+ 
++  // RN 0.88 uses separate JVM names for Kotlin implementations and Java bridges.
++  @Suppress("INAPPLICABLE_JVM_NAME")
++  @JvmName("kotlinCompat\$setProperty")
++  @JvmSynthetic
+   override fun setProperty(view: ReactViewGroup, propName: String, value: Any?) {
+     baseDelegate.setProperty(view, propName, value)
+ 
+@@ -76,6 +80,9 @@ class SplitDelegate(
+       specificDelegate.setProperty(view, propName, value)
+   }
+ 
++  @Suppress("INAPPLICABLE_JVM_NAME")
++  @JvmName("kotlinCompat\$receiveCommand")
++  @JvmSynthetic
+   override fun receiveCommand(view: ReactViewGroup, commandName: String, args: ReadableArray) {
+     baseDelegate.receiveCommand(view, commandName, args)
+ 

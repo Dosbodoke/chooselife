@@ -1,0 +1,26 @@
+// Gradle's --max-workers does not limit the compiler jobs spawned by Ninja.
+// Skia's heavy C++ files must compile one at a time on EAS's medium builder.
+// Other native projects can use one job per vCPU on the four-core builder.
+// https://github.com/wcandillon/react-native-skia/issues/4272
+// Sharing the pool with linking also serializes Skia's compile/link jobs.
+// Pools are per Ninja run; keep --max-workers=1 --no-parallel in eas.json.
+gradle.beforeProject { project ->
+    def jobs = project.name == 'react-native-skia' ? 1 : 4
+    ['com.android.application', 'com.android.library'].each { pluginId ->
+        project.pluginManager.withPlugin(pluginId) {
+            def android = project.extensions.getByName('android')
+            android.defaultConfig.externalNativeBuild.cmake.arguments.addAll([
+                '-DCMAKE_JOB_POOLS=chooselife_native=' + jobs,
+                '-DCMAKE_JOB_POOL_COMPILE=chooselife_native',
+                '-DCMAKE_JOB_POOL_LINK=chooselife_native',
+            ])
+        }
+    }
+}
+
+gradle.projectsEvaluated { g ->
+    // Init scripts also run in included plugin builds, which do not contain Skia.
+    if (g.parent == null && g.rootProject.findProject(':react-native-skia') == null) {
+        throw new GradleException('react-native-skia not found; update limit-native-build-workers.gradle')
+    }
+}
