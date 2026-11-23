@@ -145,6 +145,9 @@ export default Sentry.wrap(function RootLayout() {
                             name="highline/[id]"
                             options={{
                               headerShown: false,
+                              // Lets the photo and name fly over the screen
+                              // change from the Explore list.
+                              animation: 'fade',
                             }}
                           />
                           <Stack.Screen

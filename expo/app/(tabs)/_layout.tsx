@@ -12,6 +12,7 @@ import { useAuth } from '~/context/auth';
 import { cn } from '~/lib/utils';
 
 import { FloatingTabBar } from '~/components/floating-tab-bar';
+import { ScreenTransitionBoundary } from '~/components/screen-transition-boundary';
 import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Icon } from '~/components/ui/icon';
 
@@ -22,7 +23,12 @@ export default function TabLayout() {
   // The floating bar owns its own visibility (keyboard, Explore's highline
   // cards), so the screens below only declare titles and icons.
   return (
-    <Tabs tabBar={(props) => <FloatingTabBar {...props} />}>
+    <Tabs
+      tabBar={(props) => <FloatingTabBar {...props} />}
+      screenLayout={({ children }) => (
+        <ScreenTransitionBoundary>{children}</ScreenTransitionBoundary>
+      )}
+    >
       <Tabs.Screen
         name="home"
         options={{

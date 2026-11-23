@@ -16,11 +16,27 @@ import Animated, {
 import { getR2PublicUrl } from '~/lib/r2';
 import { cn } from '~/lib/utils';
 
+import { highlineTransition } from './shared-transition';
+
+// The tag sits on the image itself, not on a wrapper: a moving view keeps its
+// children's frames until it lands, so a wrapped image would fly at the
+// source's size and snap to the target's at the end.
+const AnimatedImage = Animated.createAnimatedComponent(Image);
+
 export const HighlineImage: React.FC<{
   coverImageId: string | null;
   className?: string;
   dotSize?: 'default' | 'small';
-}> = ({ coverImageId, className, dotSize = 'default' }) => {
+  /** Corner radius of the image, which also animates while it flies. */
+  borderRadius?: number;
+  sharedTransitionTag?: string;
+}> = ({
+  coverImageId,
+  className,
+  dotSize = 'default',
+  borderRadius,
+  sharedTransitionTag,
+}) => {
   const [loaded, setLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
@@ -32,11 +48,13 @@ export const HighlineImage: React.FC<{
           className,
         )}
       >
-        <Image
+        <AnimatedImage
+          sharedTransitionTag={sharedTransitionTag}
+          sharedTransitionStyle={highlineTransition}
           source={ChooselifeBlackImage}
           alt="Chooselife"
           contentFit="contain"
-          style={{ width: '100%', height: '100%' }}
+          style={{ width: '100%', height: '100%', borderRadius }}
           className="w-full h-full"
         />
       </View>
@@ -52,7 +70,9 @@ export const HighlineImage: React.FC<{
           <LoadingDots dotSize={dotSize} />
         </View>
       )}
-      <Image
+      <AnimatedImage
+        sharedTransitionTag={sharedTransitionTag}
+        sharedTransitionStyle={highlineTransition}
         source={{ uri: URL, cacheKey: coverImageId }}
         cachePolicy="memory-disk"
         contentFit="cover"
@@ -68,7 +88,7 @@ export const HighlineImage: React.FC<{
         onError={() => {
           setHasError(true);
         }}
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: '100%', height: '100%', borderRadius }}
         className={cn(className)}
         transition={200}
       />

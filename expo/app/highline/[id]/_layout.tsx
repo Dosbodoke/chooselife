@@ -10,6 +10,7 @@ import { isHighlineUuid, useHighlineIdBySlug } from '~/hooks/use-highline';
 
 import { HighlineNotFound } from '~/components/highline/not-found';
 import { HighlineSkeleton } from '~/components/highline/skeleton';
+import { ScreenTransitionBoundary } from '~/components/screen-transition-boundary';
 
 export default function HighlineLayout() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -21,7 +22,11 @@ export default function HighlineLayout() {
   }
 
   return (
-    <Stack>
+    <Stack
+      screenLayout={({ children }) => (
+        <ScreenTransitionBoundary>{children}</ScreenTransitionBoundary>
+      )}
+    >
       <Stack.Screen
         name="index"
         options={{

@@ -27,6 +27,7 @@ import {
   HEADER_BUTTON_SIZE,
   HighlineHeader,
 } from '~/components/highline/highline-header';
+import { HighlineName } from '~/components/highline/highline-name';
 import {
   HIGHLINE_TABS_BAR_HEIGHT,
   HighlineTabContent,
@@ -38,6 +39,10 @@ import {
 import { HighlineDetails, HighlineSummary } from '~/components/highline/info';
 import { HighlineNotFound } from '~/components/highline/not-found';
 import { RigModal } from '~/components/highline/rig-confirmations';
+import {
+  highlineContentEntering,
+  highlineImageTag,
+} from '~/components/highline/shared-transition';
 import { HighlineSkeleton } from '~/components/highline/skeleton';
 import { OfflineBanner } from '~/components/offline-banner';
 import { Ranking } from '~/components/ranking';
@@ -144,7 +149,11 @@ export default function HighlinePage() {
   return (
     <>
       <View className="flex-1 bg-gray-100">
-        <HighlineCover coverImageId={highline.cover_image} scrollY={scrollY} />
+        <HighlineCover
+          coverImageId={highline.cover_image}
+          scrollY={scrollY}
+          sharedTransitionTag={highlineImageTag(highline.id)}
+        />
 
         <Animated.ScrollView
           ref={scrollRef}
@@ -152,9 +161,23 @@ export default function HighlinePage() {
           scrollEventThrottle={16}
           refreshControl={refreshControl}
         >
-          <View style={{ height: COVER_HEIGHT - SHEET_OVERLAP }} />
+          {/* The name sits on the cover like on the card, and scrolls away
+              with the content until the header picks it up. */}
+          <View
+            style={{ height: COVER_HEIGHT - SHEET_OVERLAP }}
+            className="justify-end p-4"
+          >
+            <HighlineName
+              highlineID={highline.id}
+              name={highline.name}
+              sharedTransition
+            />
+          </View>
           {/* Content sheet over the cover */}
-          <View className="bg-gray-100 rounded-t-3xl px-4 pt-6 gap-6 flex-1 min-h-screen">
+          <Animated.View
+            entering={highlineContentEntering}
+            className="bg-gray-100 rounded-t-3xl px-4 pt-6 gap-6 flex-1 min-h-screen"
+          >
             <HighlineSummary highline={highline} />
             <HighlineTabsBar
               tab={tab}
@@ -173,7 +196,7 @@ export default function HighlinePage() {
             {/* A spacer rather than contentContainerStyle padding: padding
                 changes re-lay out the whole list, and contentInset is iOS-only. */}
             <View style={{ height: fabClearance }} />
-          </View>
+          </Animated.View>
         </Animated.ScrollView>
 
         <View pointerEvents="none" className="absolute top-0 left-0 right-0">

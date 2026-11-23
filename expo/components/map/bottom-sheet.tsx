@@ -186,6 +186,7 @@ const ListingsBottomSheet: React.FC<{ onHighlineOpen?: () => void }> = ({
           distanceFromUserMeters={item.distanceFromUserMeters}
           animateMount={false}
           onOpen={onHighlineOpen}
+          sharedTransition
         />
       </View>
     ),
