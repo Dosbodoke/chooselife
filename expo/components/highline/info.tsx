@@ -15,19 +15,18 @@ export const HighlineSummary: React.FC<{ highline: Highline }> = ({
   highline,
 }) => (
   <View className="gap-6">
-    <View className="gap-2">
-      <Text className="text-3xl font-bold tracking-tight text-foreground">
-        {highline.name}
-      </Text>
-      {highline.description ? (
-        <Text className="text-base text-muted-foreground leading-relaxed">
-          {highline.description}
-        </Text>
-      ) : null}
-      {highline.whatsapp_group_url ? (
-        <WhatsAppGroupLink url={highline.whatsapp_group_url} />
-      ) : null}
-    </View>
+    {highline.description || highline.whatsapp_group_url ? (
+      <View className="gap-2">
+        {highline.description ? (
+          <Text className="text-base text-muted-foreground leading-relaxed">
+            {highline.description}
+          </Text>
+        ) : null}
+        {highline.whatsapp_group_url ? (
+          <WhatsAppGroupLink url={highline.whatsapp_group_url} />
+        ) : null}
+      </View>
+    ) : null}
 
     <HighlineDimensions height={highline.height} distance={highline.length} />
   </View>

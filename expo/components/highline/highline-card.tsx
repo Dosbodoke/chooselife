@@ -1,9 +1,10 @@
 import { RigStatuses } from '@chooselife/ui';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { MoveHorizontalIcon, MoveVerticalIcon } from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { Touchable } from 'react-native-gesture-handler';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 
 import type { Highline } from '~/hooks/use-highline';
@@ -14,6 +15,8 @@ import { Icon } from '~/components/ui/icon';
 
 import { FavoriteHighline } from './favorite-button';
 import { HighlineImage } from './highline-image';
+import { HighlineName } from './highline-name';
+import { highlineImageTag } from './shared-transition';
 
 const ReanimatedSquircleView = Animated.createAnimatedComponent(StyledSquircle);
 
@@ -34,12 +37,18 @@ interface HighlineCardProps {
    * recalculates every position below it.
    */
   animateMount?: boolean;
+  /**
+   * Fly the photo and name into the highline screen when the card opens it.
+   * Only one card per highline on a screen may set it.
+   */
+  sharedTransition?: boolean;
 }
 
 interface CardContentProps {
   item: Highline;
   distanceFromUserMeters?: number | null;
   showStatus: boolean;
+  sharedTransition: boolean;
 }
 
 const StatusChip: React.FC<{ status: RigStatuses }> = ({ status }) => {
@@ -126,14 +135,21 @@ const CardContent: React.FC<CardContentProps> = ({
   item,
   distanceFromUserMeters,
   showStatus,
+  sharedTransition,
 }) => {
   return (
     <>
       {/* Background Image */}
       <View className="absolute inset-0">
+        {/* Rounded like the card (rounded-2xl), since the image leaves the
+            card's clip while it flies to the highline screen. */}
         <HighlineImage
           coverImageId={item.cover_image}
           className="h-full w-full"
+          borderRadius={16}
+          sharedTransitionTag={
+            sharedTransition ? highlineImageTag(item.id) : undefined
+          }
         />
       </View>
 
@@ -163,17 +179,11 @@ const CardContent: React.FC<CardContentProps> = ({
 
         {/* Bottom Content */}
         <View className="gap-1.5">
-          <Text
-            className="text-xl font-bold text-white leading-tight"
-            numberOfLines={2}
-            style={{
-              textShadowColor: 'rgba(0, 0, 0, 0.5)',
-              textShadowOffset: { width: 0, height: 1 },
-              textShadowRadius: 3,
-            }}
-          >
-            {item.name}
-          </Text>
+          <HighlineName
+            highlineID={item.id}
+            name={item.name}
+            sharedTransition={sharedTransition}
+          />
           <StatsPills
             height={item.height}
             length={item.length}
@@ -194,7 +204,10 @@ export const HighlineCard: React.FC<HighlineCardProps> = ({
   showStatus = true,
   animateMount = true,
   onOpen,
+  sharedTransition = false,
 }) => {
+  const router = useRouter();
+
   const content = (
     <ReanimatedSquircleView
       className={cn(
@@ -210,6 +223,7 @@ export const HighlineCard: React.FC<HighlineCardProps> = ({
         item={item}
         distanceFromUserMeters={distanceFromUserMeters}
         showStatus={showStatus}
+        sharedTransition={sharedTransition}
       />
     </ReanimatedSquircleView>
   );
@@ -218,11 +232,17 @@ export const HighlineCard: React.FC<HighlineCardProps> = ({
     return <Pressable onPress={onPress}>{content}</Pressable>;
   }
 
+  // Touchable dims the native view instead of the `opacity` style, so a shared
+  // image doesn't leave the card still dimmed from the press.
   return (
-    <Link href={`/highline/${item.id}`} asChild>
-      <TouchableOpacity activeOpacity={0.9} onPress={onOpen}>
-        {content}
-      </TouchableOpacity>
-    </Link>
+    <Touchable
+      activeOpacity={0.9}
+      onPress={() => {
+        onOpen?.();
+        router.push(`/highline/${item.id}`);
+      }}
+    >
+      {content}
+    </Touchable>
   );
 };

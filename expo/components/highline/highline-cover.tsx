@@ -36,7 +36,8 @@ const PULL_THRESHOLD = 90;
 export const HighlineCover: React.FC<{
   coverImageId: string | null;
   scrollY: SharedValue<number>;
-}> = ({ coverImageId, scrollY }) => {
+  sharedTransitionTag?: string;
+}> = ({ coverImageId, scrollY, sharedTransitionTag }) => {
   const style = useAnimatedStyle(() => {
     const y = scrollY.get();
     if (y < 0) {
@@ -52,7 +53,19 @@ export const HighlineCover: React.FC<{
       className="absolute top-0 left-0 right-0"
       style={[{ height: COVER_HEIGHT }, style]}
     >
-      <HighlineImage coverImageId={coverImageId} className="w-full h-full" />
+      <HighlineImage
+        coverImageId={coverImageId}
+        className="w-full h-full"
+        sharedTransitionTag={sharedTransitionTag}
+      />
+      {/* Same shade as the card's, so the name over it reads the same. */}
+      <View
+        className="absolute bottom-0 w-full h-2/3"
+        style={{
+          experimental_backgroundImage:
+            'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
+        }}
+      />
     </Animated.View>
   );
 };
