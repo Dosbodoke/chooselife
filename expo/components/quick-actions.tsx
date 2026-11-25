@@ -1,16 +1,14 @@
 import { Link, type Href } from 'expo-router';
-import {
-  ArrowRightIcon,
-  BookIcon,
-  PencilRulerIcon,
-  type LucideIcon,
-} from 'lucide-react-native';
+import { ArrowRightIcon } from 'lucide-react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
+import { KubaiBookIcon, KubaiPencilRulerIcon } from '~/lib/icons/kubai';
+
 import { Icon } from '~/components/ui/icon';
+import type { KubaiIcon } from '~/components/ui/kubai-icon';
 import { Text } from '~/components/ui/text';
 
 const CARD_HEIGHT = 176;
@@ -20,7 +18,7 @@ const SCREEN_GUTTER = 16;
 type QuickAction = {
   id: 'setupSimulator' | 'learn';
   href: Href;
-  icon: LucideIcon;
+  icon: KubaiIcon;
   gradient: [from: string, to: string];
 };
 
@@ -28,13 +26,13 @@ const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'setupSimulator',
     href: '/setup-simulator',
-    icon: PencilRulerIcon,
+    icon: KubaiPencilRulerIcon,
     gradient: ['#FF9A8B', '#F5455C'],
   },
   {
     id: 'learn',
     href: '/learn' as Href,
-    icon: BookIcon,
+    icon: KubaiBookIcon,
     gradient: ['#B79CFF', '#7B3FF2'],
   },
 ];

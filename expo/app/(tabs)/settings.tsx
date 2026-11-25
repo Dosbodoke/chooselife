@@ -11,15 +11,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import { Link, useRouter } from 'expo-router';
-import {
-  ChevronRightIcon,
-  LanguagesIcon,
-  LogOutIcon,
-  PackageIcon,
-  PencilIcon,
-  Trash2Icon,
-  type LucideIcon,
-} from 'lucide-react-native';
+import { ChevronRightIcon, type LucideIcon } from 'lucide-react-native';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -29,6 +21,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '~/context/auth';
 import { useOnlineStatus } from '~/context/react-query';
 import { supabase } from '~/lib/supabase';
+import {
+  KubaiLanguagesIcon,
+  KubaiLogOutIcon,
+  KubaiPackageIcon,
+  KubaiPencilIcon,
+  KubaiTrashIcon,
+} from '~/lib/icons/kubai';
 import { cn } from '~/lib/utils';
 import { Tables } from '~/utils/database.types';
 
@@ -48,6 +47,7 @@ import { SupabaseAvatar } from '~/components/supabase-avatar';
 import { Button } from '~/components/ui/button';
 import { PrimaryButton } from '~/components/ui/primary-button';
 import { Icon } from '~/components/ui/icon';
+import type { KubaiIcon } from '~/components/ui/kubai-icon';
 import { Text } from '~/components/ui/text';
 
 export default function SettingsPage() {
@@ -94,7 +94,7 @@ export default function SettingsPage() {
             </Text>
             <View className="bg-white rounded-xl overflow-hidden">
               <SettingsItem
-                icon={PackageIcon}
+                icon={KubaiPackageIcon}
                 iconColor="#059669"
                 label={t('components.settings.my-webbing.title')}
                 onPress={() => router.push('/my-webbings')}
@@ -158,7 +158,7 @@ export default function SettingsPage() {
 
 // Reusable Settings Item Component
 interface SettingsItemProps {
-  icon?: LucideIcon;
+  icon?: LucideIcon | KubaiIcon;
   iconColor?: string;
   label: string;
   onPress?: () => void;
@@ -188,9 +188,10 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
       {IconComponent && (
         <View
           className="size-8 rounded-md items-center justify-center mr-4"
-          style={{ backgroundColor: iconColor }}
+          // Kubai icons shade from their own color, so the tile is only a tint.
+          style={{ backgroundColor: `${iconColor}1F` }}
         >
-          <Icon as={IconComponent} className="text-white size-5" />
+          <Icon as={IconComponent} color={iconColor} className="size-5" />
         </View>
       )}
 
@@ -243,7 +244,7 @@ const ChangeLanguage: React.FC<{ isLast?: boolean }> = ({ isLast }) => {
   return (
     <>
       <SettingsItem
-        icon={LanguagesIcon}
+        icon={KubaiLanguagesIcon}
         iconColor="#34C759" // iOS Green
         label={t('app.(tabs).settings.changeLanguage')}
         onPress={openModal}
@@ -358,7 +359,7 @@ const EditProfileButton: React.FC = () => {
   return (
     <>
       <SettingsItem
-        icon={PencilIcon}
+        icon={KubaiPencilIcon}
         iconColor="#007AFF" // iOS Blue
         label={t('app.(tabs).settings.editProfile.triggerLabel')}
         onPress={openModal}
@@ -395,7 +396,7 @@ const SignOut: React.FC = () => {
   return (
     <>
       <SettingsItem
-        icon={LogOutIcon}
+        icon={KubaiLogOutIcon}
         iconColor="#8E8E93"
         label={t('app.(tabs).settings.logOut')}
         onPress={openModal}
@@ -439,7 +440,7 @@ const DeleteAccount: React.FC<{ isLast?: boolean }> = ({ isLast }) => {
   };
   return (
     <SettingsItem
-      icon={Trash2Icon}
+      icon={KubaiTrashIcon}
       iconColor="#FF3B30" // iOS Red
       label={t('app.(tabs).settings.delete.label')}
       onPress={handleDeleteAccount}
