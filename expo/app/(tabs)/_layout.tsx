@@ -1,14 +1,14 @@
 import { Tabs } from 'expo-router';
-import {
-  EarthIcon,
-  TentTreeIcon,
-  UserCircleIcon,
-  UsersRoundIcon,
-} from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { useAuth } from '~/context/auth';
+import {
+  KubaiGlobeIcon,
+  KubaiTentIcon,
+  KubaiUserRoundIcon,
+  KubaiUsersRoundIcon,
+} from '~/lib/icons/kubai';
 import { cn } from '~/lib/utils';
 
 import { FloatingTabBar } from '~/components/floating-tab-bar';
@@ -29,7 +29,7 @@ export default function TabLayout() {
           title: t('app.(tabs)._layout.homeTitle'),
           tabBarIcon: ({ focused }) => (
             <Icon
-              as={TentTreeIcon}
+              as={KubaiTentIcon}
               className={cn(
                 'size-6',
                 focused ? 'text-blue-500' : 'text-foreground',
@@ -45,7 +45,7 @@ export default function TabLayout() {
           title: t('app.(tabs)._layout.indexTitle'),
           tabBarIcon: ({ focused }) => (
             <Icon
-              as={EarthIcon}
+              as={KubaiGlobeIcon}
               className={cn(
                 'size-6',
                 focused ? 'text-blue-500' : 'text-foreground',
@@ -63,7 +63,7 @@ export default function TabLayout() {
           headerShown: false,
           tabBarIcon: ({ focused }) => (
             <Icon
-              as={UsersRoundIcon}
+              as={KubaiUsersRoundIcon}
               className={cn(
                 'size-6',
                 focused ? 'text-blue-500' : 'text-foreground',
@@ -89,7 +89,7 @@ export default function TabLayout() {
               </View>
             ) : (
               <Icon
-                as={UserCircleIcon}
+                as={KubaiUserRoundIcon}
                 className={cn(
                   'size-6',
                   focused ? 'text-blue-500' : 'text-foreground',

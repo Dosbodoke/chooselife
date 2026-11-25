@@ -2,8 +2,10 @@ import { cn } from '~/lib/utils';
 import type { LucideIcon, LucideProps } from 'lucide-react-native';
 import { useResolveClassNames } from 'uniwind';
 
+import type { KubaiIcon } from '~/components/ui/kubai-icon';
+
 type IconProps = LucideProps & {
-  as: LucideIcon;
+  as: LucideIcon | KubaiIcon;
 };
 
 function Icon({ as: IconComponent, className, size, color, fill, ...props }: IconProps) {

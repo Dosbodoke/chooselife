@@ -1,12 +1,9 @@
-import {
-  LocateFixedIcon,
-  LocateIcon,
-  MapIcon,
-  SatelliteIcon,
-} from 'lucide-react-native';
+import { LocateFixedIcon, LocateIcon } from 'lucide-react-native';
 import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { KubaiMapIcon, KubaiSatelliteIcon } from '~/lib/icons/kubai';
 
 import { Icon } from '~/components/ui/icon';
 
@@ -46,7 +43,7 @@ const MapControls: React.FC<{
         }
       >
         <Icon
-          as={mapType === 'standard' ? MapIcon : SatelliteIcon}
+          as={mapType === 'standard' ? KubaiMapIcon : KubaiSatelliteIcon}
           className="size-6 text-black"
           strokeWidth={2}
         />
